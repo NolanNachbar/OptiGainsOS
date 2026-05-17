@@ -10,3 +10,4 @@ ALTER TABLE user_profiles DROP COLUMN IF EXISTS privacy_level;
 ALTER TABLE user_profiles DROP COLUMN IF EXISTS total_workouts;
 ALTER TABLE user_profiles DROP COLUMN IF EXISTS current_streak;
 ALTER TABLE user_profiles DROP COLUMN IF EXISTS longest_streak;
+ 
