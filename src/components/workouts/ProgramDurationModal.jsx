@@ -1,0 +1,347 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronRight, TrendingUp, RotateCcw, Info } from "lucide-react";
+
+// How much weight to add per week by default (lbs), per goal
+const DEFAULT_INCREMENTS = {
+  muscle_gain:     { compound: 5,   isolation: 2.5 },
+  weight_loss:     { compound: 2.5, isolation: 2.5 },
+  endurance:       { compound: 2.5, isolation: 2.5 },
+  general_fitness: { compound: 5,   isolation: 2.5 },
+  flexibility:     { compound: 2.5, isolation: 2.5 },
+};
+
+// Preset program lengths
+const DURATION_PRESETS = [
+  { weeks: 4,  label: "4 Weeks",  description: "Short burst — test the split" },
+  { weeks: 8,  label: "8 Weeks",  description: "Standard block — solid progress" },
+  { weeks: 12, label: "12 Weeks", description: "Full cycle — serious gains" },
+  { weeks: 16, label: "16 Weeks", description: "Extended — peak development" },
+];
+
+export default function ProgramDurationModal({ split, goal, onConfirm, onCancel }) {
+  const [totalWeeks, setTotalWeeks] = useState(8);
+  const [customWeeks, setCustomWeeks] = useState("");
+  const [weeklyIncrement, setWeeklyIncrement] = useState(
+    DEFAULT_INCREMENTS[goal]?.compound ?? 5
+  );
+  const [deloadMode, setDeloadMode] = useState("match_intro");
+  const [deloadReduction, setDeloadReduction] = useState(10);
+
+  const activeWeeks = customWeeks ? parseInt(customWeeks) || totalWeeks : totalWeeks;
+  const progressionWeeks = Math.max(1, activeWeeks - 2);
+
+  // Week-by-week schedule preview — colors use explicit dark variants
+  const weekSchedule = Array.from({ length: activeWeeks }, (_, i) => {
+    const week = i + 1;
+    if (week === 1) {
+      return {
+        week,
+        type: "intro",
+        label: "Intro Week",
+        description: "Learn the movements — lighter loads, focus on form",
+        chipClass: "bg-primary-100 text-primary-700 border-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:border-primary-700",
+      };
+    }
+    if (week === activeWeeks) {
+      return {
+        week,
+        type: "deload",
+        label: "Deload Week",
+        description:
+          deloadMode === "match_intro"
+            ? "Same weight as Week 1 — full recovery"
+            : `${deloadReduction} lbs under previous week — active recovery`,
+        chipClass: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700",
+      };
+    }
+    return {
+      week,
+      type: "progression",
+      label: `Week ${week}`,
+      description: `+${weeklyIncrement} lbs from previous week`,
+      chipClass: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
+    };
+  });
+
+  function handleConfirm() {
+    onConfirm({
+      totalWeeks: activeWeeks,
+      introWeeks: 1,
+      progressionWeeks,
+      deloadWeeks: 1,
+      weeklyIncrement: parseFloat(weeklyIncrement) || 5,
+      deloadReduction: parseFloat(deloadReduction) || 10,
+      deloadMode,
+      weekSchedule,
+      split,
+    });
+  }
+
+  return (
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="max-w-2xl p-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900">
+
+        {/* Header */}
+        <DialogHeader className="shrink-0 border-b border-slate-200 dark:border-slate-700 p-6 pb-4">
+          <DialogTitle className="text-xl text-slate-900 dark:text-white">
+            Program Settings
+          </DialogTitle>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Configure how long and how progressively your program runs
+          </p>
+        </DialogHeader>
+
+        {/* Scrollable body */}
+        <div
+          className="space-y-6 overflow-y-auto overscroll-contain flex-1 p-6"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+
+          {/* Split summary chips */}
+          <div className="flex flex-wrap gap-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            {split.map((day, i) => (
+              <Badge
+                key={i}
+                variant="outline"
+                className="text-xs text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+              >
+                Day {i + 1}: {day}
+              </Badge>
+            ))}
+          </div>
+
+          {/* Duration selector */}
+          <div>
+            <Label className="text-base font-semibold block mb-3 text-slate-900 dark:text-white">
+              Program Duration
+            </Label>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+              {DURATION_PRESETS.map((preset) => {
+                const isActive = activeWeeks === preset.weeks && !customWeeks;
+                return (
+                  <button
+                    key={preset.weeks}
+                    onClick={() => { setTotalWeeks(preset.weeks); setCustomWeeks(""); }}
+                    className={[
+                      "p-3 rounded-xl border-2 text-left transition-all",
+                      isActive
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/30"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-primary-400 dark:hover:border-primary-600",
+                    ].join(" ")}
+                  >
+                    <div className={`font-bold text-sm ${isActive ? "text-primary-700 dark:text-primary-300" : "text-slate-800 dark:text-slate-100"}`}>
+                      {preset.label}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      {preset.description}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                placeholder="Custom weeks..."
+                value={customWeeks}
+                min={3}
+                max={52}
+                onChange={(e) => setCustomWeeks(e.target.value)}
+                className="w-40 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+              <span className="text-sm text-slate-500 dark:text-slate-400">weeks (min 3)</span>
+            </div>
+          </div>
+
+          {/* Progression + Deload settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Weekly increment */}
+            <div>
+              <Label className="text-base font-semibold block mb-1 text-slate-900 dark:text-white">
+                Weekly Weight Increase
+              </Label>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                Lbs added to compound lifts each progression week
+              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={weeklyIncrement}
+                  min={0}
+                  step={2.5}
+                  onChange={(e) => setWeeklyIncrement(e.target.value)}
+                  className="w-28 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+                <span className="text-sm text-slate-500 dark:text-slate-400">lbs / week</span>
+              </div>
+
+              {/* Quick-pick buttons */}
+              <div className="flex gap-2 mt-2">
+                {[2.5, 5, 7.5, 10].map((v) => {
+                  const isActive = parseFloat(weeklyIncrement) === v;
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => setWeeklyIncrement(v)}
+                      className={[
+                        "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
+                        isActive
+                          ? "border-primary-500 bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300"
+                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-primary-400 dark:hover:border-primary-600 bg-white dark:bg-slate-800",
+                      ].join(" ")}
+                    >
+                      +{v}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Deload mode */}
+            <div>
+              <Label className="text-base font-semibold block mb-1 text-slate-900 dark:text-white">
+                Deload Week Weight
+              </Label>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                How much to reduce weight on the final recovery week
+              </p>
+
+              <div className="space-y-2">
+                {/* Match Intro */}
+                <button
+                  onClick={() => setDeloadMode("match_intro")}
+                  className={[
+                    "w-full text-left p-3 rounded-xl border-2 transition-all",
+                    deloadMode === "match_intro"
+                      ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      Match Intro Week
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-6">
+                    Use the same weight as Week 1
+                  </p>
+                </button>
+
+                {/* Reduce */}
+                <button
+                  onClick={() => setDeloadMode("reduce")}
+                  className={[
+                    "w-full text-left p-3 rounded-xl border-2 transition-all",
+                    deloadMode === "reduce"
+                      ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400 rotate-180" />
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      Reduce from Previous
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-6">
+                    Drop a set amount from the last progression week
+                  </p>
+                </button>
+
+                {deloadMode === "reduce" && (
+                  <div className="flex items-center gap-2 pl-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Drop by</span>
+                    <Input
+                      type="number"
+                      value={deloadReduction}
+                      min={0}
+                      step={2.5}
+                      onChange={(e) => setDeloadReduction(e.target.value)}
+                      className="w-24 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    />
+                    <span className="text-sm text-slate-500 dark:text-slate-400">lbs</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Week-by-week preview */}
+          <div>
+            <Label className="text-base font-semibold block mb-3 text-slate-900 dark:text-white">
+              Program Preview — {activeWeeks} weeks
+            </Label>
+            <div className="flex gap-1.5 flex-wrap">
+              {weekSchedule.map((w) => (
+                <div
+                  key={w.week}
+                  title={w.description}
+                  className={`px-3 py-2 rounded-lg border text-xs font-medium ${w.chipClass}`}
+                >
+                  {w.type === "intro" ? "Intro" : w.type === "deload" ? "Deload" : `Wk ${w.week}`}
+                </div>
+              ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-primary-300 dark:bg-primary-700" />
+                1 intro week
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-emerald-300 dark:bg-emerald-700" />
+                {progressionWeeks} progression week{progressionWeeks !== 1 ? "s" : ""}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-amber-300 dark:bg-amber-700" />
+                1 deload week
+              </div>
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div className="flex gap-3 p-3 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 rounded-xl text-sm text-primary-700 dark:text-primary-300">
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <p>
+              Each week's workout will be generated with adjusted sets, reps, and rest
+              based on the phase. The app will remind you which phase you're in when
+              you start each workout.
+            </p>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex gap-3 bg-white dark:bg-slate-900">
+          <Button variant="outline" onClick={onCancel} className="flex-1">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={activeWeeks < 3}
+            variant="primary"
+            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white"
+          >
+            <ChevronRight className="w-4 h-4 mr-2" />
+            Generate Program
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

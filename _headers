@@ -1,0 +1,2 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://qmcqbwdmlwshtguztaeg.supabase.co wss://qmcqbwdmlwshtguztaeg.supabase.co https://world.openfoodfacts.org https://www.strava.com https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'

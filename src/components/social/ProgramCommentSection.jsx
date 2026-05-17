@@ -1,0 +1,174 @@
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProgramComments, useAddProgramComment, useDeleteProgramComment } from "@/hooks/useSocialQueries";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { Link } from "react-router-dom";
+import { MessageCircle, Send, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+
+export function useProgramCommentSection(sharedProgramId, commentCount = 0) {
+  const { user } = useAuth();
+  const [expanded, setExpanded] = useState(false);
+  const [body, setBody] = useState("");
+
+  const { data: comments = [], isLoading } = useProgramComments(sharedProgramId, expanded);
+  const addComment = useAddProgramComment();
+  const deleteComment = useDeleteProgramComment();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const trimmed = body.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 500) {
+      toast.error("Comment must be under 500 characters");
+      return;
+    }
+
+    addComment.mutate(
+      { sharedProgramId, body: trimmed },
+      {
+        onSuccess: () => setBody(""),
+        onError: () => toast.error("Failed to post comment"),
+      }
+    );
+  };
+
+  const handleDelete = (commentId) => {
+    deleteComment.mutate(commentId, {
+      onError: () => toast.error("Failed to delete comment"),
+    });
+  };
+
+  const displayCount = expanded ? comments.length : commentCount;
+
+  return {
+    user,
+    expanded,
+    setExpanded,
+    body,
+    setBody,
+    comments,
+    isLoading,
+    addComment,
+    handleSubmit,
+    handleDelete,
+    displayCount,
+  };
+}
+
+export function ProgramCommentToggle({ expanded, setExpanded, displayCount }) {
+  return (
+    <button
+      onClick={() => setExpanded(!expanded)}
+      className={`flex items-center gap-1.5 text-sm transition-colors ${
+        expanded
+          ? "text-primary-600 font-medium"
+          : "text-slate-400 hover:text-slate-600"
+      }`}
+    >
+      <MessageCircle className="w-4 h-4" />
+      {displayCount > 0 ? displayCount : "Comment"}
+    </button>
+  );
+}
+
+export function ProgramCommentPanel({
+  expanded,
+  isLoading,
+  comments,
+  user,
+  handleDelete,
+  handleSubmit,
+  body,
+  setBody,
+  addComment,
+}) {
+  if (!expanded) return null;
+
+  return (
+    <div className="mt-3 space-y-3 text-left">
+      {isLoading ? (
+        <div className="flex justify-center py-2">
+          <LoadingSpinner size="small" />
+        </div>
+      ) : (
+        <>
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex gap-2 items-start">
+              <Link to={`/profile/${comment.authorProfile?.username || ""}`}>
+                <UserAvatar
+                  url={comment.authorProfile?.avatar_url}
+                  username={comment.authorProfile?.username}
+                  size="sm"
+                />
+              </Link>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Link
+                    to={`/profile/${comment.authorProfile?.username || ""}`}
+                    className="hover:underline"
+                  >
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                      {comment.authorProfile?.display_name || comment.authorProfile?.username || "Unknown User"}
+                    </span>
+                  </Link>
+                  <span className="text-xs text-slate-400">
+                    @{comment.authorProfile?.username || "unknown"}
+                  </span>
+                  <span className="text-xs text-slate-400">·</span>
+                  <span className="text-xs text-slate-400">
+                    {format(new Date(comment.created_at), "MMM d, h:mm a")}
+                  </span>
+                  {comment.created_by === user?.id && (
+                    <button
+                      onClick={() => handleDelete(comment.id)}
+                      className="text-slate-300 hover:text-danger-500 transition-colors ml-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{comment.body}</p>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Comment input */}
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <Input
+          value={body}
+          onChange={(e) => setBody(e.target.value.slice(0, 500))}
+          placeholder="Write a comment..."
+          className="text-sm"
+          maxLength={500}
+        />
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!body.trim() || addComment.isPending}
+          className="bg-primary-600 px-3"
+        >
+          <Send className="w-3.5 h-3.5" />
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+// Backwards-compatible single component
+export function ProgramCommentSection({ sharedProgramId, commentCount = 0 }) {
+  const commentState = useProgramCommentSection(sharedProgramId, commentCount);
+
+  return (
+    <div>
+      <ProgramCommentToggle {...commentState} />
+      <ProgramCommentPanel {...commentState} />
+    </div>
+  );
+}

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Strip tracking params (ref, utm_*) before anything else loads -->
+    <script>
+      (function() {
+        var url = new URL(window.location.href);
+        var dirty = false;
+        ['ref', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function(k) {
+          if (url.searchParams.has(k)) { url.searchParams.delete(k); dirty = true; }
+        });
+        if (dirty) { window.location.replace(url.toString()); }
+      })();
+    </script>
+    <!-- GitHub Pages SPA redirect handler -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    <title>Sisyphus' Schedule — Smart Workout Tracking & Training Programs</title>
+    <meta name="description" content="The ultimate workout tracking platform for serious lifters. Track PRs, build programs, log nutrition, and get ML-powered exercise recommendations. Free forever." />
+    <meta name="keywords" content="workout tracker, fitness app, strength training, progressive overload, PR tracking, workout programs, bodybuilding, powerlifting, gym app, exercise tracker" />
+    <link rel="canonical" href="https://sisyphusschedule.com/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sisyphusschedule.com" />
+    <meta property="og:title" content="Sisyphus' Schedule — Smart Workout Tracking & Training Programs" />
+    <meta property="og:description" content="Track workouts, build programs, log PRs, and crush your fitness goals. ML-powered recommendations, nutrition tracking, and social features. Free forever." />
+    <meta property="og:image" content="https://sisyphusschedule.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Sisyphus' Schedule" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sisyphus' Schedule — Smart Workout Tracking & Training Programs" />
+    <meta name="twitter:description" content="Track workouts, build programs, log PRs, and crush your fitness goals. ML-powered recommendations, nutrition tracking, and social features. Free forever." />
+    <meta name="twitter:image" content="https://sisyphusschedule.com/og-image.png" />
+
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Sisyphus' Schedule",
+      "alternateName": "Sisyphus Schedule",
+      "url": "https://sisyphusschedule.com",
+      "description": "The ultimate workout tracking platform for serious lifters. Track PRs, build programs, log nutrition, and get ML-powered exercise recommendations.",
+      "applicationCategory": "HealthApplication",
+      "genre": "Fitness",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Scientific workout tracking with sets, reps, weight, and RIR",
+        "Multi-week progressive overload program builder",
+        "Automatic PR detection and strength analytics",
+        "Machine Learning powered exercise recommendations",
+        "Comprehensive nutrition and macro tracking",
+        "Social workout sharing and community leaderboards",
+        "Progressive Web App (PWA) with offline support",
+        "Privacy-first client-side ML processing"
+      ],
+      "screenshot": {
+        "@type": "ImageObject",
+        "url": "https://sisyphusschedule.com/og-image.png",
+        "width": 1200,
+        "height": 630
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Sisyphus' Schedule",
+        "url": "https://sisyphusschedule.com"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Sisyphus' Schedule",
+        "url": "https://sisyphusschedule.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://sisyphusschedule.com/logo.png",
+          "width": 512,
+          "height": 512
+        }
+      }
+    }
+    </script>
+
+    <!-- Favicon for light mode -->
+    <link rel="icon" type="image/svg+xml" href="/sisyphus-purple.svg" media="(prefers-color-scheme: light)" />
+    <!-- Favicon for dark mode -->
+    <link rel="icon" type="image/svg+xml" href="/sisyphus-white.svg" media="(prefers-color-scheme: dark)" />
+    <!-- PNG fallback favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://cloudflareinsights.com https://*.supabase.co https://api.nal.usda.gov https://www.strava.com; base-uri 'self'; form-action 'self'">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm cache clean --force
+      - run: rm -rf node_modules package-lock.json
+      - run: npm install
+      - name: Build for public repo (base /)
+        run: npm run build:pages
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_USDA_API_KEY: ${{ secrets.VITE_USDA_API_KEY }}
+      - run: cp dist/index.html dist/404.html
+      - name: Push dist to public repo
+        run: |
+          cd dist
+          git init
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Deploy from private repo"
+          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/SisyphusSchedule.git HEAD:main

@@ -1,0 +1,21 @@
+# robots.txt for Sisyphus' Schedule
+
+User-agent: *
+Allow: /
+Allow: /llm.txt
+Allow: /llms.txt
+Disallow: /dashboard
+Disallow: /workouts
+Disallow: /schedule
+Disallow: /food-tracker
+Disallow: /create-workout
+Disallow: /quick-workout
+Disallow: /program-builder
+Disallow: /admin
+
+# Allow public profiles and programs for discovery
+Allow: /profile/
+Allow: /program/
+
+# Sitemap
+Sitemap: https://sisyphusschedule.com/sitemap.xml

@@ -1,0 +1,207 @@
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import SEO from '@/components/SEO';
+import {
+  Dumbbell,
+  Calendar,
+  TrendingUp,
+  Brain,
+  Users,
+  WifiOff,
+  ArrowRight,
+  ChevronRight,
+} from 'lucide-react';
+
+const HERO_IMAGE =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAdZKJmXN0yEW_kdsIJNJF2jvegXoaQpVR2IRnlaBAmrxrUSWs4shl-IfgFS69C4RZb94hBQw_Z34IKp3klQ40GT5uWJaw6vyCYUA6QSsuhrbwgc3TtX_8G2A72hqs47omzpcyAks3aCbxWOotVurTE4n6EzcdvYamUtsoscLr3HZpcoP7wXHtWdEYRfCmBF-l4bCT0CfQzAVb-GsJCaL9EkEltUxVpieqVhxtMG18RE6eT5sWunbQCGnRU0i4wlmI90UmvZ2aCDRM';
+
+const features = [
+  {
+    icon: Dumbbell,
+    title: 'Smart Workout Tracking',
+    description:
+      "Intelligent logging that predicts your next set's weight based on real-time fatigue analysis and historic volume.",
+  },
+  {
+    icon: Calendar,
+    title: 'Program Builder',
+    description:
+      'Advanced periodization tools for strength, hypertrophy, or endurance. Build blocks that evolve with your progress.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'PR Tracking',
+    description:
+      'Automated milestone detection for 1RM, volume records, and rep maxes. Celebrate the small victories in the grind.',
+  },
+  {
+    icon: Brain,
+    title: 'ML Recommendations',
+    description:
+      'Machine learning algorithms analyze your recovery patterns to suggest optimal rest days or intensity adjustments.',
+  },
+  {
+    icon: Users,
+    title: 'Social Features',
+    description:
+      'Competitive leaderboards and collaborative training groups. Find your tribe and push each other to the limit.',
+  },
+  {
+    icon: WifiOff,
+    title: 'PWA Offline',
+    description:
+      'No connection, no problem. Our offline-first architecture ensures your data is saved even in basement iron paradises.',
+  },
+];
+
+
+export default function Landing() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <SEO
+        title="Elite Workout Tracking & Training Programs"
+        description="The ultimate workout tracking platform for serious lifters. Track PRs, build programs, log nutrition, and get ML-powered exercise recommendations. Free forever."
+        keywords="workout tracker, fitness app, strength training, progressive overload, PR tracking, workout programs, bodybuilding, powerlifting, gym app, exercise tracker"
+      />
+
+      {/* Fixed Header */}
+      <header className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-xl border-b border-white/10 z-50 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
+        <div className="flex justify-between items-center px-4 md:px-8 py-3 max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
+            <img
+              src={`${import.meta.env.BASE_URL}sisyphus-white.svg`}
+              alt="Sisyphus' Schedule"
+              className="w-8 h-8"
+            />
+            <span className="text-primary-400 font-bold tracking-tighter text-lg">
+              Sisyphus' Schedule
+            </span>
+          </div>
+<Link to="/signup">
+            <Button className="bg-primary-600 hover:bg-primary-700 text-white text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(124,58,237,0.3)]">
+              Get Started
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 md:px-8">
+          <div className="absolute inset-0 z-0">
+            <img
+              className="w-full h-full object-cover opacity-40"
+              src={HERO_IMAGE}
+              alt="Elite athlete training"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+          </div>
+          <div className="relative z-10 text-center max-w-4xl">
+<span className="text-primary-400 text-xs tracking-[0.3em] uppercase mb-6 block font-medium">
+              Engineered for Elite Athletes
+            </span>
+            <h1 className="text-5xl sm:text-7xl md:text-9xl font-bold text-white mb-8 leading-none tracking-tight uppercase">
+              Track. Grind.
+              <br />
+              <span
+                className="text-primary-400"
+                style={{ textShadow: '0 0 30px rgba(167,139,250,0.5)' }}
+              >
+                Dominate.
+              </span>
+            </h1>
+            <p className="text-lg text-slate-400 max-w-xl mx-auto mb-10">
+              Precision metrics meet relentless effort. The only workout platform that understands
+              the science of the uphill struggle.
+            </p>
+            <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+              <Link to="/signup">
+                <Button
+                  size="lg"
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-10 py-6 text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(124,58,237,0.4)] transition-all active:scale-95"
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white/20 bg-white/5 backdrop-blur-md text-white px-10 py-6 text-sm tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95"
+                >
+                  Sign In
+                  <ChevronRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="py-24 px-4 md:px-8 max-w-7xl mx-auto">
+          <div className="mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold uppercase tracking-tight mb-4">
+              Reliable Tools for the{' '}
+              <span className="text-primary-400">Unstoppable</span>
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl text-center mx-auto">
+              Built to withstand the most grueling sessions. Every feature is precision-calibrated
+              to optimize your physical peak performance.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-xl p-8 flex flex-col gap-4 items-center text-center"
+                style={{ boxShadow: 'inset 0 0 20px rgba(255,255,255,0.02)' }}
+              >
+                <div className="w-12 h-12 rounded-lg bg-primary-600/10 flex items-center justify-center">
+                  <feature.icon className="w-6 h-6 text-primary-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white tracking-wide">{feature.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-primary-600 rounded-3xl p-8 md:p-16 flex flex-col items-center text-center overflow-hidden relative">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white,_transparent)]" />
+              <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-6 leading-none uppercase tracking-tight z-10">
+                Ready to Transform?
+              </h2>
+              <p className="text-purple-100 text-lg max-w-2xl mb-10 z-10">
+                Join 10,000+ elite athletes tracking their journey to the top. No gimmicks, just
+                data-driven results.
+              </p>
+              <Link to="/signup" className="z-10">
+                <Button
+                  size="lg"
+                  className="bg-white !text-primary-600 hover:bg-slate-100 px-10 py-6 text-sm tracking-widest uppercase font-bold shadow-xl active:scale-95 transition-all"
+                >
+                  Start Your Program
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full py-16 bg-slate-950 border-t border-white/5">
+        <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-8 max-w-7xl mx-auto gap-6">
+          <div className="flex flex-col gap-1 items-center md:items-start">
+            <div className="font-bold text-white tracking-wide">Sisyphus' Schedule</div>
+            <p className="text-slate-500 text-xs">© 2025 Sisyphus' Schedule. Built for the elite.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

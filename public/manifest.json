@@ -1,0 +1,30 @@
+{
+  "name": "Sisyphus' Schedule",
+  "short_name": "Sisyphus",
+  "description": "The ultimate workout tracking and programming platform for serious lifters.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "sisyphus-white.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "sisyphus.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

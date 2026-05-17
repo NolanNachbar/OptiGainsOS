@@ -1,0 +1,267 @@
+{
+  "sisyphus_version": "1.0",
+  "type": "program",
+  "program": {
+    "name": "Sub-10 Ironman - Phase 1 Intro",
+    "description": "8-day introductory microcycle (2-4 weeks). Structural resilience. Add your EOD strength workouts to each strength day.",
+    "cycle_length": 8,
+    "num_cycles": 3,
+    "difficulty": "advanced",
+    "goal": "endurance",
+    "tags": ["triathlon", "ironman"],
+    "workouts": [
+      {
+        "day_index": 1,
+        "title": "Day 1 - Strength + Easy Run",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "AM: Strength (Core/Stability)",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Easy Run",
+            "duration_minutes": 25,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Run ~3 miles",
+                "duration_type": "time",
+                "duration_value": 25,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": "Strictly Z2."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 2,
+        "title": "Day 2 - Easy Bike + Swim Technique",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "Active recovery AM + stroke skill PM.",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z1 Easy Ride",
+            "duration_minutes": 30,
+            "time_of_day": "am",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Ride",
+                "duration_type": "time",
+                "duration_value": 30,
+                "target_type": "heart_rate_zone",
+                "target_low": "1",
+                "target_high": null,
+                "notes": ""
+              }
+            ]
+          },
+          {
+            "workout_id": null,
+            "title": "Z2 Swim Technique",
+            "duration_minutes": 20,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Swim Technique 1,000m",
+                "duration_type": "distance",
+                "duration_value": 1,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": "High elbow catch."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 3,
+        "title": "Day 3 - Strength + Easy Swim",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "AM: Strength (Lower/Linear)",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Easy Swim",
+            "duration_minutes": 20,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Swim 1,000m continuous",
+                "duration_type": "distance",
+                "duration_value": 1,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": ""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 4,
+        "title": "Day 4 - Rest + Easy Run",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "AM: Rest or mobility.",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Easy Run",
+            "duration_minutes": 35,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Run ~4 miles",
+                "duration_type": "time",
+                "duration_value": 35,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": ""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 5,
+        "title": "Day 5 - Strength + Easy Bike",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "AM: Strength (Upper/Linear)",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Easy Ride",
+            "duration_minutes": 45,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Ride",
+                "duration_type": "time",
+                "duration_value": 45,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": "90 RPM cadence focus."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 6,
+        "title": "Day 6 - Leg Flush + Swim Technique",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "If this falls on Monday, swap PM swim for 20 min mobility + foam rolling.",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z1 Leg Flush Run",
+            "duration_minutes": 20,
+            "time_of_day": "am",
+            "exercises": [
+              {
+                "step_type": "recovery",
+                "name": "Easy leg flush",
+                "duration_type": "time",
+                "duration_value": 20,
+                "target_type": "heart_rate_zone",
+                "target_low": "1",
+                "target_high": null,
+                "notes": ""
+              }
+            ]
+          },
+          {
+            "workout_id": null,
+            "title": "Z2 Swim Technique",
+            "duration_minutes": 25,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Swim Technique 1,200m",
+                "duration_type": "distance",
+                "duration_value": 1.2,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": "High elbow drills."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 7,
+        "title": "Day 7 - Strength + Endurance Ride",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "AM: Strength (Core/Pull)",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Endurance Ride",
+            "duration_minutes": 60,
+            "time_of_day": "pm",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Easy Ride",
+                "duration_type": "time",
+                "duration_value": 60,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": ""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_index": 8,
+        "title": "Day 8 - Long Run",
+        "type": "mixed",
+        "exercises": [],
+        "notes": "PM: Rest or mobility only.",
+        "cardio_sessions": [
+          {
+            "workout_id": null,
+            "title": "Z2 Long Run",
+            "duration_minutes": 55,
+            "time_of_day": "am",
+            "exercises": [
+              {
+                "step_type": "active",
+                "name": "Long Run ~6 miles",
+                "duration_type": "time",
+                "duration_value": 55,
+                "target_type": "heart_rate_zone",
+                "target_low": "2",
+                "target_high": null,
+                "notes": "No high intensity."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
