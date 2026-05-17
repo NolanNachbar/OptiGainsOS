@@ -56,10 +56,10 @@ const SegmentedCircularProgress = ({
   const quarterCircumference = circumference / 4;
 
   const segments = [
-    { percentage: calories, color: "#f59e0b", bgColor: "#e5e7eb", rotation: 0 },
-    { percentage: protein, color: "#8b5cf6", bgColor: "#e5e7eb", rotation: 90 },
-    { percentage: carbs, color: "#10b981", bgColor: "#e5e7eb", rotation: 180 },
-    { percentage: fats, color: "#6366f1", bgColor: "#e5e7eb", rotation: 270 },
+    { percentage: calories, color: "#ccff00", bgColor: "#2a2a2a", rotation: 0 },
+    { percentage: protein, color: "#a0e040", bgColor: "#2a2a2a", rotation: 90 },
+    { percentage: carbs, color: "#7bbd00", bgColor: "#2a2a2a", rotation: 180 },
+    { percentage: fats, color: "#ccff00", bgColor: "#2a2a2a", rotation: 270 },
   ];
 
   return (
@@ -107,25 +107,25 @@ const SegmentedCircularProgress = ({
           })}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Apple className="w-5 h-5 text-slate-400" />
+          <Apple className="w-5 h-5 text-[#a0a0a0]" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-2 text-[11px]">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-warning-500"></div>
-          <span className="text-slate-600">{Math.round(calories)}%</span>
+          <span className="text-[#a0a0a0]">{Math.round(calories)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-primary-500"></div>
-          <span className="text-slate-600">{Math.round(protein)}%</span>
+          <div className="w-2 h-2 rounded-full bg-[rgba(204,255,0,0.08)]0"></div>
+          <span className="text-[#a0a0a0]">{Math.round(protein)}%</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-success-500"></div>
-          <span className="text-slate-600">{Math.round(carbs)}%</span>
+          <span className="text-[#a0a0a0]">{Math.round(carbs)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-primary-500"></div>
-          <span className="text-slate-600">{Math.round(fats)}%</span>
+          <div className="w-2 h-2 rounded-full bg-[rgba(204,255,0,0.08)]0"></div>
+          <span className="text-[#a0a0a0]">{Math.round(fats)}%</span>
         </div>
       </div>
     </div>
@@ -871,28 +871,28 @@ export default function Schedule() {
   if (!user) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Schedule</h1>
+              <h1 className="text-2xl font-bold text-white">Schedule</h1>
             </div>
-            <p className="text-slate-600 text-sm mb-4">
+            <p className="text-[#a0a0a0] text-sm mb-4">
               Drag workouts to schedule, or tap any day to manage
             </p>
             {totalThisWeek > 0 && (
               <div className="w-48">
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-600">This week</span>
-                  <span className="font-semibold text-primary-600">
+                  <span className="text-[#a0a0a0]">This week</span>
+                  <span className="font-semibold text-[#ccff00]">
                     {completedThisWeek}/{totalThisWeek}
                   </span>
                 </div>
-                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-primary-500 transition-all duration-500"
+                    className="h-full bg-[rgba(204,255,0,0.08)]0 transition-all duration-500"
                     style={{ width: `${weeklyProgressPercentage}%` }}
                   ></div>
                 </div>
@@ -903,14 +903,14 @@ export default function Schedule() {
             <Button
               onClick={handleScheduleWeek}
               variant="outline"
-              className="border-primary-300 text-primary-700 hover:bg-primary-50 dark:text-white dark:bg-slate-700 dark:hover:bg-purple-700"
+              className="border-[rgba(204,255,0,0.3)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)] bg-[#202020] hover:bg-[#242424]"
             >
               <CalendarIcon className="w-4 h-4 mr-2" />
               Schedule This Week
             </Button>
             <Button
               onClick={handleBuildProgram}
-              className="border-primary-300 text-primary-700 hover:bg-primary-50 dark:text-white dark:bg-slate-700 dark:hover:bg-purple-700"
+              className="border-[rgba(204,255,0,0.3)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)] bg-[#202020] hover:bg-[#242424]"
             >
               <BookOpen className="w-4 h-4 mr-2" />
               Build Program
@@ -928,7 +928,7 @@ export default function Schedule() {
           const todayButton = !isCurrentWeek && (
             <button
               onClick={goToToday}
-              className="flex items-center gap-1 text-xs px-3 py-1 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+              className="flex items-center gap-1 text-xs px-3 py-1 text-[#ccff00] hover:text-[#ccff00] font-semibold transition-colors"
             >
               {viewingFuture ? (
                 <>
@@ -948,7 +948,7 @@ export default function Schedule() {
             <div className="flex items-center justify-center gap-6 mb-6">
               <button
                 onClick={() => navigateWeek("prev")}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-[#a0a0a0] hover:text-white transition-colors"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -956,7 +956,7 @@ export default function Schedule() {
               <div className="flex items-center gap-3">
                 {viewingFuture && todayButton}
 
-                <div className="text-sm font-semibold text-slate-700">
+                <div className="text-sm font-semibold text-white">
                   {format(currentWeekStart, "MMM d")} - {format(addDays(currentWeekStart, 6), "MMM d")}
                 </div>
 
@@ -965,7 +965,7 @@ export default function Schedule() {
 
               <button
                 onClick={() => navigateWeek("next")}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-[#a0a0a0] hover:text-white transition-colors"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -1002,11 +1002,11 @@ export default function Schedule() {
             return (
               <Card
                 key={index}
-                className={`bg-white dark:bg-slate-800 dark:text-white rounded-xl transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px] ${
+                className={`bg-[#1a1a1a] text-white rounded-xl transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px] ${
                   isDragOver
-                    ? "border-2 border-primary-400 shadow-lg scale-[1.02] bg-primary-50 dark:bg-primary-900/20"
+                    ? "border-2 border-[rgba(204,255,0,0.3)] shadow-lg scale-[1.02] bg-[rgba(204,255,0,0.1)]"
                     : isToday
-                    ? "border-2 border-primary-500"
+                    ? "border-2 border-[rgba(204,255,0,0.3)]"
                     : "border-0 shadow-sm hover:shadow-md"
                 }`}
                 onClick={() => setDayDetailDate(day)}
@@ -1022,14 +1022,14 @@ export default function Schedule() {
                   <div className="text-center">
                     <div
                       className={`text-xs font-semibold uppercase tracking-widest ${
-                        isToday ? "text-primary-600" : "text-slate-500"
+                        isToday ? "text-[#ccff00]" : "text-[#555555]"
                       }`}
                     >
                       {format(day, "EEE")}
                     </div>
                     <div
                       className={`text-4xl font-bold mt-2 ${
-                        isToday ? "text-primary-600" : "text-slate-900 dark:text-white"
+                        isToday ? "text-[#ccff00]" : "text-white"
                       }`}
                     >
                       {format(day, "d")}
@@ -1038,7 +1038,7 @@ export default function Schedule() {
                 </CardHeader>
                 <CardContent className="space-y-2 pt-0 pb-5 px-4">
                   {daySchedule.length === 0 && dayProgramWorkouts.length === 0 && dayOrphanLogs.length === 0 && dayCardio.length === 0 && !hasFood ? (
-                    <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500">
+                    <div className="text-center py-6 text-xs text-[#a0a0a0]">
                       Tap or drag to add
                     </div>
                   ) : (
@@ -1064,14 +1064,14 @@ export default function Schedule() {
                                     : cardioOnly
                                     ? "bg-orange-50 dark:bg-orange-900/15"
                                     : item.isCurrent
-                                    ? "bg-primary-100 dark:bg-primary-900/30 cursor-pointer"
-                                    : "bg-primary-50 dark:bg-primary-900/15"
+                                    ? "bg-[rgba(204,255,0,0.1)] cursor-pointer"
+                                    : "bg-[rgba(204,255,0,0.1)]"
                                 }`}
                               >
                                 {cardioOnly ? (
                                   <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-success-600" : "text-orange-500"}`} />
                                 ) : (
-                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-success-600" : "text-primary-600"}`} />
+                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-success-600" : "text-[#ccff00]"}`} />
                                 )}
                               </div>
                             );
@@ -1109,14 +1109,14 @@ export default function Schedule() {
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-move transition-colors ${
                                   item.completed
                                     ? "bg-success-100 dark:bg-success-900/30"
-                                    : "bg-primary-50 dark:bg-primary-900/15"
+                                    : "bg-[rgba(204,255,0,0.1)]"
                                 }`}
                               >
                                 <Dumbbell
                                   className={`w-3.5 h-3.5 ${
                                     item.completed
                                       ? "text-success-600"
-                                      : "text-primary-600"
+                                      : "text-[#ccff00]"
                                   }`}
                                 />
                               </div>
@@ -1140,7 +1140,7 @@ export default function Schedule() {
                       )}
 
                       {hasFood && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
                           <div className="flex justify-center">
                             <SegmentedCircularProgress
                               calories={caloriesPercentage}
@@ -1166,7 +1166,7 @@ export default function Schedule() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between mb-3">
               <CardTitle className="text-xl flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary-600" />
+                <BookOpen className="w-5 h-5 text-[#ccff00]" />
                 Library
               </CardTitle>
               <Tabs value={libraryFilter === "programs" ? "programs" : "workouts"} onValueChange={(v) => setLibraryFilter(v === "programs" ? "programs" : "all")}>
@@ -1179,7 +1179,7 @@ export default function Schedule() {
                     <BookOpen className="w-3.5 h-3.5" />
                     Programs
                     {allPrograms.length > 0 && (
-                      <Badge className="bg-primary-100 text-primary-700 text-xs px-1.5 py-0 ml-0.5">{allPrograms.length}</Badge>
+                      <Badge className="bg-[rgba(204,255,0,0.12)] text-[#ccff00] text-xs px-1.5 py-0 ml-0.5">{allPrograms.length}</Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
@@ -1187,7 +1187,7 @@ export default function Schedule() {
             </div>
             {libraryFilter !== "programs" && (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-500">Drag workouts to schedule them</p>
+                <p className="text-sm text-[#555555]">Drag workouts to schedule them</p>
                 <div className="flex gap-1">
                   {["all", "strength", "cardio", "hiit"].map((type) => (
                     <button
@@ -1195,8 +1195,8 @@ export default function Schedule() {
                       onClick={() => setLibraryFilter(type)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium dark:transition-colors ${
                         libraryFilter === type
-                          ? "bg-primary-100 text-primary-700 dark:bg-primary-600 dark:text-primary-200"
-                          : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-600"
+                          ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] dark:bg-[rgba(204,255,0,0.08)]0 text-[#ccff00]"
+                          : "text-[#555555] hover:bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]"
                       }`}
                     >
                       {type === "hiit" ? "HIIT" : type.charAt(0).toUpperCase() + type.slice(1)}
@@ -1211,8 +1211,8 @@ export default function Schedule() {
               /* Programs tab content */
               allPrograms.length === 0 ? (
                 <div className="text-center py-8">
-                  <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">
+                  <BookOpen className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+                  <p className="text-sm text-[#555555]">
                     No programs yet. Use Auto-Schedule Week or the Program Builder (on the Workouts page) to create one.
                   </p>
                 </div>
@@ -1229,25 +1229,25 @@ export default function Schedule() {
                       ? Math.min(100, Math.round(((enrollment.completed_workouts?.length || 0) / totalWorkouts) * 100))
                       : 0;
                     return (
-                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border-2 border-slate-100 dark:border-slate-600 hover:border-primary-200 bg-slate-50 dark:bg-slate-700 transition-all group">
+                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border-2 border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] bg-[#202020] transition-all group">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-slate-900 dark:text-white truncate">{prog.name}</p>
+                            <p className="font-semibold text-white truncate">{prog.name}</p>
                             {isActive && <Badge className="bg-green-100 text-green-700 text-xs flex-shrink-0">Active</Badge>}
                             {enrollment?.status === "paused" && <Badge variant="outline" className="text-xs flex-shrink-0">Paused</Badge>}
-                            {enrollment?.status === "cancelled" && <Badge variant="outline" className="text-xs flex-shrink-0 text-slate-400">Cancelled</Badge>}
-                            {!enrollment && <Badge variant="outline" className="text-xs flex-shrink-0 text-slate-400">Not enrolled</Badge>}
+                            {enrollment?.status === "cancelled" && <Badge variant="outline" className="text-xs flex-shrink-0 text-[#a0a0a0]">Cancelled</Badge>}
+                            {!enrollment && <Badge variant="outline" className="text-xs flex-shrink-0 text-[#a0a0a0]">Not enrolled</Badge>}
                           </div>
-                          <p className="text-xs text-slate-500 mb-2">
+                          <p className="text-xs text-[#555555] mb-2">
                             {prog.cycle_length}-day split · {prog.num_cycles} weeks
                             {enrollment && ` · Week ${enrollment.current_week || 1}, Day ${enrollment.current_day || 1}`}
                           </p>
                           {enrollment && (
                             <div className="flex items-center gap-2">
-                              <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden w-32">
-                                <div className="h-full bg-primary-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                              <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden w-32">
+                                <div className="h-full bg-[rgba(204,255,0,0.08)]0 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                               </div>
-                              <span className="text-xs text-slate-400">{progressPct}%</span>
+                              <span className="text-xs text-[#a0a0a0]">{progressPct}%</span>
                             </div>
                           )}
                         </div>
@@ -1273,7 +1273,7 @@ export default function Schedule() {
             ) : (
               /* Workout library content */
               workouts.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">
+                <p className="text-sm text-[#555555] text-center py-8">
                   No workouts yet. Create some in the Workouts page.
                 </p>
               ) : (
@@ -1286,19 +1286,19 @@ export default function Schedule() {
                         handleDragStart(e, { ...workout, isLibrary: true })
                       }
                       onDragEnd={handleDragEnd}
-                      className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-move hover:border-primary-400 hover:shadow-md transition-all group relative"
+                      className="bg-[#202020] p-4 rounded-lg border-2 border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)] hover:shadow-md transition-all group relative"
                     >
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleteTarget({ type: 'workout', id: workout.id, name: workout.title });
                         }}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 p-1 rounded"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#a0a0a0] hover:text-red-500 p-1 rounded"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <h4 className="font-semibold mb-2 pr-6 dark:text-white">{workout.title}</h4>
-                      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                      <h4 className="font-semibold mb-2 pr-6 text-white">{workout.title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-[#a0a0a0]">
                         <Clock className="w-3 h-3" />
                         <span>{workout.duration_minutes} min</span>
                         <Badge className="ml-auto text-xs">{workout.difficulty}</Badge>
@@ -1325,10 +1325,10 @@ export default function Schedule() {
               className="w-full max-w-2xl border-none shadow-lg max-h-[85vh] overflow-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <CardHeader className="pb-4 border-b border-slate-200">
+              <CardHeader className="pb-4 border-b border-[#2a2a2a]">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <CalendarIcon className="w-5 h-5 text-primary-600" />
+                    <CalendarIcon className="w-5 h-5 text-[#ccff00]" />
                     {format(dayDetailDate, "EEEE, MMMM d")}
                   </CardTitle>
                   <Button
@@ -1339,7 +1339,7 @@ export default function Schedule() {
                       setSelectedWorkout("");
                       setTimeOfDay("anytime");
                     }}
-                    className="hover:bg-slate-100"
+                    className="hover:bg-[#202020]"
                   >
                     <X className="w-5 h-5" />
                   </Button>
@@ -1348,8 +1348,8 @@ export default function Schedule() {
               <CardContent className="space-y-6 py-6">
                 {/* Workouts section */}
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
-                    <Dumbbell className="w-4 h-4 text-primary-600" />
+                  <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                    <Dumbbell className="w-4 h-4 text-[#ccff00]" />
                     Workouts
                   </h3>
                   {/* Program workouts for this day */}
@@ -1362,28 +1362,28 @@ export default function Schedule() {
                             item.completed
                               ? "bg-green-50 border-green-300"
                               : item.isCurrent
-                              ? "bg-primary-50 border-primary-300"
-                              : "bg-slate-50 border-slate-200"
+                              ? "bg-[rgba(204,255,0,0.08)] border-[rgba(204,255,0,0.3)]"
+                              : "bg-[#1a1a1a] border-[#2a2a2a]"
                           }`}
                         >
                           <div className="p-4">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className={`p-2 rounded-lg flex-shrink-0 ${
-                                  item.completed ? "bg-green-100" : "bg-primary-100"
+                                  item.completed ? "bg-green-100" : "bg-[rgba(204,255,0,0.12)]"
                                 }`}>
                                   <BookOpen className={`w-5 h-5 ${
-                                    item.completed ? "text-green-600" : "text-primary-600"
+                                    item.completed ? "text-green-600" : "text-[#ccff00]"
                                   }`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className={`font-bold text-base ${
-                                    item.completed ? "line-through text-green-700" : "text-slate-900"
+                                    item.completed ? "line-through text-green-700" : "text-white"
                                   }`}>
                                     {item.title}
                                   </div>
-                                  <div className="text-sm text-slate-600 flex items-center gap-2 mt-1 flex-wrap">
-                                    <Badge variant="outline" className="text-xs bg-primary-50 text-primary-700 border-primary-200">
+                                  <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1 flex-wrap">
+                                    <Badge variant="outline" className="text-xs bg-[rgba(204,255,0,0.1)] text-[#ccff00] border-[rgba(204,255,0,0.3)]">
                                       {item.programName}
                                     </Badge>
                                     <span className="text-xs">Cycle {item.cycle}, Day {item.dayIndex}</span>
@@ -1394,7 +1394,7 @@ export default function Schedule() {
                               {item.isCurrent && !item.completed && item.exercises?.length > 0 && (
                                 <Button
                                   size="sm"
-                                  className="bg-primary-600 flex-shrink-0"
+                                  className="bg-[rgba(204,255,0,0.08)]0 flex-shrink-0"
                                   onClick={() =>
                                     navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)
                                   }
@@ -1407,7 +1407,7 @@ export default function Schedule() {
                                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                                   {!item.exercises?.length && item.cardio_sessions?.length > 0 && (
                                     <button
-                                      className="text-xs text-slate-400 hover:text-red-500 transition-colors"
+                                      className="text-xs text-[#a0a0a0] hover:text-red-500 transition-colors"
                                       disabled={unmarkCardioDone.isPending}
                                       onClick={() => unmarkCardioDone.mutate(item)}
                                     >
@@ -1441,7 +1441,7 @@ export default function Schedule() {
                                   <div className="font-bold text-base line-through text-green-700">
                                     {logWorkout?.title || "Workout"}
                                   </div>
-                                  <div className="text-sm text-slate-600 flex items-center gap-2 mt-1">
+                                  <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1">
                                     {exerciseCount > 0 && <span className="text-xs">{exerciseCount} exercises</span>}
                                     {durationMin && <span className="text-xs">{durationMin} min</span>}
                                   </div>
@@ -1456,7 +1456,7 @@ export default function Schedule() {
                   )}
 
                   {getScheduleForDate(dayDetailDate).length === 0 && getProgramForDate(dayDetailDate).length === 0 && getOrphanLogsForDate(dayDetailDate).length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">
+                    <p className="text-sm text-[#555555] italic">
                       No workouts scheduled
                     </p>
                   ) : getScheduleForDate(dayDetailDate).length === 0 ? null : (
@@ -1470,7 +1470,7 @@ export default function Schedule() {
                             className={`rounded-xl border-2 transition-all ${
                               item.completed
                                 ? "bg-green-50 border-green-300"
-                                : "bg-white border-slate-200 hover:border-primary-300"
+                                : "bg-[#1a1a1a] border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)]"
                             }`}
                           >
                             <div className="p-4">
@@ -1480,14 +1480,14 @@ export default function Schedule() {
                                     className={`p-2 rounded-lg ${
                                       item.completed
                                         ? "bg-green-100"
-                                        : "bg-primary-100"
+                                        : "bg-[rgba(204,255,0,0.12)]"
                                     }`}
                                   >
                                     <Dumbbell
                                       className={`w-5 h-5 ${
                                         item.completed
                                           ? "text-green-600"
-                                          : "text-primary-600"
+                                          : "text-[#ccff00]"
                                       }`}
                                     />
                                   </div>
@@ -1496,12 +1496,12 @@ export default function Schedule() {
                                       className={`font-bold text-base ${
                                         item.completed
                                           ? "line-through text-green-700"
-                                          : "text-slate-900"
+                                          : "text-white"
                                       }`}
                                     >
                                       {workout.title}
                                     </div>
-                                    <div className="text-sm text-slate-600 flex items-center gap-2 mt-1">
+                                    <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1">
                                       {item.time_of_day && item.time_of_day !== "anytime" && (
                                         <span className="text-xs font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
                                           {item.time_of_day}
@@ -1527,7 +1527,7 @@ export default function Schedule() {
                                     className={`h-9 px-3 ${
                                       item.completed
                                         ? "text-green-600 hover:bg-green-100"
-                                        : "text-slate-600 hover:bg-slate-100"
+                                        : "text-[#a0a0a0] hover:bg-[#202020]"
                                     }`}
                                   >
                                     {item.completed ? (
@@ -1566,8 +1566,8 @@ export default function Schedule() {
                           onClick={() => setTimeOfDay(opt.toLowerCase())}
                           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                             timeOfDay === opt.toLowerCase()
-                              ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                              : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary-300"
+                              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.1)] text-[#ccff00] bg-[rgba(204,255,0,0.1)] text-[#ccff00]"
+                              : "border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]"
                           }`}
                         >
                           {opt}
@@ -1597,7 +1597,7 @@ export default function Schedule() {
                           time: timeOfDay,
                         })
                       }
-                      className="bg-primary-600"
+                      className="bg-[rgba(204,255,0,0.08)]0"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -1608,7 +1608,7 @@ export default function Schedule() {
                 {/* Cardio section */}
                 {(getCardioForDate(dayDetailDate).length > 0 || getProgramForDate(dayDetailDate).some(item => item.cardio_sessions?.length > 0)) && (
                   <div>
-                    <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
                       <Activity className="w-4 h-4 text-orange-500" />
                       Cardio
                     </h3>
@@ -1623,9 +1623,9 @@ export default function Schedule() {
                               <div key={session.id} className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
                                 <Activity className="w-4 h-4 text-orange-500 shrink-0" />
                                 <span className="font-medium text-orange-700 dark:text-orange-400 truncate flex-1">{session.name}</span>
-                                {miles && <span className="text-slate-500 shrink-0 text-xs">{miles} mi</span>}
-                                {dur && <span className="text-slate-500 shrink-0 text-xs">{dur}</span>}
-                                {session.average_heartrate && <span className="text-slate-500 shrink-0 text-xs">{Math.round(session.average_heartrate)} bpm</span>}
+                                {miles && <span className="text-[#555555] shrink-0 text-xs">{miles} mi</span>}
+                                {dur && <span className="text-[#555555] shrink-0 text-xs">{dur}</span>}
+                                {session.average_heartrate && <span className="text-[#555555] shrink-0 text-xs">{Math.round(session.average_heartrate)} bpm</span>}
                               </div>
                             );
                           })
@@ -1634,9 +1634,9 @@ export default function Schedule() {
                               <div key={`prog-cardio-${item.programWorkoutId}-${i}`} className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
                                 <Activity className="w-4 h-4 text-orange-500 shrink-0" />
                                 <span className="font-medium text-orange-700 dark:text-orange-400 truncate flex-1">{c.title}</span>
-                                <span className="text-slate-500 shrink-0 text-xs">{c.duration_minutes} min</span>
+                                <span className="text-[#555555] shrink-0 text-xs">{c.duration_minutes} min</span>
                                 {c.time_of_day && c.time_of_day !== "anytime" && (
-                                  <span className="uppercase text-slate-400 font-semibold shrink-0 text-xs">{c.time_of_day}</span>
+                                  <span className="uppercase text-[#a0a0a0] font-semibold shrink-0 text-xs">{c.time_of_day}</span>
                                 )}
                                 {item.isCurrent && !item.completed && !item.completedSessions?.has(i) && (
                                   <Button
@@ -1669,7 +1669,7 @@ export default function Schedule() {
 
                 {/* Nutrition section */}
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                  <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
                     <Apple className="w-4 h-4 text-success-600" />
                     Nutrition
                   </h3>
@@ -1677,7 +1677,7 @@ export default function Schedule() {
                     const macros = getMacrosForDate(dayDetailDate);
                     if (macros.calories === 0) {
                       return (
-                        <p className="text-sm text-slate-500 italic">
+                        <p className="text-sm text-[#555555] italic">
                           No food logged
                         </p>
                       );
@@ -1773,21 +1773,21 @@ export default function Schedule() {
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-sm text-slate-500 mt-1">How would you like to schedule your week?</p>
+                <p className="text-sm text-[#555555] mt-1">How would you like to schedule your week?</p>
               </CardHeader>
               <CardContent className="space-y-3 pb-6">
                 {/* Option A: use active program */}
                 <button
                   onClick={handleScheduleActiveProgram}
-                  className="w-full text-left p-4 rounded-xl border-2 border-primary-200 bg-primary-50 hover:border-primary-400 hover:bg-primary-100 transition-all"
+                  className="w-full text-left p-4 rounded-xl border-2 border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.12)] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
-                      <BookOpen className="w-5 h-5 text-primary-600" />
+                    <div className="p-2 bg-[rgba(204,255,0,0.12)] rounded-lg flex-shrink-0">
+                      <BookOpen className="w-5 h-5 text-[#ccff00]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">Continue My Program</p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[220px]">
+                      <p className="font-semibold text-white">Continue My Program</p>
+                      <p className="text-xs text-[#555555] mt-0.5 truncate max-w-[220px]">
                         {activeProgram?.name} · Week {activeEnrollment?.current_week || 1}
                       </p>
                     </div>
@@ -1801,15 +1801,15 @@ export default function Schedule() {
                     setScheduleMode("week");
                     setShowSplitSelector(true);
                   }}
-                  className="w-full text-left p-4 rounded-xl border-2 border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100 transition-all"
+                  className="w-full text-left p-4 rounded-xl border-2 border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.2)] hover:bg-[#202020] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded-lg flex-shrink-0">
-                      <CalendarIcon className="w-5 h-5 text-slate-600" />
+                    <div className="p-2 bg-[#202020] rounded-lg flex-shrink-0">
+                      <CalendarIcon className="w-5 h-5 text-[#a0a0a0]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">Generate New Week</p>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="font-semibold text-white">Generate New Week</p>
+                      <p className="text-xs text-[#555555] mt-0.5">
                         Pick a split and auto-generate workouts for this week
                       </p>
                     </div>
@@ -1836,19 +1836,19 @@ export default function Schedule() {
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-sm text-slate-500 mt-1">
-                  Choose when <span className="font-medium text-slate-700">{activeProgram.name}</span> begins.
+                <p className="text-sm text-[#555555] mt-1">
+                  Choose when <span className="font-medium text-white">{activeProgram.name}</span> begins.
                   All workouts will be rescheduled from this date.
                 </p>
               </CardHeader>
               <CardContent className="space-y-5 pb-6">
                 {/* Current vs new date info */}
                 {activeEnrollment.start_date && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-[#555555] bg-[#1a1a1a] rounded-lg p-3">
                     <CalendarIcon className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>
                       Currently starts{" "}
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-white">
                         {format(new Date(activeEnrollment.start_date), "MMMM d, yyyy")}
                       </span>
                     </span>
@@ -1857,20 +1857,20 @@ export default function Schedule() {
 
                 {/* Date input */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">New Start Date</label>
+                  <label className="text-sm font-medium text-white">New Start Date</label>
                   <input
                     type="date"
                     value={selectedProgramStartDate}
                     onChange={(e) => setSelectedProgramStartDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 focus:border-primary-400 focus:outline-none text-slate-900 text-sm transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border-2 border-[#2a2a2a] focus:border-[rgba(204,255,0,0.3)] focus:outline-none text-white text-sm transition-colors"
                   />
                 </div>
 
                 {/* Preview: what week/day this maps to */}
                 {selectedProgramStartDate && (
-                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 text-sm">
+                  <div className="bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] rounded-lg p-3 text-sm">
                     <p className="font-medium text-primary-800 mb-1">Schedule Preview</p>
-                    <p className="text-primary-700 text-xs">
+                    <p className="text-[#ccff00] text-xs">
                       Program runs{" "}
                       <span className="font-semibold">
                         {format(new Date(selectedProgramStartDate), "MMM d")}
@@ -1886,7 +1886,7 @@ export default function Schedule() {
                         )}
                       </span>
                     </p>
-                    <p className="text-primary-600 text-xs mt-1">
+                    <p className="text-[#ccff00] text-xs mt-1">
                       {(activeProgram.cycle_length || 7) * (activeProgram.num_cycles || 1)} total days ·{" "}
                       {activeProgram.num_cycles || 1} cycle{activeProgram.num_cycles !== 1 ? "s" : ""}
                     </p>
@@ -1903,7 +1903,7 @@ export default function Schedule() {
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-primary-600"
+                    className="flex-1 bg-[rgba(204,255,0,0.08)]0"
                     disabled={
                       !selectedProgramStartDate ||
                       selectedProgramStartDate === activeEnrollment.start_date ||

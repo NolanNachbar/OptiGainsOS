@@ -206,9 +206,9 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
 
   if (!hasData) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-4 text-center space-y-2">
-        <UtensilsCrossed className="w-6 h-6 text-slate-400 mx-auto" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+      <div className="rounded-xl border border-dashed border-slate-300 border-[#2a2a2a] p-4 text-center space-y-2">
+        <UtensilsCrossed className="w-6 h-6 text-[#a0a0a0] mx-auto" />
+        <p className="text-sm text-[#555555]">
           Log a few more meals to unlock meal plan ideas based on your food history.
         </p>
       </div>
@@ -224,7 +224,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <UtensilsCrossed className="w-4 h-4 text-primary-600" />
+            <UtensilsCrossed className="w-4 h-4 text-[#ccff00]" />
             Meal Plan Ideas
           </CardTitle>
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5" onClick={regenerate}>
@@ -232,7 +232,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             Regenerate
           </Button>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <p className="text-xs text-[#555555] mt-0.5">
           Meals from your log history · {cal.toLocaleString()} cal target
         </p>
       </CardHeader>
@@ -244,8 +244,8 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             <button key={i} onClick={() => setActiveDay(i)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeDay === i
-                  ? "bg-primary-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
+                  : "bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] hover:bg-slate-200 dark:hover:bg-slate-600"
               }`}
             >
               Day {i + 1}
@@ -261,21 +261,21 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             return (
               <div key={mt}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-semibold text-[#555555] uppercase tracking-wider">
                     {MEAL_LABELS[mt]}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400">{inst.total.calories} cal</span>
+                    <span className="text-[11px] text-[#a0a0a0]">{inst.total.calories} cal</span>
                     <button
                       onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay, mt), mealType: mt })}
-                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-300 hover:text-primary-500 transition-colors"
+                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-[#a0a0a0] hover:text-primary-500 transition-colors"
                       title="Save as meal template"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => excludeMeal(inst.key)}
-                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-300 hover:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-[#a0a0a0] hover:text-[#555555] dark:hover:text-[#a0a0a0] transition-colors"
                       title="Skip this meal"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -283,17 +283,17 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg divide-y divide-slate-100 dark:divide-slate-700/50">
+                <div className="bg-[#1a1a1a] bg-[#1a1a1a]/60 rounded-lg divide-y divide-slate-100 dark:divide-slate-700/50">
                   {inst.foods.map((food, i) => (
                     <div key={i} className="flex items-center justify-between px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight break-words">
                           {food.name}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">{food.serving_size}</div>
+                        <div className="text-[11px] text-[#a0a0a0] mt-0.5">{food.serving_size}</div>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">{food.calories} cal</div>
+                        <div className="text-xs font-semibold text-[#a0a0a0] text-[#a0a0a0]">{food.calories} cal</div>
                         <div className="flex gap-1.5 text-xs mt-0.5">
                           <span className="text-blue-500">{Math.round(food.protein)}P</span>
                           <span className="text-amber-500">{Math.round(food.carbs)}C</span>
@@ -309,12 +309,12 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
         </div>
 
         {/* Day totals */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-700 space-y-2">
+        <div className="pt-2 border-t border-[#2a2a2a] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Day Total</span>
-            <span className={`text-sm font-bold ${calClose ? "text-green-600 dark:text-green-400" : "text-slate-700 dark:text-slate-300"}`}>
+            <span className="text-xs font-semibold text-[#a0a0a0]">Day Total</span>
+            <span className={`text-sm font-bold ${calClose ? "text-green-600 dark:text-green-400" : "text-slate-700 text-[#a0a0a0]"}`}>
               {totals.calories.toLocaleString()}
-              <span className="text-xs font-normal text-slate-400 ml-1">/ {cal.toLocaleString()} cal</span>
+              <span className="text-xs font-normal text-[#a0a0a0] ml-1">/ {cal.toLocaleString()} cal</span>
             </span>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -337,7 +337,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
         <div className="pt-1 space-y-2">
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[#ccff00] hover:text-[#ccff00] transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add a food as a meal option
@@ -347,7 +347,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             <div className="space-y-2">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#a0a0a0]" />
                   <Input
                     value={addSearch}
                     onChange={(e) => setAddSearch(e.target.value)}
@@ -372,14 +372,14 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                 <div className="space-y-1">
                   {searchResults.map((food) => (
                     <button key={food.name} onClick={() => addToPool(food)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-3 py-2 bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg hover:bg-[#202020] hover:bg-[#242424] transition-colors text-left"
                     >
                       <div>
                         <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{food.name}</div>
-                        <div className="text-[11px] text-slate-400">{food.serving_size}</div>
+                        <div className="text-[11px] text-[#a0a0a0]">{food.serving_size}</div>
                       </div>
                       <div className="text-right text-xs shrink-0 ml-3">
-                        <div className="text-slate-500">{food.calories} cal</div>
+                        <div className="text-[#555555]">{food.calories} cal</div>
                         <div className="flex gap-1.5 text-xs mt-0.5">
                           <span className="text-blue-500">{Math.round(food.protein)}P</span>
                           <span className="text-amber-500">{Math.round(food.carbs)}C</span>
@@ -392,7 +392,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
               )}
 
               {addSearch.trim() && !searchResults.length && (
-                <p className="text-xs text-slate-400 text-center py-2">No matching foods found in your log.</p>
+                <p className="text-xs text-[#a0a0a0] text-center py-2">No matching foods found in your log.</p>
               )}
             </div>
           )}
@@ -400,7 +400,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
           {excluded.size > 0 && (
             <button
               onClick={() => setExcluded(new Set())}
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              className="text-xs text-[#a0a0a0] hover:text-[#a0a0a0] dark:hover:text-[#a0a0a0] transition-colors"
             >
               Reset exclusions ({excluded.size} hidden)
             </button>

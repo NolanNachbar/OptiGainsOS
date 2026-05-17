@@ -422,18 +422,18 @@ export default function Workouts() {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white text-left">Workouts</h1>
-            <p className="text-slate-500 text-sm mt-1 text-left">Your workout library and programs</p>
+            <h1 className="text-2xl font-bold text-white text-left">Workouts</h1>
+            <p className="text-[#555555] text-sm mt-1 text-left">Your workout library and programs</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={generateWorkouts}
               disabled={isGenerating || !profile}
-              className="bg-primary-600 hover:bg-primary-700"
+              className="bg-primary-500 hover:bg-primary-400 text-black font-bold"
             >
               {isGenerating ? (
                 <>
@@ -470,7 +470,7 @@ export default function Workouts() {
               <Activity className="w-4 h-4 mr-2" />
               Activity Log
               {(workoutLogs.length + cardioSessions.length) > 0 && (
-                <span className="ml-1.5 bg-primary-100 text-primary-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1.5 bg-[rgba(204,255,0,0.1)] text-[#ccff00] text-xs font-bold px-1.5 py-0.5 rounded-full">
                   {workoutLogs.length + cardioSessions.length}
                 </span>
               )}
@@ -478,18 +478,18 @@ export default function Workouts() {
           </TabsList>
 
           <TabsContent value="library">
-        <div className="rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md mb-6 overflow-hidden">
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-md mb-6 overflow-hidden">
           <div className="px-6 pt-4 pb-2">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white shrink-0">Saved Workouts</h2>
+              <h2 className="text-lg font-bold text-white shrink-0">Saved Workouts</h2>
               <div className="flex items-center gap-2 shrink-0">
                 {/* Filters button */}
                 <button
                   onClick={() => setFilterOpen(v => !v)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-primary-400 hover:text-primary-600'
+                      ? 'bg-primary-500 text-white border-[rgba(204,255,0,0.3)]'
+                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] hover:text-[#ccff00]'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -520,9 +520,9 @@ export default function Workouts() {
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="px-6 pb-4 border-t border-slate-100 dark:border-slate-700 pt-3 space-y-3">
+            <div className="px-6 pb-4 border-t border-[#2a2a2a] pt-3 space-y-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Type</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { value: 'all', label: 'All' },
@@ -537,8 +537,8 @@ export default function Workouts() {
                       onClick={() => setFilter(f.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         filter === f.value
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          ? 'bg-primary-500 text-black font-bold'
+                          : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                       }`}
                     >
                       {f.label}
@@ -548,7 +548,7 @@ export default function Workouts() {
               </div>
               {folders.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Folder</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-2">Folder</p>
                   <div className="flex flex-wrap gap-1.5">
                     {['all', ...folders, 'unfiled'].map(f => {
                       if (f !== 'all' && f !== 'unfiled' && renamingFolder === f) {
@@ -569,12 +569,12 @@ export default function Workouts() {
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-2 py-1 rounded-full text-xs font-semibold border border-primary-400 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none w-28"
+                              className="px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(204,255,0,0.3)] bg-[#1a1a1a] text-white outline-none w-28"
                             />
                             <button type="submit" className="p-1 text-emerald-600 hover:text-emerald-700">
                               <Check className="w-3.5 h-3.5" />
                             </button>
-                            <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-slate-400 hover:text-slate-600">
+                            <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-[#a0a0a0] hover:text-[#a0a0a0]">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </form>
@@ -586,8 +586,8 @@ export default function Workouts() {
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                               folderFilter === f
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                ? 'bg-primary-500 text-black font-bold'
+                                : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                             }`}
                           >
                             {f === 'all' && <FolderOpen className="w-3 h-3" />}
@@ -596,7 +596,7 @@ export default function Workouts() {
                           {f !== 'all' && f !== 'unfiled' && (
                             <button
                               onClick={() => { setRenamingFolder(f); setRenameValue(f); }}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-primary-600 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-[#a0a0a0] hover:text-[#ccff00] transition-opacity"
                               title="Rename folder"
                             >
                               <Pencil className="w-3 h-3" />
@@ -619,7 +619,7 @@ export default function Workouts() {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {likedExerciseNames.map(name => (
-                    <Badge key={name} variant="outline" className="text-sm py-1 px-3 bg-white dark:bg-slate-800 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                    <Badge key={name} variant="outline" className="text-sm py-1 px-3 bg-[#1a1a1a] text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
                       {name}
                     </Badge>
                   ))}
@@ -649,11 +649,11 @@ export default function Workouts() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Zap className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                  <Zap className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">
                     {filter === "liked" ? "No liked workouts yet" : "No workouts yet"}
                   </h3>
-                  <p className="text-slate-600 mb-6">
+                  <p className="text-[#a0a0a0] mb-6">
                     {filter === "liked"
                       ? "Like workouts using the thumbs up button to save them here"
                       : "Generate personalized workouts or create your own"}
@@ -662,7 +662,7 @@ export default function Workouts() {
                     <Button
                       onClick={generateWorkouts}
                       disabled={isGenerating || !profile}
-                      className="bg-primary-600"
+                      className="bg-primary-500"
                     >
                       <Zap className="w-4 h-4 mr-2" />
                       Generate Your First Workouts
@@ -687,13 +687,13 @@ export default function Workouts() {
             </CardHeader>
             <CardContent className="space-y-4">
               {workoutPlan.week.map((day) => (
-                <div key={day.dayIndex} className="p-4 rounded-lg border bg-white dark:bg-slate-800 dark:border-purple-500 dark:text-white">
+                <div key={day.dayIndex} className="p-4 rounded-lg border bg-[#1a1a1a] border-[#2a2a2a] dark:text-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold">
                       Day {day.dayIndex + 1}: {day.focus}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="text-sm text-slate-600">{day.duration}</div>
+                      <div className="text-sm text-[#a0a0a0]">{day.duration}</div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -714,7 +714,7 @@ export default function Workouts() {
                         className="flex justify-between text-sm"
                       >
                         <span className="font-medium">{ex.name}</span>
-                        <span className="text-slate-600">
+                        <span className="text-[#a0a0a0]">
                           {ex.sets} × {ex.reps}
                         </span>
                       </div>
@@ -729,7 +729,7 @@ export default function Workouts() {
             <CardHeader>
               <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
             </CardHeader>
-            <CardContent className="text-slate-600">
+            <CardContent className="text-[#a0a0a0]">
               No plan found yet. Click "Generate Workouts" to create a personalized plan.
             </CardContent>
           </Card>
@@ -739,7 +739,7 @@ export default function Workouts() {
           <TabsContent value="programs">
             <div className="flex items-center justify-end gap-2 mb-4">
               <Link to="/program-builder">
-                <Button className="bg-primary-600 hover:bg-primary-700">
+                <Button className="bg-primary-500 hover:bg-primary-400 text-black font-bold">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Program
                 </Button>
@@ -752,7 +752,7 @@ export default function Workouts() {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Active
                   {activeEnrollments.length > 0 && (
-                    <span className="ml-1.5 bg-primary-100 text-primary-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 bg-[rgba(204,255,0,0.1)] text-[#ccff00] text-xs font-bold px-1.5 py-0.5 rounded-full">
                       {activeEnrollments.length}
                     </span>
                   )}
@@ -787,7 +787,7 @@ export default function Workouts() {
                     </div>
                     {pastEnrollments.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        <h3 className="text-sm font-semibold text-[#555555] uppercase tracking-wide mb-3">
                           Past Programs
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -845,7 +845,7 @@ export default function Workouts() {
           <DialogHeader>
             <DialogTitle>Delete Workout?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-slate-900">"{workoutToDelete?.title}"</span>?
+              Are you sure you want to delete <span className="font-semibold text-white">"{workoutToDelete?.title}"</span>?
             </DialogDescription>
           </DialogHeader>
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
@@ -878,11 +878,11 @@ export default function Workouts() {
           <DialogHeader>
             <DialogTitle>Workout Import Format</DialogTitle>
             <DialogDescription>
-              Save a <code className="text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
+              Save a <code className="text-xs bg-[#202020] px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
             </DialogDescription>
           </DialogHeader>
-          <pre className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs overflow-auto max-h-72 text-slate-700 dark:text-slate-300 border text-left">{WORKOUT_TEMPLATE}</pre>
-          <div className="text-xs text-slate-500 space-y-1 mt-1">
+          <pre className="bg-[#1a1a1a] rounded-lg p-3 text-xs overflow-auto max-h-72 text-white text-[#a0a0a0] border text-left">{WORKOUT_TEMPLATE}</pre>
+          <div className="text-xs text-[#555555] space-y-1 mt-1">
             <p><span className="font-semibold">type</span>: <code>strength</code>, <code>cardio</code>, or <code>hiit</code></p>
             <p><span className="font-semibold">difficulty</span>: <code>beginner</code>, <code>intermediate</code>, or <code>advanced</code></p>
             <p><span className="font-semibold">reps</span>: number or range string like <code>"8-10"</code></p>
@@ -972,9 +972,9 @@ function groupByDay(entries) {
 
 function StatBlock({ label, value, bordered }) {
   return (
-    <div className={`flex-1 flex flex-col ${bordered ? 'border-l border-slate-100 dark:border-slate-700 pl-6' : ''}`}>
-      <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</span>
-      <span className="text-xl font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">{value ?? '—'}</span>
+    <div className={`flex-1 flex flex-col ${bordered ? 'border-l border-[#2a2a2a] pl-6' : ''}`}>
+      <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">{label}</span>
+      <span className="text-xl font-bold tabular-nums text-white mt-0.5">{value ?? '—'}</span>
     </div>
   );
 }
@@ -984,17 +984,17 @@ function StatBlock({ label, value, bordered }) {
 function StrengthEntryCard({ entry }) {
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all shadow-md p-4"
+      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all shadow-md p-4"
       style={{ borderLeftColor: '#4f46e5' }}
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-white">{entry.title}</h4>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-0.5">
+          <h4 className="text-base font-bold text-white">{entry.title}</h4>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mt-0.5">
             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
-        <button className="text-slate-400 hover:text-slate-700 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
+        <button className="text-[#a0a0a0] hover:text-white dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
           <Share2 className="w-4 h-4" />
         </button>
       </div>
@@ -1016,19 +1016,19 @@ function CardioEntryCard({ entry, onShare }) {
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all shadow-md"
+      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all shadow-md"
       style={{ borderLeftColor: '#f97316' }}
     >
       <div className="flex justify-between items-start p-4 pb-3">
         <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-white">{entry.title}</h4>
+          <h4 className="text-base font-bold text-white">{entry.title}</h4>
           <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mt-0.5">
             {typeLabel} · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
         <button
           onClick={onShare}
-          className="text-slate-400 hover:text-slate-700 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"
+          className="text-[#a0a0a0] hover:text-white dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"
         >
           <Share2 className="w-4 h-4" />
         </button>
@@ -1036,7 +1036,7 @@ function CardioEntryCard({ entry, onShare }) {
 
       {entry.polyline && (
         <div className="overflow-hidden mb-3">
-          <Suspense fallback={<div style={{ height: 180 }} className="bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />}>
+          <Suspense fallback={<div style={{ height: 180 }} className="bg-[#1a1a1a] rounded animate-pulse" />}>
             <StaticRouteMap polyline={entry.polyline} mapKey={entry.id} height={180} />
           </Suspense>
         </div>
@@ -1048,10 +1048,10 @@ function CardioEntryCard({ entry, onShare }) {
         {pace && <StatBlock label="Pace" value={pace} bordered />}
         {entry.avgPower && <StatBlock label="Avg Power" value={`${entry.avgPower}w`} bordered />}
         {entry.avgHeartrate && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgPower) ? 'border-l border-slate-100 dark:border-slate-700 pl-6' : ''}`}>
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Heart Rate</span>
+          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgPower) ? 'border-l border-[#2a2a2a] pl-6' : ''}`}>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Heart Rate</span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold tabular-nums text-slate-900 dark:text-white">{Math.round(entry.avgHeartrate)}</span>
+              <span className="text-xl font-bold tabular-nums text-white">{Math.round(entry.avgHeartrate)}</span>
               <span className="text-xs font-bold uppercase tracking-widest text-red-400">bpm</span>
             </div>
           </div>
@@ -1126,27 +1126,27 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   return (
     <>
       {/* Weekly Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mb-6 shadow-md">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mb-6 shadow-md">
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">This Week</span>
-          <span className="text-xl font-bold tabular-nums text-primary-600 dark:text-primary-400">{thisWeek.length} Sessions</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">This Week</span>
+          <span className="text-xl font-bold tabular-nums text-[#ccff00]">{thisWeek.length} Sessions</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Strength</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Strength</span>
           <div className="flex items-center gap-1.5">
             <Dumbbell className="w-4 h-4 text-indigo-500" />
             <span className="text-xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{weekStrength}</span>
           </div>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Cardio</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Cardio</span>
           <div className="flex items-center gap-1.5">
             <Activity className="w-4 h-4 text-orange-500" />
             <span className="text-xl font-bold tabular-nums text-orange-500">{weekCardio}</span>
           </div>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Distance</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Distance</span>
           <span className="text-xl font-bold tabular-nums text-orange-500">
             {weekMiles > 0 ? `${weekMiles.toFixed(1)} mi` : '—'}
           </span>
@@ -1162,8 +1162,8 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
             className={[
               'px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all',
               filter === val
-                ? 'bg-primary-600 text-white shadow-sm'
-                : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500',
+                ? 'bg-primary-500 text-black font-bold shadow-sm'
+                : 'border border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]',
             ].join(' ')}
           >
             {label}
@@ -1175,9 +1175,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
       {allEntries.length === 0 ? (
         <Card className="border-none shadow-sm">
           <CardContent className="py-16 text-center">
-            <Activity className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No activity yet</h3>
-            <p className="text-slate-500 mb-2">
+            <Activity className="w-14 h-14 text-[#a0a0a0] mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">No activity yet</h3>
+            <p className="text-[#555555] mb-2">
               {filter === 'cardio'
                 ? 'Log a cardio session or sync Strava in your Profile.'
                 : filter === 'strength'
@@ -1198,7 +1198,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
         <div className="space-y-8">
           {grouped.map(({ label, entries }) => (
             <section key={label}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">{label}</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-3">{label}</h3>
               <div className="space-y-3">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
@@ -1232,9 +1232,9 @@ function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
   return (
     <Card className="border-none shadow-sm">
       <CardContent className="py-12 text-center">
-        <Icon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">{title}</h3>
-        <p className="text-sm text-slate-500 mb-4">{subtitle}</p>
+        <Icon className="w-12 h-12 text-[#a0a0a0] mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
+        <p className="text-sm text-[#555555] mb-4">{subtitle}</p>
         {action}
       </CardContent>
     </Card>

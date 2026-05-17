@@ -26,8 +26,8 @@ function ScorePicker({ value, onChange, labels }) {
           onClick={() => onChange(n)}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
             value === n
-              ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 dark:border-primary-500"
-              : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-primary-300"
+              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:border-[rgba(204,255,0,0.3)]"
+              : "border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]"
           }`}
         >
           {n}
@@ -59,7 +59,7 @@ function ReadinessScore({ sleep, soreness, stress }) {
 function ReadinessBar({ pct, color }) {
   const barColor = color.includes("green") ? "bg-green-500" : color.includes("amber") ? "bg-amber-500" : "bg-red-500";
   return (
-    <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+    <div className="h-1.5 bg-[#202020] bg-[#202020] rounded-full overflow-hidden">
       <div className={`h-full rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -124,14 +124,14 @@ export default function DailyReadinessCard() {
 
   return (
     <>
-      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
+      <Card className="border border-[#2a2a2a] shadow-sm bg-[#1a1a1a]">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
               <Activity className="w-4 h-4 text-indigo-500" />
               Today's Readiness
             </CardTitle>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-primary-600" onClick={handleOpen}>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-[#ccff00]" onClick={handleOpen}>
               {todayEntry ? "Update" : <><Plus className="w-3 h-3 mr-1" />Log</>}
             </Button>
           </div>
@@ -141,7 +141,7 @@ export default function DailyReadinessCard() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-sm font-semibold ${scored.color}`}>{scored.label}</span>
-                <span className="text-xs text-slate-400">{scored.overall.toFixed(1)} / 5</span>
+                <span className="text-xs text-[#a0a0a0]">{scored.overall.toFixed(1)} / 5</span>
               </div>
               <ReadinessBar pct={scored.pct} color={scored.color} />
               <div className="grid grid-cols-3 gap-2 pt-1">
@@ -151,18 +151,18 @@ export default function DailyReadinessCard() {
                   { icon: Brain, label: "Stress", value: todayEntry.stress_score, labelMap: STRESS_LABELS },
                 ].map(({ icon: Icon, label, value, labelMap }) => (
                   <div key={label} className="text-center">
-                    <Icon className="w-3.5 h-3.5 mx-auto mb-0.5 text-slate-400" />
-                    <div className="text-base font-bold text-slate-900 dark:text-white">{value}<span className="text-xs text-slate-400">/5</span></div>
-                    <div className="text-xs text-slate-400">{labelMap[value]}</div>
+                    <Icon className="w-3.5 h-3.5 mx-auto mb-0.5 text-[#a0a0a0]" />
+                    <div className="text-base font-bold text-white">{value}<span className="text-xs text-[#a0a0a0]">/5</span></div>
+                    <div className="text-xs text-[#a0a0a0]">{labelMap[value]}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
             <div className="text-center py-3">
-              <Activity className="w-8 h-8 text-slate-200 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">How are you feeling today?</p>
-              <Button size="sm" className="bg-primary-600 hover:bg-primary-700 text-white text-xs h-8" onClick={handleOpen}>
+              <Activity className="w-8 h-8 text-slate-200 dark:text-[#a0a0a0] mx-auto mb-2" />
+              <p className="text-sm text-[#555555] mb-3">How are you feeling today?</p>
+              <Button size="sm" className="bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold text-xs h-8" onClick={handleOpen}>
                 <Plus className="w-3 h-3 mr-1" />Log Readiness
               </Button>
             </div>
@@ -181,35 +181,35 @@ export default function DailyReadinessCard() {
           <div className="space-y-5 mt-1">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
                   <Moon className="w-3.5 h-3.5 text-indigo-400" /> Sleep Quality
                 </label>
-                <span className="text-xs text-slate-400">{SLEEP_LABELS[sleep]}</span>
+                <span className="text-xs text-[#a0a0a0]">{SLEEP_LABELS[sleep]}</span>
               </div>
               <ScorePicker value={sleep} onChange={setSleep} labels={SLEEP_LABELS} />
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 text-amber-400" /> Muscle Soreness
                 </label>
-                <span className="text-xs text-slate-400">{SORENESS_LABELS[soreness]}</span>
+                <span className="text-xs text-[#a0a0a0]">{SORENESS_LABELS[soreness]}</span>
               </div>
               <ScorePicker value={soreness} onChange={setSoreness} labels={SORENESS_LABELS} />
-              <p className="text-xs text-slate-400 mt-1">1 = very sore, 5 = completely fresh</p>
+              <p className="text-xs text-[#a0a0a0] mt-1">1 = very sore, 5 = completely fresh</p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-rose-400" /> Stress Level
                 </label>
-                <span className="text-xs text-slate-400">{STRESS_LABELS[stress]}</span>
+                <span className="text-xs text-[#a0a0a0]">{STRESS_LABELS[stress]}</span>
               </div>
               <ScorePicker value={stress} onChange={setStress} labels={STRESS_LABELS} />
-              <p className="text-xs text-slate-400 mt-1">1 = very stressed, 5 = completely calm</p>
+              <p className="text-xs text-[#a0a0a0] mt-1">1 = very stressed, 5 = completely calm</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Notes (optional)</label>
+              <label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1 block">Notes (optional)</label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -219,7 +219,7 @@ export default function DailyReadinessCard() {
               />
             </div>
             <Button
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white"
+              className="w-full bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >

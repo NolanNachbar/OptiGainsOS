@@ -69,7 +69,7 @@ export default function CycleDayGrid({
               <div className="flex items-center gap-2 mb-2">
                 <Badge
                   variant={cycle === currentCycle ? "default" : "outline"}
-                  className={`text-xs ${cycle === currentCycle ? "bg-primary-600 dark:bg-primary-500 dark:text-white border-primary-400" : ""}`}
+                  className={`text-xs ${cycle === currentCycle ? "bg-primary-500 text-black font-bold border-[rgba(204,255,0,0.5)]" : ""}`}
                 >
                   Cycle {cycle}
                 </Badge>

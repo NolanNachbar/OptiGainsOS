@@ -49,7 +49,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         type: "intro",
         label: "Intro Week",
         description: "Learn the movements — lighter loads, focus on form",
-        chipClass: "bg-primary-100 text-primary-700 border-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:border-primary-700",
+        chipClass: "bg-[rgba(204,255,0,0.12)] text-[#ccff00] border-[rgba(204,255,0,0.3)] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:border-[rgba(204,255,0,0.3)]",
       };
     }
     if (week === activeWeeks) {
@@ -89,14 +89,14 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
   return (
     <Dialog open={true} onOpenChange={(open) => { if (!open) onCancel(); }}>
-      <DialogContent className="max-w-2xl p-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900">
+      <DialogContent className="max-w-2xl p-0 flex flex-col overflow-hidden bg-[#121212]">
 
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-slate-200 dark:border-slate-700 p-6 pb-4">
-          <DialogTitle className="text-xl text-slate-900 dark:text-white">
+        <DialogHeader className="shrink-0 border-b border-[#2a2a2a] p-6 pb-4">
+          <DialogTitle className="text-xl text-white">
             Program Settings
           </DialogTitle>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#555555] mt-1">
             Configure how long and how progressively your program runs
           </p>
         </DialogHeader>
@@ -108,12 +108,12 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         >
 
           {/* Split summary chips */}
-          <div className="flex flex-wrap gap-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-wrap gap-2 p-3 bg-[#202020] bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
             {split.map((day, i) => (
               <Badge
                 key={i}
                 variant="outline"
-                className="text-xs text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+                className="text-xs text-slate-700 text-[#a0a0a0] border-slate-300 border-[#2a2a2a] bg-[#1a1a1a] bg-[#202020]"
               >
                 Day {i + 1}: {day}
               </Badge>
@@ -122,7 +122,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
           {/* Duration selector */}
           <div>
-            <Label className="text-base font-semibold block mb-3 text-slate-900 dark:text-white">
+            <Label className="text-base font-semibold block mb-3 text-white">
               Program Duration
             </Label>
 
@@ -136,14 +136,14 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     className={[
                       "p-3 rounded-xl border-2 text-left transition-all",
                       isActive
-                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/30"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-primary-400 dark:hover:border-primary-600",
+                        ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)]"
+                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] dark:hover:border-[rgba(204,255,0,0.3)]",
                     ].join(" ")}
                   >
-                    <div className={`font-bold text-sm ${isActive ? "text-primary-700 dark:text-primary-300" : "text-slate-800 dark:text-slate-100"}`}>
+                    <div className={`font-bold text-sm ${isActive ? "text-[#ccff00] text-[#ccff00]" : "text-slate-800 dark:text-slate-100"}`}>
                       {preset.label}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    <div className="text-xs text-[#555555] mt-0.5 leading-snug">
                       {preset.description}
                     </div>
                   </button>
@@ -159,9 +159,9 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 min={3}
                 max={52}
                 onChange={(e) => setCustomWeeks(e.target.value)}
-                className="w-40 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="w-40 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#a0a0a0] dark:placeholder:text-[#555555]"
               />
-              <span className="text-sm text-slate-500 dark:text-slate-400">weeks (min 3)</span>
+              <span className="text-sm text-[#555555]">weeks (min 3)</span>
             </div>
           </div>
 
@@ -170,10 +170,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
             {/* Weekly increment */}
             <div>
-              <Label className="text-base font-semibold block mb-1 text-slate-900 dark:text-white">
+              <Label className="text-base font-semibold block mb-1 text-white">
                 Weekly Weight Increase
               </Label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              <p className="text-xs text-[#555555] mb-2">
                 Lbs added to compound lifts each progression week
               </p>
               <div className="flex items-center gap-2">
@@ -183,9 +183,9 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   min={0}
                   step={2.5}
                   onChange={(e) => setWeeklyIncrement(e.target.value)}
-                  className="w-28 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-28 bg-[#1a1a1a] border-[#2a2a2a] text-white"
                 />
-                <span className="text-sm text-slate-500 dark:text-slate-400">lbs / week</span>
+                <span className="text-sm text-[#555555]">lbs / week</span>
               </div>
 
               {/* Quick-pick buttons */}
@@ -199,8 +199,8 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       className={[
                         "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
                         isActive
-                          ? "border-primary-500 bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300"
-                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-primary-400 dark:hover:border-primary-600 bg-white dark:bg-slate-800",
+                          ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
+                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] dark:hover:border-[rgba(204,255,0,0.3)] bg-[#1a1a1a]",
                       ].join(" ")}
                     >
                       +{v}
@@ -212,10 +212,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
             {/* Deload mode */}
             <div>
-              <Label className="text-base font-semibold block mb-1 text-slate-900 dark:text-white">
+              <Label className="text-base font-semibold block mb-1 text-white">
                 Deload Week Weight
               </Label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              <p className="text-xs text-[#555555] mb-2">
                 How much to reduce weight on the final recovery week
               </p>
 
@@ -227,7 +227,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "match_intro"
                       ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600",
+                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-amber-300 dark:hover:border-amber-600",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       Match Intro Week
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-6">
+                  <p className="text-xs text-[#555555] mt-0.5 ml-6">
                     Use the same weight as Week 1
                   </p>
                 </button>
@@ -248,7 +248,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "reduce"
                       ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600",
+                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-amber-300 dark:hover:border-amber-600",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
@@ -257,23 +257,23 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       Reduce from Previous
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-6">
+                  <p className="text-xs text-[#555555] mt-0.5 ml-6">
                     Drop a set amount from the last progression week
                   </p>
                 </button>
 
                 {deloadMode === "reduce" && (
                   <div className="flex items-center gap-2 pl-2">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Drop by</span>
+                    <span className="text-sm text-[#a0a0a0]">Drop by</span>
                     <Input
                       type="number"
                       value={deloadReduction}
                       min={0}
                       step={2.5}
                       onChange={(e) => setDeloadReduction(e.target.value)}
-                      className="w-24 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-24 bg-[#1a1a1a] border-[#2a2a2a] text-white"
                     />
-                    <span className="text-sm text-slate-500 dark:text-slate-400">lbs</span>
+                    <span className="text-sm text-[#555555]">lbs</span>
                   </div>
                 )}
               </div>
@@ -282,7 +282,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
           {/* Week-by-week preview */}
           <div>
-            <Label className="text-base font-semibold block mb-3 text-slate-900 dark:text-white">
+            <Label className="text-base font-semibold block mb-3 text-white">
               Program Preview — {activeWeeks} weeks
             </Label>
             <div className="flex gap-1.5 flex-wrap">
@@ -298,7 +298,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#555555]">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-primary-300 dark:bg-primary-700" />
                 1 intro week
@@ -315,7 +315,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           </div>
 
           {/* Info box */}
-          <div className="flex gap-3 p-3 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 rounded-xl text-sm text-primary-700 dark:text-primary-300">
+          <div className="flex gap-3 p-3 bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] dark:border-[rgba(204,255,0,0.3)] rounded-xl text-sm text-[#ccff00] text-[#ccff00]">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
               Each week's workout will be generated with adjusted sets, reps, and rest
@@ -327,7 +327,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex gap-3 bg-white dark:bg-slate-900">
+        <div className="shrink-0 border-t border-[#2a2a2a] px-6 py-4 flex gap-3 bg-[#121212]">
           <Button variant="outline" onClick={onCancel} className="flex-1">
             Cancel
           </Button>
@@ -335,7 +335,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             onClick={handleConfirm}
             disabled={activeWeeks < 3}
             variant="primary"
-            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white"
+            className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
           >
             <ChevronRight className="w-4 h-4 mr-2" />
             Generate Program

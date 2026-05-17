@@ -1,12 +1,12 @@
 {
-  "name": "Sisyphus' Schedule",
-  "short_name": "Sisyphus",
-  "description": "The ultimate workout tracking and programming platform for serious lifters.",
+  "name": "Vektor",
+  "short_name": "Vektor",
+  "description": "The tactical workout tracking and programming platform for serious lifters.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#7c3aed",
+  "background_color": "#121212",
+  "theme_color": "#ccff00",
   "orientation": "portrait",
   "icons": [
     {
@@ -16,15 +16,10 @@
       "purpose": "any"
     },
     {
-      "src": "sisyphus-white.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "sisyphus.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
     }
   ]
 }

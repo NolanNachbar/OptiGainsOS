@@ -57,12 +57,12 @@ export function SocialContent() {
       <Card className="border-none shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary-600" />
+            <Users className="w-5 h-5 text-[#ccff00]" />
             Set Up Your Social Profile
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-slate-600">
+          <p className="text-[#a0a0a0]">
             You need to set a username before you can use social features. Update your username in the Settings tab above.
           </p>
         </CardContent>
@@ -124,9 +124,9 @@ export function SocialContent() {
             ) : friends.length === 0 ? (
               <Card className="border-none shadow-lg">
                 <CardContent className="py-12 text-center">
-                  <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No friends yet</h3>
-                  <p className="text-slate-500">Add friends by entering their username in the "Add Friend" tab.</p>
+                  <Users className="w-12 h-12 text-[#a0a0a0] mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No friends yet</h3>
+                  <p className="text-[#555555]">Add friends by entering their username in the "Add Friend" tab.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -134,7 +134,7 @@ export function SocialContent() {
                 {friends.map((friendship) => {
                   const fp = friendship.friendProfile;
                   return (
-                    <Card key={friendship.id} className="border border-slate-200 dark:border-slate-700 shadow-md">
+                    <Card key={friendship.id} className="border border-[#2a2a2a] shadow-md">
                       <CardContent className="py-4 mt-2">
                         <div className="flex items-center justify-between">
                           <Link
@@ -144,13 +144,13 @@ export function SocialContent() {
                           >
                             <UserAvatar url={fp?.avatar_url} username={fp?.username || fp?.display_name} size="sm" className="w-10 h-10" />
                             <div>
-                              <p className="font-medium text-slate-900 dark:text-white">
+                              <p className="font-medium text-white">
                                 {fp?.display_name ? (
-                                  <>{fp.display_name} {fp?.username && <span className="text-sm text-slate-500 font-normal">@{fp.username}</span>}</>
+                                  <>{fp.display_name} {fp?.username && <span className="text-sm text-[#555555] font-normal">@{fp.username}</span>}</>
                                 ) : fp?.username ? (
                                   <>@{fp.username}</>
                                 ) : (
-                                  <span className="text-slate-400 italic">No username set</span>
+                                  <span className="text-[#a0a0a0] italic">No username set</span>
                                 )}
                               </p>
                               {fp?.current_streak > 0 && fp?.last_workout_date && (() => {
@@ -159,14 +159,14 @@ export function SocialContent() {
                                 const daysSince = Math.round((today - lastWorkout) / 86400000);
                                 return daysSince <= 1;
                               })() && (
-                                <p className="text-xs text-slate-500 text-left">{fp.current_streak} day streak 🔥</p>
+                                <p className="text-xs text-[#555555] text-left">{fp.current_streak} day streak 🔥</p>
                               )}
                             </div>
                           </Link>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-slate-400 mt-5 hover:text-danger-600 hover:border-danger-300"
+                            className="text-[#a0a0a0] mt-5 hover:text-danger-600 hover:border-danger-300"
                             onClick={() => handleRemoveFriend(friendship.id, fp?.username)}
                           >
                             <UserMinus className="w-4 h-4" />
@@ -185,30 +185,30 @@ export function SocialContent() {
             <div className="space-y-6">
               {/* Incoming */}
               <div>
-                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">Incoming Requests</h3>
+                <h3 className="text-sm font-medium text-[#555555] uppercase tracking-wide mb-3">Incoming Requests</h3>
                 {pendingLoading ? (
                   <div className="flex justify-center py-8"><LoadingSpinner /></div>
                 ) : pendingRequests.length === 0 ? (
-                  <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
-                    <CardContent className="py-6 text-center text-slate-500">
+                  <Card className="border border-[#2a2a2a] shadow-md">
+                    <CardContent className="py-6 text-center text-[#555555]">
                       No pending requests
                     </CardContent>
                   </Card>
                 ) : (
                   <div className="space-y-3">
                     {pendingRequests.map((req) => (
-                      <Card key={req.id} className="border border-slate-200 dark:border-slate-700 shadow-md">
+                      <Card key={req.id} className="border border-[#2a2a2a] shadow-md">
                         <CardContent className="py-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <UserAvatar url={req.requesterProfile?.avatar_url} username={req.requesterProfile?.username || req.requesterProfile?.display_name} size="sm" className="w-10 h-10" />
-                              <p className="font-medium text-slate-900 dark:text-white">
+                              <p className="font-medium text-white">
                                 {req.requesterProfile?.display_name ? (
-                                  <>{req.requesterProfile.display_name} {req.requesterProfile?.username && <span className="text-sm text-slate-500 font-normal">@{req.requesterProfile.username}</span>}</>
+                                  <>{req.requesterProfile.display_name} {req.requesterProfile?.username && <span className="text-sm text-[#555555] font-normal">@{req.requesterProfile.username}</span>}</>
                                 ) : req.requesterProfile?.username ? (
                                   <>@{req.requesterProfile.username}</>
                                 ) : (
-                                  <span className="text-slate-400 italic">No username set</span>
+                                  <span className="text-[#a0a0a0] italic">No username set</span>
                                 )}
                               </p>
                             </div>
@@ -225,7 +225,7 @@ export function SocialContent() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-slate-500 hover:text-danger-600"
+                                className="text-[#555555] hover:text-danger-600"
                                 onClick={() => handleRespond(req.id, 'declined')}
                                 disabled={respondToRequest.isPending}
                               >
@@ -243,25 +243,25 @@ export function SocialContent() {
               {/* Sent */}
               {sentRequests.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">Sent Requests</h3>
+                  <h3 className="text-sm font-medium text-[#555555] uppercase tracking-wide mb-3">Sent Requests</h3>
                   <div className="space-y-3">
                     {sentRequests.map((req) => (
-                      <Card key={req.id} className="border border-slate-200 dark:border-slate-700 shadow-md">
+                      <Card key={req.id} className="border border-[#2a2a2a] shadow-md">
                         <CardContent className="py-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <UserAvatar url={req.addresseeProfile?.avatar_url} username={req.addresseeProfile?.username || req.addresseeProfile?.display_name} size="sm" className="w-10 h-10" />
                               <div>
-                                <p className="font-medium text-slate-900 dark:text-white">
+                                <p className="font-medium text-white">
                                   {req.addresseeProfile?.display_name ? (
-                                    <>{req.addresseeProfile.display_name} {req.addresseeProfile?.username && <span className="text-sm text-slate-500 font-normal">@{req.addresseeProfile.username}</span>}</>
+                                    <>{req.addresseeProfile.display_name} {req.addresseeProfile?.username && <span className="text-sm text-[#555555] font-normal">@{req.addresseeProfile.username}</span>}</>
                                   ) : req.addresseeProfile?.username ? (
                                     <>@{req.addresseeProfile.username}</>
                                   ) : (
-                                    <span className="text-slate-400 italic">No username set</span>
+                                    <span className="text-[#a0a0a0] italic">No username set</span>
                                   )}
                                 </p>
-                                <p className="text-xs text-slate-400">Pending...</p>
+                                <p className="text-xs text-[#a0a0a0]">Pending...</p>
                               </div>
                             </div>
                           </div>
@@ -277,12 +277,12 @@ export function SocialContent() {
           {/* Add Friend Tab */}
           <TabsContent value="add">
             {!profile?.username ? (
-              <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
+              <Card className="border border-[#2a2a2a] shadow-md">
                 <CardContent className="py-12 text-center">
-                  <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Set a username first</h3>
-                  <p className="text-slate-500 mb-4">You need a username before you can add friends.</p>
-                  <Button onClick={() => navigate('/profile')} className="bg-primary-600">
+                  <Users className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+                  <h3 className="font-semibold text-white mb-2">Set a username first</h3>
+                  <p className="text-[#555555] mb-4">You need a username before you can add friends.</p>
+                  <Button onClick={() => navigate('/profile')} className="bg-[rgba(204,255,0,0.08)]0">
                     Go to Profile
                   </Button>
                 </CardContent>
@@ -291,7 +291,7 @@ export function SocialContent() {
             <div className="space-y-4">
               {/* Search Input */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0]" />
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
@@ -302,15 +302,15 @@ export function SocialContent() {
 
               {/* Search States */}
               {!searchInput.trim() ? (
-                <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
+                <Card className="border border-[#2a2a2a] shadow-md">
                   <CardContent className="py-12 text-center">
-                    <Search className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500">Search for friends by name or username</p>
+                    <Search className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+                    <p className="text-[#555555]">Search for friends by name or username</p>
                   </CardContent>
                 </Card>
               ) : searchInput.trim().length < 2 ? (
-                <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
-                  <CardContent className="py-8 text-center text-slate-500">
+                <Card className="border border-[#2a2a2a] shadow-md">
+                  <CardContent className="py-8 text-center text-[#555555]">
                     Type at least 2 characters to search
                   </CardContent>
                 </Card>
@@ -319,10 +319,10 @@ export function SocialContent() {
                   <LoadingSpinner />
                 </div>
               ) : searchResults.length === 0 && isSearching ? (
-                <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
+                <Card className="border border-[#2a2a2a] shadow-md">
                   <CardContent className="py-12 text-center">
-                    <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500">No users found</p>
+                    <Users className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+                    <p className="text-[#555555]">No users found</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -332,7 +332,7 @@ export function SocialContent() {
                     const isPrivate = result.privacy_level !== 'public';
 
                     return (
-                      <Card key={result.user_id} className="border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg transition-shadow">
+                      <Card key={result.user_id} className="border border-[#2a2a2a] shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="py-3">
                           <div className="flex items-center justify-between gap-3">
                             <div
@@ -341,16 +341,16 @@ export function SocialContent() {
                             >
                               <UserAvatar url={result.avatar_url} username={result.username} size="sm" className="w-10 h-10 shrink-0" />
                               <div className="min-w-0">
-                                <p className="font-medium text-slate-900 truncate">
+                                <p className="font-medium text-white truncate">
                                   {result.display_name || result.username}
                                   {result.display_name && (
-                                    <span className="text-sm text-slate-500 font-normal ml-1">@{result.username}</span>
+                                    <span className="text-sm text-[#555555] font-normal ml-1">@{result.username}</span>
                                   )}
                                 </p>
                                 {isPrivate ? (
-                                  <p className="text-xs text-slate-400">Private account</p>
+                                  <p className="text-xs text-[#a0a0a0]">Private account</p>
                                 ) : result.bio ? (
-                                  <p className="text-xs text-slate-500 truncate">{result.bio}</p>
+                                  <p className="text-xs text-[#555555] truncate">{result.bio}</p>
                                 ) : null}
                               </div>
                             </div>
@@ -363,7 +363,7 @@ export function SocialContent() {
                                   Friends
                                 </span>
                               ) : relationship?.status === 'sent' ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-full">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#555555] bg-[#202020] px-2.5 py-1.5 rounded-full">
                                   <Clock className="w-3 h-3" />
                                   Pending
                                 </span>
@@ -380,7 +380,7 @@ export function SocialContent() {
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="bg-primary-600 hover:bg-primary-700 text-white"
+                                  className="bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
                                   onClick={() => handleSendRequest(result.username)}
                                   disabled={sendRequest.isPending}
                                 >

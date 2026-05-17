@@ -82,8 +82,8 @@ export function usePushNotifications(userId) {
     const reg = await navigator.serviceWorker.ready;
     reg.showNotification(title, {
       body,
-      icon: "/sisyphus-white.png",
-      badge: "/sisyphus-white.png",
+      icon: "/logo.png",
+      badge: "/logo.png",
       vibrate: [200, 100, 200],
       ...options,
     });

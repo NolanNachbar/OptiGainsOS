@@ -97,7 +97,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
             nextStep();
           }
         }}
-        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-primary-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-primary-700 transition-colors"
+        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-primary-500 text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-primary-400 transition-colors"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"

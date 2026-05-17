@@ -130,11 +130,11 @@ export default function ExerciseCard({
 
   return (
     <>
-    <Card className="border-none shadow-lg bg-white dark:bg-slate-800">
+    <Card className="border-none shadow-lg bg-[#1a1a1a]">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary-500 dark:bg-primary-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[rgba(204,255,0,0.08)]0 flex items-center justify-center text-black font-bold font-bold text-sm flex-shrink-0">
               {exerciseIndex + 1}
             </div>
             {editingName ? (
@@ -149,9 +149,9 @@ export default function ExerciseCard({
             ) : (
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg text-slate-900 dark:text-white">{exercise.name}</CardTitle>
+                  <CardTitle className="text-lg text-white">{exercise.name}</CardTitle>
                   {dbEntry && (
-                    <Badge variant="outline" className="text-xs capitalize border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300">
+                    <Badge variant="outline" className="text-xs capitalize border-slate-300 border-[#2a2a2a] text-slate-700 text-[#a0a0a0]">
                       {dbEntry.type}
                     </Badge>
                   )}
@@ -160,17 +160,17 @@ export default function ExerciseCard({
                 {isProgramMode && progressionTargets && (
                   <div className="flex items-center gap-2 mt-0.5">
                     {progressionTargets.workingWeight && (
-                      <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
+                      <span className="text-xs text-[#ccff00] font-medium">
                         Target: {progressionTargets.workingWeight} {weightUnit}
                       </span>
                     )}
                     {progressionTargets.dailyMin && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-[#555555]">
                         Min: {progressionTargets.dailyMin} {weightUnit}
                       </span>
                     )}
                     {programExercise.rir_target && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-[#555555]">
                         RIR {programExercise.rir_target}
                       </span>
                     )}
@@ -178,20 +178,20 @@ export default function ExerciseCard({
                 )}
                 {/* Original exercise targets (non-program) */}
                 {!isProgramMode && originalExercise && (
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-[#a0a0a0]">
                     Target: {originalExercise.sets || 3} sets × {originalExercise.reps || 10} reps
                   </p>
                 )}
                 {/* Last performance data */}
                 {lastPerformance && (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <History className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Last: <span className="font-semibold text-primary-600 dark:text-primary-400">
+                    <History className="w-3 h-3 text-[#555555]" />
+                    <span className="text-xs text-[#a0a0a0]">
+                      Last: <span className="font-semibold text-[#ccff00]">
                         {lastPerformance.lastWeight} {weightUnit} × {lastPerformance.lastReps}
                       </span>
                       {lastPerformance.lastDate && (
-                        <span className="text-slate-500 dark:text-slate-500 ml-1">
+                        <span className="text-[#555555] text-[#555555] ml-1">
                           ({format(new Date(lastPerformance.lastDate), 'MMM d')})
                         </span>
                       )}
@@ -227,13 +227,13 @@ export default function ExerciseCard({
               <MoreVertical className="w-5 h-5" />
             </Button>
             {openMenu && (
-              <div className="absolute right-0 top-9 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-20 min-w-[160px] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+              <div className="absolute right-0 top-9 rounded-lg shadow-lg border border-[#2a2a2a] py-1 z-20 min-w-[160px] bg-[#1a1a1a] text-white dark:text-slate-100">
                 <button
                   onClick={() => {
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -252,7 +252,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -263,7 +263,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -308,7 +308,7 @@ export default function ExerciseCard({
         <div className="overflow-x-auto -mx-1">
           <table className="w-full min-w-full">
             <thead>
-              <tr className="text-xs md:text-sm text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+              <tr className="text-xs md:text-sm text-[#a0a0a0] border-b border-[#2a2a2a]">
                 <th className="text-left py-2 px-1 w-8 md:w-12">Set</th>
                 <th className="text-left py-2 px-1 text-xs md:text-xs">Wt</th>
                 <th className="text-left py-2 px-1 text-xs md:text-xs">Reps</th>
@@ -317,7 +317,7 @@ export default function ExerciseCard({
                     <div className="flex items-center gap-1">
                       <span>RIR</span>
                       <div className="group relative">
-                        <HelpCircle className="w-3 h-3 cursor-help text-slate-400 hover:text-slate-600" />
+                        <HelpCircle className="w-3 h-3 cursor-help text-[#a0a0a0] hover:text-[#a0a0a0]" />
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-slate-900 text-white text-xs rounded shadow-lg">
                           Reps In Reserve: How many more reps you could do (0 = failure, 3 = 3 more reps possible)
                         </div>
@@ -337,7 +337,7 @@ export default function ExerciseCard({
                     : ""
                 }>
                   <td className="py-2 px-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-300 text-sm">{set.set_number}</span>
+                    <span className="font-medium text-slate-700 text-[#a0a0a0] text-sm">{set.set_number}</span>
                   </td>
                   <td className="py-2 px-1">
                     <Input
@@ -400,7 +400,7 @@ export default function ExerciseCard({
                       variant="ghost"
                       size="icon"
                       onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                      className="h-7 w-7 md:h-8 md:w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      className="h-7 w-7 md:h-8 md:w-8 text-[#a0a0a0] hover:text-red-600 hover:bg-red-50"
                     >
                       <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </Button>
@@ -414,7 +414,7 @@ export default function ExerciseCard({
           variant="ghost"
           size="sm"
           onClick={() => onAddSet(exerciseIndex)}
-          className="mt-2 text-primary-600 h-8"
+          className="mt-2 text-[#ccff00] h-8"
         >
           <Plus className="w-4 h-4 mr-1" />
           Add Set
@@ -434,20 +434,20 @@ export default function ExerciseCard({
               variant="ghost"
               size="sm"
               onClick={() => setEditingNotes(false)}
-              className="mt-1 text-primary-600"
+              className="mt-1 text-[#ccff00]"
             >
               Done
             </Button>
           </div>
         ) : exercise.notes ? (
           <p
-            className="mt-3 text-sm text-slate-600 italic border-l-2 border-primary-200 pl-3 cursor-pointer hover:bg-slate-50 py-1"
+            className="mt-3 text-sm text-[#a0a0a0] italic border-l-2 border-[rgba(204,255,0,0.3)] pl-3 cursor-pointer hover:bg-[#1a1a1a] py-1"
             onClick={() => setEditingNotes(true)}
           >
             {exercise.notes}
           </p>
         ) : originalExercise?.notes ? (
-          <p className="text-sm text-slate-600 mt-3 italic border-l-2 border-slate-300 pl-3">
+          <p className="text-sm text-[#a0a0a0] mt-3 italic border-l-2 border-slate-300 pl-3">
             {originalExercise.notes}
           </p>
         ) : null}
@@ -478,27 +478,27 @@ export default function ExerciseCard({
                   if (onReplaceExercise) onReplaceExercise(exercise.name, alt);
                   setShowReplaceDialog(false);
                 }}
-                className="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-primary-400 hover:bg-primary-50 transition-all group"
+                className="w-full text-left p-4 rounded-xl border-2 border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] transition-all group"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-slate-400 group-hover:text-primary-500">{icon}</span>
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
+                      <span className="text-lg font-bold text-[#a0a0a0] group-hover:text-primary-500">{icon}</span>
+                      <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">{label}</span>
                     </div>
-                    <p className="font-semibold text-slate-800 group-hover:text-primary-700">{alt.name}</p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="font-semibold text-slate-800 group-hover:text-[#ccff00]">{alt.name}</p>
+                    <p className="text-xs text-[#555555] mt-1">
                       {alt.sets} sets × {alt.reps} reps · {alt.rest}s rest
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-500 mt-1 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-primary-500 mt-1 flex-shrink-0" />
                 </div>
               </button>
             );
           })}
         </div>
-        <div className="mt-3 border-t border-slate-200 pt-3">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom exercise</p>
+        <div className="mt-3 border-t border-[#2a2a2a] pt-3">
+          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-2">Custom exercise</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox
@@ -529,7 +529,7 @@ export default function ExerciseCard({
             </Button>
           </div>
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-slate-500" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
+        <Button variant="ghost" className="w-full mt-2 text-[#555555]" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
           Keep current exercise
         </Button>
       </DialogContent>

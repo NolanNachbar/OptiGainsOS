@@ -3,741 +3,1082 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sisyphus' Schedule — Design Reference</title>
+<title>Vektor — Design Reference</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:          #f4f4f6;
-    --surface:     #ffffff;
-    --surface-2:   #f9f9fb;
-    --border:      #e8e8ee;
-    --border-soft: #f0f0f4;
 
-    --text-primary:   #111118;
-    --text-secondary: #6b6b80;
-    --text-muted:     #a0a0b8;
+/* ═══════════════════════════════════════════
+   VEKTOR DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg:              #121212;   /* page background */
+  --surface:         #1a1a1a;   /* cards, panels */
+  --surface-2:       #202020;   /* nested surfaces, table headers */
+  --elevated:        #242424;   /* hover states, dropdowns */
 
-    /* Brand */
-    --purple:       #7c3aed;
-    --purple-light: #ede9fe;
-    --purple-mid:   #ddd6fe;
+  /* Borders */
+  --border:          #2a2a2a;   /* default border */
+  --border-soft:     #222222;   /* subtle dividers */
 
-    /* Featured card (replaces gradient) */
-    --dark:         #18181f;
-    --dark-2:       #222230;
-    --dark-border:  #2e2e40;
+  /* Text */
+  --text:            #ffffff;
+  --text-secondary:  #a0a0a0;
+  --text-muted:      #555555;
 
-    /* Type colors */
-    --strength:  #7c3aed;
-    --cardio:    #ea7c1e;
-    --hiit:      #dc2626;
+  /* Brand — Volt Neon Green */
+  --volt:            #ccff00;
+  --volt-dim:        rgba(204,255,0,.08);   /* very subtle bg tint */
+  --volt-mid:        rgba(204,255,0,.15);   /* selected bg tint */
+  --volt-glow:       0 0 16px rgba(204,255,0,.2);
 
-    /* Status */
-    --green:  #16a34a;
-    --amber:  #d97706;
+  /* Workout type accents */
+  --strength:        #ccff00;   /* volt green — primary brand */
+  --cardio:          #f97316;   /* orange */
+  --hiit:            #ef4444;   /* red */
 
-    --radius-sm: 6px;
-    --radius:    10px;
-    --radius-lg: 14px;
+  /* Status */
+  --green:           #22c55e;
+  --amber:           #f59e0b;
+  --red:             #ef4444;
 
-    --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --shadow:    0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.04);
-  }
+  /* Macro colors */
+  --macro-pro:       #60a5fa;   /* blue */
+  --macro-carb:      #fbbf24;   /* amber */
+  --macro-fat:       #f87171;   /* rose */
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  --radius-sm:  6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text-primary);
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 40px 32px;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── SECTION HEADERS ── */
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 40px 32px 80px;
+}
 
-  section { margin-bottom: 48px; }
+/* ═══════════════════════════════════════════
+   LAYOUT HELPERS
+═══════════════════════════════════════════ */
+section { margin-bottom: 56px; }
+.stack  { display: flex; flex-direction: column; gap: 10px; }
+.row    { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.max860 { max-width: 860px; }
+.max640 { max-width: 640px; }
 
-  /* ── BUTTONS ── */
-  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* ═══════════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════════ */
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 16px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13.5px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: opacity .15s, transform .1s;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .btn:hover { opacity: .88; transform: translateY(-1px); }
-  .btn:active { transform: translateY(0); }
+.note {
+  background: rgba(204,255,0,.05);
+  border: 1px solid rgba(204,255,0,.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.55;
+}
+.note strong { color: var(--volt); font-weight: 600; }
 
-  /* Primary — dark/charcoal for main actions (Generate, Build, Add) */
-  .btn-primary {
-    background: var(--dark);
-    color: #fff;
-  }
+.sep { height: 1px; background: var(--border); margin: 48px 0; }
 
-  /* Brand — purple for enrollment, confirm, positive commitment */
-  .btn-brand {
-    background: var(--purple);
-    color: #fff;
-  }
+/* ═══════════════════════════════════════════
+   COLOR SWATCHES
+═══════════════════════════════════════════ */
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch {
+  width: 80px;
+  text-align: center;
+}
+.swatch-block {
+  height: 48px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.swatch-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  display: block;
+}
+.swatch-hex {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+}
 
-  /* Secondary — outlined for navigation/secondary actions */
-  .btn-secondary {
-    background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
-  }
-  .btn-secondary:hover { background: var(--surface); }
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY SCALE
+═══════════════════════════════════════════ */
+.type-row { margin-bottom: 12px; display: flex; align-items: baseline; gap: 24px; }
+.type-spec {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  min-width: 160px;
+}
 
-  /* Ghost — inline text actions */
-  .btn-ghost {
-    background: transparent;
-    color: var(--purple);
-    padding: 0 8px;
-    height: 28px;
-    font-size: 13px;
-  }
+/* ═══════════════════════════════════════════
+   NAVIGATION BAR
+═══════════════════════════════════════════ */
+.navbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  height: 56px;
+  gap: 4px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 32px;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 28px;
+  text-decoration: none;
+}
+.nav-logo {
+  width: 32px; height: 32px;
+}
+.nav-wordmark {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--volt);
+  letter-spacing: -.01em;
+}
+.nav-items { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--elevated); color: var(--text); }
+.nav-item.active {
+  background: var(--volt-dim);
+  color: var(--volt);
+}
+.nav-icon { width: 15px; height: 15px; }
+.nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--elevated);
+  color: var(--volt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  border: 1.5px solid var(--border);
+}
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: background .15s;
+}
+.icon-btn:hover { background: var(--elevated); color: var(--text); }
 
-  /* Positive only — replaces like/dislike pair */
-  .btn-like {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    padding: 0 12px;
-    height: 30px;
-    font-size: 12.5px;
-    border-radius: 20px;
-  }
-  .btn-like.active {
-    background: var(--purple-light);
-    color: var(--purple);
-    border-color: var(--purple-mid);
-  }
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity .12s, transform .1s, background .12s;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: -.01em;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); opacity: .9; }
+.btn .icon { width: 14px; height: 14px; }
 
-  .btn-sm { height: 30px; padding: 0 12px; font-size: 12.5px; }
-  .btn-lg { height: 42px; padding: 0 22px; font-size: 15px; }
+/* Volt — primary commitment/action (Start Workout, Enroll, Confirm) */
+.btn-volt {
+  background: var(--volt);
+  color: #000;
+}
+.btn-volt:hover { background: #d9ff1a; }
 
-  .icon { width: 15px; height: 15px; }
+/* Dark — generative machine actions (Generate Week, Build Program, Add Food) */
+.btn-dark {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-dark:hover { background: var(--elevated); }
 
-  /* ── FEATURED CARD (replaces purple gradient) ── */
-  .card-featured {
-    background: var(--dark);
-    border-radius: var(--radius-lg);
-    padding: 22px 24px;
-    color: #fff;
-    border: 1px solid var(--dark-border);
-    box-shadow: 0 8px 24px rgba(0,0,0,.18);
-  }
-  .card-featured .label-sm {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #a0a0c0;
-    margin-bottom: 6px;
-    display: block;
-  }
-  .card-featured .workout-title {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.3;
-    margin-bottom: 4px;
-  }
-  .card-featured .workout-meta {
-    font-size: 12.5px;
-    color: #8888aa;
-    margin-bottom: 18px;
-  }
-  .card-featured .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(124,58,237,.25);
-    color: #c4b5fd;
-    border: 1px solid rgba(124,58,237,.35);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11.5px;
-    font-weight: 500;
-    margin-right: 8px;
-    margin-bottom: 14px;
-  }
-  .card-featured .pill.orange {
-    background: rgba(234,124,30,.2);
-    color: #fbbf6a;
-    border-color: rgba(234,124,30,.3);
-  }
-  .card-featured-actions { display: flex; gap: 8px; margin-top: 18px; }
-  .btn-featured-primary {
-    background: var(--purple);
-    color: #fff;
-    border: none;
-    padding: 0 18px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    font-size: 13.5px;
-    cursor: pointer;
-    flex: 1;
-    transition: opacity .15s;
-  }
-  .btn-featured-primary:hover { opacity: .9; }
-  .btn-featured-secondary {
-    background: rgba(255,255,255,.08);
-    color: rgba(255,255,255,.75);
-    border: 1px solid rgba(255,255,255,.12);
-    padding: 0 18px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    font-size: 13.5px;
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .btn-featured-secondary:hover { background: rgba(255,255,255,.12); }
+/* Ghost — secondary/inline actions */
+.btn-ghost {
+  background: transparent;
+  color: var(--volt);
+  border: 1px solid rgba(204,255,0,.25);
+  padding: 0 14px;
+}
+.btn-ghost:hover { background: var(--volt-dim); }
 
-  /* High-load badge */
-  .load-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: #f97316;
-    font-weight: 500;
-    margin-top: 10px;
-  }
-  .load-dot { width: 6px; height: 6px; border-radius: 50%; background: #f97316; }
+/* Dim — destructive / cancel / skip */
+.btn-dim {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-dim:hover { background: var(--elevated); color: var(--text); }
 
-  /* ── WORKOUT LIBRARY CARD ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
+.btn-sm { height: 30px; padding: 0 12px; font-size: 12.5px; }
+.btn-lg { height: 42px; padding: 0 22px; font-size: 15px; }
 
-  /* Left border accent — the unified system */
-  .card-strength { border-left: 3px solid var(--strength); }
-  .card-cardio   { border-left: 3px solid var(--cardio); }
-  .card-hiit     { border-left: 3px solid var(--hiit); }
+/* ═══════════════════════════════════════════
+   CARD BASE
+═══════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-inner { padding: 18px 20px; }
 
-  .card-inner { padding: 16px 18px; }
+/* Left-border accent system — unified across all workout cards */
+.accent-volt    { border-left: 3px solid var(--volt); }
+.accent-cardio  { border-left: 3px solid var(--cardio); }
+.accent-hiit    { border-left: 3px solid var(--hiit); }
 
-  .card-tags { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+/* ═══════════════════════════════════════════
+   TODAY'S WORKOUT — FEATURED CARD
+═══════════════════════════════════════════ */
+.card-featured {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--volt);
+  border-radius: var(--radius);
+  padding: 22px 22px 20px;
+  box-shadow: var(--volt-glow);
+}
+.card-featured .eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--volt);
+  margin-bottom: 6px;
+  display: block;
+}
+.card-featured .title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.card-featured .meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 16px;
+}
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.pill-volt   { background: var(--volt-mid); color: var(--volt); border: 1px solid rgba(204,255,0,.2); }
+.pill-orange { background: rgba(249,115,22,.12); color: #fb923c; border: 1px solid rgba(249,115,22,.2); }
+.pill-red    { background: rgba(239,68,68,.1); color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+.featured-actions { display: flex; gap: 8px; }
+.featured-actions .btn { flex: 1; justify-content: center; }
 
-  .tag {
-    font-size: 10.5px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 4px;
-    letter-spacing: .02em;
-  }
-  .tag-advanced  { background: #fef2f2; color: #dc2626; }
-  .tag-inter     { background: #fffbeb; color: #d97706; }
-  .tag-beginner  { background: #f0fdf4; color: #16a34a; }
-  .tag-strength  { background: var(--purple-light); color: var(--purple); }
-  .tag-cardio    { background: #fff7ed; color: #ea7c1e; }
+/* ═══════════════════════════════════════════
+   WORKOUT LIBRARY CARD
+═══════════════════════════════════════════ */
+.tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .03em;
+}
+.tag-strength { background: var(--volt-dim); color: var(--volt); border: 1px solid rgba(204,255,0,.15); }
+.tag-cardio   { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.2); }
+.tag-advanced { background: rgba(239,68,68,.1); color: #f87171; border: 1px solid rgba(239,68,68,.15); }
+.tag-inter    { background: rgba(245,158,11,.1); color: #fbbf24; border: 1px solid rgba(245,158,11,.15); }
+.tag-beginner { background: rgba(34,197,94,.1); color: #4ade80; border: 1px solid rgba(34,197,94,.15); }
 
-  .card-title {
-    font-size: 14.5px;
-    font-weight: 600;
-    line-height: 1.35;
-    margin-bottom: 4px;
-    color: var(--text-primary);
-  }
-  .card-desc {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin-bottom: 14px;
-    line-height: 1.45;
-  }
-  .card-stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 14px;
-  }
-  .card-stat label {
-    display: block;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 2px;
-  }
-  .card-stat span {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-soft);
-  }
+.card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-title { font-size: 14.5px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.35; }
+.card-desc  { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45; }
+.card-stats { display: flex; gap: 24px; margin-bottom: 14px; }
+.card-stat label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.card-stat span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
 
-  /* ── ACTIVITY LOG ITEM ── */
-  .log-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    display: flex;
-  }
-  .log-accent {
-    width: 3px;
-    flex-shrink: 0;
-  }
-  .log-accent.strength { background: var(--strength); }
-  .log-accent.cardio   { background: var(--cardio); }
-  .log-body {
-    flex: 1;
-    padding: 14px 18px;
-  }
-  .log-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 2px;
-  }
-  .log-title {
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .log-date {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-  }
-  .log-type {
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    margin-bottom: 10px;
-  }
-  .log-type.strength { color: var(--strength); }
-  .log-type.cardio   { color: var(--cardio); }
-  .log-metrics {
-    display: flex;
-    gap: 24px;
-  }
-  .log-metric label {
-    display: block;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 2px;
-  }
-  .log-metric span {
-    font-size: 16px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    color: var(--text-primary);
-  }
-  .log-metric .unit {
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-left: 1px;
-  }
+/* ═══════════════════════════════════════════
+   WEEKLY STATS CARD
+═══════════════════════════════════════════ */
+.stats-card { padding: 18px 20px; }
+.stats-card .card-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.stat-row:last-child { margin-bottom: 0; }
+.stat-label { font-size: 13px; color: var(--text-secondary); }
+.stat-value { font-size: 13px; font-weight: 600; color: var(--text); font-family: 'IBM Plex Mono', monospace; }
+.progress-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--volt);
+  transition: width .3s;
+}
+.progress-fill.food { background: var(--green); }
+.divider { height: 1px; background: var(--border-soft); margin: 12px 0; }
 
-  /* ── NUTRITION ROW ── */
-  .food-row {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-soft);
-    gap: 12px;
-  }
-  .food-row:last-child { border-bottom: none; }
-  .food-name-col { flex: 1; min-width: 0; }
-  .food-name {
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text-primary);
-    /* REMOVED text-transform: uppercase */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .food-serving {
-    font-size: 11.5px;
-    color: var(--text-muted);
-  }
-  .food-macros {
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
-  }
-  .macro-val {
-    text-align: right;
-    min-width: 36px;
-  }
-  .macro-val .num {
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-  }
-  .macro-val .lbl {
-    font-size: 9.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--text-muted);
-    display: block;
-  }
-  .macro-val.cal .num { color: var(--text-primary); }
-  .macro-val.pro .num { color: #3b82f6; }
-  .macro-val.car .num { color: #eab308; }
-  .macro-val.fat .num { color: #ef4444; }
+/* ═══════════════════════════════════════════
+   ACTIVITY LOG
+═══════════════════════════════════════════ */
+.log-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  overflow: hidden;
+}
+.log-accent { width: 3px; flex-shrink: 0; }
+.log-accent.volt    { background: var(--volt); }
+.log-accent.cardio  { background: var(--cardio); }
+.log-body { flex: 1; padding: 14px 18px; }
+.log-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.log-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.log-date  { font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+.log-type  {
+  font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+.log-type.volt   { color: var(--volt); }
+.log-type.cardio { color: var(--cardio); }
+.log-metrics { display: flex; gap: 24px; }
+.log-metric label {
+  display: block;
+  font-size: 9.5px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 2px;
+}
+.log-metric span {
+  font-size: 16px; font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text);
+}
+.log-metric .unit { font-size: 10.5px; color: var(--text-muted); margin-left: 1px; }
 
-  /* ── GRID LAYOUTS ── */
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-  }
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 14px;
-  }
-  .stack { display: flex; flex-direction: column; gap: 10px; }
+/* ═══════════════════════════════════════════
+   FOOD TRACKER
+═══════════════════════════════════════════ */
+.meal-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.meal-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.meal-name {
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.meal-kcal { font-size: 12px; font-weight: 500; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+.meal-body { padding: 4px 18px 6px; }
+.food-row {
+  display: flex; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 12px;
+}
+.food-row:last-child { border-bottom: none; }
+.food-name-col { flex: 1; min-width: 0; }
+.food-name {
+  font-size: 13.5px; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.food-serving { font-size: 11.5px; color: var(--text-muted); }
+.food-macros { display: flex; gap: 16px; flex-shrink: 0; }
+.macro-val { text-align: right; min-width: 36px; }
+.macro-val .num { font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+.macro-val .lbl { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); display: block; }
+.macro-val.cal .num { color: var(--text); }
+.macro-val.pro .num { color: var(--macro-pro); }
+.macro-val.car .num { color: var(--macro-carb); }
+.macro-val.fat .num { color: var(--macro-fat); }
+.meal-add {
+  display: flex; align-items: center; justify-content: center;
+  padding: 9px; color: var(--text-muted); font-size: 12.5px;
+  cursor: pointer; gap: 5px; transition: color .15s;
+}
+.meal-add:hover { color: var(--volt); }
 
-  /* ── FOOD LOG SECTION ── */
-  .meal-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
-  .meal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--border-soft);
-    background: var(--surface-2);
-  }
-  .meal-name {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-  }
-  .meal-kcal {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-  }
-  .meal-body { padding: 4px 18px 8px; }
-  .meal-add {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-    color: var(--text-muted);
-    font-size: 12.5px;
-    cursor: pointer;
-    gap: 5px;
-    transition: color .15s;
-  }
-  .meal-add:hover { color: var(--purple); }
+/* ═══════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════ */
+.field { margin-bottom: 16px; }
+.field label {
+  display: block; font-size: 12.5px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+.field-hint { font-size: 11.5px; color: var(--text-muted); margin-top: 5px; }
+.input {
+  width: 100%; height: 38px;
+  background: #151515;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.input::placeholder { color: var(--text-muted); }
+.input:focus {
+  border-color: var(--volt);
+  box-shadow: 0 0 0 3px rgba(204,255,0,.1);
+}
 
-  /* ── NAV BAR ── */
-  .navbar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    height: 54px;
-    gap: 4px;
-    margin-bottom: 32px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-  }
-  .nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--purple);
-    margin-right: 24px;
-    text-decoration: none;
-  }
-  .nav-logo {
-    width: 28px;
-    height: 28px;
-    background: var(--purple);
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 14px;
-    font-weight: 700;
-  }
-  .nav-items { display: flex; align-items: center; gap: 2px; flex: 1; }
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: background .15s, color .15s;
-    text-decoration: none;
-  }
-  .nav-item:hover { background: var(--bg); color: var(--text-primary); }
-  .nav-item.active {
-    background: var(--purple-light);
-    color: var(--purple);
-  }
-  .nav-item .nav-icon { width: 15px; height: 15px; opacity: .75; }
-  .nav-item.active .nav-icon { opacity: 1; }
-  .nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-  .avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: var(--dark);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600;
-    cursor: pointer;
-  }
-  .theme-btn {
-    width: 32px; height: 32px;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-secondary);
-    font-size: 14px;
-  }
+/* Option buttons — replaces radio + checkbox walls */
+.option-btn {
+  display: block; width: 100%;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  margin-bottom: 8px;
+}
+.option-btn .opt-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.option-btn .opt-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.option-btn:hover { border-color: rgba(204,255,0,.3); background: var(--volt-dim); }
+.option-btn.selected {
+  border-color: var(--volt);
+  background: var(--volt-mid);
+}
+.option-btn.selected .opt-title { color: var(--volt); }
 
-  /* ── PAGE HEADER ── */
-  .page-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 24px;
-  }
-  .page-title { font-size: 22px; font-weight: 700; line-height: 1.2; }
-  .page-sub { font-size: 13.5px; color: var(--text-secondary); margin-top: 3px; }
-  .header-actions { display: flex; gap: 8px; }
+/* Toggle */
+.toggle-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.toggle-label .tl-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.toggle-label .tl-desc  { font-size: 12px; color: var(--text-muted); }
+.toggle {
+  width: 44px; height: 24px;
+  border-radius: 12px;
+  position: relative;
+  background: #333;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.toggle.on { background: var(--volt); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(20px); }
 
-  /* ── ANNOTATION ── */
-  .annotation {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #92400e;
-    margin-bottom: 12px;
-    line-height: 1.5;
-  }
-  .annotation strong { font-weight: 600; }
+/* Progress step dots */
+.step-dots { display: flex; gap: 6px; justify-content: center; margin: 12px 0; }
+.dot { width: 6px; height: 6px; border-radius: 3px; background: #333; transition: all .2s; }
+.dot.active { width: 28px; background: var(--volt); }
 
-  .separator {
-    height: 1px;
-    background: var(--border);
-    margin: 32px 0;
-  }
+/* ═══════════════════════════════════════════
+   BADGE / STATUS CHIPS
+═══════════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .02em;
+}
+.badge-volt   { background: var(--volt-dim); color: var(--volt); border: 1px solid rgba(204,255,0,.2); }
+.badge-green  { background: rgba(34,197,94,.1); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+.badge-amber  { background: rgba(245,158,11,.1); color: #fbbf24; border: 1px solid rgba(245,158,11,.2); }
+.badge-red    { background: rgba(239,68,68,.1); color: #f87171; border: 1px solid rgba(239,68,68,.15); }
+.badge-slate  { background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════
+   PAGE HEADER
+═══════════════════════════════════════════ */
+.page-header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-title { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.page-sub   { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+.header-actions { display: flex; gap: 8px; }
+
+/* ═══════════════════════════════════════════
+   NUTRITION MACRO RINGS (Dashboard)
+═══════════════════════════════════════════ */
+.macro-rings { display: flex; gap: 20px; }
+.macro-ring {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.ring-wrap {
+  width: 64px; height: 64px;
+  position: relative;
+}
+.ring-wrap svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--border); stroke-width: 5; }
+.ring-fill  { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring-fill.cal  { stroke: var(--text-secondary); }
+.ring-fill.pro  { stroke: var(--macro-pro); }
+.ring-fill.carb { stroke: var(--macro-carb); }
+.ring-fill.fat  { stroke: var(--macro-fat); }
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.ring-val { font-size: 13px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--text); line-height: 1; }
+.ring-of  { font-size: 8.5px; color: var(--text-muted); margin-top: 1px; }
+.ring-name { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+/* ═══════════════════════════════════════════
+   CHECK-IN NUMBER SELECTOR
+═══════════════════════════════════════════ */
+.checkin-row {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 10px;
+}
+.checkin-label { font-size: 12.5px; color: var(--text-secondary); width: 60px; }
+.checkin-nums  { display: flex; gap: 6px; }
+.num-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  font-size: 11.5px; font-weight: 700;
+  cursor: pointer;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  transition: all .12s;
+}
+.num-btn.filled { background: rgba(204,255,0,.25); color: var(--volt); }
+.num-btn.active { background: var(--volt); color: #000; }
+
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: NAV -->
-<!-- ══════════════════════════════════════════════ -->
-<p class="section-label">Navigation — consistent active state</p>
-<nav class="navbar">
-  <a class="nav-brand" href="#">
-    <div class="nav-logo">S</div>
-    Sisyphus' Schedule
-  </a>
-  <div class="nav-items">
-    <a class="nav-item" href="#">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-      Home
-    </a>
-    <a class="nav-item active" href="#">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
-      Workouts
-    </a>
-    <a class="nav-item" href="#">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      Schedule
-    </a>
-    <a class="nav-item" href="#">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-      Food
-    </a>
-    <a class="nav-item" href="#">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
-      Social
-    </a>
-  </div>
-  <div class="nav-right">
-    <button class="theme-btn">☽</button>
-    <div class="avatar">T</div>
-  </div>
-</nav>
-
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: BUTTONS -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- COLOR TOKENS -->
+<!-- ══════════════════════════════════════════════════════ -->
 <section>
-  <p class="section-label">Button System — 4 roles, unambiguous hierarchy</p>
-  <div class="annotation">
-    <strong>Rule:</strong> Dark/charcoal = generative/primary machine actions (Generate, Build, Add Food).
-    Purple = commitment actions (Enroll, Confirm, Start). Outlined = secondary navigation. Ghost = inline text actions.
-    No more mixing black and purple as competing primaries.
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-primary btn-lg">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      Generate Workouts
-    </button>
-    <button class="btn btn-primary">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      Generate My Week
-    </button>
-    <button class="btn btn-primary">+ Add Food</button>
-    <button class="btn btn-primary">⊞ Build Program</button>
-  </div>
-  <div class="btn-row" style="margin-top: 10px">
-    <button class="btn btn-brand btn-lg">Enroll in Program</button>
-    <button class="btn btn-brand">Start Workout</button>
-    <button class="btn btn-brand">Confirm Schedule</button>
-  </div>
-  <div class="btn-row" style="margin-top: 10px">
-    <button class="btn btn-secondary">⊕ Schedule This Week</button>
-    <button class="btn btn-secondary">+ Create Custom</button>
-    <button class="btn btn-secondary btn-sm">Import JSON</button>
-    <button class="btn btn-ghost">Options</button>
-    <button class="btn btn-ghost">View Details →</button>
-  </div>
-  <div class="btn-row" style="margin-top: 10px">
-    <button class="btn btn-like">👍  Like</button>
-    <button class="btn btn-like active">👍  Liked</button>
-    <span style="font-size:12px; color: var(--text-muted); margin-left:4px">
-      Dislike removed from public UI; signal preserved internally for ML
-    </span>
+  <p class="section-label">Color Tokens — complete palette</p>
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#121212;"></div>
+      <span class="swatch-name">--bg</span>
+      <span class="swatch-hex">#121212</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#1a1a1a;"></div>
+      <span class="swatch-name">--surface</span>
+      <span class="swatch-hex">#1a1a1a</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#202020;"></div>
+      <span class="swatch-name">--surface-2</span>
+      <span class="swatch-hex">#202020</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#242424;"></div>
+      <span class="swatch-name">--elevated</span>
+      <span class="swatch-hex">#242424</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#2a2a2a; border-color:#2a2a2a;"></div>
+      <span class="swatch-name">--border</span>
+      <span class="swatch-hex">#2a2a2a</span>
+    </div>
+    <div class="swatch" style="margin-left:16px">
+      <div class="swatch-block" style="background:#ccff00; border:none;"></div>
+      <span class="swatch-name">--volt</span>
+      <span class="swatch-hex">#CCFF00</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:rgba(204,255,0,.15); border-color:rgba(204,255,0,.2);"></div>
+      <span class="swatch-name">--volt-mid</span>
+      <span class="swatch-hex">rgba 15%</span>
+    </div>
+    <div class="swatch" style="margin-left:16px">
+      <div class="swatch-block" style="background:#f97316; border:none;"></div>
+      <span class="swatch-name">--cardio</span>
+      <span class="swatch-hex">#f97316</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#22c55e; border:none;"></div>
+      <span class="swatch-name">--green</span>
+      <span class="swatch-hex">#22c55e</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#f59e0b; border:none;"></div>
+      <span class="swatch-name">--amber</span>
+      <span class="swatch-hex">#f59e0b</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#ef4444; border:none;"></div>
+      <span class="swatch-name">--red</span>
+      <span class="swatch-hex">#ef4444</span>
+    </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: FEATURED + WORKOUT CARDS -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- TYPOGRAPHY -->
+<!-- ══════════════════════════════════════════════════════ -->
 <section>
-  <p class="section-label">Today's Workout — dark card replaces purple gradient</p>
-  <div class="grid-2" style="max-width: 860px">
+  <p class="section-label">Typography — IBM Plex Sans + IBM Plex Mono</p>
+  <div class="type-row">
+    <span class="type-spec">700 · 22px · page title</span>
+    <span style="font-size:22px;font-weight:700;">Workouts</span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">600 · 17px · card title</span>
+    <span style="font-size:17px;font-weight:600;">2 — Deadlift Strength & Pressing Support</span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">500 · 14px · body</span>
+    <span style="font-size:14px;font-weight:500;">Welcome to Vektor. Let's personalize your training.</span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">400 · 12.5px · secondary</span>
+    <span style="font-size:12.5px;color:var(--text-secondary);">Bench variation and deficit deadlift day with posterior chain emphasis.</span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">MONO 500 · 10px · label</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);">Week Generator</span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">MONO 600 · 16px · data</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;">23,710<span style="font-size:11px;color:var(--text-muted);margin-left:2px"> lbs</span></span>
+  </div>
+  <div class="type-row">
+    <span class="type-spec">MONO 600 · volt · accent data</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--volt);">3/6<span style="font-size:11px;color:var(--text-muted);margin-left:4px">workouts this week</span></span>
+  </div>
+</section>
 
-    <!-- Featured dark card -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- NAVIGATION -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Navigation Bar</p>
+  <nav class="navbar">
+    <a class="nav-brand" href="#">
+      <svg class="nav-logo" viewBox="0 0 32 32" fill="none">
+        <path d="M3 4 L10 4 L16 20 L22 4 L29 4 L19 28 L13 28 Z" fill="#CCFF00"/>
+      </svg>
+      <span class="nav-wordmark">Vektor</span>
+    </a>
+    <div class="nav-items">
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Home
+      </a>
+      <a class="nav-item active" href="#">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        Workouts
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Schedule
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Progress
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+        Social
+      </a>
+    </div>
+    <div class="nav-right">
+      <button class="icon-btn">☽</button>
+      <div class="avatar">N</div>
+    </div>
+  </nav>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BUTTONS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Button System — clear 4-tier hierarchy</p>
+  <div class="note">
+    <strong>Volt</strong> = primary commitment (Start Workout, Enroll, Confirm, Go to Schedule).
+    <strong>Dark</strong> = generative/machine actions (Generate Week, Build Program, Add Food).
+    <strong>Ghost</strong> = secondary inline (Options, View Details, Schedule).
+    <strong>Dim</strong> = cancel/skip/destructive.
+  </div>
+
+  <div class="row">
+    <button class="btn btn-volt btn-lg">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      Start Workout
+    </button>
+    <button class="btn btn-volt">Enroll in Program</button>
+    <button class="btn btn-volt">Go to Schedule</button>
+    <button class="btn btn-volt btn-sm">Confirm</button>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <button class="btn btn-dark btn-lg">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Generate My Week
+    </button>
+    <button class="btn btn-dark">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Generate Workouts
+    </button>
+    <button class="btn btn-dark">+ Add Food</button>
+    <button class="btn btn-dark">⊞ Build Program</button>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <button class="btn btn-ghost">Options</button>
+    <button class="btn btn-ghost">View Details →</button>
+    <button class="btn btn-ghost btn-sm">Schedule</button>
+    <button class="btn btn-dim">Skip</button>
+    <button class="btn btn-dim btn-sm">Cancel</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BADGES & TAGS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Badges & Tags</p>
+  <div class="row">
+    <span class="badge badge-volt">Strength</span>
+    <span class="badge badge-green">Completed</span>
+    <span class="badge badge-amber">Bulk</span>
+    <span class="badge badge-red">High Load</span>
+    <span class="badge badge-slate">Rest Day</span>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <span class="tag tag-strength">Strength</span>
+    <span class="tag tag-cardio">Cardio</span>
+    <span class="tag tag-advanced">Advanced</span>
+    <span class="tag tag-inter">Intermediate</span>
+    <span class="tag tag-beginner">Beginner</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- TODAY'S WORKOUT + WORKOUT CARD -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Today's Workout — volt-accented featured card + library card</p>
+  <div class="grid-2 max860">
+
+    <!-- Featured card -->
     <div class="card-featured">
-      <span class="label-sm">Sub-10 Ironman · Phase 1 Intro</span>
-      <div class="workout-title">2 — Deadlift Strength & Pressing Support</div>
-      <div class="workout-meta">Cycle 2, Day 3 &nbsp;·&nbsp; 11 exercises &nbsp;·&nbsp; 90 min</div>
-      <span class="pill">● Strength</span>
-      <span class="pill orange">⚡ Z2 Swim · 20 min PM</span>
-      <div class="load-badge"><div class="load-dot"></div> High-load day — lifting + cardio</div>
-      <div class="card-featured-actions">
-        <button class="btn-featured-primary">✓ Completed — View</button>
-        <button class="btn-featured-secondary">Log</button>
+      <span class="eyebrow">Sub-10 Ironman · Phase 1 · Cycle 2</span>
+      <div class="title">2 — Deadlift Strength & Pressing Support</div>
+      <div class="meta">Day 3 &nbsp;·&nbsp; 11 exercises &nbsp;·&nbsp; 90 min</div>
+      <div class="pill-row">
+        <span class="pill pill-volt">● Strength</span>
+        <span class="pill pill-orange">⚡ Z2 Swim · 20 min PM</span>
+      </div>
+      <div class="featured-actions">
+        <button class="btn btn-volt">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          Start Workout
+        </button>
+        <button class="btn btn-dim">Skip</button>
       </div>
     </div>
 
-    <!-- Library workout card — left border system -->
-    <div class="stack">
-      <div class="annotation" style="margin-bottom:0">
-        <strong>Unified left-border accent</strong> replaces inconsistent top-border on library cards.
-        Same system as Activity Log — strength = purple, cardio = orange.
+    <!-- Library card -->
+    <div class="card accent-volt">
+      <div class="card-inner">
+        <div class="card-tags">
+          <span class="tag tag-advanced">Advanced</span>
+          <span class="tag tag-strength">Strength</span>
+        </div>
+        <div class="card-title">4 — Bench Variation & Posterior Hypertrophy</div>
+        <div class="card-desc">Bench variation and deficit deadlift day with posterior chain emphasis.</div>
+        <div class="card-stats">
+          <div class="card-stat"><label>Duration</label><span>75 min</span></div>
+          <div class="card-stat"><label>Exercises</label><span>10</span></div>
+        </div>
+        <div class="card-footer">
+          <div class="row">
+            <span class="badge badge-volt">Strength</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm">Schedule</button>
+            <button class="btn btn-dark btn-sm">View Details</button>
+          </div>
+        </div>
       </div>
-      <div class="card card-strength">
-        <div class="card-inner">
-          <div class="card-tags">
-            <span class="tag tag-advanced">Advanced</span>
-            <span class="tag tag-strength">Strength</span>
-          </div>
-          <div class="card-title">4 — Bench Variation & Posterior Hypertrophy</div>
-          <div class="card-desc">Bench variation and deficit deadlift day with posterior chain emphasis.</div>
-          <div class="card-stats">
-            <div class="card-stat"><label>Duration</label><span>75 min</span></div>
-            <div class="card-stat"><label>Exercises</label><span>10</span></div>
-          </div>
-          <div class="card-footer">
-            <button class="btn btn-like">👍  Like</button>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm">Schedule</button>
-              <button class="btn btn-secondary btn-sm">View Details</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- WEEKLY STATS CARD -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Weekly Stats — progress bars + generate panel</p>
+  <div style="max-width:420px">
+    <div class="card">
+      <div class="stats-card">
+        <div class="card-eyebrow">This Week</div>
+
+        <div class="stat-row">
+          <span class="stat-label">Workouts</span>
+          <span class="stat-value">3/6</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
+
+        <div class="divider"></div>
+
+        <div class="stat-row">
+          <span class="stat-label">Food Logged</span>
+          <span class="stat-value">5/7 days</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill food" style="width:71%"></div></div>
+
+        <div class="divider"></div>
+
+        <div class="stat-row">
+          <span class="stat-label">Diet Phase</span>
+          <span class="badge badge-amber" style="font-size:11px">Bulk</span>
+        </div>
+
+        <div class="stat-row" style="margin-top:10px">
+          <span class="stat-label">Body Weight</span>
+          <span class="stat-value">187.4 <span style="font-size:11px;color:var(--text-muted)">lbs</span></span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Generate panel -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)">Week Generator</span>
+          <button class="btn btn-ghost" style="height:24px;font-size:11.5px;padding:0 10px">Options</button>
+        </div>
+        <button class="btn btn-dark" style="width:100%;justify-content:center">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Generate My Week
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- NUTRITION RINGS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Nutrition — macro rings</p>
+  <div class="card" style="max-width:480px">
+    <div class="card-inner">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+        <svg width="16" height="16" fill="none" stroke="#22c55e" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        <span style="font-size:13.5px;font-weight:600">Today's Nutrition</span>
+      </div>
+      <div class="macro-rings">
+        <!-- Calories -->
+        <div class="macro-ring">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 64 64">
+              <circle class="ring-track" cx="32" cy="32" r="27"/>
+              <circle class="ring-fill cal" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="60"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-val">1840</span>
+              <span class="ring-of">/2400</span>
             </div>
           </div>
+          <span class="ring-name">Calories</span>
+        </div>
+        <!-- Protein -->
+        <div class="macro-ring">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 64 64">
+              <circle class="ring-track" cx="32" cy="32" r="27"/>
+              <circle class="ring-fill pro" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="42"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-val" style="color:var(--macro-pro)">148</span>
+              <span class="ring-of">/200</span>
+            </div>
+          </div>
+          <span class="ring-name">Protein</span>
+        </div>
+        <!-- Carbs -->
+        <div class="macro-ring">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 64 64">
+              <circle class="ring-track" cx="32" cy="32" r="27"/>
+              <circle class="ring-fill carb" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="85"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-val" style="color:var(--macro-carb)">120</span>
+              <span class="ring-of">/250</span>
+            </div>
+          </div>
+          <span class="ring-name">Carbs</span>
+        </div>
+        <!-- Fat -->
+        <div class="macro-ring">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 64 64">
+              <circle class="ring-track" cx="32" cy="32" r="27"/>
+              <circle class="ring-fill fat" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="102"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-val" style="color:var(--macro-fat)">48</span>
+              <span class="ring-of">/80</span>
+            </div>
+          </div>
+          <span class="ring-name">Fat</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: ACTIVITY LOG -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ACTIVITY LOG -->
+<!-- ══════════════════════════════════════════════════════ -->
 <section>
-  <p class="section-label">Activity Log — left-border system (already correct, shown for reference)</p>
-  <div class="stack" style="max-width: 740px">
-
+  <p class="section-label">Activity Log — left-border accent system</p>
+  <div class="stack max640">
     <div class="log-item">
-      <div class="log-accent strength"></div>
+      <div class="log-accent volt"></div>
       <div class="log-body">
         <div class="log-header">
           <div class="log-title">2 — Deadlift Strength & Pressing Support</div>
           <div class="log-date">MAY 13</div>
         </div>
-        <div class="log-type strength">Strength</div>
+        <div class="log-type volt">Strength</div>
         <div class="log-metrics">
           <div class="log-metric"><label>Exercises</label><span>11</span></div>
           <div class="log-metric"><label>Sets</label><span>22</span></div>
@@ -745,7 +1086,6 @@
         </div>
       </div>
     </div>
-
     <div class="log-item">
       <div class="log-accent cardio"></div>
       <div class="log-body">
@@ -761,20 +1101,15 @@
         </div>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: FOOD LOG -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- FOOD TRACKER -->
+<!-- ══════════════════════════════════════════════════════ -->
 <section>
-  <p class="section-label">Food Tracker — title case replaces ALL CAPS food names</p>
-  <div class="annotation">
-    <strong>Change:</strong> Remove <code>text-transform: uppercase</code> from food name elements.
-    No other structural changes needed — this alone makes the page feel consistent with the rest of the app.
-  </div>
-  <div style="max-width: 640px">
+  <p class="section-label">Food Tracker — meal log</p>
+  <div class="max640">
     <div class="meal-section">
       <div class="meal-header">
         <span class="meal-name">01. Breakfast</span>
@@ -795,19 +1130,7 @@
         </div>
         <div class="food-row">
           <div class="food-name-col">
-            <div class="food-name">Whole Strawberries</div>
-            <div class="food-serving">100 g</div>
-          </div>
-          <div class="food-macros">
-            <div class="macro-val cal"><span class="num">36</span><span class="lbl">Cal</span></div>
-            <div class="macro-val pro"><span class="num">0.7</span><span class="lbl">Pro</span></div>
-            <div class="macro-val car"><span class="num">9.3</span><span class="lbl">Car</span></div>
-            <div class="macro-val fat"><span class="num">0</span><span class="lbl">Fat</span></div>
-          </div>
-        </div>
-        <div class="food-row">
-          <div class="food-name-col">
-            <div class="food-name">Old Fashioned 100% Whole Grain Oats</div>
+            <div class="food-name">Old Fashioned Whole Grain Oats</div>
             <div class="food-serving">100 g</div>
           </div>
           <div class="food-macros">
@@ -829,51 +1152,167 @@
             <div class="macro-val fat"><span class="num">30</span><span class="lbl">Fat</span></div>
           </div>
         </div>
-        <div class="meal-add">
-          <span style="font-size:16px;line-height:1">+</span> Add item
+        <div class="meal-add">+ Add item</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONBOARDING / FORMS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section>
+  <p class="section-label">Onboarding Forms — inputs, option buttons, toggles</p>
+  <div style="max-width:480px">
+    <div class="card">
+      <div class="card-inner">
+
+        <!-- Step indicator -->
+        <div style="text-align:center;margin-bottom:20px">
+          <svg width="36" height="36" viewBox="0 0 64 64" fill="none" style="margin-bottom:10px">
+            <path d="M6 8 L20 8 L32 40 L44 8 L58 8 L36 56 L28 56 Z" fill="#CCFF00"/>
+          </svg>
+          <div style="font-size:22px;font-weight:700;color:var(--volt);letter-spacing:-.02em;margin-bottom:4px">Welcome to Vektor</div>
+          <div style="font-size:13px;color:var(--text-secondary)">Let's personalize your fitness journey</div>
+          <div class="step-dots" style="margin-top:14px">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Step 1 of 3</div>
+        </div>
+
+        <div class="field">
+          <label>Choose a username</label>
+          <input class="input" value="nolan_lifts" />
+          <div class="field-hint">3–20 characters: letters, numbers, underscores</div>
+        </div>
+
+        <div class="field">
+          <label>Display Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+          <input class="input" placeholder="Your Name" />
+        </div>
+
+        <div>
+          <label style="font-size:12.5px;font-weight:600;color:var(--text);display:block;margin-bottom:10px">Profile Visibility</label>
+          <button class="option-btn selected">
+            <div class="opt-title">Public</div>
+            <div class="opt-desc">Searchable and visible to everyone</div>
+          </button>
+          <button class="option-btn">
+            <div class="opt-title">Friends Only</div>
+            <div class="opt-desc">Only visible to added friends</div>
+          </button>
+          <button class="option-btn">
+            <div class="opt-title">Private</div>
+            <div class="opt-desc">Your profile is completely hidden</div>
+          </button>
+        </div>
+
+        <div style="margin-top:20px">
+          <label style="font-size:12.5px;font-weight:600;color:var(--text);display:block;margin-bottom:10px">Extra Options</label>
+          <div class="toggle-row on">
+            <div class="toggle-label">
+              <div class="tl-title">Include Cardio Finisher</div>
+              <div class="tl-desc">Add a cardio exercise at the end of each workout</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">
+              <div class="tl-title">Skip Deload Weeks</div>
+              <div class="tl-desc">Disable automatic recovery weeks</div>
+            </div>
+            <div class="toggle"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:22px">
+          <button class="btn btn-dim" style="flex:1;justify-content:center">← Back</button>
+          <button class="btn btn-volt" style="flex:2;justify-content:center">Continue →</button>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SECTION: PAGE HEADER -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CHECK-IN + PAGE HEADER -->
+<!-- ══════════════════════════════════════════════════════ -->
 <section>
-  <p class="section-label">Page Header — consistent across all pages</p>
-  <div class="annotation">
-    <strong>Rule:</strong> Every page uses the same header pattern: left-aligned title + sub, right-aligned action buttons.
-    The Dashboard currently breaks this with a centered hero headline — align it left to match.
-  </div>
-  <div class="page-header" style="max-width: 860px">
+  <p class="section-label">Check-In Selector + Page Header Pattern</p>
+  <div class="grid-2 max860">
+
+    <!-- Check-in -->
+    <div class="card">
+      <div class="card-inner">
+        <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px">Check In</div>
+        <div class="checkin-row">
+          <span class="checkin-label">Sleep</span>
+          <div class="checkin-nums">
+            <button class="num-btn active">1</button>
+            <button class="num-btn filled">2</button>
+            <button class="num-btn filled">3</button>
+            <button class="num-btn">4</button>
+            <button class="num-btn">5</button>
+          </div>
+        </div>
+        <div class="checkin-row">
+          <span class="checkin-label">Soreness</span>
+          <div class="checkin-nums">
+            <button class="num-btn filled">1</button>
+            <button class="num-btn active">2</button>
+            <button class="num-btn">3</button>
+            <button class="num-btn">4</button>
+            <button class="num-btn">5</button>
+          </div>
+        </div>
+        <div class="checkin-row">
+          <span class="checkin-label">Stress</span>
+          <div class="checkin-nums">
+            <button class="num-btn">1</button>
+            <button class="num-btn">2</button>
+            <button class="num-btn">3</button>
+            <button class="num-btn">4</button>
+            <button class="num-btn">5</button>
+          </div>
+        </div>
+        <button class="btn btn-volt" style="width:100%;justify-content:center;margin-top:14px">Check In →</button>
+      </div>
+    </div>
+
+    <!-- Page header -->
     <div>
-      <div class="page-title">Workouts</div>
-      <div class="page-sub">Your workout library and programs</div>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-secondary">+ Create Custom</button>
-      <button class="btn btn-primary">
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        Generate Workouts
-      </button>
-    </div>
-  </div>
-  <div class="page-header" style="max-width: 860px; margin-top: 8px;">
-    <div>
-      <div class="page-title">Food</div>
-      <div class="page-sub" id="food-date">Thursday, May 14</div>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-secondary">⊕ New Meal</button>
-      <button class="btn btn-primary">+ Add Food</button>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Workouts</div>
+          <div class="page-sub">Your workout library and programs</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-dim btn-sm">+ Create Custom</button>
+          <button class="btn btn-dark">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Generate Workouts
+          </button>
+        </div>
+      </div>
+      <div class="page-header" style="margin-top:8px">
+        <div>
+          <div class="page-title">Food</div>
+          <div class="page-sub">Thursday, May 14</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-dim btn-sm">⊕ New Meal</button>
+          <button class="btn btn-volt">+ Add Food</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<div class="separator"></div>
-<p style="font-size:12px; color: var(--text-muted); text-align:center; margin-bottom: 8px;">
-  Sisyphus' Schedule — Design Reference · Changes are additive; no full redesign required
+<div class="sep"></div>
+<p style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);text-align:center;letter-spacing:.1em;text-transform:uppercase">
+  Vektor Design Reference · #121212 · #CCFF00 · IBM Plex Sans + Mono
 </p>
 
 </body>

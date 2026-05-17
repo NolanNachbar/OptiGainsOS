@@ -379,7 +379,7 @@ export default function CreateWorkout() {
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={addExercise} className="w-full bg-primary-600 hover:bg-primary-700 text-white">
+                <Button type="button" onClick={addExercise} className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
                 </Button>

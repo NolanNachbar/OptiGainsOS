@@ -14,19 +14,19 @@ export default function MuscleHeatMap({ data = [], className = "", view: control
     <div className={`flex flex-col items-center gap-1.5 ${className}`}>
       {/* Toggle only shown when not controlled externally */}
       {!isControlled && (
-        <div className="flex rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-sm">
+        <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium shadow-sm">
           <button
             onClick={() => setOwnView("anterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "anterior" ? "bg-primary-600 text-white" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+            className={`px-2.5 py-0.5 transition-colors ${view === "anterior" ? "bg-primary-500 text-black font-bold" : "bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#242424]"}`}
           >Front</button>
           <button
             onClick={() => setOwnView("posterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "posterior" ? "bg-primary-600 text-white" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+            className={`px-2.5 py-0.5 transition-colors ${view === "posterior" ? "bg-primary-500 text-black font-bold" : "bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#242424]"}`}
           >Back</button>
         </div>
       )}
 
-      <div className="rounded-xl bg-slate-50 dark:bg-slate-700/40 p-2 w-full flex-1 flex justify-center items-center min-h-0">
+      <div className="rounded-xl bg-[#1a1a1a] p-2 w-full flex-1 flex justify-center items-center min-h-0">
         <Model
           data={data}
           type={view}
@@ -36,7 +36,7 @@ export default function MuscleHeatMap({ data = [], className = "", view: control
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 shrink-0">
+      <div className="flex items-center gap-2 text-xs text-[#a0a0a0] shrink-0">
         <span>Low</span>
         <div className="flex h-2 w-16 rounded-full overflow-hidden">
           <div className="flex-1" style={{ background: COLORS[0] }} />

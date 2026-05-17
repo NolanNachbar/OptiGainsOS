@@ -8,19 +8,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary brand colors
+        // Primary brand colors — Volt Neon Green
         primary: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#7c5ce7',
-          600: '#5d3cc7',
-          700: '#4f33ab',
-          800: '#5b21b6',
-          900: '#4c1d95',
-          950: '#2e1065',
+          50: '#f7ffe0',
+          100: '#eeffb3',
+          200: '#e0ff80',
+          300: '#d6ff4d',
+          400: '#d4ff1a',
+          500: '#ccff00',
+          600: '#a3cc00',
+          700: '#7a9900',
+          800: '#526600',
+          900: '#293300',
+          950: '#141a00',
+        },
+        // Cyber Charcoal backgrounds
+        charcoal: {
+          DEFAULT: '#121212',
+          surface: '#1a1a1a',
+          surface2: '#202020',
+          elevated: '#242424',
+          border: '#2a2a2a',
+          borderSoft: '#222222',
         },
         // Status colors
         success: {
@@ -67,6 +76,8 @@ export default {
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'dark-card': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4)',
+        'neon': '0 0 20px rgba(204, 255, 0, 0.25)',
+        'neon-lg': '0 0 40px rgba(204, 255, 0, 0.3)',
       },
     },
   },

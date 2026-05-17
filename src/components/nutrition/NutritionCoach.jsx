@@ -219,7 +219,7 @@ export default function NutritionCoach() {
       case "gaining":
         return <TrendingUp className="w-5 h-5 text-orange-600" />;
       default:
-        return <Minus className="w-5 h-5 text-slate-500" />;
+        return <Minus className="w-5 h-5 text-[#555555]" />;
     }
   };
 
@@ -257,8 +257,8 @@ export default function NutritionCoach() {
       const rawEntry = payload.find((p) => p.dataKey === "weight");
       const trendEntry = payload.find((p) => p.dataKey === "trendWeight");
       return (
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
-          <p className="font-semibold dark:text-white">
+        <div className="bg-[#1a1a1a] p-3 rounded-lg shadow-lg border border-[#2a2a2a]">
+          <p className="font-semibold text-white">
             {format(parseISO(label), "MMM d, yyyy")}
           </p>
           {rawEntry && (
@@ -340,16 +340,16 @@ export default function NutritionCoach() {
             {tdeeResult.tdee ? (
               <div className="space-y-3">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                  <span className="text-3xl font-bold text-white">
                     {tdeeResult.tdee}
                   </span>
-                  <span className="text-sm text-slate-500">cal/day</span>
+                  <span className="text-sm text-[#555555]">cal/day</span>
                   <span
                     className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${
                       tdeeResult.method === "adaptive"
                         ? "bg-green-100 text-green-700"
                         : tdeeResult.method === "manual"
-                        ? "bg-primary-100 text-primary-700"
+                        ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]"
                         : "bg-blue-100 text-blue-700"
                     }`}
                   >
@@ -358,7 +358,7 @@ export default function NutritionCoach() {
                 </div>
 
                 {tdeeResult.confidence && (
-                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-2 text-xs text-[#a0a0a0]">
                     <div
                       className={`w-2 h-2 rounded-full ${getConfidenceColor(
                         tdeeResult.confidence
@@ -376,13 +376,13 @@ export default function NutritionCoach() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                       <div className="text-blue-600 dark:text-blue-400 text-xs font-medium">Formula</div>
-                      <div className="text-base font-bold text-slate-900 dark:text-white">
+                      <div className="text-base font-bold text-white">
                         {tdeeResult.formula_tdee}
                       </div>
                     </div>
                     <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
                       <div className="text-green-600 dark:text-green-400 text-xs font-medium">Adaptive</div>
-                      <div className="text-base font-bold text-slate-900 dark:text-white">
+                      <div className="text-base font-bold text-white">
                         {tdeeResult.adaptive_tdee}
                       </div>
                     </div>
@@ -391,7 +391,7 @@ export default function NutritionCoach() {
 
                 <button
                   onClick={() => setShowTDEEInfo(!showTDEEInfo)}
-                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                  className="flex items-center gap-1 text-xs text-[#555555] hover:text-slate-700 transition-colors"
                 >
                   How is this calculated?
                   {showTDEEInfo ? (
@@ -401,7 +401,7 @@ export default function NutritionCoach() {
                   )}
                 </button>
                 {showTDEEInfo && (
-                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5 space-y-1.5">
+                  <div className="text-xs text-[#a0a0a0] bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg p-2.5 space-y-1.5">
                     <p>
                       <strong>Formula (Mifflin-St Jeor):</strong> Uses your height,
                       weight, age, sex, and activity level.
@@ -415,11 +415,11 @@ export default function NutritionCoach() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <Scale className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
+                <Scale className="w-10 h-10 text-[#a0a0a0] mx-auto mb-2" />
+                <p className="text-[#a0a0a0] font-medium text-sm">
                   No TDEE estimate yet
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-[#555555] mt-1">
                   Add body stats in Profile or log food & weight for 14+ days.
                 </p>
               </div>
@@ -465,8 +465,8 @@ export default function NutritionCoach() {
                           }}
                           className={`py-2 rounded-lg text-sm font-medium border transition-all ${
                             goalMode === opt.value
-                              ? "bg-primary-600 text-white border-primary-600"
-                              : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500"
+                              ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold border-[rgba(204,255,0,0.5)]"
+                              : "border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:border-slate-300 dark:hover:border-slate-500"
                           }`}
                         >
                           {opt.label}
@@ -490,8 +490,8 @@ export default function NutritionCoach() {
                             }}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                               weeklyRate === preset.value
-                                ? "bg-primary-600 text-white border-primary-600"
-                                : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500"
+                                ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold border-[rgba(204,255,0,0.5)]"
+                                : "border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:border-slate-300 dark:hover:border-slate-500"
                             }`}
                           >
                             {preset.label}
@@ -503,12 +503,12 @@ export default function NutritionCoach() {
                   )}
 
                   {/* Calorie target result */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 flex items-center justify-between">
+                  <div className="bg-[#1a1a1a] bg-[#1a1a1a]/50 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                      <div className="text-2xl font-bold text-white">
                         {(macroForm.daily_calorie_goal ?? 0).toLocaleString()} cal/day
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="text-xs text-[#555555] mt-0.5">
                         TDEE {(tdeeResult.tdee ?? 0).toLocaleString()}
                         {weeklyRate !== 0
                           ? ` · ${weeklyRate > 0 ? "+" : ""}${Math.round(weeklyRate * 500)} cal ${weeklyRate > 0 ? "surplus" : "deficit"}`
@@ -537,17 +537,17 @@ export default function NutritionCoach() {
                       }}
                       className="w-24"
                     />
-                    <span className="text-sm text-slate-500 dark:text-slate-400">
+                    <span className="text-sm text-[#555555]">
                       g / lb = {Math.round(weightLbs * proteinPerLb)}g/day
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Typical: 0.7–1.2 g/lb. Higher for cutting or muscle gain.</p>
+                  <p className="text-xs text-[#555555] mt-1">Typical: 0.7–1.2 g/lb. Higher for cutting or muscle gain.</p>
                 </div>
               )}
 
               {/* Manual fine-tune inputs */}
               <div>
-                <Label className="text-sm font-medium text-slate-500 dark:text-slate-400">Fine-tune</Label>
+                <Label className="text-sm font-medium text-[#555555]">Fine-tune</Label>
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   <div>
                     <Label className="text-xs">Calories</Label>
@@ -634,7 +634,7 @@ export default function NutritionCoach() {
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-[#555555] mt-1">
                     <span className="flex items-center gap-1">
                       <div className="w-2 h-2 rounded-full bg-blue-500" />
                       Protein {Math.round((macroForm.daily_protein_goal * 4 * 100) / macroForm.daily_calorie_goal)}%
@@ -654,7 +654,7 @@ export default function NutritionCoach() {
               <div className="flex gap-2">
                 <Button
                   onClick={saveMacros}
-                  className="flex-1 bg-primary-600 hover:bg-primary-700"
+                  className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
                   disabled={updateProfileMutation.isPending}
                 >
                   <Save className="w-4 h-4 mr-2" />
@@ -673,31 +673,31 @@ export default function NutritionCoach() {
               {/* Current goals display */}
               <div className="grid grid-cols-4 gap-3 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <div className="text-2xl font-bold text-white">
                     {profile?.daily_calorie_goal || "—"}
                   </div>
-                  <div className="text-xs text-slate-500">Calories</div>
+                  <div className="text-xs text-[#555555]">Calories</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-600">
                     {profile?.daily_protein_goal || "—"}
                     <span className="text-sm font-normal">g</span>
                   </div>
-                  <div className="text-xs text-slate-500">Protein</div>
+                  <div className="text-xs text-[#555555]">Protein</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-amber-600">
                     {profile?.daily_carbs_goal || "—"}
                     <span className="text-sm font-normal">g</span>
                   </div>
-                  <div className="text-xs text-slate-500">Carbs</div>
+                  <div className="text-xs text-[#555555]">Carbs</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-rose-600">
                     {profile?.daily_fats_goal || "—"}
                     <span className="text-sm font-normal">g</span>
                   </div>
-                  <div className="text-xs text-slate-500">Fats</div>
+                  <div className="text-xs text-[#555555]">Fats</div>
                 </div>
               </div>
 
@@ -718,7 +718,7 @@ export default function NutritionCoach() {
                       style={{ width: `${fatsPct}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-[#555555] mt-1">
                     <span>{proteinPct}% P</span>
                     <span>{carbsPct}% C</span>
                     <span>{fatsPct}% F</span>
@@ -739,18 +739,18 @@ export default function NutritionCoach() {
         <Card className="border-none shadow-sm">
           <CardContent className="py-3 px-3">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-slate-600 dark:text-slate-400">Weekly Weight</div>
+              <div className="text-xs text-[#a0a0a0]">Weekly Weight</div>
               {getTrendIcon(weeklyWeight.trend)}
             </div>
             {weeklyWeight.trend === "insufficient_data" ? (
-              <div className="text-xs text-slate-500">Need more data</div>
+              <div className="text-xs text-[#555555]">Need more data</div>
             ) : (
               <>
-                <div className="text-xl font-bold text-slate-900 dark:text-white">
+                <div className="text-xl font-bold text-white">
                   {weeklyWeight.weeklyRate > 0 ? "+" : ""}
                   {weeklyWeight.weeklyRate} {weightUnit}
                 </div>
-                <div className="text-xs text-slate-500 capitalize">
+                <div className="text-xs text-[#555555] capitalize">
                   {weeklyWeight.trend} · {weeklyWeight.dataPoints} weigh-ins
                 </div>
               </>
@@ -761,15 +761,15 @@ export default function NutritionCoach() {
         <Card className="border-none shadow-sm">
           <CardContent className="py-3 px-3">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-slate-600 dark:text-slate-400">Logging</div>
-              <Calendar className="w-4 h-4 text-primary-600" />
+              <div className="text-xs text-[#a0a0a0]">Logging</div>
+              <Calendar className="w-4 h-4 text-[#ccff00]" />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
+            <div className="text-xl font-bold text-white">
               {weeklyLogging.daysLogged}/{weeklyLogging.totalDays} days
             </div>
             <div className="h-1 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden mt-1.5">
               <div
-                className="h-full bg-primary-500 transition-all"
+                className="h-full bg-[rgba(204,255,0,0.08)]0 transition-all"
                 style={{ width: `${weeklyLogging.consistency}%` }}
               ></div>
             </div>
@@ -779,14 +779,14 @@ export default function NutritionCoach() {
         <Card className="border-none shadow-sm">
           <CardContent className="py-3 px-3">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-slate-600 dark:text-slate-400">Avg Calories</div>
+              <div className="text-xs text-[#a0a0a0]">Avg Calories</div>
               <Zap className="w-4 h-4 text-orange-500" />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
+            <div className="text-xl font-bold text-white">
               {weeklyLogging.avgCalories || "—"}
             </div>
             {profile?.daily_calorie_goal && weeklyLogging.avgCalories > 0 && (
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-[#555555]">
                 Goal: {profile.daily_calorie_goal} ({weeklyLogging.avgCalories > profile.daily_calorie_goal ? "+" : ""}{weeklyLogging.avgCalories - profile.daily_calorie_goal})
               </div>
             )}
@@ -796,15 +796,15 @@ export default function NutritionCoach() {
         <Card className="border-none shadow-sm">
           <CardContent className="py-3 px-3">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-slate-600 dark:text-slate-400">Protein Hit Rate</div>
+              <div className="text-xs text-[#a0a0a0]">Protein Hit Rate</div>
               <Target className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
+            <div className="text-xl font-bold text-white">
               {weeklyLogging.daysLogged > 0
                 ? `${weeklyLogging.proteinHitRate}%`
                 : "—"}
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-[#555555]">
               ≥90% of {profile?.daily_protein_goal || 150}g
             </div>
           </CardContent>
@@ -899,13 +899,13 @@ export default function NutritionCoach() {
                       <div className="flex items-start gap-2">
                         <div className="mt-0.5">{style.icon}</div>
                         <div>
-                          <div className="font-semibold text-sm text-slate-900 dark:text-white">
+                          <div className="font-semibold text-sm text-white">
                             {rec.title}
                           </div>
-                          <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
+                          <p className="text-xs text-slate-700 text-[#a0a0a0] mt-0.5">
                             {rec.description}
                           </p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 italic">
+                          <p className="text-xs text-[#a0a0a0] mt-1 italic">
                             {rec.suggestion}
                           </p>
                         </div>
@@ -918,7 +918,7 @@ export default function NutritionCoach() {
                             (prev) => new Set([...prev, rec.id])
                           )
                         }
-                        className="text-slate-400 hover:text-slate-600 h-6 w-6 -mt-1"
+                        className="text-[#a0a0a0] hover:text-[#a0a0a0] h-6 w-6 -mt-1"
                       >
                         <X className="w-3.5 h-3.5" />
                       </Button>
@@ -937,9 +937,9 @@ export default function NutritionCoach() {
       <CollapsibleSection title="Monthly Insights" defaultOpen={false}>
         <div className="space-y-2">
           {monthlyWeight.trend !== "insufficient_data" && (
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
+            <div className="flex items-center gap-2 p-2.5 bg-[#1a1a1a] bg-[#202020] rounded-lg">
               {getTrendIcon(monthlyWeight.trend)}
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-slate-700 text-[#a0a0a0]">
                 {monthlyWeight.avgWeightChange > 0 ? "Gained" : "Lost"}{" "}
                 <strong>
                   {Math.abs(Math.round(monthlyWeight.avgWeightChange * 10) / 10)} {weightUnit}
@@ -949,25 +949,25 @@ export default function NutritionCoach() {
             </div>
           )}
           {monthlyLogging.daysLogged > 0 && (
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
+            <div className="flex items-center gap-2 p-2.5 bg-[#1a1a1a] bg-[#202020] rounded-lg">
               <Target className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-slate-700 text-[#a0a0a0]">
                 Protein goal hit <strong>{monthlyLogging.proteinHitRate}%</strong> of the time
               </span>
             </div>
           )}
           {monthlyLogging.daysLogged > 0 && (
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
-              <Calendar className="w-4 h-4 text-primary-600" />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2 p-2.5 bg-[#1a1a1a] bg-[#202020] rounded-lg">
+              <Calendar className="w-4 h-4 text-[#ccff00]" />
+              <span className="text-sm text-slate-700 text-[#a0a0a0]">
                 Logged <strong>{monthlyLogging.daysLogged}</strong>/30 days ({monthlyLogging.consistency}%)
               </span>
             </div>
           )}
           {monthlyLogging.avgCalories > 0 && (
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
+            <div className="flex items-center gap-2 p-2.5 bg-[#1a1a1a] bg-[#202020] rounded-lg">
               <Zap className="w-4 h-4 text-orange-500" />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-slate-700 text-[#a0a0a0]">
                 Avg <strong>{monthlyLogging.avgCalories} cal</strong> & <strong>{monthlyLogging.avgProtein}g protein</strong>/day
               </span>
             </div>
@@ -986,7 +986,7 @@ function CollapsibleSection({ title, defaultOpen = true, children }) {
       <CardHeader className="cursor-pointer py-3" onClick={() => setIsOpen(!isOpen)}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">{title}</CardTitle>
-          {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {isOpen ? <ChevronUp className="w-5 h-5 text-[#a0a0a0]" /> : <ChevronDown className="w-5 h-5 text-[#a0a0a0]" />}
         </div>
       </CardHeader>
       {isOpen && <CardContent className="pt-0">{children}</CardContent>}

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Mail, Lock } from 'lucide-react';
+import Logo from '@/components/Logo';
 import { toast } from 'sonner';
 
 export default function Login() {
@@ -34,22 +35,22 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src={`${import.meta.env.BASE_URL}sisyphus-white.svg`} alt="Logo" className="w-28 h-28 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white">Sisyphus' Schedule</h1>
-          <p className="text-slate-400 mt-2">Sign in to your account</p>
+          <Logo className="w-20 h-20 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-white tracking-tight">Vektor</h1>
+          <p className="text-[#a0a0a0] mt-2">Sign in to your account</p>
         </div>
 
-        <Card className="border-none shadow-lg bg-white/10 backdrop-blur-lg">
+        <Card className="border-none shadow-lg bg-[#1a1a1a] border-[#2a2a2a] text-white">
           <CardHeader>
             <CardTitle className="text-white text-center">Welcome Back</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-slate-200">Email</Label>
+                <Label htmlFor="email" className="text-white">Email</Label>
                 <div className="relative mt-1">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
@@ -58,14 +59,14 @@ export default function Login() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    className="pl-10"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-slate-200">Password</Label>
+                <Label htmlFor="password" className="text-white">Password</Label>
                 <div className="relative mt-1">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
@@ -74,7 +75,7 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    className="pl-10"
                     required
                   />
                 </div>
@@ -83,7 +84,7 @@ export default function Login() {
               <div className="flex items-center justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-primary-400 hover:text-primary-300"
+                  className="text-sm text-primary-500 hover:text-primary-400"
                 >
                   Forgot password?
                 </Link>
@@ -91,7 +92,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary-600 hover:bg-primary-700"
+                className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold"
                 disabled={loading}
               >
                 {loading ? (
@@ -106,9 +107,9 @@ export default function Login() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-slate-400">
+              <p className="text-[#a0a0a0]">
                 Don't have an account?{' '}
-                <Link to="/signup" state={{ returnTo }} className="text-primary-400 hover:text-primary-300 font-medium">
+                <Link to="/signup" state={{ returnTo }} className="text-primary-500 hover:text-primary-400 font-medium">
                   Sign up
                 </Link>
               </p>

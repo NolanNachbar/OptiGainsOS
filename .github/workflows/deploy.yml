@@ -33,4 +33,4 @@ jobs:
           git config user.name "GitHub Actions"
           git add .
           git commit -m "Deploy from private repo"
-          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/SisyphusSchedule.git HEAD:main
+          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/VektorPub.git HEAD:main

@@ -27,16 +27,16 @@ import { differenceInDays, addDays, format } from "date-fns";
 function SectionHeader({ icon: Icon, title }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="p-2 rounded-lg bg-slate-100">
-        <Icon className="w-4 h-4 text-slate-600" />
+      <div className="p-2 rounded-lg bg-[#202020]">
+        <Icon className="w-4 h-4 text-[#a0a0a0]" />
       </div>
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
     </div>
   );
 }
 
 function SectionDivider() {
-  return <div className="border-t border-slate-200 my-6" />;
+  return <div className="border-t border-[#2a2a2a] my-6" />;
 }
 
 export default function Profile() {
@@ -300,12 +300,12 @@ export default function Profile() {
     : displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Profile</h1>
-            <p className="text-slate-500 text-sm mt-1">Manage your account</p>
+            <h1 className="text-2xl font-bold text-white">Profile</h1>
+            <p className="text-[#555555] text-sm mt-1">Manage your account</p>
           </div>
         </div>
 
@@ -379,7 +379,7 @@ export default function Profile() {
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" value={user.email} disabled className="mt-1" />
-                      <p className="text-sm text-slate-500 mt-1">This is your login email and cannot be changed</p>
+                      <p className="text-sm text-[#555555] mt-1">This is your login email and cannot be changed</p>
                     </div>
                   </div>
 
@@ -398,7 +398,7 @@ export default function Profile() {
                             disabled
                             className="mt-1"
                           />
-                          <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                          <p className="text-sm text-[#555555] mt-1 flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5" />
                             You can change your username again on {format(usernameUnlockDate, 'MMM d, yyyy')}
                           </p>
@@ -416,7 +416,7 @@ export default function Profile() {
                             className="mt-1"
                             placeholder="your_username"
                           />
-                          <p className="text-sm text-slate-500 mt-1">
+                          <p className="text-sm text-[#555555] mt-1">
                             3-20 characters: letters, numbers, underscores. Can be changed once every 30 days.
                           </p>
                         </>
@@ -434,7 +434,7 @@ export default function Profile() {
                         className="mt-1"
                         placeholder="Tell others about yourself..."
                       />
-                      <p className="text-sm text-slate-500 mt-1">{formData.bio.length}/300</p>
+                      <p className="text-sm text-[#555555] mt-1">{formData.bio.length}/300</p>
                     </div>
 
                     <div>
@@ -501,7 +501,7 @@ export default function Profile() {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
-                        <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+                        <div className="flex gap-1 bg-[#202020] rounded-lg p-0.5">
                           <button
                             type="button"
                             onClick={() => {
@@ -515,7 +515,7 @@ export default function Profile() {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'bg-white shadow text-primary-600 font-medium' : 'text-slate-500'
+                              formData.height_unit === 'in' ? 'bg-[#1a1a1a] shadow text-[#ccff00] font-medium' : 'text-[#555555]'
                             }`}
                           >ft/in</button>
                           <button
@@ -529,7 +529,7 @@ export default function Profile() {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'bg-white shadow text-primary-600 font-medium' : 'text-slate-500'
+                              formData.height_unit === 'cm' ? 'bg-[#1a1a1a] shadow text-[#ccff00] font-medium' : 'text-[#555555]'
                             }`}
                           >cm</button>
                         </div>
@@ -614,15 +614,15 @@ export default function Profile() {
                         className="mt-1"
                         placeholder="e.g. 175"
                       />
-                      <p className="text-xs text-slate-500 mt-1">Saving a new weight also adds an entry to your weight log.</p>
+                      <p className="text-xs text-[#555555] mt-1">Saving a new weight also adds an entry to your weight log.</p>
                     </div>
 
                     {tdee.tdee && (
                       <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-300">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{tdee.tdee} cal/day</div>
+                            <div className="text-sm text-[#a0a0a0]">Estimated TDEE</div>
+                            <div className="text-2xl font-bold text-white text-white">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             tdee.method === 'adaptive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -658,7 +658,7 @@ export default function Profile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-slate-500 mt-1">Used when logging workout weights</p>
+                      <p className="text-sm text-[#555555] mt-1">Used when logging workout weights</p>
                     </div>
 
                     <div>
@@ -680,7 +680,7 @@ export default function Profile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-slate-500 mt-1">Nutrition coach suggests adjustments on this day</p>
+                      <p className="text-sm text-[#555555] mt-1">Nutrition coach suggests adjustments on this day</p>
                     </div>
 
                     <div>
@@ -689,13 +689,13 @@ export default function Profile() {
                         id="timezone"
                         value={formData.timezone}
                         onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="mt-1 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[rgba(204,255,0,0.3)]"
                       >
                         {Intl.supportedValuesOf('timeZone').map(tz => (
                           <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                         ))}
                       </select>
-                      <p className="text-sm text-slate-500 mt-1">Used to determine today's date for your schedule</p>
+                      <p className="text-sm text-[#555555] mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
 
@@ -706,11 +706,11 @@ export default function Profile() {
                         type="checkbox"
                         checked={formData.show_rir}
                         onChange={(e) => setFormData({ ...formData, show_rir: e.target.checked })}
-                        className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-[#2a2a2a] text-[#ccff00] focus:ring-[rgba(204,255,0,0.3)]"
                       />
                       <div>
                         <span className="font-medium">Show RIR (Reps In Reserve)</span>
-                        <p className="text-sm text-slate-500">Display RIR tracking column when logging workouts. RIR indicates how many more reps you could have done (0 = failure, 3 = 3 more reps possible).</p>
+                        <p className="text-sm text-[#555555]">Display RIR tracking column when logging workouts. RIR indicates how many more reps you could have done (0 = failure, 3 = 3 more reps possible).</p>
                       </div>
                     </label>
                   </div>
@@ -722,11 +722,11 @@ export default function Profile() {
                         type="checkbox"
                         checked={formData.adaptive_training}
                         onChange={(e) => setFormData({ ...formData, adaptive_training: e.target.checked })}
-                        className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-[#2a2a2a] text-[#ccff00] focus:ring-[rgba(204,255,0,0.3)]"
                       />
                       <div>
                         <span className="font-medium">Adaptive Cardio Suggestions</span>
-                        <p className="text-sm text-slate-500">During your weekly check-in, suggest cardio session duration adjustments based on how many runs you completed via Strava. Only applies to AI-generated running programs — never modifies your strength workouts or manually built plans.</p>
+                        <p className="text-sm text-[#555555]">During your weekly check-in, suggest cardio session duration adjustments based on how many runs you completed via Strava. Only applies to AI-generated running programs — never modifies your strength workouts or manually built plans.</p>
                       </div>
                     </label>
                   </div>
@@ -736,14 +736,14 @@ export default function Profile() {
                   {/* Notifications */}
                   <SectionHeader icon={Bell} title="Notifications" />
                   {!pushSupported ? (
-                    <p className="text-sm text-slate-500">Push notifications are not supported on this browser. Add the app to your home screen to enable them.</p>
+                    <p className="text-sm text-[#555555]">Push notifications are not supported on this browser. Add the app to your home screen to enable them.</p>
                   ) : permission === "denied" ? (
                     <p className="text-sm text-danger-600">Notifications are blocked. Enable them in your browser/iOS settings to receive reminders.</p>
                   ) : (
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-medium">Workout & Check-In Reminders</span>
-                        <p className="text-sm text-slate-500">Daily workout reminders and weekly check-in prompts.</p>
+                        <p className="text-sm text-[#555555]">Daily workout reminders and weekly check-in prompts.</p>
                       </div>
                       <Button
                         variant={isSubscribed ? "outline" : "primary"}
@@ -786,13 +786,13 @@ export default function Profile() {
                             className={`p-3 rounded-xl border-2 text-center transition-all ${
                               selected
                                 ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
-                                : "border-slate-200 hover:border-primary-300 dark:border-slate-700"
+                                : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
-                            <div className={`text-sm font-semibold ${selected ? "text-primary-700 dark:text-primary-300" : "text-slate-800 dark:text-slate-200"}`}>
+                            <div className={`text-sm font-semibold ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-white"}`}>
                               {opt.label}
                             </div>
-                            <div className="text-xs text-slate-500 mt-0.5 hidden sm:block">{opt.desc}</div>
+                            <div className="text-xs text-[#555555] mt-0.5 hidden sm:block">{opt.desc}</div>
                           </button>
                         );
                       })}
@@ -804,7 +804,7 @@ export default function Profile() {
                   {/* Primary Goals */}
                   <div className="mb-6">
                     <Label className="text-sm font-semibold mb-1 block">Primary Goals</Label>
-                    <p className="text-xs text-slate-500 mb-3">Select all that apply — the AI tailors sets, reps, and exercises to your goals</p>
+                    <p className="text-xs text-[#555555] mb-3">Select all that apply — the AI tailors sets, reps, and exercises to your goals</p>
                     <div className="grid sm:grid-cols-2 gap-2">
                       {[
                         {
@@ -847,17 +847,17 @@ export default function Profile() {
                             className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                               selected
                                 ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
-                                : "border-slate-200 hover:border-primary-300 dark:border-slate-700"
+                                : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
                             <div className="flex-1 min-w-0">
-                              <div className={`text-sm font-semibold ${selected ? "text-primary-700 dark:text-primary-300" : "text-slate-800 dark:text-slate-200"}`}>
+                              <div className={`text-sm font-semibold ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-white"}`}>
                                 {opt.label}
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5 leading-snug">{opt.desc}</div>
+                              <div className="text-xs text-[#555555] mt-0.5 leading-snug">{opt.desc}</div>
                             </div>
                             <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 ${
-                              selected ? "bg-primary-600 border-primary-600" : "border-slate-300"
+                              selected ? "bg-primary-600 border-primary-600" : "border-[#2a2a2a]"
                             }`}>
                               {selected && (
                                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -893,13 +893,13 @@ export default function Profile() {
                               className={`p-2.5 rounded-lg border-2 text-center transition-all ${
                                 selected
                                   ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
-                                  : "border-slate-200 hover:border-primary-300 dark:border-slate-700"
+                                  : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                               }`}
                             >
-                              <div className={`text-sm font-semibold ${selected ? "text-primary-700 dark:text-primary-300" : "text-slate-700 dark:text-slate-300"}`}>
+                              <div className={`text-sm font-semibold ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-slate-700 text-[#a0a0a0]"}`}>
                                 {opt.label}
                               </div>
-                              <div className="text-xs text-slate-400">{opt.desc}</div>
+                              <div className="text-xs text-[#a0a0a0]">{opt.desc}</div>
                             </button>
                           );
                         })}
@@ -909,7 +909,7 @@ export default function Profile() {
                     <div>
                       <Label className="text-sm font-semibold mb-2 block">
                         Training Days / Week
-                        <span className="ml-2 text-primary-600 font-bold">{formData.days_per_week}</span>
+                        <span className="ml-2 text-[#ccff00] font-bold">{formData.days_per_week}</span>
                         {formData.days_per_week === 6 && (
                           <span className="ml-2 text-xs text-amber-500 font-normal">High frequency — recover well</span>
                         )}
@@ -924,8 +924,8 @@ export default function Profile() {
                               onClick={() => setFormData(prev => ({ ...prev, days_per_week: n }))}
                               className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-bold transition-all ${
                                 sel
-                                  ? "border-primary-500 bg-primary-600 text-white"
-                                  : "border-slate-200 text-slate-600 hover:border-primary-300 dark:border-slate-600 dark:text-slate-300"
+                                  ? "border-[rgba(204,255,0,0.5)] bg-primary-500 text-black font-bold"
+                                  : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] dark:border-slate-600 text-[#a0a0a0]"
                               }`}
                             >
                               {n}
@@ -933,7 +933,7 @@ export default function Profile() {
                           );
                         })}
                       </div>
-                      <p className="text-xs text-slate-400 mt-1.5">days per week</p>
+                      <p className="text-xs text-[#a0a0a0] mt-1.5">days per week</p>
                     </div>
                   </div>
 
@@ -942,7 +942,7 @@ export default function Profile() {
                   {/* Equipment */}
                   <div className="mb-6">
                     <Label className="text-sm font-semibold mb-1 block">Available Equipment</Label>
-                    <p className="text-xs text-slate-500 mb-3">Only exercises you can actually do will be included</p>
+                    <p className="text-xs text-[#555555] mb-3">Only exercises you can actually do will be included</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {(EQUIPMENT_OPTIONS || []).map(opt => {
                         const selected = (formData.available_equipment || []).includes(opt.value);
@@ -959,11 +959,11 @@ export default function Profile() {
                             className={`flex items-center gap-2 p-2.5 rounded-lg border-2 text-left transition-all ${
                               selected
                                 ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
-                                : "border-slate-200 hover:border-primary-300 dark:border-slate-700"
+                                : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
                             <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
-                              selected ? "bg-primary-600 border-primary-600" : "border-slate-300"
+                              selected ? "bg-primary-600 border-primary-600" : "border-[#2a2a2a]"
                             }`}>
                               {selected && (
                                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -971,7 +971,7 @@ export default function Profile() {
                                 </svg>
                               )}
                             </div>
-                            <span className={`text-xs font-medium ${selected ? "text-primary-700 dark:text-primary-300" : "text-slate-700 dark:text-slate-300"}`}>
+                            <span className={`text-xs font-medium ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-slate-700 text-[#a0a0a0]"}`}>
                               {opt.label}
                             </span>
                           </button>
@@ -985,7 +985,7 @@ export default function Profile() {
                   {/* Injuries */}
                   <div>
                     <Label className="text-sm font-semibold mb-1 block">Injuries or Limitations</Label>
-                    <p className="text-xs text-slate-500 mb-2">Helps the AI avoid exercises that could aggravate existing issues</p>
+                    <p className="text-xs text-[#555555] mb-2">Helps the AI avoid exercises that could aggravate existing issues</p>
                     <Textarea
                       value={formData.injuries_limitations}
                       onChange={e => setFormData({ ...formData, injuries_limitations: e.target.value })}
@@ -1002,12 +1002,12 @@ export default function Profile() {
 
             {/* Sticky Save Bar */}
             <div
-              className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg transition-transform duration-300 ease-out ${
+              className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-[#1a1a1a] border-t border-[#2a2a2a] shadow-lg transition-transform duration-300 ease-out ${
                 isDirty ? 'translate-y-0' : 'translate-y-[200%]'
               }`}
             >
               <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-                <p className="text-sm text-slate-600 dark:text-slate-300">You have unsaved changes</p>
+                <p className="text-sm text-[#a0a0a0]">You have unsaved changes</p>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -1040,32 +1040,32 @@ export default function Profile() {
             </div>
 
             {/* Data & Privacy */}
-            <div className="mt-4 pt-6 border-t border-slate-200">
+            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Connected Apps</h3>
+                <Users className="w-4 h-4 text-[#a0a0a0]" />
+                <h3 className="text-sm font-semibold text-white">Connected Apps</h3>
               </div>
               <StravaConnect />
             </div>
 
-            <div className="mt-4 pt-6 border-t border-slate-200">
+            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
               <div className="flex items-center gap-2 mb-4">
-                <Database className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Data & Privacy</h3>
+                <Database className="w-4 h-4 text-[#a0a0a0]" />
+                <h3 className="text-sm font-semibold text-white">Data & Privacy</h3>
               </div>
               <DataExport weightEntries={weightEntries} foodEntries={allFoodEntries} />
             </div>
 
             {/* Bug Report */}
-            <div className="mt-4 pt-6 border-t border-slate-200">
+            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
               <div className="flex items-center gap-2 mb-4">
-                <HelpCircle className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Feedback</h3>
+                <HelpCircle className="w-4 h-4 text-[#a0a0a0]" />
+                <h3 className="text-sm font-semibold text-white">Feedback</h3>
               </div>
               <div className="flex items-left text-left justify-between">
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-white">Report a Bug</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Found something broken? Let us know.</p>
+                  <p className="font-medium text-white">Report a Bug</p>
+                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Found something broken? Let us know.</p>
                 </div>
                 <Button
                   variant="outline"
@@ -1094,8 +1094,8 @@ export default function Profile() {
               {/* Help & Support Section */}
               <div className="flex items-left text-left justify-between mb-4">
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-white">Replay Tutorial</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Restart the app tutorial</p>
+                  <p className="font-medium text-white">Replay Tutorial</p>
+                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Restart the app tutorial</p>
                 </div>
                 <Button
                   variant="outline"
@@ -1114,8 +1114,8 @@ export default function Profile() {
 
               <div className="flex items-left text-left justify-between mb-4">
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-white align-left">Sign Out</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Sign out of your account</p>
+                  <p className="font-medium text-white align-left">Sign Out</p>
+                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Sign out of your account</p>
                 </div>
                 <Button
                   variant="outline"
@@ -1137,8 +1137,8 @@ export default function Profile() {
               {!showDeleteConfirm ? (
                 <div className="flex items-left text-left justify-between">
                   <div>
-                    <p className="font-medium text-slate-900 dark:text-white align-left">Delete Account</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Permanently delete your account and all data</p>
+                    <p className="font-medium text-white align-left">Delete Account</p>
+                    <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Permanently delete your account and all data</p>
                   </div>
                   <Button
                     variant="outline"

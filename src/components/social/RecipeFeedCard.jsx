@@ -96,13 +96,13 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/profile/${username}`}
-                className="font-semibold text-slate-900 dark:text-white hover:text-primary-600 text-sm"
+                className="font-semibold text-white hover:text-[#ccff00] text-sm"
               >
                 {displayName}
               </Link>
-              <span className="text-xs text-slate-400">@{username}</span>
-              <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs text-slate-400">{format(new Date(item.created_at), "MMM d, h:mm a")}</span>
+              <span className="text-xs text-[#a0a0a0]">@{username}</span>
+              <span className="text-xs text-[#a0a0a0]">·</span>
+              <span className="text-xs text-[#a0a0a0]">{format(new Date(item.created_at), "MMM d, h:mm a")}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -110,7 +110,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-primary-600 dark:text-primary-400 border-primary-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-xs"
+                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] dark:hover:bg-[rgba(204,255,0,0.08)] text-xs"
                 onClick={handleCloneRecipe}
                 disabled={isCloning}
               >
@@ -132,50 +132,50 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
 
         {/* Recipe title + description */}
         <div className="flex items-start gap-2 mb-2">
-          <ChefHat className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
+          <ChefHat className="w-5 h-5 text-[#ccff00] mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <h4 className="font-semibold text-slate-900 dark:text-white">{item.recipe_name}</h4>
-            {item.description && <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{item.description}</p>}
+            <h4 className="font-semibold text-white">{item.recipe_name}</h4>
+            {item.description && <p className="text-sm text-[#a0a0a0] mt-1">{item.description}</p>}
           </div>
         </div>
 
         {/* Nutrition info */}
-        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 mt-3">
+        <div className="bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg p-3 mt-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-medium">Nutrition per serving</p>
+            <p className="text-xs text-[#555555] font-medium">Nutrition per serving</p>
             <Badge variant="outline" className="text-xs">{item.servings} servings</Badge>
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-xs">
             <div>
-              <p className="font-bold text-slate-900 dark:text-white">{Math.round(item.total_calories) || 0}</p>
-              <p className="text-slate-400">Calories</p>
+              <p className="font-bold text-white">{Math.round(item.total_calories) || 0}</p>
+              <p className="text-[#a0a0a0]">Calories</p>
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white">{Math.round(item.total_protein) || 0}g</p>
-              <p className="text-slate-400">Protein</p>
+              <p className="font-bold text-white">{Math.round(item.total_protein) || 0}g</p>
+              <p className="text-[#a0a0a0]">Protein</p>
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white">{Math.round(item.total_carbs) || 0}g</p>
-              <p className="text-slate-400">Carbs</p>
+              <p className="font-bold text-white">{Math.round(item.total_carbs) || 0}g</p>
+              <p className="text-[#a0a0a0]">Carbs</p>
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white">{Math.round(item.total_fats) || 0}g</p>
-              <p className="text-slate-400">Fats</p>
+              <p className="font-bold text-white">{Math.round(item.total_fats) || 0}g</p>
+              <p className="text-[#a0a0a0]">Fats</p>
             </div>
           </div>
 
           {/* Ingredients preview */}
           {item.ingredients && item.ingredients.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Ingredients:</p>
+            <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+              <p className="text-xs font-medium text-[#a0a0a0] mb-1">Ingredients:</p>
               <div className="space-y-0.5">
                 {item.ingredients.slice(0, 3).map((ingredient, i) => (
-                  <p key={i} className="text-xs text-slate-500 dark:text-slate-400">
+                  <p key={i} className="text-xs text-[#555555]">
                     • {ingredient.food_name} ({ingredient.serving_size} {ingredient.serving_unit})
                   </p>
                 ))}
                 {item.ingredients.length > 3 && (
-                  <p className="text-xs text-slate-400 italic">
+                  <p className="text-xs text-[#a0a0a0] italic">
                     +{item.ingredients.length - 3} more ingredients
                   </p>
                 )}
@@ -190,7 +190,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
             onClick={toggleLike}
             disabled={likesLoading}
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              userLiked ? "text-orange-500" : "text-slate-400 hover:text-orange-500"
+              userLiked ? "text-orange-500" : "text-[#a0a0a0] hover:text-orange-500"
             }`}
           >
             <Flame className={`w-4 h-4 ${userLiked ? "fill-orange-500" : ""}`} />
@@ -200,8 +200,8 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
             onClick={() => setCommentsExpanded(!commentsExpanded)}
             className={`flex items-center gap-1.5 text-sm transition-colors ${
               commentsExpanded
-                ? "text-primary-600 font-medium"
-                : "text-slate-400 hover:text-slate-600"
+                ? "text-[#ccff00] font-medium"
+                : "text-[#a0a0a0] hover:text-[#a0a0a0]"
             }`}
           >
             <MessageCircle className="w-4 h-4" />
@@ -235,27 +235,27 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
                           to={`/profile/${comment.authorProfile?.username || ""}`}
                           className="hover:underline"
                         >
-                          <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                          <span className="text-xs font-semibold text-white">
                             {comment.authorProfile?.display_name || comment.authorProfile?.username || "Unknown User"}
                           </span>
                         </Link>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-[#a0a0a0]">
                           @{comment.authorProfile?.username || "unknown"}
                         </span>
-                        <span className="text-xs text-slate-400">·</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-[#a0a0a0]">·</span>
+                        <span className="text-xs text-[#a0a0a0]">
                           {format(new Date(comment.created_at), "MMM d, h:mm a")}
                         </span>
                         {comment.created_by === user?.id && (
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
-                            className="text-slate-300 hover:text-danger-500 transition-colors ml-auto"
+                            className="text-[#a0a0a0] hover:text-danger-500 transition-colors ml-auto"
                           >
                             <TrashIcon className="w-3 h-3" />
                           </button>
                         )}
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{comment.body}</p>
+                      <p className="text-sm text-slate-700 text-[#a0a0a0]">{comment.body}</p>
                     </div>
                   </div>
                 ))}
@@ -275,7 +275,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
                 type="submit"
                 size="sm"
                 disabled={!commentBody.trim() || addComment.isPending}
-                className="bg-primary-600 px-3"
+                className="bg-[rgba(204,255,0,0.08)]0 px-3"
               >
                 <Send className="w-3.5 h-3.5" />
               </Button>

@@ -174,7 +174,7 @@ export default function ExerciseReactionButtons({
                   onKeyDown={(e) => e.key === "Enter" && handleManualReplace()}
                   className="flex-1 h-8 text-sm"
                 />
-                <Button size="sm" className="h-8 bg-primary-600 hover:bg-primary-700 text-white shrink-0"
+                <Button size="sm" className="h-8 bg-primary-500 hover:bg-primary-400 text-black font-bold shrink-0"
                   onClick={handleManualReplace} disabled={!manualExercise.trim()}>
                   <Check className="w-4 h-4" />
                 </Button>

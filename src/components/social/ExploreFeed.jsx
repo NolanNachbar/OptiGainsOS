@@ -90,13 +90,13 @@ export function ExploreFeed({ friendsOnly = false }) {
 
   if (items.length === 0) {
     return (
-      <Card className="border border-slate-200 dark:border-slate-700 shadow-md">
+      <Card className="border border-[#2a2a2a] shadow-md">
         <CardContent className="py-12 text-center">
-          <Compass className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 mb-1">
+          <Compass className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+          <p className="text-[#555555] mb-1">
             {friendsOnly ? "No posts from friends yet" : "Nothing to discover yet"}
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[#a0a0a0]">
             {friendsOnly
               ? "When your friends share workouts, programs, or recipes, they'll appear here."
               : "Discover public workouts, programs, and recipes from the community."}
@@ -173,7 +173,7 @@ export function ExploreFeed({ friendsOnly = false }) {
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-primary-600"
+              className="flex-1 bg-[rgba(204,255,0,0.08)]0"
               onClick={confirmClone}
               disabled={cloneWorkout.isPending || cloneProgram.isPending}
             >
@@ -233,13 +233,13 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/profile/${username}`}
-                className="font-semibold text-slate-900 dark:text-white hover:text-primary-600 text-sm"
+                className="font-semibold text-white hover:text-[#ccff00] text-sm"
               >
                 {displayName}
               </Link>
-              <span className="text-xs text-slate-400">@{username}</span>
-              <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs text-slate-400">{format(new Date(item.created_at), "MMM d, h:mm a")}</span>
+              <span className="text-xs text-[#a0a0a0]">@{username}</span>
+              <span className="text-xs text-[#a0a0a0]">·</span>
+              <span className="text-xs text-[#a0a0a0]">{format(new Date(item.created_at), "MMM d, h:mm a")}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -247,7 +247,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-primary-600 dark:text-primary-400 border-primary-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-xs"
+                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] dark:hover:bg-[rgba(204,255,0,0.08)] text-xs"
                 onClick={onClone}
                 disabled={isCloning}
               >
@@ -269,18 +269,18 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
 
         {/* Program title + caption */}
         <div className="flex items-start gap-2 mb-2">
-          <TrendingUp className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
+          <TrendingUp className="w-5 h-5 text-[#ccff00] mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <h4 className="font-semibold text-slate-900 dark:text-white">{item.program_title}</h4>
-            {item.caption && <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{item.caption}</p>}
+            <h4 className="font-semibold text-white">{item.program_title}</h4>
+            {item.caption && <p className="text-sm text-[#a0a0a0] mt-1">{item.caption}</p>}
           </div>
         </div>
 
         {/* Program details */}
         {program && (
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 mt-3 space-y-3">
+          <div className="bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg p-3 mt-3 space-y-3">
             <div className="flex flex-wrap gap-2">
-              <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-slate-100 text-slate-700"}>
+              <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-[#202020] text-slate-700"}>
                 {program.difficulty}
               </Badge>
               <Badge variant="outline">
@@ -290,27 +290,27 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600 dark:text-slate-300">
+                <Calendar className="w-4 h-4 text-[#a0a0a0]" />
+                <span className="text-[#a0a0a0] text-[#a0a0a0]">
                   {program.cycle_length}-day cycle
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Repeat className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600 dark:text-slate-300">
+                <Repeat className="w-4 h-4 text-[#a0a0a0]" />
+                <span className="text-[#a0a0a0] text-[#a0a0a0]">
                   {program.num_cycles} cycles
                 </span>
               </div>
             </div>
 
             {program.description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <p className="text-xs text-[#555555] pt-2 border-t border-[#2a2a2a]">
                 {program.description}
               </p>
             )}
 
             {/* View Details button */}
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="pt-2 border-t border-[#2a2a2a]">
               <Button
                 size="sm"
                 variant="outline"
@@ -383,15 +383,15 @@ function ProgramDetailsExpanded({ programId }) {
 
   if (workouts.length === 0) {
     return (
-      <div className="text-center py-4 text-slate-400 text-xs">
+      <div className="text-center py-4 text-[#a0a0a0] text-xs">
         No workouts configured yet
       </div>
     );
   }
 
   return (
-    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-      <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+    <div className="space-y-2 pt-2 border-t border-[#2a2a2a]">
+      <h5 className="text-xs font-semibold text-slate-700 text-[#a0a0a0] uppercase tracking-wide">
         Cycle Template ({workouts.length} days)
       </h5>
       <div className="space-y-1.5 max-h-96 overflow-y-auto">
@@ -444,14 +444,14 @@ function WorkoutDayCard({ workout }) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
+    <div className="bg-[#121212] rounded border border-[#2a2a2a]">
       <div className="p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
               Day {workout.day_number}
             </Badge>
-            <span className="font-medium text-slate-900 dark:text-white text-xs">
+            <span className="font-medium text-white text-xs">
               {workout.title}
             </span>
           </div>
@@ -463,7 +463,7 @@ function WorkoutDayCard({ workout }) {
               size="sm"
               variant="ghost"
               onClick={handleUseAsTemplate}
-              className="h-6 px-2 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+              className="h-6 px-2 text-xs text-[#ccff00] hover:text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)]"
             >
               <Copy className="w-3 h-3 mr-1" />
               Use
@@ -473,7 +473,7 @@ function WorkoutDayCard({ workout }) {
 
         {workout.exercises && workout.exercises.length > 0 && (
           <>
-            <div className="text-slate-500 text-[11px] ml-1 mb-1">
+            <div className="text-[#555555] text-[11px] ml-1 mb-1">
               {workout.exercises.length} exercises
               {!expanded && (
                 <>
@@ -485,7 +485,7 @@ function WorkoutDayCard({ workout }) {
 
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium ml-1"
+              className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium ml-1"
             >
               {expanded ? "Hide exercises" : "Show exercises"}
             </button>
@@ -493,21 +493,21 @@ function WorkoutDayCard({ workout }) {
             {expanded && (
               <div className="mt-2 space-y-1 ml-1">
                 {workout.exercises.map((ex, i) => (
-                  <div key={i} className="flex items-start gap-2 text-[11px] py-1 border-t border-slate-100 dark:border-slate-800">
-                    <span className="w-4 h-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-700 dark:text-primary-300 text-[11px] font-bold shrink-0 mt-0.5">
+                  <div key={i} className="flex items-start gap-2 text-[11px] py-1 border-t border-[#2a2a2a]">
+                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] dark:bg-primary-900 flex items-center justify-center text-[#ccff00] text-[#ccff00] text-[11px] font-bold shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-slate-900 dark:text-white">{ex.name}</div>
+                      <div className="font-medium text-white">{ex.name}</div>
                       {(ex.sets || ex.reps) && (
-                        <div className="text-slate-500">
+                        <div className="text-[#555555]">
                           {ex.sets && `${ex.sets} sets`}
                           {ex.sets && ex.reps && ' × '}
                           {ex.reps && `${ex.reps} reps`}
                         </div>
                       )}
                       {ex.notes && (
-                        <div className="text-slate-400 italic mt-0.5">{ex.notes}</div>
+                        <div className="text-[#a0a0a0] italic mt-0.5">{ex.notes}</div>
                       )}
                     </div>
                   </div>

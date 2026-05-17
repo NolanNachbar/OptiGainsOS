@@ -34,7 +34,6 @@ const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const ProgramDetail = lazy(() => import('./pages/ProgramDetail'));
 const ProgramBuilder = lazy(() => import('./pages/ProgramBuilder'));
 const Social = lazy(() => import('./pages/Social'));
-const Progress = lazy(() => import('./pages/Progress'));
 const StravaCallback = lazy(() => import('./pages/StravaCallback'));
 
 const queryClient = new QueryClient();
@@ -51,7 +50,6 @@ const protectedRoutes = [
   { path: "/quick-workout", name: "QuickWorkout", component: QuickWorkout },
   { path: "/admin", name: "Admin", component: Admin },
   { path: "/social", name: "Social", component: Social },
-  { path: "/progress", name: "Progress", component: Progress },
 ];
 
 function App() {

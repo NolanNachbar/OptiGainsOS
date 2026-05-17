@@ -69,7 +69,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
   };
   const diffStyle = DIFFICULTY_STYLES[workout.difficulty?.toLowerCase()] || {
     label: workout.difficulty || "Unknown",
-    className: "bg-slate-100 text-slate-600 border-slate-200",
+    className: "bg-[#202020] text-[#a0a0a0] border-[#2a2a2a]",
   };
 
   return (
@@ -79,7 +79,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
       transition={{ duration: 0.2 }}
     >
       <div
-        className="group relative overflow-hidden rounded-xl border-l-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-md hover:shadow-lg transition-all duration-200"
+        className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424]/50 shadow-md hover:shadow-lg transition-all duration-200"
         style={{ borderLeftColor: borderColor }}
       >
         <div className="pb-2 pt-4 px-6">
@@ -94,7 +94,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
               </Badge>
               <Badge
                 variant="outline"
-                className="text-xs capitalize text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
+                className="text-xs capitalize text-[#a0a0a0] border-[#2a2a2a] border-[#2a2a2a]"
               >
                 {workout.type}
               </Badge>
@@ -115,27 +115,27 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                   variant="ghost"
                   size="icon"
                   onClick={() => setOpenMenu(!openMenu)}
-                  className="h-7 w-7 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  className="h-7 w-7 text-[#a0a0a0] hover:text-slate-700 dark:hover:text-slate-200"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className="absolute right-0 top-8 bg-white dark:bg-slate-700 rounded-xl shadow-xl border border-slate-200 dark:border-slate-600 py-1 z-20 min-w-[140px]">
+                  <div className="absolute right-0 top-8 bg-[#1a1a1a] bg-[#202020] rounded-xl shadow-xl border border-[#2a2a2a] border-[#2a2a2a] py-1 z-20 min-w-[140px]">
                     <button
                       onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={() => { onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={() => { handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
@@ -151,11 +151,11 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
             )}
           </div>
 
-          <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 mt-1.5 leading-snug">
+          <h3 className="text-base font-bold text-white line-clamp-2 mt-1.5 leading-snug">
             {workout.title}
           </h3>
           {workout.description && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+            <p className="text-xs text-[#555555] line-clamp-2 mt-1 leading-relaxed">
               {workout.description}
             </p>
           )}
@@ -166,13 +166,13 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
           <div className="flex">
             {workout.duration_minutes && (
               <div className="flex-1 flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Duration</span>
-                <span className="text-lg font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">{workout.duration_minutes} min</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Duration</span>
+                <span className="text-lg font-bold tabular-nums text-white mt-0.5">{workout.duration_minutes} min</span>
               </div>
             )}
-            <div className={`flex-1 flex flex-col ${workout.duration_minutes ? 'border-l border-slate-100 dark:border-slate-700 pl-4' : ''}`}>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Exercises</span>
-              <span className="text-lg font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">{workout.exercises?.length || 0}</span>
+            <div className={`flex-1 flex flex-col ${workout.duration_minutes ? 'border-l border-[#2a2a2a] pl-4' : ''}`}>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Exercises</span>
+              <span className="text-lg font-bold tabular-nums text-white mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1",
                 reaction === "like"
                   ? "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:border-emerald-600"
-                  : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-400",
+                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-400",
               ].join(" ")}
             >
               <ThumbsUp className="w-3.5 h-3.5" />
@@ -202,7 +202,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1",
                 reaction === "dislike"
                   ? "bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600"
-                  : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 hover:text-red-500",
+                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 hover:text-red-500",
               ].join(" ")}
               aria-label="Not for me"
             >

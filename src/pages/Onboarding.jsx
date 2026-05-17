@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_GOALS, EQUIPMENT_OPTIONS, ACTIVITY_LEVELS, SEX_OPTIONS } from "@/lib/constants";
 import { calculateFormulaTDEE, calculateMacroSplit, suggestProtein } from "@/utils/coachingUtils";
 import { ArrowRight, ArrowLeft, SkipForward, User } from "lucide-react";
+import Logo from "@/components/Logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateWorkoutPlan } from "../ml/workoutModel";
 import { format } from "date-fns";
@@ -153,33 +154,43 @@ export default function Onboarding() {
     }
   };
 
+  const optionBtn = (active) =>
+    `p-4 rounded-lg border-2 text-left transition-all ${
+      active
+        ? 'border-[#ccff00] bg-[rgba(204,255,0,0.15)] text-[#ccff00]'
+        : 'border-[#2a2a2a] bg-[#202020] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-[#a0a0a0]'
+    }`;
+
+  const toggleRow = (active) =>
+    `flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer bg-[#202020] border-[#2a2a2a]`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl border-none shadow-lg">
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="text-center pb-2">
-          <img src={`${import.meta.env.BASE_URL}sisyphus.svg`} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary-700">
-            Welcome to Sisyphus' Schedule
+          <Logo className="w-16 h-16 mx-auto mb-4" />
+          <CardTitle className="text-3xl font-bold text-primary-500 tracking-tight">
+            Welcome to Vektor
           </CardTitle>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">Let's personalize your fitness journey</p>
+          <p className="text-[#a0a0a0] mt-2">Let's personalize your fitness journey</p>
           <div className="flex gap-2 justify-center mt-4">
             {[1, 2, 3].map(i => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === step ? 'w-8 bg-primary-600' : 'w-1.5 bg-slate-300'
+                  i === step ? 'w-8 bg-primary-500' : 'w-1.5 bg-[#333]'
                 }`}
               />
             ))}
           </div>
-          <p className="text-xs text-slate-400 mt-2">Step {step} of 3</p>
+          <p className="text-xs text-slate-500 mt-2">Step {step} of 3</p>
         </CardHeader>
 
         <CardContent className="pt-6">
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <Label className="text-base font-semibold mb-3 block">Choose a username</Label>
+                <Label className="text-base font-semibold mb-3 block text-white">Choose a username</Label>
                 <Input
                   value={formData.username}
                   onChange={(e) => {
@@ -189,11 +200,13 @@ export default function Onboarding() {
                   placeholder="your_username"
                   maxLength={20}
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">3-20 characters: letters, numbers, underscores</p>
+                <p className="text-xs text-[#555555] mt-1.5">3-20 characters: letters, numbers, underscores</p>
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-3 block">Display Name <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Label className="text-base font-semibold mb-3 block text-white">
+                  Display Name <span className="text-slate-500 font-normal">(optional)</span>
+                </Label>
                 <Input
                   value={formData.display_name}
                   onChange={(e) => setFormData({...formData, display_name: e.target.value})}
@@ -202,7 +215,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-3 block dark:text-slate-400 dark:bg-slate-800">Profile Visibility</Label>
+                <Label className="text-base font-semibold mb-3 block text-white">Profile Visibility</Label>
                 <div className="grid gap-3">
                   {[
                     { value: "public", label: "Public", desc: "Searchable and visible to everyone" },
@@ -212,14 +225,10 @@ export default function Onboarding() {
                     <button
                       key={option.value}
                       onClick={() => setFormData({...formData, privacy_level: option.value})}
-                      className={`p-4 rounded-xl border-2 text-left transition-all dark:text-slate-400 ${
-                        formData.privacy_level === option.value
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-slate-200 hover:border-primary-300 dark:border-slate-700 dark:hover:border-primary-600 dark:hover:bg-slate-700'
-                      }`}
+                      className={optionBtn(formData.privacy_level === option.value)}
                     >
                       <div className="font-semibold">{option.label}</div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">{option.desc}</div>
+                      <div className="text-sm text-[#555555]">{option.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -230,7 +239,7 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <Label className="text-base font-semibold mb-3 block ">What's your fitness level?</Label>
+                <Label className="text-base font-semibold mb-3 block text-white">What's your fitness level?</Label>
                 <div className="grid gap-3">
                   {[
                     { value: "beginner", label: "Beginner", desc: "New to working out" },
@@ -240,22 +249,18 @@ export default function Onboarding() {
                     <button
                       key={option.value}
                       onClick={() => setFormData({...formData, fitness_level: option.value})}
-                      className={`p-4 rounded-xl border-2 text-left transition-all dark:text-slate-400 ${
-                        formData.fitness_level === option.value
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-slate-200 hover:border-primary-300 dark:border-slate-700 dark:hover:border-primary-600 dark:hover:bg-slate-700'
-                      }`}
+                      className={optionBtn(formData.fitness_level === option.value)}
                     >
                       <div className="font-semibold">{option.label}</div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">{option.desc}</div>
+                      <div className="text-sm text-[#555555]">{option.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-1 block">What are your goals?</Label>
-                <p className="text-sm text-slate-500 mb-3">Select all that apply</p>
+                <Label className="text-base font-semibold mb-1 block text-white">What are your goals?</Label>
+                <p className="text-sm text-[#555555] mb-3">Select all that apply</p>
                 <div className="grid gap-3">
                   {[
                     { value: "weight_loss", label: "Weight Loss", desc: "Burn fat, get leaner" },
@@ -267,24 +272,20 @@ export default function Onboarding() {
                     <button
                       key={option.value}
                       onClick={() => handleGoalToggle(option.value)}
-                      className={`p-4 rounded-xl border-2 text-left transition-all dark:text-slate-400 ${
-                        formData.primary_goal.includes(option.value)
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-slate-200 hover:border-primary-300 dark:border-slate-700 dark:hover:border-primary-600 dark:hover:bg-slate-700'
-                      }`}
+                      className={optionBtn(formData.primary_goal.includes(option.value))}
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-semibold">{option.label}</div>
-                          <div className="text-sm text-slate-500">{option.desc}</div>
+                          <div className="text-sm text-[#555555]">{option.desc}</div>
                         </div>
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
                           formData.primary_goal.includes(option.value)
-                            ? 'border-primary-600 bg-primary-600'
-                            : 'border-slate-300'
+                            ? 'border-primary-500 bg-primary-500'
+                            : 'border-[#444]'
                         }`}>
                           {formData.primary_goal.includes(option.value) && (
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
@@ -300,7 +301,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <Label className="text-base font-semibold mb-3 block">What equipment do you have access to?</Label>
+                <Label className="text-base font-semibold mb-3 block text-white">What equipment do you have access to?</Label>
                 <div className="grid gap-3">
                   {EQUIPMENT_OPTIONS.map(option => {
                     const selected = formData.available_equipment.includes(option.value);
@@ -309,11 +310,7 @@ export default function Onboarding() {
                         key={option.value}
                         type="button"
                         onClick={() => handleEquipmentToggle(option.value)}
-                        className={`flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
-                          selected
-                            ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
-                            : "border-slate-200 hover:border-primary-300 dark:border-slate-700"
-                        }`}
+                        className={`flex items-center gap-3 ${optionBtn(selected)}`}
                       >
                         <Checkbox
                           checked={selected}
@@ -328,7 +325,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-3 block dark:hover:border-primary-600 dark:hover:bg-slate-700">Preferred workout duration</Label>
+                <Label className="text-base font-semibold mb-3 block text-white">Preferred workout duration</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: "15 min", label: "15 min" },
@@ -339,11 +336,7 @@ export default function Onboarding() {
                     <button
                       key={option.value}
                       onClick={() => setFormData({...formData, workout_duration_preference: option.value})}
-                      className={`p-4 rounded-xl border-2 transition-all dark:text-slate-400${
-                        formData.workout_duration_preference === option.value
-                          ? 'border-primary-600 bg-primary-50 text-primary-700'
-                          : 'border-slate-200 hover:border-primary-300 dark:hover:border-primary-600 dark:hover:bg-slate-700'
-                      }`}
+                      className={optionBtn(formData.workout_duration_preference === option.value)}
                     >
                       {option.label}
                     </button>
@@ -352,10 +345,10 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-1 block">
-                  Days per week: {formData.days_per_week}
+                <Label className="text-base font-semibold mb-1 block text-white">
+                  Days per week: <span className="text-primary-500">{formData.days_per_week}</span>
                   {formData.days_per_week === 6 && (
-                    <span className="text-xs text-amber-500 font-normal ml-2">⚠️ High frequency — make sure you're recovering well</span>
+                    <span className="text-xs text-amber-500 font-normal ml-2">High frequency — make sure you're recovering well</span>
                   )}
                 </Label>
                 <input
@@ -364,27 +357,27 @@ export default function Onboarding() {
                   max="6"
                   value={formData.days_per_week}
                   onChange={(e) => setFormData({...formData, days_per_week: parseInt(e.target.value)})}
-                  className="w-full accent-primary-600 mt-2"
+                  className="w-full accent-primary-500 mt-2"
                 />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
                   <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
                 </div>
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-1 block">
-                  Exercises per day: {formData.exercises_per_day ?? "Auto"}
+                <Label className="text-base font-semibold mb-1 block text-white">
+                  Exercises per day: <span className="text-primary-500">{formData.exercises_per_day ?? "Auto"}</span>
                 </Label>
                 <p className="text-sm text-slate-500 mb-3">
                   Leave on Auto to match your workout duration, or set a specific number to keep things simple.
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={() => setFormData({...formData, exercises_per_day: null})}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all dark:text-slate-400${
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.exercises_per_day === null
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 text-slate-600 hover:border-primary-300 dark:hover:border-primary-600 dark:hover:bg-slate-700'
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-500'
+                        : 'border-[#2a2a2a] text-slate-400 hover:border-primary-500/40'
                     }`}
                   >
                     Auto
@@ -395,8 +388,8 @@ export default function Onboarding() {
                       onClick={() => setFormData({...formData, exercises_per_day: n})}
                       className={`w-10 h-10 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.exercises_per_day === n
-                          ? 'border-primary-600 bg-primary-50 text-primary-700'
-                          : 'border-slate-200 text-slate-600 hover:border-primary-300'
+                          ? 'border-primary-500 bg-primary-500/10 text-primary-500'
+                          : 'border-[#2a2a2a] text-slate-400 hover:border-primary-500/40'
                       }`}
                     >
                       {n}
@@ -406,33 +399,29 @@ export default function Onboarding() {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-base font-semibold block">Extra Options</Label>
+                <Label className="text-base font-semibold block text-white">Extra Options</Label>
                 <div
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.include_cardio ? 'border-primary-600 bg-primary-50' : 'border-slate-200 hover:border-primary-300'
-                  }`}
+                  className={toggleRow(formData.include_cardio)}
                   onClick={() => setFormData({...formData, include_cardio: !formData.include_cardio})}
                 >
                   <div>
-                    <div className="font-semibold dark:text-slate-500">Include Cardio Finisher</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-500">Add a cardio exercise at the end of each workout</div>
+                    <div className="font-semibold text-white">Include Cardio Finisher</div>
+                    <div className="text-sm text-slate-500">Add a cardio exercise at the end of each workout</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-primary-600' : 'bg-slate-300'}`}>
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-primary-500' : 'bg-[#333]'}`}>
                     <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.include_cardio ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
 
                 <div
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.skip_deload ? 'border-primary-600 bg-primary-50' : 'border-slate-200 hover:border-primary-300'
-                  }`}
+                  className={toggleRow(formData.skip_deload)}
                   onClick={() => setFormData({...formData, skip_deload: !formData.skip_deload})}
                 >
                   <div>
-                    <div className="font-semibold dark:text-slate-500">Skip Deload Weeks</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-500">Disable automatic recovery weeks (not recommended for beginners)</div>
+                    <div className="font-semibold text-white">Skip Deload Weeks</div>
+                    <div className="text-sm text-slate-500">Disable automatic recovery weeks (not recommended for beginners)</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-primary-600' : 'bg-slate-300'}`}>
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-primary-500' : 'bg-[#333]'}`}>
                     <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.skip_deload ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
@@ -445,7 +434,7 @@ export default function Onboarding() {
               <Button
                 variant="outline"
                 onClick={() => setStep(step - 1)}
-                className="flex-1"
+                className="flex-1 border-[#2a2a2a] text-white hover:bg-[#222] hover:text-white"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -454,7 +443,7 @@ export default function Onboarding() {
             {step < 3 ? (
               <Button
                 onClick={() => setStep(step + 1)}
-                className="flex-1 bg-primary-600 hover:bg-primary-700"
+                className="flex-1 bg-primary-500 hover:bg-primary-400 text-black font-bold"
                 disabled={
                   (step === 1 && (!formData.username || formData.username.length < 3)) ||
                   (step === 2 && (!formData.fitness_level || !formData.primary_goal.length))
@@ -466,7 +455,7 @@ export default function Onboarding() {
             ) : (
               <Button
                 onClick={handleSubmit}
-                className="flex-1 bg-primary-600 hover:bg-primary-700"
+                className="flex-1 bg-primary-500 hover:bg-primary-400 text-black font-bold"
               >
                 Complete Setup
                 <ArrowRight className="w-4 h-4 ml-2" />

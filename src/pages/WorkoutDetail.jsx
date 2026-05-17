@@ -749,11 +749,11 @@ export default function WorkoutDetail() {
                   <div className="flex rounded-full overflow-hidden border border-slate-200 text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-primary-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-primary-500 text-black font-bold" : "bg-white text-slate-500 hover:bg-slate-50"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-primary-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-primary-500 text-black font-bold" : "bg-white text-slate-500 hover:bg-slate-50"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -937,7 +937,7 @@ export default function WorkoutDetail() {
                   <Card key={index} className="bg-slate-50">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-black font-bold flex-shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1">

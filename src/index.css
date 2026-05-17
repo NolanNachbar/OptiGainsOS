@@ -5,57 +5,63 @@
 @tailwind utilities;
 
 :root {
-  --color-bg: #f4f4f6;
-  --color-surface: #ffffff;
-  --color-border: #e5e5ea;
-  --color-text-primary: #111118;
-  --color-text-secondary: #636370;
-  --color-text-muted: #9898a8;
-  --color-brand: #5d3cc7;
-  --color-action-dark: #18181f;
-  --color-cardio: #d97706;
-  --color-positive: #16a34a;
-  --color-danger: #dc2626;
+  --color-bg: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-2: #202020;
+  --color-elevated: #242424;
+  --color-border: #2a2a2a;
+  --color-border-soft: #222222;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #555555;
+  --color-brand: #ccff00;
+  --color-action-dark: #121212;
+  --color-cardio: #f97316;
+  --color-positive: #22c55e;
+  --color-danger: #ef4444;
 }
 
-/* Base styles */
+/* Force dark mode — Vektor is always dark */
 html {
-  @apply bg-slate-50 transition-colors duration-100;
+  @apply bg-[#121212] transition-colors duration-100;
 }
 
 html.dark {
-  @apply bg-slate-950;
+  background-color: #121212;
   color: white;
 }
 
 body {
-  @apply antialiased font-sans transition-colors duration-100 bg-slate-50 text-slate-900;
-  font-size: small;
+  @apply antialiased font-sans transition-colors duration-100;
+  background-color: #121212;
+  color: white;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 html.dark body {
-  @apply bg-slate-950 text-white;
+  background-color: #121212;
+  color: white;
 }
 
-/* Dark mode body */
 p {
-  @apply text-slate-700 dark:text-white;
+  @apply dark:text-white;
 }
 
-/* Custom scrollbar for webkit browsers */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-100 dark:bg-slate-800 rounded-full;
+  @apply bg-[#1a1a1a] rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+  @apply bg-[#333333] rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400 dark:bg-purple-600;
+  background-color: #ccff00;
 }

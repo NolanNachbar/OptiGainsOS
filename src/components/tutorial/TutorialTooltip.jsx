@@ -105,7 +105,7 @@ const TutorialTooltip = forwardRef(function TutorialTooltip({
           )}
           <Button
             onClick={onNext}
-            className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-1"
+            className="bg-primary-500 hover:bg-primary-400 text-black font-bold flex items-center gap-1"
           >
             {isLastStep ? "Start Training!" : "Next"}
             {!isLastStep && <ChevronRight className="w-4 h-4" />}
