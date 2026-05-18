@@ -90,7 +90,7 @@ export function LeaderboardsContent() {
             <div className="py-5 text-center space-y-1">
               <Dumbbell className="w-6 h-6 text-[#a0a0a0] mx-auto mb-2" />
               <p className="text-xs text-[#a0a0a0]">Select an exercise to see the leaderboard</p>
-              <p className="text-[11px] text-[#a0a0a0]">Exercises are pulled from your workout history</p>
+              <p className="text-xs text-[#a0a0a0]">Exercises are pulled from your workout history</p>
             </div>
           ) : isLoading ? (
             <div className="flex justify-center py-8"><LoadingSpinner /></div>
@@ -189,7 +189,7 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
       {/* Rank icon / YOU badge */}
       <div className="w-6 shrink-0 flex items-center justify-center">
         {isCurrentUser ? (
-          <span className="text-[11px] font-bold bg-[#ccff00] text-black font-bold px-1 py-0.5 rounded">YOU</span>
+          <span className="text-xs font-bold bg-[#ccff00] text-black font-bold px-1 py-0.5 rounded">YOU</span>
         ) : RankIcon ? (
           <RankIcon className={`w-4 h-4 ${rankColors[rank]}`} />
         ) : (
@@ -206,7 +206,7 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
         }`}>
           {entry.display_name || entry.username}
         </p>
-        <p className="text-[11px] text-[#a0a0a0] text-left">{entry.max_weight} lbs</p>
+        <p className="text-xs text-[#a0a0a0] text-left">{entry.max_weight} lbs</p>
       </div>
 
       {/* Rank number */}

@@ -183,7 +183,7 @@ export default function Onboarding() {
               />
             ))}
           </div>
-          <p className="text-[11px] text-[#555555] mt-1.5">Step {step} of 3</p>
+          <p className="text-xs text-[#555555] mt-1.5">Step {step} of 3</p>
         </CardHeader>
 
         <CardContent className="pt-6">

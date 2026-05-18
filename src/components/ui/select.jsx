@@ -35,7 +35,7 @@ const SelectTrigger = React.forwardRef(({ className = "", children, ...props }, 
       type="button"
       ref={mergedRef}
       onClick={() => setOpen(!open)}
-      className={`flex h-[38px] w-full items-center justify-between rounded-[10px] border border-transparent bg-[#151515] px-3 text-[14px] text-white placeholder:text-[#555555] focus:outline-none focus:border-[#ccff00] focus:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-[38px] w-full items-center justify-between rounded-xl border border-transparent bg-[#151515] px-3 text-[14px] text-white placeholder:text-[#555555] focus:outline-none focus:border-[#ccff00] focus:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -97,7 +97,7 @@ const SelectContent = ({ className = "", children, ...props }) => {
     <>
       <div className="fixed inset-0 z-[10001]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10002] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
+        className={`fixed z-[10002] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
         style={style}
         {...props}
       >

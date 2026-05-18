@@ -68,7 +68,7 @@ export default function WorkoutLoggingHeader({
               {/* Workout Timer */}
               {startTime && (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] md:text-xs uppercase text-[#555555] font-medium tracking-wide">Workout</span>
+                  <span className="text-xs md:text-xs uppercase text-[#555555] font-medium tracking-wide">Workout</span>
                   <div className="flex items-center gap-1 font-mono">
                     <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#ccff00] flex-shrink-0" />
                     <span className="font-semibold text-white text-sm md:text-base">{formatTime(elapsedTime)}</span>
@@ -80,7 +80,7 @@ export default function WorkoutLoggingHeader({
               {restTimer !== null && restTimer >= 0 && (
                 <>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] md:text-xs uppercase text-[#555555] font-medium tracking-wide">Rest</span>
+                    <span className="text-xs md:text-xs uppercase text-[#555555] font-medium tracking-wide">Rest</span>
                     <div className="flex items-center gap-1 font-mono">
                       <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-[#555555]'}`} />
                       <span className={`font-semibold text-sm md:text-base ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-white'}`}>

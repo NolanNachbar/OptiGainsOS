@@ -58,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-[38px] w-full items-center rounded-[10px] border border-transparent bg-[#151515] pr-3 focus-within:border-[#ccff00] focus-within:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] transition-[border-color,box-shadow] duration-150"
+      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-[#151515] pr-3 focus-within:border-[#ccff00] focus-within:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] transition-[border-color,box-shadow] duration-150"
     >
       <input
         type="text"
@@ -84,7 +84,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
             <>
               <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
               <div
-                className="fixed z-[10200] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1"
+                className="fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1"
                 style={dropdownStyle}
               >
                 {filtered.length > 0 ? (
@@ -154,7 +154,7 @@ const ComboboxContent = ({ className = "", children }) => {
     <>
       <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10200] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
+        className={`fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
         style={style}
       >
         {filtered.length > 0 ? filtered : (

@@ -261,11 +261,11 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             return (
               <div key={mt}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-[#555555] uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[#555555] uppercase tracking-wider">
                     {MEAL_LABELS[mt]}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[#a0a0a0]">{inst.total.calories} cal</span>
+                    <span className="text-xs text-[#a0a0a0]">{inst.total.calories} cal</span>
                     <button
                       onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay, mt), mealType: mt })}
                       className="p-0.5 rounded hover:bg-[#2a2a2a]  text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
@@ -290,7 +290,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                         <div className="text-sm font-medium text-white  leading-tight break-words">
                           {food.name}
                         </div>
-                        <div className="text-[11px] text-[#a0a0a0] mt-0.5">{food.serving_size}</div>
+                        <div className="text-xs text-[#a0a0a0] mt-0.5">{food.serving_size}</div>
                       </div>
                       <div className="text-right shrink-0 ml-3">
                         <div className="text-xs font-semibold text-[#a0a0a0] text-[#a0a0a0]">{food.calories} cal</div>
@@ -376,7 +376,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                     >
                       <div>
                         <div className="text-sm font-medium text-white ">{food.name}</div>
-                        <div className="text-[11px] text-[#a0a0a0]">{food.serving_size}</div>
+                        <div className="text-xs text-[#a0a0a0]">{food.serving_size}</div>
                       </div>
                       <div className="text-right text-xs shrink-0 ml-3">
                         <div className="text-[#555555]">{food.calories} cal</div>

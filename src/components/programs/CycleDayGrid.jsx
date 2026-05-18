@@ -125,7 +125,7 @@ export default function CycleDayGrid({
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (
-                        <p className="text-[11px] text-[#555555] mb-0.5">
+                        <p className="text-xs text-[#555555] mb-0.5">
                           {format(calendarDate, "MMM d")}
                         </p>
                       )}
@@ -152,7 +152,7 @@ export default function CycleDayGrid({
                       {!compact && hasCardio && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {workout.cardio_sessions.map((c, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-[11px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
                               <Activity className="w-2.5 h-2.5" />
                               {c.title}
                             </span>
@@ -242,16 +242,16 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
           {hasExercises && (
             <>
               <p className="text-sm font-medium text-white truncate">{workout.title}</p>
-              <p className="text-[11px] text-[#555555] mt-0.5">{workout.exercises.length} exercises</p>
+              <p className="text-xs text-[#555555] mt-0.5">{workout.exercises.length} exercises</p>
               {workout.type && (
-                <Badge variant="outline" className="text-[11px] mt-1 capitalize">{workout.type}</Badge>
+                <Badge variant="outline" className="text-xs mt-1 capitalize">{workout.type}</Badge>
               )}
             </>
           )}
           {hasCardio && (
             <div className="flex flex-wrap gap-0.5 mt-1.5">
               {workout.cardio_sessions.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-0.5 text-[11px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
+                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
                   <Activity className="w-2.5 h-2.5" />
                   {c.title}
                 </span>

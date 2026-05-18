@@ -65,6 +65,13 @@ export default function WorkoutApprovalModal({ schedule, onApprove, onCancel, la
     ? recoveryScore >= 4 ? "High" : recoveryScore >= 3 ? "Moderate" : "Low"
     : null;
 
+  // "Why" reasoning sentence
+  const goalMap = { weight_loss: "fat loss", muscle_gain: "muscle gain", endurance: "endurance", general_fitness: "general fitness", flexibility: "flexibility" };
+  const primaryGoal = Array.isArray(profile?.primary_goal) ? profile.primary_goal[0] : profile?.primary_goal;
+  const goalLabel = goalMap[primaryGoal] || "your goals";
+  const daysPerWeek = profile?.days_per_week || schedule.length;
+  const whyReason = `${daysPerWeek} sessions/week targeting ${goalLabel}${recoveryLabel === "Low" ? " — reduced intensity based on recovery" : recoveryLabel === "High" ? " — full intensity based on recovery" : ""}.`;
+
   const handleReplaceExercise = (dayIndex, exerciseIndex) => {
     const allExerciseNames = editedExercises.flat().map(ex => ex.name);
     const exercise = editedExercises[dayIndex][exerciseIndex];
@@ -137,14 +144,14 @@ export default function WorkoutApprovalModal({ schedule, onApprove, onCancel, la
           </div>
 
           {/* ML summary — focus areas, volume, recovery */}
-          <div className="mt-3 flex flex-wrap gap-3 p-3 bg-[#1a1a1a] 50 rounded-lg border border-[#2a2a2a] ">
+          <div className="mt-3 flex flex-wrap gap-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
             <div className="flex-1 min-w-[120px]">
               <p className="text-xs font-semibold uppercase tracking-widest text-[#555555] mb-0.5">Focus</p>
-              <p className="text-xs text-[#a0a0a0]  font-medium">{focusAreas.join(", ") || "Full Body"}</p>
+              <p className="text-xs text-[#a0a0a0] font-medium">{focusAreas.join(", ") || "Full Body"}</p>
             </div>
             <div className="flex-1 min-w-[100px]">
               <p className="text-xs font-semibold uppercase tracking-widest text-[#555555] mb-0.5">Volume</p>
-              <p className="text-xs text-[#a0a0a0]  font-medium">{volumeLabel}</p>
+              <p className="text-xs text-[#a0a0a0] font-medium">{volumeLabel}</p>
             </div>
             {recoveryLabel && (
               <div className="flex-1 min-w-[80px]">
@@ -152,6 +159,10 @@ export default function WorkoutApprovalModal({ schedule, onApprove, onCancel, la
                 <p className={`text-xs font-medium ${recoveryLabel === "High" ? "text-[#4ade80]" : recoveryLabel === "Low" ? "text-[#f87171]" : "text-[#fbbf24]"}`}>{recoveryLabel}</p>
               </div>
             )}
+            <div className="w-full">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#555555] mb-0.5">Why</p>
+              <p className="text-xs text-[#a0a0a0] font-medium">{whyReason}</p>
+            </div>
           </div>
 
           {/* Phase banner — only shown when saving as program */}
@@ -209,7 +220,7 @@ export default function WorkoutApprovalModal({ schedule, onApprove, onCancel, la
 
         <div className="space-y-6 p-6 overflow-y-auto overscroll-contain flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
           {schedule.map((day, dayIndex) => (
-            <Card key={dayIndex} className="border-2 border-[#2a2a2a]">
+            <Card key={dayIndex} className="border border-[#2a2a2a]">
               <CardHeader className="bg-[#1a1a1a] pb-3">
                 <CardTitle className="text-lg">{day.focus}</CardTitle>
                 <p className="text-sm text-[#555555] flex items-center gap-1 mt-0.5">

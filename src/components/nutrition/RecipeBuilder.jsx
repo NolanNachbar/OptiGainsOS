@@ -136,13 +136,13 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </button>
                   <button
                     onClick={() => handleLog(recipe)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold text-[11px] font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold text-xs font-bold transition-colors"
                   >
                     <UtensilsCrossed className="w-2.5 h-2.5" />Log
                   </button>
                 </div>
               </div>
-              <div className="flex gap-3 text-[11px] font-mono">
+              <div className="flex gap-3 text-xs font-mono">
                 <span className="text-white font-bold">{Math.round(perServing.calories)}<span className="text-[#a0a0a0] font-normal ml-0.5">cal</span></span>
                 <span className="text-[#60a5fa]">P{perServing.protein_grams}g</span>
                 <span className="text-[#fbbf24]">C{perServing.carbs_grams}g</span>
@@ -220,7 +220,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                       <p className="text-xs text-[#555555] mt-0.5 truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-[11px] font-semibold bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] rounded-md px-1.5 py-0.5">
+                  <span className="shrink-0 text-xs font-semibold bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] rounded-md px-1.5 py-0.5">
                     {recipe.servings}×
                   </span>
                 </div>

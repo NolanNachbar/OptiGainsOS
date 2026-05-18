@@ -214,7 +214,7 @@ export default function ExerciseReactionButtons({
                     key={key}
                     type="button"
                     onClick={() => handlePickAlternative(alt)}
-                    className="w-full text-left p-3.5 rounded-xl border-2 border-[#2a2a2a]  hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all group"
+                    className="w-full text-left p-3.5 rounded-xl border border-[#2a2a2a] hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all group"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">

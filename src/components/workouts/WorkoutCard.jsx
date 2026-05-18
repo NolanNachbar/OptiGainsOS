@@ -108,7 +108,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className="absolute right-0 top-8 bg-[#202020] rounded-[10px] border border-[#2a2a2a] py-1 z-20 min-w-[140px]">
+                  <div className="absolute right-0 top-8 bg-[#202020] rounded-xl border border-[#2a2a2a] py-1 z-20 min-w-[140px]">
                     <button
                       onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-white hover:bg-[#242424] flex items-center gap-2"

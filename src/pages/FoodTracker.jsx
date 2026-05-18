@@ -945,7 +945,7 @@ const handleSaveMealTemplate = () => {
 
         {/* ── Main scrollable content ── */}
         <div className="flex-1 min-w-0">
-          <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-8">
+          <div className="max-w-3xl mx-auto px-4 md:px-8 py-4 md:py-5 space-y-5">
 
             {/* Calorie ring + macro progress bars */}
             {(() => {
@@ -954,33 +954,32 @@ const handleSaveMealTemplate = () => {
               const calsGoal = profile?.daily_calorie_goal || 2000;
               const calsRemaining = calsGoal - calsConsumed;
               const calsPct = Math.min(1, calsConsumed / calsGoal);
-              const circumference = 2 * Math.PI * 45;
               const macroRows = [
                 { label: 'Protein', consumed: totals.protein, goal: profile?.daily_protein_goal || 150, unit: 'g', barColor: 'bg-[#ccff00]', textColor: 'text-[#ccff00]' },
                 { label: 'Carbohydrates', consumed: totals.carbs, goal: profile?.daily_carbs_goal || 200, unit: 'g', barColor: 'bg-[#ccff00]/70', textColor: 'text-[#ccff00]' },
                 { label: 'Dietary Fats', consumed: totals.fats, goal: profile?.daily_fats_goal || 65, unit: 'g', barColor: 'bg-[#ccff00]/50', textColor: 'text-[#ccff00]' },
               ];
               return (
-                <div className="flex items-center gap-6 md:gap-10 p-4 md:p-6 rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a]" data-tutorial="nutrition-rings">
+                <div className="flex items-center gap-4 md:gap-8 p-3 md:p-4 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]" data-tutorial="nutrition-rings">
                   {/* Calorie ring */}
-                  <div className="relative shrink-0" style={{ width: 112, height: 112 }}>
-                    <svg width="112" height="112" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="56" cy="56" r="45" stroke="#2a2a2a" strokeWidth="8" fill="transparent" />
+                  <div className="relative shrink-0" style={{ width: 96, height: 96 }}>
+                    <svg width="96" height="96" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="48" cy="48" r="38" stroke="#2a2a2a" strokeWidth="7" fill="transparent" />
                       <circle
-                        cx="56" cy="56" r="45"
+                        cx="48" cy="48" r="38"
                         stroke={calsConsumed > calsGoal ? '#ef4444' : '#ccff00'}
-                        strokeWidth="8"
+                        strokeWidth="7"
                         fill="transparent"
-                        strokeDasharray={`${calsPct * circumference} ${circumference}`}
+                        strokeDasharray={`${calsPct * (2 * Math.PI * 38)} ${2 * Math.PI * 38}`}
                         strokeLinecap="round"
                         style={{ transition: 'stroke-dasharray 0.5s ease' }}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="font-mono text-xl font-bold leading-none text-white">
+                      <span className="font-mono text-lg font-bold leading-none text-white">
                         {isToday ? Math.abs(Math.round(calsRemaining)) : Math.round(calsConsumed)}
                       </span>
-                      <span className="text-[11px] font-bold text-[#555555] uppercase mt-1 tracking-wider">
+                      <span className="text-xs font-bold text-[#555555] uppercase mt-0.5 tracking-wider">
                         {isToday ? (calsRemaining < 0 ? 'over' : 'kcal left') : 'consumed'}
                       </span>
                     </div>
@@ -1069,19 +1068,19 @@ const handleSaveMealTemplate = () => {
                             <div className="col-span-5 md:col-span-4 grid grid-cols-4 gap-1 text-right items-center">
                               <div className="flex flex-col">
                                 <span className="font-mono text-xs font-bold text-white">{entry.calories}</span>
-                                <span className="text-[11px] uppercase text-[#a0a0a0] tracking-tighter">Cal</span>
+                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Cal</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-mono text-xs font-bold text-[#60a5fa]">{entry.protein_grams}</span>
-                                <span className="text-[11px] uppercase text-[#a0a0a0] tracking-tighter">Pro</span>
+                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Pro</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-mono text-xs font-bold text-[#fbbf24]">{entry.carbs_grams}</span>
-                                <span className="text-[11px] uppercase text-[#a0a0a0] tracking-tighter">Car</span>
+                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Car</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-mono text-xs font-bold text-[#f87171]">{entry.fats_grams}</span>
-                                <span className="text-[11px] uppercase text-[#a0a0a0] tracking-tighter">Fat</span>
+                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Fat</span>
                               </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1107,7 +1106,7 @@ const handleSaveMealTemplate = () => {
                       </>
                     ) : (
                       <button
-                        className="w-full py-7 flex items-center justify-center gap-2 text-[#a0a0a0] hover:text-[#ccff00] hover:text-[#ccff00] hover:bg-[#242424] transition-colors group"
+                        className="w-full py-4 flex items-center justify-center gap-2 text-[#a0a0a0] hover:text-[#ccff00] hover:text-[#ccff00] hover:bg-[#242424] transition-colors group"
                         onClick={() => {
                           setNewFood(prev => ({ ...prev, meal_type: mealType }));
                           setShowAddDialog(true);
@@ -1138,9 +1137,9 @@ const handleSaveMealTemplate = () => {
             {/* Mobile: sidebar content shown below meals */}
             <div className="lg:hidden space-y-6 pt-2">
               {/* Goals card */}
-              <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-5">
+              <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] font-bold tracking-widest text-[#ccff00] uppercase">NUTRITION GOALS</span>
+                  <span className="text-xs font-bold tracking-widest text-[#ccff00] uppercase">NUTRITION GOALS</span>
                   <button onClick={() => setShowGoalsModal(true)} className="text-[#a0a0a0] hover:text-white transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -1162,7 +1161,7 @@ const handleSaveMealTemplate = () => {
               <MealTemplates compact />
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold tracking-widest text-[#555555] uppercase">Recipes</span>
+                  <span className="text-xs font-bold tracking-widest text-[#555555] uppercase">Recipes</span>
                   <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-xs font-bold text-[#ccff00] uppercase tracking-widest">
                     <Plus className="w-3 h-3" />New
                   </button>
@@ -1191,7 +1190,7 @@ const handleSaveMealTemplate = () => {
 
             {/* 7-day trend — always visible at top */}
             <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 pt-3 pb-1">
-              <div className="text-[11px] font-bold tracking-widest text-[#555555] uppercase mb-1">7-Day Trend</div>
+              <div className="text-xs font-bold tracking-widest text-[#555555] uppercase mb-1">7-Day Trend</div>
               {calorieTrend.some(d => d.calories > 0) ? (
                 <div className="w-full">
                   <ResponsiveContainer width="100%" height={112}>
@@ -1213,7 +1212,7 @@ const handleSaveMealTemplate = () => {
                       />
                       {/* Per-day goal as a dashed line */}
                       <Line type="monotone" dataKey="goal" stroke="#4b5563" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
-                      <Line type="monotone" dataKey="calories" stroke="#7c3aed" strokeWidth={2} dot={{ fill: "#7c3aed", r: 2.5 }} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="calories" stroke="#ccff00" strokeWidth={2} dot={{ fill: "#ccff00", r: 2.5 }} activeDot={{ r: 4 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1228,9 +1227,9 @@ const handleSaveMealTemplate = () => {
             <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 relative overflow-hidden">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold tracking-widest text-[#ccff00] uppercase">Nutrition Goals</span>
+                  <span className="text-xs font-bold tracking-widest text-[#ccff00] uppercase">Nutrition Goals</span>
                   {activePhase && (
-                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                       activePhase.phase_type === 'cut'     ? 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
                       : activePhase.phase_type === 'bulk'  ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]'
                       : 'bg-[#202020] text-[#a0a0a0] bg-[#202020] text-[#a0a0a0]'
@@ -1282,7 +1281,7 @@ const handleSaveMealTemplate = () => {
               <button
                 key={tab.id}
                 onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
                   sidebarTab === tab.id
                     ? 'border-[rgba(204,255,0,0.3)] text-[#ccff00]'
                     : 'border-transparent text-[#a0a0a0] hover:text-white'

@@ -102,7 +102,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={filter === value ? "default" : "outline"}
                 onClick={() => setFilter(value)}
-                className="h-6 text-[11px] px-2"
+                className="h-6 text-xs px-2"
               >
                 {label}
               </Button>
@@ -117,7 +117,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={folderFilter === "all" ? "default" : "outline"}
                 onClick={() => setFolderFilter("all")}
-                className="h-6 text-[11px] px-2"
+                className="h-6 text-xs px-2"
               >
                 All Folders
               </Button>
@@ -127,7 +127,7 @@ export default function WorkoutLibrarySidebar() {
                   size="sm"
                   variant={folderFilter === folder ? "default" : "outline"}
                   onClick={() => setFolderFilter(folder)}
-                  className="h-6 text-[11px] px-2"
+                  className="h-6 text-xs px-2"
                 >
                   {folder}
                 </Button>
@@ -136,7 +136,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={folderFilter === "unfiled" ? "default" : "outline"}
                 onClick={() => setFolderFilter("unfiled")}
-                className="h-6 text-[11px] px-2"
+                className="h-6 text-xs px-2"
               >
                 Unfiled
               </Button>

@@ -677,7 +677,7 @@ export default function Dashboard() {
 
         {/* First-workout welcome banner — shown until user logs a workout or dismisses */}
         {welcomeBannerVisible && !logsLoading && !logsError && workoutLogs.length === 0 && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-[10px] bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.15)] px-5 py-4">
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.15)] px-5 py-4">
             <div>
               <p className="font-semibold text-white">Ready to log your first workout?</p>
               <p className="text-sm text-[#a0a0a0] mt-0.5">Head to the Schedule to pick a workout and get started.</p>
@@ -773,7 +773,7 @@ export default function Dashboard() {
                     /* ── Check-in flow ── */
                     <>
                       <div className="border-t border-white/20 mt-1 mb-3" />
-                      <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wider mb-2.5">Check In</p>
+                      <p className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2.5">Check In</p>
                       {[
                         { label: "Sleep", value: checkInSleep, set: setCheckInSleep },
                         { label: "Soreness", value: checkInSoreness, set: setCheckInSoreness },
@@ -787,7 +787,7 @@ export default function Dashboard() {
                                 key={n}
                                 type="button"
                                 onClick={() => set(n)}
-                                className={`w-6 h-6 rounded-full text-[11px] font-bold transition-all ${
+                                className={`w-6 h-6 rounded-full text-xs font-bold transition-all ${
                                   value === n
                                     ? "bg-[#ccff00] text-black scale-110"
                                     : value > n
@@ -918,7 +918,7 @@ export default function Dashboard() {
                   This Week
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#a0a0a0] uppercase tracking-wide">Muscles trained</span>
+                  <span className="hidden sm:inline text-xs text-[#a0a0a0] uppercase tracking-wide">Muscles trained</span>
                   <div className="flex rounded-full overflow-hidden border border-[#333] text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
@@ -932,7 +932,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-3 pb-4 flex gap-4 flex-1 min-h-0">
+            <CardContent className="pt-3 pb-4 flex flex-col sm:flex-row gap-4 flex-1 min-h-0">
               {/* Left: stats + AI generator */}
               <div className="flex-1 space-y-3 min-w-0">
                   {/* Workouts this week */}
@@ -1073,8 +1073,8 @@ export default function Dashboard() {
                 </div>
 
               {/* Right: muscle heatmap — fills remaining height */}
-              <div className="w-px bg-[#333] shrink-0" />
-              <div className="w-[150px] shrink-0 flex flex-col">
+              <div className="hidden sm:block w-px bg-[#333] shrink-0" />
+              <div className="sm:w-[150px] shrink-0 flex flex-col items-center">
                 {weeklyBodyData.length > 0 ? (
                   <MuscleHeatMap data={weeklyBodyData} view={muscleView} className="flex-1" />
                 ) : (
@@ -1115,10 +1115,10 @@ export default function Dashboard() {
           <CardContent className="py-3">
             <div className="grid grid-cols-4 gap-2 md:gap-4">
               {[
-                { label: "Calories", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, unit: "", stroke: "#f59e0b" },
-                { label: "Protein", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, unit: "g", stroke: "#8b5cf6" },
-                { label: "Carbs", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, unit: "g", stroke: "#22c55e" },
-                { label: "Fats", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, unit: "g", stroke: "#f59e0b" },
+                { label: "Calories", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, unit: "", stroke: "#ccff00" },
+                { label: "Protein", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, unit: "g", stroke: "#60a5fa" },
+                { label: "Carbs", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, unit: "g", stroke: "#fbbf24" },
+                { label: "Fats", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, unit: "g", stroke: "#f87171" },
               ].map(({ label, value, goal, unit, stroke }) => {
                 const safeValue = value ?? 0;
                 const safeGoal = goal ?? 0;
@@ -1130,12 +1130,12 @@ export default function Dashboard() {
                   <div key={label} className="flex flex-col items-center">
                     <div className="relative w-[76px] h-[76px] md:w-[88px] md:h-[88px]">
                       <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-                        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="6" className="dark:stroke-slate-700" />
+                        <circle cx="40" cy="40" r={r} fill="none" stroke="#2a2a2a" strokeWidth="6" />
                         <circle cx="40" cy="40" r={r} fill="none" stroke={stroke} strokeWidth="6" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} className="transition-all duration-700 ease-out" />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className="text-sm md:text-base font-bold text-white leading-none">{Math.round(safeValue * 10) / 10}</span>
-                        <span className="text-xs text-[#a0a0a0] leading-none mt-0.5">/ {safeGoal}{unit}</span>
+                        <span className="text-xs text-[#555555] leading-none mt-0.5">/ {safeGoal}{unit}</span>
                       </div>
                     </div>
                     <span className="text-xs font-medium text-[#555555] mt-1.5">{label}</span>
@@ -1149,6 +1149,12 @@ export default function Dashboard() {
         {showApprovalModal && pendingSchedule && (
           <WorkoutApprovalModal
             schedule={pendingSchedule.schedule}
+            todayCheckIn={todayCheckIn}
+            lastWeekVolume={
+              weeklyLogsWithExercises.length > 0
+                ? weeklyLogsWithExercises.reduce((sum, log) => sum + (log.exercises?.length || 0), 0)
+                : null
+            }
             onApprove={(schedule) => {
               handleApproveSchedule(schedule);
               if (tutorialActive && currentStepData?.id === "approve-schedule") nextStep();
@@ -1181,7 +1187,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
                   { icon: Calendar, label: "Total Workouts", value: totalWorkoutsCount, unit: "" },
-                  { icon: Dumbbell, label: "Total Volume", value: `${(totalVolume / 1000).toFixed(1)}k`, unit: weightUnit },
+                  { icon: Dumbbell, label: "Total Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "0", unit: totalVolume > 0 ? weightUnit : "" },
                   { icon: TrendingUp, label: "Avg Duration", value: avgDuration, unit: "min" },
                 ].map(({ icon: Icon, label, value, unit }) => (
                   <Card key={label} className="">
@@ -1241,10 +1247,10 @@ export default function Dashboard() {
                       )
                       : <div className="max-h-80 overflow-y-auto"><table className="w-full">
                           <thead><tr className="border-b border-[#2a2a2a]">
-                            <th className="text-left py-2 px-3 font-semibold text-[#a0a0a0] text-sm">Exercise</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#a0a0a0] text-sm">Weight</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#a0a0a0] text-sm">Reps</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#a0a0a0] text-sm">Date</th>
+                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Exercise</th>
+                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Weight</th>
+                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Reps</th>
+                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Date</th>
                           </tr></thead>
                           <tbody>
                             {Object.entries(allPRs).sort((a, b) => b[1].weight - a[1].weight).map(([exercise, pr]) => (

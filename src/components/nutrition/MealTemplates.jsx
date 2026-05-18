@@ -160,13 +160,13 @@ export default function MealTemplates({ compact = false }) {
                     </button>
                     <button
                       onClick={() => handleApply(template)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-bold transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors"
                     >
                       <Play className="w-2.5 h-2.5" />Apply
                     </button>
                   </div>
                 </div>
-                <div className="flex gap-3 text-[11px] font-mono">
+                <div className="flex gap-3 text-xs font-mono">
                   <span className="text-white font-bold">{Math.round(totals.calories)}<span className="text-[#a0a0a0] font-normal ml-0.5">cal</span></span>
                   <span className="text-[#60a5fa]">P{Math.round(totals.protein)}g</span>
                   <span className="text-[#fbbf24]">C{Math.round(totals.carbs)}g</span>

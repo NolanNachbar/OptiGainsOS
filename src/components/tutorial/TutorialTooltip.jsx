@@ -36,7 +36,7 @@ const TutorialTooltip = forwardRef(function TutorialTooltip({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-[#1a1a1a]  rounded-2xl shadow-2xl border-2 border-[#ccff00]/50/50 flex flex-col"
+        className="bg-[#1a1a1a]  rounded-xl shadow-2xl border-2 border-[#ccff00]/50/50 flex flex-col"
         style={{
           maxHeight: window.innerWidth < 768 ? 'calc(100vh - 40px)' : 'none',
         }}

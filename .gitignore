@@ -24,6 +24,9 @@ scripts/capture-demo.mjs
 # Stitch AI design tool
 .stitch/
 
+# Playwright MCP
+.playwright-mcp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

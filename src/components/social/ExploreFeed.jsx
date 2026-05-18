@@ -473,7 +473,7 @@ function WorkoutDayCard({ workout }) {
 
         {workout.exercises && workout.exercises.length > 0 && (
           <>
-            <div className="text-[#555555] text-[11px] ml-1 mb-1">
+            <div className="text-[#555555] text-xs ml-1 mb-1">
               {workout.exercises.length} exercises
               {!expanded && (
                 <>
@@ -493,8 +493,8 @@ function WorkoutDayCard({ workout }) {
             {expanded && (
               <div className="mt-2 space-y-1 ml-1">
                 {workout.exercises.map((ex, i) => (
-                  <div key={i} className="flex items-start gap-2 text-[11px] py-1 border-t border-[#2a2a2a]">
-                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] flex items-center justify-center text-[#ccff00] text-[#ccff00] text-[11px] font-bold shrink-0 mt-0.5">
+                  <div key={i} className="flex items-start gap-2 text-xs py-1 border-t border-[#2a2a2a]">
+                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] flex items-center justify-center text-[#ccff00] text-[#ccff00] text-xs font-bold shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">

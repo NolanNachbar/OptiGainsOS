@@ -25,7 +25,7 @@ export function MiniVolumeChart({ exercises }) {
         const pct = maxVolume > 0 ? (v.volume / maxVolume) * 100 : 0;
         return (
           <div key={i} className="flex items-center gap-2">
-            <span className="text-[11px] text-[#555555] w-24 truncate flex-shrink-0">
+            <span className="text-xs text-[#555555] w-24 truncate flex-shrink-0">
               {v.name}
             </span>
             <div className="flex-1 h-3 bg-[#202020] rounded-full overflow-hidden">

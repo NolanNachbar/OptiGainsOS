@@ -110,7 +110,7 @@ const SegmentedCircularProgress = ({
           <Apple className="w-5 h-5 text-[#a0a0a0]" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-2 text-[11px]">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-2 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-[rgba(245,158,11,0.1)]"></div>
           <span className="text-[#a0a0a0]">{Math.round(calories)}%</span>
@@ -1220,7 +1220,7 @@ export default function Schedule() {
                       ? Math.min(100, Math.round(((enrollment.completed_workouts?.length || 0) / totalWorkouts) * 100))
                       : 0;
                     return (
-                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border-2 border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] bg-[#202020] transition-all group">
+                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] bg-[#202020] transition-all group">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-semibold text-white truncate">{prog.name}</p>
@@ -1277,7 +1277,7 @@ export default function Schedule() {
                         handleDragStart(e, { ...workout, isLibrary: true })
                       }
                       onDragEnd={handleDragEnd}
-                      className="bg-[#202020] p-4 rounded-lg border-2 border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)]  transition-all group relative"
+                      className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)] transition-all group relative"
                     >
                       <button
                         onClick={(e) => {
@@ -1288,10 +1288,18 @@ export default function Schedule() {
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <h4 className="font-semibold mb-2 pr-6 text-white">{workout.title}</h4>
-                      <div className="flex items-center gap-2 text-xs text-[#a0a0a0]">
+                      <h4 className="font-semibold text-sm mb-1.5 pr-6 text-white leading-snug">{workout.title}</h4>
+                      {workout.exercises?.length > 0 && (
+                        <p className="text-xs text-[#555555] mb-1.5 leading-snug">
+                          {workout.exercises.slice(0, 3).map(e => e.name).join(' · ')}
+                          {workout.exercises.length > 3 && <span className="text-[#444]"> +{workout.exercises.length - 3}</span>}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-[#555555]">
                         <Clock className="w-3 h-3" />
                         <span>{workout.duration_minutes} min</span>
+                        {workout.exercises?.length > 0 && <span className="text-[#444]">·</span>}
+                        {workout.exercises?.length > 0 && <span>{workout.exercises.length} exercises</span>}
                         <Badge className="ml-auto text-xs">{workout.difficulty}</Badge>
                       </div>
                     </div>

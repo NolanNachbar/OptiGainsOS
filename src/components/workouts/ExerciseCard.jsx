@@ -494,7 +494,7 @@ export default function ExerciseCard({
                   if (onReplaceExercise) onReplaceExercise(exercise.name, alt);
                   setShowReplaceDialog(false);
                 }}
-                className="w-full text-left p-4 rounded-xl border-2 border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] transition-all group"
+                className="w-full text-left p-4 rounded-xl border border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] transition-all group"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

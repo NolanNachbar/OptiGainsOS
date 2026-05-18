@@ -79,7 +79,7 @@ export default function Landing() {
             {['Performance', 'Training', 'Nutrition'].map((label) => (
               <span
                 key={label}
-                className="font-['IBM_Plex_Mono'] text-[11px] tracking-[0.15em] uppercase text-[#a0a0a0] hover:text-white transition-colors cursor-default"
+                className="font-['IBM_Plex_Mono'] text-xs tracking-[0.15em] uppercase text-[#a0a0a0] hover:text-white transition-colors cursor-default"
               >
                 {label}
               </span>
@@ -87,12 +87,12 @@ export default function Landing() {
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/login">
-              <Button variant="ghost" className="font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase text-[#a0a0a0] hover:text-white h-9">
+              <Button variant="ghost" className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#a0a0a0] hover:text-white h-9">
                 Sign In
               </Button>
             </Link>
             <Link to="/signup">
-              <Button variant="volt" className="font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase h-9 px-5 active:scale-95 transition-all">
+              <Button variant="volt" className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase h-9 px-5 active:scale-95 transition-all">
                 Get Started
               </Button>
             </Link>
@@ -114,7 +114,7 @@ export default function Landing() {
           </div>
           <div className="relative z-10 px-6 md:px-8 max-w-7xl mx-auto w-full">
             <div className="max-w-2xl">
-              <span className="inline-block font-['IBM_Plex_Mono'] text-[11px] tracking-[0.15em] uppercase text-[#ccff00] mb-5 bg-[#ccff00]/10 px-3 py-1 border border-[#ccff00]/20">
+              <span className="inline-block font-['IBM_Plex_Mono'] text-xs tracking-[0.15em] uppercase text-[#ccff00] mb-5 bg-[#ccff00]/10 px-3 py-1 border border-[#ccff00]/20">
                 System Status: Optimized
               </span>
               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold uppercase tracking-tight leading-[1.05] mb-6">
@@ -125,13 +125,13 @@ export default function Landing() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/signup">
-                  <Button variant="volt" className="px-8 py-5 font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase font-bold active:scale-95 transition-all">
+                  <Button variant="volt" className="px-8 py-5 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase font-bold active:scale-95 transition-all">
                     Get Started
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button variant="outline" className="border-white/20 text-white px-8 py-5 font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase hover:bg-white/5 active:scale-95 transition-all">
+                  <Button variant="outline" className="border-white/20 text-white px-8 py-5 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase hover:bg-white/5 active:scale-95 transition-all">
                     Sign In
                     <ChevronRight className="ml-2 w-4 h-4" />
                   </Button>
@@ -173,7 +173,7 @@ export default function Landing() {
                 </p>
                 <div className="flex items-end gap-2 mb-8">
                   <span className="font-['IBM_Plex_Mono'] text-6xl font-bold text-[#ccff00] leading-none">88</span>
-                  <span className="font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase text-[#a0a0a0] pb-2">/ 100 Readiness</span>
+                  <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#a0a0a0] pb-2">/ 100 Readiness</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <MacroRing pct={80} color="#ccff00" label="Protein" />
@@ -186,10 +186,10 @@ export default function Landing() {
               <div className="lg:col-span-7">
                 <div className="bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
                   <div className="border-b border-[#2a2a2a] px-5 py-3 flex justify-between items-center bg-[#161616]">
-                    <span className="font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase text-[#a0a0a0]">
+                    <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#a0a0a0]">
                       Session Intensity
                     </span>
-                    <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#ccff00]">THIS WEEK</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#ccff00]">THIS WEEK</span>
                   </div>
                   <div className="h-56 px-5 pb-0 pt-5 flex items-end gap-1.5">
                     {CHART_BARS.map((h, i) => (
@@ -204,9 +204,9 @@ export default function Landing() {
                     ))}
                   </div>
                   <div className="px-5 py-3 bg-[#161616] flex justify-between">
-                    <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#555555]">Mon</span>
-                    <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#ccff00]">Peak Load</span>
-                    <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#555555]">Sun</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">Mon</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#ccff00]">Peak Load</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">Sun</span>
                   </div>
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function Landing() {
             <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">Top Performers</h2>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a]">
-            <div className="grid grid-cols-12 px-5 py-3 font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase text-[#555555] border-b border-[#2a2a2a]">
+            <div className="grid grid-cols-12 px-5 py-3 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#555555] border-b border-[#2a2a2a]">
               <div className="col-span-1">Rank</div>
               <div className="col-span-7">Athlete</div>
               <div className="col-span-2 text-right">Output</div>
@@ -271,7 +271,7 @@ export default function Landing() {
                 Free to use. No gimmicks. Just the math that gets you stronger.
               </p>
               <Link to="/signup" className="z-10">
-                <Button className="bg-black hover:bg-black/80 !text-[#ccff00] px-10 py-5 font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase font-bold active:scale-95 transition-all">
+                <Button className="bg-black hover:bg-black/80 !text-[#ccff00] px-10 py-5 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase font-bold active:scale-95 transition-all">
                   Create Free Account
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -287,14 +287,14 @@ export default function Landing() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-6 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <Logo className="w-6 h-6" />
-            <span className="font-['IBM_Plex_Mono'] text-[11px] tracking-widest uppercase text-[#ccff00] font-bold">Vektor</span>
+            <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#ccff00] font-bold">Vektor</span>
           </div>
-          <p className="font-['IBM_Plex_Mono'] text-[11px] text-[#555555]">© 2025 Vektor. All rights reserved.</p>
+          <p className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">© 2025 Vektor. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link to="/login" className="font-['IBM_Plex_Mono'] text-[11px] text-[#555555] hover:text-[#a0a0a0] transition-colors">
+            <Link to="/login" className="font-['IBM_Plex_Mono'] text-xs text-[#555555] hover:text-[#a0a0a0] transition-colors">
               Sign In
             </Link>
-            <Link to="/signup" className="font-['IBM_Plex_Mono'] text-[11px] text-[#555555] hover:text-[#a0a0a0] transition-colors">
+            <Link to="/signup" className="font-['IBM_Plex_Mono'] text-xs text-[#555555] hover:text-[#a0a0a0] transition-colors">
               Sign Up
             </Link>
           </div>

@@ -630,7 +630,7 @@ export default function Workouts() {
           )}
           <div className="px-6 pb-6">
             {filter === "liked" && likedExerciseNames.length > 0 && (
-              <div className="mb-6 p-4 rounded-[10px] bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)]">
+              <div className="mb-6 p-4 rounded-xl bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)]">
                 <h3 className="text-sm font-semibold text-[#4ade80] mb-3 flex items-center gap-1.5">
                   <ThumbsUp className="w-4 h-4" />
                   Liked Exercises
