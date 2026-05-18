@@ -16,7 +16,7 @@ const navigationItems = [
   { title: "Workouts", url: "/workouts", icon: Dumbbell },
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Food", url: "/food-tracker", icon: UtensilsCrossed },
-  { title: "Social", url: "/social", icon: Users, hasBadge: true, mobileHidden: true },
+  { title: "Social", url: "/social", icon: Users, hasBadge: true },
 ];
 
 export default function Layout({ children, currentPageName }) {
