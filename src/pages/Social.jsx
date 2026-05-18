@@ -39,7 +39,7 @@ const StaticRouteMap = lazy(() => import("@/components/strava/StaticRouteMap"));
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-function SuggestedUsersPanel() {
+function useSuggestedUsers() {
   const { user } = useAuth();
   const { friends = [] } = useFriends();
   const { sentRequests = [] } = useSentFriendRequests();
@@ -70,9 +70,7 @@ function SuggestedUsersPanel() {
 
   const visible = rawSuggestions
     .filter(p => !friendIds.has(p.created_by) && !sentIds.has(p.created_by) && !pendingIds.has(p.created_by))
-    .slice(0, 4);
-
-  if (!visible.length) return null;
+    .slice(0, 6);
 
   function handleAddFriend(profile) {
     if (!profile.username) return;
@@ -85,9 +83,16 @@ function SuggestedUsersPanel() {
     });
   }
 
+  return { visible, handleAddFriend };
+}
+
+function SuggestedUsersPanel() {
+  const { visible, handleAddFriend } = useSuggestedUsers();
+  if (!visible.length) return null;
+
   return (
     <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4 mb-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#a0a0a0] mb-3">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555] mb-3">
         Suggested
       </p>
       <div className="space-y-2.5">
@@ -115,6 +120,82 @@ function SuggestedUsersPanel() {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function DiscoverAthletes() {
+  const { visible, handleAddFriend } = useSuggestedUsers();
+  if (!visible.length) return null;
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555] mb-3">
+        Discover_Athletes
+      </p>
+      <div className="flex gap-3 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+        {visible.map((profile) => (
+          <div
+            key={profile.created_by}
+            className="shrink-0 w-[120px] rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-3 flex flex-col items-center gap-2"
+          >
+            <Link to={profile.username ? `/profile/${profile.username}` : "#"}>
+              <UserAvatar url={profile.avatar_url} username={profile.username || profile.display_name} size="md" />
+            </Link>
+            <div className="w-full text-center min-w-0">
+              <p className="text-xs font-semibold text-white truncate">
+                {profile.display_name || profile.username || "User"}
+              </p>
+              <p className="text-[10px] text-[#555555] truncate">@{profile.username}</p>
+              {profile.total_workouts > 0 && (
+                <p className="text-[10px] text-[#a0a0a0] mt-0.5">{profile.total_workouts} workouts</p>
+              )}
+            </div>
+            <button
+              onClick={() => handleAddFriend(profile)}
+              disabled={!profile.username}
+              className="w-full flex items-center justify-center gap-1 text-[10px] font-semibold py-1 rounded-md bg-[rgba(204,255,0,0.1)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.18)] transition-colors disabled:opacity-50"
+            >
+              <UserPlus className="w-3 h-3" />
+              Add
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ActivityStreamHeader({ feedFilter, setFeedFilter }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">
+        Activity_Stream
+      </p>
+      <div className="inline-flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-0.5">
+        <button
+          onClick={() => setFeedFilter("friends")}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            feedFilter === "friends"
+              ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+              : "text-[#a0a0a0] hover:text-white"
+          }`}
+        >
+          <Users className="w-3 h-3" />
+          Friends
+        </button>
+        <button
+          onClick={() => setFeedFilter("trending")}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            feedFilter === "trending"
+              ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+              : "text-[#a0a0a0] hover:text-white"
+          }`}
+        >
+          <TrendingUp className="w-3 h-3" />
+          Trending
+        </button>
       </div>
     </div>
   );
@@ -176,35 +257,6 @@ export default function Social() {
           ))}
         </div>
 
-        {/* Mobile: feed filter toggle */}
-        {mobileTab === "feed" && (
-          <div className="xl:hidden mb-4 flex justify-center">
-            <div className="inline-flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1">
-              <button
-                onClick={() => setFeedFilter("friends")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  feedFilter === "friends"
-                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
-                    : "text-[#a0a0a0] hover:text-white"
-                }`}
-              >
-                <Users className="w-4 h-4 inline mr-1.5" />
-                Friends
-              </button>
-              <button
-                onClick={() => setFeedFilter("trending")}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  feedFilter === "trending"
-                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
-                    : "text-[#a0a0a0] hover:text-white"
-                }`}
-              >
-                <TrendingUp className="w-4 h-4 inline mr-1.5" />
-                Trending
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Three-column layout (xl+) / single column (mobile) */}
         <div className="xl:grid xl:grid-cols-[260px_1fr_290px] xl:gap-5">
@@ -341,7 +393,13 @@ export default function Social() {
 
             {/* Mobile */}
             <div className="xl:hidden">
-              {mobileTab === "feed" && <ExploreFeed friendsOnly={feedFilter === "friends"} />}
+              {mobileTab === "feed" && (
+                <>
+                  <DiscoverAthletes />
+                  <ActivityStreamHeader feedFilter={feedFilter} setFeedFilter={setFeedFilter} />
+                  <ExploreFeed friendsOnly={feedFilter === "friends"} />
+                </>
+              )}
               {mobileTab === "friends" && <SocialContent />}
               {mobileTab === "ranks" && <LeaderboardsContent />}
             </div>
@@ -524,6 +582,31 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
             durationMin && { value: durationMin, label: "Min" },
           ].filter(Boolean);
 
+          return (
+            <div className="flex mb-4">
+              {stats.map((stat, i) => (
+                <div key={i} className={`flex-1 flex flex-col ${i > 0 ? 'border-l border-[#2a2a2a] pl-4' : ''}`}>
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">{stat.label}</span>
+                  <span className="text-xl font-bold tabular-nums text-white mt-0.5">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Stats strip for other share types (not detailed, not cardio) */}
+        {item.share_type !== "detailed" && item.share_type !== "cardio" && (() => {
+          const exercises = item.exercises || [];
+          const totalSets = exercises.reduce((sum, ex) => {
+            const s = ex.sets;
+            return sum + (Array.isArray(s) ? s.length : typeof s === 'number' ? s : 0);
+          }, 0);
+          const topPr = item.prs?.[0];
+          const stats = [
+            { value: exercises.length, label: "Exercises" },
+            { value: totalSets, label: "Sets" },
+            { value: topPr ? `${topPr.weight} lbs` : "—", label: "Top" },
+          ];
           return (
             <div className="flex mb-4">
               {stats.map((stat, i) => (
