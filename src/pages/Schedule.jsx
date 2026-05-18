@@ -1016,10 +1016,17 @@ export default function Schedule() {
           return (
             <div className="space-y-3 mb-4">
               {dp.map((item, idx) => (
-                <div key={`${item.programWorkoutId}-${item.cycle}`} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5">
+                <div
+                  key={`${item.programWorkoutId}-${item.cycle}`}
+                  className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 cursor-pointer active:bg-[#222222] transition-colors"
+                  onClick={() => navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)}
+                >
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555]">{dateLabel}</p>
-                    {item.completed && <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />}
+                    {item.completed
+                      ? <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />
+                      : <ChevronRight className="w-4 h-4 text-[#333333]" />
+                    }
                   </div>
                   <h2 className="text-xl font-black uppercase tracking-tight text-white leading-tight mb-3">
                     {item.title}
@@ -1045,13 +1052,13 @@ export default function Schedule() {
                     </div>
                   )}
                   {item.completed ? (
-                    <div className="flex items-center justify-center gap-1.5 py-1">
+                    <div className="flex items-center justify-center gap-1.5 py-1" onClick={e => e.stopPropagation()}>
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80]" />
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4ade80]">Completed</span>
                     </div>
                   ) : isToday && item.isCurrent ? (
                     <button
-                      onClick={() => navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)}
+                      onClick={e => { e.stopPropagation(); navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`); }}
                       className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
                     >
                       Start Session
@@ -1065,13 +1072,20 @@ export default function Schedule() {
                 const workout = workouts.find(w => w.id === item.workout_id);
                 if (!workout) return null;
                 return (
-                  <div key={item.id} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5">
+                  <div
+                    key={item.id}
+                    className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 cursor-pointer active:bg-[#222222] transition-colors"
+                    onClick={() => setDayDetailDate(selectedDay)}
+                  >
                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-1">{dateLabel}</p>
                     <div className="flex items-center justify-between mb-3">
                       <h2 className="text-xl font-black uppercase tracking-tight text-white leading-tight">
                         {workout.title}
                       </h2>
-                      {item.completed && <CheckCircle2 className="w-4 h-4 text-[#4ade80] shrink-0 ml-2" />}
+                      {item.completed
+                        ? <CheckCircle2 className="w-4 h-4 text-[#4ade80] shrink-0 ml-2" />
+                        : <ChevronRight className="w-4 h-4 text-[#333333] shrink-0 ml-2" />
+                      }
                     </div>
                     {workout.exercises?.length > 0 && (
                       <div className="space-y-2 mb-4">
@@ -1100,7 +1114,7 @@ export default function Schedule() {
                       </div>
                     ) : isToday ? (
                       <button
-                        onClick={() => setDayDetailDate(selectedDay)}
+                        onClick={e => { e.stopPropagation(); setDayDetailDate(selectedDay); }}
                         className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
                       >
                         Start Session
