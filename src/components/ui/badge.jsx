@@ -2,16 +2,23 @@ import * as React from "react";
 
 const Badge = React.forwardRef(({ className = "", variant = "default", ...props }, ref) => {
   const variants = {
-    default: "bg-slate-900 text-slate-50 hover:bg-slate-900/80 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200",
-    secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700/80",
-    destructive: "bg-danger-500 text-slate-50 hover:bg-danger-500/80",
-    outline: "text-slate-950 border border-slate-200 dark:text-slate-50 dark:border-slate-700",
+    /* design system variants */
+    volt:    "bg-[rgba(204,255,0,0.08)] text-[#ccff00] border border-[rgba(204,255,0,0.2)]",
+    green:   "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border border-[rgba(34,197,94,0.2)]",
+    amber:   "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border border-[rgba(245,158,11,0.2)]",
+    red:     "bg-[rgba(239,68,68,0.1)] text-[#f87171] border border-[rgba(239,68,68,0.15)]",
+    slate:   "bg-[#202020] text-[#a0a0a0] border border-[#2a2a2a]",
+    /* legacy variants */
+    default:     "bg-[#202020] text-[#a0a0a0] border border-[#2a2a2a]",
+    secondary:   "bg-[#202020] text-[#a0a0a0] border border-[#2a2a2a]",
+    destructive: "bg-[rgba(239,68,68,0.1)] text-white border-transparent",
+    outline:     "text-white border border-[#2a2a2a]",
   };
 
   return (
     <div
       ref={ref}
-      className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 ${variants[variant]} ${className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}
       {...props}
     />
   );

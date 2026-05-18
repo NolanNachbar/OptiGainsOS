@@ -112,7 +112,7 @@ const SegmentedCircularProgress = ({
       </div>
       <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-2 text-[11px]">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-warning-500"></div>
+          <div className="w-2 h-2 rounded-full bg-[rgba(245,158,11,0.1)]"></div>
           <span className="text-[#a0a0a0]">{Math.round(calories)}%</span>
         </div>
         <div className="flex items-center gap-1">
@@ -120,7 +120,7 @@ const SegmentedCircularProgress = ({
           <span className="text-[#a0a0a0]">{Math.round(protein)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-success-500"></div>
+          <div className="w-2 h-2 rounded-full bg-[rgba(34,197,94,0.1)]"></div>
           <span className="text-[#a0a0a0]">{Math.round(carbs)}%</span>
         </div>
         <div className="flex items-center gap-1">
@@ -874,12 +874,10 @@ export default function Schedule() {
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <h1 className="text-2xl font-bold text-white">Schedule</h1>
-            </div>
-            <p className="text-[#a0a0a0] text-sm mb-4">
+            <h1 className="text-[22px] font-bold text-white leading-tight">Schedule</h1>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5 mb-3">
               Drag workouts to schedule, or tap any day to manage
             </p>
             {totalThisWeek > 0 && (
@@ -892,7 +890,7 @@ export default function Schedule() {
                 </div>
                 <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[rgba(204,255,0,0.08)]0 transition-all duration-500"
+                    className="h-full bg-[#ccff00] transition-all duration-500"
                     style={{ width: `${weeklyProgressPercentage}%` }}
                   ></div>
                 </div>
@@ -900,19 +898,12 @@ export default function Schedule() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={handleScheduleWeek}
-              variant="outline"
-              className="border-[rgba(204,255,0,0.3)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)] bg-[#202020] hover:bg-[#242424]"
-            >
-              <CalendarIcon className="w-4 h-4 mr-2" />
+            <Button variant="ghost" onClick={handleScheduleWeek}>
+              <CalendarIcon className="w-4 h-4" />
               Schedule This Week
             </Button>
-            <Button
-              onClick={handleBuildProgram}
-              className="border-[rgba(204,255,0,0.3)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)] bg-[#202020] hover:bg-[#242424]"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
+            <Button variant="dark" onClick={handleBuildProgram}>
+              <BookOpen className="w-4 h-4" />
               Build Program
             </Button>
           </div>
@@ -1004,10 +995,10 @@ export default function Schedule() {
                 key={index}
                 className={`bg-[#1a1a1a] text-white rounded-xl transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px] ${
                   isDragOver
-                    ? "border-2 border-[rgba(204,255,0,0.3)] shadow-lg scale-[1.02] bg-[rgba(204,255,0,0.1)]"
+                    ? "border-2 border-[rgba(204,255,0,0.3)] scale-[1.02] bg-[rgba(204,255,0,0.1)]"
                     : isToday
                     ? "border-2 border-[rgba(204,255,0,0.3)]"
-                    : "border-0 shadow-sm hover:shadow-md"
+                    : "border-0 "
                 }`}
                 onClick={() => setDayDetailDate(day)}
                 onDragOver={handleDragOver}
@@ -1060,18 +1051,18 @@ export default function Schedule() {
                                 }}
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                                   item.completed
-                                    ? "bg-success-100 dark:bg-success-900/30"
+                                    ? "bg-[rgba(34,197,94,0.1)]/30"
                                     : cardioOnly
-                                    ? "bg-orange-50 dark:bg-orange-900/15"
+                                    ? "bg-[rgba(249,115,22,0.08)]"
                                     : item.isCurrent
                                     ? "bg-[rgba(204,255,0,0.1)] cursor-pointer"
                                     : "bg-[rgba(204,255,0,0.1)]"
                                 }`}
                               >
                                 {cardioOnly ? (
-                                  <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-success-600" : "text-orange-500"}`} />
+                                  <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-orange-500"}`} />
                                 ) : (
-                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-success-600" : "text-[#ccff00]"}`} />
+                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-[#ccff00]"}`} />
                                 )}
                               </div>
                             );
@@ -1082,9 +1073,9 @@ export default function Schedule() {
                               <div
                                 key={`log-${log.id}`}
                                 title={logWorkout?.title || "Logged workout"}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-success-100 dark:bg-success-900/30"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-[rgba(34,197,94,0.1)]/30"
                               >
-                                <Dumbbell className="w-3.5 h-3.5 text-success-600" />
+                                <Dumbbell className="w-3.5 h-3.5 text-[#4ade80]" />
                               </div>
                             );
                           })}
@@ -1108,14 +1099,14 @@ export default function Schedule() {
                                 onClick={(e) => e.stopPropagation()}
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-move transition-colors ${
                                   item.completed
-                                    ? "bg-success-100 dark:bg-success-900/30"
+                                    ? "bg-[rgba(34,197,94,0.1)]/30"
                                     : "bg-[rgba(204,255,0,0.1)]"
                                 }`}
                               >
                                 <Dumbbell
                                   className={`w-3.5 h-3.5 ${
                                     item.completed
-                                      ? "text-success-600"
+                                      ? "text-[#4ade80]"
                                       : "text-[#ccff00]"
                                   }`}
                                 />
@@ -1131,7 +1122,7 @@ export default function Schedule() {
                             <div
                               key={session.id}
                               title={session.name}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-100 dark:bg-orange-900/30"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-100"
                             >
                               <Activity className="w-3.5 h-3.5 text-orange-500" />
                             </div>
@@ -1162,7 +1153,7 @@ export default function Schedule() {
         </div>
 
         {/* Workout Library & Programs */}
-        <Card className="border-none shadow-lg">
+        <Card className="">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between mb-3">
               <CardTitle className="text-xl flex items-center gap-2">
@@ -1195,7 +1186,7 @@ export default function Schedule() {
                       onClick={() => setLibraryFilter(type)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium dark:transition-colors ${
                         libraryFilter === type
-                          ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] dark:bg-[rgba(204,255,0,0.08)]0 text-[#ccff00]"
+                          ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]0 text-[#ccff00]"
                           : "text-[#555555] hover:bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]"
                       }`}
                     >
@@ -1233,7 +1224,7 @@ export default function Schedule() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-semibold text-white truncate">{prog.name}</p>
-                            {isActive && <Badge className="bg-green-100 text-green-700 text-xs flex-shrink-0">Active</Badge>}
+                            {isActive && <Badge className="bg-[rgba(34,197,94,0.1)] text-[#4ade80] text-xs flex-shrink-0">Active</Badge>}
                             {enrollment?.status === "paused" && <Badge variant="outline" className="text-xs flex-shrink-0">Paused</Badge>}
                             {enrollment?.status === "cancelled" && <Badge variant="outline" className="text-xs flex-shrink-0 text-[#a0a0a0]">Cancelled</Badge>}
                             {!enrollment && <Badge variant="outline" className="text-xs flex-shrink-0 text-[#a0a0a0]">Not enrolled</Badge>}
@@ -1258,7 +1249,7 @@ export default function Schedule() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-400 hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171] opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => setDeleteTarget({ type: 'program', id: prog.id, name: prog.name })}
                             disabled={deleteProgramMutation.isPending}
                           >
@@ -1286,14 +1277,14 @@ export default function Schedule() {
                         handleDragStart(e, { ...workout, isLibrary: true })
                       }
                       onDragEnd={handleDragEnd}
-                      className="bg-[#202020] p-4 rounded-lg border-2 border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)] hover:shadow-md transition-all group relative"
+                      className="bg-[#202020] p-4 rounded-lg border-2 border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)]  transition-all group relative"
                     >
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleteTarget({ type: 'workout', id: workout.id, name: workout.title });
                         }}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#a0a0a0] hover:text-red-500 p-1 rounded"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#a0a0a0] hover:text-[#f87171] p-1 rounded"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1322,7 +1313,7 @@ export default function Schedule() {
             }}
           >
             <Card
-              className="w-full max-w-2xl border-none shadow-lg max-h-[85vh] overflow-auto"
+              className="w-full max-w-2xl border-none max-h-[85vh] overflow-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <CardHeader className="pb-4 border-b border-[#2a2a2a]">
@@ -1407,7 +1398,7 @@ export default function Schedule() {
                                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                                   {!item.exercises?.length && item.cardio_sessions?.length > 0 && (
                                     <button
-                                      className="text-xs text-[#a0a0a0] hover:text-red-500 transition-colors"
+                                      className="text-xs text-[#a0a0a0] hover:text-[#f87171] transition-colors"
                                       disabled={unmarkCardioDone.isPending}
                                       onClick={() => unmarkCardioDone.mutate(item)}
                                     >
@@ -1503,7 +1494,7 @@ export default function Schedule() {
                                     </div>
                                     <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1">
                                       {item.time_of_day && item.time_of_day !== "anytime" && (
-                                        <span className="text-xs font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                                        <span className="text-xs font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">
                                           {item.time_of_day}
                                         </span>
                                       )}
@@ -1542,7 +1533,7 @@ export default function Schedule() {
                                     onClick={() =>
                                       deleteScheduleMutation.mutate(item.id)
                                     }
-                                    className="h-9 px-3 text-red-600 hover:bg-red-50"
+                                    className="h-9 px-3 text-[#f87171] hover:bg-red-50"
                                   >
                                     <Trash2 className="w-5 h-5" />
                                   </Button>
@@ -1620,9 +1611,9 @@ export default function Schedule() {
                             const dur = secs ? (secs >= 3600 ? `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m` : `${Math.floor(secs/60)}m`) : null;
                             const miles = session.distance_meters > 0 ? (session.distance_meters / 1609.34).toFixed(2) : null;
                             return (
-                              <div key={session.id} className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
+                              <div key={session.id} className="flex items-center gap-2 text-sm bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
                                 <Activity className="w-4 h-4 text-orange-500 shrink-0" />
-                                <span className="font-medium text-orange-700 dark:text-orange-400 truncate flex-1">{session.name}</span>
+                                <span className="font-medium text-orange-700 truncate flex-1">{session.name}</span>
                                 {miles && <span className="text-[#555555] shrink-0 text-xs">{miles} mi</span>}
                                 {dur && <span className="text-[#555555] shrink-0 text-xs">{dur}</span>}
                                 {session.average_heartrate && <span className="text-[#555555] shrink-0 text-xs">{Math.round(session.average_heartrate)} bpm</span>}
@@ -1631,9 +1622,9 @@ export default function Schedule() {
                           })
                         : getProgramForDate(dayDetailDate).flatMap(item =>
                             (item.cardio_sessions || []).map((c, i) => (
-                              <div key={`prog-cardio-${item.programWorkoutId}-${i}`} className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
+                              <div key={`prog-cardio-${item.programWorkoutId}-${i}`} className="flex items-center gap-2 text-sm bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
                                 <Activity className="w-4 h-4 text-orange-500 shrink-0" />
-                                <span className="font-medium text-orange-700 dark:text-orange-400 truncate flex-1">{c.title}</span>
+                                <span className="font-medium text-orange-700 truncate flex-1">{c.title}</span>
                                 <span className="text-[#555555] shrink-0 text-xs">{c.duration_minutes} min</span>
                                 {c.time_of_day && c.time_of_day !== "anytime" && (
                                   <span className="uppercase text-[#a0a0a0] font-semibold shrink-0 text-xs">{c.time_of_day}</span>
@@ -1642,7 +1633,7 @@ export default function Schedule() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="ml-auto flex-shrink-0 h-6 px-2 text-xs border-orange-300 text-orange-700 hover:bg-orange-50"
+                                    className="ml-auto flex-shrink-0 h-6 px-2 text-xs border-orange-300 text-orange-700 hover:bg-[rgba(249,115,22,0.08)]"
                                     disabled={markSessionDone.isPending}
                                     onClick={() => markSessionDone.mutate({ item, sessionIndex: i })}
                                   >
@@ -1670,7 +1661,7 @@ export default function Schedule() {
                 {/* Nutrition section */}
                 <div>
                   <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                    <Apple className="w-4 h-4 text-success-600" />
+                    <Apple className="w-4 h-4 text-[#4ade80]" />
                     Nutrition
                   </h3>
                   {(() => {
@@ -1684,7 +1675,7 @@ export default function Schedule() {
                     }
                     return (
                       <div className="grid grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-orange-50 rounded-xl border border-orange-200">
+                        <div className="text-center p-4 bg-[rgba(249,115,22,0.08)] rounded-xl border border-[rgba(249,115,22,0.2)]">
                           <div className="flex items-center justify-center mb-2">
                             <Flame className="w-5 h-5 text-orange-600" />
                           </div>
@@ -1700,20 +1691,20 @@ export default function Schedule() {
                             </div>
                           )}
                         </div>
-                        <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
-                          <div className="text-2xl font-bold text-blue-700">
+                        <div className="text-center p-4 bg-[rgba(59,130,246,0.08)] rounded-xl border border-blue-200">
+                          <div className="text-2xl font-bold text-[#60a5fa]">
                             {Math.round(macros.protein)}g
                           </div>
-                          <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mt-1">
+                          <div className="text-xs font-semibold text-[#60a5fa] uppercase tracking-wide mt-1">
                             Protein
                           </div>
                           {profile?.daily_protein_goal && (
-                            <div className="text-xs text-blue-500 mt-1">
+                            <div className="text-xs text-[#60a5fa] mt-1">
                               of {profile.daily_protein_goal}g
                             </div>
                           )}
                         </div>
-                        <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+                        <div className="text-center p-4 bg-green-50 rounded-xl border border-[rgba(34,197,94,0.2)]">
                           <div className="text-2xl font-bold text-green-700">
                             {Math.round(macros.carbs)}g
                           </div>
@@ -1869,7 +1860,7 @@ export default function Schedule() {
                 {/* Preview: what week/day this maps to */}
                 {selectedProgramStartDate && (
                   <div className="bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] rounded-lg p-3 text-sm">
-                    <p className="font-medium text-primary-800 mb-1">Schedule Preview</p>
+                    <p className="font-medium text-[#ccff00] mb-1">Schedule Preview</p>
                     <p className="text-[#ccff00] text-xs">
                       Program runs{" "}
                       <span className="font-semibold">

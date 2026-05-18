@@ -23,7 +23,7 @@ export function UserAvatar({ url, username, size = 'md', className = '' }) {
 
   return (
     <div
-      className={`${sizeClass} rounded-full bg-primary-500 flex items-center justify-center shrink-0 ${className}`}
+      className={`${sizeClass} rounded-full bg-[#ccff00] flex items-center justify-center shrink-0 ${className}`}
     >
       <span className="text-white font-bold">{initial}</span>
     </div>

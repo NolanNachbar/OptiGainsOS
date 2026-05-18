@@ -26,7 +26,7 @@ function ScorePicker({ value, onChange, labels }) {
           onClick={() => onChange(n)}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
             value === n
-              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:border-[rgba(204,255,0,0.3)]"
+              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
               : "border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]"
           }`}
         >
@@ -50,8 +50,8 @@ function ReadinessScore({ sleep, soreness, stress }) {
 
   let color, label;
   if (overall >= 4) { color = "text-green-600"; label = "Ready"; }
-  else if (overall >= 3) { color = "text-amber-600"; label = "Moderate"; }
-  else { color = "text-red-500"; label = "Take it easy"; }
+  else if (overall >= 3) { color = "text-[#fbbf24]"; label = "Moderate"; }
+  else { color = "text-[#f87171]"; label = "Take it easy"; }
 
   return { pct, color, label, overall };
 }
@@ -124,7 +124,7 @@ export default function DailyReadinessCard() {
 
   return (
     <>
-      <Card className="border border-[#2a2a2a] shadow-sm bg-[#1a1a1a]">
+      <Card className="border border-[#2a2a2a] bg-[#1a1a1a]">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -160,9 +160,9 @@ export default function DailyReadinessCard() {
             </div>
           ) : (
             <div className="text-center py-3">
-              <Activity className="w-8 h-8 text-slate-200 dark:text-[#a0a0a0] mx-auto mb-2" />
+              <Activity className="w-8 h-8 text-white mx-auto mb-2" />
               <p className="text-sm text-[#555555] mb-3">How are you feeling today?</p>
-              <Button size="sm" className="bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold text-xs h-8" onClick={handleOpen}>
+              <Button size="sm" className="bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold text-xs h-8" onClick={handleOpen}>
                 <Plus className="w-3 h-3 mr-1" />Log Readiness
               </Button>
             </div>
@@ -181,8 +181,8 @@ export default function DailyReadinessCard() {
           <div className="space-y-5 mt-1">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
-                  <Moon className="w-3.5 h-3.5 text-indigo-400" /> Sleep Quality
+                <label className="text-sm font-semibold text-[#a0a0a0] text-[#a0a0a0] flex items-center gap-1.5">
+                  <Moon className="w-3.5 h-3.5 text-[#818cf8]" /> Sleep Quality
                 </label>
                 <span className="text-xs text-[#a0a0a0]">{SLEEP_LABELS[sleep]}</span>
               </div>
@@ -190,8 +190,8 @@ export default function DailyReadinessCard() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" /> Muscle Soreness
+                <label className="text-sm font-semibold text-[#a0a0a0] text-[#a0a0a0] flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-[#fbbf24]" /> Muscle Soreness
                 </label>
                 <span className="text-xs text-[#a0a0a0]">{SORENESS_LABELS[soreness]}</span>
               </div>
@@ -200,7 +200,7 @@ export default function DailyReadinessCard() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700 text-[#a0a0a0] flex items-center gap-1.5">
+                <label className="text-sm font-semibold text-[#a0a0a0] text-[#a0a0a0] flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-rose-400" /> Stress Level
                 </label>
                 <span className="text-xs text-[#a0a0a0]">{STRESS_LABELS[stress]}</span>
@@ -209,7 +209,7 @@ export default function DailyReadinessCard() {
               <p className="text-xs text-[#a0a0a0] mt-1">1 = very stressed, 5 = completely calm</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1 block">Notes (optional)</label>
+              <label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1 block">Notes (optional)</label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -219,7 +219,7 @@ export default function DailyReadinessCard() {
               />
             </div>
             <Button
-              className="w-full bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
+              className="w-full bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >

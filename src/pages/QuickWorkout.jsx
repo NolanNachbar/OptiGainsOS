@@ -210,7 +210,7 @@ export default function QuickWorkout() {
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen relative transition-colors duration-300">
+    <div className="bg-[#1a1a1a]  min-h-screen relative transition-colors duration-300">
       <WorkoutLoggingHeader
         workoutTitle={workoutTitle}
         showTitleInHeader={showTitleInHeader}
@@ -222,7 +222,7 @@ export default function QuickWorkout() {
       <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[140px] lg:pt-32 pb-40 lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6">
           <div className="flex items-center gap-2">
-            <Dumbbell className="w-6 h-6 text-slate-900" />
+            <Dumbbell className="w-6 h-6 text-white" />
             {editingTitle ? (
               <Input
                 autoFocus
@@ -233,22 +233,22 @@ export default function QuickWorkout() {
                 className="text-2xl font-bold h-10 flex-1"
               />
             ) : (
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{workoutTitle}</h1>
+              <h1 className="text-2xl font-bold text-white">{workoutTitle}</h1>
             )}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="h-8 w-8 text-slate-600 hover:text-slate-900"
+              className="h-8 w-8 text-[#a0a0a0] hover:text-white"
             >
               {editingTitle ? (
-                <Check className="w-4 h-4 text-success-600" />
+                <Check className="w-4 h-4 text-[#4ade80]" />
               ) : (
                 <Pencil className="w-4 h-4" />
               )}
             </Button>
           </div>
-          <p className="text-slate-600 text-sm mt-1">Add exercises as you go</p>
+          <p className="text-[#a0a0a0] text-sm mt-1">Add exercises as you go</p>
         </div>
 
         {/* Exercise List */}
@@ -289,14 +289,14 @@ export default function QuickWorkout() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-[#a0a0a0] ">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button className="flex-1 bg-primary-600 hover:bg-primary-700" onClick={handleResumeSession}>
+            <Button className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

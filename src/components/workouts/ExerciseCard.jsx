@@ -130,7 +130,7 @@ export default function ExerciseCard({
 
   return (
     <>
-    <Card className="border-none shadow-lg bg-[#1a1a1a]">
+    <Card className="bg-[#1a1a1a]">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -151,7 +151,7 @@ export default function ExerciseCard({
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg text-white">{exercise.name}</CardTitle>
                   {dbEntry && (
-                    <Badge variant="outline" className="text-xs capitalize border-slate-300 border-[#2a2a2a] text-slate-700 text-[#a0a0a0]">
+                    <Badge variant="outline" className="text-xs capitalize border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0]">
                       {dbEntry.type}
                     </Badge>
                   )}
@@ -227,13 +227,13 @@ export default function ExerciseCard({
               <MoreVertical className="w-5 h-5" />
             </Button>
             {openMenu && (
-              <div className="absolute right-0 top-9 rounded-lg shadow-lg border border-[#2a2a2a] py-1 z-20 min-w-[160px] bg-[#1a1a1a] text-white dark:text-slate-100">
+              <div className="absolute right-0 top-9 rounded-lg border border-[#2a2a2a] py-1 z-20 min-w-[160px] bg-[#1a1a1a] text-white ">
                 <button
                   onClick={() => {
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -252,7 +252,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -263,7 +263,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-100 hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -274,7 +274,7 @@ export default function ExerciseCard({
                     onRemoveExercise(exerciseIndex);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
@@ -289,9 +289,9 @@ export default function ExerciseCard({
         {/* Advisory nudge */}
         {nudgeMessage && (
           <div className={`mb-3 p-2.5 rounded-lg text-sm flex items-start gap-2 ${
-            nudgeMessage.type === 'success' ? 'bg-success-50 text-success-700' :
-            nudgeMessage.type === 'warning' ? 'bg-amber-50 text-amber-700' :
-            'bg-blue-50 text-blue-700'
+            nudgeMessage.type === 'success' ? 'bg-[rgba(34,197,94,0.08)] text-[#4ade80]' :
+            nudgeMessage.type === 'warning' ? 'bg-[rgba(245,158,11,0.08)] text-[#fbbf24]' :
+            'bg-[rgba(59,130,246,0.08)] text-[#60a5fa]'
           }`}>
             {nudgeMessage.type === 'warning' ? (
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -318,7 +318,7 @@ export default function ExerciseCard({
                       <span>RIR</span>
                       <div className="group relative">
                         <HelpCircle className="w-3 h-3 cursor-help text-[#a0a0a0] hover:text-[#a0a0a0]" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-slate-900 text-white text-xs rounded shadow-lg">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-[#121212] text-white text-xs rounded">
                           Reps In Reserve: How many more reps you could do (0 = failure, 3 = 3 more reps possible)
                         </div>
                       </div>
@@ -333,11 +333,11 @@ export default function ExerciseCard({
               {exercise.sets.map((set, setIndex) => (
                 <tr key={setIndex} className={
                   set.completed
-                    ? set.set_type === 'daily_min' ? "bg-blue-100 dark:bg-blue-950/30" : "bg-success-600/10 dark:bg-success-600/20"
+                    ? set.set_type === 'daily_min' ? "bg-[rgba(59,130,246,0.08)]" : "bg-[rgba(34,197,94,0.1)]"
                     : ""
                 }>
                   <td className="py-2 px-1">
-                    <span className="font-medium text-slate-700 text-[#a0a0a0] text-sm">{set.set_number}</span>
+                    <span className="font-medium text-[#a0a0a0] text-[#a0a0a0] text-sm">{set.set_number}</span>
                   </td>
                   <td className="py-2 px-1">
                     <Input
@@ -400,7 +400,7 @@ export default function ExerciseCard({
                       variant="ghost"
                       size="icon"
                       onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                      className="h-7 w-7 md:h-8 md:w-8 text-[#a0a0a0] hover:text-red-600 hover:bg-red-50"
+                      className="h-7 w-7 md:h-8 md:w-8 text-[#a0a0a0] hover:text-[#f87171] hover:bg-red-50"
                     >
                       <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </Button>
@@ -447,7 +447,7 @@ export default function ExerciseCard({
             {exercise.notes}
           </p>
         ) : originalExercise?.notes ? (
-          <p className="text-sm text-[#a0a0a0] mt-3 italic border-l-2 border-slate-300 pl-3">
+          <p className="text-sm text-[#a0a0a0] mt-3 italic border-l-2 border-[#2a2a2a] pl-3">
             {originalExercise.notes}
           </p>
         ) : null}
@@ -465,12 +465,28 @@ export default function ExerciseCard({
         </DialogHeader>
         <div className="space-y-3 mt-2">
           {replaceAlternatives && [
-            { key: "easier", label: "Easier", icon: "↓", description: "Lower difficulty, same muscle group" },
-            { key: "same",   label: "Same Level", icon: "→", description: "Similar difficulty, different exercise" },
-            { key: "harder", label: "Harder", icon: "↑", description: "Higher difficulty, same muscle group" },
+            { key: "easier", label: "Easier", icon: "↓" },
+            { key: "same",   label: "Same Level", icon: "→" },
+            { key: "harder", label: "Harder", icon: "↑" },
           ].map(({ key, label, icon }) => {
             const alt = replaceAlternatives[key];
             if (!alt) return null;
+
+            const origEquip = (dbEntry?.equipment || []).map(e => String(e).toLowerCase());
+            const altEquip  = (alt.equipment || []).map(e => String(e).toLowerCase());
+            const origIsBarbell  = origEquip.some(e => e.includes('barbell'));
+            const altIsDumbbell  = altEquip.some(e => e.includes('dumbbell'));
+            const origIsDumbbell = origEquip.some(e => e.includes('dumbbell'));
+            const altIsBarbell   = altEquip.some(e => e.includes('barbell'));
+            const altIsBodyweight = altEquip.some(e => e.includes('bodyweight') || e === 'none');
+
+            let loadHint = null;
+            if (origIsBarbell && altIsDumbbell)       loadHint = 'Use ~45% of barbell load per dumbbell';
+            else if (origIsDumbbell && altIsBarbell)  loadHint = 'Combine both dumbbell loads';
+            else if (altIsBodyweight)                 loadHint = 'Bodyweight — adjust volume as needed';
+
+            const muscles = (alt.primaryMuscle || []).slice(0, 3).join(', ');
+
             return (
               <button
                 key={key}
@@ -483,15 +499,22 @@ export default function ExerciseCard({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-[#a0a0a0] group-hover:text-primary-500">{icon}</span>
+                      <span className="text-lg font-bold text-[#a0a0a0] group-hover:text-[#ccff00]">{icon}</span>
                       <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">{label}</span>
+                      {alt.pattern && (
+                        <span className="text-xs text-[#555555] border border-[#2a2a2a] rounded px-1.5 py-0.5">{alt.pattern}</span>
+                      )}
                     </div>
-                    <p className="font-semibold text-slate-800 group-hover:text-[#ccff00]">{alt.name}</p>
-                    <p className="text-xs text-[#555555] mt-1">
-                      {alt.sets} sets × {alt.reps} reps · {alt.rest}s rest
-                    </p>
+                    <p className="font-semibold text-white group-hover:text-[#ccff00]">{alt.name}</p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                      {muscles && <span className="text-xs text-[#a0a0a0]">{muscles}</span>}
+                      <span className="text-xs text-[#555555]">{alt.sets} × {alt.reps} · {alt.rest}s</span>
+                    </div>
+                    {loadHint && (
+                      <p className="text-xs text-[#fbbf24] mt-1">{loadHint}</p>
+                    )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-primary-500 mt-1 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-[#ccff00] mt-1 flex-shrink-0" />
                 </div>
               </button>
             );

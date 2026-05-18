@@ -90,7 +90,7 @@ export function ExploreFeed({ friendsOnly = false }) {
 
   if (items.length === 0) {
     return (
-      <Card className="border border-[#2a2a2a] shadow-md">
+      <Card className="border border-[#2a2a2a]">
         <CardContent className="py-12 text-center">
           <Compass className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
           <p className="text-[#555555] mb-1">
@@ -208,9 +208,9 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
   const commentState = useProgramCommentSection(item.id, item.commentCount);
 
   const DIFFICULTY_COLORS = {
-    beginner: "bg-green-100 text-green-700",
+    beginner: "bg-[rgba(34,197,94,0.1)] text-[#4ade80]",
     intermediate: "bg-yellow-100 text-yellow-700",
-    advanced: "bg-red-100 text-red-700",
+    advanced: "bg-[rgba(239,68,68,0.1)] text-[#f87171]",
   };
 
   const GOAL_LABELS = {
@@ -222,7 +222,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
   };
 
   return (
-    <Card className="border-none shadow-md">
+    <Card className="">
       <CardContent className="pt-5 pb-4">
         {/* Author header */}
         <div className="flex items-start gap-3 mb-3">
@@ -247,7 +247,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] dark:hover:bg-[rgba(204,255,0,0.08)] text-xs"
+                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-xs"
                 onClick={onClone}
                 disabled={isCloning}
               >
@@ -258,7 +258,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs"
+                className="shrink-0 text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] text-xs"
                 onClick={onUnshare}
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" /> Unshare
@@ -280,7 +280,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
         {program && (
           <div className="bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg p-3 mt-3 space-y-3">
             <div className="flex flex-wrap gap-2">
-              <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-[#202020] text-slate-700"}>
+              <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-[#202020] text-[#a0a0a0]"}>
                 {program.difficulty}
               </Badge>
               <Badge variant="outline">
@@ -327,7 +327,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
         )}
 
         {/* Likes and Comments */}
-        <div className="flex items-center gap-3 pt-2 border-t border-slate-100 mt-3">
+        <div className="flex items-center gap-3 pt-2 border-t border-[#2a2a2a] mt-3">
           <ProgramLikeButton sharedProgramId={item.id} />
           <ProgramCommentToggle {...commentState} />
         </div>
@@ -391,7 +391,7 @@ function ProgramDetailsExpanded({ programId }) {
 
   return (
     <div className="space-y-2 pt-2 border-t border-[#2a2a2a]">
-      <h5 className="text-xs font-semibold text-slate-700 text-[#a0a0a0] uppercase tracking-wide">
+      <h5 className="text-xs font-semibold text-[#a0a0a0] text-[#a0a0a0] uppercase tracking-wide">
         Cycle Template ({workouts.length} days)
       </h5>
       <div className="space-y-1.5 max-h-96 overflow-y-auto">
@@ -494,7 +494,7 @@ function WorkoutDayCard({ workout }) {
               <div className="mt-2 space-y-1 ml-1">
                 {workout.exercises.map((ex, i) => (
                   <div key={i} className="flex items-start gap-2 text-[11px] py-1 border-t border-[#2a2a2a]">
-                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] dark:bg-primary-900 flex items-center justify-center text-[#ccff00] text-[#ccff00] text-[11px] font-bold shrink-0 mt-0.5">
+                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] flex items-center justify-center text-[#ccff00] text-[#ccff00] text-[11px] font-bold shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">

@@ -4,14 +4,6 @@ import { ChevronDown, Check } from "lucide-react";
 
 const ComboboxContext = React.createContext({});
 
-/**
- * Two modes:
- *  - Pass `items` (string[]) → fully self-contained, filters inline every render.
- *  - Pass children with <ComboboxContent>/<ComboboxItem> → legacy context-based API.
- *
- * Uses the `value` prop directly (no local inputValue state) so filtering is always
- * in sync with what the parent controls — no useEffect lag.
- */
 function Combobox({ value = "", onValueChange, items, excludeValue = "", placeholder = "", onKeyDown, children }) {
   const [open, setOpen] = React.useState(false);
   const [dropdownStyle, setDropdownStyle] = React.useState({});
@@ -58,7 +50,6 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
 
   const useItemsMode = Array.isArray(items);
 
-  // Filter inline every render — value prop is authoritative, no stale closure possible
   const query = (value ?? "").trim().toLowerCase();
   const filtered = useItemsMode
     ? [...new Set(items)].filter((n) => n !== excludeValue && (!query || n.toLowerCase().includes(query)))
@@ -67,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-10 w-full items-center rounded-md border border-slate-200 bg-white pr-3 ring-offset-white focus-within:ring-2 focus-within:ring-slate-950 focus-within:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:ring-slate-50"
+      className="flex h-[38px] w-full items-center rounded-[10px] border border-transparent bg-[#151515] pr-3 focus-within:border-[#ccff00] focus-within:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] transition-[border-color,box-shadow] duration-150"
     >
       <input
         type="text"
@@ -76,10 +67,10 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-slate-500 dark:text-slate-50 dark:placeholder:text-slate-400"
+        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-white outline-none placeholder:text-[#555555]"
       />
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center">
-        <ChevronDown className="h-4 w-4 opacity-50" />
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-[#555555]">
+        <ChevronDown className="h-4 w-4" />
       </button>
     </div>
   );
@@ -93,7 +84,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
             <>
               <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
               <div
-                className="fixed z-[10200] max-h-60 overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-slate-700 dark:bg-slate-800"
+                className="fixed z-[10200] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1"
                 style={dropdownStyle}
               >
                 {filtered.length > 0 ? (
@@ -103,7 +94,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                       <div
                         key={name}
                         onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
-                        className={`flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${selected ? "bg-slate-100 dark:bg-slate-700" : ""}`}
+                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-[rgba(204,255,0,0.08)] text-[#ccff00]" : "text-[#a0a0a0]"}`}
                       >
                         {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
                         {name}
@@ -111,7 +102,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                     );
                   })
                 ) : (
-                  <div className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">
+                  <div className="px-2 py-1.5 text-[13px] text-[#555555]">
                     {query ? `No results for "${value}". Press Enter to use it.` : "No options available."}
                   </div>
                 )}
@@ -123,7 +114,6 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
     );
   }
 
-  // Legacy children mode (used by CreateWorkout.jsx)
   return (
     <ComboboxContext.Provider
       value={{ inputValue: value ?? "", open, setOpen, triggerRef, handleSelect, placeholder }}
@@ -136,7 +126,6 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   );
 }
 
-// Legacy children-based components — still used by CreateWorkout.jsx
 const ComboboxContent = ({ className = "", children }) => {
   const { open, setOpen, triggerRef, inputValue } = React.useContext(ComboboxContext);
   const [style, setStyle] = React.useState({});
@@ -165,11 +154,11 @@ const ComboboxContent = ({ className = "", children }) => {
     <>
       <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10200] max-h-60 overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-slate-700 dark:bg-slate-800 ${className}`}
+        className={`fixed z-[10200] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
         style={style}
       >
         {filtered.length > 0 ? filtered : (
-          <div className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">
+          <div className="px-2 py-1.5 text-[13px] text-[#555555]">
             {query ? `No results for "${inputValue}".` : "No options available."}
           </div>
         )}
@@ -185,7 +174,7 @@ const ComboboxItem = ({ value, children }) => {
   return (
     <div
       onMouseDown={(e) => { e.preventDefault(); handleSelect(value); }}
-      className={`flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${selected ? "bg-slate-100 dark:bg-slate-700" : ""}`}
+      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-[rgba(204,255,0,0.08)] text-[#ccff00]" : "text-[#a0a0a0]"}`}
     >
       {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
       {children}

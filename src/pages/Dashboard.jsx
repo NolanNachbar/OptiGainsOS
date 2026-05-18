@@ -18,7 +18,7 @@ import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { useTutorial } from "@/hooks/useTutorial";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
 import { generatePersonalizedWorkout } from "@/ml/mlRecommender";
-import { getWeeklyBodyData } from "@/utils/muscleVolumeUtils";
+import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import {
   Dumbbell,
@@ -258,7 +258,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("workout_logs")
-        .select("exercises")
+        .select("exercises, log_date, completed_at")
         .eq("created_by", user.id)
         .gte("log_date", weekStart)
         .lte("log_date", weekEnd);
@@ -268,7 +268,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const weeklyBodyData = getWeeklyBodyData(weeklyLogsWithExercises);
+  const weeklyBodyData = getRecoveryHeatmapData(weeklyLogsWithExercises);
 
   const { enrollments } = useEnrollments();
   const activeEnrollment = enrollments.find((e) => e.status === "active");
@@ -667,31 +667,27 @@ export default function Dashboard() {
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen relative">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 text-left">
-            Welcome to Vektor
-          </h1>
-          <p className="text-[#a0a0a0] text-left">
-            Let's crush your fitness goals today
-          </p>
+        <div className="mb-8 flex items-end justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-white leading-tight">Welcome to Vektor</h1>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Let's crush your fitness goals today</p>
+          </div>
         </div>
 
         {/* First-workout welcome banner — shown until user logs a workout or dismisses */}
         {welcomeBannerVisible && !logsLoading && !logsError && workoutLogs.length === 0 && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-primary-500/10 border border-primary-500/30 px-5 py-4">
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-[10px] bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.15)] px-5 py-4">
             <div>
               <p className="font-semibold text-white">Ready to log your first workout?</p>
               <p className="text-sm text-[#a0a0a0] mt-0.5">Head to the Schedule to pick a workout and get started.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Link to="/schedule">
-                <button className="text-sm font-bold px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-400 text-black transition-colors">
-                  Go to Schedule
-                </button>
+                <Button variant="volt" size="sm">Go to Schedule</Button>
               </Link>
               <button
                 onClick={() => { localStorage.setItem('sisyphus_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
-                className="text-[#a0a0a0] hover:text-slate-600 dark:hover:text-[#a0a0a0] text-lg leading-none px-1"
+                className="text-[#555555] hover:text-[#a0a0a0] text-lg leading-none px-1 transition-colors"
                 aria-label="Dismiss"
               >
                 ×
@@ -703,7 +699,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" data-tutorial="dashboard-overview">
           {/* ── Today's Workout Card ── */}
           <div
-            className="rounded-xl shadow-md bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-primary-500"
+            className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-[#ccff00]"
             data-tutorial="start-workout-btn"
           >
             <div className="px-5 pt-4 pb-1">
@@ -715,14 +711,14 @@ export default function Dashboard() {
               {/* Tutorial demo */}
               {tutorialActive && currentStepData?.id === "start-workout" ? (
                 <div className="text-center py-2">
-                  <Badge className="bg-white/20 text-white border-none text-xs mb-2">Demo Program</Badge>
+                  <Badge className="bg-[#1a1a1a]/20 text-white border-none text-xs mb-2">Demo Program</Badge>
                   <h3 className="text-lg font-bold text-white mb-1">Upper Body Strength</h3>
                   <div className="flex items-center justify-center gap-3 text-xs text-white/80 mb-3">
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />45 min</span>
                     <span className="flex items-center gap-1"><Target className="w-3 h-3" />1 exercise</span>
                   </div>
                   <Link to="/workout-detail?tutorial=demo">
-                    <Button variant="ghost" className="bg-primary-500 text-black hover:bg-primary-400 text-sm font-bold" size="sm" onClick={() => nextStep()} data-tutorial="start-workout-btn">
+                    <Button variant="ghost" className="bg-[#ccff00] text-black hover:bg-[#ccff00] text-sm font-bold" size="sm" onClick={() => nextStep()} data-tutorial="start-workout-btn">
                       Start Workout <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
@@ -730,7 +726,7 @@ export default function Dashboard() {
               ) : workoutTitle ? (
                 <>
                   {todayProgramWorkout && (
-                    <Badge className="bg-white/20 text-white border-none text-xs mb-1.5">
+                    <Badge className="bg-[#1a1a1a]/20 text-white border-none text-xs mb-1.5">
                       {todayProgramWorkout.programName}
                     </Badge>
                   )}
@@ -749,7 +745,7 @@ export default function Dashboard() {
                     <div className="flex gap-2 mt-1">
                       {todayWorkoutLink && (
                         <Link to={todayWorkoutLink} className="flex-1">
-                          <Button variant="ghost" size="sm" className="w-full text-sm bg-white/20 text-white hover:bg-white/30">
+                          <Button variant="ghost" size="sm" className="w-full text-sm bg-[#1a1a1a]/20 text-white hover:bg-[#1a1a1a]/30">
                             <Circle className="w-3.5 h-3.5 mr-1 fill-green-400 text-green-400" />Completed — View
                           </Button>
                         </Link>
@@ -760,13 +756,13 @@ export default function Dashboard() {
                     <div className="flex gap-2 mt-1">
                       {todayWorkoutLink && (
                         <Link to={todayWorkoutLink} className="flex-1" onClick={() => tutorialActive && nextStep()}>
-                          <Button variant="ghost" size="sm" className="w-full text-sm bg-primary-500 text-black hover:bg-primary-400 font-bold" data-tutorial="start-workout-btn">
+                          <Button variant="ghost" size="sm" className="w-full text-sm bg-[#ccff00] text-black hover:bg-[#ccff00] font-bold" data-tutorial="start-workout-btn">
                             Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
                           </Button>
                         </Link>
                       )}
                       {todayExercises.length > 0 && (
-                        <Button variant="ghost" size="sm" className="bg-white/20 text-white hover:bg-white/30 text-xs px-3" onClick={() => setShowTodayExercises((v) => !v)}>
+                        <Button variant="ghost" size="sm" className="bg-[#1a1a1a]/20 text-white hover:bg-[#1a1a1a]/30 text-xs px-3" onClick={() => setShowTodayExercises((v) => !v)}>
                           {showTodayExercises ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           <span className="ml-1">More</span>
                         </Button>
@@ -792,10 +788,10 @@ export default function Dashboard() {
                                 onClick={() => set(n)}
                                 className={`w-6 h-6 rounded-full text-[11px] font-bold transition-all ${
                                   value === n
-                                    ? "bg-primary-500 text-black scale-110"
+                                    ? "bg-[#ccff00] text-black scale-110"
                                     : value > n
-                                    ? "bg-white/40 text-white"
-                                    : "bg-white/15 text-white/50 hover:bg-white/25"
+                                    ? "bg-[#1a1a1a]/40 text-white"
+                                    : "bg-[#1a1a1a]/15 text-white/50 hover:bg-[#1a1a1a]/25"
                                 }`}
                               >
                                 {n}
@@ -808,7 +804,7 @@ export default function Dashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="flex-1 bg-primary-500 text-black hover:bg-primary-400 text-sm font-bold font-semibold"
+                          className="flex-1 bg-[#ccff00] text-black hover:bg-[#ccff00] text-sm font-bold font-semibold"
                           disabled={checkInMutation.isPending}
                           onClick={() => checkInMutation.mutate()}
                         >
@@ -816,7 +812,7 @@ export default function Dashboard() {
                         </Button>
                         {todayWorkoutLink && (
                           <Link to={todayWorkoutLink}>
-                            <Button variant="ghost" size="sm" className="bg-white/15 text-white/70 hover:bg-white/25 text-xs px-3">
+                            <Button variant="ghost" size="sm" className="bg-[#1a1a1a]/15 text-white/70 hover:bg-[#1a1a1a]/25 text-xs px-3">
                               Skip
                             </Button>
                           </Link>
@@ -838,7 +834,7 @@ export default function Dashboard() {
                   <Calendar className="w-7 h-7 mx-auto mb-1.5 text-white/60" />
                   <p className="text-sm text-white/90 mb-2">No workout scheduled</p>
                   <Link to="/schedule">
-                    <Button variant="ghost" className="bg-primary-500 text-black hover:bg-primary-400 text-sm font-bold" size="sm">
+                    <Button variant="primary" size="sm">
                       Schedule a Workout
                     </Button>
                   </Link>
@@ -856,7 +852,7 @@ export default function Dashboard() {
                   {todayProgramWorkout.cardio_sessions.map((c, i) => {
                     const sessionDone = todayProgramWorkout.completed || todayProgramWorkout.completedSessions?.has(i);
                     return (
-                      <div key={i} className="flex items-center gap-2 text-xs bg-white/10 rounded-lg px-3 py-1.5">
+                      <div key={i} className="flex items-center gap-2 text-xs bg-[#1a1a1a]/10 rounded-lg px-3 py-1.5">
                         <span className="font-medium text-white flex-1 truncate">{c.title}</span>
                         <span className="text-white/60 shrink-0">{c.duration_minutes} min{c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}</span>
                         {sessionDone ? (
@@ -898,7 +894,7 @@ export default function Dashboard() {
                 </p>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {todayExercises.map((ex, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs bg-white/10 rounded-lg px-3 py-1.5">
+                    <div key={i} className="flex items-center justify-between text-xs bg-[#1a1a1a]/10 rounded-lg px-3 py-1.5">
                       <span className="font-medium text-white truncate mr-2">{ex.name}</span>
                       <span className="text-white/60 shrink-0">
                         {ex.sets}×{ex.reps}
@@ -917,19 +913,19 @@ export default function Dashboard() {
             <CardHeader className="pb-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-primary-500" />
+                  <Brain className="w-4 h-4 text-[#ccff00]" />
                   This Week
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#a0a0a0] dark:text-[#555555] uppercase tracking-wide">Muscles trained</span>
+                  <span className="text-xs text-[#a0a0a0] uppercase tracking-wide">Muscles trained</span>
                   <div className="flex rounded-full overflow-hidden border border-[#333] text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-primary-500 text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-primary-500 text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -945,7 +941,7 @@ export default function Dashboard() {
                       <span className="font-semibold text-white">{weeklyCompleted}/{weeklyGoal}</span>
                     </div>
                     <div className="h-1.5 bg-[#333] rounded-full overflow-hidden">
-                      <div className="h-full bg-primary-500 rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
+                      <div className="h-full bg-[#ccff00] rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
                     </div>
                   </div>
 
@@ -979,7 +975,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-1">
                       <span className="font-semibold text-white">{currentBodyWeight || "—"}{currentBodyWeight ? ` ${weightUnit}` : ""}</span>
                       {bodyWeightChange !== undefined && bodyWeightChange !== null && bodyWeightChange !== 0 && (
-                        <span className={`text-xs ${bodyWeightChange > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                        <span className={`text-xs ${bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]"}`}>
                           {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange.toFixed(1)}
                         </span>
                       )}
@@ -1014,7 +1010,7 @@ export default function Dashboard() {
                       <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">Week Generator</span>
                       <button
                         onClick={() => setShowWorkoutSettings((s) => !s)}
-                        className="text-xs text-primary-500 hover:text-primary-400 font-medium"
+                        className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium"
                       >
                         {showWorkoutSettings ? "Hide" : "Options"}
                       </button>
@@ -1029,13 +1025,13 @@ export default function Dashboard() {
                           <div className="flex flex-wrap gap-1.5">
                             <button
                               onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: null }))}
-                              className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === null ? "border-primary-500 bg-primary-500/10 text-primary-500" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-primary-500/40"}`}
+                              className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === null ? "border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[#ccff00]/40"}`}
                             >Auto</button>
                             {[3, 4, 5, 6, 7].map((n) => (
                               <button
                                 key={n}
                                 onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: n }))}
-                                className={`w-8 h-7 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === n ? "border-primary-500 bg-primary-500/10 text-primary-500" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-primary-500/40"}`}
+                                className={`w-8 h-7 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === n ? "border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[#ccff00]/40"}`}
                               >{n}</button>
                             ))}
                           </div>
@@ -1044,29 +1040,30 @@ export default function Dashboard() {
                           <span className="text-[#a0a0a0]">Cardio finisher</span>
                           <button
                             onClick={() => setWorkoutSettings((s) => ({ ...s, includeCardio: !s.includeCardio }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.includeCardio ? "bg-primary-500" : "bg-[#444]"}`}
+                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.includeCardio ? "bg-[#ccff00]" : "bg-[#444]"}`}
                           >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${workoutSettings.includeCardio ? "translate-x-4" : "translate-x-0"}`} />
+                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.includeCardio ? "translate-x-4" : "translate-x-0"}`} />
                           </button>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-[#a0a0a0]">Skip deload weeks</span>
                           <button
                             onClick={() => setWorkoutSettings((s) => ({ ...s, skipDeload: !s.skipDeload }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.skipDeload ? "bg-primary-500" : "bg-[#444]"}`}
+                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.skipDeload ? "bg-[#ccff00]" : "bg-[#444]"}`}
                           >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${workoutSettings.skipDeload ? "translate-x-4" : "translate-x-0"}`} />
+                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.skipDeload ? "translate-x-4" : "translate-x-0"}`} />
                           </button>
                         </div>
                       </div>
                     )}
 
                     <Button
+                      variant="dark"
                       onClick={() => {
                         handleGenerateAndSchedule();
                         if (tutorialActive && currentStepData?.id === "generate-week") nextStep();
                       }}
-                      className="w-full bg-[#18181f] hover:bg-slate-800 text-white text-sm h-9"
+                      className="w-full h-9"
                       data-tutorial="generate-week-btn"
                     >
                       <Zap className="w-3.5 h-3.5 mr-1.5" />Generate My Week
@@ -1081,8 +1078,8 @@ export default function Dashboard() {
                   <MuscleHeatMap data={weeklyBodyData} view={muscleView} className="flex-1" />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <Dumbbell className="w-8 h-8 text-slate-200 dark:text-slate-600 mb-2" />
-                    <p className="text-xs text-[#a0a0a0] dark:text-[#555555]">Log workouts to see<br />which muscles you've hit</p>
+                    <Dumbbell className="w-8 h-8 text-white  mb-2" />
+                    <p className="text-xs text-[#a0a0a0]">Log workouts to see<br />which muscles you've hit</p>
                   </div>
                 )}
               </div>
@@ -1091,11 +1088,11 @@ export default function Dashboard() {
         </div>
 
         {/* Nutrition */}
-        <Card className="border border-[#2a2a2a] shadow-sm mb-8" data-tutorial="nutrition-card">
+        <Card className="border border-[#2a2a2a] mb-8" data-tutorial="nutrition-card">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                <Apple className="w-4 h-4 text-emerald-600" />
+                <Apple className="w-4 h-4 text-[#4ade80]" />
                 Today's Nutrition
               </CardTitle>
               {tdeeResult?.tdee && (
@@ -1108,7 +1105,7 @@ export default function Dashboard() {
                     {tdeeResult.tdee.toLocaleString()} cal
                   </span>
                   {tdeeResult.method === "adaptive" && (
-                    <span className="text-xs text-emerald-600 font-medium">observed</span>
+                    <span className="text-xs text-[#4ade80] font-medium">observed</span>
                   )}
                 </div>
               )}
@@ -1163,7 +1160,7 @@ export default function Dashboard() {
         <div className="mt-8">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary-500" />
+              <BarChart3 className="w-5 h-5 text-[#ccff00]" />
               Progress & Analytics
             </h2>
             <p className="text-[#555555] text-sm mt-1">Track your strength, workouts, and body weight</p>
@@ -1250,9 +1247,9 @@ export default function Dashboard() {
                           </tr></thead>
                           <tbody>
                             {Object.entries(allPRs).sort((a, b) => b[1].weight - a[1].weight).map(([exercise, pr]) => (
-                              <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-slate-50 hover:bg-[#242424] transition-colors">
+                              <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424] transition-colors">
                                 <td className="py-2 px-3 font-medium text-sm">{exercise}</td>
-                                <td className="py-2 px-3"><span className="font-semibold text-primary-500 text-sm">{pr.weight} {weightUnit}</span></td>
+                                <td className="py-2 px-3"><span className="font-semibold text-[#ccff00] text-sm">{pr.weight} {weightUnit}</span></td>
                                 <td className="py-2 px-3 text-sm">{pr.reps}</td>
                                 <td className="py-2 px-3 text-[#a0a0a0] text-sm">{new Date(pr.date).toLocaleDateString()}</td>
                               </tr>
@@ -1293,7 +1290,7 @@ export default function Dashboard() {
                         <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Notes (optional)</label>
                         <Input value={bodyWeightNotes} onChange={(e) => setBodyWeightNotes(e.target.value)} placeholder="e.g., Morning weigh-in..." />
                       </div>
-                      <Button type="submit" className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold" disabled={addBodyWeightMutation.isPending}>
+                      <Button type="submit" className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold" disabled={addBodyWeightMutation.isPending}>
                         <Scale className="w-4 h-4 mr-2" />Log Weight
                       </Button>
                     </form>
@@ -1307,7 +1304,7 @@ export default function Dashboard() {
                         { label: "Starting", value: startBodyWeight ? `${startBodyWeight} ${weightUnit}` : "—" },
                         { label: "Current", value: currentBodyWeight ? `${currentBodyWeight} ${weightUnit}` : "—" },
                         { label: "Trend", value: sortedWeightEntries.length > 1 ? `${(sortedWeightEntries.reduce((s, e) => s + e.weight, 0) / sortedWeightEntries.length).toFixed(1)} ${weightUnit}` : "—" },
-                        { label: "Change", value: bodyWeightChange !== null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)} ${weightUnit}` : "—", color: bodyWeightChange > 0 ? "text-amber-600" : bodyWeightChange < 0 ? "text-emerald-600" : "" },
+                        { label: "Change", value: bodyWeightChange !== null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)} ${weightUnit}` : "—", color: bodyWeightChange > 0 ? "text-[#fbbf24]" : bodyWeightChange < 0 ? "text-[#4ade80]" : "" },
                       ].map(({ label, value, color }) => (
                         <div key={label} className="bg-[#202020] rounded-xl p-3">
                           <div className="text-xs text-[#555555] mb-0.5">{label}</div>
@@ -1327,7 +1324,7 @@ export default function Dashboard() {
               )}
 
               {weightEntries.length === 0
-                ? <Card className="border border-slate-200 dark:border-slate-700 shadow-sm text-center py-12 bg-white dark:bg-slate-800"><CardContent>
+                ? <Card className="border border-[#2a2a2a]  text-center py-12 bg-[#1a1a1a] "><CardContent>
                     <Scale className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-white mb-2">No weight entries yet</h3>
                     <p className="text-[#a0a0a0]">Start logging your weight to track your progress</p>
@@ -1422,26 +1419,26 @@ function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, set
                 const vol = calculateVolume(log);
                 const durMin = log.duration_seconds ? Math.round(log.duration_seconds / 60) : null;
                 return (
-                  <div key={log.id} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 hover:bg-[#242424] transition-colors" onClick={() => toggleExpanded(log.id)}>
+                  <div key={log.id} className="border border-[#2a2a2a]  rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-[#1a1a1a] hover:bg-[#242424] transition-colors" onClick={() => toggleExpanded(log.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate text-white">{log.workoutTitle}</div>
                         <div className="flex flex-wrap gap-3 text-xs text-[#555555] mt-0.5">
                           <span>{format(parseISO(log.log_date), "MMM d, yyyy")}</span>
                           {durMin && <span>{durMin} min</span>}
                           <span>{log.exercises?.length || 0} exercises</span>
-                          {vol > 0 && <span className="text-primary-500 font-medium">{(vol / 1000).toFixed(1)}k {weightUnit}</span>}
+                          {vol > 0 && <span className="text-[#ccff00] font-medium">{(vol / 1000).toFixed(1)}k {weightUnit}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteLog(log.id); }}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-[#f87171]" onClick={(e) => { e.stopPropagation(); handleDeleteLog(log.id); }}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-[#a0a0a0]" /> : <ChevronDown className="w-4 h-4 text-[#a0a0a0]" />}
                       </div>
                     </div>
                     {isExpanded && (
-                      <div className="border-t border-slate-200 dark:border-slate-700 p-3 space-y-3">
+                      <div className="border-t border-[#2a2a2a]  p-3 space-y-3">
                         {log.exercises?.map((exercise, idx) => (
                           <div key={idx} className="bg-[#202020] rounded-xl p-3">
                             <h4 className="font-semibold text-sm mb-2 text-white">{exercise.name}</h4>
@@ -1459,7 +1456,7 @@ function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, set
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.set_number}</td>
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.weight} {weightUnit}</td>
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.reps}</td>
-                                    <td className="py-1 px-2 text-center text-primary-500">{set.weight * set.reps}</td>
+                                    <td className="py-1 px-2 text-center text-[#ccff00]">{set.weight * set.reps}</td>
                                     <td className="py-1 px-2 text-center text-[#555555]">{(set.rir ?? set.rpe) ?? "—"}</td>
                                   </tr>
                                 ))}
@@ -1498,7 +1495,7 @@ function WeightHistorySection({ weightEntries, weightUnit, handleDeleteBodyWeigh
         <CardContent className="pt-0">
           <div className="space-y-2">
             {weightEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-3 bg-[#202020] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors">
+              <div key={entry.id} className="flex items-center justify-between p-3 bg-[#202020] rounded-xl hover:bg-[#202020]  transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="text-lg font-bold text-white">{entry.weight} {weightUnit}</div>
                   <div className="text-sm text-[#a0a0a0]">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</div>
@@ -1506,7 +1503,7 @@ function WeightHistorySection({ weightEntries, weightUnit, handleDeleteBodyWeigh
                 <div className="flex items-center gap-2">
                   {entry.notes && <p className="text-xs text-[#555555] italic hidden sm:block">{entry.notes}</p>}
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteBodyWeight(entry.id)}>
-                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    <Trash2 className="w-3.5 h-3.5 text-[#f87171]" />
                   </Button>
                 </div>
               </div>

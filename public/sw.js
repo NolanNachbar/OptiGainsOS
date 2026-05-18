@@ -41,17 +41,16 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Sisyphus' Schedule", body: event.data.text() };
-  const { title, body, url = "/", icon = "/sisyphus-white.png" } = payload;
+    payload = { title: "Vektor's Schedule", body: event.data.text() };
+  }
+  const { title, body, url = "/", icon = "/vektor-logo.png" } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: "/sisyphus-white.png",
-      data: { url }
-    })
-  );
+      badge: "/vektor-logo.png",
+      data: { url },
       vibrate: [200, 100, 200],
     })
   );

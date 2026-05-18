@@ -5,11 +5,11 @@ import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator } from "lucide-rea
 import { useTutorial } from "@/hooks/useTutorial";
 
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-primary-500" },
-  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-success-500" },
-  { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-warning-500" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-primary-500" },
-  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-slate-600" },
+  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-[#ccff00]" },
+  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]" },
+  { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]" },
+  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-[#ccff00]" },
+  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]" },
 ];
 
 export default function FloatingActionButton({ onWeighIn, onCalculators }) {
@@ -76,10 +76,10 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
                   onClick={() => handleAction(action)}
                   className="flex items-center gap-3"
                 >
-                  <span className="bg-white text-slate-700 text-sm font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                  <span className="bg-[#1a1a1a] text-[#a0a0a0] text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
                     {action.label}
                   </span>
-                  <div className={`w-12 h-12 ${action.color} text-white rounded-full shadow-lg flex items-center justify-center`}>
+                  <div className={`w-12 h-12 ${action.color} text-white rounded-full flex items-center justify-center`}>
                     <action.icon className="w-5 h-5" />
                   </div>
                 </motion.button>
@@ -97,7 +97,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
             nextStep();
           }
         }}
-        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-primary-500 text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-primary-400 transition-colors"
+        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-[#ccff00] text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-[#ccff00] transition-colors"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"

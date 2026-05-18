@@ -31,13 +31,13 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
       }`}
     >
       <Card
-        className={`border-none shadow-md overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-150 ${
+        className={`overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-150 ${
           isOverlay
-            ? "shadow-md scale-105 ring-2 ring-primary-300"
-            : "hover:shadow-md"
+            ? "scale-105 ring-2 ring-[rgba(204,255,0,0.3)]"
+            : ""
         }`}
       >
-        <div className="h-1.5 bg-primary-500" />
+        <div className="h-1.5 bg-[#ccff00]" />
         <div className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
@@ -53,15 +53,15 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+              <p className="text-sm font-bold text-white truncate">
                 {workout.title}
               </p>
               {workout.description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                <p className="text-xs text-[#555555]  line-clamp-1 mt-0.5">
                   {workout.description}
                 </p>
               )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-3 mt-2 text-xs text-[#555555] ">
                 {workout.duration_minutes && (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -74,7 +74,7 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                 </span>
               </div>
             </div>
-            <GripVertical className="w-4 h-4 text-slate-300 dark:text-slate-600 flex-shrink-0 mt-1" />
+            <GripVertical className="w-4 h-4 text-[#a0a0a0]  flex-shrink-0 mt-1" />
           </div>
         </div>
       </Card>

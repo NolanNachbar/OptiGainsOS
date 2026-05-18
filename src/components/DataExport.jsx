@@ -103,8 +103,8 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
   return (
     <div className="flex items-center justify-between mb-4">
       <div>
-        <p className="font-medium text-slate-900 dark:text-white">Export Your Data</p>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="font-medium text-white">Export Your Data</p>
+        <p className="text-sm text-[#a0a0a0] ">
           Download your food log, body weight, and lifting history as CSV files
         </p>
       </div>

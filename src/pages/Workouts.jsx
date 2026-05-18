@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useRef, lazy, Suspense } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ import { ACTIVITY_TYPE_LABELS } from "@/lib/strava";
 import ShareCardioModal from "@/components/strava/ShareCardioModal";
 
 import { generateWorkoutPlan } from "@/ml/workoutModel";
+import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
 const StaticRouteMap = lazy(() => import("@/components/strava/StaticRouteMap"));
@@ -28,6 +29,7 @@ const StaticRouteMap = lazy(() => import("@/components/strava/StaticRouteMap"));
 export default function Workouts() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const importProgramRef = useRef(null);
   const [filter, setFilter] = useState("all");
   const [folderFilter, setFolderFilter] = useState("all");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -393,6 +395,22 @@ export default function Workouts() {
     return reactions.find(r => r.workout_id === workoutId)?.reaction;
   };
 
+  const handleImportProgram = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = parseProgramJson(ev.target.result);
+        navigate('/program-builder', { state: { importedProgram: parsed } });
+      } catch (err) {
+        toast.error(err.message || 'Failed to load JSON');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   // Liked exercise names (thumbs up on exercises during workouts)
   // These are non-workout rows in exercise_reactions (no "workout:" prefix)
   const { getLikedExercises } = useExerciseReactions();
@@ -424,16 +442,22 @@ export default function Workouts() {
   return (
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white text-left">Workouts</h1>
-            <p className="text-[#555555] text-sm mt-1 text-left">Your workout library and programs</p>
+            <h1 className="text-[22px] font-bold text-white leading-tight">Workouts</h1>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Your workout library and programs</p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Link to={"/create-workout"}>
+              <Button variant="dim" size="sm">
+                <Plus className="w-3.5 h-3.5" />
+                Create Custom
+              </Button>
+            </Link>
             <Button
+              variant="dark"
               onClick={generateWorkouts}
               disabled={isGenerating || !profile}
-              className="bg-primary-500 hover:bg-primary-400 text-black font-bold"
             >
               {isGenerating ? (
                 <>
@@ -442,17 +466,11 @@ export default function Workouts() {
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 mr-2" />
+                  <Zap className="w-4 h-4" />
                   Generate Workouts
                 </>
               )}
             </Button>
-            <Link to={"/create-workout"}>
-              <Button variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Custom
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -478,7 +496,7 @@ export default function Workouts() {
           </TabsList>
 
           <TabsContent value="library">
-        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-md mb-6 overflow-hidden">
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mb-6 overflow-hidden">
           <div className="px-6 pt-4 pb-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-bold text-white shrink-0">Saved Workouts</h2>
@@ -488,23 +506,23 @@ export default function Workouts() {
                   onClick={() => setFilterOpen(v => !v)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-primary-500 text-white border-[rgba(204,255,0,0.3)]'
+                      ? 'bg-[#ccff00] text-white border-[rgba(204,255,0,0.3)]'
                       : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] hover:text-[#ccff00]'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                   Filters
                   {(filter !== 'all' || folderFilter !== 'all') && (
-                    <span className="bg-white/30 text-white text-xs font-bold px-1 rounded-full leading-none py-0.5">
+                    <span className="bg-[#1a1a1a]/30 text-white text-xs font-bold px-1 rounded-full leading-none py-0.5">
                       {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
                     </span>
                   )}
                 </button>
-                <Button variant="outline" size="sm" onClick={() => document.getElementById("import-workout-input").click()}>
+                <Button variant="dim" size="sm" onClick={() => document.getElementById("import-workout-input").click()}>
                   <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Import</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowFormatGuide(true)} title="Import format guide">
+                <Button variant="dim" size="sm" onClick={() => setShowFormatGuide(true)} title="Import format guide">
                   <HelpCircle className="w-4 h-4" />
                 </Button>
                 <input
@@ -537,7 +555,7 @@ export default function Workouts() {
                       onClick={() => setFilter(f.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         filter === f.value
-                          ? 'bg-primary-500 text-black font-bold'
+                          ? 'bg-[#ccff00] text-black font-bold'
                           : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                       }`}
                     >
@@ -571,7 +589,7 @@ export default function Workouts() {
                               onChange={(e) => setRenameValue(e.target.value)}
                               className="px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(204,255,0,0.3)] bg-[#1a1a1a] text-white outline-none w-28"
                             />
-                            <button type="submit" className="p-1 text-emerald-600 hover:text-emerald-700">
+                            <button type="submit" className="p-1 text-[#4ade80] hover:text-[#4ade80]">
                               <Check className="w-3.5 h-3.5" />
                             </button>
                             <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-[#a0a0a0] hover:text-[#a0a0a0]">
@@ -586,7 +604,7 @@ export default function Workouts() {
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                               folderFilter === f
-                                ? 'bg-primary-500 text-black font-bold'
+                                ? 'bg-[#ccff00] text-black font-bold'
                                 : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                             }`}
                           >
@@ -612,19 +630,19 @@ export default function Workouts() {
           )}
           <div className="px-6 pb-6">
             {filter === "liked" && likedExerciseNames.length > 0 && (
-              <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-100 dark:bg-green-950/20 dark:border-green-900/40">
-                <h3 className="text-sm font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-1.5">
+              <div className="mb-6 p-4 rounded-[10px] bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)]">
+                <h3 className="text-sm font-semibold text-[#4ade80] mb-3 flex items-center gap-1.5">
                   <ThumbsUp className="w-4 h-4" />
                   Liked Exercises
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {likedExerciseNames.map(name => (
-                    <Badge key={name} variant="outline" className="text-sm py-1 px-3 bg-[#1a1a1a] text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                    <Badge key={name} variant="green" className="text-sm py-1 px-3">
                       {name}
                     </Badge>
                   ))}
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-500 mt-2">
+                <p className="text-xs text-[#4ade80] mt-2 opacity-70">
                   These exercises are prioritised when generating workouts for you.
                 </p>
               </div>
@@ -660,9 +678,9 @@ export default function Workouts() {
                   </p>
                   {filter === "all" && (
                     <Button
+                      variant="primary"
                       onClick={generateWorkouts}
                       disabled={isGenerating || !profile}
-                      className="bg-primary-500"
                     >
                       <Zap className="w-4 h-4 mr-2" />
                       Generate Your First Workouts
@@ -676,7 +694,7 @@ export default function Workouts() {
 
         {/* Generated Workout Plan Display */}
         {workoutPlan?.week?.length ? (
-          <Card className="border-none shadow-lg">
+          <Card className="">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
@@ -687,7 +705,7 @@ export default function Workouts() {
             </CardHeader>
             <CardContent className="space-y-4">
               {workoutPlan.week.map((day) => (
-                <div key={day.dayIndex} className="p-4 rounded-lg border bg-[#1a1a1a] border-[#2a2a2a] dark:text-white">
+                <div key={day.dayIndex} className="p-4 rounded-lg border bg-[#1a1a1a] border-[#2a2a2a]">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold">
                       Day {day.dayIndex + 1}: {day.focus}
@@ -725,7 +743,7 @@ export default function Workouts() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-none shadow-lg">
+          <Card className="">
             <CardHeader>
               <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
             </CardHeader>
@@ -738,9 +756,24 @@ export default function Workouts() {
 
           <TabsContent value="programs">
             <div className="flex items-center justify-end gap-2 mb-4">
+              <input
+                ref={importProgramRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImportProgram}
+              />
+              <Button
+                variant="dim"
+                size="sm"
+                onClick={() => importProgramRef.current?.click()}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Import JSON
+              </Button>
               <Link to="/program-builder">
-                <Button className="bg-primary-500 hover:bg-primary-400 text-black font-bold">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button variant="primary">
+                  <Plus className="w-4 h-4" />
                   Create Program
                 </Button>
               </Link>
@@ -848,7 +881,7 @@ export default function Workouts() {
               Are you sure you want to delete <span className="font-semibold text-white">"{workoutToDelete?.title}"</span>?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+          <div className="bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
             This will remove it from your library and any scheduled workouts. This action cannot be undone.
           </div>
           <div className="flex gap-3 mt-2">
@@ -864,7 +897,7 @@ export default function Workouts() {
             </Button>
             <Button
               onClick={confirmDelete}
-              className="flex-1 bg-danger-600 hover:bg-danger-700 text-white"
+              className="flex-1 bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.1)] text-white"
             >
               Delete Workout
             </Button>
@@ -984,7 +1017,7 @@ function StatBlock({ label, value, bordered }) {
 function StrengthEntryCard({ entry }) {
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all shadow-md p-4"
+      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all p-4"
       style={{ borderLeftColor: '#4f46e5' }}
     >
       <div className="flex justify-between items-start mb-4">
@@ -994,7 +1027,7 @@ function StrengthEntryCard({ entry }) {
             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
-        <button className="text-[#a0a0a0] hover:text-white dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
+        <button className="text-[#a0a0a0] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
           <Share2 className="w-4 h-4" />
         </button>
       </div>
@@ -1016,7 +1049,7 @@ function CardioEntryCard({ entry, onShare }) {
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all shadow-md"
+      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all"
       style={{ borderLeftColor: '#f97316' }}
     >
       <div className="flex justify-between items-start p-4 pb-3">
@@ -1028,7 +1061,7 @@ function CardioEntryCard({ entry, onShare }) {
         </div>
         <button
           onClick={onShare}
-          className="text-[#a0a0a0] hover:text-white dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"
+          className="text-[#a0a0a0] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"
         >
           <Share2 className="w-4 h-4" />
         </button>
@@ -1052,7 +1085,7 @@ function CardioEntryCard({ entry, onShare }) {
             <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Heart Rate</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-bold tabular-nums text-white">{Math.round(entry.avgHeartrate)}</span>
-              <span className="text-xs font-bold uppercase tracking-widest text-red-400">bpm</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#f87171]">bpm</span>
             </div>
           </div>
         )}
@@ -1126,7 +1159,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   return (
     <>
       {/* Weekly Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mb-6 shadow-md">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mb-6">
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">This Week</span>
           <span className="text-xl font-bold tabular-nums text-[#ccff00]">{thisWeek.length} Sessions</span>
@@ -1135,7 +1168,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Strength</span>
           <div className="flex items-center gap-1.5">
             <Dumbbell className="w-4 h-4 text-indigo-500" />
-            <span className="text-xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{weekStrength}</span>
+            <span className="text-xl font-bold tabular-nums text-[#818cf8]">{weekStrength}</span>
           </div>
         </div>
         <div className="flex flex-col">
@@ -1162,7 +1195,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
             className={[
               'px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all',
               filter === val
-                ? 'bg-primary-500 text-black font-bold shadow-sm'
+                ? 'bg-[#ccff00] text-black font-bold'
                 : 'border border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]',
             ].join(' ')}
           >
@@ -1173,7 +1206,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
 
       {/* Feed */}
       {allEntries.length === 0 ? (
-        <Card className="border-none shadow-sm">
+        <Card className="border-none">
           <CardContent className="py-16 text-center">
             <Activity className="w-14 h-14 text-[#a0a0a0] mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">No activity yet</h3>
@@ -1230,7 +1263,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
 
 function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
   return (
-    <Card className="border-none shadow-sm">
+    <Card className="border-none">
       <CardContent className="py-12 text-center">
         <Icon className="w-12 h-12 text-[#a0a0a0] mx-auto mb-3" />
         <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>

@@ -66,10 +66,10 @@ export default function StravaCallback() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] ">
         <div className="text-center p-6">
-          <p className="text-red-600 font-medium text-lg mb-1">Failed to connect Strava</p>
-          <p className="text-sm text-slate-500 mb-4">{error}</p>
+          <p className="text-[#f87171] font-medium text-lg mb-1">Failed to connect Strava</p>
+          <p className="text-sm text-[#555555] mb-4">{error}</p>
           <Button variant="outline" onClick={() => navigate('/profile')}>
             Back to Profile
           </Button>

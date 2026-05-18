@@ -66,16 +66,16 @@ export default function Landing() {
       />
 
       {/* Fixed Header */}
-      <header className="fixed top-0 w-full bg-[#121212]/90 backdrop-blur-xl border-b border-white/5 z-50 shadow-[0_0_20px_rgba(204,255,0,0.05)]">
+      <header className="fixed top-0 w-full bg-[#121212]/90 backdrop-blur-xl border-b border-[#2a2a2a] z-50">
         <div className="flex justify-between items-center px-4 md:px-8 py-3 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <Logo className="w-8 h-8" />
-            <span className="text-primary-500 font-bold tracking-tight text-lg">
+            <span className="text-[#ccff00] font-bold tracking-tight text-lg">
               Vektor
             </span>
           </div>
           <Link to="/signup">
-            <Button className="bg-primary-500 hover:bg-primary-400 text-black text-xs tracking-widest uppercase font-bold shadow-neon">
+            <Button variant="volt" className="text-xs tracking-widest uppercase">
               Get Started
             </Button>
           </Link>
@@ -94,14 +94,14 @@ export default function Landing() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/70 to-transparent" />
           </div>
           <div className="relative z-10 text-center max-w-4xl">
-            <span className="text-primary-500 text-xs tracking-[0.3em] uppercase mb-6 block font-medium">
+            <span className="text-[#ccff00] text-xs tracking-[0.3em] uppercase mb-6 block font-medium">
               Engineered for Serious Lifters
             </span>
             <h1 className="text-5xl sm:text-7xl md:text-9xl font-bold text-white mb-8 leading-none tracking-tight uppercase">
               Track. Grind.
               <br />
               <span
-                className="text-primary-500"
+                className="text-[#ccff00]"
                 style={{ textShadow: '0 0 40px rgba(204,255,0,0.4)' }}
               >
                 Dominate.
@@ -115,7 +115,7 @@ export default function Landing() {
               <Link to="/signup">
                 <Button
                   size="lg"
-                  className="bg-primary-500 hover:bg-primary-400 text-black px-10 py-6 text-sm tracking-widest uppercase font-bold shadow-neon-lg transition-all active:scale-95"
+                  className="bg-[#ccff00] hover:bg-[#d9ff1a] text-black px-10 py-6 text-sm tracking-widest uppercase font-bold transition-all active:scale-95"
                 >
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4" />
@@ -125,7 +125,7 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white/20 bg-white/5 backdrop-blur-md text-white px-10 py-6 text-sm tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95"
+                  className="border-white/20 bg-[#1a1a1a]/5 backdrop-blur-md text-white px-10 py-6 text-sm tracking-widest uppercase hover:bg-[#1a1a1a]/10 transition-all active:scale-95"
                 >
                   Sign In
                   <ChevronRight className="ml-2 w-4 h-4" />
@@ -140,7 +140,7 @@ export default function Landing() {
           <div className="mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold uppercase tracking-tight mb-4">
               Reliable Tools for the{' '}
-              <span className="text-primary-500">Unstoppable</span>
+              <span className="text-[#ccff00]">Unstoppable</span>
             </h2>
             <p className="text-[#a0a0a0] text-lg max-w-2xl text-center mx-auto">
               Built to withstand the most grueling sessions. Every feature is precision-calibrated
@@ -153,8 +153,8 @@ export default function Landing() {
                 key={feature.title}
                 className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8 flex flex-col gap-4 items-center text-center hover:border-[rgba(204,255,0,0.25)] transition-colors"
               >
-                <div className="w-12 h-12 rounded-lg bg-primary-500/10 flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-primary-500" />
+                <div className="w-12 h-12 rounded-lg bg-[#ccff00]/10 flex items-center justify-center">
+                  <feature.icon className="w-6 h-6 text-[#ccff00]" />
                 </div>
                 <h3 className="text-lg font-bold text-white tracking-wide">{feature.title}</h3>
                 <p className="text-[#a0a0a0] text-sm leading-relaxed">{feature.description}</p>
@@ -166,7 +166,7 @@ export default function Landing() {
         {/* CTA Section */}
         <section className="py-24 px-4 md:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="bg-primary-500 rounded-3xl p-8 md:p-16 flex flex-col items-center text-center overflow-hidden relative">
+            <div className="bg-[#ccff00] rounded-3xl p-8 md:p-16 flex flex-col items-center text-center overflow-hidden relative">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white,_transparent)]" />
               <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold text-black mb-6 leading-none uppercase tracking-tight z-10">
                 Ready to Transform?
@@ -178,7 +178,7 @@ export default function Landing() {
               <Link to="/signup" className="z-10">
                 <Button
                   size="lg"
-                  className="bg-black text-primary-500 hover:bg-black/80 px-10 py-6 text-sm tracking-widest uppercase font-bold shadow-xl active:scale-95 transition-all"
+                  className="bg-black text-[#ccff00] hover:bg-black/80 px-10 py-6 text-sm tracking-widest uppercase font-bold shadow-xl active:scale-95 transition-all"
                 >
                   Start Your Program
                   <ArrowRight className="ml-2 w-4 h-4" />
@@ -193,7 +193,7 @@ export default function Landing() {
       <footer className="w-full py-16 bg-[#121212] border-t border-charcoal-border">
         <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-8 max-w-7xl mx-auto gap-6">
           <div className="flex flex-col gap-1 items-center md:items-start">
-            <div className="font-bold text-primary-500 tracking-tight">Vektor</div>
+            <div className="font-bold text-[#ccff00] tracking-tight">Vektor</div>
             <p className="text-[#555555] text-xs">© 2025 Vektor. Built for the elite.</p>
           </div>
         </div>

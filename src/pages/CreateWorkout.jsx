@@ -19,11 +19,11 @@ import { toast } from "sonner";
 const CARDIO_TYPES = new Set(['cardio', 'hiit']);
 
 const STEP_TYPES = [
-  { value: 'warmup',   label: 'Warmup',   border: 'border-l-blue-400',   text: 'text-blue-600 dark:text-blue-400' },
-  { value: 'active',   label: 'Active',   border: 'border-l-green-500',  text: 'text-green-600 dark:text-green-400' },
-  { value: 'recovery', label: 'Recovery', border: 'border-l-amber-400',  text: 'text-amber-600 dark:text-amber-400' },
-  { value: 'rest',     label: 'Rest',     border: 'border-l-slate-300',  text: 'text-slate-400 dark:text-slate-500' },
-  { value: 'cooldown', label: 'Cooldown', border: 'border-l-slate-400',  text: 'text-slate-500 dark:text-slate-400' },
+  { value: 'warmup',   label: 'Warmup',   border: 'border-l-blue-400',   text: 'text-[#60a5fa]' },
+  { value: 'active',   label: 'Active',   border: 'border-l-green-500',  text: 'text-green-600' },
+  { value: 'recovery', label: 'Recovery', border: 'border-l-amber-400',  text: 'text-[#fbbf24]' },
+  { value: 'rest',     label: 'Rest',     border: 'border-l-slate-300',  text: 'text-[#555555] ' },
+  { value: 'cooldown', label: 'Cooldown', border: 'border-l-slate-400',  text: 'text-[#555555] ' },
 ];
 
 const TARGET_TYPES = [
@@ -226,19 +226,19 @@ export default function CreateWorkout() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-[#1a1a1a]  min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-white">
             {editId ? 'Edit Workout' : 'Create Workout'}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-[#555555] text-sm mt-1">
             {editId ? 'Modify your workout routine' : 'Build your perfect workout routine'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="border-none shadow-lg mb-6">
+          <Card className="mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -324,7 +324,7 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg mb-6">
+          <Card className="mb-6">
             <CardHeader><CardTitle>{isCardio ? 'Steps' : 'Exercises'}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {workout.exercises.map((exercise, index) => {
@@ -373,13 +373,13 @@ export default function CreateWorkout() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add Step
                   </Button>
-                  <Button type="button" onClick={addRepeatBlock} variant="outline" className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30">
+                  <Button type="button" onClick={addRepeatBlock} variant="outline" className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-50">
                     <Repeat2 className="w-4 h-4 mr-2" />
                     Add Repeat
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={addExercise} className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold">
+                <Button type="button" onClick={addExercise} className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
                 </Button>
@@ -391,7 +391,7 @@ export default function CreateWorkout() {
             <Button type="button" variant="outline" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-primary-600 hover:bg-primary-700">
+            <Button type="submit" className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]">
               <Save className="w-4 h-4 mr-2" />
               {editId ? 'Update Workout' : 'Save Workout'}
             </Button>
@@ -404,13 +404,13 @@ export default function CreateWorkout() {
 
 function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, onRemove, onChange }) {
   return (
-    <Card className="bg-slate-50 dark:bg-slate-900">
+    <Card className="bg-[#1a1a1a] ">
       <CardContent className="pt-6">
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold">Exercise {index + 1}</h4>
           {canRemove && (
             <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-              <Trash2 className="w-4 h-4 text-danger-500" />
+              <Trash2 className="w-4 h-4 text-[#f87171]" />
             </Button>
           )}
         </div>
@@ -478,11 +478,11 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
 
 function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep, onRemoveStep, onChangeStep }) {
   return (
-    <div className="border-2 border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden">
+    <div className="border-2 border-purple-200 rounded-xl overflow-hidden">
       {/* Repeat header */}
-      <div className="flex items-center gap-3 bg-purple-50 dark:bg-purple-950/30 px-4 py-2.5">
-        <Repeat2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-        <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Repeat</span>
+      <div className="flex items-center gap-3 bg-purple-50 px-4 py-2.5">
+        <Repeat2 className="w-4 h-4 text-purple-600 shrink-0" />
+        <span className="text-sm font-semibold text-purple-700">Repeat</span>
         <div className="flex items-center gap-1.5">
           <Input
             type="number"
@@ -492,20 +492,20 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             max="99"
             className="w-16 h-7 text-sm text-center"
           />
-          <span className="text-sm text-purple-600 dark:text-purple-400">×</span>
+          <span className="text-sm text-purple-600">×</span>
         </div>
-        <span className="text-xs text-purple-500 dark:text-purple-500 flex-1">
+        <span className="text-xs text-purple-500 flex-1">
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <button type="button" onClick={onRemove} className="text-slate-400 hover:text-red-500 transition-colors ml-auto shrink-0">
+          <button type="button" onClick={onRemove} className="text-[#555555] hover:text-[#f87171] transition-colors ml-auto shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
 
       {/* Nested steps */}
-      <div className="p-3 space-y-2 bg-white dark:bg-slate-900/50">
+      <div className="p-3 space-y-2 bg-[#1a1a1a] 50">
         {(block.steps || []).map((step, si) => (
           <CardioStepCard
             key={si}
@@ -522,7 +522,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           variant="ghost"
           size="sm"
           onClick={onAddStep}
-          className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 border border-dashed border-purple-200 dark:border-purple-800"
+          className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 border border-dashed border-purple-200"
         >
           <Plus className="w-3 h-3 mr-1" />
           Add Step to Repeat
@@ -536,8 +536,8 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
   const meta = STEP_TYPES.find(s => s.value === step.step_type) || STEP_TYPES[1];
 
   const card = nested
-    ? `bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg border-l-4 ${meta.border}`
-    : `bg-slate-50 dark:bg-slate-900 border-l-4 ${meta.border}`;
+    ? `bg-[#1a1a1a]  border border-[#2a2a2a]  rounded-lg border-l-4 ${meta.border}`
+    : `bg-[#1a1a1a]  border-l-4 ${meta.border}`;
 
   return (
     <Card className={card}>
@@ -548,7 +548,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
           </span>
           {canRemove && (
             <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-              <Trash2 className="w-4 h-4 text-danger-500" />
+              <Trash2 className="w-4 h-4 text-[#f87171]" />
             </Button>
           )}
         </div>
@@ -641,14 +641,14 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                     placeholder={step.target_type === 'pace' ? "5:30" : "min"}
                     className="w-20"
                   />
-                  <span className="text-slate-400 text-sm">–</span>
+                  <span className="text-[#555555] text-sm">–</span>
                   <Input
                     value={step.target_high}
                     onChange={(e) => onChange("target_high", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "6:00" : "max"}
                     className="w-20"
                   />
-                  <span className="text-xs text-slate-500 shrink-0">
+                  <span className="text-xs text-[#555555] shrink-0">
                     {step.target_type === 'pace' ? '/km'
                       : step.target_type === 'speed' ? 'km/h'
                       : step.target_type === 'cadence' ? 'spm'

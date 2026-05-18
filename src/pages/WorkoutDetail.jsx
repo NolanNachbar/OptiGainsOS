@@ -694,7 +694,7 @@ export default function WorkoutDetail() {
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen relative transition-colors duration-300">
+    <div className="bg-[#121212] min-h-screen relative transition-colors duration-300">
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
@@ -722,8 +722,8 @@ export default function WorkoutDetail() {
           </Button>
         )}
 
-        <Card ref={workoutCardRef} className={`border-none shadow-md mb-6 ${isLogging ? 'mt-4' : ''}`}>
-          <div className="h-3 bg-primary-500"></div>
+        <Card ref={workoutCardRef} className={`border-none mb-6 ${isLogging ? 'mt-4' : ''}`}>
+          <div className="h-1 bg-[#ccff00] rounded-t-xl"></div>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
@@ -734,26 +734,26 @@ export default function WorkoutDetail() {
                   {workout.type}
                 </Badge>
                 {workout.is_custom && (
-                  <Badge className="bg-primary-100 text-primary-800">Custom</Badge>
+                  <Badge variant="volt">Custom</Badge>
                 )}
                 {isProgramSource && (
-                  <Badge className="bg-primary-100 text-primary-800">Program Workout</Badge>
+                  <Badge variant="slate">Program Workout</Badge>
                 )}
                 {isLogging && (
-                  <Badge className="bg-success-600 text-white shadow-sm">Logging Active</Badge>
+                  <Badge variant="green">Logging Active</Badge>
                 )}
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-slate-400 uppercase tracking-wide">Muscles worked</span>
-                  <div className="flex rounded-full overflow-hidden border border-slate-200 text-xs font-medium">
+                  <span className="text-xs text-[#555555] uppercase tracking-wide">Muscles worked</span>
+                  <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-primary-500 text-black font-bold" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-primary-500 text-black font-bold" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -763,22 +763,22 @@ export default function WorkoutDetail() {
           <CardContent className="flex flex-col md:flex-row md:gap-8">
             <div className="flex-1 min-w-0">
               {/* Title + description */}
-              <CardTitle className="text-3xl mb-1">{workout.title}</CardTitle>
+              <CardTitle className="text-[22px] font-bold mb-1">{workout.title}</CardTitle>
               {workout.description && (
-                <p className="text-slate-600 mb-4">{workout.description}</p>
+                <p className="text-[#a0a0a0] mb-4">{workout.description}</p>
               )}
               <div className="flex flex-wrap gap-6 mb-6">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary-600" />
+                    <Clock className="w-5 h-5 text-[#ccff00]" />
                     <div>
-                      <div className="text-sm text-slate-600">Duration</div>
+                      <div className="text-sm text-[#a0a0a0]">Duration</div>
                       <div className="font-semibold">{workout.duration_minutes} minutes</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary-600" />
+                    <Target className="w-5 h-5 text-[#ccff00]" />
                     <div>
-                      <div className="text-sm text-slate-600">Exercises</div>
+                      <div className="text-sm text-[#a0a0a0]">Exercises</div>
                       <div className="font-semibold">{workout.exercises?.length || 0} exercises</div>
                     </div>
                   </div>
@@ -801,7 +801,8 @@ export default function WorkoutDetail() {
                   <div className="space-y-3">
                     <Button
                       onClick={handleStartLogging}
-                      className="w-full bg-primary-600 hover:bg-primary-700 text-lg py-6"
+                      variant="volt"
+                      className="w-full text-lg py-6"
                       data-tutorial="start-logging-btn"
                     >
                       <Dumbbell className="w-5 h-5 mr-2" />
@@ -849,14 +850,14 @@ export default function WorkoutDetail() {
           <div className="space-y-6">
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
-              <Card className="border-amber-200 bg-amber-50 shadow-lg">
+              <Card className="border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.05)]">
                 <CardContent className="py-3">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="w-5 h-5 text-[#fbbf24] mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-amber-800 text-sm">Recovery Advisory</p>
+                      <p className="font-medium text-[#fbbf24] text-sm">Recovery Advisory</p>
                       {recoveryWarnings.map((w, i) => (
-                        <p key={i} className="text-sm text-amber-700 mt-1">{w.message}</p>
+                        <p key={i} className="text-sm text-[#fbbf24] mt-1">{w.message}</p>
                       ))}
                     </div>
                   </div>
@@ -910,7 +911,7 @@ export default function WorkoutDetail() {
             <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />
 
             {/* Notes Section */}
-            <Card className="border-none shadow-lg">
+            <Card className="">
               <CardHeader>
                 <CardTitle className="text-lg">Workout Notes (Optional)</CardTitle>
               </CardHeader>
@@ -926,7 +927,7 @@ export default function WorkoutDetail() {
           </div>
         ) : (
           // View Mode - Show exercises read-only
-          <Card className="border-none shadow-lg">
+          <Card className="">
             <CardHeader>
               <CardTitle>Exercises</CardTitle>
             </CardHeader>
@@ -934,10 +935,10 @@ export default function WorkoutDetail() {
               {workout.exercises?.map((exercise, index) => {
                 const isLogFormat = Array.isArray(exercise.sets);
                 return (
-                  <Card key={index} className="bg-slate-50">
+                  <Card key={index} className="bg-[#202020]">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-black font-bold flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-bold flex-shrink-0 font-mono text-sm shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1">
@@ -945,7 +946,7 @@ export default function WorkoutDetail() {
                           {isLogFormat ? (
                             <table className="w-full text-sm mt-2">
                               <thead>
-                                <tr className="border-b border-slate-200">
+                                <tr className="border-b border-[#2a2a2a]">
                                   <th className="text-left py-2 px-2">Set</th>
                                   <th className="text-left py-2 px-2">Weight</th>
                                   <th className="text-left py-2 px-2">Reps</th>
@@ -953,7 +954,7 @@ export default function WorkoutDetail() {
                               </thead>
                               <tbody>
                                 {exercise.sets.map((set, si) => (
-                                  <tr key={si} className="border-b border-slate-100">
+                                  <tr key={si} className="border-b border-[#2a2a2a]">
                                     <td className="py-2 px-2 font-medium">{set.set_number}</td>
                                     <td className="py-2 px-2">{set.weight} {weightUnit}</td>
                                     <td className="py-2 px-2">{set.reps}</td>
@@ -962,7 +963,7 @@ export default function WorkoutDetail() {
                               </tbody>
                             </table>
                           ) : (
-                            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+                            <div className="flex flex-wrap gap-4 text-sm text-[#a0a0a0]">
                               <div>
                                 <span className="font-medium">Sets:</span> {exercise.sets}
                               </div>
@@ -975,7 +976,7 @@ export default function WorkoutDetail() {
                             </div>
                           )}
                           {exercise.notes && (
-                            <p className="text-sm text-slate-600 mt-2 italic">{exercise.notes}</p>
+                            <p className="text-sm text-[#a0a0a0] mt-2 italic">{exercise.notes}</p>
                           )}
                         </div>
                       </div>
@@ -994,14 +995,14 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-[#a0a0a0]">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button className="flex-1 bg-primary-600 hover:bg-primary-700" onClick={handleResumeSession}>
+            <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>
@@ -1014,14 +1015,14 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Incomplete Sets</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[#a0a0a0]">
             Some sets haven't been checked off. Would you like to mark them all as complete?
           </p>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => handleIncompleteResponse(false)}>
               Leave As-Is
             </Button>
-            <Button variant="primary" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
+            <Button variant="volt" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
               Complete All
             </Button>
           </div>

@@ -2,7 +2,7 @@ import { History } from "lucide-react";
 
 export default function ExerciseCardPreview() {
   return (
-    <div className="bg-[#1a1a1a] border-2 border-[#2a2a2a] rounded-xl p-4 shadow-lg max-w-sm mx-auto">
+    <div className="bg-[#1a1a1a] border-2 border-[#2a2a2a] rounded-xl p-4 max-w-sm mx-auto">
       {/* Exercise header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-8 h-8 rounded-full bg-[rgba(204,255,0,0.08)]0 flex items-center justify-center text-black font-bold text-sm">
@@ -30,12 +30,12 @@ export default function ExerciseCardPreview() {
         </div>
         {[1, 2, 3].map((set) => (
           <div key={set} className="flex items-center gap-2">
-            <span className="w-10 font-medium text-slate-700 text-[#a0a0a0] text-sm">{set}</span>
-            <div className="w-20 h-9 bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)] border-2 border-[rgba(204,255,0,0.3)] rounded-lg flex items-center justify-center">
+            <span className="w-10 font-medium text-[#a0a0a0] text-[#a0a0a0] text-sm">{set}</span>
+            <div className="w-20 h-9 bg-[rgba(204,255,0,0.08)] border-2 border-[rgba(204,255,0,0.3)] rounded-lg flex items-center justify-center">
               <span className="text-sm font-medium text-[#ccff00] text-[#ccff00]">185</span>
             </div>
-            <div className="w-16 h-9 bg-[#1a1a1a] bg-[#121212]/50 border border-slate-300 border-[#2a2a2a] rounded-lg flex items-center justify-center">
-              <span className="text-sm text-slate-700 text-[#a0a0a0]">5</span>
+            <div className="w-16 h-9 bg-[#1a1a1a] bg-[#121212]/50 border border-[#2a2a2a] border-[#2a2a2a] rounded-lg flex items-center justify-center">
+              <span className="text-sm text-[#a0a0a0] text-[#a0a0a0]">5</span>
             </div>
           </div>
         ))}

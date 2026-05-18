@@ -6,8 +6,8 @@ export default function ProgressDots({ current, total }) {
           key={i}
           className={`h-1.5 rounded-full transition-all duration-300 ${
             i === current
-              ? 'w-8 bg-primary-600'
-              : 'w-1.5 bg-slate-300 dark:bg-slate-600'
+              ? 'w-8 bg-[#ccff00]'
+              : 'w-1.5 bg-[#333333] '
           }`}
           aria-label={`Step ${i + 1} of ${total}${i === current ? ' (current)' : ''}`}
         />

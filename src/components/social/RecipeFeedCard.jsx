@@ -85,7 +85,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
   };
 
   return (
-    <Card className="border-none shadow-md">
+    <Card>
       <CardContent className="pt-5 pb-4">
         {/* Author header */}
         <div className="flex items-start gap-3 mb-3">
@@ -110,7 +110,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] dark:hover:bg-[rgba(204,255,0,0.08)] text-xs"
+                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-xs"
                 onClick={handleCloneRecipe}
                 disabled={isCloning}
               >
@@ -121,7 +121,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs"
+                className="shrink-0 text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] text-xs"
                 onClick={onUnshare}
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" /> Unshare
@@ -185,7 +185,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
         </div>
 
         {/* Engagement row */}
-        <div className="flex items-center gap-3 pt-2 border-t border-slate-100 mt-3">
+        <div className="flex items-center gap-3 pt-2 border-t border-[#2a2a2a] mt-3">
           <button
             onClick={toggleLike}
             disabled={likesLoading}
@@ -249,13 +249,13 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
                         {comment.created_by === user?.id && (
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
-                            className="text-[#a0a0a0] hover:text-danger-500 transition-colors ml-auto"
+                            className="text-[#a0a0a0] hover:text-[#f87171] transition-colors ml-auto"
                           >
                             <TrashIcon className="w-3 h-3" />
                           </button>
                         )}
                       </div>
-                      <p className="text-sm text-slate-700 text-[#a0a0a0]">{comment.body}</p>
+                      <p className="text-sm text-[#a0a0a0] text-[#a0a0a0]">{comment.body}</p>
                     </div>
                   </div>
                 ))}

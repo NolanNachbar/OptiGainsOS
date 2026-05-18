@@ -36,11 +36,11 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-16 h-16 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white tracking-tight">Vektor</h1>
-          <p className="text-[#a0a0a0] mt-2">Reset your password</p>
+          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">Vektor</h1>
+          <p className="text-[13px] text-[#a0a0a0] mt-2">Reset your password</p>
         </div>
 
-        <Card className="border-none shadow-lg bg-[#1a1a1a] border-[#2a2a2a] text-white">
+        <Card>
           <CardHeader>
             <CardTitle className="text-white text-center">
               {emailSent ? 'Check Your Email' : 'Forgot Password'}
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                 <div>
                   <Label htmlFor="email" className="text-white">Email</Label>
                   <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                     <Input
                       id="email"
                       type="email"
@@ -83,7 +83,8 @@ export default function ForgotPassword() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold"
+                  variant="volt"
+                  className="w-full font-bold"
                   disabled={loading}
                 >
                   {loading ? (
@@ -101,7 +102,7 @@ export default function ForgotPassword() {
             <div className="mt-6 text-center">
               <Link
                 to="/login"
-                className="text-primary-500 hover:text-primary-400 font-medium inline-flex items-center gap-2"
+                className="text-[#ccff00] hover:text-[#d9ff1a] font-medium inline-flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Sign In

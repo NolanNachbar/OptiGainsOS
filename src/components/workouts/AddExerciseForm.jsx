@@ -33,7 +33,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
       <Button
         variant="outline"
         onClick={() => setShowForm(true)}
-        className="w-full py-6 border-2 border-dashed border-primary-200 text-primary-600 hover:bg-primary-50 mb-28 lg:mb-0"
+        className="w-full py-6 border-2 border-dashed border-[rgba(204,255,0,0.2)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] mb-28 lg:mb-0"
       >
         <Plus className="w-5 h-5 mr-2" />
         Add Exercise
@@ -42,7 +42,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   }
 
   return (
-    <Card className="border-2 border-dashed border-primary-200 shadow-sm mb-28 lg:mb-0">
+    <Card className="border-2 border-dashed border-[rgba(204,255,0,0.2)] mb-28 lg:mb-0">
       <CardContent className="pt-4 pb-4">
         <div className="flex gap-2">
           <div className="flex-1">
@@ -57,7 +57,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
           <Button
             onClick={handleAdd}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            className="bg-primary-600 hover:bg-primary-700"
+            className="bg-[#ccff00] hover:bg-[#ccff00]"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add

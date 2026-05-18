@@ -52,11 +52,11 @@ export default function WorkoutLoggingHeader({
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-[9998] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm" style={{ top: 'var(--layout-header-height, 0px)' }}>
+      <div className="fixed top-0 left-0 right-0 z-[9998] bg-[#121212] border-b border-[#2a2a2a]" style={{ top: 'var(--layout-header-height, 0px)' }}>
         <div className="max-w-4xl mx-auto px-3 md:px-8 py-2">
           {/* Workout Title (when scrolled) - Desktop Only */}
           {showTitleInHeader && (
-            <h2 className="hidden md:block font-semibold text-slate-900 dark:text-white text-base mb-2 truncate animate-in fade-in slide-in-from-top-2 duration-200">
+            <h2 className="hidden md:block font-semibold text-white text-base mb-2 truncate animate-in fade-in slide-in-from-top-2 duration-200">
               {workoutTitle}
             </h2>
           )}
@@ -68,10 +68,10 @@ export default function WorkoutLoggingHeader({
               {/* Workout Timer */}
               {startTime && (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] md:text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Workout</span>
+                  <span className="text-[11px] md:text-xs uppercase text-[#555555] font-medium tracking-wide">Workout</span>
                   <div className="flex items-center gap-1 font-mono">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
-                    <span className="font-semibold text-slate-900 dark:text-white text-sm md:text-base">{formatTime(elapsedTime)}</span>
+                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#ccff00] flex-shrink-0" />
+                    <span className="font-semibold text-white text-sm md:text-base">{formatTime(elapsedTime)}</span>
                   </div>
                 </div>
               )}
@@ -80,10 +80,10 @@ export default function WorkoutLoggingHeader({
               {restTimer !== null && restTimer >= 0 && (
                 <>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] md:text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Rest</span>
+                    <span className="text-[11px] md:text-xs uppercase text-[#555555] font-medium tracking-wide">Rest</span>
                     <div className="flex items-center gap-1 font-mono">
-                      <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-amber-600 dark:text-amber-500' : restTimer === 0 ? 'text-success-600 dark:text-success-500' : 'text-slate-600 dark:text-slate-400'}`} />
-                      <span className={`font-semibold text-sm md:text-base ${restTimer <= 10 ? 'text-amber-600 dark:text-amber-500' : restTimer === 0 ? 'text-success-600 dark:text-success-500' : 'text-slate-900 dark:text-white'}`}>
+                      <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-[#555555]'}`} />
+                      <span className={`font-semibold text-sm md:text-base ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-white'}`}>
                         {restTimer === 0 ? 'Done!' : formatRestTime(restTimer)}
                       </span>
                     </div>
@@ -93,13 +93,13 @@ export default function WorkoutLoggingHeader({
                     <div className="flex gap-1 items-center">
                       <button
                         onClick={() => onAddRestTime?.(30)}
-                        className="text-xs md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium"
+                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-[#202020] hover:bg-[#242424] text-[#a0a0a0] hover:text-white border border-[#2a2a2a] font-medium"
                       >
                         +30s
                       </button>
                       <button
                         onClick={() => onSkipRest?.()}
-                        className="text-xs md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium"
+                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-[#202020] hover:bg-[#242424] text-[#a0a0a0] hover:text-white border border-[#2a2a2a] font-medium"
                       >
                         Skip
                       </button>
@@ -124,7 +124,8 @@ export default function WorkoutLoggingHeader({
                 onClick={onFinish}
                 disabled={isSaving}
                 size="sm"
-                className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3 bg-success-600 hover:bg-success-700 text-white transition-all hover:scale-105"
+                variant="volt"
+                className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3 transition-all hover:scale-105"
                 data-tutorial="finish-workout-btn"
               >
                 {isSaving ? (
@@ -146,11 +147,11 @@ export default function WorkoutLoggingHeader({
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-danger-500" />
+                <AlertTriangle className="w-5 h-5 text-[#f87171]" />
                 Cancel Workout?
               </DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-slate-600">
+            <p className="text-[13px] text-[#a0a0a0]">
               Your progress for this workout will be lost. Are you sure you want to cancel?
             </p>
             <div className="flex gap-2 mt-2">

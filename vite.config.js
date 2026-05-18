@@ -8,7 +8,7 @@ const useHttps = process.env.VITE_HTTPS === 'true';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.GITHUB_PAGES ? '/' : '/FlexAppeal/',
+  base: process.env.GITHUB_PAGES ? '/VektorPub/' : '/FlexAppeal/',
   plugins: [react(), ...(useHttps ? [basicSsl()] : [])],
   server: {
     ...(useHttps ? { https: true } : {}),

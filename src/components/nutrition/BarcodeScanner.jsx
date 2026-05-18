@@ -140,7 +140,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
                 <div key={i} className={`absolute w-8 h-8 border-white ${cls}`} />
               ))}
               {/* Scan line animation */}
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-primary-400/80 animate-pulse" />
+              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[#ccff00]/80 animate-pulse" />
             </div>
           </div>
         )}
@@ -167,17 +167,17 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Not found state */}
       {scanState === "not_found" && (
-        <div className="bg-white dark:bg-slate-900 p-6 flex flex-col items-center gap-3 text-center">
-          <PackageSearch className="w-10 h-10 text-slate-400" />
+        <div className="bg-[#1a1a1a]  p-6 flex flex-col items-center gap-3 text-center">
+          <PackageSearch className="w-10 h-10 text-[#555555]" />
           <div>
-            <p className="font-semibold text-slate-900 dark:text-white">Product not found</p>
-            <p className="text-sm text-slate-500 mt-1">Barcode: {foundBarcode}</p>
+            <p className="font-semibold text-white">Product not found</p>
+            <p className="text-sm text-[#555555] mt-1">Barcode: {foundBarcode}</p>
           </div>
           <div className="flex gap-2 w-full">
             <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
               Try again
             </Button>
-            <Button className="flex-1 bg-primary-600 hover:bg-primary-700" onClick={() => onNotFound(foundBarcode)}>
+            <Button className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]" onClick={() => onNotFound(foundBarcode)}>
               Enter manually
             </Button>
           </div>
@@ -186,11 +186,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Error state */}
       {scanState === "error" && (
-        <div className="bg-white dark:bg-slate-900 p-6 flex flex-col items-center gap-3 text-center">
-          <AlertTriangle className="w-10 h-10 text-red-400" />
+        <div className="bg-[#1a1a1a]  p-6 flex flex-col items-center gap-3 text-center">
+          <AlertTriangle className="w-10 h-10 text-[#f87171]" />
           <div>
-            <p className="font-semibold text-slate-900 dark:text-white">Camera unavailable</p>
-            <p className="text-sm text-slate-500 mt-1">{errorMessage}</p>
+            <p className="font-semibold text-white">Camera unavailable</p>
+            <p className="text-sm text-[#555555] mt-1">{errorMessage}</p>
           </div>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Close

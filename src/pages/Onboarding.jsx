@@ -169,21 +169,21 @@ export default function Onboarding() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center pb-2">
           <Logo className="w-16 h-16 mx-auto mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary-500 tracking-tight">
+          <CardTitle className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">
             Welcome to Vektor
           </CardTitle>
-          <p className="text-[#a0a0a0] mt-2">Let's personalize your fitness journey</p>
-          <div className="flex gap-2 justify-center mt-4">
+          <p className="text-[13px] text-[#a0a0a0] mt-1">Let's personalize your fitness journey</p>
+          <div className="flex gap-1.5 justify-center mt-4">
             {[1, 2, 3].map(i => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === step ? 'w-8 bg-primary-500' : 'w-1.5 bg-[#333]'
+                  i === step ? 'w-7 bg-[#ccff00]' : 'w-1.5 bg-[#333]'
                 }`}
               />
             ))}
           </div>
-          <p className="text-xs text-slate-500 mt-2">Step {step} of 3</p>
+          <p className="text-[11px] text-[#555555] mt-1.5">Step {step} of 3</p>
         </CardHeader>
 
         <CardContent className="pt-6">
@@ -205,7 +205,7 @@ export default function Onboarding() {
 
               <div>
                 <Label className="text-base font-semibold mb-3 block text-white">
-                  Display Name <span className="text-slate-500 font-normal">(optional)</span>
+                  Display Name <span className="text-[#555555] font-normal">(optional)</span>
                 </Label>
                 <Input
                   value={formData.display_name}
@@ -281,7 +281,7 @@ export default function Onboarding() {
                         </div>
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
                           formData.primary_goal.includes(option.value)
-                            ? 'border-primary-500 bg-primary-500'
+                            ? 'border-[#ccff00] bg-[#ccff00]'
                             : 'border-[#444]'
                         }`}>
                           {formData.primary_goal.includes(option.value) && (
@@ -346,7 +346,7 @@ export default function Onboarding() {
 
               <div>
                 <Label className="text-base font-semibold mb-1 block text-white">
-                  Days per week: <span className="text-primary-500">{formData.days_per_week}</span>
+                  Days per week: <span className="text-[#ccff00]">{formData.days_per_week}</span>
                   {formData.days_per_week === 6 && (
                     <span className="text-xs text-amber-500 font-normal ml-2">High frequency — make sure you're recovering well</span>
                   )}
@@ -359,16 +359,16 @@ export default function Onboarding() {
                   onChange={(e) => setFormData({...formData, days_per_week: parseInt(e.target.value)})}
                   className="w-full accent-primary-500 mt-2"
                 />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <div className="flex justify-between text-xs text-[#555555] mt-1">
                   <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
                 </div>
               </div>
 
               <div>
                 <Label className="text-base font-semibold mb-1 block text-white">
-                  Exercises per day: <span className="text-primary-500">{formData.exercises_per_day ?? "Auto"}</span>
+                  Exercises per day: <span className="text-[#ccff00]">{formData.exercises_per_day ?? "Auto"}</span>
                 </Label>
-                <p className="text-sm text-slate-500 mb-3">
+                <p className="text-sm text-[#555555] mb-3">
                   Leave on Auto to match your workout duration, or set a specific number to keep things simple.
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -376,8 +376,8 @@ export default function Onboarding() {
                     onClick={() => setFormData({...formData, exercises_per_day: null})}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.exercises_per_day === null
-                        ? 'border-primary-500 bg-primary-500/10 text-primary-500'
-                        : 'border-[#2a2a2a] text-slate-400 hover:border-primary-500/40'
+                        ? 'border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]'
+                        : 'border-[#2a2a2a] text-[#555555] hover:border-[#ccff00]/40'
                     }`}
                   >
                     Auto
@@ -388,8 +388,8 @@ export default function Onboarding() {
                       onClick={() => setFormData({...formData, exercises_per_day: n})}
                       className={`w-10 h-10 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.exercises_per_day === n
-                          ? 'border-primary-500 bg-primary-500/10 text-primary-500'
-                          : 'border-[#2a2a2a] text-slate-400 hover:border-primary-500/40'
+                          ? 'border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]'
+                          : 'border-[#2a2a2a] text-[#555555] hover:border-[#ccff00]/40'
                       }`}
                     >
                       {n}
@@ -406,10 +406,10 @@ export default function Onboarding() {
                 >
                   <div>
                     <div className="font-semibold text-white">Include Cardio Finisher</div>
-                    <div className="text-sm text-slate-500">Add a cardio exercise at the end of each workout</div>
+                    <div className="text-sm text-[#555555]">Add a cardio exercise at the end of each workout</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-primary-500' : 'bg-[#333]'}`}>
-                    <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.include_cardio ? 'translate-x-5' : 'translate-x-0'}`} />
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-[#ccff00]' : 'bg-[#333]'}`}>
+                    <span className={`absolute top-1 left-1 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.include_cardio ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
 
@@ -419,10 +419,10 @@ export default function Onboarding() {
                 >
                   <div>
                     <div className="font-semibold text-white">Skip Deload Weeks</div>
-                    <div className="text-sm text-slate-500">Disable automatic recovery weeks (not recommended for beginners)</div>
+                    <div className="text-sm text-[#555555]">Disable automatic recovery weeks (not recommended for beginners)</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-primary-500' : 'bg-[#333]'}`}>
-                    <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.skip_deload ? 'translate-x-5' : 'translate-x-0'}`} />
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-[#ccff00]' : 'bg-[#333]'}`}>
+                    <span className={`absolute top-1 left-1 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.skip_deload ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
               </div>
@@ -432,33 +432,35 @@ export default function Onboarding() {
           <div className="flex gap-3 mt-8">
             {step > 1 && (
               <Button
-                variant="outline"
+                variant="dim"
                 onClick={() => setStep(step - 1)}
-                className="flex-1 border-[#2a2a2a] text-white hover:bg-[#222] hover:text-white"
+                className="flex-1"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
             )}
             {step < 3 ? (
               <Button
+                variant="volt"
                 onClick={() => setStep(step + 1)}
-                className="flex-1 bg-primary-500 hover:bg-primary-400 text-black font-bold"
+                className="flex-1"
                 disabled={
                   (step === 1 && (!formData.username || formData.username.length < 3)) ||
                   (step === 2 && (!formData.fitness_level || !formData.primary_goal.length))
                 }
               >
                 Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-4 h-4" />
               </Button>
             ) : (
               <Button
+                variant="volt"
                 onClick={handleSubmit}
-                className="flex-1 bg-primary-500 hover:bg-primary-400 text-black font-bold"
+                className="flex-1"
               >
                 Complete Setup
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-4 h-4" />
               </Button>
             )}
           </div>

@@ -8,14 +8,14 @@ export function LoadingSpinner({ size = 'default', className = '' }) {
 
   return (
     <div
-      className={`animate-spin rounded-full border-b-2 border-primary-600 ${sizeClasses[size]} ${className}`}
+      className={`animate-spin rounded-full border-b-2 border-[#ccff00] ${sizeClasses[size]} ${className}`}
     />
   );
 }
 
 export function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50">
+    <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a]">
       <LoadingSpinner />
     </div>
   );

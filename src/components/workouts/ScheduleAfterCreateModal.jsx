@@ -96,14 +96,14 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
         <div className="px-6 pt-6 pb-4 shrink-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-primary-600" />
+            <CalendarCheck className="w-5 h-5 text-[#ccff00]" />
             Schedule Your Program
           </DialogTitle>
         </DialogHeader>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[#a0a0a0]">
             <strong>{program?.name}</strong> was created successfully! Want to schedule it on your calendar now?
           </p>
 
@@ -122,9 +122,9 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
-            <div className="border rounded-lg p-4 bg-slate-50">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-primary-600" />
+            <div className="border rounded-lg p-4 bg-[#1a1a1a]">
+              <h3 className="text-sm font-semibold text-[#a0a0a0] mb-3 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#ccff00]" />
                 Cycle 1 Schedule Preview
               </h3>
 
@@ -132,22 +132,22 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 {scheduledWorkouts.map((workout, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
+                      <Badge variant="outline" className="bg-[rgba(204,255,0,0.05)] text-[#ccff00] border-[rgba(204,255,0,0.2)]">
                         Day {workout.dayIndex}
                       </Badge>
-                      <span className="font-medium text-sm text-slate-900">{workout.title}</span>
+                      <span className="font-medium text-sm text-white">{workout.title}</span>
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-[#555555]">
                       {format(new Date(workout.date), "EEE, MMM d")}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t text-xs text-slate-500 space-y-1">
+              <div className="mt-3 pt-3 border-t text-xs text-[#555555] space-y-1">
                 <p>Rest days automatically distributed between training days.</p>
                 <p>All {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
               </div>
@@ -156,7 +156,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
         </div>
 
-        <div className="shrink-0 border-t bg-white dark:bg-slate-900 px-6 py-4">
+        <div className="shrink-0 border-t bg-[#1a1a1a]  px-6 py-4">
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -170,7 +170,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
             <Button
               onClick={handleSchedule}
               variant="primary"
-              className="flex-1 bg-primary-600"
+              className="flex-1 bg-[#ccff00]"
               disabled={isScheduling}
             >
               <CalendarCheck className="w-4 h-4 mr-1.5" />

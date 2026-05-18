@@ -25,13 +25,13 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+        <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a]  p-6">
           <div className="text-center max-w-md">
             <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-xl font-bold text-white mb-2">
               Something went wrong
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+            <p className="text-[#555555]  text-sm mb-6">
               {this.state.error?.message || 'An unexpected error occurred.'}
             </p>
             <div className="flex gap-3 justify-center">

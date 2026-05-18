@@ -128,10 +128,10 @@ function CTLLineChart({ data }) {
 }
 
 function TSBStatusBadge({ tsb }) {
-  if (tsb > 10) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Fresh — ready to peak</span>;
-  if (tsb >= 0) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Balanced — good training state</span>;
-  if (tsb >= -15) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Fatigued — normal heavy block</span>;
-  return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Deep fatigue — consider a deload</span>;
+  if (tsb > 10) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(34,197,94,0.1)] text-[#4ade80]">Fresh — ready to peak</span>;
+  if (tsb >= 0) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.1)] text-[#60a5fa]">Balanced — good training state</span>;
+  if (tsb >= -15) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(245,158,11,0.1)] text-[#fbbf24]">Fatigued — normal heavy block</span>;
+  return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(239,68,68,0.1)] text-[#f87171]">Deep fatigue — consider a deload</span>;
 }
 
 export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, hasStrava }) {
@@ -158,20 +158,20 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
   return (
     <div className="space-y-4">
       {!hasStrava && (
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-orange-50 dark:bg-orange-900/10 rounded-xl px-4 py-3 border border-orange-200 dark:border-orange-900/30">
+        <div className="flex items-center gap-2 text-xs text-[#555555]  bg-[rgba(249,115,22,0.08)] rounded-xl px-4 py-3 border border-[rgba(249,115,22,0.2)]">
           <Activity className="w-4 h-4 text-orange-400 shrink-0" />
           <span>Connect Strava to include cardio TSS. Lifting TSS is calculated from RPE logged in your sets.</span>
         </div>
       )}
 
       {/* Weekly TSS */}
-      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
+      <Card className="border border-[#2a2a2a]  bg-[#1a1a1a] ">
         <CardHeader className="pb-1">
-          <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-indigo-500" />
             Weekly Training Load (TSS)
           </CardTitle>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#555555] mt-0.5">
             TSS (Training Stress Score) measures how hard you worked each week — combining workout duration and intensity.
             Higher bars = more total training stress that week.
           </p>
@@ -180,7 +180,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
           {hasAnyLoad ? (
             <WeeklyTSSBars data={weeklyData} />
           ) : (
-            <div className="text-center py-8 text-sm text-slate-400">
+            <div className="text-center py-8 text-sm text-[#555555]">
               Log workouts with RPE or connect Strava to see training load
             </div>
           )}
@@ -188,24 +188,24 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
       </Card>
 
       {/* CTL / ATL / TSB */}
-      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
+      <Card className="border border-[#2a2a2a]  bg-[#1a1a1a] ">
         <CardHeader className="pb-1">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-500" />
               Fitness · Fatigue · Form
             </CardTitle>
             {sufficient && current && (
               <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                <span className="flex items-center gap-1.5 text-[#818cf8]">
                   <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
                   CTL {current.ctl}
                 </span>
-                <span className="flex items-center gap-1.5 text-red-500 dark:text-red-400">
+                <span className="flex items-center gap-1.5 text-[#f87171]">
                   <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
                   ATL {current.atl}
                 </span>
-                <span className={`flex items-center gap-1.5 font-semibold ${current.tsb >= 0 ? "text-green-600" : "text-red-500"}`}>
+                <span className={`flex items-center gap-1.5 font-semibold ${current.tsb >= 0 ? "text-green-600" : "text-[#f87171]"}`}>
                   <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
                   TSB {current.tsb >= 0 ? "+" : ""}{current.tsb}
                 </span>
@@ -217,7 +217,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
               <TSBStatusBadge tsb={current.tsb} />
             </div>
           ) : (
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#555555] mt-0.5">
               Tracks your long-term fitness buildup, short-term fatigue, and whether you're ready to train hard or need recovery.
             </p>
           )}
@@ -225,18 +225,18 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
         <CardContent className="pb-4 pt-2">
           {!sufficient ? (
             <div className="text-center py-10">
-              <Lock className="w-10 h-10 text-slate-200 dark:text-slate-600 mx-auto mb-3" />
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <Lock className="w-10 h-10 text-white  mx-auto mb-3" />
+              <p className="text-sm font-medium text-[#555555]  mb-1">
                 Unlocks after 28 days of data
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#555555]">
                 Log workouts regularly to build your training history
               </p>
             </div>
           ) : (
             <>
               <CTLLineChart data={ctlData} />
-              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-[#555555] ">
                 <span className="flex items-center gap-1.5">
                   <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#6366f1" strokeWidth="2" /></svg>
                   Fitness (CTL)
@@ -250,21 +250,21 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
                   Form (TSB)
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-xs border-t border-slate-100 dark:border-slate-700 pt-4">
+              <div className="mt-4 grid grid-cols-3 gap-3 text-xs border-t border-[#2a2a2a]  pt-4">
                 <div className="text-center">
                   <div className="w-2 h-2 rounded-full bg-indigo-500 mx-auto mb-1" />
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">Fitness (CTL)</div>
-                  <div className="text-slate-400 mt-0.5 leading-snug">42-day average — how fit you are from consistent training</div>
+                  <div className="font-semibold text-[#a0a0a0] ">Fitness (CTL)</div>
+                  <div className="text-[#555555] mt-0.5 leading-snug">42-day average — how fit you are from consistent training</div>
                 </div>
                 <div className="text-center">
                   <div className="w-2 h-2 rounded-full bg-red-400 mx-auto mb-1" />
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">Fatigue (ATL)</div>
-                  <div className="text-slate-400 mt-0.5 leading-snug">7-day average — how beat up you are from recent training</div>
+                  <div className="font-semibold text-[#a0a0a0] ">Fatigue (ATL)</div>
+                  <div className="text-[#555555] mt-0.5 leading-snug">7-day average — how beat up you are from recent training</div>
                 </div>
                 <div className="text-center">
                   <div className="w-2 h-2 rounded-full bg-green-400 mx-auto mb-1" />
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">Form (TSB)</div>
-                  <div className="text-slate-400 mt-0.5 leading-snug">Fitness minus fatigue — positive means fresh, negative means tired</div>
+                  <div className="font-semibold text-[#a0a0a0] ">Form (TSB)</div>
+                  <div className="text-[#555555] mt-0.5 leading-snug">Fitness minus fatigue — positive means fresh, negative means tired</div>
                 </div>
               </div>
             </>

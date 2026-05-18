@@ -96,6 +96,60 @@ export function getWorkoutBodyData(exercises = []) {
 }
 
 /**
+ * Recovery-weighted heatmap data.
+ *
+ * Applies exponential decay to each session's contribution based on hours elapsed.
+ * tau = 36h for primary muscles, 24h for secondary muscles.
+ * A muscle trained 36h ago contributes ~37% as much as one trained just now.
+ * Muscles that have fully recovered (< 5% contribution remaining) are hidden.
+ *
+ * @param {Array<{ log_date?: string, completed_at?: string, exercises: Array }>} workoutLogs
+ * @returns IExerciseData[] for react-body-highlighter
+ */
+export function getRecoveryHeatmapData(workoutLogs = []) {
+  const PRIMARY_TAU = 36;   // ~36h half-life for primary movers
+  const SECONDARY_TAU = 24; // secondary muscles recover faster
+
+  const now = new Date();
+  const muscleSums = {};
+
+  for (const log of workoutLogs) {
+    const timestamp = log.completed_at || (log.log_date ? log.log_date + 'T12:00:00' : null);
+    if (!timestamp) continue;
+    const hoursAgo = (now - new Date(timestamp)) / (1000 * 60 * 60);
+
+    for (const ex of log.exercises || []) {
+      const dbEntry = findExercise(ex.name || ex.exercise_name);
+      if (!dbEntry) continue;
+
+      const setCount = ex.sets?.length || 1;
+      const primary = toLibMuscles(dbEntry.primaryMuscle);
+      const secondary = toLibMuscles(dbEntry.secondaryMuscle);
+
+      const primaryDecay = Math.exp(-hoursAgo / PRIMARY_TAU);
+      const secondaryDecay = Math.exp(-hoursAgo / SECONDARY_TAU);
+
+      for (const m of primary) {
+        muscleSums[m] = (muscleSums[m] || 0) + setCount * primaryDecay;
+      }
+      for (const m of secondary) {
+        muscleSums[m] = (muscleSums[m] || 0) + setCount * 0.5 * secondaryDecay;
+      }
+    }
+  }
+
+  const maxVal = Math.max(...Object.values(muscleSums), 1);
+
+  return Object.entries(muscleSums)
+    .filter(([, val]) => val / maxVal > 0.05)
+    .map(([muscle, decayedSets]) => ({
+      name: muscle,
+      muscles: [muscle],
+      frequency: Math.max(1, Math.round((decayedSets / maxVal) * 3)),
+    }));
+}
+
+/**
  * For the weekly dashboard heat map — sums actual set counts per muscle.
  * workoutLogs is an array of log objects with an `exercises` array.
  * Returns IExerciseData[] for react-body-highlighter.

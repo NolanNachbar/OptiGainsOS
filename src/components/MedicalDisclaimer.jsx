@@ -16,16 +16,16 @@ export default function MedicalDisclaimer() {
   };
 
   return (
-    <div className="relative bg-slate-100 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-600 mb-4">
+    <div className="relative bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-400 mb-4">
       <button
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-slate-400 hover:text-slate-600"
+        className="absolute top-2 right-2 text-zinc-500 hover:text-zinc-300"
         aria-label="Dismiss"
       >
         <X className="w-4 h-4" />
       </button>
       <p className="pr-6">
-        <span className="font-medium text-slate-700">Medical disclaimer:</span>{' '}
+        <span className="font-medium text-zinc-300">Medical disclaimer:</span>{' '}
         Recommendations are for informational purposes only and are not medical advice.
         Consult a healthcare professional before beginning any new exercise or nutrition program.
       </p>

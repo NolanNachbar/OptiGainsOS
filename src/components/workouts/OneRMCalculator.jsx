@@ -36,7 +36,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
   const repRanges = [1, 3, 5, 8, 10, 12];
 
   const content = (
-    <Card className={embedded ? "border-none shadow-none" : "w-full max-w-md border-none shadow-lg"}>
+    <Card className={embedded ? "border-none shadow-none" : "w-full max-w-md border-none"}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -82,18 +82,18 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
 
           {oneRM && (
             <div className="space-y-3 pt-2">
-              <div className="text-center p-4 bg-primary-50 rounded-lg">
-                <div className="text-sm text-slate-600">Estimated 1 Rep Max</div>
-                <div className="text-3xl font-bold text-primary-600">{oneRM} {weightUnit}</div>
+              <div className="text-center p-4 bg-[rgba(204,255,0,0.05)] rounded-lg">
+                <div className="text-sm text-[#a0a0a0]">Estimated 1 Rep Max</div>
+                <div className="text-3xl font-bold text-[#ccff00]">{oneRM} {weightUnit}</div>
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm font-medium text-slate-700">Weight for target reps:</div>
+                <div className="text-sm font-medium text-[#a0a0a0]">Weight for target reps:</div>
                 <div className="grid grid-cols-3 gap-2">
                   {repRanges.map((targetReps) => (
-                    <div key={targetReps} className="text-center p-2 bg-slate-50 rounded-lg">
-                      <div className="text-xs text-slate-500">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
-                      <div className="font-semibold text-slate-800">
+                    <div key={targetReps} className="text-center p-2 bg-[#1a1a1a] rounded-lg">
+                      <div className="text-xs text-[#555555]">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
+                      <div className="font-semibold text-white">
                         {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
                       </div>
                     </div>
@@ -103,7 +103,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
             </div>
           )}
 
-          <p className="text-xs text-slate-500 text-center">
+          <p className="text-xs text-[#555555] text-center">
             Uses Brzycki formula. Most accurate for 1-10 reps.
           </p>
         </CardContent>

@@ -49,7 +49,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         type: "intro",
         label: "Intro Week",
         description: "Learn the movements — lighter loads, focus on form",
-        chipClass: "bg-[rgba(204,255,0,0.12)] text-[#ccff00] border-[rgba(204,255,0,0.3)] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] dark:border-[rgba(204,255,0,0.3)]",
+        chipClass: "bg-[rgba(204,255,0,0.12)] text-[#ccff00] border-[rgba(204,255,0,0.3)] text-[#ccff00]",
       };
     }
     if (week === activeWeeks) {
@@ -61,7 +61,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           deloadMode === "match_intro"
             ? "Same weight as Week 1 — full recovery"
             : `${deloadReduction} lbs under previous week — active recovery`,
-        chipClass: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700",
+        chipClass: "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border-amber-200",
       };
     }
     return {
@@ -69,7 +69,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
       type: "progression",
       label: `Week ${week}`,
       description: `+${weeklyIncrement} lbs from previous week`,
-      chipClass: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
+      chipClass: "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-emerald-200",
     };
   });
 
@@ -113,7 +113,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
               <Badge
                 key={i}
                 variant="outline"
-                className="text-xs text-slate-700 text-[#a0a0a0] border-slate-300 border-[#2a2a2a] bg-[#1a1a1a] bg-[#202020]"
+                className="text-xs text-[#a0a0a0] text-[#a0a0a0] border-[#2a2a2a] border-[#2a2a2a] bg-[#1a1a1a] bg-[#202020]"
               >
                 Day {i + 1}: {day}
               </Badge>
@@ -136,11 +136,11 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     className={[
                       "p-3 rounded-xl border-2 text-left transition-all",
                       isActive
-                        ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)]"
-                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] dark:hover:border-[rgba(204,255,0,0.3)]",
+                        ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)]"
+                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)]",
                     ].join(" ")}
                   >
-                    <div className={`font-bold text-sm ${isActive ? "text-[#ccff00] text-[#ccff00]" : "text-slate-800 dark:text-slate-100"}`}>
+                    <div className={`font-bold text-sm ${isActive ? "text-[#ccff00] text-[#ccff00]" : "text-white "}`}>
                       {preset.label}
                     </div>
                     <div className="text-xs text-[#555555] mt-0.5 leading-snug">
@@ -159,7 +159,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 min={3}
                 max={52}
                 onChange={(e) => setCustomWeeks(e.target.value)}
-                className="w-40 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#a0a0a0] dark:placeholder:text-[#555555]"
+                className="w-40 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#a0a0a0]"
               />
               <span className="text-sm text-[#555555]">weeks (min 3)</span>
             </div>
@@ -199,8 +199,8 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       className={[
                         "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
                         isActive
-                          ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
-                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] dark:hover:border-[rgba(204,255,0,0.3)] bg-[#1a1a1a]",
+                          ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
+                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] bg-[#1a1a1a]",
                       ].join(" ")}
                     >
                       +{v}
@@ -226,13 +226,13 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   className={[
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "match_intro"
-                      ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
-                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-amber-300 dark:hover:border-amber-600",
+                      ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
+                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(245,158,11,0.4)]",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
-                    <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                    <RotateCcw className="w-4 h-4 text-[#fbbf24]" />
+                    <span className="text-sm font-medium text-white ">
                       Match Intro Week
                     </span>
                   </div>
@@ -247,13 +247,13 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   className={[
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "reduce"
-                      ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30"
-                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-amber-300 dark:hover:border-amber-600",
+                      ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
+                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(245,158,11,0.4)]",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400 rotate-180" />
-                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                    <TrendingUp className="w-4 h-4 text-[#fbbf24] rotate-180" />
+                    <span className="text-sm font-medium text-white ">
                       Reduce from Previous
                     </span>
                   </div>
@@ -300,22 +300,22 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#555555]">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-primary-300 dark:bg-primary-700" />
+                <div className="w-3 h-3 rounded bg-[#ccff00]" />
                 1 intro week
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-emerald-300 dark:bg-emerald-700" />
+                <div className="w-3 h-3 rounded bg-[rgba(34,197,94,0.4)]" />
                 {progressionWeeks} progression week{progressionWeeks !== 1 ? "s" : ""}
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-amber-300 dark:bg-amber-700" />
+                <div className="w-3 h-3 rounded bg-[rgba(245,158,11,0.4)]" />
                 1 deload week
               </div>
             </div>
           </div>
 
           {/* Info box */}
-          <div className="flex gap-3 p-3 bg-[rgba(204,255,0,0.08)] dark:bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] dark:border-[rgba(204,255,0,0.3)] rounded-xl text-sm text-[#ccff00] text-[#ccff00]">
+          <div className="flex gap-3 p-3 bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] rounded-xl text-sm text-[#ccff00] text-[#ccff00]">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
               Each week's workout will be generated with adjusted sets, reps, and rest
@@ -335,7 +335,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             onClick={handleConfirm}
             disabled={activeWeeks < 3}
             variant="primary"
-            className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
+            className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
           >
             <ChevronRight className="w-4 h-4 mr-2" />
             Generate Program

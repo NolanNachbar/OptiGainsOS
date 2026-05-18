@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useProgram, useCreateProgram, useUpdateProgram } from "@/hooks/useProgramQueries";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,7 +85,9 @@ function makeEmptyWorkout(dayIndex) {
 export default function ProgramBuilder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const editId = searchParams.get("edit");
+  const { user } = useAuth();
 
   const { program: existingProgram, isLoading: loadingExisting } = useProgram(editId);
   const createMutation = useCreateProgram();
@@ -109,6 +111,7 @@ export default function ProgramBuilder() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [createdProgram, setCreatedProgram] = useState(null);
   const importFileRef = useRef(null);
+  const wasImported = useRef(false);
 
   const handleImportJson = (e) => {
     const file = e.target.files?.[0];
@@ -119,6 +122,7 @@ export default function ProgramBuilder() {
         const { programMeta, workouts: imported } = parseProgramJson(ev.target.result);
         setProgram(programMeta);
         setWorkouts(imported);
+        wasImported.current = true;
         toast.success(`Loaded "${programMeta.name}"`);
       } catch (err) {
         toast.error(err.message || "Failed to load JSON");
@@ -158,6 +162,16 @@ export default function ProgramBuilder() {
       setWorkouts(converted);
     }
   }, [editId, existingProgram]);
+
+  // Pre-populate from JSON import navigated in via router state
+  useEffect(() => {
+    const imp = location.state?.importedProgram;
+    if (!imp || editId) return;
+    setProgram(imp.programMeta);
+    setWorkouts(imp.workouts);
+    wasImported.current = true;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-generate cycle day slots when cycle_length changes (new programs only)
   useEffect(() => {
@@ -413,7 +427,20 @@ export default function ProgramBuilder() {
       createMutation.mutate(
         { program: programData, workouts: enrichedWorkouts },
         {
-          onSuccess: (created) => {
+          onSuccess: async (created) => {
+            if (wasImported.current && user) {
+              await Promise.allSettled(
+                enrichedWorkouts.map((w) =>
+                  db.entities.Workout.create({
+                    created_by: user.id,
+                    title: w.title,
+                    type: w.type,
+                    exercises: w.exercises,
+                    is_custom: true,
+                  })
+                )
+              );
+            }
             toast.success("Program created!");
             setCreatedProgram({ ...created, ...programData });
             setShowScheduleModal(true);
@@ -439,15 +466,15 @@ export default function ProgramBuilder() {
   const editingWorkout = editingDay != null ? workouts.find((w) => w.day_index === editingDay) : null;
 
   return (
-    <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-[#1a1a1a]  min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-white">
               {editId ? "Edit Program" : "Create Program"}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-[#555555] text-sm mt-1">
               Step {step + 1} of {STEPS.length}: {STEPS[step]}
             </p>
           </div>
@@ -472,7 +499,7 @@ export default function ProgramBuilder() {
             )}
             <button
               onClick={() => navigate("/workouts")}
-              className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"
+              className="text-[#555555] hover:text-[#a0a0a0] text-sm flex items-center gap-1"
             >
               <ArrowLeft className="w-4 h-4" />
               Cancel
@@ -487,8 +514,8 @@ export default function ProgramBuilder() {
               key={s}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
                 i <= step
-                  ? "bg-primary-500"
-                  : "bg-slate-200"
+                  ? "bg-[#ccff00]"
+                  : "bg-[#2a2a2a]"
               }`}
             />
           ))}
@@ -565,7 +592,7 @@ export default function ProgramBuilder() {
             <Button
               onClick={next}
               disabled={!canProceed()}
-              className="flex-1 bg-primary-600"
+              className="flex-1 bg-[#ccff00] text-black font-bold"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -574,7 +601,7 @@ export default function ProgramBuilder() {
             <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 bg-primary-600"
+              className="flex-1 bg-[#ccff00] text-black font-bold"
             >
               <Save className="w-4 h-4 mr-2" />
               {createMutation.isPending || updateMutation.isPending
@@ -614,7 +641,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
   };
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="">
       <CardHeader>
         <CardTitle>Program Details</CardTitle>
       </CardHeader>
@@ -656,7 +683,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max="30"
               className="mt-1"
             />
-            <p className="text-xs text-slate-400 mt-0.5">Days per cycle</p>
+            <p className="text-xs text-[#555555] mt-0.5">Days per cycle</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
@@ -673,7 +700,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max="20"
               className="mt-1"
             />
-            <p className="text-xs text-slate-400 mt-0.5">Times repeated</p>
+            <p className="text-xs text-[#555555] mt-0.5">Times repeated</p>
           </div>
           <div>
             <Label>Difficulty</Label>
@@ -718,7 +745,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Total training days info */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 text-primary-700 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(204,255,0,0.05)] text-[#ccff00] text-sm">
           <Calendar className="w-4 h-4 flex-shrink-0" />
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong>{program.cycle_length * program.num_cycles} total training days</strong>
@@ -726,7 +753,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* rest day tip */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 text-amber-700 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(245,158,11,0.08)] text-[#fbbf24] text-sm">
           <span>💡</span>
           <span>
             <strong>Tip:</strong> Include rest days in your cycle length. For example, a 7-day cycle
@@ -792,14 +819,14 @@ function StepCycleDays({
 }) {
   return (
     <div className="space-y-4">
-      <Card className="border-none shadow-lg">
+      <Card className="">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base">
                 {program.cycle_length}-Day Cycle Template
               </CardTitle>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#555555] mt-1">
                 Drag workouts from the library or click a day to build exercises inline.
                 This template repeats for {program.num_cycles} cycle{program.num_cycles !== 1 ? "s" : ""}.
               </p>
@@ -815,7 +842,7 @@ function StepCycleDays({
             onClearDay={onClearDay}
           />
 
-          <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
             <WorkoutLibrarySidebar />
           </div>
         </CardContent>
@@ -874,11 +901,11 @@ function InlineDayEditor({
   const cardioLibrary = libraryWorkouts.filter(w => w.type === 'cardio' || w.type === 'hiit');
 
   return (
-    <Card className="border-none shadow-lg border-l-4 border-l-primary-500">
+    <Card className="border-none border-l-4 border-l-primary-500">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Badge className="bg-primary-600">
+            <Badge className="bg-[#ccff00]">
               Day {dayIndex}
             </Badge>
             Editing Exercises
@@ -921,7 +948,7 @@ function InlineDayEditor({
 
         {/* Exercises */}
         {(workout.exercises || []).length === 0 && (
-          <div className="text-center py-6 text-slate-400">
+          <div className="text-center py-6 text-[#555555]">
             <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No exercises yet. Add one below.</p>
           </div>
@@ -971,7 +998,7 @@ function InlineDayEditor({
         </div>
 
         {/* Cardio Workouts */}
-        <div className="border-t border-slate-100 dark:border-slate-700 pt-3">
+        <div className="border-t border-[#2a2a2a]  pt-3">
           <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
             <Activity className="w-3.5 h-3.5 text-orange-500" />
             Cardio Workouts
@@ -989,7 +1016,7 @@ function InlineDayEditor({
               });
             }}
           >
-            <SelectTrigger className="h-8 text-xs text-slate-500">
+            <SelectTrigger className="h-8 text-xs text-[#555555]">
               <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout..." : "No cardio workouts in library yet"} />
             </SelectTrigger>
             <SelectContent>
@@ -1000,10 +1027,10 @@ function InlineDayEditor({
           </Select>
           <div className="space-y-1.5 mt-2">
             {(workout.cardio_sessions || []).map((c, i) => (
-              <div key={i} className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg px-3 py-1.5">
+              <div key={i} className="flex items-center gap-2 bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-lg px-3 py-1.5">
                 <Activity className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                <span className="text-xs font-medium text-orange-700 dark:text-orange-400 flex-1 truncate">{c.title}</span>
-                <span className="text-xs text-slate-500 shrink-0">{c.duration_minutes} min</span>
+                <span className="text-xs font-medium text-orange-700 flex-1 truncate">{c.title}</span>
+                <span className="text-xs text-[#555555] shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
                   <SelectTrigger className="w-20 h-6 text-xs">
                     <SelectValue />
@@ -1014,7 +1041,7 @@ function InlineDayEditor({
                     <SelectItem value="anytime">Anytime</SelectItem>
                   </SelectContent>
                 </Select>
-                <button type="button" onClick={() => removeCardioWorkout(dayIndex, i)} className="text-slate-400 hover:text-red-500 transition-colors shrink-0">
+                <button type="button" onClick={() => removeCardioWorkout(dayIndex, i)} className="text-[#555555] hover:text-[#f87171] transition-colors shrink-0">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1053,18 +1080,18 @@ function ExerciseEditor({
   const isCardio = workoutType === "cardio" || workoutType === "hiit";
 
   return (
-    <Card className="bg-slate-50 border-slate-200">
+    <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
       <CardContent className="pt-3 pb-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400">#{index + 1}</span>
+            <span className="text-xs font-semibold text-[#555555]">#{index + 1}</span>
             {detected && (
               <Badge variant="outline" className="text-xs capitalize">
                 {detected.type}
               </Badge>
             )}
             {exercise.muscle_groups?.length > 0 && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-[#555555]">
                 {exercise.muscle_groups.join(", ")}
               </span>
             )}
@@ -1077,7 +1104,7 @@ function ExerciseEditor({
               className="h-6 w-6 p-0"
               onClick={() => removeExercise(dayIndex, index)}
             >
-              <Trash2 className="w-3 h-3 text-danger-500" />
+              <Trash2 className="w-3 h-3 text-[#f87171]" />
             </Button>
           )}
         </div>
@@ -1093,7 +1120,7 @@ function ExerciseEditor({
           </div>
           {!isCardio && (
             <div>
-              <Label className="text-xs text-slate-500">Focus</Label>
+              <Label className="text-xs text-[#555555]">Focus</Label>
               <Select
                 value={exercise.focus || "hypertrophy"}
                 onValueChange={(v) => update("focus", v)}
@@ -1109,7 +1136,7 @@ function ExerciseEditor({
             </div>
           )}
           <div>
-            <Label className="text-xs text-slate-500">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
+            <Label className="text-xs text-[#555555]">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
             <Input
               type="number"
               value={exercise.rir_target}
@@ -1124,7 +1151,7 @@ function ExerciseEditor({
             />
           </div>
           <div>
-            <Label className="text-xs text-slate-500">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
+            <Label className="text-xs text-[#555555]">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
             <Input
               type="number"
               value={typeof exercise.sets === "number" ? exercise.sets : Array.isArray(exercise.sets) ? exercise.sets.length : 3}
@@ -1134,7 +1161,7 @@ function ExerciseEditor({
             />
           </div>
           <div>
-            <Label className="text-xs text-slate-500">{isCardio ? "Duration/Distance" : "Rep Target"}</Label>
+            <Label className="text-xs text-[#555555]">{isCardio ? "Duration/Distance" : "Rep Target"}</Label>
             <Input
               value={exercise.rep_target}
               onChange={(e) => update("rep_target", e.target.value)}
@@ -1143,7 +1170,7 @@ function ExerciseEditor({
             />
           </div>
           <div>
-            <Label className="text-xs text-slate-500">Rest (sec)</Label>
+            <Label className="text-xs text-[#555555]">Rest (sec)</Label>
             <Input
               type="number"
               value={exercise.rest_seconds}
@@ -1154,7 +1181,7 @@ function ExerciseEditor({
           </div>
           {!isCardio && (
             <div>
-              <Label className="text-xs text-slate-500">Weight +/session</Label>
+              <Label className="text-xs text-[#555555]">Weight +/session</Label>
               <Input
                 type="number"
                 value={exercise.progression?.weight_increment || 5}
@@ -1183,10 +1210,10 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
 
   if (exercises.length === 0) {
     return (
-      <Card className="border-none shadow-lg">
+      <Card className="">
         <CardContent className="py-12 text-center">
-          <TrendingUp className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">
+          <TrendingUp className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
+          <p className="text-[#555555]">
             No exercises found. Go back and add exercises to see projections.
           </p>
         </CardContent>
@@ -1202,10 +1229,10 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
       : [];
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="">
       <CardHeader>
         <CardTitle>Progression Preview</CardTitle>
-        <p className="text-sm text-slate-500 mb-3">
+        <p className="text-sm text-[#555555] mb-3">
           Enter starting weights to see projected progression. These are estimates
           assuming progression every session (best case).
         </p>
@@ -1226,11 +1253,11 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border border-slate-200 rounded-lg p-4">
+        <div className="border border-[#2a2a2a] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="font-medium text-base">{currentExercise.name}</p>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-[#555555] mt-1">
                 {typeof currentExercise.sets === "number" ? currentExercise.sets : Array.isArray(currentExercise.sets) ? currentExercise.sets.length : 3} sets &times; {currentExercise.rep_target} reps &middot; +
                 {currentExercise.progression?.weight_increment || 5} lbs/session
               </p>
@@ -1248,7 +1275,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
                   }))
                 }
               />
-              <span className="text-sm text-slate-500">lbs</span>
+              <span className="text-sm text-[#555555]">lbs</span>
             </div>
           </div>
 
@@ -1257,15 +1284,15 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
               {projections.map((p) => (
                 <div
                   key={p.week}
-                  className="flex-shrink-0 text-center bg-slate-50 rounded px-4 py-2"
+                  className="flex-shrink-0 text-center bg-[#1a1a1a] rounded px-4 py-2"
                 >
-                  <p className="text-xs text-slate-500">Cycle {p.week}</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1">{p.weight} lbs</p>
+                  <p className="text-xs text-[#555555]">Cycle {p.week}</p>
+                  <p className="text-sm font-bold text-white mt-1">{p.weight} lbs</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500 text-sm">
+            <div className="text-center py-8 text-[#555555] text-sm">
               Enter a starting weight to see progression
             </div>
           )}
@@ -1291,46 +1318,46 @@ function StepConfirm({ program, workouts }) {
   ).length;
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="">
       <CardHeader>
         <CardTitle>Review & Confirm</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-slate-500">Name</p>
+            <p className="text-xs text-[#555555]">Name</p>
             <p className="font-semibold">{program.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Difficulty</p>
+            <p className="text-xs text-[#555555]">Difficulty</p>
             <p className="font-semibold">{DIFFICULTY_LEVELS.find(l => l.value === program.difficulty)?.label || program.difficulty}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Cycle</p>
+            <p className="text-xs text-[#555555]">Cycle</p>
             <p className="font-semibold">{program.cycle_length}-day cycle &times; {program.num_cycles}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Total Days</p>
+            <p className="text-xs text-[#555555]">Total Days</p>
             <p className="font-semibold">{program.cycle_length * program.num_cycles} days</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Goal</p>
+            <p className="text-xs text-[#555555]">Goal</p>
             <p className="font-semibold">{GOALS.find(g => g.value === program.goal)?.label || program.goal?.replace("_", " ")}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Training Days</p>
+            <p className="text-xs text-[#555555]">Training Days</p>
             <p className="font-semibold">{filledDays} of {program.cycle_length} days</p>
           </div>
         </div>
 
         {program.description && (
           <div>
-            <p className="text-xs text-slate-500">Description</p>
-            <p className="text-sm text-slate-700">{program.description}</p>
+            <p className="text-xs text-[#555555]">Description</p>
+            <p className="text-sm text-[#a0a0a0]">{program.description}</p>
           </div>
         )}
 
-        <div className="border-t border-slate-100 pt-4">
+        <div className="border-t border-[#2a2a2a] pt-4">
           <h3 className="text-sm font-semibold mb-3">Cycle Template</h3>
           <div className="space-y-2">
             {workouts.map((w) => {
@@ -1341,7 +1368,7 @@ function StepConfirm({ program, workouts }) {
                 <div
                   key={w.day_index}
                   className={`flex items-center justify-between p-2 rounded text-sm ${
-                    isEmpty ? "bg-slate-50/50 opacity-60" : "bg-slate-50"
+                    isEmpty ? "bg-[#1a1a1a]/50 opacity-60" : "bg-[#1a1a1a]"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1352,7 +1379,7 @@ function StepConfirm({ program, workouts }) {
                       {isEmpty ? "Rest" : w.title}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-[#555555]">
                     {[
                       hasExercises && `${w.exercises.length} exercises`,
                       hasCardio && `${w.cardio_sessions.length} cardio`,
@@ -1364,7 +1391,7 @@ function StepConfirm({ program, workouts }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-success-50 text-success-700 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(34,197,94,0.08)] text-[#4ade80] text-sm">
           <Check className="w-4 h-4" />
           <span>
             Ready to save: {filledDays} training days

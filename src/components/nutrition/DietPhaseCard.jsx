@@ -167,31 +167,31 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
     switch (type) {
       case "cut":
         return {
-          bg: "bg-red-50 dark:bg-red-900/20",
-          text: "text-red-700 dark:text-red-400",
-          badge: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400",
-          border: "border-red-200 dark:border-red-800",
+          bg: "bg-red-50",
+          text: "text-red-700",
+          badge: "bg-red-100 text-red-700",
+          border: "border-[rgba(239,68,68,0.2)]",
         };
       case "bulk":
         return {
-          bg: "bg-green-50 dark:bg-green-900/20",
-          text: "text-green-700 dark:text-green-400",
-          badge: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400",
-          border: "border-green-200 dark:border-green-800",
+          bg: "bg-green-50",
+          text: "text-green-700",
+          badge: "bg-[rgba(34,197,94,0.1)] text-[#4ade80]",
+          border: "border-[rgba(34,197,94,0.2)]",
         };
       case "reverse":
         return {
-          bg: "bg-teal-50 dark:bg-teal-900/20",
-          text: "text-teal-700 dark:text-teal-400",
-          badge: "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400",
-          border: "border-teal-200 dark:border-teal-800",
+          bg: "bg-teal-50",
+          text: "text-teal-700",
+          badge: "bg-teal-100 text-teal-700",
+          border: "border-teal-200",
         };
       default:
         return {
-          bg: "bg-blue-50 dark:bg-blue-900/20",
-          text: "text-blue-700 dark:text-blue-400",
-          badge: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400",
-          border: "border-blue-200 dark:border-blue-800",
+          bg: "bg-[rgba(59,130,246,0.08)]",
+          text: "text-[#60a5fa]",
+          badge: "bg-[rgba(59,130,246,0.1)] text-[#60a5fa]",
+          border: "border-blue-200",
         };
     }
   };
@@ -210,7 +210,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
 
   return (
     <>
-      <Card className="border-none shadow-lg">
+      <Card className="">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -233,10 +233,10 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
             <div className="space-y-2">
               {/* Auto-transition banner */}
               {shouldTransition && (
-                <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="p-2.5 bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-amber-600" />
-                    <span className="font-semibold text-sm text-amber-800 dark:text-amber-300">
+                    <Trophy className="w-4 h-4 text-[#fbbf24]" />
+                    <span className="font-semibold text-sm text-amber-800">
                       Target Reached!
                     </span>
                     <Button
@@ -300,7 +300,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                           <span>Metabolic recovery</span>
                           <span>{activePhase.starting_calories} → {phaseCalories} / {tdeeResult.tdee} cal</span>
                         </div>
-                        <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-1.5">
+                        <div className="w-full bg-[#2a2a2a]  rounded-full h-1.5">
                           <div
                             className="bg-teal-500 h-1.5 rounded-full transition-all"
                             style={{
@@ -327,7 +327,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                 <div>
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center gap-1 text-xs text-[#555555] hover:text-slate-700 transition-colors"
+                    className="flex items-center gap-1 text-xs text-[#555555] hover:text-[#a0a0a0] transition-colors"
                   >
                     History ({completedPhases.length})
                     {showHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -388,7 +388,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
       <Dialog open={showNewPhase} onOpenChange={setShowNewPhase}>
         <DialogContent className="flex flex-col p-0">
           {/* Fixed header */}
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#2a2a2a] flex-shrink-0">
             <DialogTitle>Start New Diet Phase</DialogTitle>
             <DialogDescription>
               {activePhase
@@ -421,8 +421,8 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                       }}
                       className={`p-3 rounded-lg border-2 text-center transition-all ${
                         selected
-                          ? `${colors.border} ${colors.bg} ring-2 ring-offset-1 ring-primary-300`
-                          : "border-[#2a2a2a] border-[#2a2a2a] hover:border-slate-300 dark:hover:border-slate-500"
+                          ? `${colors.border} ${colors.bg} ring-2 ring-offset-1 ring-[rgba(204,255,0,0.3)]`
+                          : "border-[#2a2a2a] border-[#2a2a2a] hover:border-[#2a2a2a]"
                       }`}
                     >
                       <div className="flex justify-center mb-1">
@@ -454,7 +454,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                       !customRate && newRate === preset.value
                         ? "border-[rgba(204,255,0,0.4)] bg-[rgba(204,255,0,0.08)] text-white"
-                        : "border-[#2a2a2a] border-[#2a2a2a] hover:border-slate-300 dark:hover:border-slate-500"
+                        : "border-[#2a2a2a] border-[#2a2a2a] hover:border-[#2a2a2a]"
                     }`}
                   >
                     <span className="font-medium text-sm">{preset.label}</span>
@@ -547,10 +547,10 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           </div>
 
           {/* Fixed footer */}
-          <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0 flex gap-2">
+          <div className="px-6 py-4 border-t border-[#2a2a2a] flex-shrink-0 flex gap-2">
             <Button
               onClick={handleStartPhase}
-              className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-primary-400 text-black font-bold"
+              className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
               disabled={startPhaseMutation.isPending}
             >
               {startPhaseMutation.isPending

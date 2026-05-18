@@ -10,22 +10,10 @@ const DIFF_BORDER = { beginner: '#10b981', intermediate: '#f59e0b', advanced: '#
 
 // Capitalized and color-coded difficulty badges
 const DIFFICULTY_STYLES = {
-  beginner: {
-    label: "Beginner",
-    className: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700",
-  },
-  intermediate: {
-    label: "Intermediate",
-    className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700",
-  },
-  advanced: {
-    label: "Advanced",
-    className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700",
-  },
-  expert: {
-    label: "Expert",
-    className: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700",
-  },
+  beginner:     { label: "Beginner",     className: "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.2)]" },
+  intermediate: { label: "Intermediate", className: "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border-[rgba(245,158,11,0.2)]" },
+  advanced:     { label: "Advanced",     className: "bg-[rgba(239,68,68,0.1)] text-[#f87171] border-[rgba(239,68,68,0.15)]" },
+  expert:       { label: "Expert",       className: "bg-[rgba(168,85,247,0.1)] text-[#c084fc] border-[rgba(168,85,247,0.15)]" },
 };
 
 export default function WorkoutCard({ workout, reaction, onReactionChange, userId, onEdit, onClone, onDelete }) {
@@ -79,7 +67,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
       transition={{ duration: 0.2 }}
     >
       <div
-        className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424]/50 shadow-md hover:shadow-lg transition-all duration-200"
+        className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424]/50 transition-colors duration-200"
         style={{ borderLeftColor: borderColor }}
       >
         <div className="pb-2 pt-4 px-6">
@@ -100,8 +88,8 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
               </Badge>
               {workout.folder && (
                 <Badge
-                  variant="outline"
-                  className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700 max-w-[120px] truncate text-xs"
+                  variant="slate"
+                  className="max-w-[120px] truncate text-xs"
                 >
                   <FolderOpen className="w-3 h-3 mr-1 shrink-0" />
                   <span className="truncate">{workout.folder}</span>
@@ -115,33 +103,33 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                   variant="ghost"
                   size="icon"
                   onClick={() => setOpenMenu(!openMenu)}
-                  className="h-7 w-7 text-[#a0a0a0] hover:text-slate-700 dark:hover:text-slate-200"
+                  className="h-7 w-7 text-[#a0a0a0] hover:text-[#a0a0a0]"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className="absolute right-0 top-8 bg-[#1a1a1a] bg-[#202020] rounded-xl shadow-xl border border-[#2a2a2a] border-[#2a2a2a] py-1 z-20 min-w-[140px]">
+                  <div className="absolute right-0 top-8 bg-[#202020] rounded-[10px] border border-[#2a2a2a] py-1 z-20 min-w-[140px]">
                     <button
                       onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-[#242424] flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={() => { onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-[#242424] flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={() => { handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-[#1a1a1a] dark:hover:bg-slate-600 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-[#242424] flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
                     <button
                       onClick={() => { onDelete(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-[#f87171] hover:bg-[rgba(239,68,68,0.1)] flex items-center gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />Delete
                     </button>
@@ -187,7 +175,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1",
                 reaction === "like"
                   ? "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:border-emerald-600"
-                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-400",
+                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.4)] hover:text-[#4ade80]",
               ].join(" ")}
             >
               <ThumbsUp className="w-3.5 h-3.5" />
@@ -202,7 +190,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1",
                 reaction === "dislike"
                   ? "bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600"
-                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 hover:text-red-500",
+                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)] hover:text-[#f87171]",
               ].join(" ")}
               aria-label="Not for me"
             >
@@ -214,7 +202,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
               variant="primary"
-              className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-white border-none shadow-sm"
+              className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-white border-none"
             >
               View Details
             </Button>

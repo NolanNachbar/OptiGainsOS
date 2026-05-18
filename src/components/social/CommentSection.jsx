@@ -64,7 +64,7 @@ export function CommentToggle({ expanded, setExpanded, displayCount }) {
   return (
     <button
       onClick={() => setExpanded(!expanded)}
-      className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-600 transition-colors"
+      className="flex items-center gap-1.5 text-sm text-[#555555] hover:text-[#a0a0a0] transition-colors"
     >
       <MessageCircle className="w-4 h-4" />
       {displayCount > 0 ? displayCount : "Comment"}
@@ -108,27 +108,27 @@ export function CommentPanel({
                     to={`/profile/${comment.authorProfile?.username || ""}`}
                     className="hover:underline"
                   >
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                    <span className="text-xs font-semibold text-white">
                       {comment.authorProfile?.display_name || comment.authorProfile?.username || "Unknown User"}
                     </span>
                   </Link>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-[#555555]">
                     @{comment.authorProfile?.username || "unknown"}
                   </span>
-                  <span className="text-xs text-slate-400">·</span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-[#555555]">·</span>
+                  <span className="text-xs text-[#555555]">
                     {format(new Date(comment.created_at), "MMM d, h:mm a")}
                   </span>
                   {comment.created_by === user?.id && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="text-slate-300 hover:text-danger-500 transition-colors ml-auto"
+                      className="text-[#a0a0a0] hover:text-[#f87171] transition-colors ml-auto"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300">{comment.body}</p>
+                <p className="text-sm text-[#a0a0a0] ">{comment.body}</p>
               </div>
             </div>
           ))}
@@ -148,7 +148,7 @@ export function CommentPanel({
           type="submit"
           size="sm"
           disabled={!body.trim() || addComment.isPending}
-          className="bg-primary-600 px-3"
+          className="bg-[#ccff00] px-3"
         >
           <Send className="w-3.5 h-3.5" />
         </Button>

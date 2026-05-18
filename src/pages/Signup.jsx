@@ -64,11 +64,11 @@ export default function Signup() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white tracking-tight">Vektor</h1>
+          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">Vektor</h1>
           <p className="text-[#a0a0a0] mt-2">Create your account</p>
         </div>
 
-        <Card className="border-none shadow-lg bg-[#1a1a1a] border-[#2a2a2a] text-white">
+        <Card className="bg-[#1a1a1a] border-[#2a2a2a] text-white">
           <CardHeader>
             <CardTitle className="text-white text-center">Get Started</CardTitle>
           </CardHeader>
@@ -77,7 +77,7 @@ export default function Signup() {
               <div>
                 <Label htmlFor="email" className="text-white">Email</Label>
                 <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                   <Input
                     id="email"
                     type="email"
@@ -93,7 +93,7 @@ export default function Signup() {
               <div>
                 <Label htmlFor="password" className="text-white">Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                   <Input
                     id="password"
                     type="password"
@@ -110,7 +110,7 @@ export default function Signup() {
               <div>
                 <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -124,8 +124,9 @@ export default function Signup() {
               </div>
 
               <Button
+                variant="volt"
                 type="submit"
-                className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold"
+                className="w-full"
                 disabled={loading}
               >
                 {loading ? (
@@ -142,7 +143,7 @@ export default function Signup() {
             <div className="mt-6 text-center">
               <p className="text-[#a0a0a0]">
                 Already have an account?{' '}
-                <Link to="/login" state={{ returnTo }} className="text-primary-500 hover:text-primary-400 font-medium">
+                <Link to="/login" state={{ returnTo }} className="text-[#ccff00] hover:text-[#ccff00] font-medium">
                   Sign in
                 </Link>
               </p>

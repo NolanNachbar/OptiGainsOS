@@ -10,13 +10,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "vektor-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
+      "src": "vektor-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

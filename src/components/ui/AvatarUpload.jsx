@@ -154,14 +154,14 @@ export function AvatarUpload({ currentUrl, username, profileId }) {
       <Dialog open={!!previewUrl} onOpenChange={(open) => { if (!open) handleCancel(); }}>
         <DialogContent className="max-w-md flex flex-col p-0 overflow-hidden">
           <div className="px-6 pt-6 pb-4 shrink-0">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white text-center">
+            <p className="text-lg font-semibold text-white text-center">
               Adjust Your Photo
             </p>
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* Cropper Area */}
-            <div className="relative w-full h-80 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
+            <div className="relative w-full h-80 bg-[#202020]  rounded-lg overflow-hidden">
               <Cropper
                 image={previewUrl}
                 crop={crop}
@@ -177,7 +177,7 @@ export function AvatarUpload({ currentUrl, username, profileId }) {
 
             {/* Zoom Slider */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-[#a0a0a0]  mb-2">
                 Zoom
               </label>
               <input
@@ -187,13 +187,13 @@ export function AvatarUpload({ currentUrl, username, profileId }) {
                 step={0.1}
                 value={zoom}
                 onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                className="w-full h-2 bg-[#2a2a2a]  rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 justify-center px-6 py-4 border-t bg-white dark:bg-slate-900 shrink-0">
+          <div className="flex gap-3 justify-center px-6 py-4 border-t bg-[#1a1a1a]  shrink-0">
             <Button
               type="button"
               variant="outline"

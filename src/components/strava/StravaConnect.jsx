@@ -78,8 +78,8 @@ export default function StravaConnect() {
     return (
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-medium text-slate-900 dark:text-white">Connect Strava</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="font-medium text-white">Connect Strava</p>
+          <p className="text-sm text-[#555555] ">
             Import your runs, rides, and other cardio activities
           </p>
         </div>
@@ -98,13 +98,13 @@ export default function StravaConnect() {
     <div className="flex items-center justify-between">
       <div>
         <div className="flex items-center gap-2">
-          <p className="font-medium text-slate-900 dark:text-white">Strava</p>
-          <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400">
+          <p className="font-medium text-white">Strava</p>
+          <Badge className="bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.2)]">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Connected
           </Badge>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-[#555555] ">
           Sync your latest activities in the Cardio tab
         </p>
       </div>
@@ -117,7 +117,7 @@ export default function StravaConnect() {
           variant="ghost"
           size="sm"
           onClick={handleDisconnect}
-          className="text-slate-500 hover:text-red-600"
+          className="text-[#555555] hover:text-[#f87171]"
         >
           <Link2Off className="w-4 h-4 mr-1.5" />
           Disconnect

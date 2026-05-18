@@ -206,7 +206,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
 
   if (!hasData) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 border-[#2a2a2a] p-4 text-center space-y-2">
+      <div className="rounded-xl border border-dashed border-[#2a2a2a] border-[#2a2a2a] p-4 text-center space-y-2">
         <UtensilsCrossed className="w-6 h-6 text-[#a0a0a0] mx-auto" />
         <p className="text-sm text-[#555555]">
           Log a few more meals to unlock meal plan ideas based on your food history.
@@ -220,7 +220,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
   const calClose   = Math.abs(totals.calories - cal) < 150;
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
@@ -245,7 +245,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeDay === i
                   ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
-                  : "bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] hover:bg-slate-200 dark:hover:bg-slate-600"
+                  : "bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] hover:bg-[#2a2a2a] "
               }`}
             >
               Day {i + 1}
@@ -268,14 +268,14 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                     <span className="text-[11px] text-[#a0a0a0]">{inst.total.calories} cal</span>
                     <button
                       onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay, mt), mealType: mt })}
-                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-[#a0a0a0] hover:text-primary-500 transition-colors"
+                      className="p-0.5 rounded hover:bg-[#2a2a2a]  text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
                       title="Save as meal template"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => excludeMeal(inst.key)}
-                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-[#a0a0a0] hover:text-[#555555] dark:hover:text-[#a0a0a0] transition-colors"
+                      className="p-0.5 rounded hover:bg-[#2a2a2a]  text-[#a0a0a0] hover:text-[#555555] transition-colors"
                       title="Skip this meal"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -283,11 +283,11 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                   </div>
                 </div>
 
-                <div className="bg-[#1a1a1a] bg-[#1a1a1a]/60 rounded-lg divide-y divide-slate-100 dark:divide-slate-700/50">
+                <div className="bg-[#1a1a1a] rounded-lg divide-y divide-[#2a2a2a]">
                   {inst.foods.map((food, i) => (
                     <div key={i} className="flex items-center justify-between px-3 py-2">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight break-words">
+                        <div className="text-sm font-medium text-white  leading-tight break-words">
                           {food.name}
                         </div>
                         <div className="text-[11px] text-[#a0a0a0] mt-0.5">{food.serving_size}</div>
@@ -295,7 +295,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                       <div className="text-right shrink-0 ml-3">
                         <div className="text-xs font-semibold text-[#a0a0a0] text-[#a0a0a0]">{food.calories} cal</div>
                         <div className="flex gap-1.5 text-xs mt-0.5">
-                          <span className="text-blue-500">{Math.round(food.protein)}P</span>
+                          <span className="text-[#60a5fa]">{Math.round(food.protein)}P</span>
                           <span className="text-amber-500">{Math.round(food.carbs)}C</span>
                           <span className="text-rose-500">{Math.round(food.fats)}F</span>
                         </div>
@@ -312,7 +312,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
         <div className="pt-2 border-t border-[#2a2a2a] space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#a0a0a0]">Day Total</span>
-            <span className={`text-sm font-bold ${calClose ? "text-green-600 dark:text-green-400" : "text-slate-700 text-[#a0a0a0]"}`}>
+            <span className={`text-sm font-bold ${calClose ? "text-green-600" : "text-[#a0a0a0] text-[#a0a0a0]"}`}>
               {totals.calories.toLocaleString()}
               <span className="text-xs font-normal text-[#a0a0a0] ml-1">/ {cal.toLocaleString()} cal</span>
             </span>
@@ -375,13 +375,13 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                       className="w-full flex items-center justify-between px-3 py-2 bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg hover:bg-[#202020] hover:bg-[#242424] transition-colors text-left"
                     >
                       <div>
-                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{food.name}</div>
+                        <div className="text-sm font-medium text-white ">{food.name}</div>
                         <div className="text-[11px] text-[#a0a0a0]">{food.serving_size}</div>
                       </div>
                       <div className="text-right text-xs shrink-0 ml-3">
                         <div className="text-[#555555]">{food.calories} cal</div>
                         <div className="flex gap-1.5 text-xs mt-0.5">
-                          <span className="text-blue-500">{Math.round(food.protein)}P</span>
+                          <span className="text-[#60a5fa]">{Math.round(food.protein)}P</span>
                           <span className="text-amber-500">{Math.round(food.carbs)}C</span>
                           <span className="text-rose-500">{Math.round(food.fats)}F</span>
                         </div>
@@ -400,7 +400,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
           {excluded.size > 0 && (
             <button
               onClick={() => setExcluded(new Set())}
-              className="text-xs text-[#a0a0a0] hover:text-[#a0a0a0] dark:hover:text-[#a0a0a0] transition-colors"
+              className="text-xs text-[#a0a0a0] hover:text-[#a0a0a0] transition-colors"
             >
               Reset exclusions ({excluded.size} hidden)
             </button>
@@ -424,13 +424,13 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
 function MacroCell({ label, value, goal, color }) {
   const close = goal ? Math.abs(value - goal) / goal < 0.1 : false;
   const c = {
-    blue:  { bg: "bg-blue-50 dark:bg-blue-900/20",  text: "text-blue-700 dark:text-blue-400",   sub: "text-blue-400"  },
-    amber: { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-400", sub: "text-amber-400" },
-    rose:  { bg: "bg-rose-50 dark:bg-rose-900/20",   text: "text-rose-700 dark:text-rose-400",   sub: "text-rose-400"  },
+    blue:  { bg: "bg-[rgba(59,130,246,0.08)]",  text: "text-[#60a5fa]",   sub: "text-[#60a5fa]"  },
+    amber: { bg: "bg-[rgba(245,158,11,0.08)]", text: "text-[#fbbf24]", sub: "text-[#fbbf24]" },
+    rose:  { bg: "bg-rose-50",   text: "text-rose-700",   sub: "text-rose-400"  },
   }[color];
   return (
     <div className={`py-1.5 rounded-lg text-center text-xs ${c.bg}`}>
-      <div className={`font-bold ${close ? "text-green-600 dark:text-green-400" : c.text}`}>{value}g</div>
+      <div className={`font-bold ${close ? "text-green-600" : c.text}`}>{value}g</div>
       <div className={`text-xs ${c.sub}`}>{label}{goal ? ` / ${goal}g` : ""}</div>
     </div>
   );

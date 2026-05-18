@@ -103,7 +103,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
       <DialogContent className="max-w-2xl p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 border-b p-6 pb-4">
           <DialogTitle>Choose Your {daysPerWeek}-Day Split</DialogTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#a0a0a0]  mt-1">
             Select a preset or build your own custom schedule
           </p>
         </DialogHeader>
@@ -112,7 +112,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
           {/* Preset Splits - hidden when in custom mode */}
           {presets.length > 0 && !isCustomMode && (
             <div>
-              <h3 className="font-semibold mb-3 text-slate-900 dark:text-white">Preset Splits</h3>
+              <h3 className="font-semibold mb-3 text-white">Preset Splits</h3>
               <div className="space-y-3">
                 {presets.map((preset) => (
                   <button
@@ -120,14 +120,14 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     onClick={() => handleSelectPreset(preset)}
                     className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                       selectedPreset === preset.id && !isCustomMode
-                        ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-slate-200 dark:border-slate-600 hover:border-primary-300 bg-white dark:bg-slate-700'
+                        ? 'border-[#ccff00] bg-[rgba(204,255,0,0.05)]'
+                        : 'border-[#2a2a2a]  hover:border-[rgba(204,255,0,0.3)] bg-[#1a1a1a] '
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-slate-900 dark:text-white">{preset.name}</span>
+                      <span className="font-semibold text-white">{preset.name}</span>
                       {selectedPreset === preset.id && !isCustomMode && (
-                        <Check className="w-5 h-5 text-primary-600" />
+                        <Check className="w-5 h-5 text-[#ccff00]" />
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -146,7 +146,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
           {/* Custom Split Builder */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Custom Split</h3>
+              <h3 className="font-semibold text-white">Custom Split</h3>
               {!isCustomMode ? (
                 <Button variant="outline" size="sm" onClick={startCustomMode}>
                   Build Custom
@@ -159,14 +159,14 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
             </div>
 
             {isCustomMode && (
-              <div className="p-4 border-2 border-primary-300 dark:border-primary-600 rounded-lg bg-primary-50/50 dark:bg-primary-900/20">
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+              <div className="p-4 border-2 border-[rgba(204,255,0,0.3)] rounded-lg bg-[rgba(204,255,0,0.05)]/50">
+                <p className="text-sm text-[#a0a0a0]  mb-3">
                   Choose the focus for each day of your split
                 </p>
                 <div className="space-y-3">
                   {Array.from({ length: daysPerWeek }).map((_, dayIndex) => (
                     <div key={dayIndex} className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[60px]">
+                      <span className="text-sm font-medium text-[#a0a0a0]  min-w-[60px]">
                         Day {dayIndex + 1}:
                       </span>
                       <Select value={customSplit[dayIndex]} onValueChange={(value) => handleCustomDayChange(dayIndex, value)}>
@@ -196,14 +196,14 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <p className="text-sm font-semibold text-white">
                     Exercises per day
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[#555555]">
                     You have 60+ min — choose how many exercises per session
                   </p>
                 </div>
-                <span className="text-lg font-bold text-primary-600">{exercisesPerDay}</span>
+                <span className="text-lg font-bold text-[#ccff00]">{exercisesPerDay}</span>
               </div>
               <div className="flex gap-2">
                 {[5, 6, 7, 8, 9, 10].map((n) => (
@@ -212,8 +212,8 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     onClick={() => setExercisesPerDay(n)}
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
                       exercisesPerDay === n
-                        ? "border-[rgba(204,255,0,0.5)] bg-primary-500 text-black font-bold"
-                        : "border-slate-200 text-slate-700 hover:border-primary-300 dark:border-slate-600 dark:text-slate-300"
+                        ? "border-[rgba(204,255,0,0.5)] bg-[#ccff00] text-black font-bold"
+                        : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)]  "
                     }`}
                   >
                     {n}

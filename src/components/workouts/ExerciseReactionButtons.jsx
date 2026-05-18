@@ -86,9 +86,9 @@ export default function ExerciseReactionButtons({
   }
 
   function difficultyLabel(diff) {
-    if (diff <= 1) return { label: "Beginner",     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
-    if (diff === 2) return { label: "Intermediate", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
-    return            { label: "Advanced",     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+    if (diff <= 1) return { label: "Beginner",     color: "bg-[rgba(34,197,94,0.1)] text-[#4ade80]" };
+    if (diff === 2) return { label: "Intermediate", color: "bg-[rgba(245,158,11,0.1)] text-[#fbbf24]" };
+    return            { label: "Advanced",     color: "bg-[rgba(239,68,68,0.1)] text-[#f87171]" };
   }
 
   const hasAlternatives = alternatives && (alternatives.easier || alternatives.same || alternatives.harder);
@@ -116,11 +116,11 @@ export default function ExerciseReactionButtons({
           aria-pressed={isLiked}
           className={[
             "inline-flex items-center justify-center shrink-0 transition-all duration-150",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(204,255,0,0.3)] focus-visible:ring-offset-1",
             btnCls,
             isLiked
-              ? "bg-green-500 text-white hover:bg-green-600 shadow-sm"
-              : "bg-transparent text-slate-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400",
+              ? "bg-green-500 text-white hover:bg-green-600"
+              : "bg-transparent text-[#555555] hover:bg-[rgba(34,197,94,0.08)] hover:text-[#4ade80]",
           ].join(" ")}
         >
           <ThumbsUp className="w-4 h-4" />
@@ -137,8 +137,8 @@ export default function ExerciseReactionButtons({
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1",
             btnCls,
             isDisliked
-              ? "bg-red-500 text-white hover:bg-red-600 shadow-sm"
-              : "bg-transparent text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400",
+              ? "bg-red-500 text-white hover:bg-red-600"
+              : "bg-transparent text-[#555555] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171]",
           ].join(" ")}
         >
           <ThumbsDown className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function ExerciseReactionButtons({
             <DialogTitle>Replace Exercise</DialogTitle>
             <DialogDescription>
               Swap out{" "}
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{exerciseName}</span>
+              <span className="font-semibold text-white ">{exerciseName}</span>
               {" "}with a similar alternative, or type your own.
             </DialogDescription>
           </DialogHeader>
@@ -165,7 +165,7 @@ export default function ExerciseReactionButtons({
           {/* Manual entry row */}
           <div className="mt-1 mb-3">
             {manualMode ? (
-              <div className="flex gap-2 items-center p-3 rounded-xl border-2 border-primary-400 bg-primary-50 dark:bg-primary-900/20">
+              <div className="flex gap-2 items-center p-3 rounded-xl border-2 border-[#ccff00] bg-[rgba(204,255,0,0.05)]">
                 <Input
                   autoFocus
                   placeholder="e.g., Incline Dumbbell Press"
@@ -174,7 +174,7 @@ export default function ExerciseReactionButtons({
                   onKeyDown={(e) => e.key === "Enter" && handleManualReplace()}
                   className="flex-1 h-8 text-sm"
                 />
-                <Button size="sm" className="h-8 bg-primary-500 hover:bg-primary-400 text-black font-bold shrink-0"
+                <Button size="sm" className="h-8 bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold shrink-0"
                   onClick={handleManualReplace} disabled={!manualExercise.trim()}>
                   <Check className="w-4 h-4" />
                 </Button>
@@ -187,7 +187,7 @@ export default function ExerciseReactionButtons({
               <button
                 type="button"
                 onClick={() => setManualMode(true)}
-                className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm"
+                className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#2a2a2a]  hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all text-[#555555]  hover:text-[#ccff00] text-sm"
               >
                 <Pencil className="w-4 h-4" />
                 Enter my own exercise
@@ -198,7 +198,7 @@ export default function ExerciseReactionButtons({
           {/* AI Suggestions */}
           {hasAlternatives && (
             <div className="space-y-2.5">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              <p className="text-xs font-semibold text-[#555555]  uppercase tracking-wide">
                 Suggested Replacements
               </p>
               {[
@@ -214,30 +214,30 @@ export default function ExerciseReactionButtons({
                     key={key}
                     type="button"
                     onClick={() => handlePickAlternative(alt)}
-                    className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all group"
+                    className="w-full text-left p-3.5 rounded-xl border-2 border-[#2a2a2a]  hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all group"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-base font-bold text-slate-400 group-hover:text-primary-500">{icon}</span>
-                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
+                          <span className="text-base font-bold text-[#555555] group-hover:text-[#ccff00]">{icon}</span>
+                          <span className="text-xs font-semibold text-[#555555]  uppercase tracking-wide">{label}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${diff.color}`}>{diff.label}</span>
                         </div>
-                        <p className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-primary-700 dark:group-hover:text-primary-300 text-sm truncate">
+                        <p className="font-semibold text-white  group-hover:text-[#ccff00] text-sm truncate">
                           {alt.name}
                         </p>
                         {alt.primaryMuscle?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {alt.primaryMuscle.slice(0, 3).map((m) => (
-                              <span key={m} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-full">{m}</span>
+                              <span key={m} className="text-xs bg-[#202020]  text-[#a0a0a0]  px-1.5 py-0.5 rounded-full">{m}</span>
                             ))}
                           </div>
                         )}
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        <p className="text-xs text-[#555555]  mt-1">
                           {alt.sets} sets × {alt.reps} reps · {alt.rest}s rest
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-500 mt-1 flex-shrink-0 ml-2" />
+                      <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-[#ccff00] mt-1 flex-shrink-0 ml-2" />
                     </div>
                   </button>
                 );
@@ -246,19 +246,19 @@ export default function ExerciseReactionButtons({
           )}
 
           {!hasAlternatives && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">
+            <p className="text-sm text-[#555555]  text-center py-2">
               No automatic suggestions found — use the manual entry above!
             </p>
           )}
 
           {/* Footer */}
-          <div className="flex gap-2 mt-1 pt-3 border-t border-slate-100 dark:border-slate-700">
-            <Button variant="ghost" className="flex-1 text-slate-500" onClick={() => setShowAlternatives(false)}>
+          <div className="flex gap-2 mt-1 pt-3 border-t border-[#2a2a2a] ">
+            <Button variant="ghost" className="flex-1 text-[#555555]" onClick={() => setShowAlternatives(false)}>
               Cancel
             </Button>
             <Button
               variant="outline"
-              className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+              className="flex-1 text-[#f87171] border-[rgba(239,68,68,0.2)] hover:bg-[rgba(239,68,68,0.08)]"
               onClick={() => {
                 toggleReaction({ exerciseName, reaction: "dislike" });
                 onReactionChange?.(exerciseName, "dislike");

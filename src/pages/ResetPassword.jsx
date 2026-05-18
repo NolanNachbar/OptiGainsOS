@@ -57,11 +57,11 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-16 h-16 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white tracking-tight">Vektor</h1>
-          <p className="text-[#a0a0a0] mt-2">Set your new password</p>
+          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">Vektor</h1>
+          <p className="text-[13px] text-[#a0a0a0] mt-2">Set your new password</p>
         </div>
 
-        <Card className="border-none shadow-lg bg-[#1a1a1a] border-[#2a2a2a] text-white">
+        <Card>
           <CardHeader>
             <CardTitle className="text-white text-center">Reset Password</CardTitle>
           </CardHeader>
@@ -70,7 +70,7 @@ export default function ResetPassword() {
               <div>
                 <Label htmlFor="password" className="text-white">New Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                   <Input
                     id="password"
                     type="password"
@@ -87,7 +87,7 @@ export default function ResetPassword() {
               <div>
                 <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -102,7 +102,8 @@ export default function ResetPassword() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary-500 hover:bg-primary-400 text-black font-bold"
+                variant="volt"
+                className="w-full font-bold"
                 disabled={loading}
               >
                 {loading ? (
@@ -119,7 +120,7 @@ export default function ResetPassword() {
             <div className="mt-6 text-center">
               <p className="text-[#a0a0a0]">
                 Remember your password?{' '}
-                <Link to="/login" className="text-primary-500 hover:text-primary-400 font-medium">
+                <Link to="/login" className="text-[#ccff00] hover:text-[#d9ff1a] font-medium">
                   Sign in
                 </Link>
               </p>

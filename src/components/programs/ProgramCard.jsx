@@ -38,8 +38,8 @@ export default function ProgramCard({ program, enrollment }) {
     >
       <Link to={`/program/${program.id}`}>
         <div
-          className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424]/50 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
-          style={{ borderLeftColor: '#7c3aed' }}
+          className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all duration-200 cursor-pointer"
+          style={{ borderLeftColor: '#ccff00' }}
         >
           <div className="px-5 pt-4 pb-2">
             {/* Badges */}
@@ -53,13 +53,11 @@ export default function ProgramCard({ program, enrollment }) {
                 <Badge variant="outline">{GOAL_LABELS[program.goal] || program.goal}</Badge>
               )}
               {enrollment?.status === 'active' && (
-                <Badge variant="outline" className="bg-success-50 text-success-700 border-success-200 ml-auto">
-                  Active
-                </Badge>
+                <Badge variant="green" className="ml-auto">Active</Badge>
               )}
             </div>
 
-            <h3 className="text-base font-bold text-white group-hover:text-primary-500 transition-colors mb-1">
+            <h3 className="text-base font-bold text-white group-hover:text-[#ccff00] transition-colors mb-1">
               {program.name}
             </h3>
             {program.description && (
@@ -68,9 +66,9 @@ export default function ProgramCard({ program, enrollment }) {
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="h-1 bg-[#202020] dark:bg-[#1a1a1a]/10 rounded-full overflow-hidden mb-3">
+              <div className="h-1 bg-[#202020] rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-[rgba(204,255,0,0.08)]0 rounded-full"
+                  className="h-full bg-[#ccff00] rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>

@@ -69,7 +69,7 @@ export default function CycleDayGrid({
               <div className="flex items-center gap-2 mb-2">
                 <Badge
                   variant={cycle === currentCycle ? "default" : "outline"}
-                  className={`text-xs ${cycle === currentCycle ? "bg-primary-500 text-black font-bold border-[rgba(204,255,0,0.5)]" : ""}`}
+                  className={`text-xs ${cycle === currentCycle ? "bg-[#ccff00] text-black font-bold border-[rgba(204,255,0,0.5)]" : ""}`}
                 >
                   Cycle {cycle}
                 </Badge>
@@ -95,25 +95,25 @@ export default function CycleDayGrid({
                     ? addDays(startDate, (cycleIdx * cycleLength) + dayIndex - 1)
                     : null;
 
-                  let cellClasses = "rounded-lg border p-2 text-left transition-all duration-200 min-h-[60px] min-w-0 overflow-hidden dark:bg-slate-800";
+                  let cellClasses = "rounded-lg border p-2 text-left transition-all duration-200 min-h-[60px] min-w-0 overflow-hidden ";
                   if (isCompleted) {
-                    cellClasses += " border-success-300 bg-success-50";
+                    cellClasses += " border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)]";
                   } else if (isCurrent) {
-                    cellClasses += " border-primary-400 ring-2 ring-primary-200 bg-primary-50";
+                    cellClasses += " border-[#ccff00] ring-2 ring-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.05)]";
                   } else if (isPast) {
-                    cellClasses += " border-slate-200 bg-slate-50 opacity-60";
+                    cellClasses += " border-[#2a2a2a] bg-[#1a1a1a] opacity-60";
                   } else {
                     cellClasses += workout
-                      ? " bg-white border-slate-200 hover:border-slate-300"
-                      : " bg-slate-50 border-slate-200";
+                      ? " bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#2a2a2a]"
+                      : " bg-[#1a1a1a] border-[#2a2a2a]";
                   }
-                  if (onCellClick) cellClasses += " cursor-pointer hover:shadow-sm";
+                  if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
-                    ? "text-xs font-medium truncate text-success-700"
+                    ? "text-xs font-medium truncate text-[#4ade80]"
                     : isCurrent
-                    ? "text-xs font-medium truncate text-primary-700"
-                    : "text-xs font-medium truncate text-slate-600";
+                    ? "text-xs font-medium truncate text-[#ccff00]"
+                    : "text-xs font-medium truncate text-[#a0a0a0]";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
@@ -125,27 +125,27 @@ export default function CycleDayGrid({
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (
-                        <p className="text-[11px] text-slate-400 mb-0.5">
+                        <p className="text-[11px] text-[#555555] mb-0.5">
                           {format(calendarDate, "MMM d")}
                         </p>
                       )}
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-slate-400">Day {dayIndex}</p>
+                          <p className="text-xs text-[#555555]">Day {dayIndex}</p>
                           <span className={labelClass}>
                             {workout?.title || "Rest"}
                           </span>
                         </div>
                         {isCompleted ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-success-500 flex-shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80] flex-shrink-0" />
                         ) : isCurrent ? (
-                          <PlayCircle className="w-3.5 h-3.5 text-primary-500 flex-shrink-0 animate-pulse" />
+                          <PlayCircle className="w-3.5 h-3.5 text-[#ccff00] flex-shrink-0 animate-pulse" />
                         ) : workout ? (
-                          <Circle className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                          <Circle className="w-3.5 h-3.5 text-[#a0a0a0] flex-shrink-0" />
                         ) : null}
                       </div>
                       {!compact && workout?.exercises?.length > 0 && (
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-[#555555] mt-1">
                           {workout.exercises.length} exercises
                         </p>
                       )}
@@ -216,21 +216,21 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
       className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 cursor-pointer ${
         isOver
-          ? "border-primary-400 bg-primary-50 scale-[1.02] shadow-md"
+          ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)] scale-[1.02]"
           : hasWorkout
-          ? "border-solid border-slate-200 bg-white hover:border-primary-300 hover:shadow-sm"
-          : "border-slate-300 bg-slate-50 hover:border-primary-300 hover:bg-white"
+          ? "border-solid border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] "
+          : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] hover:bg-[#1a1a1a]"
       }`}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+        <span className="text-xs font-semibold text-[#555555] flex items-center gap-1">
           Day {dayIndex}
           {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" title="High-load day" />}
         </span>
         {hasWorkout && onClearDay && (
           <button
             onClick={(e) => { e.stopPropagation(); onClearDay(dayIndex); }}
-            className="text-xs text-slate-400 hover:text-red-500 transition-colors"
+            className="text-xs text-[#555555] hover:text-[#f87171] transition-colors"
           >
             Clear
           </button>
@@ -241,8 +241,8 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
         <div>
           {hasExercises && (
             <>
-              <p className="text-sm font-medium text-slate-800 truncate">{workout.title}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">{workout.exercises.length} exercises</p>
+              <p className="text-sm font-medium text-white truncate">{workout.title}</p>
+              <p className="text-[11px] text-[#555555] mt-0.5">{workout.exercises.length} exercises</p>
               {workout.type && (
                 <Badge variant="outline" className="text-[11px] mt-1 capitalize">{workout.type}</Badge>
               )}
@@ -260,12 +260,12 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
           )}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-12 text-slate-400">
+        <div className="flex flex-col items-center justify-center h-12 text-[#555555]">
           {isOver ? (
-            <p className="text-xs font-medium text-primary-600">Drop here</p>
+            <p className="text-xs font-medium text-[#ccff00]">Drop here</p>
           ) : (
             <>
-              <p className="text-sm font-medium text-slate-400">Rest</p>
+              <p className="text-sm font-medium text-[#555555]">Rest</p>
               <p className="text-xs mt-0.5">Click or drop to add</p>
             </>
           )}

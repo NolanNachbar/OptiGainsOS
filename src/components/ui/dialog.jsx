@@ -11,7 +11,7 @@ const Dialog = ({ open, onOpenChange, children }) => {
     <DialogContext.Provider value={{ onOpenChange }}>
       <div className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 z-[10000]" style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
         <div
-          className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 bg-black/50 dark:bg-black/60"
+          className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 bg-black/50"
           style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
           onClick={() => onOpenChange(false)}
         />
@@ -41,14 +41,14 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
   return (
     <div
       ref={ref}
-      className={`relative z-50 bg-white text-slate-900 rounded-lg shadow-lg w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] dark:bg-slate-800 dark:text-slate-50 ${hasCustomPadding ? "" : "p-6"} ${className}`}
+      className={`relative z-50 bg-[#1a1a1a] text-white border border-[#2a2a2a] rounded-[10px] w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
       style={{ maxHeight: 'calc(100vh - var(--layout-header-height, 0px) - 56px - env(safe-area-inset-bottom, 0px) - 1rem)' }}
       {...props}
     >
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2"
+          className="absolute right-4 top-4 rounded-sm text-[#555555] transition-opacity hover:text-white focus:outline-none"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -79,7 +79,7 @@ DialogTitle.displayName = "DialogTitle";
 const DialogDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-sm text-slate-500 ${className}`}
+    className={`text-[13px] text-[#a0a0a0] ${className}`}
     {...props}
   />
 ));

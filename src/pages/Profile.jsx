@@ -47,6 +47,7 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [phaseConflict, setPhaseConflict] = useState(null); // { phase, pendingSubmit }
+  const [activeSection, setActiveSection] = useState('identity');
 
   const { profile, isLoading } = useProfile();
   const { activePhase } = useDietPhase();
@@ -299,20 +300,21 @@ export default function Profile() {
     ? displayName[0].toUpperCase()
     : displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+  const NAV = [
+    { id: 'identity', label: 'Identity',         icon: User },
+    { id: 'body',     label: 'Body & Nutrition',  icon: Flame },
+    { id: 'fitness',  label: 'Training',          icon: Dumbbell },
+    { id: 'settings', label: 'Settings',          icon: Database },
+  ];
+
   return (
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Profile</h1>
-            <p className="text-[#555555] text-sm mt-1">Manage your account</p>
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto">
 
         {phaseConflict && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="mb-6 bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg p-4">
             <p className="font-medium text-amber-800 mb-1">Your new goal conflicts with your active {phaseConflict.phase.phase_type === 'cut' ? 'cut' : 'bulk'} phase</p>
-            <p className="text-sm text-amber-700 mb-4">
+            <p className="text-sm text-[#fbbf24] mb-4">
               End your active {phaseConflict.phase.phase_type} phase now so your coaching recommendations match your new goal?
             </p>
             <div className="flex gap-3">
@@ -351,14 +353,86 @@ export default function Profile() {
           </div>
         )}
 
+        {/* ── Two-column layout (desktop) / single column (mobile) ── */}
+        <div className="md:grid md:grid-cols-[220px_1fr] md:gap-8 md:items-start">
+
+          {/* LEFT SIDEBAR — desktop only */}
+          <aside className="hidden md:block">
+            <div
+              className="flex flex-col gap-3"
+              style={{
+                position: 'sticky',
+                top: 'calc(var(--layout-header-height, 64px) + 1.5rem)',
+              }}
+            >
+              {/* Avatar card */}
+              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4 text-center">
+                <AvatarUpload
+                  currentUrl={profile?.avatar_url}
+                  username={formData.display_name || formData.username || user.email}
+                  profileId={profile?.id}
+                />
+                <p className="text-white font-semibold mt-3 text-sm leading-tight">
+                  {formData.display_name || user.user_metadata?.full_name || user.email}
+                </p>
+                {formData.username && (
+                  <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
+                )}
+              </div>
+
+              {/* Section nav */}
+              <nav className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-2 flex flex-col gap-0.5">
+                {NAV.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveSection(id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                      activeSection === id
+                        ? 'bg-[rgba(204,255,0,0.08)] text-[#ccff00]'
+                        : 'text-[#a0a0a0] hover:text-white hover:bg-[#242424]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </aside>
+
+          {/* RIGHT CONTENT */}
+          <div>
+            {/* Mobile page header */}
+            <div className="md:hidden mb-6">
+              <h1 className="text-[22px] font-bold text-white leading-tight">Profile</h1>
+              <p className="text-[13px] text-[#a0a0a0] mt-0.5">Manage your account</p>
+            </div>
+
+            {/* Desktop section heading */}
+            <div className="hidden md:block mb-6">
+              <h1 className="text-[22px] font-bold text-white leading-tight">
+                {NAV.find(n => n.id === activeSection)?.label}
+              </h1>
+              <p className="text-[13px] text-[#a0a0a0] mt-0.5">
+                {activeSection === 'identity'  ? 'Your account and social profile' :
+                 activeSection === 'body'      ? 'Body stats, nutrition goals, and app preferences' :
+                 activeSection === 'fitness'   ? 'Training preferences and fitness profile' :
+                                                'Notifications, integrations, and account actions'}
+              </p>
+            </div>
+
         <form onSubmit={handleSubmit}>
-              {/* Card 1: Profile & Preferences */}
-              <Card className="border-none shadow-lg mb-6">
+
+          {/* ── IDENTITY SECTION ── */}
+          <div className={activeSection !== 'identity' ? 'md:hidden' : ''}>
+              <Card className="mb-6">
                 <CardContent className="pt-6">
 
                   {/* Section A: Account */}
                   <SectionHeader icon={User} title="Account" />
-                  <div className="flex flex-col items-center mb-4">
+                  {/* Avatar only shown on mobile — desktop has it in the sidebar */}
+                  <div className="flex flex-col items-center mb-4 md:hidden">
                     <AvatarUpload
                       currentUrl={profile?.avatar_url}
                       username={formData.display_name || formData.username || user.email}
@@ -458,8 +532,14 @@ export default function Profile() {
                       </Select>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+          </div>
 
-                  <SectionDivider />
+          {/* ── BODY & NUTRITION SECTION ── */}
+          <div className={activeSection !== 'body' ? 'md:hidden' : ''}>
+              <Card className="mb-6">
+                <CardContent className="pt-6">
 
                   {/* Section C: Body Stats */}
                   <SectionHeader icon={Flame} title="Body Stats" />
@@ -618,14 +698,14 @@ export default function Profile() {
                     </div>
 
                     {tdee.tdee && (
-                      <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+                      <div className="bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-[#a0a0a0]">Estimated TDEE</div>
                             <div className="text-2xl font-bold text-white text-white">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            tdee.method === 'adaptive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            tdee.method === 'adaptive' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]' : 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
                           }`}>
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
@@ -731,40 +811,13 @@ export default function Profile() {
                     </label>
                   </div>
 
-                  <SectionDivider />
-
-                  {/* Notifications */}
-                  <SectionHeader icon={Bell} title="Notifications" />
-                  {!pushSupported ? (
-                    <p className="text-sm text-[#555555]">Push notifications are not supported on this browser. Add the app to your home screen to enable them.</p>
-                  ) : permission === "denied" ? (
-                    <p className="text-sm text-danger-600">Notifications are blocked. Enable them in your browser/iOS settings to receive reminders.</p>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium">Workout & Check-In Reminders</span>
-                        <p className="text-sm text-[#555555]">Daily workout reminders and weekly check-in prompts.</p>
-                      </div>
-                      <Button
-                        variant={isSubscribed ? "outline" : "primary"}
-                        size="sm"
-                        onClick={isSubscribed ? unsubscribe : subscribe}
-                        className="ml-4 shrink-0"
-                      >
-                        {isSubscribed ? (
-                          <><BellOff className="w-4 h-4 mr-1.5" />Turn Off</>
-                        ) : (
-                          <><Bell className="w-4 h-4 mr-1.5" />Enable</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
                 </CardContent>
               </Card>
+          </div>{/* end body section */}
 
-              {/* Card 1.5: Fitness Profile */}
-              <Card className="border-none shadow-lg mb-6">
+          {/* ── FITNESS SECTION ── */}
+          <div className={activeSection !== 'fitness' ? 'md:hidden' : ''}>
+              <Card className="mb-6">
                 <CardContent className="pt-6">
                   <SectionHeader icon={Dumbbell} title="Fitness Profile" />
 
@@ -785,7 +838,7 @@ export default function Profile() {
                             onClick={() => setFormData(prev => ({ ...prev, fitness_level: opt.value }))}
                             className={`p-3 rounded-xl border-2 text-center transition-all ${
                               selected
-                                ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
+                                ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)]"
                                 : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
@@ -846,7 +899,7 @@ export default function Profile() {
                             }))}
                             className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                               selected
-                                ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
+                                ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)]"
                                 : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
@@ -857,7 +910,7 @@ export default function Profile() {
                               <div className="text-xs text-[#555555] mt-0.5 leading-snug">{opt.desc}</div>
                             </div>
                             <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 ${
-                              selected ? "bg-primary-600 border-primary-600" : "border-[#2a2a2a]"
+                              selected ? "bg-[#ccff00] border-[#ccff00]" : "border-[#2a2a2a]"
                             }`}>
                               {selected && (
                                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -892,11 +945,11 @@ export default function Profile() {
                               onClick={() => setFormData(prev => ({ ...prev, workout_duration_preference: opt.value }))}
                               className={`p-2.5 rounded-lg border-2 text-center transition-all ${
                                 selected
-                                  ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
+                                  ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)]"
                                   : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                               }`}
                             >
-                              <div className={`text-sm font-semibold ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-slate-700 text-[#a0a0a0]"}`}>
+                              <div className={`text-sm font-semibold ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-[#a0a0a0] text-[#a0a0a0]"}`}>
                                 {opt.label}
                               </div>
                               <div className="text-xs text-[#a0a0a0]">{opt.desc}</div>
@@ -924,8 +977,8 @@ export default function Profile() {
                               onClick={() => setFormData(prev => ({ ...prev, days_per_week: n }))}
                               className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-bold transition-all ${
                                 sel
-                                  ? "border-[rgba(204,255,0,0.5)] bg-primary-500 text-black font-bold"
-                                  : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] dark:border-slate-600 text-[#a0a0a0]"
+                                  ? "border-[rgba(204,255,0,0.5)] bg-[#ccff00] text-black font-bold"
+                                  : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)]  text-[#a0a0a0]"
                               }`}
                             >
                               {n}
@@ -958,12 +1011,12 @@ export default function Profile() {
                             }))}
                             className={`flex items-center gap-2 p-2.5 rounded-lg border-2 text-left transition-all ${
                               selected
-                                ? "border-primary-500 bg-primary-50 dark:bg-primary-950"
+                                ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)]"
                                 : "border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] border-[#2a2a2a]"
                             }`}
                           >
                             <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
-                              selected ? "bg-primary-600 border-primary-600" : "border-[#2a2a2a]"
+                              selected ? "bg-[#ccff00] border-[#ccff00]" : "border-[#2a2a2a]"
                             }`}>
                               {selected && (
                                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -971,7 +1024,7 @@ export default function Profile() {
                                 </svg>
                               )}
                             </div>
-                            <span className={`text-xs font-medium ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-slate-700 text-[#a0a0a0]"}`}>
+                            <span className={`text-xs font-medium ${selected ? "text-[#ccff00] text-[#ccff00]" : "text-[#a0a0a0] text-[#a0a0a0]"}`}>
                               {opt.label}
                             </span>
                           </button>
@@ -995,82 +1048,61 @@ export default function Profile() {
                   </div>
                 </CardContent>
               </Card>
+          </div>{/* end fitness section */}
 
-              {/* Spacer for sticky bar - extra height on mobile to account for bottom nav + save bar */}
-              {isDirty && <div className="h-28 md:h-20" />}
-            </form>
+          {/* Spacer for sticky bar */}
+          {isDirty && <div className="h-28 md:h-20" />}
+        </form>
 
-            {/* Sticky Save Bar */}
-            <div
-              className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-[#1a1a1a] border-t border-[#2a2a2a] shadow-lg transition-transform duration-300 ease-out ${
-                isDirty ? 'translate-y-0' : 'translate-y-[200%]'
-              }`}
-            >
-              <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-                <p className="text-sm text-[#a0a0a0]">You have unsaved changes</p>
-                <div className="flex items-center gap-2">
+        {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
+        <div className={activeSection !== 'settings' ? 'md:hidden' : ''}>
+          <Card className="mb-4">
+            <CardContent className="pt-6">
+              <SectionHeader icon={Bell} title="Notifications" />
+              {!pushSupported ? (
+                <p className="text-sm text-[#555555]">Push notifications are not supported on this browser. Add the app to your home screen to enable them.</p>
+              ) : permission === "denied" ? (
+                <p className="text-sm text-[#f87171]">Notifications are blocked. Enable them in your browser/iOS settings to receive reminders.</p>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">Workout & Check-In Reminders</span>
+                    <p className="text-sm text-[#555555]">Daily workout reminders and weekly check-in prompts.</p>
+                  </div>
                   <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={updateProfileMutation.isPending}
-                    onClick={handleCancel}
+                    variant={isSubscribed ? "outline" : "primary"}
+                    size="sm"
+                    onClick={isSubscribed ? unsubscribe : subscribe}
+                    className="ml-4 shrink-0"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    className="bg-primary-600 hover:bg-primary-700"
-                    disabled={updateProfileMutation.isPending}
-                    onClick={handleSubmit}
-                  >
-                    {updateProfileMutation.isPending ? (
-                      <>
-                        <LoadingSpinner size="small" className="mr-2" />
-                        Saving...
-                      </>
+                    {isSubscribed ? (
+                      <><BellOff className="w-4 h-4 mr-1.5" />Turn Off</>
                     ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </>
+                      <><Bell className="w-4 h-4 mr-1.5" />Enable</>
                     )}
                   </Button>
                 </div>
-              </div>
-            </div>
+              )}
 
-            {/* Data & Privacy */}
-            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-[#a0a0a0]" />
-                <h3 className="text-sm font-semibold text-white">Connected Apps</h3>
-              </div>
+              <SectionDivider />
+
+              <SectionHeader icon={Users} title="Connected Apps" />
               <StravaConnect />
-            </div>
 
-            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
-              <div className="flex items-center gap-2 mb-4">
-                <Database className="w-4 h-4 text-[#a0a0a0]" />
-                <h3 className="text-sm font-semibold text-white">Data & Privacy</h3>
-              </div>
+              <SectionDivider />
+
+              <SectionHeader icon={Database} title="Data & Privacy" />
               <DataExport weightEntries={weightEntries} foodEntries={allFoodEntries} />
-            </div>
 
-            {/* Bug Report */}
-            <div className="mt-4 pt-6 border-t border-[#2a2a2a]">
-              <div className="flex items-center gap-2 mb-4">
-                <HelpCircle className="w-4 h-4 text-[#a0a0a0]" />
-                <h3 className="text-sm font-semibold text-white">Feedback</h3>
-              </div>
-              <div className="flex items-left text-left justify-between">
+              <SectionDivider />
+
+              <SectionHeader icon={HelpCircle} title="Feedback" />
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-white">Report a Bug</p>
-                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Found something broken? Let us know.</p>
+                  <p className="text-sm text-[#a0a0a0]">Found something broken? Let us know.</p>
                 </div>
-                <Button
-                  variant="outline"
-                  asChild
-                >
+                <Button variant="outline" asChild>
                   <a
                     href="https://docs.google.com/forms/d/e/1FAIpQLSdJPHWYaP6caujXTLhBAEjxWAZlLiGNxqnph3lMm96eMlVArg/viewform?usp=publish-editor"
                     target="_blank"
@@ -1082,28 +1114,24 @@ export default function Profile() {
                   </a>
                 </Button>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Danger Zone */}
-            <div className="mt-4 pt-6 border-t-2 border-danger-200">
-              <div className="flex items-center text-center gap-2 mb-4">
-                <AlertTriangle className="w-4 h-4 text-danger-600" />
-                <h3 className="text-sm font-semibold text-danger-600">Danger Zone</h3>
+          <Card className="border-[rgba(239,68,68,0.15)]">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-4 h-4 text-[#f87171]" />
+                <h3 className="text-sm font-semibold text-[#f87171]">Danger Zone</h3>
               </div>
 
-              {/* Help & Support Section */}
-              <div className="flex items-left text-left justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="font-medium text-white">Replay Tutorial</p>
-                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Restart the app tutorial</p>
+                  <p className="text-sm text-[#a0a0a0]">Restart the app tutorial</p>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    replayTutorial();
-                    navigate('/dashboard');
-                    toast.success('Tutorial restarted!');
-                  }}
+                  onClick={() => { replayTutorial(); navigate('/dashboard'); toast.success('Tutorial restarted!'); }}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Replay
@@ -1112,21 +1140,17 @@ export default function Profile() {
 
               <SectionDivider />
 
-              <div className="flex items-left text-left justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="font-medium text-white align-left">Sign Out</p>
-                  <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Sign out of your account</p>
+                  <p className="font-medium text-white">Sign Out</p>
+                  <p className="text-sm text-[#a0a0a0]">Sign out of your account</p>
                 </div>
                 <Button
                   variant="outline"
-                  className="border-danger-300 text-danger-600 hover:bg-danger-50 hover:text-danger-700"
+                  className="border-[rgba(239,68,68,0.15)] text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171]"
                   onClick={async () => {
-                    try {
-                      await signOut();
-                      toast.success('Signed out successfully');
-                    } catch {
-                      toast.error('Failed to sign out');
-                    }
+                    try { await signOut(); toast.success('Signed out successfully'); }
+                    catch { toast.error('Failed to sign out'); }
                   }}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
@@ -1134,15 +1158,17 @@ export default function Profile() {
                 </Button>
               </div>
 
+              <SectionDivider />
+
               {!showDeleteConfirm ? (
-                <div className="flex items-left text-left justify-between">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-white align-left">Delete Account</p>
-                    <p className="text-sm text-[#a0a0a0] dark:text-[#a0a0a0]">Permanently delete your account and all data</p>
+                    <p className="font-medium text-white">Delete Account</p>
+                    <p className="text-sm text-[#a0a0a0]">Permanently delete your account and all data</p>
                   </div>
                   <Button
                     variant="outline"
-                    className="border-danger-300 text-danger-600 hover:bg-danger-50 hover:text-danger-700"
+                    className="border-[rgba(239,68,68,0.15)] text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171]"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -1150,21 +1176,17 @@ export default function Profile() {
                   </Button>
                 </div>
               ) : (
-                <div className="bg-danger-50 border border-danger-200 rounded-lg p-4">
-                  <p className="font-medium text-danger-800 mb-2">Are you sure?</p>
-                  <p className="text-sm text-danger-700 mb-4">
+                <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.15)] rounded-lg p-4">
+                  <p className="font-medium text-[#f87171] mb-2">Are you sure?</p>
+                  <p className="text-sm text-[#f87171] mb-4">
                     This will permanently delete your profile, food entries, and workout schedules. This action cannot be undone.
                   </p>
                   <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteConfirm(false)}
-                      disabled={deleteLoading}
-                    >
+                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleteLoading}>
                       Cancel
                     </Button>
                     <Button
-                      className="bg-danger-600 hover:bg-danger-700 text-white"
+                      className="bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.1)] text-white"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -1179,24 +1201,45 @@ export default function Profile() {
                       }}
                     >
                       {deleteLoading ? (
-                        <>
-                          <LoadingSpinner size="small" className="mr-2" />
-                          Deleting...
-                        </>
+                        <><LoadingSpinner size="small" className="mr-2" />Deleting...</>
                       ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Yes, Delete My Account
-                        </>
+                        <><Trash2 className="w-4 h-4 mr-2" />Yes, Delete My Account</>
                       )}
                     </Button>
                   </div>
                 </div>
               )}
-            </div>
-      </div>
+            </CardContent>
+          </Card>
+        </div>{/* end settings section */}
 
-      {/* QR Code share dialog */}
+          </div>{/* end right content */}
+        </div>{/* end two-column grid */}
+
+      </div>{/* end max-w-6xl */}
+
+      {/* Sticky Save Bar */}
+      <div
+        className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-[#1a1a1a] border-t border-[#2a2a2a] transition-transform duration-300 ease-out ${
+          isDirty ? 'translate-y-0' : 'translate-y-[200%]'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-[#a0a0a0]">You have unsaved changes</p>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
+              {updateProfileMutation.isPending ? (
+                <><LoadingSpinner size="small" className="mr-2" />Saving...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" />Save Changes</>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

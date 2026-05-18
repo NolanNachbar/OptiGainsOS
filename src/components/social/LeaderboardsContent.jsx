@@ -40,7 +40,7 @@ export function LeaderboardsContent() {
 
   return (
     <>
-      <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-md overflow-hidden">
+      <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
         <div className="p-4 space-y-3">
 
           {/* Header */}
@@ -76,8 +76,8 @@ export function LeaderboardsContent() {
                   i > 0 ? "border-l border-[#2a2a2a]" : ""
                 } ${
                   timePeriod === tp.value
-                    ? "bg-primary-500 text-black font-bold"
-                    : "text-[#a0a0a0] hover:text-[#a0a0a0] dark:hover:text-slate-300 hover:bg-[#242424]"
+                    ? "bg-[#ccff00] text-black font-bold"
+                    : "text-[#a0a0a0] hover:text-[#a0a0a0] hover:bg-[#242424]"
                 }`}
               >
                 {tp.label}
@@ -88,15 +88,15 @@ export function LeaderboardsContent() {
           {/* Results */}
           {!selectedExercise ? (
             <div className="py-5 text-center space-y-1">
-              <Dumbbell className="w-6 h-6 text-slate-300 dark:text-[#a0a0a0] mx-auto mb-2" />
+              <Dumbbell className="w-6 h-6 text-[#a0a0a0] mx-auto mb-2" />
               <p className="text-xs text-[#a0a0a0]">Select an exercise to see the leaderboard</p>
-              <p className="text-[11px] text-slate-300 dark:text-[#a0a0a0]">Exercises are pulled from your workout history</p>
+              <p className="text-[11px] text-[#a0a0a0]">Exercises are pulled from your workout history</p>
             </div>
           ) : isLoading ? (
             <div className="flex justify-center py-8"><LoadingSpinner /></div>
           ) : leaderboard.length === 0 ? (
             <div className="py-6 text-center">
-              <Trophy className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+              <Trophy className="w-7 h-7 text-[#a0a0a0] mx-auto mb-2" />
               <p className="text-xs text-[#a0a0a0]">No data yet for {selectedExercise}</p>
             </div>
           ) : (
@@ -117,7 +117,7 @@ export function LeaderboardsContent() {
 
       {/* Profile actions card */}
       {profile?.username && (
-        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-md mt-3">
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mt-3">
           <div className="p-3 flex gap-2">
             <button
               onClick={() => navigate(`/profile/${profile.username}`)}
@@ -145,7 +145,7 @@ export function LeaderboardsContent() {
               <DialogTitle>Share Your Profile</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4 pt-2">
-              <div className="p-3 bg-white rounded-xl shadow-inner border border-slate-100">
+              <div className="p-3 bg-[#1a1a1a] rounded-xl shadow-inner border border-[#2a2a2a]">
                 <QRCodeSVG value={profileUrl} size={200} level="M" marginSize={0} />
               </div>
               <p className="text-xs text-[#a0a0a0] text-center">
@@ -172,7 +172,7 @@ export function LeaderboardsContent() {
 function LeaderboardRow({ entry, rank, isCurrentUser }) {
   const isFirst = rank === 1;
 
-  const rankColors = { 1: 'text-amber-500', 2: 'text-[#a0a0a0]', 3: 'text-amber-700' };
+  const rankColors = { 1: 'text-amber-500', 2: 'text-[#a0a0a0]', 3: 'text-[#fbbf24]' };
   const RankIcon = rank === 1 ? Crown : rank <= 3 ? Medal : null;
 
   return (
@@ -180,20 +180,20 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
       to={`/profile/${entry.username}`}
       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group ${
         isFirst
-          ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40"
+          ? "bg-[rgba(245,158,11,0.08)] border border-amber-200"
           : isCurrentUser
-          ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800/40"
+          ? "bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.2)]/40"
           : "hover:bg-[#242424]"
       }`}
     >
       {/* Rank icon / YOU badge */}
       <div className="w-6 shrink-0 flex items-center justify-center">
         {isCurrentUser ? (
-          <span className="text-[11px] font-bold bg-primary-500 text-black font-bold px-1 py-0.5 rounded">YOU</span>
+          <span className="text-[11px] font-bold bg-[#ccff00] text-black font-bold px-1 py-0.5 rounded">YOU</span>
         ) : RankIcon ? (
           <RankIcon className={`w-4 h-4 ${rankColors[rank]}`} />
         ) : (
-          <span className={`text-xs font-bold ${isCurrentUser ? 'text-primary-500' : 'text-[#a0a0a0]'}`}>
+          <span className={`text-xs font-bold ${isCurrentUser ? 'text-[#ccff00]' : 'text-[#a0a0a0]'}`}>
             {String(rank).padStart(2, '0')}
           </span>
         )}
@@ -202,7 +202,7 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
       {/* Name + weight */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold truncate text-left ${
-          isFirst ? 'text-amber-700 text-amber-400' : 'text-white'
+          isFirst ? 'text-[#fbbf24] text-[#fbbf24]' : 'text-white'
         }`}>
           {entry.display_name || entry.username}
         </p>
@@ -211,7 +211,7 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
 
       {/* Rank number */}
       <span className={`text-xs font-bold shrink-0 ${
-        isFirst ? 'text-amber-500' : isCurrentUser ? 'text-primary-500' : 'text-slate-300 dark:text-[#a0a0a0]'
+        isFirst ? 'text-amber-500' : isCurrentUser ? 'text-[#ccff00]' : 'text-[#a0a0a0]'
       }`}>
         #{rank}
       </span>

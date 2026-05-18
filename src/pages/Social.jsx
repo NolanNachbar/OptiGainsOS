@@ -135,7 +135,7 @@ export default function Social() {
       <div className="max-w-[1400px] mx-auto">
 
         {/* Mobile tab bar */}
-        <div className="xl:hidden flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] shadow-md p-1 mb-4 gap-1">
+        <div className="xl:hidden flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1 mb-4 gap-1">
           {[
             { key: "feed", icon: Dumbbell, label: "Feed" },
             { key: "friends", icon: Users, label: "Friends", badge: totalNotifications },
@@ -146,14 +146,14 @@ export default function Social() {
               onClick={() => setMobileTab(key)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors ${
                 mobileTab === key
-                  ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
-                  : "text-[#a0a0a0] hover:text-white dark:hover:text-white"
+                  ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                  : "text-[#a0a0a0] hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4" />
               {label}
               {badge > 0 && (
-                <span className="bg-danger-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+                <span className="bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {badge}
                 </span>
               )}
@@ -164,13 +164,13 @@ export default function Social() {
         {/* Mobile: feed filter toggle */}
         {mobileTab === "feed" && (
           <div className="xl:hidden mb-4 flex justify-center">
-            <div className="inline-flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] shadow-md p-1">
+            <div className="inline-flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1">
               <button
                 onClick={() => setFeedFilter("friends")}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   feedFilter === "friends"
-                    ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
-                    : "text-[#a0a0a0] hover:text-white dark:hover:text-white"
+                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                    : "text-[#a0a0a0] hover:text-white"
                 }`}
               >
                 <Users className="w-4 h-4 inline mr-1.5" />
@@ -180,8 +180,8 @@ export default function Social() {
                 onClick={() => setFeedFilter("trending")}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   feedFilter === "trending"
-                    ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
-                    : "text-[#a0a0a0] hover:text-white dark:hover:text-white"
+                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                    : "text-[#a0a0a0] hover:text-white"
                 }`}
               >
                 <TrendingUp className="w-4 h-4 inline mr-1.5" />
@@ -219,8 +219,8 @@ export default function Social() {
                   onClick={() => setFeedFilter("friends")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     feedFilter === "friends"
-                      ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold shadow-sm"
-                      : "text-[#555555] hover:text-white "
+                      ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                      : "text-[#555555] hover:text-white"
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -230,8 +230,8 @@ export default function Social() {
                   onClick={() => setFeedFilter("trending")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     feedFilter === "trending"
-                      ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold shadow-sm"
-                      : "text-[#555555] hover:text-white "
+                      ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                      : "text-[#555555] hover:text-white"
                   }`}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
@@ -247,7 +247,7 @@ export default function Social() {
                   Connections
                 </p>
                 {totalNotifications > 0 && (
-                  <span className="bg-danger-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
                     {totalNotifications}
                   </span>
                 )}
@@ -410,7 +410,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs"
+                className="shrink-0 text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] text-xs"
                 onClick={onUnshare}
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" /> Unshare
@@ -552,7 +552,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
             {hasMore && (
               <button
                 onClick={() => setExercisesExpanded(!exercisesExpanded)}
-                className="text-xs text-primary-500 hover:text-[#ccff00] ml-7 font-medium"
+                className="text-xs text-[#ccff00] hover:text-[#ccff00] ml-7 font-medium"
               >
                 {exercisesExpanded ? "Show less" : `+${allExercises.length - exerciseLimit} more`}
               </button>

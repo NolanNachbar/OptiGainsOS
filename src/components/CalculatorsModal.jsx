@@ -54,7 +54,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-2 block">
+          <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-2 block">
             Target Weight ({weightUnit})
           </Label>
           <Input
@@ -67,7 +67,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-2 block">
+          <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-2 block">
             Bar Weight ({weightUnit})
           </Label>
           <Select value={barWeight} onValueChange={setBarWeight}>
@@ -125,7 +125,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                 ))}
 
                 {!result.exact && result.remainder > 0.1 && (
-                  <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg text-sm text-warning-800">
+                  <div className="p-3 bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] rounded-lg text-sm text-[#fbbf24]">
                     <strong>Note:</strong> Can't load exactly. Missing {result.remainder.toFixed(1)} {weightUnit} per side.
                   </div>
                 )}
@@ -199,19 +199,19 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1.5 block">
+            <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1.5 block">
               Weight ({weightUnit})
             </Label>
             <Input type="number" step="0.5" placeholder={weightUnit === 'lbs' ? "225" : "100"}
               value={knownWeight} onChange={(e) => setKnownWeight(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1.5 block">Reps done</Label>
+            <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1.5 block">Reps done</Label>
             <Input type="number" min="1" max="36" placeholder="5"
               value={knownReps} onChange={(e) => setKnownReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1.5 block">RIR left</Label>
+            <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1.5 block">RIR left</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={knownRir} onChange={(e) => setKnownRir(e.target.value)} />
           </div>
@@ -223,12 +223,12 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1.5 block">Target reps</Label>
+            <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1.5 block">Target reps</Label>
             <Input type="number" min="1" max="36" placeholder="3"
               value={targetReps} onChange={(e) => setTargetReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-700 text-[#a0a0a0] mb-1.5 block">Target RIR</Label>
+            <Label className="text-sm font-medium text-[#a0a0a0] text-[#a0a0a0] mb-1.5 block">Target RIR</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={targetRir} onChange={(e) => setTargetRir(e.target.value)} />
           </div>
@@ -251,15 +251,15 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
             <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[rgba(204,255,0,0.3)]">
               <div className="text-center">
                 <div className="text-xs text-[#555555] mb-0.5">Est. 1RM</div>
-                <div className="font-semibold text-slate-800">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
+                <div className="font-semibold text-white">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-[#555555] mb-0.5">% of 1RM</div>
-                <div className="font-semibold text-slate-800">{result.targetPct.toFixed(1)}%</div>
+                <div className="font-semibold text-white">{result.targetPct.toFixed(1)}%</div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-[#555555] mb-0.5">Exact weight</div>
-                <div className="font-semibold text-slate-800">{result.exact.toFixed(1)} {weightUnit}</div>
+                <div className="font-semibold text-white">{result.exact.toFixed(1)} {weightUnit}</div>
               </div>
             </div>
           </CardContent>

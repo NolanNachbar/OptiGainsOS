@@ -68,7 +68,7 @@ export default function ShareCardioModal({ session, onClose, onShared }) {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-[#a0a0a0] ">
             Sharing <span className="font-medium">{session.name}</span>
             {" "}({typeLabel}
             {fmt(session.distance_meters) ? ` · ${fmt(session.distance_meters)}` : ""}
@@ -87,7 +87,7 @@ export default function ShareCardioModal({ session, onClose, onShared }) {
             {sharing ? <LoadingSpinner size="small" className="mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
             Share to Feed
           </Button>
-          <Button variant="ghost" onClick={onClose} className="w-full text-slate-500">
+          <Button variant="ghost" onClick={onClose} className="w-full text-[#555555]">
             Cancel
           </Button>
         </div>

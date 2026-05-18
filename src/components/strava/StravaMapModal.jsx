@@ -36,56 +36,56 @@ export default function StravaMapModal({ session, onClose }) {
             <Route className="w-4 h-4 text-orange-500" />
             {session.name}
           </DialogTitle>
-          {date && <p className="text-xs text-slate-400 mt-0.5">{date}</p>}
+          {date && <p className="text-xs text-[#555555] mt-0.5">{date}</p>}
         </DialogHeader>
 
         {session.map_polyline ? (
-          <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700" style={{ isolation: "isolate" }}>
-            <Suspense fallback={<div style={{ height: 270 }} className="bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />}>
+          <div className="rounded-xl overflow-hidden border border-[#2a2a2a] " style={{ isolation: "isolate" }}>
+            <Suspense fallback={<div style={{ height: 270 }} className="bg-[#202020]  rounded-xl animate-pulse" />}>
               <StaticRouteMap polyline={session.map_polyline} mapKey={session.id} height={270} />
             </Suspense>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-40 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400 text-sm">
+          <div className="flex items-center justify-center h-40 bg-[#202020]  rounded-xl text-[#555555] text-sm">
             No route data available
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-1 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-3 px-1 text-xs text-[#555555] ">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Start</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Finish</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           {fmt(session.distance_meters) && (
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
-              <div className="flex items-center gap-1 text-xs text-slate-400 mb-0.5"><MapPin className="w-3 h-3" />Distance</div>
-              <p className="font-semibold text-slate-900 dark:text-white">{fmt(session.distance_meters)}</p>
+            <div className="bg-[#1a1a1a]  rounded-xl p-3">
+              <div className="flex items-center gap-1 text-xs text-[#555555] mb-0.5"><MapPin className="w-3 h-3" />Distance</div>
+              <p className="font-semibold text-white">{fmt(session.distance_meters)}</p>
             </div>
           )}
           {fmtTime(session.moving_time_seconds) && (
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
-              <div className="flex items-center gap-1 text-xs text-slate-400 mb-0.5"><Timer className="w-3 h-3" />Moving Time</div>
-              <p className="font-semibold text-slate-900 dark:text-white">{fmtTime(session.moving_time_seconds)}</p>
+            <div className="bg-[#1a1a1a]  rounded-xl p-3">
+              <div className="flex items-center gap-1 text-xs text-[#555555] mb-0.5"><Timer className="w-3 h-3" />Moving Time</div>
+              <p className="font-semibold text-white">{fmtTime(session.moving_time_seconds)}</p>
             </div>
           )}
           {session.average_heartrate && (
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
-              <div className="flex items-center gap-1 text-xs text-slate-400 mb-0.5"><Heart className="w-3 h-3 text-red-400" />Avg HR</div>
-              <p className="font-semibold text-slate-900 dark:text-white">{Math.round(session.average_heartrate)} bpm</p>
+            <div className="bg-[#1a1a1a]  rounded-xl p-3">
+              <div className="flex items-center gap-1 text-xs text-[#555555] mb-0.5"><Heart className="w-3 h-3 text-[#f87171]" />Avg HR</div>
+              <p className="font-semibold text-white">{Math.round(session.average_heartrate)} bpm</p>
             </div>
           )}
           {session.total_elevation_gain > 5 && (
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
-              <div className="flex items-center gap-1 text-xs text-slate-400 mb-0.5"><TrendingUp className="w-3 h-3" />Elevation</div>
-              <p className="font-semibold text-slate-900 dark:text-white">{Math.round(session.total_elevation_gain * 3.281)} ft</p>
+            <div className="bg-[#1a1a1a]  rounded-xl p-3">
+              <div className="flex items-center gap-1 text-xs text-[#555555] mb-0.5"><TrendingUp className="w-3 h-3" />Elevation</div>
+              <p className="font-semibold text-white">{Math.round(session.total_elevation_gain * 3.281)} ft</p>
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs capitalize">{typeLabel}</Badge>
-          {session.calories && <span className="text-xs text-slate-400">{Math.round(session.calories)} cal</span>}
+          {session.calories && <span className="text-xs text-[#555555]">{Math.round(session.calories)} cal</span>}
         </div>
       </DialogContent>
     </Dialog>

@@ -30,20 +30,20 @@ export default function CheckinHistory() {
   if (sortedCheckins.length === 0) return null;
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="">
       <CardHeader className="pb-2">
         <button
           onClick={() => setExpanded(!expanded)}
           className="flex items-center justify-between w-full"
         >
           <CardTitle className="flex items-center gap-2 text-base">
-            <History className="w-4 h-4 text-slate-500" />
+            <History className="w-4 h-4 text-[#555555]" />
             Check-in History ({sortedCheckins.length})
           </CardTitle>
           {expanded ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
+            <ChevronUp className="w-4 h-4 text-[#555555]" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
+            <ChevronDown className="w-4 h-4 text-[#555555]" />
           )}
         </button>
       </CardHeader>
@@ -54,37 +54,37 @@ export default function CheckinHistory() {
             {sortedCheckins.map((checkin) => (
               <div
                 key={checkin.id}
-                className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg text-sm"
+                className="flex items-center gap-3 p-3 bg-[#1a1a1a]  rounded-lg text-sm"
               >
                 {/* Status icon */}
                 {checkin.status === "accepted" ? (
                   <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
                 ) : (
-                  <X className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <X className="w-4 h-4 text-[#555555] flex-shrink-0" />
                 )}
 
                 {/* Date + week */}
                 <div className="min-w-[100px]">
-                  <div className="font-medium dark:text-white">
+                  <div className="font-medium">
                     {format(parseISO(checkin.checkin_date), "MMM d, yyyy")}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className="text-xs text-[#555555] ">
                     Week {checkin.week_number}
                   </div>
                 </div>
 
                 {/* Trend weight */}
                 <div className="min-w-[70px]">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs">Trend</div>
-                  <div className="font-medium dark:text-white">
+                  <div className="text-[#555555]  text-xs">Trend</div>
+                  <div className="font-medium">
                     {checkin.trend_weight} {weightUnit}
                   </div>
                 </div>
 
                 {/* Rate */}
                 <div className="min-w-[80px]">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs">Rate</div>
-                  <div className="font-medium dark:text-white">
+                  <div className="text-[#555555]  text-xs">Rate</div>
+                  <div className="font-medium">
                     {checkin.actual_weekly_rate > 0 ? "+" : ""}
                     {checkin.actual_weekly_rate} /wk
                   </div>
@@ -96,15 +96,15 @@ export default function CheckinHistory() {
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${
                         checkin.status === "accepted"
-                          ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400"
-                          : "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-300"
+                          ? "bg-[rgba(34,197,94,0.1)] text-[#4ade80]"
+                          : "bg-[#2a2a2a]  text-[#555555] "
                       }`}
                     >
                       {checkin.calorie_adjustment > 0 ? "+" : ""}
                       {checkin.calorie_adjustment} cal
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#202020]  text-[#555555] ">
                       No change
                     </span>
                   )}

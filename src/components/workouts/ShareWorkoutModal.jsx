@@ -154,12 +154,12 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-primary-600" />
+            <Share2 className="w-5 h-5 text-[#ccff00]" />
             Share Workout
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[#a0a0a0]">
             Share <span className="font-medium">{workoutTitle}</span> to your profile so friends can use it as a template.
           </p>
 
@@ -210,13 +210,13 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
           </div>
 
           {prs.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-amber-700 font-medium text-sm">
+            <div className="bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg p-3 space-y-1">
+              <div className="flex items-center gap-1.5 text-[#fbbf24] font-medium text-sm">
                 <Trophy className="w-4 h-4" />
                 Personal Records Detected!
               </div>
               {prs.map((pr, i) => (
-                <p key={i} className="text-sm text-amber-600 ml-5.5">
+                <p key={i} className="text-sm text-[#fbbf24] ml-5.5">
                   {pr.exercise}: {pr.weight} lbs x {pr.reps}
                 </p>
               ))}
@@ -230,10 +230,10 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
               variant="outline"
               className="w-full justify-start h-auto py-3"
             >
-              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <Dumbbell className="w-5 h-5 mr-3 text-primary-600" />}
+              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <Dumbbell className="w-5 h-5 mr-3 text-[#ccff00]" />}
               <div className="text-left">
                 <div className="font-medium">Exercises Only</div>
-                <div className="text-xs text-slate-500">Share the routine without your weights/reps</div>
+                <div className="text-xs text-[#555555]">Share the routine without your weights/reps</div>
               </div>
             </Button>
 
@@ -243,15 +243,15 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
               variant="outline"
               className="w-full justify-start h-auto py-3"
             >
-              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <BarChart3 className="w-5 h-5 mr-3 text-blue-600" />}
+              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <BarChart3 className="w-5 h-5 mr-3 text-[#60a5fa]" />}
               <div className="text-left">
                 <div className="font-medium">With Performance</div>
-                <div className="text-xs text-slate-500">Include your sets, weights, and reps</div>
+                <div className="text-xs text-[#555555]">Include your sets, weights, and reps</div>
               </div>
             </Button>
           </div>
 
-          <Button variant="ghost" onClick={onClose} className="w-full text-slate-500">
+          <Button variant="ghost" onClick={onClose} className="w-full text-[#555555]">
             Skip
           </Button>
         </div>

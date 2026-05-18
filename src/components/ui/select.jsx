@@ -35,7 +35,7 @@ const SelectTrigger = React.forwardRef(({ className = "", children, ...props }, 
       type="button"
       ref={mergedRef}
       onClick={() => setOpen(!open)}
-      className={`flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:ring-slate-50 ${className}`}
+      className={`flex h-[38px] w-full items-center justify-between rounded-[10px] border border-transparent bg-[#151515] px-3 text-[14px] text-white placeholder:text-[#555555] focus:outline-none focus:border-[#ccff00] focus:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -97,7 +97,7 @@ const SelectContent = ({ className = "", children, ...props }) => {
     <>
       <div className="fixed inset-0 z-[10001]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10002] max-h-60 overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-slate-700 dark:bg-slate-800 ${className}`}
+        className={`fixed z-[10002] max-h-60 overflow-auto rounded-[10px] border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
         style={style}
         {...props}
       >
@@ -122,7 +122,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
         onValueChange(value);
         setOpen(false);
       }}
-      className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 ${selectedValue === value ? 'bg-slate-100 dark:bg-slate-700' : ''} ${className}`}
+      className={`relative flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] outline-none text-[#a0a0a0] hover:bg-[#242424] hover:text-white ${selectedValue === value ? 'bg-[rgba(204,255,0,0.08)] text-[#ccff00]' : ''} ${className}`}
       {...props}
     >
       {children}

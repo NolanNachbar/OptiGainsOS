@@ -7,24 +7,29 @@ const Button = React.forwardRef(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ccff00] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
   const variants = {
-    default: "bg-slate-900 text-slate-50 hover:bg-slate-900/90 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200",
-    primary: "bg-[#5d3cc7] text-white hover:bg-[#4f33ab]",
-    ai: "bg-[#18181f] text-white hover:bg-slate-800",
-    destructive: "bg-danger-500 text-slate-50 hover:bg-danger-500/90",
-    outline: "border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-slate-50",
-    secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700/80",
-    ghost: "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-700 dark:hover:text-slate-50",
-    link: "text-slate-900 underline-offset-4 hover:underline dark:text-slate-50",
+    /* 4-tier design system */
+    volt:        "bg-[#ccff00] text-black rounded-md hover:bg-[#d9ff1a]",
+    dark:        "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
+    ghost:       "bg-transparent text-[#ccff00] border border-[rgba(204,255,0,0.25)] rounded-md hover:bg-[rgba(204,255,0,0.08)]",
+    dim:         "bg-transparent text-[#a0a0a0] border border-[#2a2a2a] rounded-md hover:bg-[#242424] hover:text-white",
+    /* utility / legacy variants */
+    default:     "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
+    primary:     "bg-[#ccff00] text-black rounded-md hover:bg-[#d9ff1a]",
+    ai:          "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
+    destructive: "bg-[rgba(239,68,68,0.1)] text-white rounded-md hover:bg-[rgba(239,68,68,0.1)]",
+    outline:     "border border-[#2a2a2a] bg-transparent text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
+    secondary:   "bg-[#202020] text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
+    link:        "text-[#ccff00] underline-offset-4 hover:underline",
   };
 
   const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10",
+    default: "h-9 px-4 text-[13.5px]",
+    sm:      "h-[30px] px-3 text-[12.5px]",
+    lg:      "h-[42px] px-[22px] text-[15px]",
+    icon:    "h-9 w-9",
   };
 
   return (

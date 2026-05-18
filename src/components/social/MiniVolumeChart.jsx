@@ -25,16 +25,16 @@ export function MiniVolumeChart({ exercises }) {
         const pct = maxVolume > 0 ? (v.volume / maxVolume) * 100 : 0;
         return (
           <div key={i} className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-500 w-24 truncate flex-shrink-0">
+            <span className="text-[11px] text-[#555555] w-24 truncate flex-shrink-0">
               {v.name}
             </span>
-            <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-3 bg-[#202020] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-primary-500"
+                className="h-full rounded-full bg-[#ccff00]"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="text-xs text-slate-400 w-14 text-right flex-shrink-0">
+            <span className="text-xs text-[#555555] w-14 text-right flex-shrink-0">
               {v.volume >= 1000
                 ? `${(v.volume / 1000).toFixed(1)}k`
                 : v.volume}{' '}
@@ -44,7 +44,7 @@ export function MiniVolumeChart({ exercises }) {
         );
       })}
       {volumes.length > 5 && (
-        <p className="text-xs text-slate-400 pl-26">+{volumes.length - 5} more</p>
+        <p className="text-xs text-[#555555] pl-26">+{volumes.length - 5} more</p>
       )}
     </div>
   );

@@ -58,7 +58,7 @@ export default function PublicProfile() {
         </div>
         <div className="px-4 md:px-6">
           <div className="max-w-5xl mx-auto">
-            <Card className="border-none shadow-lg">
+            <Card className="">
               <CardContent className="py-12 text-center">
                 <User className="w-12 h-12 text-[#a0a0a0] mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">User not found</h3>
@@ -83,7 +83,7 @@ export default function PublicProfile() {
         </div>
         <div className="px-4 md:px-6">
           <div className="max-w-5xl mx-auto">
-            <Card className="border-none shadow-lg">
+            <Card className="">
               <CardContent className="py-12 text-center">
                 <Lock className="w-12 h-12 text-[#a0a0a0] mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">@{profile.username}</h3>
@@ -131,7 +131,7 @@ export default function PublicProfile() {
       <div className="px-4 md:px-6">
         <div className="max-w-5xl mx-auto">
         {/* Profile Header */}
-        <Card className="border-none shadow-lg mb-6">
+        <Card className="mb-6">
           <CardContent className="pt-8 pb-6">
             <div className="flex flex-col items-center text-center">
               <div className="mb-4">
@@ -160,21 +160,21 @@ export default function PublicProfile() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="border-none shadow-sm">
+          <Card className="border-none">
             <CardContent className="py-4 text-center">
-              <Dumbbell className="w-6 h-6 text-primary-500 mx-auto mb-2" />
+              <Dumbbell className="w-6 h-6 text-[#ccff00] mx-auto mb-2" />
               <p className="text-2xl font-bold text-white">{profile.total_workouts || 0}</p>
               <p className="text-xs text-[#555555]">Workouts</p>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-sm">
+          <Card className="border-none">
             <CardContent className="py-4 text-center">
               <Flame className="w-6 h-6 text-orange-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-white">{profile.current_streak || 0}</p>
               <p className="text-xs text-[#555555]">Day Streak</p>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-sm">
+          <Card className="border-none">
             <CardContent className="py-4 text-center">
               <Trophy className="w-6 h-6 text-amber-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-white">{profile.longest_streak || 0}</p>
@@ -185,11 +185,11 @@ export default function PublicProfile() {
 
         {/* Additional Info */}
         {(profile.fitness_level || (profile.primary_goal && profile.primary_goal.length > 0)) && (
-          <Card className="border-none shadow-sm mb-6">
+          <Card className="border-none mb-6">
             <CardContent className="py-4">
               <div className="flex flex-wrap gap-2">
                 {profile.fitness_level && (
-                  <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full capitalize">
+                  <span className="px-3 py-1 bg-[rgba(59,130,246,0.08)] text-[#60a5fa] text-sm rounded-full capitalize">
                     {profile.fitness_level}
                   </span>
                 )}
@@ -204,7 +204,7 @@ export default function PublicProfile() {
         )}
 
         {/* Shared Content */}
-        <Card className="border-none shadow-lg">
+        <Card className="">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-[#ccff00]" />
@@ -341,9 +341,9 @@ export default function PublicProfile() {
                     {sharedPrograms.map((sp) => {
                       const program = sp.program;
                       const DIFFICULTY_COLORS = {
-                        beginner: "bg-green-100 text-green-700",
+                        beginner: "bg-[rgba(34,197,94,0.1)] text-[#4ade80]",
                         intermediate: "bg-yellow-100 text-yellow-700",
-                        advanced: "bg-red-100 text-red-700",
+                        advanced: "bg-[rgba(239,68,68,0.1)] text-[#f87171]",
                       };
                       const GOAL_LABELS = {
                         muscle_gain: "Muscle Gain",
@@ -371,7 +371,7 @@ export default function PublicProfile() {
                                 {program && (
                                   <div className="space-y-2 mt-3">
                                     <div className="flex flex-wrap gap-2">
-                                      <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-slate-100 text-white"}>
+                                      <Badge className={DIFFICULTY_COLORS[program.difficulty] || "bg-[#202020] text-white"}>
                                         {program.difficulty}
                                       </Badge>
                                       <Badge variant="outline">

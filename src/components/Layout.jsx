@@ -100,7 +100,7 @@ export default function Layout({ children, currentPageName }) {
                   <div className="relative">
                     <item.icon className="w-[15px] h-[15px]" />
                     {item.hasBadge && notificationCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold rounded-full flex items-center justify-center">
                         {notificationCount > 9 ? '9+' : notificationCount}
                       </span>
                     )}
@@ -192,7 +192,7 @@ export default function Layout({ children, currentPageName }) {
                     className={`w-6 h-6 ${isActive ? "stroke-[2.5]" : ""}`}
                   />
                   {item.hasBadge && notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-danger-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold rounded-full flex items-center justify-center">
                       {notificationCount > 9 ? "9+" : notificationCount}
                     </span>
                   )}

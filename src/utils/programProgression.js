@@ -25,16 +25,19 @@ function deriveStallSuggestion(avgRir, rirTarget, sessionsAtWeight) {
   if (avgRir === null) {
     return 'Log RIR on your sets to get progression coaching.';
   }
-  if (avgRir > rirTarget + 1) {
-    return `Effort is low (avg RIR ${avgRir.toFixed(1)}). Try increasing weight slightly next session.`;
+  if (avgRir < 2) {
+    if (sessionsAtWeight >= 5) {
+      return `${sessionsAtWeight} sessions grinding near failure (avg RIR ${avgRir.toFixed(1)}). Consider a deload week, then return to 90% of this weight.`;
+    }
+    return `Working close to failure (avg RIR ${avgRir.toFixed(1)}). Focus on completing all reps before adding weight.`;
   }
-  if (avgRir <= rirTarget) {
-    return 'Good effort level — focus on completing all target reps before adding weight.';
+  if (avgRir > rirTarget + 1) {
+    return `Weight feels manageable (avg RIR ${avgRir.toFixed(1)}) but reps aren't there yet. Focus on hitting all target reps.`;
   }
   if (sessionsAtWeight >= 5) {
-    return `${sessionsAtWeight} sessions at this weight. Consider a short deload then reset 10%.`;
+    return `${sessionsAtWeight} sessions at this weight. Consider a deload week — come back to this weight fresh.`;
   }
-  return `${sessionsAtWeight} sessions without progress. Check form or consider a deload.`;
+  return `${sessionsAtWeight} sessions without progress. Check sleep and nutrition are supporting recovery.`;
 }
 
 // Returns the Monday date string for a given date string (ISO week start).
@@ -181,7 +184,9 @@ export function updateProgressionState(currentState, exercise, completedSets) {
   const targetReps = parseInt(rep_target) || 0;
   const allSetsHitTarget = targetReps > 0 && workingSets.every((s) => s.reps >= targetReps);
 
-  const readyToProgress = allSetsHitTarget && avgRir != null && avgRir <= rir_target;
+  // Progress only when the user hit all target reps AND still had adequate reserve (≥2 RIR).
+  // Grinding near failure (RIR 0-1) means the weight is already at the edge — don't add more.
+  const readyToProgress = allSetsHitTarget && avgRir != null && avgRir >= 2;
 
   const prevState = state[name] || {};
   const sessionsAtWeight =

@@ -48,12 +48,12 @@ export default function ShareRecipeModal({ recipe, onClose }) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-primary-600" />
+            <Share2 className="w-5 h-5 text-[#ccff00]" />
             Share Recipe
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[#a0a0a0]">
             Share <span className="font-medium">{recipe.name}</span> with the community.
           </p>
 
@@ -89,24 +89,24 @@ export default function ShareRecipeModal({ recipe, onClose }) {
           </div>
 
           {/* Nutrition preview */}
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-2">Nutrition per serving</p>
+          <div className="bg-[#1a1a1a] rounded-lg p-3">
+            <p className="text-xs text-[#555555] mb-2">Nutrition per serving</p>
             <div className="grid grid-cols-4 gap-2 text-center text-xs">
               <div>
-                <p className="font-bold text-slate-900">{recipe.total_calories || 0}</p>
-                <p className="text-slate-400">Cal</p>
+                <p className="font-bold text-white">{recipe.total_calories || 0}</p>
+                <p className="text-[#555555]">Cal</p>
               </div>
               <div>
-                <p className="font-bold text-slate-900">{recipe.total_protein || 0}g</p>
-                <p className="text-slate-400">Protein</p>
+                <p className="font-bold text-white">{recipe.total_protein || 0}g</p>
+                <p className="text-[#555555]">Protein</p>
               </div>
               <div>
-                <p className="font-bold text-slate-900">{recipe.total_carbs || 0}g</p>
-                <p className="text-slate-400">Carbs</p>
+                <p className="font-bold text-white">{recipe.total_carbs || 0}g</p>
+                <p className="text-[#555555]">Carbs</p>
               </div>
               <div>
-                <p className="font-bold text-slate-900">{recipe.total_fats || 0}g</p>
-                <p className="text-slate-400">Fats</p>
+                <p className="font-bold text-white">{recipe.total_fats || 0}g</p>
+                <p className="text-[#555555]">Fats</p>
               </div>
             </div>
           </div>
