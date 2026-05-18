@@ -1210,12 +1210,12 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
                 : 'Complete workouts or sync Strava to build your log.'}
             </p>
             {filter !== 'strength' && !profile?.strava_access_token && (
-              <a href="/profile">
+              <Link to="/profile">
                 <Button className="mt-4 bg-[#FC4C02] hover:bg-[#e04400] text-white">
                   <Link2 className="w-4 h-4 mr-2" />
                   Connect Strava
                 </Button>
-              </a>
+              </Link>
             )}
           </CardContent>
         </Card>
