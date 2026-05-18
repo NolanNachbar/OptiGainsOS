@@ -158,6 +158,7 @@ export default function Schedule() {
   const [showProgramStartModal, setShowProgramStartModal] = useState(false);
   const [selectedProgramStartDate, setSelectedProgramStartDate] = useState("");
   const [sessionChecks, setSessionChecks] = useState(new Set()); // local per-session check state
+  const [selectedDay, setSelectedDay] = useState(new Date());
 
   const { profile } = useProfile();
   const { getLikedExercises, getDislikedExercises } = useExerciseReactions();
@@ -870,9 +871,348 @@ export default function Schedule() {
 
   if (!user) return <LoadingScreen />;
 
+  const enrollmentProgressPct = activeEnrollment && activeProgram
+    ? Math.min(100, Math.round(
+        ((activeEnrollment.completed_workouts?.length || 0) /
+          ((activeProgram.cycle_length || 1) * (activeProgram.num_cycles || activeProgram.duration_weeks || 4))) * 100
+      ))
+    : 0;
+
   return (
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
-      <div className="max-w-5xl mx-auto">
+
+      {/* ── MOBILE LAYOUT ── */}
+      <div className="xl:hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-end mb-5">
+          <button
+            onClick={handleBuildProgram}
+            className="border border-[#2a2a2a] text-[10px] font-bold uppercase tracking-[0.15em] text-[#a0a0a0] px-3 py-2 rounded-lg hover:border-[rgba(204,255,0,0.4)] hover:text-[#ccff00] transition-colors"
+          >
+            Build Program
+          </button>
+        </div>
+
+        {/* Week navigation */}
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => navigateWeek("prev")} className="p-1 text-[#555555] hover:text-white transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]">
+            {format(currentWeekStart, "MMM d")} — {format(addDays(currentWeekStart, 6), "MMM d")}
+          </span>
+          <button onClick={() => navigateWeek("next")} className="p-1 text-[#555555] hover:text-white transition-colors">
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Day strip */}
+        <div className="flex gap-1.5 mb-5">
+          {weekDays.map((day) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            const isToday = isSameDay(day, new Date());
+            const isSelected = isSameDay(day, selectedDay);
+            const dp = getProgramForDate(day);
+            const ds = getScheduleForDate(day);
+            const allItems = [...dp, ...ds];
+            const hasWorkout = allItems.length > 0;
+            const isDone = hasWorkout && allItems.every(item => item.completed);
+            return (
+              <button
+                key={dateStr}
+                onClick={() => setSelectedDay(day)}
+                className={`flex-1 flex flex-col items-center pt-2 pb-2.5 rounded-xl transition-all ${
+                  isSelected
+                    ? "bg-[#ccff00]"
+                    : isToday
+                    ? "bg-[rgba(204,255,0,0.1)] border border-[rgba(204,255,0,0.25)]"
+                    : "bg-[#1a1a1a] border border-[#2a2a2a]"
+                }`}
+              >
+                <span className={`text-[9px] font-bold uppercase tracking-wider mb-1 ${isSelected ? "text-[#121212]" : "text-[#555555]"}`}>
+                  {format(day, "EEE")}
+                </span>
+                <span className={`text-base font-black leading-none ${isSelected ? "text-[#121212]" : isToday ? "text-[#ccff00]" : "text-white"}`}>
+                  {format(day, "d")}
+                </span>
+                <div className={`w-1.5 h-1.5 rounded-full mt-2 ${
+                  isDone ? "bg-[#4ade80]" :
+                  hasWorkout ? (isSelected ? "bg-[#121212]" : "bg-[#ccff00]") :
+                  "bg-transparent"
+                }`} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected day card */}
+        {(() => {
+          const dp = getProgramForDate(selectedDay);
+          const ds = getScheduleForDate(selectedDay);
+          const orphans = getOrphanLogsForDate(selectedDay);
+          const isToday = isSameDay(selectedDay, new Date());
+          const dateLabel = format(selectedDay, "EEEE, MMMM d").toUpperCase();
+          const macros = getMacrosForDate(selectedDay);
+          const hasMacros = macros.calories > 0;
+
+          const MacroBlock = () => {
+            const rings = [
+              { label: "Cal", value: Math.round(macros.calories), goal: profile?.daily_calorie_goal, stroke: "#f97316" },
+              { label: "Pro", value: Math.round(macros.protein), unit: "g", goal: profile?.daily_protein_goal, stroke: "#60a5fa" },
+              { label: "Carbs", value: Math.round(macros.carbs), unit: "g", goal: profile?.daily_carbs_goal, stroke: "#4ade80" },
+              { label: "Fats", value: Math.round(macros.fats), unit: "g", goal: profile?.daily_fats_goal, stroke: "#facc15" },
+            ];
+            const size = 64, sw = 5, r = (size - sw) / 2, circ = 2 * Math.PI * r;
+            return (
+              <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-3">Nutrition</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {rings.map(({ label, value, unit = "", goal, stroke }) => {
+                    const pct = goal ? Math.min(1, value / goal) : 0;
+                    const filled = pct * circ;
+                    return (
+                      <div key={label} className="flex flex-col items-center gap-1">
+                        <div className="relative" style={{ width: size, height: size }}>
+                          <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+                            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#2a2a2a" strokeWidth={sw} />
+                            {goal && (
+                              <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={stroke} strokeWidth={sw}
+                                strokeDasharray={`${filled} ${circ - filled}`} strokeLinecap="round" />
+                            )}
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-[11px] font-black tabular-nums text-white leading-none">{value}</span>
+                            {unit && <span className="text-[8px] text-[#555555] leading-none">{unit}</span>}
+                          </div>
+                        </div>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-[#555555]">{label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          };
+
+          if (dp.length === 0 && ds.length === 0 && orphans.length === 0) {
+            return (
+              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 mb-4">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-2">{dateLabel}</p>
+                <p className="text-2xl font-black uppercase tracking-tight text-[#333333] mb-4 text-center">Rest Day</p>
+                {isToday && (
+                  <button
+                    onClick={() => setDayDetailDate(selectedDay)}
+                    className="w-full text-xs font-bold uppercase tracking-[0.15em] text-[#555555] hover:text-[#ccff00] transition-colors text-center"
+                  >
+                    + Add Workout
+                  </button>
+                )}
+                {hasMacros && <MacroBlock />}
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3 mb-4">
+              {dp.map((item, idx) => (
+                <div key={`${item.programWorkoutId}-${item.cycle}`} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555]">{dateLabel}</p>
+                    {item.completed && <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />}
+                  </div>
+                  <h2 className="text-xl font-black uppercase tracking-tight text-white leading-tight mb-3">
+                    {item.title}
+                  </h2>
+                  {item.exercises?.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      {item.exercises.slice(0, 5).map((ex, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[#ccff00] text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                            <span className="text-white text-xs font-semibold uppercase tracking-wide">{ex.name}</span>
+                          </div>
+                          <span className="text-[#555555] text-[11px] font-mono tabular-nums shrink-0 ml-2">
+                            {Array.isArray(ex.sets)
+                              ? `${ex.sets.length}×${ex.sets[0]?.reps ?? ex.reps ?? "?"}`
+                              : `${ex.sets ?? "?"}×${ex.reps ?? "?"}`}
+                          </span>
+                        </div>
+                      ))}
+                      {item.exercises.length > 5 && (
+                        <p className="text-[#555555] text-[11px] ml-7">+{item.exercises.length - 5} more exercises</p>
+                      )}
+                    </div>
+                  )}
+                  {item.completed ? (
+                    <div className="flex items-center justify-center gap-1.5 py-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80]" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4ade80]">Completed</span>
+                    </div>
+                  ) : isToday && item.isCurrent ? (
+                    <button
+                      onClick={() => navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)}
+                      className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
+                    >
+                      Start Session
+                    </button>
+                  ) : null}
+                  {hasMacros && idx === 0 && <MacroBlock />}
+                </div>
+              ))}
+
+              {ds.map((item, idx) => {
+                const workout = workouts.find(w => w.id === item.workout_id);
+                if (!workout) return null;
+                return (
+                  <div key={item.id} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-1">{dateLabel}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-xl font-black uppercase tracking-tight text-white leading-tight">
+                        {workout.title}
+                      </h2>
+                      {item.completed && <CheckCircle2 className="w-4 h-4 text-[#4ade80] shrink-0 ml-2" />}
+                    </div>
+                    {workout.exercises?.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {workout.exercises.slice(0, 5).map((ex, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#ccff00] text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                              <span className="text-white text-xs font-semibold uppercase tracking-wide">{ex.name}</span>
+                            </div>
+                            <span className="text-[#555555] text-[11px] font-mono tabular-nums shrink-0 ml-2">
+                              {Array.isArray(ex.sets)
+                                ? `${ex.sets.length}×${ex.sets[0]?.reps ?? ex.reps ?? "?"}`
+                                : `${ex.sets ?? "?"}×${ex.reps ?? "?"}`}
+                            </span>
+                          </div>
+                        ))}
+                        {workout.exercises.length > 5 && (
+                          <p className="text-[#555555] text-[11px] ml-7">+{workout.exercises.length - 5} more exercises</p>
+                        )}
+                      </div>
+                    )}
+                    {item.completed ? (
+                      <div className="flex items-center justify-center gap-1.5 py-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80]" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4ade80]">Completed</span>
+                      </div>
+                    ) : isToday ? (
+                      <button
+                        onClick={() => setDayDetailDate(selectedDay)}
+                        className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
+                      >
+                        Start Session
+                      </button>
+                    ) : null}
+                    {hasMacros && dp.length === 0 && idx === 0 && <MacroBlock />}
+                  </div>
+                );
+              })}
+
+              {orphans.map((log, idx) => {
+                const logWorkout = workouts.find(w => w.id === log.workout_id);
+                return (
+                  <div key={log.id} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-1">{dateLabel}</p>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4ade80] shrink-0" />
+                      <h2 className="text-base font-black uppercase tracking-tight text-[#4ade80]">
+                        {logWorkout?.title || "Logged Workout"}
+                      </h2>
+                    </div>
+                    {hasMacros && dp.length === 0 && ds.length === 0 && idx === 0 && <MacroBlock />}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Program progress */}
+        {activeEnrollment && activeProgram && (
+          <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-4 py-3 mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555]">
+                Week {activeEnrollment.current_week || 1}/{activeProgram.num_cycles || activeProgram.duration_weeks || 4} — {activeProgram.name}
+              </span>
+              <span className="text-[9px] font-black text-[#ccff00] tabular-nums">{enrollmentProgressPct}%</span>
+            </div>
+            <div className="h-[3px] bg-[#2a2a2a] rounded-full overflow-hidden">
+              <div className="h-full bg-[#ccff00] transition-all duration-500" style={{ width: `${enrollmentProgressPct}%` }} />
+            </div>
+          </div>
+        )}
+
+        {/* Workout Library // Backlog */}
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-[#ccff00]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#555555]">
+                Workout Library // Backlog
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-[#555555]">Count: {workouts.length}</span>
+          </div>
+          <div className="px-4 py-2 flex gap-1.5 border-b border-[#2a2a2a] overflow-x-auto [&::-webkit-scrollbar]:hidden">
+            {["all", "strength", "cardio", "hiit"].map((type) => (
+              <button
+                key={type}
+                onClick={() => setLibraryFilter(type)}
+                className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
+                  libraryFilter === type
+                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]"
+                    : "text-[#555555] hover:text-[#a0a0a0]"
+                }`}
+              >
+                {type === "hiit" ? "HIIT" : type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="divide-y divide-[#2a2a2a]">
+            {workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).length === 0 ? (
+              <p className="text-xs text-[#555555] text-center py-6">No workouts yet.</p>
+            ) : (
+              workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => {
+                const typeBadge = {
+                  strength: "text-[#818cf8]",
+                  cardio: "text-orange-400",
+                  hiit: "text-[#f87171]",
+                  recovery: "text-[#4ade80]",
+                }[workout.type] || "text-[#555555]";
+                return (
+                  <button
+                    key={workout.id}
+                    onClick={() => setDayDetailDate(selectedDay)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#222222] transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${typeBadge}`}>
+                          {workout.type?.toUpperCase() || "WORKOUT"}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-white truncate uppercase tracking-wide">{workout.title}</p>
+                      {workout.exercises?.length > 0 && (
+                        <p className="text-[10px] text-[#555555] truncate mt-0.5">
+                          {workout.exercises.slice(0, 3).map(e => e.name).join(" · ")}
+                          {workout.exercises.length > 3 && ` +${workout.exercises.length - 3}`}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#333333] shrink-0 ml-3" />
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP LAYOUT ── */}
+      <div className="max-w-5xl mx-auto hidden xl:block">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
