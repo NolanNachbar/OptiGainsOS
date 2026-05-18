@@ -18,6 +18,7 @@ import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { useTutorial } from "@/hooks/useTutorial";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
 import { generatePersonalizedWorkout } from "@/ml/mlRecommender";
+import { computeWeekNumber } from "@/ml/workoutModel";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import {
@@ -498,7 +499,7 @@ export default function Dashboard() {
             duration: profile.workout_duration_preference || "45 min",
           },
           daysPerWeek: profile.days_per_week || 3,
-          weekNumber: 1,
+          weekNumber: computeWeekNumber(profile.created_at),
         });
         queryClient.setQueryData(["workoutPlan"], plan);
       }

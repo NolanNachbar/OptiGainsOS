@@ -388,12 +388,12 @@ function scoreExerciseForGoal(ex, goal) {
 // ============================================================================
 
 // Shared anchor helper — picks the best compound movement from given patterns
-function selectAnchor({ level, equipment, goal, usedNames, patterns, scoreFn, dislikedExercises = [] }) {
+function selectAnchor({ level, equipment, goal, dayUsedNames, weekPrimaryByPattern = {}, patterns, scoreFn, dislikedExercises = [] }) {
   const normPatterns = patterns.map(normalize);
   const dislikedSet = new Set((dislikedExercises || []).map(normalize));
 
   const makePool = (diffFn) => EXERCISE_DB.filter(ex => {
-    if (usedNames.has(ex.name)) return false;
+    if (dayUsedNames.has(ex.name)) return false; // hard exclude within this day only
     if (dislikedSet.has(normalize(ex.name))) return false;
     if (!diffFn(ex, level)) return false;
     if (!fitsEquipment(ex, equipment)) return false;
@@ -407,16 +407,25 @@ function selectAnchor({ level, equipment, goal, usedNames, patterns, scoreFn, di
 
   const scored = candidates.map(ex => ({
     ex,
-    priority: scoreFn(ex) + scoreExerciseForGoal(ex, goal)
+    priority: (() => {
+      const pat = normalize(ex.pattern);
+      const weekPrimary = weekPrimaryByPattern[pat];
+      // Penalize exact repeat of this week's primary for this pattern.
+      // Boost a different variation — high-frequency training works by hitting
+      // the same pattern at a different portion of the resistance curve.
+      const repeatPenalty  = (weekPrimary && normalize(ex.name) === normalize(weekPrimary)) ? -8 : 0;
+      const variationBoost = (weekPrimary && normalize(ex.name) !== normalize(weekPrimary)) ? 4 : 0;
+      return scoreFn(ex) + scoreExerciseForGoal(ex, goal) + repeatPenalty + variationBoost;
+    })()
   }));
   scored.sort((a, b) => b.priority - a.priority);
   return scored[0]?.ex || null;
 }
 
 // Push day anchor: Bench Press > Dumbbell Bench > Machine Press
-function selectPushAnchor({ level, equipment, goal, usedNames }) {
+function selectPushAnchor({ level, equipment, goal, dayUsedNames, weekPrimaryByPattern, likedExercises, dislikedExercises }) {
   return selectAnchor({
-    level, equipment, goal, usedNames,
+    level, equipment, goal, dayUsedNames, weekPrimaryByPattern, dislikedExercises,
     patterns: ["Horizontal Push", "Incline Press", "Decline Press"],
     scoreFn: (ex) => {
       const n = normalize(ex.name);
@@ -435,9 +444,9 @@ function selectPushAnchor({ level, equipment, goal, usedNames }) {
 
 // Leg day anchor: Back Squat > Front Squat > barbell squat > Goblet Squat
 // NOTE: Hinges (deadlifts/RDLs) stay on Legs day too, but squat is the primary anchor
-function selectLegAnchor({ level, equipment, goal, usedNames }) {
+function selectLegAnchor({ level, equipment, goal, dayUsedNames, weekPrimaryByPattern, likedExercises, dislikedExercises }) {
   return selectAnchor({
-    level, equipment, goal, usedNames,
+    level, equipment, goal, dayUsedNames, weekPrimaryByPattern, dislikedExercises,
     patterns: ["Squat", "Split Squat"],   // Hinge left for fill step on Legs day
     scoreFn: (ex) => {
       const n = normalize(ex.name);
@@ -455,9 +464,9 @@ function selectLegAnchor({ level, equipment, goal, usedNames }) {
 }
 
 // Pull day anchor: Rows and Pull-Ups ONLY — no hinges (deadlifts belong on Legs/Lower)
-function selectPullAnchor({ level, equipment, goal, usedNames }) {
+function selectPullAnchor({ level, equipment, goal, dayUsedNames, weekPrimaryByPattern, likedExercises, dislikedExercises }) {
   return selectAnchor({
-    level, equipment, goal, usedNames,
+    level, equipment, goal, dayUsedNames, weekPrimaryByPattern, dislikedExercises,
     patterns: ["Horizontal Pull", "Vertical Pull"],  // NO Hinge here
     scoreFn: (ex) => {
       const n = normalize(ex.name);
@@ -477,9 +486,9 @@ function selectPullAnchor({ level, equipment, goal, usedNames }) {
 }
 
 // Hinge anchor for Legs/Lower: Deadlift > RDL > Stiff-Leg DL
-function selectHingeAnchor({ level, equipment, goal, usedNames }) {
+function selectHingeAnchor({ level, equipment, goal, dayUsedNames, weekPrimaryByPattern, likedExercises, dislikedExercises }) {
   return selectAnchor({
-    level, equipment, goal, usedNames,
+    level, equipment, goal, dayUsedNames, weekPrimaryByPattern, dislikedExercises,
     patterns: ["Hinge"],
     scoreFn: (ex) => {
       const n = normalize(ex.name);
@@ -500,66 +509,85 @@ function selectHingeAnchor({ level, equipment, goal, usedNames }) {
 // ============================================================================
 
 
-// Base prescription for a single goal
+// Base prescription for a single goal — RIR-based intensity zones.
+//
+// Scientific basis: hypertrophy occurs across a wide rep spectrum (5–30 reps)
+// when proximity to failure is controlled via RIR (Reps in Reserve).
+// Goal modulates VOLUME (sets) and rep zone, NOT absolute rep count.
+// Weight loss ≠ high reps/short rest — that myth discards mechanical tension,
+// which is the primary signal for lean mass retention during a caloric deficit.
+//
+// Compound lifts: 2 RIR (protect CNS, allow high frequency)
+// Isolation lifts: 1 RIR (lower systemic cost, safely push closer to failure)
 function prescriptionForGoal(goalStr, isCompound, level) {
   const g = normalize(goalStr);
   const l = normalize(level);
 
-  if (g.includes("muscle") || g.includes("gain")) {
-    if (isCompound) {
-      return {
-        sets: 4,
-        repsLo: l === "beginner" ? 8 : l === "advanced" ? 4 : 6,
-        repsHi: l === "beginner" ? 10 : l === "advanced" ? 6 : 8,
-        rest: l === "advanced" ? 180 : 120,
-      };
-    }
-    return { sets: 3, repsLo: l === "advanced" ? 8 : 10, repsHi: l === "advanced" ? 12 : 12, rest: 75 };
-  }
-
-  if (g.includes("weight") || g.includes("loss")) {
-    if (isCompound) return { sets: 4, repsLo: 12, repsHi: 15, rest: 45 };
-    return { sets: 3, repsLo: 15, repsHi: 20, rest: 30 };
+  if (g.includes("flexibility")) {
+    return { sets: 3, repsLo: null, repsHi: null, rest: 45, timedReps: "30-45s", rir: null };
   }
 
   if (g.includes("endurance")) {
-    if (isCompound) return { sets: 3, repsLo: 15, repsHi: 20, rest: 30 };
-    return { sets: 3, repsLo: 20, repsHi: 25, rest: 30 };
+    if (isCompound) return { sets: 3, repsLo: 12, repsHi: 15, rest: 60, rir: 2 };
+    return { sets: 3, repsLo: 15, repsHi: 20, rest: 45, rir: 2 };
   }
 
-  if (g.includes("flexibility")) {
-    return { sets: 3, repsLo: null, repsHi: null, rest: 45, timedReps: "30-45s" };
+  if (isCompound) {
+    // Intensity zone by level — same across all strength/physique goals
+    const repsLo = l === "advanced" ? 4 : l === "beginner" ? 8 : 6;
+    const repsHi = l === "advanced" ? 6 : l === "beginner" ? 10 : 8;
+    const rest   = l === "advanced" ? 180 : l === "beginner" ? 150 : 150;
+    const rir    = 2;
+
+    // Goal adjusts SETS (volume management), not the intensity zone
+    let sets;
+    if (g.includes("muscle") || g.includes("gain")) {
+      sets = l === "advanced" ? 5 : 4;
+    } else if (g.includes("weight") || g.includes("loss")) {
+      // Caloric deficit limits recovery — same intensity, -1 set to manage fatigue
+      sets = l === "advanced" ? 4 : 3;
+    } else {
+      sets = l === "advanced" ? 4 : 3; // general fitness
+    }
+    return { sets, repsLo, repsHi, rest, rir };
   }
 
-  // General fitness default
-  if (isCompound) return { sets: 3, repsLo: l === "beginner" ? 10 : 8, repsHi: l === "beginner" ? 12 : 12, rest: 75 };
-  return { sets: 3, repsLo: 12, repsHi: 15, rest: 50 };
+  // Isolation lifts
+  const repsLo = l === "advanced" ? 8 : 10;
+  const repsHi = l === "advanced" ? 12 : 15;
+  const rir    = 1; // isolations can go closer to failure safely
+
+  let sets;
+  if (g.includes("muscle") || g.includes("gain")) {
+    sets = 3;
+  } else {
+    sets = 3; // same volume for all other goals on isolations
+  }
+  return { sets, repsLo, repsHi, rest: 75, rir };
 }
 
 function getPrescription(ex, goal, level, weekNumber = 1) {
   const l = normalize(level);
   const isCompound = normalize(ex.type) === "compound";
 
-  // Normalize goal to array for unified handling
   const goals = Array.isArray(goal) ? goal : (goal ? [goal] : ["general_fitness"]);
 
-  let sets, reps, rest;
+  let sets, reps, rest, rir;
 
   if (goals.length === 1) {
-    // Single goal — use exact prescription
     const p = prescriptionForGoal(goals[0], isCompound, level);
     sets = p.sets;
     reps = p.timedReps || `${p.repsLo}-${p.repsHi}`;
     rest = p.rest;
+    rir  = p.rir ?? null;
   } else {
-    // Multiple goals — blend prescriptions by averaging numeric values
-    // Priority: if muscle_gain + weight_loss → moderate reps (10-12), moderate rest (60s)
-    // This gives a physique/recomp style prescription
+    // Multi-goal: blend by averaging. RIR uses the most conservative (highest) value.
     const prescriptions = goals.map(g => prescriptionForGoal(g, isCompound, level));
     const validReps = prescriptions.filter(p => p.repsLo !== null);
 
     sets = Math.round(prescriptions.reduce((s, p) => s + p.sets, 0) / prescriptions.length);
     rest = Math.round(prescriptions.reduce((s, p) => s + p.rest, 0) / prescriptions.length);
+    rir  = prescriptions.reduce((max, p) => (p.rir !== null ? Math.max(max, p.rir) : max), 0) || null;
 
     if (validReps.length > 0) {
       const avgLo = Math.round(validReps.reduce((s, p) => s + p.repsLo, 0) / validReps.length);
@@ -571,12 +599,14 @@ function getPrescription(ex, goal, level, weekNumber = 1) {
   }
 
   // ─── Level adjustments ───────────────────────────────────────────────────────
+  // Level now only fine-tunes sets (volume scaling), since intensity zone is
+  // already baked into prescriptionForGoal per level.
   if (l === "beginner") {
     sets = Math.max(2, sets - 1);
     rest = Math.round(rest * 1.25);
   } else if (l === "advanced") {
     sets = Math.min(5, sets + 1);
-    rest = Math.max(30, Math.round(rest * 0.85));
+    rest = Math.max(60, Math.round(rest * 0.9));
   }
 
   // ─── Training phase modifiers ────────────────────────────────────────────────
@@ -595,28 +625,24 @@ function getPrescription(ex, goal, level, weekNumber = 1) {
 
   rest = Math.round(rest * phaseInfo.restMultiplier);
 
-  return { sets, reps, rest, phase: phaseInfo.phase, phaseName: phaseInfo.name };
+  return { sets, reps, rest, rir, phase: phaseInfo.phase, phaseName: phaseInfo.name };
 }
 
 // ============================================================================
 // SMART EXERCISE SELECTION
 // ============================================================================
 
-function selectExercises({ patterns, level, equipment, goal, count, usedNames, likedExercises = [], dislikedExercises = [] }) {
+function selectExercises({ patterns, level, equipment, goal, count, dayUsedNames, weekPrimaryByPattern = {}, likedExercises = [], dislikedExercises = [] }) {
   const patternSet = new Set((patterns || []).map(normalize));
   const likedSet = new Set((likedExercises || []).map(normalize));
   const dislikedSet = new Set((dislikedExercises || []).map(normalize));
 
   // Fallback chain — patterns ALWAYS take priority over difficulty broadening.
-  // We NEVER cross day-type pattern boundaries (Pull exercises never appear on Legs day etc.)
-  // 1. strict difficulty + correct patterns
-  // 2. loose difficulty + correct patterns  (handles advanced bodyweight-only users)
-  // 3. strict difficulty + no pattern filter (last resort — only if pool still too small)
-  // 4. loose difficulty + no pattern filter (absolute last resort)
+  // Hard exclusion is day-local only (dayUsedNames), allowing the same pattern
+  // to appear on multiple days with biomechanically varied exercises.
   const makePool = (diffFn, usePatterns) =>
     EXERCISE_DB.filter(ex => {
-      if (usedNames.has(ex.name)) return false;
-      // Exclude disliked exercises — user explicitly doesn't want them
+      if (dayUsedNames.has(ex.name)) return false; // hard exclude within this day
       if (dislikedSet.has(normalize(ex.name))) return false;
       if (!diffFn(ex, level)) return false;
       if (!fitsEquipment(ex, equipment)) return false;
@@ -634,14 +660,9 @@ function selectExercises({ patterns, level, equipment, goal, count, usedNames, l
     score: scoreExerciseForGoal(ex, goal),
     isPattern: patternSet.has(normalize(ex.pattern)),
     isCompound: normalize(ex.type) === "compound",
-    // Boost liked exercises — user wants to see these more often
     likeBump: likedSet.has(normalize(ex.name)) ? 12 : 0,
-    // Penalize bodyweight push exercises when user has real gym equipment available
-    // (no penalty for bodyweight-only users — bodyweight pushes are all they have)
     equipPenalty: (() => {
       const expanded = expandEquipment(equipment);
-      // Only penalize when user has real equipment (full gym or specific gear)
-      // Don't penalize bodyweight-only users — push-ups are their only option
       if (expanded === null || (expanded && !expanded.has("__bodyweight_only__"))) {
         const eq = (ex.equipment || []).map(normalize);
         const isBodyweightOnly = eq.every(e => e === "bodyweight" || e === "body weight");
@@ -649,14 +670,23 @@ function selectExercises({ patterns, level, equipment, goal, count, usedNames, l
         return isBodyweightOnly && isPushPattern ? -8 : 0;
       }
       return 0;
+    })(),
+    // Variation-aware scoring: penalise exact repeats across days, boost variations.
+    // Allows high-frequency pattern training (e.g. squat twice a week) without
+    // repeating the identical movement — Front Squat after Back Squat is desirable.
+    variationScore: (() => {
+      const pat = normalize(ex.pattern);
+      const weekPrimary = weekPrimaryByPattern[pat];
+      if (!weekPrimary) return 0;
+      return normalize(ex.name) === normalize(weekPrimary) ? -6 : 3;
     })()
   }));
 
   scored.sort((a, b) => {
     if (a.isPattern !== b.isPattern) return b.isPattern - a.isPattern;
     if (a.isCompound !== b.isCompound) return b.isCompound - a.isCompound;
-    const scoreA = a.score + a.equipPenalty + a.likeBump;
-    const scoreB = b.score + b.equipPenalty + b.likeBump;
+    const scoreA = a.score + a.equipPenalty + a.likeBump + a.variationScore;
+    const scoreB = b.score + b.equipPenalty + b.likeBump + b.variationScore;
     if (Math.abs(scoreA - scoreB) > 0.5) return scoreB - scoreA;
     return Math.random() - 0.5;
   });
@@ -669,7 +699,7 @@ function selectExercises({ patterns, level, equipment, goal, count, usedNames, l
     const exPattern = normalize(item.ex.pattern);
     if (patternCounts[exPattern] >= 3) continue;
     selected.push(item.ex);
-    usedNames.add(item.ex.name);
+    dayUsedNames.add(item.ex.name);
     patternCounts[exPattern] = (patternCounts[exPattern] || 0) + 1;
   }
 
@@ -767,66 +797,83 @@ export function generateWorkoutPlan(input, weekNumber = 1) {
   const exercisesPerDay = (exercisesPerDayOverride && Number(exercisesPerDayOverride) >= 1)
     ? Number(exercisesPerDayOverride)
     : determineExercisesPerDay(duration, goal);
-  const usedNames = new Set();
   const phaseInfo = getTrainingPhase(weekNumber);
 
-  const week = split.map((focus, idx) => {
-    let patterns = DAY_PATTERNS[focus] || DAY_PATTERNS["Full Body"] || [];
+  // weekPrimaryByPattern: tracks the first-selected exercise per movement pattern
+  // across the whole week. Used to prefer biomechanical variations on repeated
+  // pattern days (e.g. Front Squat on Day 3 after Back Squat on Day 1).
+  const weekPrimaryByPattern = {};
 
-    if (focus === "Active Recovery") {
-      patterns = ["Mobility", "Stretch", "Light Cardio"];
+  const week = split.map((focus, idx) => {
+    // dayUsedNames: hard exclusion — no exercise appears twice in the same day.
+    // Intentionally NOT shared across days so the same pattern can recur with
+    // a different variation (high-frequency training).
+    const dayUsedNames = new Set();
+
+    function registerExercise(ex) {
+      if (!ex) return;
+      dayUsedNames.add(ex.name);
+      const pat = normalize(ex.pattern);
+      if (!weekPrimaryByPattern[pat]) weekPrimaryByPattern[pat] = ex.name;
     }
 
+    let patterns = DAY_PATTERNS[focus] || DAY_PATTERNS["Full Body"] || [];
+    if (focus === "Active Recovery") patterns = ["Mobility", "Stretch", "Light Cardio"];
+
     let exercises = [];
+    const anchorArgs = { level, equipment, goal, dayUsedNames, weekPrimaryByPattern, likedExercises, dislikedExercises };
 
-    const anchorArgs = { level, equipment, goal, usedNames, likedExercises, dislikedExercises };
-
-    // Anchor the primary compound(s) first — they count toward exercisesPerDay total
     if (focus === "Push") {
       const a = selectPushAnchor(anchorArgs);
-      if (a) { usedNames.add(a.name); exercises.push(a); }
+      if (a) { registerExercise(a); exercises.push(a); }
 
     } else if (focus === "Legs" || focus === "Lower") {
-      // Squat anchor first, then a hinge anchor — both are core to leg days
       const squat = selectLegAnchor(anchorArgs);
-      if (squat) { usedNames.add(squat.name); exercises.push(squat); }
+      if (squat) { registerExercise(squat); exercises.push(squat); }
       if (exercises.length < exercisesPerDay) {
         const hinge = selectHingeAnchor(anchorArgs);
-        if (hinge) { usedNames.add(hinge.name); exercises.push(hinge); }
+        if (hinge) { registerExercise(hinge); exercises.push(hinge); }
       }
 
     } else if (focus === "Pull") {
-      // Row/pull-up anchor ONLY — no deadlifts here, those belong on Legs
       const a = selectPullAnchor(anchorArgs);
-      if (a) { usedNames.add(a.name); exercises.push(a); }
+      if (a) { registerExercise(a); exercises.push(a); }
 
     } else if (focus === "Upper") {
       const push = selectPushAnchor(anchorArgs);
-      if (push) { usedNames.add(push.name); exercises.push(push); }
+      if (push) { registerExercise(push); exercises.push(push); }
       const pull = selectPullAnchor(anchorArgs);
-      if (pull) { usedNames.add(pull.name); exercises.push(pull); }
+      if (pull) { registerExercise(pull); exercises.push(pull); }
 
     } else if (focus === "Full Body") {
       const squat = selectLegAnchor(anchorArgs);
-      if (squat) { usedNames.add(squat.name); exercises.push(squat); }
+      if (squat) { registerExercise(squat); exercises.push(squat); }
       const push = selectPushAnchor(anchorArgs);
-      if (push) { usedNames.add(push.name); exercises.push(push); }
+      if (push) { registerExercise(push); exercises.push(push); }
+      // Pull anchor on Full Body ensures posterior chain (lats, rhomboids, rear delts)
+      // is never silently dropped when the fill step randomises away from pull patterns.
+      if (exercises.length < exercisesPerDay) {
+        const pull = selectPullAnchor(anchorArgs);
+        if (pull) { registerExercise(pull); exercises.push(pull); }
+      }
     }
 
     // Fill remaining slots up to exercisesPerDay (anchor counts toward total)
     const remaining = exercisesPerDay - exercises.length;
     if (remaining > 0) {
-      const rest = selectExercises({
+      const filled = selectExercises({
         patterns,
         level,
         equipment,
         goal,
         count: remaining,
-        usedNames,
+        dayUsedNames,
+        weekPrimaryByPattern,
         likedExercises,
         dislikedExercises,
       });
-      exercises = [...exercises, ...rest];
+      filled.forEach(ex => registerExercise(ex));
+      exercises = [...exercises, ...filled];
     }
 
     return {
@@ -847,6 +894,7 @@ export function generateWorkoutPlan(input, weekNumber = 1) {
           sets: pres.sets,
           reps: pres.reps,
           rest: pres.rest,
+          rir: pres.rir,
           phase: pres.phase,
           phaseName: pres.phaseName
         };
@@ -1313,6 +1361,21 @@ export function replaceExercise({
 // ============================================================================
 // VALIDATION & UTILITIES
 // ============================================================================
+
+/**
+ * Compute the current training week number from the user's program start date.
+ * Use profile.created_at as the start of Week 1.
+ *
+ * @param {string|Date} startDate - ISO date string or Date object
+ * @returns {number} 1-indexed week number (min 1)
+ */
+export function computeWeekNumber(startDate) {
+  if (!startDate) return 1;
+  const start = new Date(startDate);
+  if (isNaN(start.getTime())) return 1;
+  const diffMs = Math.max(0, Date.now() - start.getTime());
+  return Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
 
 export function validateInputs({ daysPerWeek, goal, level, equipment }) {
   const errors = [];
