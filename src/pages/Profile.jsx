@@ -16,7 +16,7 @@ import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK
 import { calculateMacroSplit, suggestProtein, getBestTDEE } from "@/utils/coachingUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Trash2, AlertTriangle, Flame, Apple as AppleIcon, Calculator, Dumbbell, Users, Clock, User, LogOut, HelpCircle, BookOpen, Bell, BellOff, Database } from "lucide-react";
+import { Save, Trash2, AlertTriangle, Flame, Apple as AppleIcon, Calculator, Dumbbell, Users, Clock, User, LogOut, HelpCircle, BookOpen, Bell, BellOff, Database, ChevronRight, ChevronLeft } from "lucide-react";
 import DataExport from "@/components/DataExport";
 import StravaConnect from "@/components/strava/StravaConnect";
 import { useTutorial } from "@/hooks/useTutorial";
@@ -47,7 +47,7 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [phaseConflict, setPhaseConflict] = useState(null); // { phase, pendingSubmit }
-  const [activeSection, setActiveSection] = useState('identity');
+  const [activeSection, setActiveSection] = useState(null);
 
   const { profile, isLoading } = useProfile();
   const { activePhase } = useDietPhase();
@@ -403,29 +403,74 @@ export default function Profile() {
 
           {/* RIGHT CONTENT */}
           <div>
-            {/* Mobile page header */}
-            <div className="md:hidden mb-6">
-              <h1 className="text-[22px] font-bold text-white leading-tight">Profile</h1>
-              <p className="text-[13px] text-[#a0a0a0] mt-0.5">Manage your account</p>
+            {/* Mobile: hub view (profile card + nav list) */}
+            <div className={activeSection !== null ? 'hidden' : 'md:hidden mb-4'}>
+              <h1 className="text-[22px] font-bold text-white leading-tight mb-4">Profile</h1>
+              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 text-center mb-3">
+                <AvatarUpload
+                  currentUrl={profile?.avatar_url}
+                  username={formData.display_name || formData.username || user.email}
+                  profileId={profile?.id}
+                />
+                <p className="text-white font-semibold mt-3 text-sm leading-tight">
+                  {formData.display_name || user.user_metadata?.full_name || user.email}
+                </p>
+                {formData.username && (
+                  <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
+                )}
+              </div>
+              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+                {NAV.map(({ id, label, icon: Icon }, idx) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveSection(id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-[#242424] hover:bg-[#242424] ${idx < NAV.length - 1 ? 'border-b border-[#2a2a2a]' : ''}`}
+                  >
+                    <div className="p-1.5 rounded-md bg-[#242424]">
+                      <Icon className="w-3.5 h-3.5 text-[#ccff00]" />
+                    </div>
+                    <span className="text-white flex-1">{label}</span>
+                    <ChevronRight className="w-4 h-4 text-[#555555]" />
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Mobile: back navigation when inside a section */}
+            {activeSection !== null && (
+              <div className="md:hidden mb-5">
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(null)}
+                  className="flex items-center gap-1 text-[#ccff00] text-sm font-medium mb-3 -ml-0.5"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Profile
+                </button>
+                <h1 className="text-[22px] font-bold text-white leading-tight">
+                  {NAV.find(n => n.id === activeSection)?.label}
+                </h1>
+              </div>
+            )}
 
             {/* Desktop section heading */}
             <div className="hidden md:block mb-6">
               <h1 className="text-[22px] font-bold text-white leading-tight">
-                {NAV.find(n => n.id === activeSection)?.label}
+                {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
               </h1>
               <p className="text-[13px] text-[#a0a0a0] mt-0.5">
-                {activeSection === 'identity'  ? 'Your account and social profile' :
-                 activeSection === 'body'      ? 'Body stats, nutrition goals, and app preferences' :
-                 activeSection === 'fitness'   ? 'Training preferences and fitness profile' :
-                                                'Notifications, integrations, and account actions'}
+                {(activeSection ?? 'identity') === 'identity' ? 'Your account and social profile' :
+                 (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
+                 (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
+                                                                'Notifications, integrations, and account actions'}
               </p>
             </div>
 
         <form onSubmit={handleSubmit}>
 
           {/* ── IDENTITY SECTION ── */}
-          <div className={activeSection !== 'identity' ? 'md:hidden' : ''}>
+          <div className={activeSection === 'identity' ? '' : activeSection === null ? 'hidden md:block' : 'hidden'}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -537,7 +582,7 @@ export default function Profile() {
           </div>
 
           {/* ── BODY & NUTRITION SECTION ── */}
-          <div className={activeSection !== 'body' ? 'md:hidden' : ''}>
+          <div className={activeSection === 'body' ? '' : 'hidden'}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -816,7 +861,7 @@ export default function Profile() {
           </div>{/* end body section */}
 
           {/* ── FITNESS SECTION ── */}
-          <div className={activeSection !== 'fitness' ? 'md:hidden' : ''}>
+          <div className={activeSection === 'fitness' ? '' : 'hidden'}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
                   <SectionHeader icon={Dumbbell} title="Fitness Profile" />
@@ -1055,7 +1100,7 @@ export default function Profile() {
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
-        <div className={activeSection !== 'settings' ? 'md:hidden' : ''}>
+        <div className={activeSection === 'settings' ? '' : 'hidden'}>
           <Card className="mb-4">
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />

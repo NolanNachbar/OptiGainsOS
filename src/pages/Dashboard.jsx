@@ -719,7 +719,7 @@ export default function Dashboard() {
                     <span className="flex items-center gap-1"><Target className="w-3 h-3" />1 exercise</span>
                   </div>
                   <Link to="/workout-detail?tutorial=demo">
-                    <Button variant="ghost" className="bg-[#ccff00] text-black hover:bg-[#ccff00] text-sm font-bold" size="sm" onClick={() => nextStep()} data-tutorial="start-workout-btn">
+                    <Button variant="volt" size="sm" onClick={() => nextStep()} data-tutorial="start-workout-btn">
                       Start Workout <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
@@ -757,7 +757,7 @@ export default function Dashboard() {
                     <div className="flex gap-2 mt-1">
                       {todayWorkoutLink && (
                         <Link to={todayWorkoutLink} className="flex-1" onClick={() => tutorialActive && nextStep()}>
-                          <Button variant="ghost" size="sm" className="w-full text-sm bg-[#ccff00] text-black hover:bg-[#ccff00] font-bold" data-tutorial="start-workout-btn">
+                          <Button variant="volt" size="sm" className="w-full" data-tutorial="start-workout-btn">
                             Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
                           </Button>
                         </Link>

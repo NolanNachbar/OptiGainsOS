@@ -14,7 +14,18 @@
         "day_index": 1,
         "title": "Day 1 - Heavy Lower + Easy Run",
         "type": "mixed",
-        "exercises": [],
+        "exercises": [
+          { "name": "Incline DB press",         "reps": "6",   "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Chest-supported Row",       "reps": "6",   "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Zercher Squats",            "reps": "5",   "sets": 1, "notes": "",        "rest_seconds": 180 },
+          { "name": "Barbell Squats",            "reps": "2",   "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Weighted Dips",             "reps": "5",   "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Cable Lateral Raise",       "reps": "10",  "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Cable Triceps Extension",   "reps": "10",  "sets": 3, "notes": "",        "rest_seconds": 180 },
+          { "name": "Seated Leg Curl",           "reps": "10",  "sets": 2, "notes": "",        "rest_seconds": 180 },
+          { "name": "Calf Raise",                "reps": "15",  "sets": 1, "notes": "",        "rest_seconds": 180 },
+          { "name": "Hanging Leg Raise",         "reps": "10",  "sets": 2, "notes": "",        "rest_seconds": 180 }
+        ],
         "notes": "AM: Strength (Heavy Lower). PM run protects joints after heavy AM lifts.",
         "cardio_sessions": [
           {
@@ -116,7 +127,18 @@
         "day_index": 3,
         "title": "Day 3 - Upper Power + Endurance Swim",
         "type": "mixed",
-        "exercises": [],
+        "exercises": [
+          { "name": "Weighted Pull-Up",              "reps": "7",    "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Machine Incline Press",         "reps": "7",    "sets": 2, "notes": "Paused",   "rest_seconds": 180 },
+          { "name": "RDL",                           "reps": "6",    "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Chest-supported Row",           "reps": "7",    "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Cable Lateral Raise",           "reps": "10",   "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Weighted Dips",                 "reps": "6-10", "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Preacher Curl",                 "reps": "10",   "sets": 2, "notes": "",         "rest_seconds": 180 },
+          { "name": "Reverse Grip Preacher Curl",    "reps": "10",   "sets": 1, "notes": "",         "rest_seconds": 180 },
+          { "name": "Leg Extensions",                "reps": "6-12", "sets": 2, "notes": "Single Leg", "rest_seconds": 180 },
+          { "name": "Larsen Press",                  "reps": "10",   "sets": 3, "notes": "",         "rest_seconds": 180 }
+        ],
         "notes": "AM: Strength (Upper Power). PM: Z2 swim volume build.",
         "cardio_sessions": [
           {
@@ -228,7 +250,16 @@
         "day_index": 5,
         "title": "Day 5 - Core/Power + Threshold Bike",
         "type": "mixed",
-        "exercises": [],
+        "exercises": [
+          { "name": "Barbell Shoulder Press",    "reps": "6-10",  "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Chest-supported Rows",      "reps": "6-10",  "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Barbell Squat",             "reps": "6-10",  "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Db Incline Press",          "reps": "6-10",  "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Bayesian Curl",             "reps": "6-10",  "sets": 3, "notes": "",  "rest_seconds": 60  },
+          { "name": "Cable Triceps Pushdown",    "reps": "10",    "sets": 3, "notes": "",  "rest_seconds": 180 },
+          { "name": "Reverse Peck Deck",         "reps": "12-15", "sets": 1, "notes": "",  "rest_seconds": 180 },
+          { "name": "Calf Raises",               "reps": "15",    "sets": 3, "notes": "",  "rest_seconds": 180 }
+        ],
         "notes": "AM: Strength (Core/Power). PM: FTP threshold bike. Key session of the cycle.",
         "cardio_sessions": [
           {
@@ -340,7 +371,18 @@
         "day_index": 7,
         "title": "Day 7 - Full Body Strength + Technique Swim",
         "type": "mixed",
-        "exercises": [],
+        "exercises": [
+          { "name": "Barbell Squat",               "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Incline DB Press",             "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Weighted Pull-Up",             "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "RDL",                          "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Machine Lateral Raise",        "reps": "6-12", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "DB Skullcrushers",             "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Leg Curl",                     "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Leg Extension",                "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Preacher Curl",                "reps": "6-10", "sets": 2, "notes": "",  "rest_seconds": 180 },
+          { "name": "Reverse Grip Preacher Curl",   "reps": "6-10", "sets": 1, "notes": "",  "rest_seconds": 180 }
+        ],
         "notes": "AM: Strength (Full Body). PM: drill-focused technique swim. Low intensity.",
         "cardio_sessions": [
           {
