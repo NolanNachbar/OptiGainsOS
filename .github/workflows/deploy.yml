@@ -25,6 +25,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_USDA_API_KEY: ${{ secrets.VITE_USDA_API_KEY }}
+          VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
       - run: cp dist/index.html dist/404.html
       - name: Push dist to public repo
         run: |
