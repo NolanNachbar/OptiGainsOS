@@ -670,7 +670,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8 flex items-end justify-between">
           <div>
-            <h1 className="text-[22px] font-bold text-white leading-tight">Welcome to Vektor</h1>
+            <h1 className="text-[22px] font-bold text-white leading-tight">Welcome to VEKTOR</h1>
             <p className="text-[13px] text-[#a0a0a0] mt-0.5">Let's crush your fitness goals today</p>
           </div>
         </div>

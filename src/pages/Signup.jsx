@@ -64,7 +64,7 @@ export default function Signup() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">Vektor</h1>
+          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em] uppercase">Vektor</h1>
           <p className="text-[#a0a0a0] mt-2">Create your account</p>
         </div>
 

@@ -72,7 +72,7 @@ export default function Layout({ children, currentPageName }) {
         <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-[#1a1a1a] border-b border-[#2a2a2a] items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
             <Logo className="w-8 h-8" />
-            <span className="text-[#ccff00] font-bold text-[15px] tracking-tight">Vektor</span>
+            <span className="text-[#ccff00] font-bold text-[15px] tracking-tight uppercase">Vektor</span>
           </Link>
 
           <div className="flex items-center gap-0.5 flex-1">

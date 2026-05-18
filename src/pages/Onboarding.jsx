@@ -170,7 +170,7 @@ export default function Onboarding() {
         <CardHeader className="text-center pb-2">
           <Logo className="w-16 h-16 mx-auto mb-4" />
           <CardTitle className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">
-            Welcome to Vektor
+            Welcome to VEKTOR
           </CardTitle>
           <p className="text-[13px] text-[#a0a0a0] mt-1">Let's personalize your fitness journey</p>
           <div className="flex gap-1.5 justify-center mt-4">
