@@ -203,22 +203,6 @@ export default function Dashboard() {
   const weekStart = format(getWeekStart(profile?.timezone, 0), "yyyy-MM-dd");
   const weekEnd = format(getWeekEnd(profile?.timezone, 0), "yyyy-MM-dd");
 
-  const { data: weeklyLogs = [] } = useQuery({
-    queryKey: queryKeys.weeklyWorkoutLogs(weekStart, user?.id),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("workout_logs")
-        .select("id")
-        .eq("created_by", user.id)
-        .gte("log_date", weekStart)
-        .lte("log_date", weekEnd);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
-
-  const weeklyCompleted = weeklyLogs.length;
   const weeklyGoal = profile?.days_per_week || 3;
 
   const { data: weeklyCardio = [] } = useQuery({
@@ -259,7 +243,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("workout_logs")
-        .select("exercises, log_date, completed_at")
+        .select("exercises, log_date, created_at")
         .eq("created_by", user.id)
         .gte("log_date", weekStart)
         .lte("log_date", weekEnd);
@@ -269,6 +253,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const weeklyCompleted = weeklyLogsWithExercises.length;
   const weeklyBodyData = getRecoveryHeatmapData(weeklyLogsWithExercises);
 
   const { enrollments } = useEnrollments();
@@ -671,7 +656,7 @@ export default function Dashboard() {
         <div className="mb-8 flex items-end justify-between">
           <div>
             <h1 className="text-[22px] font-bold text-white leading-tight">Welcome to VEKTOR</h1>
-            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Let's crush your fitness goals today</p>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Training status as of today</p>
           </div>
         </div>
 
@@ -835,7 +820,7 @@ export default function Dashboard() {
                   <Calendar className="w-7 h-7 mx-auto mb-1.5 text-white/60" />
                   <p className="text-sm text-white/90 mb-2">No workout scheduled</p>
                   <Link to="/schedule">
-                    <Button variant="primary" size="sm">
+                    <Button variant="primary">
                       Schedule a Workout
                     </Button>
                   </Link>
@@ -879,8 +864,8 @@ export default function Dashboard() {
                   })}
                 </div>
                 {todayProgramWorkout.cardio_sessions.length > 0 && todayExercises.length > 0 && (
-                  <p className="text-xs text-amber-300 mt-2 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                  <p className="text-xs text-[#a0a0a0] mt-2 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#555555] inline-block" />
                     High-load day — lifting + cardio
                   </p>
                 )}
@@ -988,7 +973,7 @@ export default function Dashboard() {
                     <div className="pt-1 border-t border-[#2a2a2a]">
                       <div className="flex items-center justify-between text-sm mb-1.5">
                         <span className="text-[#a0a0a0] flex items-center gap-1.5">
-                          <Activity className="w-3.5 h-3.5 text-orange-500" />
+                          <Activity className="w-3.5 h-3.5 text-[#a0a0a0]" />
                           Cardio
                         </span>
                         <span className="font-semibold text-white">
@@ -1011,7 +996,7 @@ export default function Dashboard() {
                       <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">Week Generator</span>
                       <button
                         onClick={() => setShowWorkoutSettings((s) => !s)}
-                        className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium"
+                        className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium min-h-[44px] px-2 flex items-center"
                       >
                         {showWorkoutSettings ? "Hide" : "Options"}
                       </button>
@@ -1098,7 +1083,7 @@ export default function Dashboard() {
               </CardTitle>
               {tdeeResult?.tdee && (
                 <div className="flex items-center gap-1.5 text-xs">
-                  <Flame className="w-3 h-3 text-orange-400" />
+                  <Flame className="w-3 h-3 text-[#ccff00]" />
                   <span className="text-[#555555]">
                     Est. TDEE:
                   </span>
@@ -1331,10 +1316,10 @@ export default function Dashboard() {
               )}
 
               {weightEntries.length === 0
-                ? <Card className="border border-[#2a2a2a]  text-center py-12 bg-[#1a1a1a] "><CardContent>
-                    <Scale className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No weight entries yet</h3>
-                    <p className="text-[#a0a0a0]">Start logging your weight to track your progress</p>
+                ? <Card className="border border-[#2a2a2a]  text-center py-6 bg-[#1a1a1a] "><CardContent>
+                    <Scale className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+                    <h3 className="text-base font-semibold text-white mb-1">No weight entries yet</h3>
+                    <p className="text-sm text-[#555555]">Start logging your weight to track progress</p>
                   </CardContent></Card>
                 : <WeightHistorySection weightEntries={weightEntries} weightUnit={weightUnit} handleDeleteBodyWeight={handleDeleteBodyWeight} />
               }

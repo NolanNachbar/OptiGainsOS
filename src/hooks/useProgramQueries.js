@@ -96,7 +96,7 @@ export function useEnrollment(programId) {
       });
       return results.find(r => r.status === 'active')
         || results.find(r => r.status === 'paused')
-        || results[0]
+        || results.find(r => r.status === 'completed')
         || null;
     },
     enabled: !!user && !!programId,
@@ -202,17 +202,27 @@ export function useEnrollInProgram() {
       const firstWorkout = workoutsWithExercises.sort((a, b) => (a.day_index || 0) - (b.day_index || 0))[0];
       const startDayIndex = firstWorkout?.day_index || 1;
 
-      return db.entities.ProgramEnrollment.create({
-        user_id: user.id,
-        program_id: programId,
+      const enrollmentData = {
         progression_state: progressionState,
-        // v2 fields
+        status: 'active',
         current_cycle: 1,
         current_day_index: startDayIndex,
         start_date: startDate || new Date().toISOString().split('T')[0],
-        // v1 compat
         current_week: 1,
         current_day: startDayIndex,
+        completed_workouts: [],
+      };
+
+      // Re-use the existing row if the user previously cancelled (unique constraint on user+program)
+      const existing = await db.entities.ProgramEnrollment.filter({ user_id: user.id, program_id: programId });
+      if (existing.length > 0) {
+        return db.entities.ProgramEnrollment.update(existing[0].id, enrollmentData);
+      }
+
+      return db.entities.ProgramEnrollment.create({
+        user_id: user.id,
+        program_id: programId,
+        ...enrollmentData,
       });
     },
     onSuccess: (data, variables) => {

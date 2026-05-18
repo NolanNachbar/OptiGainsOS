@@ -19,7 +19,7 @@ const Button = React.forwardRef(({
     default:     "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
     primary:     "bg-[#ccff00] text-black rounded-md hover:bg-[#d9ff1a]",
     ai:          "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
-    destructive: "bg-[rgba(239,68,68,0.1)] text-white rounded-md hover:bg-[rgba(239,68,68,0.1)]",
+    destructive: "bg-transparent text-[#f87171] border border-[rgba(239,68,68,0.35)] rounded-md hover:bg-[rgba(239,68,68,0.12)] hover:border-[rgba(239,68,68,0.6)]",
     outline:     "border border-[#2a2a2a] bg-transparent text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
     secondary:   "bg-[#202020] text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
     link:        "text-[#ccff00] underline-offset-4 hover:underline",

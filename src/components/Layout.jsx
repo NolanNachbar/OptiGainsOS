@@ -210,11 +210,13 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </nav>
 
-      {/* Floating Action Button */}
-      <FloatingActionButton
-        onWeighIn={() => setShowWeighIn(true)}
-        onCalculators={() => setShowCalculators(true)}
-      />
+      {/* Floating Action Button — hidden on pages with their own primary actions */}
+      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder'].some(p => location.pathname.startsWith(p)) && (
+        <FloatingActionButton
+          onWeighIn={() => setShowWeighIn(true)}
+          onCalculators={() => setShowCalculators(true)}
+        />
+      )}
 
       <WeighInModal
         open={showWeighIn}

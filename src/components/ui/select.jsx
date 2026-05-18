@@ -91,7 +91,10 @@ const SelectContent = ({ className = "", children, ...props }) => {
     };
   }, [open, triggerRef]);
 
-  if (!open) return null;
+  // Always render items hidden so SelectItem can register labels into labelsRef
+  if (!open) {
+    return <div className="hidden" aria-hidden="true">{children}</div>;
+  }
 
   return createPortal(
     <>

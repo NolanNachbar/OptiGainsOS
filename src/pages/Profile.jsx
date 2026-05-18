@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,44 @@ export default function Profile() {
   const { profile, isLoading } = useProfile();
   const { activePhase } = useDietPhase();
   const { replayTutorial } = useTutorial();
+
+  const { data: profileStats } = useQuery({
+    queryKey: ['profile-stats', user?.id],
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workout_logs')
+        .select('log_date, exercises')
+        .eq('created_by', user.id)
+        .order('log_date', { ascending: false });
+      if (error) throw error;
+      const totalWorkouts = data.length;
+      let totalVolumeLbs = 0;
+      for (const log of data) {
+        for (const ex of (log.exercises || [])) {
+          for (const set of (ex.sets || [])) {
+            totalVolumeLbs += (Number(set.weight) || 0) * (Number(set.reps) || 0);
+          }
+        }
+      }
+      let streak = 0;
+      const uniqueDays = [...new Set(data.map(l => l.log_date))].sort().reverse();
+      const today = new Date().toISOString().split('T')[0];
+      let expected = today;
+      for (const d of uniqueDays) {
+        if (d === expected) {
+          streak++;
+          const dt = new Date(expected);
+          dt.setDate(dt.getDate() - 1);
+          expected = dt.toISOString().split('T')[0];
+        } else {
+          break;
+        }
+      }
+      return { totalWorkouts, totalVolumeLbs: Math.round(totalVolumeLbs), streak };
+    },
+  });
 
   const [formData, setFormData] = useState({
     daily_calorie_goal: DEFAULT_GOALS.calories,
@@ -378,6 +416,26 @@ export default function Profile() {
                 {formData.username && (
                   <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
                 )}
+                {profileStats && (
+                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
+                    <div>
+                      <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-lg leading-tight">
+                        {profileStats.totalVolumeLbs >= 1000
+                          ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
+                          : profileStats.totalVolumeLbs}
+                      </p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                    </div>
+                    <div>
+                      <p className="text-[#ccff00] font-bold text-lg leading-tight">{profileStats.streak}</p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Section nav */}
@@ -417,6 +475,26 @@ export default function Profile() {
                 </p>
                 {formData.username && (
                   <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
+                )}
+                {profileStats && (
+                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
+                    <div>
+                      <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-lg leading-tight">
+                        {profileStats.totalVolumeLbs >= 1000
+                          ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
+                          : profileStats.totalVolumeLbs}
+                      </p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                    </div>
+                    <div>
+                      <p className="text-[#ccff00] font-bold text-lg leading-tight">{profileStats.streak}</p>
+                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">

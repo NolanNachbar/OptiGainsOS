@@ -172,7 +172,7 @@ export default function Onboarding() {
           <CardTitle className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">
             Welcome to VEKTOR
           </CardTitle>
-          <p className="text-[13px] text-[#a0a0a0] mt-1">Let's personalize your fitness journey</p>
+          <p className="text-[13px] text-[#a0a0a0] mt-1">Configure your training profile</p>
           <div className="flex gap-1.5 justify-center mt-4">
             {[1, 2, 3].map(i => (
               <div

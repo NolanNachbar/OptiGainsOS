@@ -134,7 +134,7 @@ export default function ExerciseCard({
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[rgba(204,255,0,0.08)]0 flex items-center justify-center text-black font-bold font-bold text-sm flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-bold text-sm flex-shrink-0">
               {exerciseIndex + 1}
             </div>
             {editingName ? (

@@ -134,7 +134,7 @@ function DiscoverAthletes({ notificationCount = 0 }) {
     <div className="mb-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">
-          Discover_Athletes
+          Discover Athletes
         </p>
         <button
           onClick={() => navigate("/social/friends")}
@@ -186,7 +186,7 @@ function ActivityStreamHeader({ feedFilter, setFeedFilter }) {
   return (
     <div className="flex items-center justify-between mb-3">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">
-        Activity_Stream
+        Activity Feed
       </p>
       <div className="inline-flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-0.5">
         <button
@@ -442,7 +442,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
   const hasMore = allExercises.length > exerciseLimit;
   const visibleExercises = exercisesExpanded ? allExercises : allExercises.slice(0, exerciseLimit);
 
-  const borderColor = item.share_type === 'cardio' ? '#f97316' : item.share_type === 'detailed' ? '#4f46e5' : '#7c3aed';
+  const borderColor = item.share_type === 'cardio' ? '#3a3a3a' : item.share_type === 'detailed' ? '#ccff00' : '#555555';
 
   return (
     <div
@@ -505,7 +505,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
         {item.prs && item.prs.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {item.prs.map((pr, i) => (
-              <Badge key={i} className="bg-amber-100 text-amber-800 border-amber-200 text-xs">
+              <Badge key={i} className="bg-[rgba(204,255,0,0.08)] text-[#ccff00] border-[rgba(204,255,0,0.2)] text-xs">
                 <Trophy className="w-3 h-3 mr-1" />
                 {pr.exercise} {pr.weight} lbs PR
               </Badge>
@@ -677,10 +677,10 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
           <button
             onClick={onToggleKudos}
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              item.userReacted ? "text-orange-500" : "text-[#a0a0a0] hover:text-orange-500"
+              item.userReacted ? "text-[#ccff00]" : "text-[#a0a0a0] hover:text-[#ccff00]"
             }`}
           >
-            <Flame className={`w-4 h-4 ${item.userReacted ? "fill-orange-500" : ""}`} />
+            <Flame className={`w-4 h-4 ${item.userReacted ? "fill-[#ccff00]" : ""}`} />
             {item.reactionCount > 0 ? item.reactionCount : "Fire"}
           </button>
           <button

@@ -248,7 +248,7 @@ export default function ProgramDetail() {
                       variant="outline"
                       className={
                         enrollment.status === "active"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          ? "bg-[rgba(204,255,0,0.1)] text-[#ccff00] border-[rgba(204,255,0,0.25)]"
                           : enrollment.status === "completed"
                           ? "bg-[rgba(204,255,0,0.05)] text-[#ccff00] border-[rgba(204,255,0,0.2)]"
                           : "bg-[#1a1a1a] text-[#a0a0a0] border-[#2a2a2a]   "
@@ -297,7 +297,7 @@ export default function ProgramDetail() {
                   <>
                     <Button
                       onClick={() => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } })}
-                      className="bg-[#ccff00] hover:bg-[#ccff00]"
+                      variant="volt"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       {user ? "Start Program" : "Sign in to Start"}
@@ -319,7 +319,7 @@ export default function ProgramDetail() {
                 {isEnrolled && currentWorkout && (
                   <Button
                     onClick={handleStartWorkout}
-                    className="bg-[#ccff00] hover:bg-[#ccff00]"
+                    variant="volt"
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Start Next Workout
@@ -337,7 +337,7 @@ export default function ProgramDetail() {
                     Resume
                   </Button>
                 )}
-                {enrollment && (
+                {(isEnrolled || enrollment?.status === "paused") && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -427,7 +427,7 @@ export default function ProgramDetail() {
           <Card className="border border-[#2a2a2a]  mb-4 border-l-4 border-l-warning-400 bg-[#1a1a1a] ">
             <CardContent className="py-3">
               {recoveryWarnings.map((w) => (
-                <div key={w.muscle} className="flex items-start gap-2 text-sm text-[#fbbf24]">
+                <div key={w.muscle} className="flex items-start gap-2 text-sm text-[#a0a0a0]">
                   <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{w.message}</span>
                 </div>
@@ -550,10 +550,10 @@ export default function ProgramDetail() {
                   {(showWorkoutDetail.cardio_sessions || []).map((c, i) => (
                     <div
                       key={`cardio-${i}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[rgba(249,115,22,0.08)]"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f]"
                     >
                       <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-orange-500" />
+                        <Activity className="w-4 h-4 text-[#a0a0a0]" />
                         <div>
                           <p className="font-medium text-sm text-white">{c.title}</p>
                           <p className="text-xs text-[#555555] ">
@@ -561,7 +561,7 @@ export default function ProgramDetail() {
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-orange-100 text-orange-700 text-xs border-0">
+                      <Badge className="bg-[#2a2a2a] text-[#a0a0a0] text-xs border-0">
                         Cardio
                       </Badge>
                     </div>
@@ -592,7 +592,7 @@ export default function ProgramDetail() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 bg-[#1a1a1a]  border-[#2a2a2a]  text-white"
+                  className="mt-1 bg-[#1a1a1a] border-[#2a2a2a] text-white [color-scheme:dark]"
                 />
               </div>
 
@@ -624,7 +624,8 @@ export default function ProgramDetail() {
                 Cancel
               </Button>
               <Button
-                className="flex-1 bg-[#ccff00]"
+                variant="volt"
+                className="flex-1"
                 onClick={handleEnroll}
                 disabled={enrollMutation.isPending}
               >

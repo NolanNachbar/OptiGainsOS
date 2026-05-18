@@ -445,7 +445,7 @@ export default function Workouts() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
           <div>
             <h1 className="text-[22px] font-bold text-white leading-tight">Workouts</h1>
-            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Your workout library and programs</p>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Library & session history</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to={"/create-workout"}>
@@ -666,12 +666,12 @@ export default function Workouts() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <Zap className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                <div className="text-center py-6">
+                  <Zap className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+                  <h3 className="text-base font-semibold text-white mb-1">
                     {filter === "liked" ? "No liked workouts yet" : "No workouts yet"}
                   </h3>
-                  <p className="text-[#a0a0a0] mb-6">
+                  <p className="text-sm text-[#555555] mb-4">
                     {filter === "liked"
                       ? "Like workouts using the thumbs up button to save them here"
                       : "Generate personalized workouts or create your own"}
@@ -763,14 +763,6 @@ export default function Workouts() {
                 className="hidden"
                 onChange={handleImportProgram}
               />
-              <Button
-                variant="dim"
-                size="sm"
-                onClick={() => importProgramRef.current?.click()}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Import JSON
-              </Button>
               <Link to="/program-builder">
                 <Button variant="primary">
                   <Plus className="w-4 h-4" />
@@ -881,7 +873,7 @@ export default function Workouts() {
               Are you sure you want to delete <span className="font-semibold text-white">"{workoutToDelete?.title}"</span>?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+          <div className="bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg p-3 text-sm text-[#a0a0a0]">
             This will remove it from your library and any scheduled workouts. This action cannot be undone.
           </div>
           <div className="flex gap-3 mt-2">
@@ -1050,12 +1042,12 @@ function CardioEntryCard({ entry, onShare }) {
   return (
     <div
       className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all"
-      style={{ borderLeftColor: '#f97316' }}
+      style={{ borderLeftColor: '#3a3a3a' }}
     >
       <div className="flex justify-between items-start p-4 pb-3">
         <div>
           <h4 className="text-base font-bold text-white">{entry.title}</h4>
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mt-0.5">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mt-0.5">
             {typeLabel} · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
@@ -1174,13 +1166,13 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Cardio</span>
           <div className="flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-orange-500" />
-            <span className="text-xl font-bold tabular-nums text-orange-500">{weekCardio}</span>
+            <Activity className="w-4 h-4 text-[#a0a0a0]" />
+            <span className="text-xl font-bold tabular-nums text-white">{weekCardio}</span>
           </div>
         </div>
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Distance</span>
-          <span className="text-xl font-bold tabular-nums text-orange-500">
+          <span className="text-xl font-bold tabular-nums text-white">
             {weekMiles > 0 ? `${weekMiles.toFixed(1)} mi` : '—'}
           </span>
         </div>
@@ -1207,10 +1199,10 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
       {/* Feed */}
       {allEntries.length === 0 ? (
         <Card className="border-none">
-          <CardContent className="py-16 text-center">
-            <Activity className="w-14 h-14 text-[#a0a0a0] mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No activity yet</h3>
-            <p className="text-[#555555] mb-2">
+          <CardContent className="py-6 text-center">
+            <Activity className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-white mb-1">No activity yet</h3>
+            <p className="text-sm text-[#555555] mb-2">
               {filter === 'cardio'
                 ? 'Log a cardio session or sync Strava in your Profile.'
                 : filter === 'strength'
@@ -1264,9 +1256,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
 function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
   return (
     <Card className="border-none">
-      <CardContent className="py-12 text-center">
-        <Icon className="w-12 h-12 text-[#a0a0a0] mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
+      <CardContent className="py-6 text-center">
+        <Icon className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+        <h3 className="text-base font-semibold text-white mb-1">{title}</h3>
         <p className="text-sm text-[#555555] mb-4">{subtitle}</p>
         {action}
       </CardContent>

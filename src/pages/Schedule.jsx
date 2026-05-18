@@ -1172,12 +1172,12 @@ export default function Schedule() {
               {libraryFilter === "programs" ? `${allPrograms.length} programs` : `${workouts.length} workouts`}
             </span>
           </div>
-          <div className="px-4 py-2 flex gap-1.5 border-b border-[#2a2a2a] overflow-x-auto [&::-webkit-scrollbar]:hidden">
+          <div className="px-4 py-2 pr-8 flex gap-1.5 border-b border-[#2a2a2a] overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {["all", "strength", "cardio", "hiit", "programs"].map((type) => (
               <button
                 key={type}
                 onClick={() => setLibraryFilter(type)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
+                className={`shrink-0 px-3 py-2 min-h-[36px] rounded-full text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
                   libraryFilter === type
                     ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]"
                     : "text-[#555555] hover:text-[#a0a0a0]"
@@ -1255,7 +1255,7 @@ export default function Schedule() {
                 workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => {
                   const typeBadge = {
                     strength: "text-[#818cf8]",
-                    cardio: "text-orange-400",
+                    cardio: "text-[#a0a0a0]",
                     hiit: "text-[#f87171]",
                     recovery: "text-[#4ade80]",
                   }[workout.type] || "text-[#555555]";
@@ -1478,7 +1478,7 @@ export default function Schedule() {
                                 }`}
                               >
                                 {cardioOnly ? (
-                                  <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-orange-500"}`} />
+                                  <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-[#a0a0a0]"}`} />
                                 ) : (
                                   <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-[#ccff00]"}`} />
                                 )}
@@ -1540,9 +1540,9 @@ export default function Schedule() {
                             <div
                               key={session.id}
                               title={session.name}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-100"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#2a2a2a]"
                             >
-                              <Activity className="w-3.5 h-3.5 text-orange-500" />
+                              <Activity className="w-3.5 h-3.5 text-[#a0a0a0]" />
                             </div>
                           ))}
                         </div>
@@ -1696,7 +1696,7 @@ export default function Schedule() {
                       }
                       onDragEnd={handleDragEnd}
                       className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] border-l-4 cursor-move hover:border-[rgba(204,255,0,0.3)] transition-all group relative"
-                      style={{ borderLeftColor: { strength: '#4f46e5', cardio: '#f97316', hiit: '#ef4444', mixed: '#06b6d4' }[workout.type] || '#555555' }}
+                      style={{ borderLeftColor: { strength: '#ccff00', cardio: '#555555', hiit: '#ef4444', mixed: '#a0a0a0' }[workout.type] || '#555555' }}
                     >
                       <button
                         onClick={(e) => {
@@ -2027,7 +2027,7 @@ export default function Schedule() {
                 {(getCardioForDate(dayDetailDate).length > 0 || getProgramForDate(dayDetailDate).some(item => item.cardio_sessions?.length > 0)) && (
                   <div>
                     <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                      <Activity className="w-4 h-4 text-orange-500" />
+                      <Activity className="w-4 h-4 text-[#a0a0a0]" />
                       Cardio
                     </h3>
                     <div className="space-y-2">
@@ -2038,9 +2038,9 @@ export default function Schedule() {
                             const dur = secs ? (secs >= 3600 ? `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m` : `${Math.floor(secs/60)}m`) : null;
                             const miles = session.distance_meters > 0 ? (session.distance_meters / 1609.34).toFixed(2) : null;
                             return (
-                              <div key={session.id} className="flex items-center gap-2 text-sm bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
-                                <Activity className="w-4 h-4 text-orange-500 shrink-0" />
-                                <span className="font-medium text-orange-700 truncate flex-1">{session.name}</span>
+                              <div key={session.id} className="flex items-center gap-2 text-sm bg-[#1f1f1f] border border-[#2a2a2a] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
+                                <Activity className="w-4 h-4 text-[#a0a0a0] shrink-0" />
+                                <span className="font-medium text-white truncate flex-1">{session.name}</span>
                                 {miles && <span className="text-[#555555] shrink-0 text-xs">{miles} mi</span>}
                                 {dur && <span className="text-[#555555] shrink-0 text-xs">{dur}</span>}
                                 {session.average_heartrate && <span className="text-[#555555] shrink-0 text-xs">{Math.round(session.average_heartrate)} bpm</span>}
@@ -2049,9 +2049,9 @@ export default function Schedule() {
                           })
                         : getProgramForDate(dayDetailDate).flatMap(item =>
                             (item.cardio_sessions || []).map((c, i) => (
-                              <div key={`prog-cardio-${item.programWorkoutId}-${i}`} className="flex items-center gap-2 text-sm bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
-                                <Activity className="w-4 h-4 text-orange-500 shrink-0" />
-                                <span className="font-medium text-orange-700 truncate flex-1">{c.title}</span>
+                              <div key={`prog-cardio-${item.programWorkoutId}-${i}`} className="flex items-center gap-2 text-sm bg-[#1f1f1f] border border-[#2a2a2a] rounded-xl px-3 py-2.5 min-w-0 overflow-hidden">
+                                <Activity className="w-4 h-4 text-[#a0a0a0] shrink-0" />
+                                <span className="font-medium text-white truncate flex-1">{c.title}</span>
                                 <span className="text-[#555555] shrink-0 text-xs">{c.duration_minutes} min</span>
                                 {c.time_of_day && c.time_of_day !== "anytime" && (
                                   <span className="uppercase text-[#a0a0a0] font-semibold shrink-0 text-xs">{c.time_of_day}</span>
@@ -2102,57 +2102,57 @@ export default function Schedule() {
                     }
                     return (
                       <div className="grid grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-[rgba(249,115,22,0.08)] rounded-xl border border-[rgba(249,115,22,0.2)]">
+                        <div className="text-center p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
                           <div className="flex items-center justify-center mb-2">
-                            <Flame className="w-5 h-5 text-orange-600" />
+                            <Flame className="w-5 h-5 text-[#ccff00]" />
                           </div>
-                          <div className="text-2xl font-bold text-orange-700">
+                          <div className="text-2xl font-bold text-white">
                             {Math.round(macros.calories)}
                           </div>
-                          <div className="text-xs font-semibold text-orange-600 uppercase tracking-wide mt-1">
+                          <div className="text-xs font-semibold text-[#a0a0a0] uppercase tracking-wide mt-1">
                             Calories
                           </div>
                           {profile?.daily_calorie_goal && (
-                            <div className="text-xs text-orange-500 mt-1">
+                            <div className="text-xs text-[#555555] mt-1">
                               of {profile.daily_calorie_goal}
                             </div>
                           )}
                         </div>
-                        <div className="text-center p-4 bg-[rgba(59,130,246,0.08)] rounded-xl border border-blue-200">
-                          <div className="text-2xl font-bold text-[#60a5fa]">
+                        <div className="text-center p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+                          <div className="text-2xl font-bold text-white">
                             {Math.round(macros.protein)}g
                           </div>
-                          <div className="text-xs font-semibold text-[#60a5fa] uppercase tracking-wide mt-1">
+                          <div className="text-xs font-semibold text-[#a0a0a0] uppercase tracking-wide mt-1">
                             Protein
                           </div>
                           {profile?.daily_protein_goal && (
-                            <div className="text-xs text-[#60a5fa] mt-1">
+                            <div className="text-xs text-[#555555] mt-1">
                               of {profile.daily_protein_goal}g
                             </div>
                           )}
                         </div>
-                        <div className="text-center p-4 bg-green-50 rounded-xl border border-[rgba(34,197,94,0.2)]">
-                          <div className="text-2xl font-bold text-green-700">
+                        <div className="text-center p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+                          <div className="text-2xl font-bold text-white">
                             {Math.round(macros.carbs)}g
                           </div>
-                          <div className="text-xs font-semibold text-green-600 uppercase tracking-wide mt-1">
+                          <div className="text-xs font-semibold text-[#a0a0a0] uppercase tracking-wide mt-1">
                             Carbs
                           </div>
                           {profile?.daily_carbs_goal && (
-                            <div className="text-xs text-green-500 mt-1">
+                            <div className="text-xs text-[#555555] mt-1">
                               of {profile.daily_carbs_goal}g
                             </div>
                           )}
                         </div>
-                        <div className="text-center p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                          <div className="text-2xl font-bold text-yellow-700">
+                        <div className="text-center p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+                          <div className="text-2xl font-bold text-white">
                             {Math.round(macros.fats)}g
                           </div>
-                          <div className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mt-1">
+                          <div className="text-xs font-semibold text-[#a0a0a0] uppercase tracking-wide mt-1">
                             Fats
                           </div>
                           {profile?.daily_fats_goal && (
-                            <div className="text-xs text-yellow-500 mt-1">
+                            <div className="text-xs text-[#555555] mt-1">
                               of {profile.daily_fats_goal}g
                             </div>
                           )}

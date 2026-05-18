@@ -710,7 +710,9 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className={`max-w-5xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-[140px] pb-32 lg:pt-32 lg:pb-6' : ''}`}>
+      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : ''}`}>
+        <div className="lg:flex lg:items-start lg:gap-6">
+        <div className="flex-1 min-w-0">
         {!isLogging && (
           <Button
             variant="ghost"
@@ -744,7 +746,7 @@ export default function WorkoutDetail() {
                 )}
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden md:flex items-center gap-2 shrink-0 lg:hidden">
                   <span className="text-xs text-[#555555] uppercase tracking-wide">Muscles worked</span>
                   <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium">
                     <button
@@ -837,7 +839,7 @@ export default function WorkoutDetail() {
               {workout.exercises?.length > 0 && (() => {
                 const bodyData = getWorkoutBodyData(workout.exercises);
                 return bodyData.length > 0 ? (
-                  <div className="mt-6 md:mt-0 md:w-64 md:shrink-0 flex flex-col">
+                  <div className="hidden md:flex flex-col md:mt-0 md:w-64 md:shrink-0 lg:hidden">
                     <MuscleHeatMap data={bodyData} view={muscleView} className="flex-1" maxWidth={220} />
                   </div>
                 ) : null;
@@ -987,6 +989,32 @@ export default function WorkoutDetail() {
             </CardContent>
           </Card>
         )}
+        </div>{/* end main column */}
+
+        {/* Sticky anatomy sidebar — desktop only */}
+        {workout.exercises?.length > 0 && (() => {
+          const bodyData = getWorkoutBodyData(workout.exercises);
+          return bodyData.length > 0 ? (
+            <div
+              className="hidden lg:flex flex-col items-center w-52 shrink-0 sticky"
+              style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
+            >
+              <p className="text-xs text-[#555555] uppercase tracking-wide mb-2 self-start">Muscles worked</p>
+              <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium mb-3">
+                <button
+                  onClick={() => setMuscleView("anterior")}
+                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                >Front</button>
+                <button
+                  onClick={() => setMuscleView("posterior")}
+                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                >Back</button>
+              </div>
+              <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />
+            </div>
+          ) : null;
+        })()}
+        </div>{/* end two-column flex */}
       </div>
 
       {/* Resume previous session prompt */}

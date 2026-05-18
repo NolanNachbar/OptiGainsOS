@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Model from "react-body-highlighter";
 
-const COLORS = ["#ddd6fe", "#a78bfa", "#7c3aed"];
+const COLORS = ["#667a00", "#99bf00", "#ccff00"];
 
 export default function MuscleHeatMap({ data = [], className = "", view: controlledView, maxWidth = 130 }) {
   const [ownView, setOwnView] = useState("anterior");

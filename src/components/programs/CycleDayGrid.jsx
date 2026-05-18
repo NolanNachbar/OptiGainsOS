@@ -45,11 +45,13 @@ export default function CycleDayGrid({
   const currentDayIndex = enrollment?.current_day_index || 0;
   const startDate = enrollment?.start_date ? parseISO(enrollment.start_date) : null;
 
-  // For large cycles, wrap at 7 columns like a calendar
+  // View mode: wrap at 7 columns like a calendar
   const colsPerRow = cycleLength > 7 ? 7 : cycleLength;
+  // Edit mode: max 4 columns so cards stay readable; 8-day = 4+4, 7-day = 4+3, etc.
+  const editColsPerRow = Math.min(4, cycleLength);
 
   if (mode === "edit") {
-    return <EditGrid workouts={workoutMap} cycleLength={cycleLength} colsPerRow={colsPerRow} onCellClick={onCellClick} onClearDay={onClearDay} />;
+    return <EditGrid workouts={workoutMap} cycleLength={cycleLength} colsPerRow={editColsPerRow} onCellClick={onCellClick} onClearDay={onClearDay} />;
   }
 
   // View mode: show all cycles
@@ -152,7 +154,7 @@ export default function CycleDayGrid({
                       {!compact && hasCardio && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {workout.cardio_sessions.map((c, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-[rgba(204,255,0,0.08)] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium">
                               <Activity className="w-2.5 h-2.5" />
                               {c.title}
                             </span>
@@ -225,7 +227,7 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold text-[#555555] flex items-center gap-1">
           Day {dayIndex}
-          {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" title="High-load day" />}
+          {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] inline-block" title="High-load day" />}
         </span>
         {hasWorkout && onClearDay && (
           <button
@@ -239,21 +241,19 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
 
       {hasWorkout ? (
         <div>
+          <p className="text-sm font-medium text-white leading-snug line-clamp-2 mb-1">{workout.title}</p>
           {hasExercises && (
-            <>
-              <p className="text-sm font-medium text-white truncate">{workout.title}</p>
-              <p className="text-xs text-[#555555] mt-0.5">{workout.exercises.length} exercises</p>
-              {workout.type && (
-                <Badge variant="outline" className="text-xs mt-1 capitalize">{workout.type}</Badge>
-              )}
-            </>
+            <p className="text-xs text-[#555555]">{workout.exercises.length} exercises</p>
+          )}
+          {workout.type && (
+            <Badge variant="outline" className="text-xs mt-1 capitalize border-[#2a2a2a] text-[#555555]">{workout.type}</Badge>
           )}
           {hasCardio && (
-            <div className="flex flex-wrap gap-0.5 mt-1.5">
+            <div className="flex flex-wrap gap-1 mt-1.5">
               {workout.cardio_sessions.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
-                  <Activity className="w-2.5 h-2.5" />
-                  {c.title}
+                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-[rgba(204,255,0,0.08)] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium leading-tight">
+                  <Activity className="w-2.5 h-2.5 shrink-0" />
+                  <span className="line-clamp-1">{c.title}</span>
                 </span>
               ))}
             </div>

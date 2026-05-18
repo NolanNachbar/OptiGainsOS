@@ -173,9 +173,15 @@ export default function ProgramBuilder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-generate cycle day slots when cycle_length changes (new programs only)
+  // Auto-generate cycle day slots when cycle_length changes (new programs only).
+  // Skip when workouts were just populated by a JSON import — the import already
+  // fills all slots and we must not overwrite them with empty day templates.
   useEffect(() => {
     if (editId) return;
+    if (wasImported.current) {
+      wasImported.current = false;
+      return;
+    }
     const slots = [];
     for (let d = 1; d <= program.cycle_length; d++) {
       const existing = workouts.find((w) => w.day_index === d);
@@ -458,10 +464,7 @@ export default function ProgramBuilder() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              {editId ? "Edit Program" : "Create Program"}
-            </h1>
-            <p className="text-[#555555] text-sm mt-1">
+            <p className="text-[#555555] text-sm">
               Step {step + 1} of {STEPS.length}: {STEPS[step]}
             </p>
           </div>
@@ -577,18 +580,20 @@ export default function ProgramBuilder() {
           )}
           {step < STEPS.length - 1 ? (
             <Button
+              variant="volt"
               onClick={next}
               disabled={!canProceed()}
-              className="flex-1 bg-[#ccff00] text-black font-bold"
+              className="flex-1 font-bold"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
             <Button
+              variant="volt"
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 bg-[#ccff00] text-black font-bold"
+              className="flex-1 font-bold"
             >
               <Save className="w-4 h-4 mr-2" />
               {createMutation.isPending || updateMutation.isPending
@@ -1198,9 +1203,9 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
   if (exercises.length === 0) {
     return (
       <Card className="">
-        <CardContent className="py-12 text-center">
-          <TrendingUp className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
-          <p className="text-[#555555]">
+        <CardContent className="py-6 text-center">
+          <TrendingUp className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+          <p className="text-sm text-[#555555]">
             No exercises found. Go back and add exercises to see projections.
           </p>
         </CardContent>

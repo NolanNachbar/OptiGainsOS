@@ -229,11 +229,8 @@ export default function CreateWorkout() {
     <div className="p-4 md:p-6 bg-[#1a1a1a]  min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">
-            {editId ? 'Edit Workout' : 'Create Workout'}
-          </h1>
-          <p className="text-[#555555] text-sm mt-1">
-            {editId ? 'Modify your workout routine' : 'Build your perfect workout routine'}
+          <p className="text-[#555555] text-sm">
+            {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
 
