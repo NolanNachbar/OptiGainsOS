@@ -992,7 +992,7 @@ function InlineDayEditor({
         {/* Cardio Workouts */}
         <div className="border-t border-[#2a2a2a]  pt-3">
           <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
-            <Activity className="w-3.5 h-3.5 text-orange-500" />
+            <Activity className="w-3.5 h-3.5 text-[#a0a0a0]" />
             Cardio Workouts
           </Label>
           <Select
@@ -1019,9 +1019,9 @@ function InlineDayEditor({
           </Select>
           <div className="space-y-1.5 mt-2">
             {(workout.cardio_sessions || []).map((c, i) => (
-              <div key={i} className="flex items-center gap-2 bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-lg px-3 py-1.5">
-                <Activity className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                <span className="text-xs font-medium text-orange-700 flex-1 truncate">{c.title}</span>
+              <div key={i} className="flex items-center gap-2 bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg px-3 py-1.5">
+                <Activity className="w-3.5 h-3.5 text-[#a0a0a0] shrink-0" />
+                <span className="text-xs font-medium text-white flex-1 truncate">{c.title}</span>
                 <span className="text-xs text-[#555555] shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
                   <SelectTrigger className="w-20 h-6 text-xs">

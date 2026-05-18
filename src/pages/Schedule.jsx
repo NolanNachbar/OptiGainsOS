@@ -2060,7 +2060,7 @@ export default function Schedule() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="ml-auto flex-shrink-0 h-6 px-2 text-xs border-orange-300 text-orange-700 hover:bg-[rgba(249,115,22,0.08)]"
+                                    className="ml-auto flex-shrink-0 h-6 px-2 text-xs border-[#3a3a3a] text-[#a0a0a0] hover:bg-[#2a2a2a] hover:text-white"
                                     disabled={markSessionDone.isPending}
                                     onClick={() => markSessionDone.mutate({ item, sessionIndex: i })}
                                   >
