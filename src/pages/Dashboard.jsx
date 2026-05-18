@@ -803,9 +803,9 @@ export default function Dashboard() {
                       ))}
                       <div className="flex items-center gap-2 mt-3">
                         <Button
-                          variant="ghost"
+                          variant="volt"
                           size="sm"
-                          className="flex-1 bg-[#ccff00] text-black hover:bg-[#ccff00] text-sm font-bold font-semibold"
+                          className="flex-1 text-sm font-bold"
                           disabled={checkInMutation.isPending}
                           onClick={() => checkInMutation.mutate()}
                         >

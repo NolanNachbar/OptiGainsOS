@@ -1146,18 +1146,20 @@ export default function Schedule() {
         )}
 
         {/* Workout Library // Backlog */}
-        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-[#ccff00]" />
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#555555]">
-                Workout Library // Backlog
+                Library
               </span>
             </div>
-            <span className="text-[10px] font-bold text-[#555555]">Count: {workouts.length}</span>
+            <span className="text-[10px] font-bold text-[#555555]">
+              {libraryFilter === "programs" ? `${allPrograms.length} programs` : `${workouts.length} workouts`}
+            </span>
           </div>
           <div className="px-4 py-2 flex gap-1.5 border-b border-[#2a2a2a] overflow-x-auto [&::-webkit-scrollbar]:hidden">
-            {["all", "strength", "cardio", "hiit"].map((type) => (
+            {["all", "strength", "cardio", "hiit", "programs"].map((type) => (
               <button
                 key={type}
                 onClick={() => setLibraryFilter(type)}
@@ -1171,43 +1173,105 @@ export default function Schedule() {
               </button>
             ))}
           </div>
-          <div className="divide-y divide-[#2a2a2a]">
-            {workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).length === 0 ? (
-              <p className="text-xs text-[#555555] text-center py-6">No workouts yet.</p>
-            ) : (
-              workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => {
-                const typeBadge = {
-                  strength: "text-[#818cf8]",
-                  cardio: "text-orange-400",
-                  hiit: "text-[#f87171]",
-                  recovery: "text-[#4ade80]",
-                }[workout.type] || "text-[#555555]";
+
+          {/* Programs list */}
+          {libraryFilter === "programs" ? (
+            <div className="divide-y divide-[#2a2a2a]">
+              {allPrograms.length === 0 ? (
+                <p className="text-xs text-[#555555] text-center py-6">No programs yet.</p>
+              ) : allPrograms.map((prog) => {
+                const progEnrollments = enrollments.filter(e => e.program_id === prog.id);
+                const enrollment = progEnrollments.find(e => e.status === "active")
+                  || progEnrollments.find(e => e.status === "paused")
+                  || progEnrollments[0];
+                const isActive = enrollment?.status === "active";
+                const isPaused = enrollment?.status === "paused";
+                const totalWorkouts = (prog.cycle_length || 1) * (prog.num_cycles || prog.duration_weeks || 4);
+                const pct = enrollment
+                  ? Math.min(100, Math.round(((enrollment.completed_workouts?.length || 0) / totalWorkouts) * 100))
+                  : 0;
                 return (
-                  <button
-                    key={workout.id}
-                    onClick={() => setDayDetailDate(selectedDay)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#222222] transition-colors text-left"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${typeBadge}`}>
-                          {workout.type?.toUpperCase() || "WORKOUT"}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-white truncate uppercase tracking-wide">{workout.title}</p>
-                      {workout.exercises?.length > 0 && (
-                        <p className="text-[10px] text-[#555555] truncate mt-0.5">
-                          {workout.exercises.slice(0, 3).map(e => e.name).join(" · ")}
-                          {workout.exercises.length > 3 && ` +${workout.exercises.length - 3}`}
+                  <div key={prog.id} className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <p className="text-sm font-bold text-white truncate uppercase tracking-wide">{prog.name}</p>
+                          {isActive && <span className="text-[9px] font-black uppercase tracking-[0.1em] text-[#4ade80] shrink-0">Active</span>}
+                          {isPaused && <span className="text-[9px] font-black uppercase tracking-[0.1em] text-[#a0a0a0] shrink-0">Paused</span>}
+                          {!enrollment && <span className="text-[9px] font-black uppercase tracking-[0.1em] text-[#555555] shrink-0">Not enrolled</span>}
+                        </div>
+                        <p className="text-[10px] text-[#555555] mb-2">
+                          {prog.cycle_length}-day split · {prog.num_cycles || prog.duration_weeks} cycles
+                          {enrollment && ` · Week ${enrollment.current_week || 1}, Day ${enrollment.current_day || 1}`}
                         </p>
-                      )}
+                        {enrollment && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-[3px] bg-[#2a2a2a] rounded-full overflow-hidden">
+                              <div className="h-full bg-[#ccff00] transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-[9px] font-black text-[#ccff00] tabular-nums shrink-0">{pct}%</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 shrink-0 mt-0.5">
+                        <button
+                          onClick={() => navigate(`/program/${prog.id}`)}
+                          className="text-[10px] font-bold uppercase tracking-[0.1em] border border-[#2a2a2a] text-[#a0a0a0] px-2.5 py-1.5 rounded-lg hover:border-[rgba(204,255,0,0.3)] hover:text-white transition-colors"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget({ type: "program", id: prog.id, name: prog.name })}
+                          className="text-[10px] font-bold uppercase tracking-[0.1em] border border-[#2a2a2a] text-[#f87171] px-2.5 py-1.5 rounded-lg hover:bg-[rgba(239,68,68,0.08)] transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-[#333333] shrink-0 ml-3" />
-                  </button>
+                  </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          ) : (
+            /* Workouts list */
+            <div className="divide-y divide-[#2a2a2a]">
+              {workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).length === 0 ? (
+                <p className="text-xs text-[#555555] text-center py-6">No workouts yet.</p>
+              ) : (
+                workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => {
+                  const typeBadge = {
+                    strength: "text-[#818cf8]",
+                    cardio: "text-orange-400",
+                    hiit: "text-[#f87171]",
+                    recovery: "text-[#4ade80]",
+                  }[workout.type] || "text-[#555555]";
+                  return (
+                    <button
+                      key={workout.id}
+                      onClick={() => setDayDetailDate(selectedDay)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#222222] transition-colors text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${typeBadge}`}>
+                            {workout.type?.toUpperCase() || "WORKOUT"}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-white truncate uppercase tracking-wide">{workout.title}</p>
+                        {workout.exercises?.length > 0 && (
+                          <p className="text-[10px] text-[#555555] truncate mt-0.5">
+                            {workout.exercises.slice(0, 3).map(e => e.name).join(" · ")}
+                            {workout.exercises.length > 3 && ` +${workout.exercises.length - 3}`}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#333333] shrink-0 ml-3" />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
 
