@@ -564,7 +564,7 @@ export function ProgressContent() {
                     <div className="flex items-end">
                       <Button
                         type="submit"
-                        className="w-full bg-[#ccff00] hover:bg-[#ccff00]"
+                        className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold"
                         disabled={addWeightMutation.isPending}
                       >
                         <Scale className="w-4 h-4 mr-2" />

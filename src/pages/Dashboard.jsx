@@ -1297,7 +1297,7 @@ export default function Dashboard() {
                         <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Notes (optional)</label>
                         <Input value={bodyWeightNotes} onChange={(e) => setBodyWeightNotes(e.target.value)} placeholder="e.g., Morning weigh-in..." />
                       </div>
-                      <Button type="submit" className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold" disabled={addBodyWeightMutation.isPending}>
+                      <Button type="submit" variant="primary" className="w-full font-bold" disabled={addBodyWeightMutation.isPending}>
                         <Scale className="w-4 h-4 mr-2" />Log Weight
                       </Button>
                     </form>

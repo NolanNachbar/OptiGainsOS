@@ -55,8 +55,9 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
     URL.revokeObjectURL(url);
     toast.success(`"${workout.title}" exported`);
   };
+  const typeLabel = workout.type ? workout.type.charAt(0).toUpperCase() + workout.type.slice(1) : null;
   const diffStyle = DIFFICULTY_STYLES[workout.difficulty?.toLowerCase()] || {
-    label: workout.difficulty || "Unknown",
+    label: typeLabel || "General",
     className: "bg-[#202020] text-[#a0a0a0] border-[#2a2a2a]",
   };
 

@@ -428,19 +428,6 @@ export default function ProgramBuilder() {
         { program: programData, workouts: enrichedWorkouts },
         {
           onSuccess: async (created) => {
-            if (wasImported.current && user) {
-              await Promise.allSettled(
-                enrichedWorkouts.map((w) =>
-                  db.entities.Workout.create({
-                    created_by: user.id,
-                    title: w.title,
-                    type: w.type,
-                    exercises: w.exercises,
-                    is_custom: true,
-                  })
-                )
-              );
-            }
             toast.success("Program created!");
             setCreatedProgram({ ...created, ...programData });
             setShowScheduleModal(true);

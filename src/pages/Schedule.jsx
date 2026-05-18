@@ -1277,7 +1277,8 @@ export default function Schedule() {
                         handleDragStart(e, { ...workout, isLibrary: true })
                       }
                       onDragEnd={handleDragEnd}
-                      className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] cursor-move hover:border-[rgba(204,255,0,0.3)] transition-all group relative"
+                      className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] border-l-4 cursor-move hover:border-[rgba(204,255,0,0.3)] transition-all group relative"
+                      style={{ borderLeftColor: { strength: '#4f46e5', cardio: '#f97316', hiit: '#ef4444', mixed: '#06b6d4' }[workout.type] || '#555555' }}
                     >
                       <button
                         onClick={(e) => {
@@ -1300,7 +1301,7 @@ export default function Schedule() {
                         <span>{workout.duration_minutes} min</span>
                         {workout.exercises?.length > 0 && <span className="text-[#444]">·</span>}
                         {workout.exercises?.length > 0 && <span>{workout.exercises.length} exercises</span>}
-                        <Badge className="ml-auto text-xs">{workout.difficulty}</Badge>
+                        <Badge className="ml-auto text-xs capitalize">{workout.type || 'general'}</Badge>
                       </div>
                     </div>
                   ))}

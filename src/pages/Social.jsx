@@ -43,6 +43,7 @@ function SuggestedUsersPanel() {
   const { user } = useAuth();
   const { friends = [] } = useFriends();
   const { sentRequests = [] } = useSentFriendRequests();
+  const [pendingIds, setPendingIds] = useState(new Set());
   const sendRequest = useSendFriendRequest();
 
   const friendIds = new Set(friends.map(f =>
@@ -50,7 +51,7 @@ function SuggestedUsersPanel() {
   ));
   const sentIds = new Set(sentRequests.map(r => r.addressee_id));
 
-  const { data: suggestions = [] } = useQuery({
+  const { data: rawSuggestions = [] } = useQuery({
     queryKey: ['suggestedUsers', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,14 +62,28 @@ function SuggestedUsersPanel() {
         .order('total_workouts', { ascending: false })
         .limit(8);
       if (error) throw error;
-      return (data || []).filter(p => !friendIds.has(p.created_by) && !sentIds.has(p.created_by));
+      return data || [];
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
-  const visible = suggestions.slice(0, 4);
+  const visible = rawSuggestions
+    .filter(p => !friendIds.has(p.created_by) && !sentIds.has(p.created_by) && !pendingIds.has(p.created_by))
+    .slice(0, 4);
+
   if (!visible.length) return null;
+
+  function handleAddFriend(profile) {
+    if (!profile.username) return;
+    setPendingIds(prev => new Set([...prev, profile.created_by]));
+    sendRequest.mutate(profile.username, {
+      onError: (err) => {
+        setPendingIds(prev => { const s = new Set(prev); s.delete(profile.created_by); return s; });
+        toast.error(err.message || 'Failed to send request');
+      },
+    });
+  }
 
   return (
     <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4 mb-4">
@@ -92,8 +107,8 @@ function SuggestedUsersPanel() {
               )}
             </div>
             <button
-              onClick={() => profile.username && sendRequest.mutate(profile.username)}
-              disabled={sendRequest.isPending}
+              onClick={() => handleAddFriend(profile)}
+              disabled={!profile.username}
               className="shrink-0 text-xs font-semibold px-2 py-1 rounded-md bg-[rgba(204,255,0,0.1)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.18)] transition-colors disabled:opacity-50"
             >
               <UserPlus className="w-3 h-3" />

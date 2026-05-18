@@ -476,14 +476,6 @@ export default function Workouts() {
 
         <Tabs defaultValue="activity-log" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="library">
-              <Dumbbell className="w-4 h-4 mr-2" />
-              Library
-            </TabsTrigger>
-            <TabsTrigger value="programs">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Programs
-            </TabsTrigger>
             <TabsTrigger value="activity-log">
               <Activity className="w-4 h-4 mr-2" />
               Activity Log
@@ -492,6 +484,14 @@ export default function Workouts() {
                   {workoutLogs.length + cardioSessions.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="library">
+              <Dumbbell className="w-4 h-4 mr-2" />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="programs">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Programs
             </TabsTrigger>
           </TabsList>
 

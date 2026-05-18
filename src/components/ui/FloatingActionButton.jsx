@@ -5,11 +5,11 @@ import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator } from "lucide-rea
 import { useTutorial } from "@/hooks/useTutorial";
 
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-[#ccff00]" },
-  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]" },
-  { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-[#ccff00]" },
-  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]" },
+  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-[#ccff00]", iconColor: "text-black" },
+  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]", iconColor: "text-white" },
+  { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]", iconColor: "text-white" },
+  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-[#ccff00]", iconColor: "text-black" },
+  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]", iconColor: "text-white" },
 ];
 
 export default function FloatingActionButton({ onWeighIn, onCalculators }) {
@@ -79,7 +79,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
                   <span className="bg-[#1a1a1a] text-[#a0a0a0] text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
                     {action.label}
                   </span>
-                  <div className={`w-12 h-12 ${action.color} text-white rounded-full flex items-center justify-center`}>
+                  <div className={`w-12 h-12 ${action.color} ${action.iconColor} rounded-full flex items-center justify-center`}>
                     <action.icon className="w-5 h-5" />
                   </div>
                 </motion.button>

@@ -167,31 +167,31 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
     switch (type) {
       case "cut":
         return {
-          bg: "bg-red-50",
-          text: "text-red-700",
-          badge: "bg-red-100 text-red-700",
+          bg: "bg-[rgba(239,68,68,0.08)]",
+          text: "text-[#f87171]",
+          badge: "bg-[rgba(239,68,68,0.1)] text-[#f87171]",
           border: "border-[rgba(239,68,68,0.2)]",
         };
       case "bulk":
         return {
-          bg: "bg-green-50",
-          text: "text-green-700",
+          bg: "bg-[rgba(34,197,94,0.08)]",
+          text: "text-[#4ade80]",
           badge: "bg-[rgba(34,197,94,0.1)] text-[#4ade80]",
           border: "border-[rgba(34,197,94,0.2)]",
         };
       case "reverse":
         return {
-          bg: "bg-teal-50",
-          text: "text-teal-700",
-          badge: "bg-teal-100 text-teal-700",
-          border: "border-teal-200",
+          bg: "bg-[rgba(20,184,166,0.08)]",
+          text: "text-[#2dd4bf]",
+          badge: "bg-[rgba(20,184,166,0.1)] text-[#2dd4bf]",
+          border: "border-[rgba(20,184,166,0.2)]",
         };
       default:
         return {
           bg: "bg-[rgba(59,130,246,0.08)]",
           text: "text-[#60a5fa]",
           badge: "bg-[rgba(59,130,246,0.1)] text-[#60a5fa]",
-          border: "border-blue-200",
+          border: "border-[rgba(59,130,246,0.2)]",
         };
     }
   };
