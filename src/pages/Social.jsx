@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +21,6 @@ import { LeaderboardsContent } from "@/components/social/LeaderboardsContent";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getWorkoutPhotoUrl } from "@/utils/imageUpload";
 import {
-  Dumbbell,
   Flame,
   Trophy,
   Copy,
@@ -125,15 +124,31 @@ function SuggestedUsersPanel() {
   );
 }
 
-function DiscoverAthletes() {
+function DiscoverAthletes({ notificationCount = 0 }) {
   const { visible, handleAddFriend } = useSuggestedUsers();
+  const navigate = useNavigate();
+
   if (!visible.length) return null;
 
   return (
     <div className="mb-4">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555] mb-3">
-        Discover_Athletes
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">
+          Discover_Athletes
+        </p>
+        <button
+          onClick={() => navigate("/social/friends")}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
+        >
+          {notificationCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+              {notificationCount}
+            </span>
+          )}
+          Manage Friends
+          <ChevronRight className="w-3 h-3" />
+        </button>
+      </div>
       <div className="flex gap-3 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
         {visible.map((profile) => (
           <div
@@ -158,7 +173,7 @@ function DiscoverAthletes() {
               className="w-full flex items-center justify-center gap-1 text-[10px] font-semibold py-1 rounded-md bg-[rgba(204,255,0,0.1)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.18)] transition-colors disabled:opacity-50"
             >
               <UserPlus className="w-3 h-3" />
-              Add
+              Connect
             </button>
           </div>
         ))}
@@ -215,47 +230,18 @@ export default function Social() {
   const { friends = [] } = useFriends();
 
   const [desktopCenter, setDesktopCenter] = useState("feed"); // "feed" | "friends"
-  const [mobileTab, setMobileTab] = useState("feed"); // "feed" | "friends" | "ranks"
   const [feedFilter, setFeedFilter] = useState("friends");
-
-  const isViewingFriends = desktopCenter === "friends" || mobileTab === "friends";
+  const [rankingsExpanded, setRankingsExpanded] = useState(false);
 
   useEffect(() => {
-    if (isViewingFriends) markAsViewed();
-  }, [isViewingFriends, markAsViewed]);
+    if (desktopCenter === "friends") markAsViewed();
+  }, [desktopCenter, markAsViewed]);
 
   const totalNotifications = pendingRequests.length + newlyAccepted.length;
 
   return (
     <div className="bg-[#121212] min-h-screen p-4 md:p-6">
       <div className="max-w-[1400px] mx-auto">
-
-        {/* Mobile tab bar */}
-        <div className="xl:hidden flex rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1 mb-4 gap-1">
-          {[
-            { key: "feed", icon: Dumbbell, label: "Feed" },
-            { key: "friends", icon: Users, label: "Friends", badge: totalNotifications },
-            { key: "ranks", icon: Medal, label: "Ranks" },
-          ].map(({ key, icon: Icon, label, badge }) => (
-            <button
-              key={key}
-              onClick={() => setMobileTab(key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors ${
-                mobileTab === key
-                  ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
-                  : "text-[#a0a0a0] hover:text-white"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-              {badge > 0 && (
-                <span className="bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
-                  {badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
 
 
         {/* Three-column layout (xl+) / single column (mobile) */}
@@ -393,15 +379,29 @@ export default function Social() {
 
             {/* Mobile */}
             <div className="xl:hidden">
-              {mobileTab === "feed" && (
-                <>
-                  <DiscoverAthletes />
-                  <ActivityStreamHeader feedFilter={feedFilter} setFeedFilter={setFeedFilter} />
-                  <ExploreFeed friendsOnly={feedFilter === "friends"} />
-                </>
-              )}
-              {mobileTab === "friends" && <SocialContent />}
-              {mobileTab === "ranks" && <LeaderboardsContent />}
+              <DiscoverAthletes notificationCount={totalNotifications} />
+
+              {/* Expandable rankings */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setRankingsExpanded(v => !v)}
+                  className="w-full flex items-center justify-between rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Medal className="w-4 h-4 text-[#ccff00]" />
+                    <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">Rankings</span>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 text-[#555555] transition-transform ${rankingsExpanded ? "rotate-90" : ""}`} />
+                </button>
+                {rankingsExpanded && (
+                  <div className="mt-2">
+                    <LeaderboardsContent />
+                  </div>
+                )}
+              </div>
+
+              <ActivityStreamHeader feedFilter={feedFilter} setFeedFilter={setFeedFilter} />
+              <ExploreFeed friendsOnly={feedFilter === "friends"} />
             </div>
           </main>
 
@@ -434,8 +434,10 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
   const username = item.authorProfile?.username || "Unknown";
   const displayName = item.authorProfile?.display_name || username;
   const [exercisesExpanded, setExercisesExpanded] = useState(false);
+  const [listVisible, setListVisible] = useState(false);
 
-  const exerciseLimit = item.share_type === "detailed" ? 3 : 4;
+  const isDetailed = item.share_type === "detailed";
+  const exerciseLimit = isDetailed ? 3 : item.exercises?.length ?? 0;
   const allExercises = item.exercises || [];
   const hasMore = allExercises.length > exerciseLimit;
   const visibleExercises = exercisesExpanded ? allExercises : allExercises.slice(0, exerciseLimit);
@@ -628,32 +630,44 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
 
         {/* Exercise list */}
         {item.share_type !== "cardio" && (
-          <div className="space-y-1.5 mb-3">
-            {visibleExercises.map((ex, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="w-5 h-5 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#a0a0a0] text-xs font-medium shrink-0">
-                  {i + 1}
-                </span>
-                <span className="text-white text-[#a0a0a0]">{ex.name}</span>
-                {item.share_type === "blank" || !Array.isArray(ex.sets) ? (
-                  <span className="text-[#a0a0a0] text-xs">
-                    {Array.isArray(ex.sets) ? ex.sets.length : ex.sets} x {ex.reps}
-                  </span>
-                ) : (
-                  <span className="text-[#a0a0a0] text-xs">
-                    {ex.sets.length} sets
-                    {ex.sets[0]?.weight > 0 && ` · ${ex.sets[0].weight} lbs`}
-                  </span>
+          <div className="mb-3">
+            {!isDetailed && (
+              <button
+                onClick={() => setListVisible(!listVisible)}
+                className="text-xs font-semibold text-[#555555] hover:text-[#a0a0a0] transition-colors mb-1.5"
+              >
+                {listVisible ? "Hide exercises" : `Show ${allExercises.length} exercises`}
+              </button>
+            )}
+            {(isDetailed || listVisible) && (
+              <div className="space-y-1.5">
+                {visibleExercises.map((ex, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#a0a0a0] text-xs font-medium shrink-0">
+                      {i + 1}
+                    </span>
+                    <span className="text-white">{ex.name}</span>
+                    {item.share_type === "blank" || !Array.isArray(ex.sets) ? (
+                      <span className="text-[#a0a0a0] text-xs">
+                        {Array.isArray(ex.sets) ? ex.sets.length : ex.sets} x {ex.reps}
+                      </span>
+                    ) : (
+                      <span className="text-[#a0a0a0] text-xs">
+                        {ex.sets.length} sets
+                        {ex.sets[0]?.weight > 0 && ` · ${ex.sets[0].weight} lbs`}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {hasMore && (
+                  <button
+                    onClick={() => setExercisesExpanded(!exercisesExpanded)}
+                    className="text-xs text-[#ccff00] ml-7 font-medium"
+                  >
+                    {exercisesExpanded ? "Show less" : `+${allExercises.length - exerciseLimit} more`}
+                  </button>
                 )}
               </div>
-            ))}
-            {hasMore && (
-              <button
-                onClick={() => setExercisesExpanded(!exercisesExpanded)}
-                className="text-xs text-[#ccff00] hover:text-[#ccff00] ml-7 font-medium"
-              >
-                {exercisesExpanded ? "Show less" : `+${allExercises.length - exerciseLimit} more`}
-              </button>
             )}
           </div>
         )}
@@ -759,7 +773,7 @@ function AddFriendButton({ username }) {
       className="flex items-center gap-1 text-xs font-semibold text-[#ccff00] hover:text-[#ccff00] transition-colors"
     >
       <UserPlus className="w-3.5 h-3.5" />
-      {sendRequest.isPending ? "Sending..." : "Follow"}
+      {sendRequest.isPending ? "Sending..." : "Connect"}
     </button>
   );
 }
