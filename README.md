@@ -2,7 +2,7 @@
 
 The deployment can be accessed through this link:
 
-https://sisyphusschedule.com/
+https://nolannachbar.github.io/VektorPub/
 
 # How to build and run this
 
