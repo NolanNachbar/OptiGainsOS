@@ -2,7 +2,7 @@
   "name": "Vektor",
   "short_name": "Vektor",
   "description": "The tactical workout tracking and programming platform for serious lifters.",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#121212",

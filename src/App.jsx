@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
@@ -52,6 +53,13 @@ const protectedRoutes = [
   { path: "/social", name: "Social", component: Social },
 ];
 
+function RootRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <Landing />;
+}
+
 function App() {
   // Initialize ML model after a 3 second delay so the app loads fully first.
   // Training is CPU-intensive -- delaying prevents freezing on startup.
@@ -88,7 +96,7 @@ function App() {
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
