@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     );
 
     const { action, code, redirect_uri } = await req.json();
-    const clientId = Deno.env.get("STRAVA_CLIENT_ID")!;
+    const clientId = parseInt(Deno.env.get("STRAVA_CLIENT_ID")!, 10);
     const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET")!;
 
     if (action === "exchange") {
