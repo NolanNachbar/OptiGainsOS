@@ -102,7 +102,7 @@ function SuggestedUsersPanel() {
             </Link>
             <div className="flex-1 min-w-0">
               <Link to={profile.username ? `/profile/${profile.username}` : "#"}>
-                <p className="text-sm font-medium text-white truncate text-left hover:text-[#ccff00] transition-colors">
+                <p className="text-sm font-medium text-white truncate text-left hover:text-brand transition-colors">
                   {profile.display_name || profile.username || "User"}
                 </p>
               </Link>
@@ -113,7 +113,7 @@ function SuggestedUsersPanel() {
             <button
               onClick={() => handleAddFriend(profile)}
               disabled={!profile.username}
-              className="shrink-0 text-xs font-semibold px-2 py-1 rounded-md bg-[rgba(204,255,0,0.1)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.18)] transition-colors disabled:opacity-50"
+              className="shrink-0 text-xs font-semibold px-2 py-1 rounded-md bg-brand/10 text-brand hover:bg-brand/[18%] transition-colors disabled:opacity-50"
             >
               <UserPlus className="w-3 h-3" />
             </button>
@@ -138,7 +138,7 @@ function DiscoverAthletes({ notificationCount = 0 }) {
         </p>
         <button
           onClick={() => navigate("/social/friends")}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#a0a0a0] hover:text-brand transition-colors"
         >
           {notificationCount > 0 && (
             <span className="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
@@ -170,7 +170,7 @@ function DiscoverAthletes({ notificationCount = 0 }) {
             <button
               onClick={() => handleAddFriend(profile)}
               disabled={!profile.username}
-              className="w-full flex items-center justify-center gap-1 text-[10px] font-semibold py-1 rounded-md bg-[rgba(204,255,0,0.1)] text-[#ccff00] hover:bg-[rgba(204,255,0,0.18)] transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-1 text-[10px] font-semibold py-1 rounded-md bg-brand/10 text-brand hover:bg-brand/[18%] transition-colors disabled:opacity-50"
             >
               <UserPlus className="w-3 h-3" />
               Connect
@@ -193,7 +193,7 @@ function ActivityStreamHeader({ feedFilter, setFeedFilter }) {
           onClick={() => setFeedFilter("friends")}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
             feedFilter === "friends"
-              ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+              ? "bg-brand/[12%] text-brand font-bold"
               : "text-[#a0a0a0] hover:text-white"
           }`}
         >
@@ -204,7 +204,7 @@ function ActivityStreamHeader({ feedFilter, setFeedFilter }) {
           onClick={() => setFeedFilter("trending")}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
             feedFilter === "trending"
-              ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+              ? "bg-brand/[12%] text-brand font-bold"
               : "text-[#a0a0a0] hover:text-white"
           }`}
         >
@@ -272,7 +272,7 @@ export default function Social() {
                   onClick={() => setFeedFilter("friends")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     feedFilter === "friends"
-                      ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                      ? "bg-brand/[12%] text-brand font-bold"
                       : "text-[#555555] hover:text-white"
                   }`}
                 >
@@ -283,7 +283,7 @@ export default function Social() {
                   onClick={() => setFeedFilter("trending")}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     feedFilter === "trending"
-                      ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00] font-bold"
+                      ? "bg-brand/[12%] text-brand font-bold"
                       : "text-[#555555] hover:text-white"
                   }`}
                 >
@@ -338,7 +338,7 @@ export default function Social() {
                           </p>
                         </div>
                         {isActive && (
-                          <div className="w-2 h-2 rounded-full bg-[rgba(204,255,0,0.08)]0 shrink-0" />
+                          <div className="w-2 h-2 rounded-full bg-brand/[8%]0 shrink-0" />
                         )}
                       </Link>
                     );
@@ -348,7 +348,7 @@ export default function Social() {
 
               <button
                 onClick={() => setDesktopCenter("friends")}
-                className="mt-3 w-full flex items-center justify-center gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#a0a0a0] hover:text-[#ccff00] transition-colors py-2 border-t border-[#2a2a2a]"
+                className="mt-3 w-full flex items-center justify-center gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#a0a0a0] hover:text-brand transition-colors py-2 border-t border-[#2a2a2a]"
               >
                 Manage Connections
                 <ChevronRight className="w-3 h-3" />
@@ -365,7 +365,7 @@ export default function Social() {
                 <div>
                   <button
                     onClick={() => setDesktopCenter("feed")}
-                    className="flex items-center gap-1.5 text-sm font-medium text-[#555555] hover:text-[#ccff00] transition-colors mb-4"
+                    className="flex items-center gap-1.5 text-sm font-medium text-[#555555] hover:text-brand transition-colors mb-4"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     Back to Feed
@@ -388,7 +388,7 @@ export default function Social() {
                   className="w-full flex items-center justify-between rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-4 py-3"
                 >
                   <div className="flex items-center gap-2">
-                    <Medal className="w-4 h-4 text-[#ccff00]" />
+                    <Medal className="w-4 h-4 text-brand" />
                     <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#555555]">Rankings</span>
                   </div>
                   <ChevronRight className={`w-4 h-4 text-[#555555] transition-transform ${rankingsExpanded ? "rotate-90" : ""}`} />
@@ -442,7 +442,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
   const hasMore = allExercises.length > exerciseLimit;
   const visibleExercises = exercisesExpanded ? allExercises : allExercises.slice(0, exerciseLimit);
 
-  const borderColor = item.share_type === 'cardio' ? '#3a3a3a' : item.share_type === 'detailed' ? '#ccff00' : '#555555';
+  const borderColor = item.share_type === 'cardio' ? '#3a3a3a' : item.share_type === 'detailed' ? 'var(--color-brand)' : '#555555';
 
   return (
     <div
@@ -459,7 +459,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/profile/${username}`}
-                className="font-semibold text-white hover:text-[#ccff00] text-sm"
+                className="font-semibold text-white hover:text-brand text-sm"
               >
                 {displayName}
               </Link>
@@ -474,7 +474,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-xs"
+                className="shrink-0 text-brand border-brand/30 hover:bg-brand/[8%] text-xs"
                 onClick={onClone}
                 disabled={isCloning}
               >
@@ -505,7 +505,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
         {item.prs && item.prs.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {item.prs.map((pr, i) => (
-              <Badge key={i} className="bg-[rgba(204,255,0,0.08)] text-[#ccff00] border-[rgba(204,255,0,0.2)] text-xs">
+              <Badge key={i} className="bg-brand/[8%] text-brand border-brand/20 text-xs">
                 <Trophy className="w-3 h-3 mr-1" />
                 {pr.exercise} {pr.weight} lbs PR
               </Badge>
@@ -662,7 +662,7 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
                 {hasMore && (
                   <button
                     onClick={() => setExercisesExpanded(!exercisesExpanded)}
-                    className="text-xs text-[#ccff00] ml-7 font-medium"
+                    className="text-xs text-brand ml-7 font-medium"
                   >
                     {exercisesExpanded ? "Show less" : `+${allExercises.length - exerciseLimit} more`}
                   </button>
@@ -677,17 +677,17 @@ export function FeedCard({ item, isOwn, showAddFriend, onToggleKudos, onClone, i
           <button
             onClick={onToggleKudos}
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              item.userReacted ? "text-[#ccff00]" : "text-[#a0a0a0] hover:text-[#ccff00]"
+              item.userReacted ? "text-brand" : "text-[#a0a0a0] hover:text-brand"
             }`}
           >
-            <Flame className={`w-4 h-4 ${item.userReacted ? "fill-[#ccff00]" : ""}`} />
+            <Flame className={`w-4 h-4 ${item.userReacted ? "fill-brand" : ""}`} />
             {item.reactionCount > 0 ? item.reactionCount : "Fire"}
           </button>
           <button
             onClick={() => commentState.setExpanded(!commentState.expanded)}
             className={`flex items-center gap-1.5 text-sm transition-colors ${
               commentState.expanded
-                ? "text-[#ccff00] font-medium"
+                ? "text-brand font-medium"
                 : "text-[#a0a0a0] hover:text-[#a0a0a0]"
             }`}
           >
@@ -770,7 +770,7 @@ function AddFriendButton({ username }) {
     <button
       onClick={handleAdd}
       disabled={sendRequest.isPending}
-      className="flex items-center gap-1 text-xs font-semibold text-[#ccff00] hover:text-[#ccff00] transition-colors"
+      className="flex items-center gap-1 text-xs font-semibold text-brand hover:text-brand transition-colors"
     >
       <UserPlus className="w-3.5 h-3.5" />
       {sendRequest.isPending ? "Sending..." : "Connect"}

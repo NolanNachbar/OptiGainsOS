@@ -504,7 +504,7 @@ export default function ProgramBuilder() {
               key={s}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
                 i <= step
-                  ? "bg-[#ccff00]"
+                  ? "bg-brand"
                   : "bg-[#2a2a2a]"
               }`}
             />
@@ -737,7 +737,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Total training days info */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(204,255,0,0.05)] text-[#ccff00] text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-brand/[5%] text-brand text-sm">
           <Calendar className="w-4 h-4 flex-shrink-0" />
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong>{program.cycle_length * program.num_cycles} total training days</strong>
@@ -897,7 +897,7 @@ function InlineDayEditor({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Badge className="bg-[#ccff00]">
+            <Badge className="bg-brand">
               Day {dayIndex}
             </Badge>
             Editing Exercises

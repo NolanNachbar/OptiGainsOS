@@ -96,7 +96,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
         <div className="px-6 pt-6 pb-4 shrink-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-[#ccff00]" />
+            <CalendarCheck className="w-5 h-5 text-brand" />
             Schedule Your Program
           </DialogTitle>
         </DialogHeader>
@@ -124,7 +124,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
           {scheduledWorkouts.length > 0 && (
             <div className="border rounded-lg p-4 bg-[#1a1a1a]">
               <h3 className="text-sm font-semibold text-[#a0a0a0] mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-[#ccff00]" />
+                <BookOpen className="w-4 h-4 text-brand" />
                 Cycle 1 Schedule Preview
               </h3>
 
@@ -135,7 +135,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                     className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-[rgba(204,255,0,0.05)] text-[#ccff00] border-[rgba(204,255,0,0.2)]">
+                      <Badge variant="outline" className="bg-brand/[5%] text-brand border-brand/20">
                         Day {workout.dayIndex}
                       </Badge>
                       <span className="font-medium text-sm text-white">{workout.title}</span>
@@ -170,7 +170,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
             <Button
               onClick={handleSchedule}
               variant="primary"
-              className="flex-1 bg-[#ccff00]"
+              className="flex-1 bg-brand"
               disabled={isScheduling}
             >
               <CalendarCheck className="w-4 h-4 mr-1.5" />

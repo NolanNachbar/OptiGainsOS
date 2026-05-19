@@ -32,7 +32,7 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
         <div className="bg-[#202020] p-3 rounded-xl border border-[#2a2a2a]">
           <p className="font-semibold text-xs text-white mb-1">{format(parseISO(label), 'MMM d, yyyy')}</p>
           {raw && <p className="text-xs font-mono text-[#555555]">{raw.value} {weightUnit}</p>}
-          {trend && <p className="text-xs font-mono text-[#ccff00]">Trend: {trend.value} {weightUnit}</p>}
+          {trend && <p className="text-xs font-mono text-brand">Trend: {trend.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -73,11 +73,11 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
             <Line
               type="monotone"
               dataKey="trend"
-              stroke="#ccff00"
+              stroke="var(--color-brand)"
               strokeWidth={1.5}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: '#ccff00', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--color-brand)', strokeWidth: 0 }}
             />
           )}
         </LineChart>
@@ -89,7 +89,7 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
             Raw
           </span>
           <span className="flex items-center gap-1.5">
-            <div className="w-4 h-px" style={{ borderTop: '1.5px dashed #ccff00' }} />
+            <div className="w-4 h-px" style={{ borderTop: '1.5px dashed var(--color-brand)' }} />
             Trend
           </span>
         </div>

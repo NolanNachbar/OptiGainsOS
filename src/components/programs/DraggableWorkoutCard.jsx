@@ -33,11 +33,11 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
       <Card
         className={`overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-150 ${
           isOverlay
-            ? "scale-105 ring-2 ring-[rgba(204,255,0,0.3)]"
+            ? "scale-105 ring-2 ring-brand/30"
             : ""
         }`}
       >
-        <div className="h-1.5 bg-[#ccff00]" />
+        <div className="h-1.5 bg-brand" />
         <div className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">

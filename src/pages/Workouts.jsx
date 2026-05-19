@@ -480,7 +480,7 @@ export default function Workouts() {
               <Activity className="w-4 h-4 mr-2" />
               Activity Log
               {(workoutLogs.length + cardioSessions.length) > 0 && (
-                <span className="ml-1.5 bg-[rgba(204,255,0,0.1)] text-[#ccff00] text-xs font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
                   {workoutLogs.length + cardioSessions.length}
                 </span>
               )}
@@ -506,8 +506,8 @@ export default function Workouts() {
                   onClick={() => setFilterOpen(v => !v)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-[#ccff00] text-white border-[rgba(204,255,0,0.3)]'
-                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] hover:text-[#ccff00]'
+                      ? 'bg-brand text-white border-brand/30'
+                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30 hover:text-brand'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -555,7 +555,7 @@ export default function Workouts() {
                       onClick={() => setFilter(f.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         filter === f.value
-                          ? 'bg-[#ccff00] text-black font-bold'
+                          ? 'bg-brand text-black font-bold'
                           : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                       }`}
                     >
@@ -587,7 +587,7 @@ export default function Workouts() {
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(204,255,0,0.3)] bg-[#1a1a1a] text-white outline-none w-28"
+                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 bg-[#1a1a1a] text-white outline-none w-28"
                             />
                             <button type="submit" className="p-1 text-[#4ade80] hover:text-[#4ade80]">
                               <Check className="w-3.5 h-3.5" />
@@ -604,7 +604,7 @@ export default function Workouts() {
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                               folderFilter === f
-                                ? 'bg-[#ccff00] text-black font-bold'
+                                ? 'bg-brand text-black font-bold'
                                 : 'bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]'
                             }`}
                           >
@@ -614,7 +614,7 @@ export default function Workouts() {
                           {f !== 'all' && f !== 'unfiled' && (
                             <button
                               onClick={() => { setRenamingFolder(f); setRenameValue(f); }}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-[#a0a0a0] hover:text-[#ccff00] transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-[#a0a0a0] hover:text-brand transition-opacity"
                               title="Rename folder"
                             >
                               <Pencil className="w-3 h-3" />
@@ -777,7 +777,7 @@ export default function Workouts() {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Active
                   {activeEnrollments.length > 0 && (
-                    <span className="ml-1.5 bg-[rgba(204,255,0,0.1)] text-[#ccff00] text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
                       {activeEnrollments.length}
                     </span>
                   )}
@@ -1154,7 +1154,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] mb-6">
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">This Week</span>
-          <span className="text-xl font-bold tabular-nums text-[#ccff00]">{thisWeek.length} Sessions</span>
+          <span className="text-xl font-bold tabular-nums text-brand">{thisWeek.length} Sessions</span>
         </div>
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mb-1">Strength</span>
@@ -1187,8 +1187,8 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
             className={[
               'px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all',
               filter === val
-                ? 'bg-[#ccff00] text-black font-bold'
-                : 'border border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]',
+                ? 'bg-brand text-black font-bold'
+                : 'border border-[#2a2a2a] text-[#555555] hover:border-brand/30',
             ].join(' ')}
           >
             {label}

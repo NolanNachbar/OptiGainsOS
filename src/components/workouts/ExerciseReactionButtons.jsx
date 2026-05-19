@@ -116,7 +116,7 @@ export default function ExerciseReactionButtons({
           aria-pressed={isLiked}
           className={[
             "inline-flex items-center justify-center shrink-0 transition-all duration-150",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(204,255,0,0.3)] focus-visible:ring-offset-1",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-1",
             btnCls,
             isLiked
               ? "bg-green-500 text-white hover:bg-green-600"
@@ -165,7 +165,7 @@ export default function ExerciseReactionButtons({
           {/* Manual entry row */}
           <div className="mt-1 mb-3">
             {manualMode ? (
-              <div className="flex gap-2 items-center p-3 rounded-xl border-2 border-[#ccff00] bg-[rgba(204,255,0,0.05)]">
+              <div className="flex gap-2 items-center p-3 rounded-xl border-2 border-brand bg-brand/[5%]">
                 <Input
                   autoFocus
                   placeholder="e.g., Incline Dumbbell Press"
@@ -174,7 +174,7 @@ export default function ExerciseReactionButtons({
                   onKeyDown={(e) => e.key === "Enter" && handleManualReplace()}
                   className="flex-1 h-8 text-sm"
                 />
-                <Button size="sm" className="h-8 bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold shrink-0"
+                <Button size="sm" className="h-8 bg-brand hover:bg-brand text-black font-bold shrink-0"
                   onClick={handleManualReplace} disabled={!manualExercise.trim()}>
                   <Check className="w-4 h-4" />
                 </Button>
@@ -187,7 +187,7 @@ export default function ExerciseReactionButtons({
               <button
                 type="button"
                 onClick={() => setManualMode(true)}
-                className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#2a2a2a]  hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all text-[#555555]  hover:text-[#ccff00] text-sm"
+                className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#2a2a2a]  hover:border-brand hover:bg-brand/[5%] transition-all text-[#555555]  hover:text-brand text-sm"
               >
                 <Pencil className="w-4 h-4" />
                 Enter my own exercise
@@ -214,16 +214,16 @@ export default function ExerciseReactionButtons({
                     key={key}
                     type="button"
                     onClick={() => handlePickAlternative(alt)}
-                    className="w-full text-left p-3.5 rounded-xl border border-[#2a2a2a] hover:border-[#ccff00] hover:bg-[rgba(204,255,0,0.05)] transition-all group"
+                    className="w-full text-left p-3.5 rounded-xl border border-[#2a2a2a] hover:border-brand hover:bg-brand/[5%] transition-all group"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-base font-bold text-[#555555] group-hover:text-[#ccff00]">{icon}</span>
+                          <span className="text-base font-bold text-[#555555] group-hover:text-brand">{icon}</span>
                           <span className="text-xs font-semibold text-[#555555]  uppercase tracking-wide">{label}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${diff.color}`}>{diff.label}</span>
                         </div>
-                        <p className="font-semibold text-white  group-hover:text-[#ccff00] text-sm truncate">
+                        <p className="font-semibold text-white  group-hover:text-brand text-sm truncate">
                           {alt.name}
                         </p>
                         {alt.primaryMuscle?.length > 0 && (
@@ -237,7 +237,7 @@ export default function ExerciseReactionButtons({
                           {alt.sets} sets × {alt.reps} reps · {alt.rest}s rest
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-[#ccff00] mt-1 flex-shrink-0 ml-2" />
+                      <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-brand mt-1 flex-shrink-0 ml-2" />
                     </div>
                   </button>
                 );

@@ -140,7 +140,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
                 <div key={i} className={`absolute w-8 h-8 border-white ${cls}`} />
               ))}
               {/* Scan line animation */}
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[#ccff00]/80 animate-pulse" />
+              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand/80 animate-pulse" />
             </div>
           </div>
         )}
@@ -177,7 +177,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
             <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
               Try again
             </Button>
-            <Button className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]" onClick={() => onNotFound(foundBarcode)}>
+            <Button className="flex-1 bg-brand hover:bg-brand" onClick={() => onNotFound(foundBarcode)}>
               Enter manually
             </Button>
           </div>

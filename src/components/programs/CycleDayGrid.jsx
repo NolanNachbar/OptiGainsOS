@@ -71,7 +71,7 @@ export default function CycleDayGrid({
               <div className="flex items-center gap-2 mb-2">
                 <Badge
                   variant={cycle === currentCycle ? "default" : "outline"}
-                  className={`text-xs ${cycle === currentCycle ? "bg-[#ccff00] text-black font-bold border-[rgba(204,255,0,0.5)]" : ""}`}
+                  className={`text-xs ${cycle === currentCycle ? "bg-brand text-black font-bold border-brand/50" : ""}`}
                 >
                   Cycle {cycle}
                 </Badge>
@@ -101,7 +101,7 @@ export default function CycleDayGrid({
                   if (isCompleted) {
                     cellClasses += " border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)]";
                   } else if (isCurrent) {
-                    cellClasses += " border-[#ccff00] ring-2 ring-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.05)]";
+                    cellClasses += " border-brand ring-2 ring-brand/30 bg-brand/[5%]";
                   } else if (isPast) {
                     cellClasses += " border-[#2a2a2a] bg-[#1a1a1a] opacity-60";
                   } else {
@@ -114,7 +114,7 @@ export default function CycleDayGrid({
                   const labelClass = isCompleted
                     ? "text-xs font-medium truncate text-[#4ade80]"
                     : isCurrent
-                    ? "text-xs font-medium truncate text-[#ccff00]"
+                    ? "text-xs font-medium truncate text-brand"
                     : "text-xs font-medium truncate text-[#a0a0a0]";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
@@ -141,7 +141,7 @@ export default function CycleDayGrid({
                         {isCompleted ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80] flex-shrink-0" />
                         ) : isCurrent ? (
-                          <PlayCircle className="w-3.5 h-3.5 text-[#ccff00] flex-shrink-0 animate-pulse" />
+                          <PlayCircle className="w-3.5 h-3.5 text-brand flex-shrink-0 animate-pulse" />
                         ) : workout ? (
                           <Circle className="w-3.5 h-3.5 text-[#a0a0a0] flex-shrink-0" />
                         ) : null}
@@ -154,7 +154,7 @@ export default function CycleDayGrid({
                       {!compact && hasCardio && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {workout.cardio_sessions.map((c, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-[rgba(204,255,0,0.08)] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-brand/[8%] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium">
                               <Activity className="w-2.5 h-2.5" />
                               {c.title}
                             </span>
@@ -218,16 +218,16 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
       className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 cursor-pointer ${
         isOver
-          ? "border-[#ccff00] bg-[rgba(204,255,0,0.05)] scale-[1.02]"
+          ? "border-brand bg-brand/[5%] scale-[1.02]"
           : hasWorkout
-          ? "border-solid border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] "
-          : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)] hover:bg-[#1a1a1a]"
+          ? "border-solid border-[#2a2a2a] bg-[#1a1a1a] hover:border-brand/30 "
+          : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-brand/30 hover:bg-[#1a1a1a]"
       }`}
     >
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold text-[#555555] flex items-center gap-1">
           Day {dayIndex}
-          {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] inline-block" title="High-load day" />}
+          {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-brand inline-block" title="High-load day" />}
         </span>
         {hasWorkout && onClearDay && (
           <button
@@ -251,7 +251,7 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
           {hasCardio && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {workout.cardio_sessions.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-[rgba(204,255,0,0.08)] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium leading-tight">
+                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-brand/[8%] text-[#a8d400] px-1.5 py-0.5 rounded-full font-medium leading-tight">
                   <Activity className="w-2.5 h-2.5 shrink-0" />
                   <span className="line-clamp-1">{c.title}</span>
                 </span>
@@ -262,7 +262,7 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       ) : (
         <div className="flex flex-col items-center justify-center h-12 text-[#555555]">
           {isOver ? (
-            <p className="text-xs font-medium text-[#ccff00]">Drop here</p>
+            <p className="text-xs font-medium text-brand">Drop here</p>
           ) : (
             <>
               <p className="text-sm font-medium text-[#555555]">Rest</p>

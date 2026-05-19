@@ -17,8 +17,8 @@ const PHASE_CONFIG = {
     icon: BookOpen,
     label: "Week 1 — Intro Phase",
     description: "Focus on learning the movements. Lighter loads, longer rest, perfect form.",
-    color: "bg-[rgba(204,255,0,0.05)] border-[rgba(204,255,0,0.2)] text-[#ccff00]",
-    iconColor: "text-[#ccff00]",
+    color: "bg-brand/[5%] border-brand/20 text-brand",
+    iconColor: "text-brand",
   },
   progression: {
     icon: TrendingUp,
@@ -200,7 +200,7 @@ export default function WorkoutApprovalModal({ schedule, onApprove, onCancel, la
             <div className="mt-3 flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
               <button
                 onClick={() => setSaveAsProgram(!saveAsProgram)}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${saveAsProgram ? "bg-[#ccff00]" : "bg-[#333333]"}`}
+                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${saveAsProgram ? "bg-brand" : "bg-[#333333]"}`}
               >
                 <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${saveAsProgram ? "translate-x-5" : "translate-x-0"}`} />
               </button>

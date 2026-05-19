@@ -41,7 +41,7 @@ export default function WeeklyCheckinBanner() {
     >
       <CardContent className="pt-5 pb-4">
         <div className="flex items-center gap-2 mb-3">
-          <CalendarCheck className="w-5 h-5 text-[#ccff00]" />
+          <CalendarCheck className="w-5 h-5 text-brand" />
           <h3 className="font-semibold text-white">Weekly Check-in</h3>
           {activePhase && (
             <span className="text-sm text-[#555555]">
@@ -158,7 +158,7 @@ export default function WeeklyCheckinBanner() {
         <div className="flex gap-2">
           <Button
             onClick={() => acceptCheckin.mutate(pendingCheckin)}
-            className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]"
+            className="flex-1 bg-brand hover:bg-brand"
             disabled={acceptCheckin.isPending}
           >
             <Check className="w-4 h-4 mr-1.5" />

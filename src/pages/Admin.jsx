@@ -152,7 +152,7 @@ export default function Admin() {
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Settings className="w-6 h-6 text-[#ccff00]" />
+            <Settings className="w-6 h-6 text-brand" />
             Admin Testing Panel
           </h1>
           <p className="text-[#555555] text-sm mt-1">Quick adjustments for testing</p>
@@ -191,7 +191,7 @@ export default function Admin() {
               <Label className="text-base font-semibold mb-3 block">Available Equipment</Label>
               <div className="grid gap-3">
                 {EQUIPMENT_OPTIONS.map(option => (
-                  <div key={option.value} className="flex items-center space-x-3 p-3 rounded-lg border-2 border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] cursor-pointer" onClick={() => handleEquipmentToggle(option.value)}>
+                  <div key={option.value} className="flex items-center space-x-3 p-3 rounded-lg border-2 border-[#2a2a2a] hover:border-brand/30 cursor-pointer" onClick={() => handleEquipmentToggle(option.value)}>
                     <Checkbox checked={formData.available_equipment.includes(option.value)} onCheckedChange={() => handleEquipmentToggle(option.value)} />
                     <Label className="flex-1 cursor-pointer">{option.label}</Label>
                   </div>
@@ -230,8 +230,8 @@ export default function Admin() {
                   onClick={() => setFormData({...formData, exercises_per_day: null})}
                   className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
                     formData.exercises_per_day === null
-                      ? 'border-[#ccff00] bg-[rgba(204,255,0,0.05)] text-[#ccff00]'
-                      : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)]'
+                      ? 'border-brand bg-brand/[5%] text-brand'
+                      : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30'
                   }`}
                 >
                   Auto
@@ -242,8 +242,8 @@ export default function Admin() {
                     onClick={() => setFormData({...formData, exercises_per_day: n})}
                     className={`w-10 h-10 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.exercises_per_day === n
-                        ? 'border-[#ccff00] bg-[rgba(204,255,0,0.05)] text-[#ccff00]'
-                        : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)]'
+                        ? 'border-brand bg-brand/[5%] text-brand'
+                        : 'border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30'
                     }`}
                   >
                     {n}
@@ -256,23 +256,23 @@ export default function Admin() {
               <Label className="text-base font-semibold block">Workout Options</Label>
               <div
                 className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  formData.include_cardio ? 'border-[#ccff00] bg-[rgba(204,255,0,0.05)]' : 'border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)]'
+                  formData.include_cardio ? 'border-brand bg-brand/[5%]' : 'border-[#2a2a2a] hover:border-brand/30'
                 }`}
                 onClick={() => setFormData({...formData, include_cardio: !formData.include_cardio})}
               >
                 <Label className="cursor-pointer">Include Cardio Finisher</Label>
-                <div className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors ${formData.include_cardio ? 'bg-[#ccff00]' : 'bg-[#333333]'}`}>
+                <div className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors ${formData.include_cardio ? 'bg-brand' : 'bg-[#333333]'}`}>
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.include_cardio ? 'translate-x-5' : 'translate-x-0'}`} />
                 </div>
               </div>
               <div
                 className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  formData.skip_deload ? 'border-[#ccff00] bg-[rgba(204,255,0,0.05)]' : 'border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)]'
+                  formData.skip_deload ? 'border-brand bg-brand/[5%]' : 'border-[#2a2a2a] hover:border-brand/30'
                 }`}
                 onClick={() => setFormData({...formData, skip_deload: !formData.skip_deload})}
               >
                 <Label className="cursor-pointer">Skip Deload Weeks</Label>
-                <div className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors ${formData.skip_deload ? 'bg-[#ccff00]' : 'bg-[#333333]'}`}>
+                <div className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors ${formData.skip_deload ? 'bg-brand' : 'bg-[#333333]'}`}>
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.skip_deload ? 'translate-x-5' : 'translate-x-0'}`} />
                 </div>
               </div>
@@ -283,7 +283,7 @@ export default function Admin() {
         <Card className="mb-6">
           <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <Button onClick={handleSaveAndRegenerate} disabled={updateProfileMutation.isPending || regenerateWorkoutsMutation.isPending} className="w-full bg-[#ccff00]">
+            <Button onClick={handleSaveAndRegenerate} disabled={updateProfileMutation.isPending || regenerateWorkoutsMutation.isPending} className="w-full bg-brand">
               {updateProfileMutation.isPending || regenerateWorkoutsMutation.isPending ? <><LoadingSpinner size="small" className="mr-2" />Processing...</> : <><Save className="w-4 h-4 mr-2" />Save & Regenerate</>}
             </Button>
             <Button variant="outline" onClick={() => updateProfileMutation.mutate(formData)} disabled={updateProfileMutation.isPending} className="w-full">

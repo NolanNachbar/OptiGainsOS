@@ -96,7 +96,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/profile/${username}`}
-                className="font-semibold text-white hover:text-[#ccff00] text-sm"
+                className="font-semibold text-white hover:text-brand text-sm"
               >
                 {displayName}
               </Link>
@@ -110,7 +110,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-xs"
+                className="shrink-0 text-brand border-brand/30 hover:bg-brand/[8%] text-xs"
                 onClick={handleCloneRecipe}
                 disabled={isCloning}
               >
@@ -132,7 +132,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
 
         {/* Recipe title + description */}
         <div className="flex items-start gap-2 mb-2">
-          <ChefHat className="w-5 h-5 text-[#ccff00] mt-0.5 flex-shrink-0" />
+          <ChefHat className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <h4 className="font-semibold text-white">{item.recipe_name}</h4>
             {item.description && <p className="text-sm text-[#a0a0a0] mt-1">{item.description}</p>}
@@ -200,7 +200,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
             onClick={() => setCommentsExpanded(!commentsExpanded)}
             className={`flex items-center gap-1.5 text-sm transition-colors ${
               commentsExpanded
-                ? "text-[#ccff00] font-medium"
+                ? "text-brand font-medium"
                 : "text-[#a0a0a0] hover:text-[#a0a0a0]"
             }`}
           >
@@ -275,7 +275,7 @@ export default function RecipeFeedCard({ item, isOwn, onUnshare }) {
                 type="submit"
                 size="sm"
                 disabled={!commentBody.trim() || addComment.isPending}
-                className="bg-[rgba(204,255,0,0.08)]0 px-3"
+                className="bg-brand/[8%]0 px-3"
               >
                 <Send className="w-3.5 h-3.5" />
               </Button>

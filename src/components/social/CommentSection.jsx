@@ -148,7 +148,7 @@ export function CommentPanel({
           type="submit"
           size="sm"
           disabled={!body.trim() || addComment.isPending}
-          className="bg-[#ccff00] px-3"
+          className="bg-brand px-3"
         >
           <Send className="w-3.5 h-3.5" />
         </Button>

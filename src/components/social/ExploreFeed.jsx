@@ -173,7 +173,7 @@ export function ExploreFeed({ friendsOnly = false }) {
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-[rgba(204,255,0,0.08)]0"
+              className="flex-1 bg-brand/[8%]0"
               onClick={confirmClone}
               disabled={cloneWorkout.isPending || cloneProgram.isPending}
             >
@@ -233,7 +233,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/profile/${username}`}
-                className="font-semibold text-white hover:text-[#ccff00] text-sm"
+                className="font-semibold text-white hover:text-brand text-sm"
               >
                 {displayName}
               </Link>
@@ -247,7 +247,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-xs"
+                className="shrink-0 text-brand border-brand/30 hover:bg-brand/[8%] text-xs"
                 onClick={onClone}
                 disabled={isCloning}
               >
@@ -269,7 +269,7 @@ function ProgramFeedCard({ item, isOwn, onClone, isCloning, onUnshare }) {
 
         {/* Program title + caption */}
         <div className="flex items-start gap-2 mb-2">
-          <TrendingUp className="w-5 h-5 text-[#ccff00] mt-0.5 flex-shrink-0" />
+          <TrendingUp className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <h4 className="font-semibold text-white">{item.program_title}</h4>
             {item.caption && <p className="text-sm text-[#a0a0a0] mt-1">{item.caption}</p>}
@@ -463,7 +463,7 @@ function WorkoutDayCard({ workout }) {
               size="sm"
               variant="ghost"
               onClick={handleUseAsTemplate}
-              className="h-6 px-2 text-xs text-[#ccff00] hover:text-[#ccff00] hover:bg-[rgba(204,255,0,0.08)]"
+              className="h-6 px-2 text-xs text-brand hover:text-brand hover:bg-brand/[8%]"
             >
               <Copy className="w-3 h-3 mr-1" />
               Use
@@ -485,7 +485,7 @@ function WorkoutDayCard({ workout }) {
 
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium ml-1"
+              className="text-xs text-brand hover:text-brand font-medium ml-1"
             >
               {expanded ? "Hide exercises" : "Show exercises"}
             </button>
@@ -494,7 +494,7 @@ function WorkoutDayCard({ workout }) {
               <div className="mt-2 space-y-1 ml-1">
                 {workout.exercises.map((ex, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs py-1 border-t border-[#2a2a2a]">
-                    <span className="w-4 h-4 rounded-full bg-[rgba(204,255,0,0.12)] flex items-center justify-center text-[#ccff00] text-[#ccff00] text-xs font-bold shrink-0 mt-0.5">
+                    <span className="w-4 h-4 rounded-full bg-brand/[12%] flex items-center justify-center text-brand text-brand text-xs font-bold shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">

@@ -10,7 +10,7 @@ export default function SocialFriends() {
       <div className="max-w-lg mx-auto">
         <button
           onClick={() => navigate("/social")}
-          className="flex items-center gap-1.5 text-sm font-medium text-[#555555] hover:text-[#ccff00] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm font-medium text-[#555555] hover:text-brand transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Feed

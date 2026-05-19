@@ -49,7 +49,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         type: "intro",
         label: "Intro Week",
         description: "Learn the movements — lighter loads, focus on form",
-        chipClass: "bg-[rgba(204,255,0,0.12)] text-[#ccff00] border-[rgba(204,255,0,0.3)] text-[#ccff00]",
+        chipClass: "bg-brand/[12%] text-brand border-brand/30 text-brand",
       };
     }
     if (week === activeWeeks) {
@@ -136,11 +136,11 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     className={[
                       "p-3 rounded-xl border-2 text-left transition-all",
                       isActive
-                        ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)]"
-                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.3)]",
+                        ? "border-brand/30 bg-brand/[8%]"
+                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-brand/30",
                     ].join(" ")}
                   >
-                    <div className={`font-bold text-sm ${isActive ? "text-[#ccff00] text-[#ccff00]" : "text-white "}`}>
+                    <div className={`font-bold text-sm ${isActive ? "text-brand text-brand" : "text-white "}`}>
                       {preset.label}
                     </div>
                     <div className="text-xs text-[#555555] mt-0.5 leading-snug">
@@ -199,8 +199,8 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       className={[
                         "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
                         isActive
-                          ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
-                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[rgba(204,255,0,0.3)] bg-[#1a1a1a]",
+                          ? "border-brand/30 bg-brand/[8%] text-brand text-brand"
+                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30 bg-[#1a1a1a]",
                       ].join(" ")}
                     >
                       +{v}
@@ -300,7 +300,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#555555]">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-[#ccff00]" />
+                <div className="w-3 h-3 rounded bg-brand" />
                 1 intro week
               </div>
               <div className="flex items-center gap-1.5">
@@ -315,7 +315,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           </div>
 
           {/* Info box */}
-          <div className="flex gap-3 p-3 bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] rounded-xl text-sm text-[#ccff00] text-[#ccff00]">
+          <div className="flex gap-3 p-3 bg-brand/[8%] border border-brand/30 rounded-xl text-sm text-brand text-brand">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
               Each week's workout will be generated with adjusted sets, reps, and rest
@@ -335,7 +335,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             onClick={handleConfirm}
             disabled={activeWeeks < 3}
             variant="primary"
-            className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
+            className="flex-1 bg-brand/[8%]0 hover:bg-brand text-black font-bold"
           >
             <ChevronRight className="w-4 h-4 mr-2" />
             Generate Program

@@ -349,7 +349,7 @@ export default function NutritionCoach() {
                       tdeeResult.method === "adaptive"
                         ? "bg-[rgba(34,197,94,0.1)] text-[#4ade80]"
                         : tdeeResult.method === "manual"
-                        ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]"
+                        ? "bg-brand/[12%] text-brand"
                         : "bg-[rgba(59,130,246,0.1)] text-[#60a5fa]"
                     }`}
                   >
@@ -465,7 +465,7 @@ export default function NutritionCoach() {
                           }}
                           className={`py-2 rounded-lg text-sm font-medium border transition-all ${
                             goalMode === opt.value
-                              ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold border-[rgba(204,255,0,0.5)]"
+                              ? "bg-brand/[8%]0 text-black font-bold border-brand/50"
                               : "border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:border-[#2a2a2a]"
                           }`}
                         >
@@ -490,7 +490,7 @@ export default function NutritionCoach() {
                             }}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                               weeklyRate === preset.value
-                                ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold border-[rgba(204,255,0,0.5)]"
+                                ? "bg-brand/[8%]0 text-black font-bold border-brand/50"
                                 : "border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:border-[#2a2a2a]"
                             }`}
                           >
@@ -654,7 +654,7 @@ export default function NutritionCoach() {
               <div className="flex gap-2">
                 <Button
                   onClick={saveMacros}
-                  className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
+                  className="flex-1 bg-brand/[8%]0 hover:bg-brand text-black font-bold"
                   disabled={updateProfileMutation.isPending}
                 >
                   <Save className="w-4 h-4 mr-2" />
@@ -762,14 +762,14 @@ export default function NutritionCoach() {
           <CardContent className="py-3 px-3">
             <div className="flex items-center justify-between mb-1">
               <div className="text-xs text-[#a0a0a0]">Logging</div>
-              <Calendar className="w-4 h-4 text-[#ccff00]" />
+              <Calendar className="w-4 h-4 text-brand" />
             </div>
             <div className="text-xl font-bold text-white">
               {weeklyLogging.daysLogged}/{weeklyLogging.totalDays} days
             </div>
             <div className="h-1 bg-[#2a2a2a]  rounded-full overflow-hidden mt-1.5">
               <div
-                className="h-full bg-[rgba(204,255,0,0.08)]0 transition-all"
+                className="h-full bg-brand/[8%]0 transition-all"
                 style={{ width: `${weeklyLogging.consistency}%` }}
               ></div>
             </div>
@@ -958,7 +958,7 @@ export default function NutritionCoach() {
           )}
           {monthlyLogging.daysLogged > 0 && (
             <div className="flex items-center gap-2 p-2.5 bg-[#1a1a1a] bg-[#202020] rounded-lg">
-              <Calendar className="w-4 h-4 text-[#ccff00]" />
+              <Calendar className="w-4 h-4 text-brand" />
               <span className="text-sm text-[#a0a0a0] text-[#a0a0a0]">
                 Logged <strong>{monthlyLogging.daysLogged}</strong>/30 days ({monthlyLogging.consistency}%)
               </span>

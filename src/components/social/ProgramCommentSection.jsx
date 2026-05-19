@@ -66,7 +66,7 @@ export function ProgramCommentToggle({ expanded, setExpanded, displayCount }) {
       onClick={() => setExpanded(!expanded)}
       className={`flex items-center gap-1.5 text-sm transition-colors ${
         expanded
-          ? "text-[#ccff00] font-medium"
+          ? "text-brand font-medium"
           : "text-[#555555] hover:text-[#a0a0a0]"
       }`}
     >
@@ -152,7 +152,7 @@ export function ProgramCommentPanel({
           type="submit"
           size="sm"
           disabled={!body.trim() || addComment.isPending}
-          className="bg-[#ccff00] px-3"
+          className="bg-brand px-3"
         >
           <Send className="w-3.5 h-3.5" />
         </Button>

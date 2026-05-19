@@ -82,9 +82,9 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
 
           {oneRM && (
             <div className="space-y-3 pt-2">
-              <div className="text-center p-4 bg-[rgba(204,255,0,0.05)] rounded-lg">
+              <div className="text-center p-4 bg-brand/[5%] rounded-lg">
                 <div className="text-sm text-[#a0a0a0]">Estimated 1 Rep Max</div>
-                <div className="text-3xl font-bold text-[#ccff00]">{oneRM} {weightUnit}</div>
+                <div className="text-3xl font-bold text-brand">{oneRM} {weightUnit}</div>
               </div>
 
               <div className="space-y-2">

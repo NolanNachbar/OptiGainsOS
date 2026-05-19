@@ -105,7 +105,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-[#ccff00]" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </button>
                   <button
                     onClick={() => handleLog(recipe)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand/[8%]0 hover:bg-brand text-black font-bold text-xs font-bold transition-colors"
                   >
                     <UtensilsCrossed className="w-2.5 h-2.5" />Log
                   </button>
@@ -248,7 +248,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 </p>
                 {/* Actions */}
                 <div className="flex gap-1.5">
-                  <Button size="sm" onClick={() => handleLog(recipe)} className="flex-1 bg-[rgba(204,255,0,0.08)]0 h-8 text-xs">
+                  <Button size="sm" onClick={() => handleLog(recipe)} className="flex-1 bg-brand/[8%]0 h-8 text-xs">
                     <UtensilsCrossed className="w-3 h-3 mr-1" />Log
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setSharingRecipe(recipe)} title="Share" className="h-8 w-8 p-0">
@@ -386,11 +386,11 @@ function FoodSearchResult({ food, onClick, icon }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left px-4 py-3 hover:bg-[rgba(204,255,0,0.08)] border-b last:border-b-0 transition-colors group"
+      className="w-full text-left px-4 py-3 hover:bg-brand/[8%] border-b last:border-b-0 transition-colors group"
     >
       <div className="flex items-start gap-3">
         {icon && (
-          <div className="mt-0.5 text-[#a0a0a0] group-hover:text-[#ccff00] transition-colors">
+          <div className="mt-0.5 text-[#a0a0a0] group-hover:text-brand transition-colors">
             {icon}
           </div>
         )}
@@ -416,7 +416,7 @@ function FoodSearchResult({ food, onClick, icon }) {
             </span>
           </div>
         </div>
-        <Plus className="w-4 h-4 text-[#a0a0a0] group-hover:text-[#ccff00] mt-1 transition-colors" />
+        <Plus className="w-4 h-4 text-[#a0a0a0] group-hover:text-brand mt-1 transition-colors" />
       </div>
     </button>
   );
@@ -596,7 +596,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
     <div className="space-y-3">
       <button
         onClick={onCancel}
-        className="flex items-center gap-1.5 text-xs font-medium text-[#ccff00] hover:text-[#ccff00] transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to search
@@ -703,7 +703,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       {amount > 1 && (parseFloat(calories) > 0 || parseFloat(protein) > 0) && (
-        <div className="bg-[rgba(204,255,0,0.08)] rounded-lg px-3 py-2 text-xs text-[#ccff00]">
+        <div className="bg-brand/[8%] rounded-lg px-3 py-2 text-xs text-brand">
           <span className="font-medium">Total ({amount} {unit}s):</span>{" "}
           {Math.round((parseFloat(calories) || 0) * amount)} cal &middot;{" "}
           {Math.round((parseFloat(protein) || 0) * amount * 10) / 10}g P &middot;{" "}
@@ -714,7 +714,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
 
       <Button
         onClick={handleAdd}
-        className="w-full h-10 bg-[rgba(204,255,0,0.08)]0 rounded-lg text-sm font-medium"
+        className="w-full h-10 bg-brand/[8%]0 rounded-lg text-sm font-medium"
       >
         <Plus className="w-4 h-4 mr-1.5" />
         Add Ingredient
@@ -954,14 +954,14 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 1
-                        ? "bg-[rgba(204,255,0,0.08)]0"
+                        ? "bg-brand/[8%]0"
                         : "bg-[#2a2a2a]"
                     }`}
                   />
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 2
-                        ? "bg-[rgba(204,255,0,0.08)]0"
+                        ? "bg-brand/[8%]0"
                         : "bg-[#2a2a2a]"
                     }`}
                   />
@@ -997,8 +997,8 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 py-6">
                   <div className="max-w-md mx-auto space-y-6">
                     <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-[rgba(204,255,0,0.08)] rounded-xl flex items-center justify-center mx-auto mb-4">
-                        <ChefHat className="w-8 h-8 text-[#ccff00]" />
+                      <div className="w-16 h-16 bg-brand/[8%] rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <ChefHat className="w-8 h-8 text-brand" />
                       </div>
                       <h3 className="text-lg font-semibold text-white">
                         Recipe Details
@@ -1076,7 +1076,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       }
                       goToStep(2);
                     }}
-                    className="w-full h-11 bg-[rgba(204,255,0,0.08)]0 rounded-xl text-sm font-medium"
+                    className="w-full h-11 bg-brand/[8%]0 rounded-xl text-sm font-medium"
                   >
                     Next: Add Ingredients
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1113,7 +1113,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               className="pl-10 h-11 rounded-xl bg-[#1a1a1a] border-[#2a2a2a] focus:bg-[#1a1a1a]"
                             />
                             {isSearching && (
-                              <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#ccff00] animate-spin" />
+                              <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand animate-spin" />
                             )}
                           </div>
 
@@ -1187,7 +1187,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           <div className="flex justify-center mt-3">
                             <button
                               onClick={() => setShowManualEntry(true)}
-                              className="flex items-center gap-1.5 text-xs font-medium text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
+                              className="flex items-center gap-1.5 text-xs font-medium text-[#a0a0a0] hover:text-brand transition-colors"
                             >
                               <PenLine className="w-3.5 h-3.5" />
                               or add manually from label
@@ -1254,7 +1254,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}
-                    className="w-full h-11 bg-[rgba(204,255,0,0.08)]0 rounded-xl text-sm font-medium disabled:opacity-50"
+                    className="w-full h-11 bg-brand/[8%]0 rounded-xl text-sm font-medium disabled:opacity-50"
                   >
                     {isSaving ? (
                       <>
@@ -1394,7 +1394,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
           <Button
             onClick={handleLog}
             disabled={logMutation.isPending}
-            className="w-full bg-[rgba(204,255,0,0.08)]0"
+            className="w-full bg-brand/[8%]0"
           >
             {logMutation.isPending ? (
               <>

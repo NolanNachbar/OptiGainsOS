@@ -5,10 +5,10 @@ import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator } from "lucide-rea
 import { useTutorial } from "@/hooks/useTutorial";
 
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-[#ccff00]", iconColor: "text-black" },
+  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-brand", iconColor: "text-black" },
   { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]", iconColor: "text-white" },
   { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]", iconColor: "text-white" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-[#ccff00]", iconColor: "text-black" },
+  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-brand", iconColor: "text-black" },
   { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]", iconColor: "text-white" },
 ];
 
@@ -97,7 +97,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
             nextStep();
           }
         }}
-        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-[#ccff00] text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-[#ccff00] transition-colors"
+        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-brand text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-brand transition-colors"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"

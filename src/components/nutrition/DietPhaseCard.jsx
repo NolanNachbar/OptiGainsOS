@@ -214,7 +214,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <Dumbbell className="w-4 h-4 text-[#ccff00]" />
+              <Dumbbell className="w-4 h-4 text-brand" />
               Diet Phase
             </CardTitle>
             <Button
@@ -421,7 +421,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                       }}
                       className={`p-3 rounded-lg border-2 text-center transition-all ${
                         selected
-                          ? `${colors.border} ${colors.bg} ring-2 ring-offset-1 ring-[rgba(204,255,0,0.3)]`
+                          ? `${colors.border} ${colors.bg} ring-2 ring-offset-1 ring-brand/30`
                           : "border-[#2a2a2a] border-[#2a2a2a] hover:border-[#2a2a2a]"
                       }`}
                     >
@@ -453,7 +453,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                       !customRate && newRate === preset.value
-                        ? "border-[rgba(204,255,0,0.4)] bg-[rgba(204,255,0,0.08)] text-white"
+                        ? "border-brand/40 bg-brand/[8%] text-white"
                         : "border-[#2a2a2a] border-[#2a2a2a] hover:border-[#2a2a2a]"
                     }`}
                   >
@@ -550,7 +550,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           <div className="px-6 py-4 border-t border-[#2a2a2a] flex-shrink-0 flex gap-2">
             <Button
               onClick={handleStartPhase}
-              className="flex-1 bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
+              className="flex-1 bg-brand/[8%]0 hover:bg-brand text-black font-bold"
               disabled={startPhaseMutation.isPending}
             >
               {startPhaseMutation.isPending

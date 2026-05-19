@@ -145,7 +145,7 @@ export default function PublicProfile() {
                 <p className="text-[#a0a0a0] mt-2 max-w-md">{profile.bio}</p>
               )}
               {profile.isOwn && (
-                <span className="mt-2 px-3 py-1 bg-[rgba(204,255,0,0.1)] text-[#ccff00] text-xs font-medium rounded-full">
+                <span className="mt-2 px-3 py-1 bg-brand/10 text-brand text-xs font-medium rounded-full">
                   This is you
                 </span>
               )}
@@ -162,7 +162,7 @@ export default function PublicProfile() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="border-none">
             <CardContent className="py-4 text-center">
-              <Dumbbell className="w-6 h-6 text-[#ccff00] mx-auto mb-2" />
+              <Dumbbell className="w-6 h-6 text-brand mx-auto mb-2" />
               <p className="text-2xl font-bold text-white">{profile.total_workouts || 0}</p>
               <p className="text-xs text-[#555555]">Workouts</p>
             </CardContent>
@@ -207,7 +207,7 @@ export default function PublicProfile() {
         <Card className="">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-[#ccff00]" />
+              <Share2 className="w-5 h-5 text-brand" />
               Shared Content
             </CardTitle>
           </CardHeader>
@@ -278,7 +278,7 @@ export default function PublicProfile() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)]"
+                                    className="shrink-0 text-brand border-brand/30 hover:bg-brand/[8%]"
                                     onClick={() => handleCloneWorkout(sw)}
                                     disabled={cloneWorkout.isPending}
                                   >
@@ -292,7 +292,7 @@ export default function PublicProfile() {
                               <div className="space-y-1.5">
                                 {(sw.exercises || []).map((ex, i) => (
                                   <div key={i} className="flex items-center gap-2 text-sm">
-                                    <span className="w-5 h-5 rounded-full bg-[rgba(204,255,0,0.08)]0 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                    <span className="w-5 h-5 rounded-full bg-brand/[8%]0 flex items-center justify-center text-white text-xs font-bold shrink-0">
                                       {i + 1}
                                     </span>
                                     <span className="text-[#a0a0a0]">{ex.name}</span>
@@ -359,7 +359,7 @@ export default function PublicProfile() {
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
                                 <div className="flex items-start gap-2 mb-2">
-                                  <TrendingUp className="w-5 h-5 text-[#ccff00] mt-0.5 flex-shrink-0" />
+                                  <TrendingUp className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
                                   <div>
                                     <h4 className="font-semibold text-white">{program?.name || 'Untitled Program'}</h4>
                                     {sp.caption && (
@@ -407,7 +407,7 @@ export default function PublicProfile() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="shrink-0 text-[#ccff00] border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)]"
+                                  className="shrink-0 text-brand border-brand/30 hover:bg-brand/[8%]"
                                   onClick={() => handleCloneProgram(sp)}
                                   disabled={cloneProgram.isPending}
                                 >

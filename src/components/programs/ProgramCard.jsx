@@ -39,7 +39,7 @@ export default function ProgramCard({ program, enrollment }) {
       <Link to={`/program/${program.id}`}>
         <div
           className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all duration-200 cursor-pointer"
-          style={{ borderLeftColor: '#ccff00' }}
+          style={{ borderLeftColor: 'var(--color-brand)' }}
         >
           <div className="px-5 pt-4 pb-2">
             {/* Badges */}
@@ -57,7 +57,7 @@ export default function ProgramCard({ program, enrollment }) {
               )}
             </div>
 
-            <h3 className="text-base font-bold text-white group-hover:text-[#ccff00] transition-colors mb-1">
+            <h3 className="text-base font-bold text-white group-hover:text-brand transition-colors mb-1">
               {program.name}
             </h3>
             {program.description && (
@@ -68,7 +68,7 @@ export default function ProgramCard({ program, enrollment }) {
             {enrollment && (
               <div className="h-1 bg-[#202020] rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-[#ccff00] rounded-full"
+                  className="h-full bg-brand rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>

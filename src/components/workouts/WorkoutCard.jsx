@@ -36,7 +36,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
 
   const handleExport = () => {
     const exportData = {
-      _sisyphus_version: 1,
+      _vektor_version: 1,
       title: workout.title,
       description: workout.description,
       type: workout.type,

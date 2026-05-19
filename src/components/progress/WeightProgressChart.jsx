@@ -32,7 +32,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         <div className="bg-[#202020] p-3 rounded-xl border border-[#2a2a2a]">
           <p className="font-semibold text-[13px] text-white">{format(parseISO(label), 'MMM d, yyyy')}</p>
           {rawEntry && <p className="text-[12px] text-[#a0a0a0] font-mono">{rawEntry.value} {weightUnit}</p>}
-          {trendEntry && <p className="text-[12px] font-mono text-[#ccff00]">Trend: {trendEntry.value} {weightUnit}</p>}
+          {trendEntry && <p className="text-[12px] font-mono text-brand">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -52,7 +52,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Trend</div>
-          <div className="text-[18px] font-bold font-mono text-[#ccff00]">{currentTrend} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span></div>
+          <div className="text-[18px] font-bold font-mono text-brand">{currentTrend} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span></div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Change</div>
@@ -95,11 +95,11 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <Line
               type="monotone"
               dataKey="trendWeight"
-              stroke="#ccff00"
+              stroke="var(--color-brand)"
               strokeWidth={1.5}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: '#ccff00', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--color-brand)', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -111,7 +111,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px" style={{ borderTop: '1.5px dashed #ccff00' }} />
+          <div className="w-4 h-px" style={{ borderTop: '1.5px dashed var(--color-brand)' }} />
           Trend (EWMA)
         </span>
       </div>

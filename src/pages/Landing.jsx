@@ -73,7 +73,7 @@ export default function Landing() {
         <div className="flex justify-between items-center h-16 px-6 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <Logo className="w-7 h-7" />
-            <span className="text-[#ccff00] font-bold tracking-tight text-lg uppercase">Vektor</span>
+            <span className="text-brand font-bold tracking-tight text-lg uppercase">Vektor</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             {['Performance', 'Training', 'Nutrition'].map((label) => (
@@ -114,11 +114,11 @@ export default function Landing() {
           </div>
           <div className="relative z-10 px-6 md:px-8 max-w-7xl mx-auto w-full">
             <div className="max-w-2xl">
-              <span className="inline-block font-['IBM_Plex_Mono'] text-xs tracking-[0.15em] uppercase text-[#ccff00] mb-5 bg-[#ccff00]/10 px-3 py-1 border border-[#ccff00]/20">
+              <span className="inline-block font-['IBM_Plex_Mono'] text-xs tracking-[0.15em] uppercase text-brand mb-5 bg-brand/10 px-3 py-1 border border-brand/20">
                 System Status: Optimized
               </span>
               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold uppercase tracking-tight leading-[1.05] mb-6">
-                Own Your <span className="text-[#ccff00]">Evolution.</span>
+                Own Your <span className="text-brand">Evolution.</span>
               </h1>
               <p className="text-[#a0a0a0] text-lg max-w-lg mb-8 leading-relaxed">
                 Precision tracking, adaptive programming, and data-driven nutrition coaching for athletes who take training seriously.
@@ -147,10 +147,11 @@ export default function Landing() {
             {FEATURES.map(({ icon: Icon, title, body }) => (
               <div
                 key={title}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] border-l-[3px] border-l-[#ccff00] p-7 hover:border-t-[#ccff00]/20 hover:border-r-[#ccff00]/20 hover:border-b-[#ccff00]/20 transition-colors"
-                style={{ borderLeftColor: '#ccff00' }}
+                className="bg-[#1a1a1a] border border-[#2a2a2a] border-l-[3px] p-7 transition-colors"
+                style={{ borderLeftColor: 'var(--color-brand)' }}
+                style={{ borderLeftColor: 'var(--color-brand)' }}
               >
-                <Icon className="w-6 h-6 text-[#ccff00] mb-5" />
+                <Icon className="w-6 h-6 text-brand mb-5" />
                 <h3 className="text-lg font-semibold text-white mb-3 tracking-tight">{title}</h3>
                 <p className="text-[#a0a0a0] text-sm leading-relaxed">{body}</p>
               </div>
@@ -172,11 +173,11 @@ export default function Landing() {
                   Mathematical recovery scoring derived from your training history and logged sleep. Know exactly how much you have in the tank before you touch a bar.
                 </p>
                 <div className="flex items-end gap-2 mb-8">
-                  <span className="font-['IBM_Plex_Mono'] text-6xl font-bold text-[#ccff00] leading-none">88</span>
+                  <span className="font-['IBM_Plex_Mono'] text-6xl font-bold text-brand leading-none">88</span>
                   <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#a0a0a0] pb-2">/ 100 Readiness</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <MacroRing pct={80} color="#ccff00" label="Protein" />
+                  <MacroRing pct={80} color="var(--color-brand)" label="Protein" />
                   <MacroRing pct={60} color="#ec6a06" label="Carbs" />
                   <MacroRing pct={40} color="#f87171" label="Fat" />
                 </div>
@@ -189,7 +190,7 @@ export default function Landing() {
                     <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#a0a0a0]">
                       Session Intensity
                     </span>
-                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#ccff00]">THIS WEEK</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-brand">THIS WEEK</span>
                   </div>
                   <div className="h-56 px-5 pb-0 pt-5 flex items-end gap-1.5">
                     {CHART_BARS.map((h, i) => (
@@ -198,14 +199,14 @@ export default function Landing() {
                         className="flex-1 transition-all"
                         style={{
                           height: `${h}%`,
-                          backgroundColor: h >= 85 ? '#ec6a06' : h >= 65 ? '#ccff00' : '#2a2a2a',
+                          backgroundColor: h >= 85 ? '#ec6a06' : h >= 65 ? 'var(--color-brand)' : '#2a2a2a',
                         }}
                       />
                     ))}
                   </div>
                   <div className="px-5 py-3 bg-[#161616] flex justify-between">
                     <span className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">Mon</span>
-                    <span className="font-['IBM_Plex_Mono'] text-xs text-[#ccff00]">Peak Load</span>
+                    <span className="font-['IBM_Plex_Mono'] text-xs text-brand">Peak Load</span>
                     <span className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">Sun</span>
                   </div>
                 </div>
@@ -218,7 +219,7 @@ export default function Landing() {
         {/* Leaderboard */}
         <section className="py-20 px-6 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
-            <Trophy className="w-5 h-5 text-[#ccff00]" />
+            <Trophy className="w-5 h-5 text-brand" />
             <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">Top Performers</h2>
           </div>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a]">
@@ -233,7 +234,7 @@ export default function Landing() {
                 key={rank}
                 className={`grid grid-cols-12 px-5 py-4 items-center hover:bg-[#202020] transition-colors ${i < LEADERBOARD.length - 1 ? 'border-b border-[#2a2a2a]' : ''}`}
               >
-                <div className="col-span-1 font-['IBM_Plex_Mono'] text-lg font-semibold text-[#ccff00]">{rank}</div>
+                <div className="col-span-1 font-['IBM_Plex_Mono'] text-lg font-semibold text-brand">{rank}</div>
                 <div className="col-span-7 flex items-center gap-3">
                   <div className="w-9 h-9 bg-[#2a2a2a] border border-[#333] flex items-center justify-center font-['IBM_Plex_Mono'] text-xs text-[#a0a0a0]">
                     {initials}
@@ -245,7 +246,7 @@ export default function Landing() {
                 </div>
                 <div className="col-span-2 text-right">
                   {active ? (
-                    <span className="font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase text-[#ccff00] bg-[#ccff00]/10 border border-[#ccff00]/30 px-2 py-1">
+                    <span className="font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase text-brand bg-brand/10 border border-brand/30 px-2 py-1">
                       Active
                     </span>
                   ) : (
@@ -262,7 +263,7 @@ export default function Landing() {
         {/* CTA */}
         <section className="py-20 px-6 md:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="bg-[#ccff00] p-10 md:p-16 flex flex-col items-center text-center relative overflow-hidden">
+            <div className="bg-brand p-10 md:p-16 flex flex-col items-center text-center relative overflow-hidden">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white,_transparent)]" />
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black uppercase tracking-tight leading-tight mb-5 z-10">
                 Start Tracking.<br />Start Adapting.
@@ -271,7 +272,7 @@ export default function Landing() {
                 Free to use. No gimmicks. Just the math that gets you stronger.
               </p>
               <Link to="/signup" className="z-10">
-                <Button className="bg-black hover:bg-black/80 !text-[#ccff00] px-10 py-5 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase font-bold active:scale-95 transition-all">
+                <Button className="bg-black hover:bg-black/80 !text-brand px-10 py-5 font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase font-bold active:scale-95 transition-all">
                   Create Free Account
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -287,7 +288,7 @@ export default function Landing() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-6 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <Logo className="w-6 h-6" />
-            <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-[#ccff00] font-bold">Vektor</span>
+            <span className="font-['IBM_Plex_Mono'] text-xs tracking-widest uppercase text-brand font-bold">Vektor</span>
           </div>
           <p className="font-['IBM_Plex_Mono'] text-xs text-[#555555]">© 2025 Vektor. All rights reserved.</p>
           <div className="flex gap-6">

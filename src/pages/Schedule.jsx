@@ -56,10 +56,10 @@ const SegmentedCircularProgress = ({
   const quarterCircumference = circumference / 4;
 
   const segments = [
-    { percentage: calories, color: "#ccff00", bgColor: "#2a2a2a", rotation: 0 },
+    { percentage: calories, color: "var(--color-brand)", bgColor: "#2a2a2a", rotation: 0 },
     { percentage: protein, color: "#a0e040", bgColor: "#2a2a2a", rotation: 90 },
     { percentage: carbs, color: "#7bbd00", bgColor: "#2a2a2a", rotation: 180 },
-    { percentage: fats, color: "#ccff00", bgColor: "#2a2a2a", rotation: 270 },
+    { percentage: fats, color: "var(--color-brand)", bgColor: "#2a2a2a", rotation: 270 },
   ];
 
   return (
@@ -116,7 +116,7 @@ const SegmentedCircularProgress = ({
           <span className="text-[#a0a0a0]">{Math.round(calories)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-[rgba(204,255,0,0.08)]0"></div>
+          <div className="w-2 h-2 rounded-full bg-brand/[8%]0"></div>
           <span className="text-[#a0a0a0]">{Math.round(protein)}%</span>
         </div>
         <div className="flex items-center gap-1">
@@ -124,7 +124,7 @@ const SegmentedCircularProgress = ({
           <span className="text-[#a0a0a0]">{Math.round(carbs)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-[rgba(204,255,0,0.08)]0"></div>
+          <div className="w-2 h-2 rounded-full bg-brand/[8%]0"></div>
           <span className="text-[#a0a0a0]">{Math.round(fats)}%</span>
         </div>
       </div>
@@ -888,7 +888,7 @@ export default function Schedule() {
         <div className="flex items-center justify-end mb-5">
           <button
             onClick={handleBuildProgram}
-            className="border border-[#2a2a2a] text-[10px] font-bold uppercase tracking-[0.15em] text-[#a0a0a0] px-3 py-2 rounded-lg hover:border-[rgba(204,255,0,0.4)] hover:text-[#ccff00] transition-colors"
+            className="border border-[#2a2a2a] text-[10px] font-bold uppercase tracking-[0.15em] text-[#a0a0a0] px-3 py-2 rounded-lg hover:border-brand/40 hover:text-brand transition-colors"
           >
             Build Program
           </button>
@@ -924,21 +924,21 @@ export default function Schedule() {
                 onClick={() => setSelectedDay(day)}
                 className={`flex-1 flex flex-col items-center pt-2 pb-2.5 rounded-xl transition-all ${
                   isSelected
-                    ? "bg-[#ccff00]"
+                    ? "bg-brand"
                     : isToday
-                    ? "bg-[rgba(204,255,0,0.1)] border border-[rgba(204,255,0,0.25)]"
+                    ? "bg-brand/10 border border-brand/25"
                     : "bg-[#1a1a1a] border border-[#2a2a2a]"
                 }`}
               >
                 <span className={`text-[9px] font-bold uppercase tracking-wider mb-1 ${isSelected ? "text-[#121212]" : "text-[#555555]"}`}>
                   {format(day, "EEE")}
                 </span>
-                <span className={`text-base font-black leading-none ${isSelected ? "text-[#121212]" : isToday ? "text-[#ccff00]" : "text-white"}`}>
+                <span className={`text-base font-black leading-none ${isSelected ? "text-[#121212]" : isToday ? "text-brand" : "text-white"}`}>
                   {format(day, "d")}
                 </span>
                 <div className={`w-1.5 h-1.5 rounded-full mt-2 ${
                   isDone ? "bg-[#4ade80]" :
-                  hasWorkout ? (isSelected ? "bg-[#121212]" : "bg-[#ccff00]") :
+                  hasWorkout ? (isSelected ? "bg-[#121212]" : "bg-brand") :
                   "bg-transparent"
                 }`} />
               </button>
@@ -1003,7 +1003,7 @@ export default function Schedule() {
                 {isToday && (
                   <button
                     onClick={() => setDayDetailDate(selectedDay)}
-                    className="w-full text-xs font-bold uppercase tracking-[0.15em] text-[#555555] hover:text-[#ccff00] transition-colors text-center"
+                    className="w-full text-xs font-bold uppercase tracking-[0.15em] text-[#555555] hover:text-brand transition-colors text-center"
                   >
                     + Add Workout
                   </button>
@@ -1036,7 +1036,7 @@ export default function Schedule() {
                       {item.exercises.slice(0, 5).map((ex, i) => (
                         <div key={i} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-[#ccff00] text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                            <span className="text-brand text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
                             <span className="text-white text-xs font-semibold uppercase tracking-wide">{ex.name}</span>
                           </div>
                           <span className="text-[#555555] text-[11px] font-mono tabular-nums shrink-0 ml-2">
@@ -1059,7 +1059,7 @@ export default function Schedule() {
                   ) : isToday && item.isCurrent ? (
                     <button
                       onClick={e => { e.stopPropagation(); navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`); }}
-                      className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
+                      className="w-full py-3 rounded-xl bg-brand text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
                     >
                       Start Session
                     </button>
@@ -1092,7 +1092,7 @@ export default function Schedule() {
                         {workout.exercises.slice(0, 5).map((ex, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="text-[#ccff00] text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                              <span className="text-brand text-[11px] font-black tabular-nums w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
                               <span className="text-white text-xs font-semibold uppercase tracking-wide">{ex.name}</span>
                             </div>
                             <span className="text-[#555555] text-[11px] font-mono tabular-nums shrink-0 ml-2">
@@ -1115,7 +1115,7 @@ export default function Schedule() {
                     ) : isToday ? (
                       <button
                         onClick={e => { e.stopPropagation(); setDayDetailDate(selectedDay); }}
-                        className="w-full py-3 rounded-xl bg-[#ccff00] text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
+                        className="w-full py-3 rounded-xl bg-brand text-[#121212] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-[#d4ff33] transition-colors"
                       >
                         Start Session
                       </button>
@@ -1151,10 +1151,10 @@ export default function Schedule() {
               <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555]">
                 Week {activeEnrollment.current_week || 1}/{activeProgram.num_cycles || activeProgram.duration_weeks || 4} — {activeProgram.name}
               </span>
-              <span className="text-[9px] font-black text-[#ccff00] tabular-nums">{enrollmentProgressPct}%</span>
+              <span className="text-[9px] font-black text-brand tabular-nums">{enrollmentProgressPct}%</span>
             </div>
             <div className="h-[3px] bg-[#2a2a2a] rounded-full overflow-hidden">
-              <div className="h-full bg-[#ccff00] transition-all duration-500" style={{ width: `${enrollmentProgressPct}%` }} />
+              <div className="h-full bg-brand transition-all duration-500" style={{ width: `${enrollmentProgressPct}%` }} />
             </div>
           </div>
         )}
@@ -1163,7 +1163,7 @@ export default function Schedule() {
         <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#ccff00]" />
+              <BookOpen className="w-4 h-4 text-brand" />
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#555555]">
                 Library
               </span>
@@ -1179,7 +1179,7 @@ export default function Schedule() {
                 onClick={() => setLibraryFilter(type)}
                 className={`shrink-0 px-3 py-2 min-h-[36px] rounded-full text-[10px] font-bold uppercase tracking-[0.1em] transition-colors ${
                   libraryFilter === type
-                    ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]"
+                    ? "bg-brand/[12%] text-brand"
                     : "text-[#555555] hover:text-[#a0a0a0]"
                 }`}
               >
@@ -1221,16 +1221,16 @@ export default function Schedule() {
                         {enrollment && (
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-[3px] bg-[#2a2a2a] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#ccff00] transition-all" style={{ width: `${pct}%` }} />
+                              <div className="h-full bg-brand transition-all" style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-[9px] font-black text-[#ccff00] tabular-nums shrink-0">{pct}%</span>
+                            <span className="text-[9px] font-black text-brand tabular-nums shrink-0">{pct}%</span>
                           </div>
                         )}
                       </div>
                       <div className="flex gap-2 shrink-0 mt-0.5">
                         <button
                           onClick={() => navigate(`/program/${prog.id}`)}
-                          className="text-[10px] font-bold uppercase tracking-[0.1em] border border-[#2a2a2a] text-[#a0a0a0] px-2.5 py-1.5 rounded-lg hover:border-[rgba(204,255,0,0.3)] hover:text-white transition-colors"
+                          className="text-[10px] font-bold uppercase tracking-[0.1em] border border-[#2a2a2a] text-[#a0a0a0] px-2.5 py-1.5 rounded-lg hover:border-brand/30 hover:text-white transition-colors"
                         >
                           View
                         </button>
@@ -1302,13 +1302,13 @@ export default function Schedule() {
               <div className="w-48">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-[#a0a0a0]">This week</span>
-                  <span className="font-semibold text-[#ccff00]">
+                  <span className="font-semibold text-brand">
                     {completedThisWeek}/{totalThisWeek}
                   </span>
                 </div>
                 <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#ccff00] transition-all duration-500"
+                    className="h-full bg-brand transition-all duration-500"
                     style={{ width: `${weeklyProgressPercentage}%` }}
                   ></div>
                 </div>
@@ -1337,7 +1337,7 @@ export default function Schedule() {
           const todayButton = !isCurrentWeek && (
             <button
               onClick={goToToday}
-              className="flex items-center gap-1 text-xs px-3 py-1 text-[#ccff00] hover:text-[#ccff00] font-semibold transition-colors"
+              className="flex items-center gap-1 text-xs px-3 py-1 text-brand hover:text-brand font-semibold transition-colors"
             >
               {viewingFuture ? (
                 <>
@@ -1413,9 +1413,9 @@ export default function Schedule() {
                 key={index}
                 className={`bg-[#1a1a1a] text-white rounded-xl transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px] ${
                   isDragOver
-                    ? "border-2 border-[rgba(204,255,0,0.3)] scale-[1.02] bg-[rgba(204,255,0,0.1)]"
+                    ? "border-2 border-brand/30 scale-[1.02] bg-brand/10"
                     : isToday
-                    ? "border-2 border-[rgba(204,255,0,0.3)]"
+                    ? "border-2 border-brand/30"
                     : "border-0 "
                 }`}
                 onClick={() => setDayDetailDate(day)}
@@ -1431,14 +1431,14 @@ export default function Schedule() {
                   <div className="text-center">
                     <div
                       className={`text-xs font-semibold uppercase tracking-widest ${
-                        isToday ? "text-[#ccff00]" : "text-[#555555]"
+                        isToday ? "text-brand" : "text-[#555555]"
                       }`}
                     >
                       {format(day, "EEE")}
                     </div>
                     <div
                       className={`text-4xl font-bold mt-2 ${
-                        isToday ? "text-[#ccff00]" : "text-white"
+                        isToday ? "text-brand" : "text-white"
                       }`}
                     >
                       {format(day, "d")}
@@ -1473,14 +1473,14 @@ export default function Schedule() {
                                     : cardioOnly
                                     ? "bg-[rgba(249,115,22,0.08)]"
                                     : item.isCurrent
-                                    ? "bg-[rgba(204,255,0,0.1)] cursor-pointer"
-                                    : "bg-[rgba(204,255,0,0.1)]"
+                                    ? "bg-brand/10 cursor-pointer"
+                                    : "bg-brand/10"
                                 }`}
                               >
                                 {cardioOnly ? (
                                   <Activity className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-[#a0a0a0]"}`} />
                                 ) : (
-                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-[#ccff00]"}`} />
+                                  <BookOpen className={`w-3.5 h-3.5 ${item.completed ? "text-[#4ade80]" : "text-brand"}`} />
                                 )}
                               </div>
                             );
@@ -1518,14 +1518,14 @@ export default function Schedule() {
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-move transition-colors ${
                                   item.completed
                                     ? "bg-[rgba(34,197,94,0.1)]/30"
-                                    : "bg-[rgba(204,255,0,0.1)]"
+                                    : "bg-brand/10"
                                 }`}
                               >
                                 <Dumbbell
                                   className={`w-3.5 h-3.5 ${
                                     item.completed
                                       ? "text-[#4ade80]"
-                                      : "text-[#ccff00]"
+                                      : "text-brand"
                                   }`}
                                 />
                               </div>
@@ -1575,7 +1575,7 @@ export default function Schedule() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between mb-3">
               <CardTitle className="text-xl flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#ccff00]" />
+                <BookOpen className="w-5 h-5 text-brand" />
                 Library
               </CardTitle>
               <Tabs value={libraryFilter === "programs" ? "programs" : "workouts"} onValueChange={(v) => setLibraryFilter(v === "programs" ? "programs" : "all")}>
@@ -1588,7 +1588,7 @@ export default function Schedule() {
                     <BookOpen className="w-3.5 h-3.5" />
                     Programs
                     {allPrograms.length > 0 && (
-                      <Badge className="bg-[rgba(204,255,0,0.12)] text-[#ccff00] text-xs px-1.5 py-0 ml-0.5">{allPrograms.length}</Badge>
+                      <Badge className="bg-brand/[12%] text-brand text-xs px-1.5 py-0 ml-0.5">{allPrograms.length}</Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
@@ -1604,7 +1604,7 @@ export default function Schedule() {
                       onClick={() => setLibraryFilter(type)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium dark:transition-colors ${
                         libraryFilter === type
-                          ? "bg-[rgba(204,255,0,0.12)] text-[#ccff00]0 text-[#ccff00]"
+                          ? "bg-brand/[12%] text-brand0 text-brand"
                           : "text-[#555555] hover:bg-[#202020] text-[#a0a0a0] hover:bg-[#242424]"
                       }`}
                     >
@@ -1638,7 +1638,7 @@ export default function Schedule() {
                       ? Math.min(100, Math.round(((enrollment.completed_workouts?.length || 0) / totalWorkouts) * 100))
                       : 0;
                     return (
-                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)] bg-[#202020] transition-all group">
+                      <div key={prog.id} className="flex items-center justify-between p-4 rounded-lg border border-[#2a2a2a] hover:border-brand/30 bg-[#202020] transition-all group">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-semibold text-white truncate">{prog.name}</p>
@@ -1654,7 +1654,7 @@ export default function Schedule() {
                           {enrollment && (
                             <div className="flex items-center gap-2">
                               <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden w-32">
-                                <div className="h-full bg-[rgba(204,255,0,0.08)]0 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                                <div className="h-full bg-brand/[8%]0 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                               </div>
                               <span className="text-xs text-[#a0a0a0]">{progressPct}%</span>
                             </div>
@@ -1695,8 +1695,8 @@ export default function Schedule() {
                         handleDragStart(e, { ...workout, isLibrary: true })
                       }
                       onDragEnd={handleDragEnd}
-                      className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] border-l-4 cursor-move hover:border-[rgba(204,255,0,0.3)] transition-all group relative"
-                      style={{ borderLeftColor: { strength: '#ccff00', cardio: '#555555', hiit: '#ef4444', mixed: '#a0a0a0' }[workout.type] || '#555555' }}
+                      className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] border-l-4 cursor-move hover:border-brand/30 transition-all group relative"
+                      style={{ borderLeftColor: { strength: 'var(--color-brand)', cardio: '#555555', hiit: '#ef4444', mixed: '#a0a0a0' }[workout.type] || '#555555' }}
                     >
                       <button
                         onClick={(e) => {
@@ -1746,7 +1746,7 @@ export default function Schedule() {
               <CardHeader className="pb-4 border-b border-[#2a2a2a]">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <CalendarIcon className="w-5 h-5 text-[#ccff00]" />
+                    <CalendarIcon className="w-5 h-5 text-brand" />
                     {format(dayDetailDate, "EEEE, MMMM d")}
                   </CardTitle>
                   <Button
@@ -1767,7 +1767,7 @@ export default function Schedule() {
                 {/* Workouts section */}
                 <div>
                   <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                    <Dumbbell className="w-4 h-4 text-[#ccff00]" />
+                    <Dumbbell className="w-4 h-4 text-brand" />
                     Workouts
                   </h3>
                   {/* Program workouts for this day */}
@@ -1780,7 +1780,7 @@ export default function Schedule() {
                             item.completed
                               ? "bg-green-50 border-green-300"
                               : item.isCurrent
-                              ? "bg-[rgba(204,255,0,0.08)] border-[rgba(204,255,0,0.3)]"
+                              ? "bg-brand/[8%] border-brand/30"
                               : "bg-[#1a1a1a] border-[#2a2a2a]"
                           }`}
                         >
@@ -1788,10 +1788,10 @@ export default function Schedule() {
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className={`p-2 rounded-lg flex-shrink-0 ${
-                                  item.completed ? "bg-green-100" : "bg-[rgba(204,255,0,0.12)]"
+                                  item.completed ? "bg-green-100" : "bg-brand/[12%]"
                                 }`}>
                                   <BookOpen className={`w-5 h-5 ${
-                                    item.completed ? "text-green-600" : "text-[#ccff00]"
+                                    item.completed ? "text-green-600" : "text-brand"
                                   }`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -1801,7 +1801,7 @@ export default function Schedule() {
                                     {item.title}
                                   </div>
                                   <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1 flex-wrap">
-                                    <Badge variant="outline" className="text-xs bg-[rgba(204,255,0,0.1)] text-[#ccff00] border-[rgba(204,255,0,0.3)]">
+                                    <Badge variant="outline" className="text-xs bg-brand/10 text-brand border-brand/30">
                                       {item.programName}
                                     </Badge>
                                     <span className="text-xs">Cycle {item.cycle}, Day {item.dayIndex}</span>
@@ -1812,7 +1812,7 @@ export default function Schedule() {
                               {item.isCurrent && !item.completed && item.exercises?.length > 0 && (
                                 <Button
                                   size="sm"
-                                  className="bg-[rgba(204,255,0,0.08)]0 flex-shrink-0"
+                                  className="bg-brand/[8%]0 flex-shrink-0"
                                   onClick={() =>
                                     navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)
                                   }
@@ -1888,7 +1888,7 @@ export default function Schedule() {
                             className={`rounded-xl border-2 transition-all ${
                               item.completed
                                 ? "bg-green-50 border-green-300"
-                                : "bg-[#1a1a1a] border-[#2a2a2a] hover:border-[rgba(204,255,0,0.3)]"
+                                : "bg-[#1a1a1a] border-[#2a2a2a] hover:border-brand/30"
                             }`}
                           >
                             <div className="p-4">
@@ -1898,14 +1898,14 @@ export default function Schedule() {
                                     className={`p-2 rounded-lg ${
                                       item.completed
                                         ? "bg-green-100"
-                                        : "bg-[rgba(204,255,0,0.12)]"
+                                        : "bg-brand/[12%]"
                                     }`}
                                   >
                                     <Dumbbell
                                       className={`w-5 h-5 ${
                                         item.completed
                                           ? "text-green-600"
-                                          : "text-[#ccff00]"
+                                          : "text-brand"
                                       }`}
                                     />
                                   </div>
@@ -1984,8 +1984,8 @@ export default function Schedule() {
                           onClick={() => setTimeOfDay(opt.toLowerCase())}
                           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                             timeOfDay === opt.toLowerCase()
-                              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.1)] text-[#ccff00] bg-[rgba(204,255,0,0.1)] text-[#ccff00]"
-                              : "border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]"
+                              ? "border-brand/30 bg-brand/10 text-brand bg-brand/10 text-brand"
+                              : "border-[#2a2a2a] text-[#555555] hover:border-brand/30"
                           }`}
                         >
                           {opt}
@@ -2015,7 +2015,7 @@ export default function Schedule() {
                           time: timeOfDay,
                         })
                       }
-                      className="bg-[rgba(204,255,0,0.08)]0"
+                      className="bg-brand/[8%]0"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -2104,7 +2104,7 @@ export default function Schedule() {
                       <div className="grid grid-cols-4 gap-4">
                         <div className="text-center p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
                           <div className="flex items-center justify-center mb-2">
-                            <Flame className="w-5 h-5 text-[#ccff00]" />
+                            <Flame className="w-5 h-5 text-brand" />
                           </div>
                           <div className="text-2xl font-bold text-white">
                             {Math.round(macros.calories)}
@@ -2197,11 +2197,11 @@ export default function Schedule() {
                 {/* Option A: use active program */}
                 <button
                   onClick={handleScheduleActiveProgram}
-                  className="w-full text-left p-4 rounded-xl border-2 border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.12)] transition-all"
+                  className="w-full text-left p-4 rounded-xl border-2 border-brand/30 bg-brand/[8%] hover:border-brand/30 hover:bg-brand/[12%] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[rgba(204,255,0,0.12)] rounded-lg flex-shrink-0">
-                      <BookOpen className="w-5 h-5 text-[#ccff00]" />
+                    <div className="p-2 bg-brand/[12%] rounded-lg flex-shrink-0">
+                      <BookOpen className="w-5 h-5 text-brand" />
                     </div>
                     <div>
                       <p className="font-semibold text-white">Continue My Program</p>
@@ -2219,7 +2219,7 @@ export default function Schedule() {
                     setScheduleMode("week");
                     setShowSplitSelector(true);
                   }}
-                  className="w-full text-left p-4 rounded-xl border-2 border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(204,255,0,0.2)] hover:bg-[#202020] transition-all"
+                  className="w-full text-left p-4 rounded-xl border-2 border-[#2a2a2a] bg-[#1a1a1a] hover:border-brand/20 hover:bg-[#202020] transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#202020] rounded-lg flex-shrink-0">
@@ -2280,15 +2280,15 @@ export default function Schedule() {
                     type="date"
                     value={selectedProgramStartDate}
                     onChange={(e) => setSelectedProgramStartDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border-2 border-[#2a2a2a] focus:border-[rgba(204,255,0,0.3)] focus:outline-none text-white text-sm transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border-2 border-[#2a2a2a] focus:border-brand/30 focus:outline-none text-white text-sm transition-colors"
                   />
                 </div>
 
                 {/* Preview: what week/day this maps to */}
                 {selectedProgramStartDate && (
-                  <div className="bg-[rgba(204,255,0,0.08)] border border-[rgba(204,255,0,0.3)] rounded-lg p-3 text-sm">
-                    <p className="font-medium text-[#ccff00] mb-1">Schedule Preview</p>
-                    <p className="text-[#ccff00] text-xs">
+                  <div className="bg-brand/[8%] border border-brand/30 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-brand mb-1">Schedule Preview</p>
+                    <p className="text-brand text-xs">
                       Program runs{" "}
                       <span className="font-semibold">
                         {format(new Date(selectedProgramStartDate), "MMM d")}
@@ -2304,7 +2304,7 @@ export default function Schedule() {
                         )}
                       </span>
                     </p>
-                    <p className="text-[#ccff00] text-xs mt-1">
+                    <p className="text-brand text-xs mt-1">
                       {(activeProgram.cycle_length || 7) * (activeProgram.num_cycles || 1)} total days ·{" "}
                       {activeProgram.num_cycles || 1} cycle{activeProgram.num_cycles !== 1 ? "s" : ""}
                     </p>
@@ -2321,7 +2321,7 @@ export default function Schedule() {
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-[rgba(204,255,0,0.08)]0"
+                    className="flex-1 bg-brand/[8%]0"
                     disabled={
                       !selectedProgramStartDate ||
                       selectedProgramStartDate === activeEnrollment.start_date ||

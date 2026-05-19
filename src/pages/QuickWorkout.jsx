@@ -296,7 +296,7 @@ export default function QuickWorkout() {
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]" onClick={handleResumeSession}>
+            <Button className="flex-1 bg-brand hover:bg-brand" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

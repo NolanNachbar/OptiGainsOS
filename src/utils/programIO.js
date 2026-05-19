@@ -28,7 +28,7 @@ const FORMAT_VERSION = "1.0";
 
 export function exportProgramAsJson(program) {
   const payload = {
-    sisyphus_version: FORMAT_VERSION,
+    vektor_version: FORMAT_VERSION,
     type: "program",
     exported_at: new Date().toISOString(),
     program: {

@@ -96,7 +96,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       </div>
 
       {result && (
-        <Card className="bg-[rgba(204,255,0,0.08)] border-[rgba(204,255,0,0.3)]">
+        <Card className="bg-brand/[8%] border-brand/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Plates Per Side</CardTitle>
           </CardHeader>
@@ -106,7 +106,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                 {result.platesNeeded.map((plate, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-[rgba(204,255,0,0.08)]0 rounded-full flex items-center justify-center text-black font-bold font-bold">
+                      <div className="w-12 h-12 bg-brand/[8%]0 rounded-full flex items-center justify-center text-black font-bold font-bold">
                         {plate.count}×
                       </div>
                       <div>
@@ -118,7 +118,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-[#ccff00] border-[rgba(204,255,0,0.3)]">
+                    <Badge variant="outline" className="text-brand border-brand/30">
                       {(plate.weight * plate.count).toFixed(1)} {weightUnit}
                     </Badge>
                   </div>
@@ -236,11 +236,11 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
       </div>
 
       {result && (
-        <Card className="bg-[rgba(204,255,0,0.08)] border-[rgba(204,255,0,0.3)]">
+        <Card className="bg-brand/[8%] border-brand/30">
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
               <div className="text-sm text-[#555555] mb-1">Working Weight</div>
-              <div className="text-5xl font-bold text-[#ccff00]">
+              <div className="text-5xl font-bold text-brand">
                 {result.rounded} <span className="text-2xl">{weightUnit}</span>
               </div>
               <div className="text-sm text-[#555555] mt-1">
@@ -248,7 +248,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[rgba(204,255,0,0.3)]">
+            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-brand/30">
               <div className="text-center">
                 <div className="text-xs text-[#555555] mb-0.5">Est. 1RM</div>
                 <div className="font-semibold text-white">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
@@ -279,7 +279,7 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calculator className="w-6 h-6 text-[#ccff00]" />
+            <Calculator className="w-6 h-6 text-brand" />
             Lifting Calculators
           </DialogTitle>
         </DialogHeader>

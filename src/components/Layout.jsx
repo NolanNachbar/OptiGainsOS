@@ -72,7 +72,7 @@ export default function Layout({ children, currentPageName }) {
         <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-[#1a1a1a] border-b border-[#2a2a2a] items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
             <Logo className="w-8 h-8" />
-            <span className="text-[#ccff00] font-bold text-[15px] tracking-tight uppercase">Vektor</span>
+            <span className="text-brand font-bold text-[15px] tracking-tight uppercase">Vektor</span>
           </Link>
 
           <div className="flex items-center gap-0.5 flex-1">
@@ -93,7 +93,7 @@ export default function Layout({ children, currentPageName }) {
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13.5px] font-medium transition-all duration-150 ${
                     isActive
-                      ? 'bg-[rgba(204,255,0,0.08)] text-[#ccff00]'
+                      ? 'bg-brand/[8%] text-brand'
                       : 'text-[#a0a0a0] hover:bg-[#242424] hover:text-white'
                   }`}
                 >
@@ -171,7 +171,7 @@ export default function Layout({ children, currentPageName }) {
                 key={item.title}
                 to={item.url}
                 className={`flex flex-col items-center gap-0.5 px-3 py-2 min-w-0 flex-1 transition-colors ${
-                  isActive ? "text-[#ccff00]" : "text-[#555555]"
+                  isActive ? "text-brand" : "text-[#555555]"
                 }`}
                 data-tutorial={
                   isHomeButton ? "home-nav" :
@@ -199,7 +199,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
                 <span
                   className={`text-xs font-medium ${
-                    isActive ? "text-[#ccff00]" : "text-[#555555]"
+                    isActive ? "text-brand" : "text-[#555555]"
                   }`}
                 >
                   {item.title}

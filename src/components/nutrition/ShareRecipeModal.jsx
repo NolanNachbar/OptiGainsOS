@@ -48,7 +48,7 @@ export default function ShareRecipeModal({ recipe, onClose }) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-[#ccff00]" />
+            <Share2 className="w-5 h-5 text-brand" />
             Share Recipe
           </DialogTitle>
         </DialogHeader>

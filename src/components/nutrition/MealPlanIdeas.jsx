@@ -224,7 +224,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <UtensilsCrossed className="w-4 h-4 text-[#ccff00]" />
+            <UtensilsCrossed className="w-4 h-4 text-brand" />
             Meal Plan Ideas
           </CardTitle>
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5" onClick={regenerate}>
@@ -244,7 +244,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             <button key={i} onClick={() => setActiveDay(i)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeDay === i
-                  ? "bg-[rgba(204,255,0,0.08)]0 text-black font-bold"
+                  ? "bg-brand/[8%]0 text-black font-bold"
                   : "bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] hover:bg-[#2a2a2a] "
               }`}
             >
@@ -268,7 +268,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                     <span className="text-xs text-[#a0a0a0]">{inst.total.calories} cal</span>
                     <button
                       onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay, mt), mealType: mt })}
-                      className="p-0.5 rounded hover:bg-[#2a2a2a]  text-[#a0a0a0] hover:text-[#ccff00] transition-colors"
+                      className="p-0.5 rounded hover:bg-[#2a2a2a]  text-[#a0a0a0] hover:text-brand transition-colors"
                       title="Save as meal template"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
@@ -337,7 +337,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
         <div className="pt-1 space-y-2">
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-[#ccff00] hover:text-[#ccff00] transition-colors"
+            className="flex items-center gap-1.5 text-xs text-brand hover:text-brand transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add a food as a meal option

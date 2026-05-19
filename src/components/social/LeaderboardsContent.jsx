@@ -76,7 +76,7 @@ export function LeaderboardsContent() {
                   i > 0 ? "border-l border-[#2a2a2a]" : ""
                 } ${
                   timePeriod === tp.value
-                    ? "bg-[#ccff00] text-black font-bold"
+                    ? "bg-brand text-black font-bold"
                     : "text-[#a0a0a0] hover:text-[#a0a0a0] hover:bg-[#242424]"
                 }`}
               >
@@ -182,18 +182,18 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
         isFirst
           ? "bg-[rgba(245,158,11,0.08)] border border-amber-200"
           : isCurrentUser
-          ? "bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.2)]/40"
+          ? "bg-brand/[5%] border border-brand/20/40"
           : "hover:bg-[#242424]"
       }`}
     >
       {/* Rank icon / YOU badge */}
       <div className="w-6 shrink-0 flex items-center justify-center">
         {isCurrentUser ? (
-          <span className="text-xs font-bold bg-[#ccff00] text-black font-bold px-1 py-0.5 rounded">YOU</span>
+          <span className="text-xs font-bold bg-brand text-black font-bold px-1 py-0.5 rounded">YOU</span>
         ) : RankIcon ? (
           <RankIcon className={`w-4 h-4 ${rankColors[rank]}`} />
         ) : (
-          <span className={`text-xs font-bold ${isCurrentUser ? 'text-[#ccff00]' : 'text-[#a0a0a0]'}`}>
+          <span className={`text-xs font-bold ${isCurrentUser ? 'text-brand' : 'text-[#a0a0a0]'}`}>
             {String(rank).padStart(2, '0')}
           </span>
         )}
@@ -211,7 +211,7 @@ function LeaderboardRow({ entry, rank, isCurrentUser }) {
 
       {/* Rank number */}
       <span className={`text-xs font-bold shrink-0 ${
-        isFirst ? 'text-amber-500' : isCurrentUser ? 'text-[#ccff00]' : 'text-[#a0a0a0]'
+        isFirst ? 'text-amber-500' : isCurrentUser ? 'text-brand' : 'text-[#a0a0a0]'
       }`}>
         #{rank}
       </span>

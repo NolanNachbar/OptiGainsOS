@@ -70,7 +70,7 @@ export default function WorkoutLoggingHeader({
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs md:text-xs uppercase text-[#555555] font-medium tracking-wide">Workout</span>
                   <div className="flex items-center gap-1 font-mono">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#ccff00] flex-shrink-0" />
+                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-brand flex-shrink-0" />
                     <span className="font-semibold text-white text-sm md:text-base">{formatTime(elapsedTime)}</span>
                   </div>
                 </div>

@@ -8,7 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary brand colors — Volt Neon Green
+        // Brand accent — driven by CSS var so gym tenants can override at runtime
+        brand: 'rgb(var(--color-brand-rgb) / <alpha-value>)',
+        // Primary brand colors — Volt Neon Green (kept for static references)
         primary: {
           50: '#f7ffe0',
           100: '#eeffb3',

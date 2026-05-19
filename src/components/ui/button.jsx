@@ -7,22 +7,22 @@ const Button = React.forwardRef(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ccff00] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
+  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
   const variants = {
     /* 4-tier design system */
-    volt:        "bg-[#ccff00] text-black rounded-md hover:bg-[#d9ff1a]",
+    volt:        "bg-brand text-black rounded-md hover:bg-[#d9ff1a]",
     dark:        "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
-    ghost:       "bg-transparent text-[#ccff00] border border-[rgba(204,255,0,0.25)] rounded-md hover:bg-[rgba(204,255,0,0.08)]",
+    ghost:       "bg-transparent text-brand border border-brand/25 rounded-md hover:bg-brand/[8%]",
     dim:         "bg-transparent text-[#a0a0a0] border border-[#2a2a2a] rounded-md hover:bg-[#242424] hover:text-white",
     /* utility / legacy variants */
     default:     "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
-    primary:     "bg-[#ccff00] text-black rounded-md hover:bg-[#d9ff1a]",
+    primary:     "bg-brand text-black rounded-md hover:bg-[#d9ff1a]",
     ai:          "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
     destructive: "bg-transparent text-[#f87171] border border-[rgba(239,68,68,0.35)] rounded-md hover:bg-[rgba(239,68,68,0.12)] hover:border-[rgba(239,68,68,0.6)]",
     outline:     "border border-[#2a2a2a] bg-transparent text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
     secondary:   "bg-[#202020] text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
-    link:        "text-[#ccff00] underline-offset-4 hover:underline",
+    link:        "text-brand underline-offset-4 hover:underline",
   };
 
   const sizes = {

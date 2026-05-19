@@ -725,7 +725,7 @@ export default function WorkoutDetail() {
         )}
 
         <Card ref={workoutCardRef} className={`border-none mb-6 ${isLogging ? 'mt-4' : ''}`}>
-          <div className="h-1 bg-[#ccff00] rounded-t-xl"></div>
+          <div className="h-1 bg-brand rounded-t-xl"></div>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
@@ -751,11 +751,11 @@ export default function WorkoutDetail() {
                   <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -771,14 +771,14 @@ export default function WorkoutDetail() {
               )}
               <div className="flex flex-wrap gap-6 mb-6">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[#ccff00]" />
+                    <Clock className="w-5 h-5 text-brand" />
                     <div>
                       <div className="text-sm text-[#a0a0a0]">Duration</div>
                       <div className="font-semibold">{workout.duration_minutes} minutes</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-[#ccff00]" />
+                    <Target className="w-5 h-5 text-brand" />
                     <div>
                       <div className="text-sm text-[#a0a0a0]">Exercises</div>
                       <div className="font-semibold">{workout.exercises?.length || 0} exercises</div>
@@ -940,7 +940,7 @@ export default function WorkoutDetail() {
                   <Card key={index} className="bg-[#202020]">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-bold flex-shrink-0 font-mono text-sm shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-black font-bold flex-shrink-0 font-mono text-sm shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1">
@@ -1003,11 +1003,11 @@ export default function WorkoutDetail() {
               <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium mb-3">
                 <button
                   onClick={() => setMuscleView("anterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                 >Front</button>
                 <button
                   onClick={() => setMuscleView("posterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
                 >Back</button>
               </div>
               <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />

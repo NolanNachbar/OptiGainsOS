@@ -58,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-[#151515] pr-3 focus-within:border-[#ccff00] focus-within:shadow-[0_0_0_3px_rgba(204,255,0,0.1)] transition-[border-color,box-shadow] duration-150"
+      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-[#151515] pr-3 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] transition-[border-color,box-shadow] duration-150"
     >
       <input
         type="text"
@@ -94,7 +94,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                       <div
                         key={name}
                         onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
-                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-[rgba(204,255,0,0.08)] text-[#ccff00]" : "text-[#a0a0a0]"}`}
+                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-[#a0a0a0]"}`}
                       >
                         {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
                         {name}
@@ -174,7 +174,7 @@ const ComboboxItem = ({ value, children }) => {
   return (
     <div
       onMouseDown={(e) => { e.preventDefault(); handleSelect(value); }}
-      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-[rgba(204,255,0,0.08)] text-[#ccff00]" : "text-[#a0a0a0]"}`}
+      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-[#a0a0a0]"}`}
     >
       {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
       {children}

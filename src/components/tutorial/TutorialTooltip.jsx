@@ -36,7 +36,7 @@ const TutorialTooltip = forwardRef(function TutorialTooltip({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-[#1a1a1a]  rounded-xl shadow-2xl border-2 border-[#ccff00]/50/50 flex flex-col"
+        className="bg-[#1a1a1a]  rounded-xl shadow-2xl border-2 border-brand/50/50 flex flex-col"
         style={{
           maxHeight: window.innerWidth < 768 ? 'calc(100vh - 40px)' : 'none',
         }}
@@ -64,7 +64,7 @@ const TutorialTooltip = forwardRef(function TutorialTooltip({
           id="tutorial-title"
           className="text-xl font-bold text-white mb-3 flex items-center gap-2"
         >
-          {celebration && <Sparkles className="w-5 h-5 text-[#ccff00]" />}
+          {celebration && <Sparkles className="w-5 h-5 text-brand" />}
           {title}
         </h2>
         <p
@@ -105,7 +105,7 @@ const TutorialTooltip = forwardRef(function TutorialTooltip({
           )}
           <Button
             onClick={onNext}
-            className="bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold flex items-center gap-1"
+            className="bg-brand hover:bg-brand text-black font-bold flex items-center gap-1"
           >
             {isLastStep ? "Start Training!" : "Next"}
             {!isLastStep && <ChevronRight className="w-4 h-4" />}

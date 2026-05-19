@@ -347,7 +347,7 @@ export function ProgressContent() {
                             <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
                               <td className="py-3 px-4 font-medium">{exercise}</td>
                               <td className="py-3 px-4">
-                                <span className="font-semibold text-[#ccff00]">
+                                <span className="font-semibold text-brand">
                                   {pr.weight} {weightUnit}
                                 </span>
                               </td>
@@ -446,7 +446,7 @@ export function ProgressContent() {
                                 {log.exercises?.length || 0} exercises
                               </div>
                               {volume > 0 && (
-                                <div className="text-[#ccff00] font-medium">
+                                <div className="text-brand font-medium">
                                   {(volume / 1000).toFixed(1)}k {weightUnit} volume
                                 </div>
                               )}
@@ -495,7 +495,7 @@ export function ProgressContent() {
                                           <td className="py-2 px-2 font-medium">{set.set_number}</td>
                                           <td className="py-2 px-2">{set.weight} {weightUnit}</td>
                                           <td className="py-2 px-2">{set.reps}</td>
-                                          <td className="py-2 px-2 text-[#ccff00]">
+                                          <td className="py-2 px-2 text-brand">
                                             {set.weight * set.reps} {weightUnit}
                                           </td>
                                         </tr>
@@ -504,14 +504,14 @@ export function ProgressContent() {
                                   </table>
                                 </div>
                                 {exercise.notes && (
-                                  <div className="mt-3 text-sm text-[#a0a0a0] italic border-l-2 border-[rgba(204,255,0,0.2)] pl-3">
+                                  <div className="mt-3 text-sm text-[#a0a0a0] italic border-l-2 border-brand/20 pl-3">
                                     {exercise.notes}
                                   </div>
                                 )}
                               </div>
                             ))}
                             {log.notes && (
-                              <div className="bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.2)] rounded-lg p-4">
+                              <div className="bg-brand/[5%] border border-brand/20 rounded-lg p-4">
                                 <div className="font-semibold text-sm text-[#a0a0a0] mb-1">
                                   Workout Notes
                                 </div>
@@ -564,7 +564,7 @@ export function ProgressContent() {
                     <div className="flex items-end">
                       <Button
                         type="submit"
-                        className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold"
+                        className="w-full bg-brand hover:bg-brand text-black font-bold"
                         disabled={addWeightMutation.isPending}
                       >
                         <Scale className="w-4 h-4 mr-2" />

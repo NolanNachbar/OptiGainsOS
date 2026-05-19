@@ -20,8 +20,8 @@
 //
 // ============================================================================
 
-const MODEL_STORAGE_KEY = 'sisyphus_rf_model_v1';
-const MODEL_META_KEY    = 'sisyphus_rf_model_meta_v1';
+const MODEL_STORAGE_KEY = 'vektor_rf_model_v1';
+const MODEL_META_KEY    = 'vektor_rf_model_meta_v1';
 
 // 5 trees, shallow depth -- fast training (~150ms) with acceptable accuracy.
 // 77.6% accuracy on a 274-exercise personalization problem is strong.

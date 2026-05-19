@@ -57,7 +57,7 @@ export function SocialContent() {
       <Card className="">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#ccff00]" />
+            <Users className="w-5 h-5 text-brand" />
             Set Up Your Social Profile
           </CardTitle>
         </CardHeader>
@@ -282,7 +282,7 @@ export function SocialContent() {
                   <Users className="w-10 h-10 text-[#a0a0a0] mx-auto mb-3" />
                   <h3 className="font-semibold text-white mb-2">Set a username first</h3>
                   <p className="text-[#555555] mb-4">You need a username before you can add friends.</p>
-                  <Button onClick={() => navigate('/profile')} className="bg-[rgba(204,255,0,0.08)]0">
+                  <Button onClick={() => navigate('/profile')} className="bg-brand/[8%]0">
                     Go to Profile
                   </Button>
                 </CardContent>
@@ -380,7 +380,7 @@ export function SocialContent() {
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
+                                  className="bg-brand/[8%]0 hover:bg-brand text-black font-bold"
                                   onClick={() => handleSendRequest(result.username)}
                                   disabled={sendRequest.isPending}
                                 >

@@ -190,7 +190,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("in");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "in" ? "bg-[#1a1a1a] shadow text-[#ccff00] font-medium" : "text-[#555555]"
+                    heightUnit === "in" ? "bg-[#1a1a1a] shadow text-brand font-medium" : "text-[#555555]"
                   }`}
                 >ft/in</button>
                 <button
@@ -203,7 +203,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("cm");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "cm" ? "bg-[#1a1a1a] shadow text-[#ccff00] font-medium" : "text-[#555555]"
+                    heightUnit === "cm" ? "bg-[#1a1a1a] shadow text-brand font-medium" : "text-[#555555]"
                   }`}
                 >cm</button>
               </div>
@@ -314,7 +314,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           </Button>
           <Button
             type="button"
-            className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]"
+            className="flex-1 bg-brand hover:bg-brand"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >

@@ -26,8 +26,8 @@ function ScorePicker({ value, onChange, labels }) {
           onClick={() => onChange(n)}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
             value === n
-              ? "border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.08)] text-[#ccff00] text-[#ccff00]"
-              : "border-[#2a2a2a] text-[#555555] hover:border-[rgba(204,255,0,0.3)]"
+              ? "border-brand/30 bg-brand/[8%] text-brand text-brand"
+              : "border-[#2a2a2a] text-[#555555] hover:border-brand/30"
           }`}
         >
           {n}
@@ -131,7 +131,7 @@ export default function DailyReadinessCard() {
               <Activity className="w-4 h-4 text-indigo-500" />
               Today's Readiness
             </CardTitle>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-[#ccff00]" onClick={handleOpen}>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-brand" onClick={handleOpen}>
               {todayEntry ? "Update" : <><Plus className="w-3 h-3 mr-1" />Log</>}
             </Button>
           </div>
@@ -162,7 +162,7 @@ export default function DailyReadinessCard() {
             <div className="text-center py-3">
               <Activity className="w-8 h-8 text-white mx-auto mb-2" />
               <p className="text-sm text-[#555555] mb-3">How are you feeling today?</p>
-              <Button size="sm" className="bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold text-xs h-8" onClick={handleOpen}>
+              <Button size="sm" className="bg-brand/[8%]0 hover:bg-brand text-black font-bold text-xs h-8" onClick={handleOpen}>
                 <Plus className="w-3 h-3 mr-1" />Log Readiness
               </Button>
             </div>
@@ -219,7 +219,7 @@ export default function DailyReadinessCard() {
               />
             </div>
             <Button
-              className="w-full bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold"
+              className="w-full bg-brand/[8%]0 hover:bg-brand text-black font-bold"
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >

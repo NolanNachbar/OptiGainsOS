@@ -376,7 +376,7 @@ export default function CreateWorkout() {
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={addExercise} className="w-full bg-[#ccff00] hover:bg-[#ccff00] text-black font-bold">
+                <Button type="button" onClick={addExercise} className="w-full bg-brand hover:bg-brand text-black font-bold">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
                 </Button>
@@ -388,7 +388,7 @@ export default function CreateWorkout() {
             <Button type="button" variant="outline" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-[#ccff00] hover:bg-[#ccff00]">
+            <Button type="submit" className="flex-1 bg-brand hover:bg-brand">
               <Save className="w-4 h-4 mr-2" />
               {editId ? 'Update Workout' : 'Save Workout'}
             </Button>

@@ -248,9 +248,9 @@ export default function ProgramDetail() {
                       variant="outline"
                       className={
                         enrollment.status === "active"
-                          ? "bg-[rgba(204,255,0,0.1)] text-[#ccff00] border-[rgba(204,255,0,0.25)]"
+                          ? "bg-brand/10 text-brand border-brand/25"
                           : enrollment.status === "completed"
-                          ? "bg-[rgba(204,255,0,0.05)] text-[#ccff00] border-[rgba(204,255,0,0.2)]"
+                          ? "bg-brand/[5%] text-brand border-brand/20"
                           : "bg-[#1a1a1a] text-[#a0a0a0] border-[#2a2a2a]   "
                       }
                     >
@@ -308,7 +308,7 @@ export default function ProgramDetail() {
                         <Link
                           to="/signup"
                           state={{ returnTo: location.pathname }}
-                          className="text-[#ccff00] hover:text-[#ccff00] font-medium"
+                          className="text-brand hover:text-brand font-medium"
                         >
                           Sign up free
                         </Link>
@@ -413,7 +413,7 @@ export default function ProgramDetail() {
                 </div>
                 <div className="h-2 bg-[#2a2a2a]  rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#ccff00] rounded-full transition-all duration-500"
+                    className="h-full bg-brand rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>

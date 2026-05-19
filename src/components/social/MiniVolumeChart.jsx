@@ -30,7 +30,7 @@ export function MiniVolumeChart({ exercises }) {
             </span>
             <div className="flex-1 h-3 bg-[#202020] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-[#ccff00]"
+                className="h-full rounded-full bg-brand"
                 style={{ width: `${pct}%` }}
               />
             </div>

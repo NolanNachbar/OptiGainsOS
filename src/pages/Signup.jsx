@@ -64,7 +64,7 @@ export default function Signup() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em] uppercase">Vektor</h1>
+          <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">Vektor</h1>
           <p className="text-[#a0a0a0] mt-2">Create your account</p>
         </div>
 
@@ -143,7 +143,7 @@ export default function Signup() {
             <div className="mt-6 text-center">
               <p className="text-[#a0a0a0]">
                 Already have an account?{' '}
-                <Link to="/login" state={{ returnTo }} className="text-[#ccff00] hover:text-[#ccff00] font-medium">
+                <Link to="/login" state={{ returnTo }} className="text-brand hover:text-brand font-medium">
                   Sign in
                 </Link>
               </p>

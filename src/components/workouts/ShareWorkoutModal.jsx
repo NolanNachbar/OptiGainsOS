@@ -154,7 +154,7 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-[#ccff00]" />
+            <Share2 className="w-5 h-5 text-brand" />
             Share Workout
           </DialogTitle>
         </DialogHeader>
@@ -230,7 +230,7 @@ export default function ShareWorkoutModal({ workoutTitle, exercises, onClose, on
               variant="outline"
               className="w-full justify-start h-auto py-3"
             >
-              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <Dumbbell className="w-5 h-5 mr-3 text-[#ccff00]" />}
+              {sharing ? <LoadingSpinner size="small" className="mr-3" /> : <Dumbbell className="w-5 h-5 mr-3 text-brand" />}
               <div className="text-left">
                 <div className="font-medium">Exercises Only</div>
                 <div className="text-xs text-[#555555]">Share the routine without your weights/reps</div>

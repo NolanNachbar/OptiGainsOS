@@ -99,7 +99,7 @@ export default function Dashboard() {
   const [bodyWeightNotes, setBodyWeightNotes] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [welcomeBannerVisible, setWelcomeBannerVisible] = useState(
-    () => !localStorage.getItem('sisyphus_welcome_dismissed')
+    () => !localStorage.getItem('vektor_welcome_dismissed')
   );
 
   // Today's workout expand state
@@ -662,7 +662,7 @@ export default function Dashboard() {
 
         {/* First-workout welcome banner — shown until user logs a workout or dismisses */}
         {welcomeBannerVisible && !logsLoading && !logsError && workoutLogs.length === 0 && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.15)] px-5 py-4">
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-brand/[5%] border border-brand/[15%] px-5 py-4">
             <div>
               <p className="font-semibold text-white">Ready to log your first workout?</p>
               <p className="text-sm text-[#a0a0a0] mt-0.5">Head to the Schedule to pick a workout and get started.</p>
@@ -672,7 +672,7 @@ export default function Dashboard() {
                 <Button variant="volt" size="sm">Go to Schedule</Button>
               </Link>
               <button
-                onClick={() => { localStorage.setItem('sisyphus_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
+                onClick={() => { localStorage.setItem('vektor_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
                 className="text-[#555555] hover:text-[#a0a0a0] text-lg leading-none px-1 transition-colors"
                 aria-label="Dismiss"
               >
@@ -685,7 +685,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" data-tutorial="dashboard-overview">
           {/* ── Today's Workout Card ── */}
           <div
-            className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-[#ccff00]"
+            className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-brand"
             data-tutorial="start-workout-btn"
           >
             <div className="px-5 pt-4 pb-1">
@@ -774,7 +774,7 @@ export default function Dashboard() {
                                 onClick={() => set(n)}
                                 className={`w-6 h-6 rounded-full text-xs font-bold transition-all ${
                                   value === n
-                                    ? "bg-[#ccff00] text-black scale-110"
+                                    ? "bg-brand text-black scale-110"
                                     : value > n
                                     ? "bg-[#1a1a1a]/40 text-white"
                                     : "bg-[#1a1a1a]/15 text-white/50 hover:bg-[#1a1a1a]/25"
@@ -899,7 +899,7 @@ export default function Dashboard() {
             <CardHeader className="pb-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-[#ccff00]" />
+                  <Brain className="w-4 h-4 text-brand" />
                   This Week
                 </CardTitle>
                 <div className="flex items-center gap-2">
@@ -907,11 +907,11 @@ export default function Dashboard() {
                   <div className="flex rounded-full overflow-hidden border border-[#333] text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-[#ccff00] text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -927,7 +927,7 @@ export default function Dashboard() {
                       <span className="font-semibold text-white">{weeklyCompleted}/{weeklyGoal}</span>
                     </div>
                     <div className="h-1.5 bg-[#333] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#ccff00] rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
+                      <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
                     </div>
                   </div>
 
@@ -996,7 +996,7 @@ export default function Dashboard() {
                       <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">Week Generator</span>
                       <button
                         onClick={() => setShowWorkoutSettings((s) => !s)}
-                        className="text-xs text-[#ccff00] hover:text-[#ccff00] font-medium min-h-[44px] px-2 flex items-center"
+                        className="text-xs text-brand hover:text-brand font-medium min-h-[44px] px-2 flex items-center"
                       >
                         {showWorkoutSettings ? "Hide" : "Options"}
                       </button>
@@ -1011,13 +1011,13 @@ export default function Dashboard() {
                           <div className="flex flex-wrap gap-1.5">
                             <button
                               onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: null }))}
-                              className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === null ? "border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[#ccff00]/40"}`}
+                              className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === null ? "border-brand bg-brand/10 text-brand" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/40"}`}
                             >Auto</button>
                             {[3, 4, 5, 6, 7].map((n) => (
                               <button
                                 key={n}
                                 onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: n }))}
-                                className={`w-8 h-7 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === n ? "border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-[#ccff00]/40"}`}
+                                className={`w-8 h-7 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === n ? "border-brand bg-brand/10 text-brand" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/40"}`}
                               >{n}</button>
                             ))}
                           </div>
@@ -1026,7 +1026,7 @@ export default function Dashboard() {
                           <span className="text-[#a0a0a0]">Cardio finisher</span>
                           <button
                             onClick={() => setWorkoutSettings((s) => ({ ...s, includeCardio: !s.includeCardio }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.includeCardio ? "bg-[#ccff00]" : "bg-[#444]"}`}
+                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.includeCardio ? "bg-brand" : "bg-[#444]"}`}
                           >
                             <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.includeCardio ? "translate-x-4" : "translate-x-0"}`} />
                           </button>
@@ -1035,7 +1035,7 @@ export default function Dashboard() {
                           <span className="text-[#a0a0a0]">Skip deload weeks</span>
                           <button
                             onClick={() => setWorkoutSettings((s) => ({ ...s, skipDeload: !s.skipDeload }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.skipDeload ? "bg-[#ccff00]" : "bg-[#444]"}`}
+                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.skipDeload ? "bg-brand" : "bg-[#444]"}`}
                           >
                             <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.skipDeload ? "translate-x-4" : "translate-x-0"}`} />
                           </button>
@@ -1083,7 +1083,7 @@ export default function Dashboard() {
               </CardTitle>
               {tdeeResult?.tdee && (
                 <div className="flex items-center gap-1.5 text-xs">
-                  <Flame className="w-3 h-3 text-[#ccff00]" />
+                  <Flame className="w-3 h-3 text-brand" />
                   <span className="text-[#555555]">
                     Est. TDEE:
                   </span>
@@ -1100,7 +1100,7 @@ export default function Dashboard() {
           <CardContent className="py-3">
             <div className="grid grid-cols-4 gap-2 md:gap-4">
               {[
-                { label: "Calories", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, unit: "", stroke: "#ccff00" },
+                { label: "Calories", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, unit: "", stroke: "var(--color-brand)" },
                 { label: "Protein", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, unit: "g", stroke: "#60a5fa" },
                 { label: "Carbs", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, unit: "g", stroke: "#fbbf24" },
                 { label: "Fats", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, unit: "g", stroke: "#f87171" },
@@ -1152,7 +1152,7 @@ export default function Dashboard() {
         <div className="mt-8">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#ccff00]" />
+              <BarChart3 className="w-5 h-5 text-brand" />
               Progress & Analytics
             </h2>
             <p className="text-[#555555] text-sm mt-1">Track your strength, workouts, and body weight</p>
@@ -1241,7 +1241,7 @@ export default function Dashboard() {
                             {Object.entries(allPRs).sort((a, b) => b[1].weight - a[1].weight).map(([exercise, pr]) => (
                               <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424] transition-colors">
                                 <td className="py-2 px-3 font-medium text-sm">{exercise}</td>
-                                <td className="py-2 px-3"><span className="font-semibold text-[#ccff00] text-sm">{pr.weight} {weightUnit}</span></td>
+                                <td className="py-2 px-3"><span className="font-semibold text-brand text-sm">{pr.weight} {weightUnit}</span></td>
                                 <td className="py-2 px-3 text-sm">{pr.reps}</td>
                                 <td className="py-2 px-3 text-[#a0a0a0] text-sm">{new Date(pr.date).toLocaleDateString()}</td>
                               </tr>
@@ -1419,7 +1419,7 @@ function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, set
                           <span>{format(parseISO(log.log_date), "MMM d, yyyy")}</span>
                           {durMin && <span>{durMin} min</span>}
                           <span>{log.exercises?.length || 0} exercises</span>
-                          {vol > 0 && <span className="text-[#ccff00] font-medium">{(vol / 1000).toFixed(1)}k {weightUnit}</span>}
+                          {vol > 0 && <span className="text-brand font-medium">{(vol / 1000).toFixed(1)}k {weightUnit}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
@@ -1448,7 +1448,7 @@ function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, set
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.set_number}</td>
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.weight} {weightUnit}</td>
                                     <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.reps}</td>
-                                    <td className="py-1 px-2 text-center text-[#ccff00]">{set.weight * set.reps}</td>
+                                    <td className="py-1 px-2 text-center text-brand">{set.weight * set.reps}</td>
                                     <td className="py-1 px-2 text-center text-[#555555]">{(set.rir ?? set.rpe) ?? "—"}</td>
                                   </tr>
                                 ))}
@@ -1456,7 +1456,7 @@ function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, set
                             </table>
                           </div>
                         ))}
-                        {log.notes && <div className="bg-[rgba(204,255,0,0.05)] border border-[rgba(204,255,0,0.15)] rounded-xl p-3 text-sm text-[#a0a0a0]">{log.notes}</div>}
+                        {log.notes && <div className="bg-brand/[5%] border border-brand/[15%] rounded-xl p-3 text-sm text-[#a0a0a0]">{log.notes}</div>}
                       </div>
                     )}
                   </div>

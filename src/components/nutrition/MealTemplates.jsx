@@ -108,7 +108,7 @@ export default function MealTemplates({ compact = false }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-[#ccff00]" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -253,7 +253,7 @@ export default function MealTemplates({ compact = false }) {
                     <Button
                       size="sm"
                       onClick={() => handleApply(template)}
-                      className="flex-1 bg-[rgba(204,255,0,0.08)]0"
+                      className="flex-1 bg-brand/[8%]0"
                     >
                       <Play className="w-3 h-3 mr-1" />
                       Apply
@@ -404,7 +404,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           <Button
             onClick={() => applyMutation.mutate()}
             disabled={applyMutation.isPending}
-            className="w-full bg-[rgba(204,255,0,0.08)]0"
+            className="w-full bg-brand/[8%]0"
           >
             {applyMutation.isPending ? (
               <>
@@ -614,7 +614,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-[#2a2a2a] bg-[#121212] shrink-0 space-y-2">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-[rgba(204,255,0,0.08)]0 hover:bg-[#ccff00] text-black font-bold">
+            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-brand/[8%]0 hover:bg-brand text-black font-bold">
               {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
             </Button>
             <Button
@@ -727,7 +727,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
           <Button
             onClick={handleSave}
             disabled={createMutation.isPending || !name.trim()}
-            className="w-full bg-[rgba(204,255,0,0.08)]0"
+            className="w-full bg-brand/[8%]0"
           >
             {createMutation.isPending ? (
               <>

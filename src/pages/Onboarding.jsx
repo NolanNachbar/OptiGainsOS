@@ -157,8 +157,8 @@ export default function Onboarding() {
   const optionBtn = (active) =>
     `p-4 rounded-lg border-2 text-left transition-all ${
       active
-        ? 'border-[#ccff00] bg-[rgba(204,255,0,0.15)] text-[#ccff00]'
-        : 'border-[#2a2a2a] bg-[#202020] hover:border-[rgba(204,255,0,0.3)] hover:bg-[rgba(204,255,0,0.08)] text-[#a0a0a0]'
+        ? 'border-brand bg-brand/[15%] text-brand'
+        : 'border-[#2a2a2a] bg-[#202020] hover:border-brand/30 hover:bg-brand/[8%] text-[#a0a0a0]'
     }`;
 
   const toggleRow = (active) =>
@@ -169,7 +169,7 @@ export default function Onboarding() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center pb-2">
           <Logo className="w-16 h-16 mx-auto mb-4" />
-          <CardTitle className="text-[22px] font-bold text-[#ccff00] tracking-[-0.02em]">
+          <CardTitle className="text-[22px] font-bold text-brand tracking-[-0.02em]">
             Welcome to VEKTOR
           </CardTitle>
           <p className="text-[13px] text-[#a0a0a0] mt-1">Configure your training profile</p>
@@ -178,7 +178,7 @@ export default function Onboarding() {
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === step ? 'w-7 bg-[#ccff00]' : 'w-1.5 bg-[#333]'
+                  i === step ? 'w-7 bg-brand' : 'w-1.5 bg-[#333]'
                 }`}
               />
             ))}
@@ -281,7 +281,7 @@ export default function Onboarding() {
                         </div>
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
                           formData.primary_goal.includes(option.value)
-                            ? 'border-[#ccff00] bg-[#ccff00]'
+                            ? 'border-brand bg-brand'
                             : 'border-[#444]'
                         }`}>
                           {formData.primary_goal.includes(option.value) && (
@@ -346,7 +346,7 @@ export default function Onboarding() {
 
               <div>
                 <Label className="text-base font-semibold mb-1 block text-white">
-                  Days per week: <span className="text-[#ccff00]">{formData.days_per_week}</span>
+                  Days per week: <span className="text-brand">{formData.days_per_week}</span>
                   {formData.days_per_week === 6 && (
                     <span className="text-xs text-amber-500 font-normal ml-2">High frequency — make sure you're recovering well</span>
                   )}
@@ -366,7 +366,7 @@ export default function Onboarding() {
 
               <div>
                 <Label className="text-base font-semibold mb-1 block text-white">
-                  Exercises per day: <span className="text-[#ccff00]">{formData.exercises_per_day ?? "Auto"}</span>
+                  Exercises per day: <span className="text-brand">{formData.exercises_per_day ?? "Auto"}</span>
                 </Label>
                 <p className="text-sm text-[#555555] mb-3">
                   Leave on Auto to match your workout duration, or set a specific number to keep things simple.
@@ -376,8 +376,8 @@ export default function Onboarding() {
                     onClick={() => setFormData({...formData, exercises_per_day: null})}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.exercises_per_day === null
-                        ? 'border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]'
-                        : 'border-[#2a2a2a] text-[#555555] hover:border-[#ccff00]/40'
+                        ? 'border-brand bg-brand/10 text-brand'
+                        : 'border-[#2a2a2a] text-[#555555] hover:border-brand/40'
                     }`}
                   >
                     Auto
@@ -388,8 +388,8 @@ export default function Onboarding() {
                       onClick={() => setFormData({...formData, exercises_per_day: n})}
                       className={`w-10 h-10 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.exercises_per_day === n
-                          ? 'border-[#ccff00] bg-[#ccff00]/10 text-[#ccff00]'
-                          : 'border-[#2a2a2a] text-[#555555] hover:border-[#ccff00]/40'
+                          ? 'border-brand bg-brand/10 text-brand'
+                          : 'border-[#2a2a2a] text-[#555555] hover:border-brand/40'
                       }`}
                     >
                       {n}
@@ -408,7 +408,7 @@ export default function Onboarding() {
                     <div className="font-semibold text-white">Include Cardio Finisher</div>
                     <div className="text-sm text-[#555555]">Add a cardio exercise at the end of each workout</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-[#ccff00]' : 'bg-[#333]'}`}>
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.include_cardio ? 'bg-brand' : 'bg-[#333]'}`}>
                     <span className={`absolute top-1 left-1 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.include_cardio ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
@@ -421,7 +421,7 @@ export default function Onboarding() {
                     <div className="font-semibold text-white">Skip Deload Weeks</div>
                     <div className="text-sm text-[#555555]">Disable automatic recovery weeks (not recommended for beginners)</div>
                   </div>
-                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-[#ccff00]' : 'bg-[#333]'}`}>
+                  <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${formData.skip_deload ? 'bg-brand' : 'bg-[#333]'}`}>
                     <span className={`absolute top-1 left-1 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${formData.skip_deload ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                 </div>
