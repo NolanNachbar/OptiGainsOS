@@ -234,6 +234,10 @@ export default function Social() {
   const [rankingsExpanded, setRankingsExpanded] = useState(false);
 
   useEffect(() => {
+    markAsViewed();
+  }, [markAsViewed]);
+
+  useEffect(() => {
     if (desktopCenter === "friends") markAsViewed();
   }, [desktopCenter, markAsViewed]);
 
