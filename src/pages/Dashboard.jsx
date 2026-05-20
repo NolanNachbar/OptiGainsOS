@@ -9,10 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { queryKeys, invalidateBodyWeight, invalidateSchedule, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
+import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { useTutorial } from "@/hooks/useTutorial";
@@ -24,80 +23,44 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import {
   Dumbbell,
   Calendar,
-  Calendar as CalendarIcon,
-  TrendingUp,
   Target,
   Circle,
   Clock,
   ArrowRight,
   Apple,
   Scale,
-  X,
   Flame,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Trash2,
-  Undo2,
-  Redo2,
-  BookOpen,
-  BarChart3,
   Brain,
   ChevronDown,
   ChevronUp,
   Zap,
   ListChecks,
-  Eye,
-  MoreVertical,
   Activity,
   CheckCircle2,
-  Trophy,
 } from "lucide-react";
-import { format, addDays, isSameDay, isBefore, addWeeks, subWeeks } from "date-fns";
+import { format, addDays, addWeeks, subWeeks } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserAvatar } from "@/components/ui/UserAvatar";
 import WorkoutApprovalModal from "@/components/workouts/WorkoutApprovalModal";
-import { useBodyWeightEntries } from "@/hooks/useUserQueries";
-import { invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { getUniqueExercises, getExerciseHistory, calculateVolume, getAllPersonalRecords } from "@/utils/exerciseStats";
-import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
-import WeightProgressChart from "@/components/progress/WeightProgressChart";
-import NutritionCoach from "@/components/nutrition/NutritionCoach";
+import { calculateVolume } from "@/utils/exerciseStats";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
-import { parseISO } from "date-fns";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import NutritionCoach from "@/components/nutrition/NutritionCoach";
 import MedicalDisclaimer from "@/components/MedicalDisclaimer";
 
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultAnalyticsTab = searchParams.get("tab") || "history";
-  const [activeAnalyticsTab, setActiveAnalyticsTab] = useState(defaultAnalyticsTab);
+  const [sidebarTab, setSidebarTab] = useState("training");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { activePhase } = useDietPhase();
   const { startTutorial, nextStep, isActive: tutorialActive, currentStepData, setTutorialWorkouts } = useTutorial();
 
-  // Progress state
-  const [selectedExercise, setSelectedExercise] = useState("");
-  const [expandedLogs, setExpandedLogs] = useState(new Set());
-  const [exerciseFilter, setExerciseFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [newBodyWeight, setNewBodyWeight] = useState("");
   const [bodyWeightDate, setBodyWeightDate] = useState(() => getTodayString(null));
   const [bodyWeightNotes, setBodyWeightNotes] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [welcomeBannerVisible, setWelcomeBannerVisible] = useState(
     () => !localStorage.getItem('vektor_welcome_dismissed')
   );
@@ -569,12 +532,6 @@ export default function Dashboard() {
   });
   const { weightEntries } = useBodyWeightEntries();
 
-  const deleteLogMutation = useMutation({
-    mutationFn: async (logId) => { await db.entities.WorkoutLog.delete(logId); },
-    onSuccess: () => { invalidateWorkoutLogs(queryClient); toast.success("Workout log deleted"); },
-    onError: () => toast.error("Failed to delete workout log"),
-  });
-
   const addBodyWeightMutation = useMutation({
     mutationFn: async () => {
       if (!newBodyWeight || !bodyWeightDate) throw new Error("Weight and date are required");
@@ -592,16 +549,7 @@ export default function Dashboard() {
     onError: () => toast.error("Failed to add weight entry"),
   });
 
-  const deleteBodyWeightMutation = useMutation({
-    mutationFn: async (entryId) => { await db.entities.BodyWeightEntry.delete(entryId); },
-    onSuccess: () => { invalidateBodyWeight(queryClient); toast.success("Weight entry deleted"); },
-    onError: () => toast.error("Failed to delete weight entry"),
-  });
-
   const weightUnit = profile?.weight_unit || "lbs";
-  const uniqueExercises = getUniqueExercises(workoutLogs);
-  const exerciseHistory = selectedExercise ? getExerciseHistory(workoutLogs, selectedExercise) : [];
-  const allPRs = getAllPersonalRecords(workoutLogs);
   const totalWorkoutsCount = workoutLogs.length;
   const totalVolume = workoutLogs.reduce((sum, log) => sum + calculateVolume(log), 0);
   const avgDuration = workoutLogs.length > 0
@@ -612,25 +560,7 @@ export default function Dashboard() {
   const tdeeResult = getBestTDEE(profile, currentBodyWeight, weightEntries, allFoodEntries || []);
   const startBodyWeight = sortedWeightEntries[sortedWeightEntries.length - 1]?.weight;
   const bodyWeightChange = currentBodyWeight && startBodyWeight ? currentBodyWeight - startBodyWeight : null;
-  const enrichedLogs = workoutLogs.map((log) => {
-    const workout = workouts.find((w) => w.id === log.workout_id);
-    return { ...log, workoutTitle: workout?.title || "Unknown Workout", workoutType: workout?.type || "unknown" };
-  });
-  const filteredLogs = enrichedLogs.filter((log) => {
-    if (typeFilter !== "all" && log.workoutType !== typeFilter) return false;
-    if (exerciseFilter && !log.exercises?.some((ex) => ex.name.toLowerCase().includes(exerciseFilter.toLowerCase()))) return false;
-    return true;
-  });
 
-  useEffect(() => {
-    if (!selectedExercise && uniqueExercises.length > 0) setSelectedExercise(uniqueExercises[0]);
-  }, [uniqueExercises, selectedExercise]);
-
-  const toggleExpanded = (logId) => {
-    setExpandedLogs((prev) => { const s = new Set(prev); s.has(logId) ? s.delete(logId) : s.add(logId); return s; });
-  };
-  const handleDeleteLog = (logId) => setDeleteTarget({ type: "log", id: logId });
-  const handleDeleteBodyWeight = (entryId) => setDeleteTarget({ type: "weight", id: entryId });
   const handleAddBodyWeight = (e) => { e.preventDefault(); addBodyWeightMutation.mutate(); };
 
   // Derive the link URL for today's workout
@@ -650,8 +580,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-[#121212] min-h-screen relative">
-      <div className="max-w-5xl mx-auto">
+    <div className="px-2 py-4 md:px-3 md:py-5 bg-[#121212] min-h-screen relative">
+      <div className="max-w-[1400px] mx-auto">
+      <div className="flex gap-6 items-start">
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="mb-8 flex items-end justify-between">
           <div>
@@ -682,7 +615,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" data-tutorial="dashboard-overview">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" data-tutorial="dashboard-overview">
           {/* ── Today's Workout Card ── */}
           <div
             className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-brand"
@@ -895,7 +828,7 @@ export default function Dashboard() {
           </div>
 
           {/* ── This Week + Muscles Trained (merged, spans 2 cols) ── */}
-          <Card className="md:col-span-2 flex flex-col">
+          <Card className={`${profile?.strava_access_token ? 'md:col-span-2' : 'md:col-span-2'} flex flex-col`}>
             <CardHeader className="pb-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -1071,10 +1004,28 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
         </div>
 
+        {showApprovalModal && pendingSchedule && (
+          <WorkoutApprovalModal
+            schedule={pendingSchedule.schedule}
+            todayCheckIn={todayCheckIn}
+            lastWeekVolume={
+              weeklyLogsWithExercises.length > 0
+                ? weeklyLogsWithExercises.reduce((sum, log) => sum + (log.exercises?.length || 0), 0)
+                : null
+            }
+            onApprove={(schedule) => {
+              handleApproveSchedule(schedule);
+              if (tutorialActive && currentStepData?.id === "approve-schedule") nextStep();
+            }}
+            onCancel={() => { setShowApprovalModal(false); setPendingSchedule(null); }}
+          />
+        )}
+
         {/* Nutrition */}
-        <Card className="border border-[#2a2a2a] mb-8" data-tutorial="nutrition-card">
+        <Card className="border border-[#2a2a2a] mb-4" data-tutorial="nutrition-card">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -1084,15 +1035,9 @@ export default function Dashboard() {
               {tdeeResult?.tdee && (
                 <div className="flex items-center gap-1.5 text-xs">
                   <Flame className="w-3 h-3 text-brand" />
-                  <span className="text-[#555555]">
-                    Est. TDEE:
-                  </span>
-                  <span className="font-semibold text-[#a0a0a0]">
-                    {tdeeResult.tdee.toLocaleString()} cal
-                  </span>
-                  {tdeeResult.method === "adaptive" && (
-                    <span className="text-xs text-[#4ade80] font-medium">observed</span>
-                  )}
+                  <span className="text-[#555555]">Est. TDEE:</span>
+                  <span className="font-semibold text-[#a0a0a0]">{tdeeResult.tdee.toLocaleString()} cal</span>
+                  {tdeeResult.method === "adaptive" && <span className="text-xs text-[#4ade80] font-medium">observed</span>}
                 </div>
               )}
             </div>
@@ -1108,9 +1053,7 @@ export default function Dashboard() {
                 const safeValue = value ?? 0;
                 const safeGoal = goal ?? 0;
                 const pct = safeGoal > 0 ? Math.min(1, safeValue / safeGoal) : 0;
-                const r = 32;
-                const circ = 2 * Math.PI * r;
-                const offset = circ * (1 - pct);
+                const r = 32; const circ = 2 * Math.PI * r; const offset = circ * (1 - pct);
                 return (
                   <div key={label} className="flex flex-col items-center">
                     <div className="relative w-[76px] h-[76px] md:w-[88px] md:h-[88px]">
@@ -1131,378 +1074,77 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {showApprovalModal && pendingSchedule && (
-          <WorkoutApprovalModal
-            schedule={pendingSchedule.schedule}
-            todayCheckIn={todayCheckIn}
-            lastWeekVolume={
-              weeklyLogsWithExercises.length > 0
-                ? weeklyLogsWithExercises.reduce((sum, log) => sum + (log.exercises?.length || 0), 0)
-                : null
-            }
-            onApprove={(schedule) => {
-              handleApproveSchedule(schedule);
-              if (tutorialActive && currentStepData?.id === "approve-schedule") nextStep();
-            }}
-            onCancel={() => { setShowApprovalModal(false); setPendingSchedule(null); }}
-          />
-        )}
-
-        {/* Progress & Analytics */}
-        <div className="mt-8">
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-brand" />
-              Progress & Analytics
-            </h2>
-            <p className="text-[#555555] text-sm mt-1">Track your strength, workouts, and body weight</p>
+        {/* Stat strip + quick weight log */}
+        <div className="flex items-center gap-0 mb-4 bg-[#1a1a1a] rounded-xl overflow-hidden">
+          {[
+            { label: "Workouts", value: totalWorkoutsCount, unit: "" },
+            { label: "Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "—", unit: totalVolume > 0 ? weightUnit : "" },
+            { label: "Avg Duration", value: avgDuration || "—", unit: avgDuration ? "min" : "" },
+            { label: "Body Weight", value: currentBodyWeight || "—", unit: currentBodyWeight ? weightUnit : "", extra: bodyWeightChange && bodyWeightChange !== 0 ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)}` : null, extraColor: bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]" },
+          ].map(({ label, value, unit, extra, extraColor }, i) => (
+            <div key={label} className={`flex-1 px-4 py-3 ${i > 0 ? "border-l border-[#2a2a2a]" : ""}`}>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-0.5">{label}</div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold tabular-nums text-white">{value}</span>
+                {unit && <span className="text-xs text-[#a0a0a0]">{unit}</span>}
+                {extra && <span className={`text-xs font-semibold ${extraColor}`}>{extra}</span>}
+              </div>
+            </div>
+          ))}
+          <div className="border-l border-[#2a2a2a] px-3 py-2 flex items-center gap-1.5">
+            <form onSubmit={handleAddBodyWeight} className="flex gap-1.5">
+              <Input type="number" step="0.1" value={newBodyWeight} onChange={(e) => setNewBodyWeight(e.target.value)} placeholder={`Log weight`} className="h-8 text-xs w-28" required />
+              <Input type="date" value={bodyWeightDate} onChange={(e) => setBodyWeightDate(e.target.value)} className="h-8 text-xs w-32" required />
+              <Button type="submit" variant="volt" size="sm" className="h-8 px-2.5" disabled={addBodyWeightMutation.isPending}>
+                <Scale className="w-3.5 h-3.5" />
+              </Button>
+            </form>
           </div>
+        </div>
 
-          <Tabs defaultValue={defaultAnalyticsTab === 'training-load' && !profile?.strava_access_token ? 'history' : defaultAnalyticsTab} className="w-full" onValueChange={setActiveAnalyticsTab}>
-            <TabsList className={`grid w-full mb-6 mt-4 ${profile?.strava_access_token ? 'grid-cols-4' : 'grid-cols-3'}`}>
-              <TabsTrigger value="history"><Dumbbell className="w-4 h-4 mr-1.5 hidden sm:block" />History</TabsTrigger>
-              <TabsTrigger value="bodyweight"><Scale className="w-4 h-4 mr-1.5 hidden sm:block" />Weight</TabsTrigger>
-              {profile?.strava_access_token && (
-                <TabsTrigger value="training-load"><Activity className="w-4 h-4 mr-1.5 hidden sm:block" />Training</TabsTrigger>
-              )}
-              <TabsTrigger value="coach"><Brain className="w-4 h-4 mr-1.5 hidden sm:block" />Nutrition</TabsTrigger>
-            </TabsList>
+      </div>
 
-            <TabsContent value="history">
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                {[
-                  { icon: Calendar, label: "Total Workouts", value: totalWorkoutsCount, unit: "" },
-                  { icon: Dumbbell, label: "Total Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "0", unit: totalVolume > 0 ? weightUnit : "" },
-                  { icon: TrendingUp, label: "Avg Duration", value: avgDuration, unit: "min" },
-                ].map(({ icon: Icon, label, value, unit }) => (
-                  <Card key={label} className="">
-                    <CardContent className="py-2 text-center">
-                      <div className="flex items-center justify-center gap-1 text-xs text-[#555555] mb-0.5 mt-2"><Icon className="w-3 h-3" />{label}</div>
-                      <div className="text-xl font-bold text-white">{value}<span className="text-xs text-[#a0a0a0] ml-1">{unit}</span></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                <Card className="">
-                  <CardHeader className="pb-2">
-                    <div className="flex flex-col gap-2">
-                      <CardTitle className="text-base">Exercise Progress</CardTitle>
-                      <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select an exercise" /></SelectTrigger>
-                        <SelectContent>{uniqueExercises.map((ex) => <SelectItem key={ex} value={ex}>{ex}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedExercise && activeAnalyticsTab === "history"
-                      ? <ExerciseProgressChart data={exerciseHistory} exerciseName={selectedExercise} weightUnit={weightUnit} className="h-64" />
-                      : (
-                        <div className="h-64 flex flex-col items-center justify-center gap-3 text-center px-4">
-                          {uniqueExercises.length === 0 ? (
-                            <>
-                              <BarChart3 className="w-10 h-10 text-[#a0a0a0]" />
-                              <div>
-                                <p className="text-sm font-semibold text-[#a0a0a0]">No workout logs yet</p>
-                                <p className="text-xs text-[#a0a0a0] mt-1">Complete workouts to track exercise progress over time</p>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <TrendingUp className="w-10 h-10 text-[#a0a0a0]" />
-                              <p className="text-sm text-[#555555]">Select an exercise above to see your progress chart</p>
-                            </>
-                          )}
-                        </div>
-                      )
-                    }
-                  </CardContent>
-                </Card>
-                <Card className="">
-                  <CardHeader className="pb-2"><CardTitle className="text-base">Personal Records</CardTitle></CardHeader>
-                  <CardContent>
-                    {Object.keys(allPRs).length === 0
-                      ? (
-                        <div className="text-center py-8">
-                          <Trophy className="w-10 h-10 text-[#a0a0a0] mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-[#a0a0a0]">No personal records yet</p>
-                          <p className="text-xs text-[#a0a0a0] mt-1">Log sets with weight to track your PRs</p>
-                        </div>
-                      )
-                      : <div className="max-h-80 overflow-y-auto"><table className="w-full">
-                          <thead><tr className="border-b border-[#2a2a2a]">
-                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Exercise</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Weight</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Reps</th>
-                            <th className="text-left py-2 px-3 font-semibold text-[#555555] text-xs uppercase tracking-wider">Date</th>
-                          </tr></thead>
-                          <tbody>
-                            {Object.entries(allPRs).sort((a, b) => b[1].weight - a[1].weight).map(([exercise, pr]) => (
-                              <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a] hover:bg-[#242424] transition-colors">
-                                <td className="py-2 px-3 font-medium text-sm">{exercise}</td>
-                                <td className="py-2 px-3"><span className="font-semibold text-brand text-sm">{pr.weight} {weightUnit}</span></td>
-                                <td className="py-2 px-3 text-sm">{pr.reps}</td>
-                                <td className="py-2 px-3 text-[#a0a0a0] text-sm">{new Date(pr.date).toLocaleDateString()}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table></div>
-                    }
-                  </CardContent>
-                </Card>
-              </div>
-
-              <WorkoutLogsSection
-                exerciseFilter={exerciseFilter} setExerciseFilter={setExerciseFilter}
-                typeFilter={typeFilter} setTypeFilter={setTypeFilter}
-                filteredLogs={filteredLogs} workoutLogs={workoutLogs}
-                expandedLogs={expandedLogs} toggleExpanded={toggleExpanded}
-                handleDeleteLog={handleDeleteLog} weightUnit={weightUnit}
-              />
-            </TabsContent>
-
-            <TabsContent value="bodyweight">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                <Card className="">
-                  <CardHeader className="pb-2"><CardTitle className="text-base">Log Your Weight</CardTitle></CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleAddBodyWeight} className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Weight ({weightUnit}) *</label>
-                          <Input type="number" step="0.1" value={newBodyWeight} onChange={(e) => setNewBodyWeight(e.target.value)} placeholder={`e.g., ${weightUnit === "lbs" ? "150" : "68"}`} required />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Date *</label>
-                          <Input type="date" value={bodyWeightDate} onChange={(e) => setBodyWeightDate(e.target.value)} required />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Notes (optional)</label>
-                        <Input value={bodyWeightNotes} onChange={(e) => setBodyWeightNotes(e.target.value)} placeholder="e.g., Morning weigh-in..." />
-                      </div>
-                      <Button type="submit" variant="primary" className="w-full font-bold" disabled={addBodyWeightMutation.isPending}>
-                        <Scale className="w-4 h-4 mr-2" />Log Weight
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-                <Card className="">
-                  <CardHeader className="pb-2"><CardTitle className="text-base">Quick Stats</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: "Starting", value: startBodyWeight ? `${startBodyWeight} ${weightUnit}` : "—" },
-                        { label: "Current", value: currentBodyWeight ? `${currentBodyWeight} ${weightUnit}` : "—" },
-                        { label: "Trend", value: sortedWeightEntries.length > 1 ? `${(sortedWeightEntries.reduce((s, e) => s + e.weight, 0) / sortedWeightEntries.length).toFixed(1)} ${weightUnit}` : "—" },
-                        { label: "Change", value: bodyWeightChange !== null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)} ${weightUnit}` : "—", color: bodyWeightChange > 0 ? "text-[#fbbf24]" : bodyWeightChange < 0 ? "text-[#4ade80]" : "" },
-                      ].map(({ label, value, color }) => (
-                        <div key={label} className="bg-[#202020] rounded-xl p-3">
-                          <div className="text-xs text-[#555555] mb-0.5">{label}</div>
-                          <div className={`text-lg font-bold ${color || "text-white"}`}>{value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {weightEntries.length > 0 && activeAnalyticsTab === "bodyweight" && (
-                <Card className="mb-6">
-                  <CardHeader className="pb-2"><CardTitle className="text-base">Weight Progress</CardTitle></CardHeader>
-                  <CardContent><WeightProgressChart data={weightEntries} weightUnit={weightUnit} className="h-64" /></CardContent>
-                </Card>
-              )}
-
-              {weightEntries.length === 0
-                ? <Card className="border border-[#2a2a2a]  text-center py-6 bg-[#1a1a1a] "><CardContent>
-                    <Scale className="w-10 h-10 text-[#555555] mx-auto mb-3" />
-                    <h3 className="text-base font-semibold text-white mb-1">No weight entries yet</h3>
-                    <p className="text-sm text-[#555555]">Start logging your weight to track progress</p>
-                  </CardContent></Card>
-                : <WeightHistorySection weightEntries={weightEntries} weightUnit={weightUnit} handleDeleteBodyWeight={handleDeleteBodyWeight} />
-              }
-            </TabsContent>
-
-          {profile?.strava_access_token && (
-            <TabsContent value="training-load">
+      {/* Sidebar — Training Load + Nutrition tabs */}
+      <aside className="w-[400px] shrink-0 hidden xl:block" style={{ position: 'sticky', top: 'calc(var(--layout-header-height, 56px) + 1.5rem)', maxHeight: 'calc(100vh - var(--layout-header-height, 56px) - 3rem)', overflowY: 'auto' }}>
+        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+          <div className="flex gap-1 p-1.5 border-b border-[#2a2a2a] bg-[#111]">
+            {[
+              { id: "training", label: "Training", icon: Activity },
+              { id: "nutrition", label: "Nutrition", icon: Apple },
+              { id: "weight", label: "Weight", icon: Scale },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setSidebarTab(id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  sidebarTab === id
+                    ? "bg-brand/[10%] text-brand"
+                    : "text-[#555555] hover:text-[#a0a0a0]"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="p-3">
+            {sidebarTab === "training" ? (
               <TrainingLoadTab
                 cardioSessions={allCardioSessions}
                 workoutLogs={workoutLogs}
                 profile={profile}
-                hasStrava={true}
+                hasStrava={!!profile?.strava_access_token}
               />
-            </TabsContent>
-          )}
-
-          <TabsContent value="coach">
-              <NutritionCoach />
-            </TabsContent>
-          </Tabs>
+            ) : sidebarTab === "weight" ? (
+              <NutritionCoach view="weight" />
+            ) : (
+              <NutritionCoach view="nutrition" />
+            )}
+          </div>
         </div>
+      </aside>
       </div>
-
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={deleteTarget?.type === "log" ? "Delete Workout Log?" : "Delete Weight Entry?"}
-        description={deleteTarget?.type === "log" ? "This will permanently delete this workout log." : "This will permanently delete this weight entry."}
-        confirmText="Delete" cancelText="Cancel" variant="danger"
-        onConfirm={() => {
-          if (deleteTarget.type === "log") deleteLogMutation.mutate(deleteTarget.id);
-          else deleteBodyWeightMutation.mutate(deleteTarget.id);
-          setDeleteTarget(null);
-        }}
-        loading={deleteLogMutation.isPending || deleteBodyWeightMutation.isPending}
-      />
+      </div>
     </div>
-  );
-}
-
-function WorkoutLogsSection({ exerciseFilter, setExerciseFilter, typeFilter, setTypeFilter, filteredLogs, workoutLogs, expandedLogs, toggleExpanded, handleDeleteLog, weightUnit }) {
-  const [logsOpen, setLogsOpen] = useState(false);
-  return (
-    <Card className="mb-6">
-      <CardHeader className="cursor-pointer py-3" onClick={() => setLogsOpen(!logsOpen)}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />Workout Logs
-            <Badge variant="secondary" className="text-xs ml-1">{workoutLogs.length}</Badge>
-          </CardTitle>
-          {logsOpen ? <ChevronUp className="w-5 h-5 text-[#a0a0a0]" /> : <ChevronDown className="w-5 h-5 text-[#a0a0a0]" />}
-        </div>
-      </CardHeader>
-      {logsOpen && (
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Search Exercise</label>
-              <Input placeholder="e.g., Bench Press" value={exerciseFilter} onChange={(e) => setExerciseFilter(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-[#a0a0a0] mb-1 block">Workout Type</label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="strength">Strength</SelectItem>
-                  <SelectItem value="cardio">Cardio</SelectItem>
-                  <SelectItem value="hiit">HIIT</SelectItem>
-                  <SelectItem value="yoga">Yoga</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {filteredLogs.length === 0 ? (
-            <div className="text-center py-8">
-              <Dumbbell className="w-10 h-10 text-[#a0a0a0] mx-auto mb-2" />
-              <p className="text-sm font-semibold text-[#a0a0a0]">
-                {workoutLogs.length === 0 ? "No workout history yet" : "No matching workouts"}
-              </p>
-              <p className="text-xs text-[#a0a0a0] mt-1">
-                {workoutLogs.length === 0 ? "Complete a workout to see your logs here" : "Try adjusting your filters"}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredLogs.map((log) => {
-                const isExpanded = expandedLogs.has(log.id);
-                const vol = calculateVolume(log);
-                const durMin = log.duration_seconds ? Math.round(log.duration_seconds / 60) : null;
-                return (
-                  <div key={log.id} className="border border-[#2a2a2a]  rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-[#1a1a1a] hover:bg-[#242424] transition-colors" onClick={() => toggleExpanded(log.id)}>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate text-white">{log.workoutTitle}</div>
-                        <div className="flex flex-wrap gap-3 text-xs text-[#555555] mt-0.5">
-                          <span>{format(parseISO(log.log_date), "MMM d, yyyy")}</span>
-                          {durMin && <span>{durMin} min</span>}
-                          <span>{log.exercises?.length || 0} exercises</span>
-                          {vol > 0 && <span className="text-brand font-medium">{(vol / 1000).toFixed(1)}k {weightUnit}</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-[#f87171]" onClick={(e) => { e.stopPropagation(); handleDeleteLog(log.id); }}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                        {isExpanded ? <ChevronUp className="w-4 h-4 text-[#a0a0a0]" /> : <ChevronDown className="w-4 h-4 text-[#a0a0a0]" />}
-                      </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="border-t border-[#2a2a2a]  p-3 space-y-3">
-                        {log.exercises?.map((exercise, idx) => (
-                          <div key={idx} className="bg-[#202020] rounded-xl p-3">
-                            <h4 className="font-semibold text-sm mb-2 text-white">{exercise.name}</h4>
-                            <table className="w-full text-xs">
-                              <thead><tr className="border-b border-[#2a2a2a]">
-                                <th className="text-center py-1 px-2 text-[#a0a0a0]">Set</th>
-                                <th className="text-center py-1 px-2 text-[#a0a0a0]">Weight</th>
-                                <th className="text-center py-1 px-2 text-[#a0a0a0]">Reps</th>
-                                <th className="text-center py-1 px-2 text-[#a0a0a0]">Vol</th>
-                                <th className="text-center py-1 px-2 text-[#a0a0a0]">RIR</th>
-                              </tr></thead>
-                              <tbody>
-                                {exercise.sets?.map((set, si) => (
-                                  <tr key={si} className="border-b border-[#2a2a2a]">
-                                    <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.set_number}</td>
-                                    <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.weight} {weightUnit}</td>
-                                    <td className="py-1 px-2 text-center text-[#a0a0a0]">{set.reps}</td>
-                                    <td className="py-1 px-2 text-center text-brand">{set.weight * set.reps}</td>
-                                    <td className="py-1 px-2 text-center text-[#555555]">{(set.rir ?? set.rpe) ?? "—"}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        ))}
-                        {log.notes && <div className="bg-brand/[5%] border border-brand/[15%] rounded-xl p-3 text-sm text-[#a0a0a0]">{log.notes}</div>}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-function WeightHistorySection({ weightEntries, weightUnit, handleDeleteBodyWeight }) {
-  const [historyOpen, setHistoryOpen] = useState(false);
-  return (
-    <Card className="">
-      <CardHeader className="cursor-pointer py-3" onClick={() => setHistoryOpen(!historyOpen)}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Scale className="w-4 h-4" />Weight History
-            <Badge variant="secondary" className="text-xs ml-1">{weightEntries.length}</Badge>
-          </CardTitle>
-          {historyOpen ? <ChevronUp className="w-5 h-5 text-[#a0a0a0]" /> : <ChevronDown className="w-5 h-5 text-[#a0a0a0]" />}
-        </div>
-      </CardHeader>
-      {historyOpen && (
-        <CardContent className="pt-0">
-          <div className="space-y-2">
-            {weightEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-3 bg-[#202020] rounded-xl hover:bg-[#202020]  transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="text-lg font-bold text-white">{entry.weight} {weightUnit}</div>
-                  <div className="text-sm text-[#a0a0a0]">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {entry.notes && <p className="text-xs text-[#555555] italic hidden sm:block">{entry.notes}</p>}
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteBodyWeight(entry.id)}>
-                    <Trash2 className="w-3.5 h-3.5 text-[#f87171]" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      )}
-    </Card>
   );
 }

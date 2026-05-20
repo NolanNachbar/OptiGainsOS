@@ -58,7 +58,7 @@ import CheckinHistory from "./CheckinHistory";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import MedicalDisclaimer from "@/components/MedicalDisclaimer";
 
-export default function NutritionCoach() {
+export default function NutritionCoach({ view = "nutrition" }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { activePhase } = useDietPhase();
@@ -229,7 +229,7 @@ export default function NutritionCoach() {
         return {
           border: "border-l-4 border-l-red-500",
           icon: <AlertTriangle className="w-5 h-5 text-[#f87171]" />,
-          bg: "bg-red-50",
+          bg: "bg-[rgba(239,68,68,0.08)]",
         };
       case "suggestion":
         return {
@@ -241,7 +241,7 @@ export default function NutritionCoach() {
         return {
           border: "border-l-4 border-l-green-500",
           icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-          bg: "bg-green-50",
+          bg: "bg-[rgba(34,197,94,0.08)]",
         };
       default:
         return {
@@ -319,31 +319,27 @@ export default function NutritionCoach() {
       : 0;
   const fatsPct = totalMacroCal > 0 ? 100 - proteinPct - carbsPct : 0;
 
-  return (
-    <div className="space-y-4">
-      <MedicalDisclaimer />
-      {/* Weekly Check-in Banner */}
-      <WeeklyCheckinBanner />
-      <TrainingAdaptationBanner />
+  if (view === "weight") {
+    return (
+      <div className="space-y-2">
+        <MedicalDisclaimer />
 
-      {/* TDEE + Macro Goals side-by-side on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* TDEE Dashboard */}
+        {/* TDEE */}
         <Card className="">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-500" />
+          <CardHeader className="pb-1 pt-3 px-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Flame className="w-3.5 h-3.5 text-orange-500" />
               Estimated TDEE
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pb-3 pt-1">
             {tdeeResult.tdee ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-white">
+                  <span className="text-2xl font-bold text-white">
                     {tdeeResult.tdee}
                   </span>
-                  <span className="text-sm text-[#555555]">cal/day</span>
+                  <span className="text-xs text-[#555555]">cal/day</span>
                   <span
                     className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${
                       tdeeResult.method === "adaptive"
@@ -360,7 +356,7 @@ export default function NutritionCoach() {
                 {tdeeResult.confidence && (
                   <div className="flex items-center gap-2 text-xs text-[#a0a0a0]">
                     <div
-                      className={`w-2 h-2 rounded-full ${getConfidenceColor(
+                      className={`w-1.5 h-1.5 rounded-full ${getConfidenceColor(
                         tdeeResult.confidence
                       )}`}
                     />
@@ -373,16 +369,16 @@ export default function NutritionCoach() {
                 )}
 
                 {tdeeResult.formula_tdee && tdeeResult.adaptive_tdee && (
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="p-2 bg-[rgba(59,130,246,0.08)] rounded-lg">
+                  <div className="grid grid-cols-2 gap-1.5 text-sm">
+                    <div className="p-1.5 bg-[rgba(59,130,246,0.08)] rounded-lg">
                       <div className="text-[#60a5fa] text-xs font-medium">Formula</div>
-                      <div className="text-base font-bold text-white">
+                      <div className="text-sm font-bold text-white">
                         {tdeeResult.formula_tdee}
                       </div>
                     </div>
-                    <div className="p-2 bg-green-50 rounded-lg">
-                      <div className="text-green-600 text-xs font-medium">Adaptive</div>
-                      <div className="text-base font-bold text-white">
+                    <div className="p-1.5 bg-[rgba(34,197,94,0.08)] rounded-lg">
+                      <div className="text-[#4ade80] text-xs font-medium">Adaptive</div>
+                      <div className="text-sm font-bold text-white">
                         {tdeeResult.adaptive_tdee}
                       </div>
                     </div>
@@ -395,13 +391,13 @@ export default function NutritionCoach() {
                 >
                   How is this calculated?
                   {showTDEEInfo ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
+                    <ChevronUp className="w-3 h-3" />
                   ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    <ChevronDown className="w-3 h-3" />
                   )}
                 </button>
                 {showTDEEInfo && (
-                  <div className="text-xs text-[#a0a0a0] bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg p-2.5 space-y-1.5">
+                  <div className="text-xs text-[#a0a0a0] bg-[#1a1a1a] rounded-lg p-2 space-y-1">
                     <p>
                       <strong>Formula (Mifflin-St Jeor):</strong> Uses your height,
                       weight, age, sex, and activity level.
@@ -414,12 +410,12 @@ export default function NutritionCoach() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-4">
-                <Scale className="w-10 h-10 text-[#a0a0a0] mx-auto mb-2" />
+              <div className="text-center py-2">
+                <Scale className="w-8 h-8 text-[#a0a0a0] mx-auto mb-1.5" />
                 <p className="text-[#a0a0a0] font-medium text-sm">
                   No TDEE estimate yet
                 </p>
-                <p className="text-xs text-[#555555] mt-1">
+                <p className="text-xs text-[#555555] mt-0.5">
                   Add body stats in Profile or log food & weight for 14+ days.
                 </p>
               </div>
@@ -427,11 +423,71 @@ export default function NutritionCoach() {
           </CardContent>
         </Card>
 
-        {/* Calorie & Macro Configuration */}
-        <Card className="">
-        <CardHeader className="pb-3">
+        {/* Weekly Weight stat */}
+        <Card className="border-none">
+          <CardContent className="py-2 px-2.5">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="text-[10px] text-[#a0a0a0]">Weekly Weight</div>
+              <div className="scale-75 origin-right">{getTrendIcon(weeklyWeight.trend)}</div>
+            </div>
+            {weeklyWeight.trend === "insufficient_data" ? (
+              <div className="text-xs text-[#555555]">Need more data</div>
+            ) : (
+              <>
+                <div className="text-base font-bold text-white leading-tight">
+                  {weeklyWeight.weeklyRate > 0 ? "+" : ""}{weeklyWeight.weeklyRate} {weightUnit}
+                </div>
+                <div className="text-[10px] text-[#555555] capitalize">
+                  {weeklyWeight.trend} · {weeklyWeight.dataPoints} pts
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weight Trend Chart */}
+        {chartData.length >= 2 && (
+          <Card className="">
+            <CardHeader className="pb-1 pt-3 px-3">
+              <CardTitle className="text-sm">Weight Trend (30 Days)</CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 pb-3 pt-1">
+              <div className="w-full h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="coachWeightGradient2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="recorded_date" tickFormatter={(d) => format(parseISO(d), "MMM d")} stroke="#64748b" style={{ fontSize: "11px" }} />
+                    <YAxis stroke="#8b5cf6" style={{ fontSize: "11px" }} domain={["dataMin - 2", "dataMax + 2"]} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="weight" stroke="#8b5cf6" strokeWidth={2} fill="url(#coachWeightGradient2)" dot={{ fill: "#8b5cf6", r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="trendWeight" stroke="#2563eb" strokeWidth={2} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: "#2563eb" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <MedicalDisclaimer />
+      <WeeklyCheckinBanner />
+      <TrainingAdaptationBanner />
+
+      {/* Calorie & Macro Configuration */}
+      <Card className="">
+        <CardHeader className="pb-2 pt-3 px-3">
           <div className="flex items-center justify-between">
-            <CardTitle>Calorie & Macro Goals</CardTitle>
+            <CardTitle className="text-sm">Calorie & Macro Goals</CardTitle>
             {!editingMacros && (
               <Button variant="outline" size="sm" onClick={startEditingMacros}>
                 Edit
@@ -439,7 +495,7 @@ export default function NutritionCoach() {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 pb-3 pt-0">
           {editingMacros ? (
             <div className="space-y-5">
               {/* Goal + rate selector (only when TDEE is available) */}
@@ -669,35 +725,32 @@ export default function NutritionCoach() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {/* Current goals display */}
-              <div className="grid grid-cols-4 gap-3 text-center">
+              <div className="grid grid-cols-4 gap-1.5 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-lg font-bold text-white leading-tight">
                     {profile?.daily_calorie_goal || "—"}
                   </div>
-                  <div className="text-xs text-[#555555]">Calories</div>
+                  <div className="text-[10px] text-[#555555]">Calories</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-[#60a5fa]">
-                    {profile?.daily_protein_goal || "—"}
-                    <span className="text-sm font-normal">g</span>
+                  <div className="text-lg font-bold text-[#60a5fa] leading-tight">
+                    {profile?.daily_protein_goal || "—"}<span className="text-xs font-normal">g</span>
                   </div>
-                  <div className="text-xs text-[#555555]">Protein</div>
+                  <div className="text-[10px] text-[#555555]">Protein</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-[#fbbf24]">
-                    {profile?.daily_carbs_goal || "—"}
-                    <span className="text-sm font-normal">g</span>
+                  <div className="text-lg font-bold text-[#fbbf24] leading-tight">
+                    {profile?.daily_carbs_goal || "—"}<span className="text-xs font-normal">g</span>
                   </div>
-                  <div className="text-xs text-[#555555]">Carbs</div>
+                  <div className="text-[10px] text-[#555555]">Carbs</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-rose-600">
-                    {profile?.daily_fats_goal || "—"}
-                    <span className="text-sm font-normal">g</span>
+                  <div className="text-lg font-bold text-rose-600 leading-tight">
+                    {profile?.daily_fats_goal || "—"}<span className="text-xs font-normal">g</span>
                   </div>
-                  <div className="text-xs text-[#555555]">Fats</div>
+                  <div className="text-[10px] text-[#555555]">Fats</div>
                 </div>
               </div>
 
@@ -729,64 +782,41 @@ export default function NutritionCoach() {
           )}
         </CardContent>
       </Card>
-      </div>
 
       {/* Diet Phase */}
       <DietPhaseCard tdeeResult={tdeeResult} trendWeight={latestWeight} />
 
       {/* Insight Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-1.5">
         <Card className="border-none">
-          <CardContent className="py-3 px-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-[#a0a0a0]">Weekly Weight</div>
-              {getTrendIcon(weeklyWeight.trend)}
+          <CardContent className="py-2 px-2.5">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="text-[10px] text-[#a0a0a0]">Logging</div>
+              <Calendar className="w-3.5 h-3.5 text-brand" />
             </div>
-            {weeklyWeight.trend === "insufficient_data" ? (
-              <div className="text-xs text-[#555555]">Need more data</div>
-            ) : (
-              <>
-                <div className="text-xl font-bold text-white">
-                  {weeklyWeight.weeklyRate > 0 ? "+" : ""}
-                  {weeklyWeight.weeklyRate} {weightUnit}
-                </div>
-                <div className="text-xs text-[#555555] capitalize">
-                  {weeklyWeight.trend} · {weeklyWeight.dataPoints} weigh-ins
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-none">
-          <CardContent className="py-3 px-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-[#a0a0a0]">Logging</div>
-              <Calendar className="w-4 h-4 text-brand" />
-            </div>
-            <div className="text-xl font-bold text-white">
+            <div className="text-base font-bold text-white leading-tight">
               {weeklyLogging.daysLogged}/{weeklyLogging.totalDays} days
             </div>
-            <div className="h-1 bg-[#2a2a2a]  rounded-full overflow-hidden mt-1.5">
+            <div className="h-1 bg-[#2a2a2a] rounded-full overflow-hidden mt-1">
               <div
                 className="h-full bg-brand/[8%]0 transition-all"
                 style={{ width: `${weeklyLogging.consistency}%` }}
-              ></div>
+              />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none">
-          <CardContent className="py-3 px-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-[#a0a0a0]">Avg Calories</div>
-              <Zap className="w-4 h-4 text-orange-500" />
+          <CardContent className="py-2 px-2.5">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="text-[10px] text-[#a0a0a0]">Avg Calories</div>
+              <Zap className="w-3.5 h-3.5 text-orange-500" />
             </div>
-            <div className="text-xl font-bold text-white">
+            <div className="text-base font-bold text-white leading-tight">
               {weeklyLogging.avgCalories || "—"}
             </div>
             {profile?.daily_calorie_goal && weeklyLogging.avgCalories > 0 && (
-              <div className="text-xs text-[#555555]">
+              <div className="text-[10px] text-[#555555]">
                 Goal: {profile.daily_calorie_goal} ({weeklyLogging.avgCalories > profile.daily_calorie_goal ? "+" : ""}{weeklyLogging.avgCalories - profile.daily_calorie_goal})
               </div>
             )}
@@ -794,97 +824,26 @@ export default function NutritionCoach() {
         </Card>
 
         <Card className="border-none">
-          <CardContent className="py-3 px-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-[#a0a0a0]">Protein Hit Rate</div>
-              <Target className="w-4 h-4 text-[#60a5fa]" />
+          <CardContent className="py-2 px-2.5">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="text-[10px] text-[#a0a0a0]">Protein Hit</div>
+              <Target className="w-3.5 h-3.5 text-[#60a5fa]" />
             </div>
-            <div className="text-xl font-bold text-white">
+            <div className="text-base font-bold text-white leading-tight">
               {weeklyLogging.daysLogged > 0
                 ? `${weeklyLogging.proteinHitRate}%`
                 : "—"}
             </div>
-            <div className="text-xs text-[#555555]">
+            <div className="text-[10px] text-[#555555]">
               ≥90% of {profile?.daily_protein_goal || 150}g
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Weight Trend Chart */}
-      {chartData.length >= 2 && (
-        <Card className="">
-          <CardHeader>
-            <CardTitle>Weight Trend (Last 30 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="coachWeightGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="#8b5cf6"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#8b5cf6"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="recorded_date"
-                    tickFormatter={(date) => format(parseISO(date), "MMM d")}
-                    stroke="#64748b"
-                    style={{ fontSize: "12px" }}
-                  />
-                  <YAxis
-                    stroke="#8b5cf6"
-                    style={{ fontSize: "12px" }}
-                    domain={["dataMin - 2", "dataMax + 2"]}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    fill="url(#coachWeightGradient)"
-                    dot={{ fill: "#8b5cf6", r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="trendWeight"
-                    stroke="#2563eb"
-                    strokeWidth={2.5}
-                    strokeDasharray="6 3"
-                    dot={false}
-                    activeDot={{ r: 5, fill: "#2563eb" }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Recommendation Cards — collapsible */}
       {recommendations.length > 0 && (
-        <CollapsibleSection title="Recommendations" defaultOpen={true}>
+        <CollapsibleSection title="Recommendations" defaultOpen={false}>
           <div className="space-y-2">
             {recommendations
               .filter((r) => !dismissedCards.has(r.id))
@@ -983,13 +942,13 @@ function CollapsibleSection({ title, defaultOpen = true, children }) {
 
   return (
     <Card className="">
-      <CardHeader className="cursor-pointer py-3" onClick={() => setIsOpen(!isOpen)}>
+      <CardHeader className="cursor-pointer py-2 px-3" onClick={() => setIsOpen(!isOpen)}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{title}</CardTitle>
-          {isOpen ? <ChevronUp className="w-5 h-5 text-[#a0a0a0]" /> : <ChevronDown className="w-5 h-5 text-[#a0a0a0]" />}
+          <CardTitle className="text-sm">{title}</CardTitle>
+          {isOpen ? <ChevronUp className="w-4 h-4 text-[#a0a0a0]" /> : <ChevronDown className="w-4 h-4 text-[#a0a0a0]" />}
         </div>
       </CardHeader>
-      {isOpen && <CardContent className="pt-0">{children}</CardContent>}
+      {isOpen && <CardContent className="pt-0 px-3 pb-3">{children}</CardContent>}
     </Card>
   );
 }

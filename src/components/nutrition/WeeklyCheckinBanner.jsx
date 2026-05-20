@@ -99,8 +99,8 @@ export default function WeeklyCheckinBanner() {
         <div
           className={`p-3 rounded-lg mb-4 text-sm ${
             isOnTrack
-              ? "bg-green-50 text-green-800"
-              : "bg-[rgba(245,158,11,0.08)] text-amber-800"
+              ? "bg-[rgba(34,197,94,0.1)] text-[#4ade80]"
+              : "bg-[rgba(245,158,11,0.08)] text-[#fbbf24]"
           }`}
         >
           {pendingCheckin.reasoning}
@@ -157,8 +157,9 @@ export default function WeeklyCheckinBanner() {
         {/* Actions */}
         <div className="flex gap-2">
           <Button
+            variant="volt"
             onClick={() => acceptCheckin.mutate(pendingCheckin)}
-            className="flex-1 bg-brand hover:bg-brand"
+            className="flex-1"
             disabled={acceptCheckin.isPending}
           >
             <Check className="w-4 h-4 mr-1.5" />
