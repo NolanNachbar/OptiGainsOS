@@ -10,7 +10,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LoadingScreen, LoadingSpinner } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateReactions, invalidateWorkouts, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { useProfile } from "@/hooks/useUserQueries";
-import { useExerciseReactions } from "@/hooks/useExerciseReactions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
@@ -18,9 +17,7 @@ import ProgramCard from "@/components/programs/ProgramCard";
 import { Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { ACTIVITY_TYPE_LABELS } from "@/lib/strava";
-import ShareCardioModal from "@/components/strava/ShareCardioModal";
 
-import { generateWorkoutPlan } from "@/ml/workoutModel";
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
@@ -378,21 +375,15 @@ export default function Workouts() {
     setIsGenerating(true);
 
     try {
-      // generateWorkoutPlan now accepts profile directly
-      const plan = generateWorkoutPlan(profile);
-
-      queryClient.setQueryData(['workoutPlan'], plan);
-      setWorkoutPlan(plan);
+      toast.error("Workout generation removed — use Program Builder to create programs.");
+      setIsGenerating(false);
+      return;
     } catch (error) {
       console.error("Error generating workout plan:", error);
       toast.error("Failed to generate workout plan. Please try again.");
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const getReaction = (workoutId) => {
-    return reactions.find(r => r.workout_id === workoutId)?.reaction;
   };
 
   const handleImportProgram = (e) => {
@@ -413,8 +404,6 @@ export default function Workouts() {
 
   // Liked exercise names (thumbs up on exercises during workouts)
   // These are non-workout rows in exercise_reactions (no "workout:" prefix)
-  const { getLikedExercises } = useExerciseReactions();
-  const likedExerciseNames = getLikedExercises().filter(name => !name.startsWith('workout:'));
 
   const folders = [...new Set(
     workouts.map(w => w.folder).filter(Boolean)
@@ -423,7 +412,6 @@ export default function Workouts() {
   const filteredWorkouts = workouts.filter(workout => {
     // Type/category filter
     if (filter === "custom" && !workout.is_custom) return false;
-    if (filter === "liked" && getReaction(workout.id) !== "like") return false;
     if (!["all", "custom", "liked"].includes(filter) && workout.type !== filter) return false;
 
     // Folder filter
@@ -629,24 +617,6 @@ export default function Workouts() {
             </div>
           )}
           <div className="px-6 pb-6">
-            {filter === "liked" && likedExerciseNames.length > 0 && (
-              <div className="mb-6 p-4 rounded-xl bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)]">
-                <h3 className="text-sm font-semibold text-[#4ade80] mb-3 flex items-center gap-1.5">
-                  <ThumbsUp className="w-4 h-4" />
-                  Liked Exercises
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {likedExerciseNames.map(name => (
-                    <Badge key={name} variant="green" className="text-sm py-1 px-3">
-                      {name}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-xs text-[#4ade80] mt-2 opacity-70">
-                  These exercises are prioritised when generating workouts for you.
-                </p>
-              </div>
-            )}
             <div className="max-h-[600px] overflow-y-auto pr-2">
               {filteredWorkouts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -654,7 +624,6 @@ export default function Workouts() {
                     <WorkoutCard
                       key={workout.id}
                       workout={workout}
-                      reaction={getReaction(workout.id)}
                       onReactionChange={(workoutId, reaction) =>
                         reactionMutation.mutate({ workoutId, reaction })
                       }
@@ -1242,13 +1211,6 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
         </div>
       )}
 
-      {shareSession && (
-        <ShareCardioModal
-          session={shareSession}
-          onClose={() => setShareSession(null)}
-          onShared={() => setShareSession(null)}
-        />
-      )}
     </>
   );
 }

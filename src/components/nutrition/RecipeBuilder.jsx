@@ -54,7 +54,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import ShareRecipeModal from "@/components/nutrition/ShareRecipeModal";
 
 export default function RecipeBuilder({ showCreateDialog: externalShow, onCreateDialogChange, hideHeader = false, compact = false }) {
   const { user } = useAuth();
@@ -166,13 +165,6 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
             onOpenChange={(open) => { setShowLogDialog(open); if (!open) setLoggingRecipe(null); }}
             recipe={loggingRecipe}
             userId={user.id}
-          />
-        )}
-        {sharingRecipe && (
-          <ShareRecipeModal
-            open={!!sharingRecipe}
-            onOpenChange={(open) => { if (!open) setSharingRecipe(null); }}
-            recipe={sharingRecipe}
           />
         )}
         <ConfirmDialog
@@ -292,12 +284,6 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
         />
       )}
 
-      {sharingRecipe && (
-        <ShareRecipeModal
-          recipe={sharingRecipe}
-          onClose={() => setSharingRecipe(null)}
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

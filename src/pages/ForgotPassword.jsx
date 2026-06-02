@@ -36,7 +36,7 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-16 h-16 mx-auto mb-4" />
-          <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">Vektor</h1>
+          <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
           <p className="text-[13px] text-[#a0a0a0] mt-2">Reset your password</p>
         </div>
 

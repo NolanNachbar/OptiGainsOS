@@ -14,8 +14,6 @@ import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
 );
-import { replaceExercise } from "@/ml/workoutModel";
-import ExerciseReactionButtons from "@/components/workouts/ExerciseReactionButtons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -202,21 +200,6 @@ export default function ExerciseCard({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {/* Like / Dislike buttons */}
-            {onReactionChange && (
-              <ExerciseReactionButtons
-                exerciseName={exercise.name}
-                currentReaction={currentReaction}
-                onReactionChange={onReactionChange}
-                onReplaceExercise={onReplaceExercise}
-                exercise={exercise}
-                dayFocus={dayFocus}
-                goal={goal}
-                level={fitnessLevel}
-                equipment={equipment}
-                currentWeekExerciseNames={currentWeekExerciseNames}
-              />
-            )}
             <div className="relative" ref={menuRef}>
             <Button
               variant="ghost"
@@ -240,15 +223,7 @@ export default function ExerciseCard({
                 </button>
                 <button
                   onClick={() => {
-                    const alts = replaceExercise({
-                      dislikedName: exercise.name,
-                      currentWeekExerciseNames,
-                      goal,
-                      level: fitnessLevel,
-                      equipment,
-                      dayFocus,
-                    });
-                    setReplaceAlternatives(alts);
+                    setReplaceAlternatives(null);
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}

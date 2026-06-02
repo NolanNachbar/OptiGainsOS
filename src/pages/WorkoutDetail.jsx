@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
-import { useTutorial } from "@/hooks/useTutorial";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,12 +25,9 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
-import ShareWorkoutModal from "@/components/workouts/ShareWorkoutModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useExerciseReactions } from "@/hooks/useExerciseReactions";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import { analytics } from "@/lib/analytics.js";
 
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
@@ -48,11 +44,12 @@ export default function WorkoutDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { nextStep } = useTutorial();
   const { showLocalNotification } = usePushNotifications(user?.id);
   const [workout, setWorkout] = useState(null);
   const [isLogging, setIsLogging] = useState(false);
-  const [notes, setNotes] = useState("");
+  const [preWorkoutNotes, setPreWorkoutNotes] = useState("");
+  const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
+  const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -79,7 +76,6 @@ export default function WorkoutDetail() {
   const weightUnit = profile?.weight_unit || 'lbs';
 
   // Exercise reactions (like/dislike per exercise)
-  const { getReaction, toggleReaction } = useExerciseReactions();
 
   // Fetch enrollment data (program mode only)
   const { data: enrollment } = useQuery({
@@ -468,6 +464,12 @@ export default function WorkoutDetail() {
         }
       }
 
+      // Combine notes
+      const combinedNotes = [
+        preWorkoutNotes ? `PRE: ${preWorkoutNotes}` : null,
+        postWorkoutNotes ? `POST: ${postWorkoutNotes}` : null,
+      ].filter(Boolean).join("\n\n");
+
       // Create workout log
       await db.entities.WorkoutLog.create({
         created_by: user.id,
@@ -476,7 +478,7 @@ export default function WorkoutDetail() {
         log_date: today,
         exercises: exerciseLogs,
         duration_seconds: durationSeconds,
-        notes: notes || null,
+        notes: combinedNotes || null,
       });
 
       // Update reaction if exists
@@ -494,8 +496,6 @@ export default function WorkoutDetail() {
     },
     onSuccess: () => {
       completeSession();
-      const durationMin = startTime ? Math.round((Date.now() - startTime) / 60000) : null;
-      analytics.workoutCompleted(workout?.id, durationMin);
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
 
@@ -527,17 +527,17 @@ export default function WorkoutDetail() {
               } else {
                 toast.success("Workout logged! Progression updated.");
               }
-              setShowShareModal(true);
+              navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
             onError: () => {
               toast.success("Workout logged! (Progression update failed)");
-              setShowShareModal(true);
+              navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
           }
         );
       } else {
         toast.success("Workout logged successfully!");
-        setShowShareModal(true);
+        navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
       }
     },
     onError: (error) => {
@@ -605,13 +605,8 @@ export default function WorkoutDetail() {
 
   const handleStartLogging = () => {
     setIsLogging(true);
-    // Advance tutorial if in demo mode
-    if (isTutorialDemo) {
-      nextStep();
-      return;
-    }
+    if (isTutorialDemo) { return; }
     const workoutId = isProgramSource ? null : urlParams.get('id');
-    analytics.workoutStarted(workoutId || programWorkoutId, isProgramSource ? 'program' : 'library');
     const now = Date.now();
     setStartTime(now);
     createSession({
@@ -628,7 +623,7 @@ export default function WorkoutDetail() {
     restoreSession(resumeSession.id);
     setExerciseLogs(resumeSession.exercises || []);
     setStartTime(new Date(resumeSession.start_time).getTime());
-    setNotes(resumeSession.notes || "");
+    setPreWorkoutNotes(resumeSession.notes || "");
     setIsLogging(true);
     setResumeSession(null);
   };
@@ -649,7 +644,8 @@ export default function WorkoutDetail() {
     cancelSession();
     setIsLogging(false);
     setExerciseLogs([]);
-    setNotes("");
+    setPreWorkoutNotes("");
+    setPostWorkoutNotes("");
     setStartTime(null);
   };
 
@@ -667,17 +663,12 @@ export default function WorkoutDetail() {
   };
 
   const handleSaveWorkoutLog = () => {
-    if (isTutorialDemo) {
-      // In tutorial mode, advance to next step and go back to dashboard
-      nextStep();
-      navigate('/dashboard');
-      return;
-    }
+    if (isTutorialDemo) { navigate('/dashboard'); return; }
     if (hasIncompleteSets()) {
       setShowIncompletePrompt(true);
       return;
     }
-    saveWorkoutLogMutation.mutate();
+    setShowPostWorkoutDialog(true);
   };
 
   const handleIncompleteResponse = (autoCheck) => {
@@ -686,7 +677,7 @@ export default function WorkoutDetail() {
       markAllSetsComplete();
     }
     // Small delay so state update flushes before mutation reads exerciseLogs
-    setTimeout(() => saveWorkoutLogMutation.mutate(), 50);
+    setTimeout(() => setShowPostWorkoutDialog(true), 50);
   };
 
   if (!workout || !user || (isProgramSource && (!enrollment || !programWorkout))) {
@@ -850,6 +841,21 @@ export default function WorkoutDetail() {
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
+            {/* Pre-workout Notes */}
+            <Card className="border-brand/20 bg-brand/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[#a0a0a0]">Pre-workout Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={preWorkoutNotes}
+                  onChange={(e) => setPreWorkoutNotes(e.target.value)}
+                  placeholder="Anything notable going in? Energy, soreness, focus..."
+                  className="bg-transparent border-none focus-visible:ring-0 px-0 min-h-[60px] resize-none text-base"
+                />
+              </CardContent>
+            </Card>
+
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
               <Card className="border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.05)]">
@@ -879,10 +885,6 @@ export default function WorkoutDetail() {
                     weightUnit={weightUnit}
                     onUpdateSet={(exIdx, setIdx, field, value) => {
                       updateSetData(exIdx, setIdx, field, value);
-                      // Advance tutorial when first set is completed in demo mode
-                      if (isTutorialDemo && exIdx === 0 && setIdx === 0 && field === 'completed' && value === true) {
-                        nextStep();
-                      }
                     }}
                     onAddSet={addSet}
                     onRemoveSet={removeSet}
@@ -893,8 +895,6 @@ export default function WorkoutDetail() {
                     lastPerformance={lastPerformance}
                     programExercise={programEx}
                     progressionTargets={targets}
-                    currentReaction={getReaction(exerciseLog.name)}
-                    onReactionChange={(name, reaction) => toggleReaction({ exerciseName: name, reaction })}
                     onReplaceExercise={handleReplaceExercise}
                     dayFocus={workout.focus || "Full Body"}
                     goal={profile?.primary_goal || "general_fitness"}
@@ -1057,26 +1057,39 @@ export default function WorkoutDetail() {
         </DialogContent>
       </Dialog>
 
-      {showShareModal && (
-        <ShareWorkoutModal
-          workoutTitle={workout.title}
-          exercises={exerciseLogs}
-          onClose={() => {
-            setShowShareModal(false);
-            const returnTo = isProgramSource && enrollment
-              ? `/program/${enrollment.program_id}`
-              : "/dashboard";
-            navigate(returnTo);
-          }}
-          onShared={() => {
-            setShowShareModal(false);
-            const returnTo = isProgramSource && enrollment
-              ? `/program/${enrollment.program_id}`
-              : "/dashboard";
-            navigate(returnTo);
-          }}
-        />
-      )}
+      {/* Post-workout notes prompt */}
+      <Dialog open={showPostWorkoutDialog} onOpenChange={setShowPostWorkoutDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Finish Workout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#a0a0a0]">Post-workout Notes</label>
+              <Textarea
+                value={postWorkoutNotes}
+                onChange={(e) => setPostWorkoutNotes(e.target.value)}
+                placeholder="What felt good/bad? Any injuries? Pump quality?"
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
+                Go Back
+              </Button>
+              <Button
+                variant="volt"
+                className="flex-1"
+                disabled={saveWorkoutLogMutation.isPending}
+                onClick={() => saveWorkoutLogMutation.mutate()}
+              >
+                {saveWorkoutLogMutation.isPending ? "Saving..." : "Log Workout"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

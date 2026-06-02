@@ -20,7 +20,6 @@ import {
   getAllPersonalRecords
 } from "@/utils/exerciseStats";
 import { ExerciseProgressChart, WeightProgressChart } from "@/components/progress/ProgressCharts";
-import NutritionCoach from "@/components/nutrition/NutritionCoach";
 
 export function ProgressContent() {
   const { user } = useAuth();
@@ -650,10 +649,6 @@ export function ProgressContent() {
             )}
           </TabsContent>
 
-          {/* Nutrition Coach Tab */}
-          <TabsContent value="coach">
-            <NutritionCoach />
-          </TabsContent>
         </Tabs>
     </div>
   );

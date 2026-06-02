@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { analytics } from "@/lib/analytics.js";
 import {
   useProgram,
   useEnrollment,
@@ -10,7 +9,6 @@ import {
   useDeleteProgram,
   useDeleteEnrollment,
 } from "@/hooks/useProgramQueries";
-import { useShareProgram } from "@/hooks/useSocialQueries";
 import { calculateDailyTargets } from "@/utils/programProgression";
 import { exportProgramAsJson } from "@/utils/programIO";
 import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
@@ -66,9 +64,6 @@ export default function ProgramDetail() {
   const location = useLocation();
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (programId) analytics.programDeepLink(programId);
-  }, [programId]);
 
   const { program, isLoading: programLoading } = useProgram(programId);
   const { enrollment, isLoading: enrollmentLoading } = useEnrollment(programId);
@@ -76,7 +71,6 @@ export default function ProgramDetail() {
   const statusMutation = useUpdateEnrollmentStatus();
   const deleteMutation = useDeleteProgram();
   const deleteEnrollmentMutation = useDeleteEnrollment();
-  const shareMutation = useShareProgram();
 
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [startingWeights, setStartingWeights] = useState({});
@@ -349,23 +343,6 @@ export default function ProgramDetail() {
                 )}
                 {isOwner && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        shareMutation.mutate(
-                          { programId: program.id, caption: "", isPublic: true },
-                          {
-                            onSuccess: () => toast.success("Program shared!"),
-                            onError: () => toast.error("Failed to share"),
-                          }
-                        );
-                      }}
-                      disabled={shareMutation.isPending}
-                    >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
-                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

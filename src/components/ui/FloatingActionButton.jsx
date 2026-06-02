@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator } from "lucide-react";
-import { useTutorial } from "@/hooks/useTutorial";
 
 const actions = [
   { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-brand", iconColor: "text-black" },
@@ -15,24 +14,14 @@ const actions = [
 export default function FloatingActionButton({ onWeighIn, onCalculators }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { nextStep, isActive: tutorialActive, currentStepData } = useTutorial();
-
   const handleAction = (action) => {
     setIsOpen(false);
-
     if (action.path) {
       navigate(action.path);
     } else if (action.action === "weighIn") {
       onWeighIn?.();
     } else if (action.action === "calculators") {
       onCalculators?.();
-    }
-
-    // Advance tutorial AFTER navigation/action, with delay for DOM to update
-    if (tutorialActive && currentStepData?.id === 'log-food-action' && action.label === 'Log Food') {
-      setTimeout(() => {
-        nextStep();
-      }, 500);
     }
   };
 
@@ -93,9 +82,6 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
       <motion.button
         onClick={() => {
           setIsOpen(!isOpen);
-          if (tutorialActive && currentStepData?.id === 'quick-actions') {
-            nextStep();
-          }
         }}
         className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-brand text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-brand transition-colors"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}

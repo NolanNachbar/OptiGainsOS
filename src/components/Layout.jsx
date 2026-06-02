@@ -1,22 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Home, Dumbbell, Calendar, UtensilsCrossed, Users } from "lucide-react";
-import { useNotificationCount } from "@/hooks/useSocialQueries";
+import { Home, Dumbbell, UtensilsCrossed, Brain, Briefcase } from "lucide-react";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import FloatingActionButton from "@/components/ui/FloatingActionButton";
-import { useTutorial } from "@/hooks/useTutorial";
 import Logo from "@/components/Logo";
 import { useStravaAutoSync } from "@/hooks/useStravaAutoSync";
 
 const navigationItems = [
   { title: "Home", url: "/dashboard", icon: Home },
-  { title: "Workouts", url: "/workouts", icon: Dumbbell },
-  { title: "Schedule", url: "/schedule", icon: Calendar },
-  { title: "Food", url: "/food-tracker", icon: UtensilsCrossed },
-  { title: "Social", url: "/social", icon: Users, hasBadge: true },
+  { title: "Train", url: "/workouts", icon: Dumbbell },
+  { title: "Fuel", url: "/food-tracker", icon: UtensilsCrossed },
+  { title: "Mind", url: "/mind", icon: Brain },
+  { title: "Career", url: "/career", icon: Briefcase },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -25,11 +23,8 @@ export default function Layout({ children, currentPageName }) {
   useStravaAutoSync();
   const [showCalculators, setShowCalculators] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
-  const { data: notificationCount = 0 } = useNotificationCount();
   const mobileHeaderRef = useRef(null);
-  const { nextStep, isActive: tutorialActive, currentStepData } = useTutorial();
 
-  // Measure visible header/nav height so sticky sub-headers can position below it
   useEffect(() => {
     const updateHeaderHeight = () => {
       const desktopNav = document.querySelector('[data-desktop-nav]');
@@ -52,12 +47,12 @@ export default function Layout({ children, currentPageName }) {
 
   const pageDisplayName = {
     Dashboard: "Home",
-    Workouts: "Workouts",
-    FoodTracker: "Food Tracker",
+    Workouts: "Train",
+    FoodTracker: "Fuel",
     Schedule: "Schedule",
-    Social: "Social",
+    Mind: "Mind",
+    Career: "Career",
     Profile: "Profile",
-    PublicProfile: "Profile",
     WorkoutDetail: "Workout",
     QuickWorkout: "Quick Workout",
     CreateWorkout: "Create Workout",
@@ -72,39 +67,24 @@ export default function Layout({ children, currentPageName }) {
         <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-[#1a1a1a] border-b border-[#2a2a2a] items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
             <Logo className="w-8 h-8" />
-            <span className="text-brand font-bold text-[15px] tracking-tight uppercase">Vektor</span>
+            <span className="text-brand font-bold text-[15px] tracking-tight uppercase">OptiGainsOS</span>
           </Link>
 
           <div className="flex items-center gap-0.5 flex-1">
             {navigationItems.map((item) => {
-              const isActive = location.pathname === item.url;
+              const isActive = location.pathname === item.url ||
+                (item.url === '/workouts' && ['/workouts', '/schedule', '/program-builder', '/create-workout', '/quick-workout'].some(p => location.pathname.startsWith(p)));
               return (
                 <Link
                   key={item.title}
                   to={item.url}
-                  data-tutorial={
-                    item.title === 'Schedule' ? 'schedule-nav' :
-                    item.title === 'Home' ? 'home-nav' :
-                    undefined
-                  }
-                  onClick={() => {
-                    if (tutorialActive && currentStepData?.id === 'schedule' && item.title === 'Schedule') nextStep();
-                    if (tutorialActive && currentStepData?.id === 'navigate-back' && item.title === 'Home') nextStep();
-                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13.5px] font-medium transition-all duration-150 ${
                     isActive
                       ? 'bg-brand/[8%] text-brand'
                       : 'text-[#a0a0a0] hover:bg-[#242424] hover:text-white'
                   }`}
                 >
-                  <div className="relative">
-                    <item.icon className="w-[15px] h-[15px]" />
-                    {item.hasBadge && notificationCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {notificationCount > 9 ? '9+' : notificationCount}
-                      </span>
-                    )}
-                  </div>
+                  <item.icon className="w-[15px] h-[15px]" />
                   <span>{item.title}</span>
                 </Link>
               );
@@ -162,10 +142,9 @@ export default function Layout({ children, currentPageName }) {
         }}
       >
         <div className="flex items-center justify-around px-2 py-1">
-          {navigationItems.filter(item => !item.mobileHidden).map((item) => {
-            const isActive = location.pathname === item.url;
-            const isHomeButton = item.title === "Home";
-            const isScheduleButton = item.title === "Schedule";
+          {navigationItems.map((item) => {
+            const isActive = location.pathname === item.url ||
+              (item.url === '/workouts' && ['/workouts', '/schedule', '/program-builder', '/create-workout', '/quick-workout'].some(p => location.pathname.startsWith(p)));
             return (
               <Link
                 key={item.title}
@@ -173,35 +152,9 @@ export default function Layout({ children, currentPageName }) {
                 className={`flex flex-col items-center gap-0.5 px-3 py-2 min-w-0 flex-1 transition-colors ${
                   isActive ? "text-brand" : "text-[#555555]"
                 }`}
-                data-tutorial={
-                  isHomeButton ? "home-nav" :
-                  isScheduleButton ? "schedule-nav" :
-                  undefined
-                }
-                onClick={() => {
-                  if (tutorialActive && currentStepData?.id === 'navigate-back' && item.title === 'Home') {
-                    nextStep();
-                  }
-                  if (tutorialActive && currentStepData?.id === 'schedule' && item.title === 'Schedule') {
-                    nextStep();
-                  }
-                }}
               >
-                <div className="relative">
-                  <item.icon
-                    className={`w-6 h-6 ${isActive ? "stroke-[2.5]" : ""}`}
-                  />
-                  {item.hasBadge && notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-[rgba(239,68,68,0.1)] text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {notificationCount > 9 ? "9+" : notificationCount}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={`text-xs font-medium ${
-                    isActive ? "text-brand" : "text-[#555555]"
-                  }`}
-                >
+                <item.icon className={`w-6 h-6 ${isActive ? "stroke-[2.5]" : ""}`} />
+                <span className={`text-xs font-medium ${isActive ? "text-brand" : "text-[#555555]"}`}>
                   {item.title}
                 </span>
               </Link>
@@ -210,7 +163,6 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </nav>
 
-      {/* Floating Action Button — hidden on pages with their own primary actions */}
       {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder'].some(p => location.pathname.startsWith(p)) && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
@@ -218,11 +170,7 @@ export default function Layout({ children, currentPageName }) {
         />
       )}
 
-      <WeighInModal
-        open={showWeighIn}
-        onOpenChange={setShowWeighIn}
-      />
-
+      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
       <CalculatorsModal
         isOpen={showCalculators}
         onClose={() => setShowCalculators(false)}

@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
-import ShareWorkoutModal from "@/components/workouts/ShareWorkoutModal";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 
@@ -175,7 +174,7 @@ export default function QuickWorkout() {
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
       toast.success("Workout logged successfully!");
-      setShowShareModal(true);
+      navigate("/dashboard");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to save workout log");
@@ -303,20 +302,6 @@ export default function QuickWorkout() {
         </DialogContent>
       </Dialog>
 
-      {showShareModal && (
-        <ShareWorkoutModal
-          workoutTitle={workoutTitle}
-          exercises={exercises}
-          onClose={() => {
-            setShowShareModal(false);
-            navigate("/dashboard");
-          }}
-          onShared={() => {
-            setShowShareModal(false);
-            navigate("/dashboard");
-          }}
-        />
-      )}
     </div>
   );
 }

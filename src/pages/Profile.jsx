@@ -19,8 +19,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Trash2, AlertTriangle, Flame, Apple as AppleIcon, Calculator, Dumbbell, Users, Clock, User, LogOut, HelpCircle, BookOpen, Bell, BellOff, Database, ChevronRight, ChevronLeft } from "lucide-react";
 import DataExport from "@/components/DataExport";
 import StravaConnect from "@/components/strava/StravaConnect";
-import { useTutorial } from "@/hooks/useTutorial";
-import { AvatarUpload } from "@/components/ui/AvatarUpload";
 import { toast } from "sonner";
 import { differenceInDays, addDays, format } from "date-fns";
 
@@ -51,7 +49,6 @@ export default function Profile() {
 
   const { profile, isLoading } = useProfile();
   const { activePhase } = useDietPhase();
-  const { replayTutorial } = useTutorial();
 
   const { data: profileStats } = useQuery({
     queryKey: ['profile-stats', user?.id],
@@ -405,17 +402,14 @@ export default function Profile() {
             >
               {/* Avatar card */}
               <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4 text-center">
-                <AvatarUpload
-                  currentUrl={profile?.avatar_url}
-                  username={formData.display_name || formData.username || user.email}
-                  profileId={profile?.id}
-                />
+                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
+                  <span className="text-brand text-2xl font-bold">
+                    {(formData.display_name || user.email || 'N')[0].toUpperCase()}
+                  </span>
+                </div>
                 <p className="text-white font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.user_metadata?.full_name || user.email}
+                  {formData.display_name || user.email}
                 </p>
-                {formData.username && (
-                  <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
-                )}
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
                     <div>
@@ -465,17 +459,14 @@ export default function Profile() {
             <div className={activeSection !== null ? 'hidden' : 'md:hidden mb-4'}>
               <h1 className="text-[22px] font-bold text-white leading-tight mb-4">Profile</h1>
               <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 text-center mb-3">
-                <AvatarUpload
-                  currentUrl={profile?.avatar_url}
-                  username={formData.display_name || formData.username || user.email}
-                  profileId={profile?.id}
-                />
+                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
+                  <span className="text-brand text-2xl font-bold">
+                    {(formData.display_name || user.email || 'N')[0].toUpperCase()}
+                  </span>
+                </div>
                 <p className="text-white font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.user_metadata?.full_name || user.email}
+                  {formData.display_name || user.email}
                 </p>
-                {formData.username && (
-                  <p className="text-[#555555] text-xs mt-0.5">@{formData.username}</p>
-                )}
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
                     <div>
@@ -554,14 +545,6 @@ export default function Profile() {
 
                   {/* Section A: Account */}
                   <SectionHeader icon={User} title="Account" />
-                  {/* Avatar only shown on mobile — desktop has it in the sidebar */}
-                  <div className="flex flex-col items-center mb-4 md:hidden">
-                    <AvatarUpload
-                      currentUrl={profile?.avatar_url}
-                      username={formData.display_name || formData.username || user.email}
-                      profileId={profile?.id}
-                    />
-                  </div>
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="display-name">Display Name</Label>
@@ -580,81 +563,6 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  <SectionDivider />
-
-                  {/* Section B: Social Profile */}
-                  <SectionHeader icon={Users} title="Social Profile" />
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="username">Username</Label>
-                      {isUsernameLocked ? (
-                        <>
-                          <Input
-                            id="username"
-                            value={formData.username}
-                            disabled
-                            className="mt-1"
-                          />
-                          <p className="text-sm text-[#555555] mt-1 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            You can change your username again on {format(usernameUnlockDate, 'MMM d, yyyy')}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <Input
-                            id="username"
-                            value={formData.username}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
-                              setFormData({ ...formData, username: val });
-                            }}
-                            maxLength={20}
-                            className="mt-1"
-                            placeholder="your_username"
-                          />
-                          <p className="text-sm text-[#555555] mt-1">
-                            3-20 characters: letters, numbers, underscores. Can be changed once every 30 days.
-                          </p>
-                        </>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value.slice(0, 300) })}
-                        maxLength={300}
-                        rows={3}
-                        className="mt-1"
-                        placeholder="Tell others about yourself..."
-                      />
-                      <p className="text-sm text-[#555555] mt-1">{formData.bio.length}/300</p>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="privacy">Profile Visibility</Label>
-                      <Select
-                        value={formData.privacy_level}
-                        onValueChange={(value) => setFormData({ ...formData, privacy_level: value })}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select visibility">
-                            {formData.privacy_level === 'public' && 'Public'}
-                            {formData.privacy_level === 'friends_only' && 'Friends Only'}
-                            {formData.privacy_level === 'private' && 'Private'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Public — Searchable and visible to everyone</SelectItem>
-                          <SelectItem value="friends_only">Friends Only — Add friends by exact username only</SelectItem>
-                          <SelectItem value="private">Private — Your profile is completely hidden</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
           </div>
@@ -1245,20 +1153,6 @@ export default function Profile() {
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="w-4 h-4 text-[#f87171]" />
                 <h3 className="text-sm font-semibold text-[#f87171]">Danger Zone</h3>
-              </div>
-
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium text-white">Replay Tutorial</p>
-                  <p className="text-sm text-[#a0a0a0]">Restart the app tutorial</p>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => { replayTutorial(); navigate('/dashboard'); toast.success('Tutorial restarted!'); }}
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Replay
-                </Button>
               </div>
 
               <SectionDivider />

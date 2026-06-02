@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTutorial } from "@/hooks/useTutorial";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { calculateMacros } from "@/utils/nutritionUtils";
@@ -32,13 +31,10 @@ import { format, addDays, isSameDay, isBefore, addWeeks, subWeeks, startOfWeek }
 import { getTodayString, getWeekStart } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import WorkoutApprovalModal from "@/components/workouts/WorkoutApprovalModal";
 import CustomSplitSelector from "@/components/workouts/CustomSplitSelector";
 import ProgramDurationModal from "@/components/workouts/ProgramDurationModal";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
-import { generateWorkoutPlan } from "@/ml/workoutModel";
-import { useExerciseReactions } from "@/hooks/useExerciseReactions";
 import { BookOpen, Activity } from "lucide-react";
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPE_COLORS } from "@/lib/strava";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -136,7 +132,6 @@ export default function Schedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { tutorialWorkouts } = useTutorial();
   const [currentWeekStart, setCurrentWeekStart] = useState(
     getWeekStart(null, 1)
   );
@@ -161,10 +156,7 @@ export default function Schedule() {
   const [selectedDay, setSelectedDay] = useState(new Date());
 
   const { profile } = useProfile();
-  const { getLikedExercises, getDislikedExercises } = useExerciseReactions();
   // Pre-compute at render time so event handlers always have a defined value
-  const likedExercises = getLikedExercises();
-  const dislikedExercises = getDislikedExercises();
 
   const { data: allWorkouts = [] } = useQuery({
     queryKey: queryKeys.workouts(user?.id),
@@ -241,10 +233,9 @@ export default function Schedule() {
   const getCardioForDate = (day) =>
     weeklyCardio.filter(s => isSameDay(new Date(s.start_date), day));
 
-  // Merge tutorial workouts with real schedule (tutorial workouts appear only during tutorial)
   const schedule = [
     ...dbSchedule,
-    ...tutorialWorkouts.filter((tw) => weekDates.includes(tw.date)).map((tw, index) => ({
+    ...[].map((tw, index) => ({
       id: `tutorial-${index}`,
       workout_id: `tutorial-workout-${index}`,
       scheduled_date: tw.date,
@@ -610,38 +601,7 @@ export default function Schedule() {
     if (scheduleMode === "week") {
       // Week-only: generate immediately, skip program duration modal
       try {
-        // Pass split explicitly so exercises are generated for Push/Pull/Legs etc.
-        // NOT re-derived from days_per_week (which would give Upper/Lower for 4-day).
-        const plan = generateWorkoutPlan({
-          days_per_week: split.length,
-          split,                                              // ← user's chosen day types
-          fitness_level: profile.fitness_level || "intermediate",
-          available_equipment: profile.available_equipment || [],
-          workout_duration_preference: profile.workout_duration_preference || "45 min",
-          primary_goal: profile.primary_goal || "general_fitness",
-          exercises_per_day: exercisesPerDay,
-          likedExercises,
-          dislikedExercises,
-        }, 1);
-
-        const DAY_DISTRIBUTION = {
-          1: [0], 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4],
-          5: [0, 1, 2, 3, 4], 6: [0, 1, 2, 3, 4, 5], 7: [0, 1, 2, 3, 4, 5, 6],
-        };
-        const dayOffsets = DAY_DISTRIBUTION[split.length] || split.map((_, i) => i);
-        // plan.week already has correct focus from split — no relabeling needed
-        const week = plan.week;
-        const scheduleSuggestion = week.map((day, index) => ({
-          date: format(addDays(currentWeekStart, dayOffsets[index]), "yyyy-MM-dd"),
-          dayName: format(addDays(currentWeekStart, dayOffsets[index]), "EEEE"),
-          focus: day.focus,
-          duration: day.duration,
-          exercises: day.exercises,
-          dayIndex: day.dayIndex,
-          // No programConfig → week-only path in handleApproveSchedule
-        }));
-        setPendingSchedule({ plan: { ...plan, week }, schedule: scheduleSuggestion });
-        setShowApprovalModal(true);
+        toast.error("Auto-generation removed — use Program Builder to create and enroll in a program.");
       } catch (err) {
         console.error(err);
         toast.error("Failed to generate workout plan");
@@ -652,65 +612,10 @@ export default function Schedule() {
     }
   };
 
-  // Step 3: User confirmed duration + progression — generate the plan
-  const handleDurationConfirmed = (programConfig) => {
+  const handleDurationConfirmed = (_programConfig) => {
     setShowDurationModal(false);
     try {
-      const { split, totalWeeks, weeklyIncrement, deloadMode, deloadReduction, weekSchedule } = programConfig;
-
-      // Generate week 1 (intro) workout plan using the chosen split
-      // Pass split explicitly so the model generates exercises for Push/Pull/Legs etc,
-      // NOT for a re-derived Upper/Lower split based on days_per_week alone.
-      const plan = generateWorkoutPlan({
-        days_per_week: split.length,
-        split,                                              // ← user's chosen day types
-        fitness_level: profile.fitness_level || "intermediate",
-        available_equipment: profile.available_equipment || [],
-        workout_duration_preference: profile.workout_duration_preference || "45 min",
-        primary_goal: profile.primary_goal || "general_fitness",
-        exercises_per_day: pendingExercisesPerDay,
-        likedExercises,
-        dislikedExercises,
-      }, 1);
-
-      // plan.week already has correct focus labels — no relabeling needed
-      const week = plan.week;
-
-      // Spread training days across the week intelligently with rest days
-      // e.g. 3-day split → Mon, Wed, Fri; 4-day → Mon, Tue, Thu, Fri; 5-day → Mon-Fri
-      const DAY_DISTRIBUTION = {
-        1: [0],
-        2: [0, 3],
-        3: [0, 2, 4],
-        4: [0, 1, 3, 4],
-        5: [0, 1, 2, 3, 4],
-        6: [0, 1, 2, 3, 4, 5],
-        7: [0, 1, 2, 3, 4, 5, 6],
-      };
-      const dayOffsets = DAY_DISTRIBUTION[split.length] || split.map((_, i) => i);
-
-      // Annotate each day with program config for scheduling
-      const scheduleSuggestion = week.map((day, index) => ({
-        date: format(addDays(currentWeekStart, dayOffsets[index]), "yyyy-MM-dd"),
-        dayName: format(addDays(currentWeekStart, dayOffsets[index]), "EEEE"),
-        focus: day.focus,
-        duration: day.duration,
-        exercises: day.exercises,
-        dayIndex: day.dayIndex,
-        programConfig: {
-          totalWeeks,
-          weeklyIncrement,
-          deloadMode,
-          deloadReduction,
-          weekSchedule,
-          split,
-          currentWeek: 1,
-          phase: "intro",
-        },
-      }));
-
-      setPendingSchedule({ plan: { ...plan, week }, schedule: scheduleSuggestion });
-      setShowApprovalModal(true);
+      toast.error("Auto-generation removed — use Program Builder to create and enroll in a program.");
     } catch (error) {
       console.error("Error generating plan:", error);
       toast.error("Failed to generate workout plan");
@@ -2357,19 +2262,6 @@ export default function Schedule() {
           />
         )}
 
-        {/* Approval Modal */}
-        {showApprovalModal && pendingSchedule && (
-          <WorkoutApprovalModal
-            schedule={pendingSchedule.schedule}
-            onApprove={handleApproveSchedule}
-            onCancel={() => {
-              setShowApprovalModal(false);
-              setPendingSchedule(null);
-              setScheduleMode(null);
-              setPendingExercisesPerDay(null);
-            }}
-          />
-        )}
 
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog

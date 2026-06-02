@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../api/supabaseClient';
-import { analytics, identifyUser, resetAnalytics } from '../lib/analytics.js';
 
 const AuthContext = createContext({});
 
@@ -22,7 +21,6 @@ export function AuthProvider({ children }) {
       (_event, session) => {
         const u = session?.user ?? null;
         setUser(u);
-        if (u) identifyUser(u.id, { email: u.email });
       }
     );
 
@@ -38,7 +36,6 @@ export function AuthProvider({ children }) {
       },
     });
     if (error) throw error;
-    analytics.signup('email');
     return data;
   };
 
@@ -63,7 +60,6 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) throw error;
-    resetAnalytics();
   };
 
   const resetPassword = async (email) => {

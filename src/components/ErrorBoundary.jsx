@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import * as Sentry from '@sentry/react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +14,6 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info.componentStack);
-    Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
   }
 
   handleReset = () => {

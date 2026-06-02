@@ -1,5 +1,5 @@
 {
-  "name": "sisyphus-schedule",
+  "name": "optigains-os",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,12 +12,14 @@
     "build": "vite build",
     "build:pages": "GITHUB_PAGES=true vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:android": "npx cap open android",
+    "mobile:ios": "npx cap open ios"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
     "@dnd-kit/core": "^6.3.1",
-    "@sentry/react": "^10.53.1",
     "@supabase/supabase-js": "^2.38.4",
     "@tanstack/react-query": "^5.90.20",
     "@zxing/browser": "^0.1.5",
@@ -28,13 +30,9 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.553.0",
     "postcss": "^8.5.6",
-    "posthog-js": "^1.373.5",
-    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-body-highlighter": "^2.0.5",
     "react-dom": "^19.2.0",
-    "react-easy-crop": "^5.5.7",
-    "react-helmet-async": "^3.0.0",
     "react-is": "^19.2.4",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6",
@@ -44,6 +42,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.5",
+    "@capacitor/core": "^8.3.4",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

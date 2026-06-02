@@ -3,7 +3,6 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys, invalidatePrograms } from "@/lib/queryKeys";
 import { updateProgressionState } from "@/utils/programProgression";
-import { analytics } from "@/lib/analytics.js";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -227,7 +226,6 @@ export function useEnrollInProgram() {
     },
     onSuccess: (data, variables) => {
       invalidatePrograms(queryClient);
-      analytics.programEnrolled(variables.programId, variables.programName);
     },
   });
 }

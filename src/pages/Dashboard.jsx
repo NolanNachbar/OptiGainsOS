@@ -14,10 +14,7 @@ import { queryKeys, invalidateBodyWeight, invalidateSchedule, invalidateWorkouts
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
-import { useTutorial } from "@/hooks/useTutorial";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
-import { generatePersonalizedWorkout } from "@/ml/mlRecommender";
-import { computeWeekNumber } from "@/ml/workoutModel";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import {
@@ -41,11 +38,9 @@ import {
 import { format, addDays, addWeeks, subWeeks } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
 import { toast } from "sonner";
-import WorkoutApprovalModal from "@/components/workouts/WorkoutApprovalModal";
 import { calculateVolume } from "@/utils/exerciseStats";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
-import NutritionCoach from "@/components/nutrition/NutritionCoach";
-import MedicalDisclaimer from "@/components/MedicalDisclaimer";
+import MorningCheckin from "@/components/dashboard/MorningCheckin";
 
 
 export default function Dashboard() {
@@ -56,13 +51,12 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
 
   const { activePhase } = useDietPhase();
-  const { startTutorial, nextStep, isActive: tutorialActive, currentStepData, setTutorialWorkouts } = useTutorial();
 
   const [newBodyWeight, setNewBodyWeight] = useState("");
   const [bodyWeightDate, setBodyWeightDate] = useState(() => getTodayString(null));
   const [bodyWeightNotes, setBodyWeightNotes] = useState("");
   const [welcomeBannerVisible, setWelcomeBannerVisible] = useState(
-    () => !localStorage.getItem('vektor_welcome_dismissed')
+    () => !localStorage.getItem('optigains_welcome_dismissed')
   );
 
   // Today's workout expand state
@@ -86,29 +80,10 @@ export default function Dashboard() {
     skipDeload: false,
   });
 
-  const { data: hasProfile, isLoading: checkingProfile } = useQuery({
-    queryKey: queryKeys.hasProfile(user?.id),
-    queryFn: async () => {
-      const profiles = await db.entities.UserProfile.filter({ created_by: user.id });
-      return profiles.length > 0;
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
 
-  useEffect(() => {
-    if (!checkingProfile && user && hasProfile === false) {
-      navigate("/onboarding");
-    }
-  }, [user, hasProfile, navigate, checkingProfile]);
 
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
-
-  // Daily check-in state
-  const [checkInSleep, setCheckInSleep] = useState(3);
-  const [checkInSoreness, setCheckInSoreness] = useState(3);
-  const [checkInStress, setCheckInStress] = useState(3);
 
   const { data: todayCheckIn } = useQuery({
     queryKey: ["dailyReadiness", today, user?.id],
@@ -117,22 +92,6 @@ export default function Dashboard() {
       return rows[0] || null;
     },
     enabled: !!user,
-  });
-
-  const checkInMutation = useMutation({
-    mutationFn: async () => {
-      if (todayCheckIn) {
-        return db.entities.DailyReadiness.update(todayCheckIn.id, {
-          sleep_score: checkInSleep, soreness_score: checkInSoreness, stress_score: checkInStress,
-        });
-      }
-      return db.entities.DailyReadiness.create({
-        created_by: user.id, checkin_date: today,
-        sleep_score: checkInSleep, soreness_score: checkInSoreness, stress_score: checkInStress,
-      });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dailyReadiness", today, user?.id] }),
-    onError: () => toast.error("Failed to save check-in"),
   });
 
   useEffect(() => {
@@ -429,7 +388,7 @@ export default function Dashboard() {
         workoutSettings.skipDeload !== (plan?.skipDeload ?? false);
 
       if (!plan || settingsChanged) {
-        if (!profile) { toast.error("No workout plan found. Complete onboarding first."); navigate("/workouts"); return; }
+        if (!profile) { navigate("/workouts"); return; }
         const goalMapping = {
           weight_loss: "Weight Loss", muscle_gain: "Muscle Gain",
           endurance: "Build Endurance", general_fitness: "General Fitness",
@@ -438,29 +397,8 @@ export default function Dashboard() {
         const goals = Array.isArray(profile.primary_goal)
           ? profile.primary_goal.map(g => goalMapping[g] || g)
           : goalMapping[profile.primary_goal] || "General Fitness";
-        plan = generatePersonalizedWorkout({
-          userProfile: {
-            goal: goals,
-            level: profile.fitness_level || "intermediate",
-            equipment: profile.available_equipment || [],
-            daysPerWeek: profile.days_per_week || 3,
-            duration: profile.workout_duration_preference || "45 min",
-          },
-          daysPerWeek: profile.days_per_week || 3,
-          weekNumber: computeWeekNumber(profile.created_at),
-        });
-        queryClient.setQueryData(["workoutPlan"], plan);
       }
-      if (!plan) { toast.error("No workout plan found. Generate workouts first."); navigate("/workouts"); return; }
-
-      const scheduleSuggestion = plan.week.map((day, index) => ({
-        date: format(addDays(currentWeekStart, index), "yyyy-MM-dd"),
-        dayName: format(addDays(currentWeekStart, index), "EEEE"),
-        focus: day.focus, duration: day.duration,
-        exercises: day.exercises, dayIndex: day.dayIndex,
-      }));
-      setPendingSchedule({ plan, schedule: scheduleSuggestion });
-      setShowApprovalModal(true);
+      navigate("/schedule");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to load workout plan");
@@ -469,11 +407,8 @@ export default function Dashboard() {
 
   const handleApproveSchedule = async (approvedSchedule) => {
     try {
-      if (tutorialActive) {
-        setTutorialWorkouts(approvedSchedule);
-        toast.success("Weekly schedule created!");
-        setShowApprovalModal(false);
-        setPendingSchedule(null);
+      if (false) {
+        // tutorial path removed
         return;
       }
       for (const daySchedule of approvedSchedule) {
@@ -575,7 +510,7 @@ export default function Dashboard() {
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
   const exerciseCount = todayExercises.length || todayWorkoutDetails?.exercises?.length || 0;
 
-  if (!user || checkingProfile) {
+  if (!user) {
     return <DashboardSkeleton />;
   }
 
@@ -588,7 +523,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8 flex items-end justify-between">
           <div>
-            <h1 className="text-[22px] font-bold text-white leading-tight">Welcome to VEKTOR</h1>
+            <h1 className="text-[22px] font-bold text-white leading-tight">OptiGainsOS</h1>
             <p className="text-[13px] text-[#a0a0a0] mt-0.5">Training status as of today</p>
           </div>
         </div>
@@ -605,7 +540,7 @@ export default function Dashboard() {
                 <Button variant="volt" size="sm">Go to Schedule</Button>
               </Link>
               <button
-                onClick={() => { localStorage.setItem('vektor_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
+                onClick={() => { localStorage.setItem('optigains_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
                 className="text-[#555555] hover:text-[#a0a0a0] text-lg leading-none px-1 transition-colors"
                 aria-label="Dismiss"
               >
@@ -614,6 +549,14 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Morning Check-in ── */}
+        <div className="mb-4">
+          <MorningCheckin
+            today={today}
+            existingCheckin={todayCheckIn}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" data-tutorial="dashboard-overview">
           {/* ── Today's Workout Card ── */}
@@ -627,22 +570,7 @@ export default function Dashboard() {
                 <span className="text-sm font-semibold text-white/90">Today's Workout</span>
               </div>
 
-              {/* Tutorial demo */}
-              {tutorialActive && currentStepData?.id === "start-workout" ? (
-                <div className="text-center py-2">
-                  <Badge className="bg-[#1a1a1a]/20 text-white border-none text-xs mb-2">Demo Program</Badge>
-                  <h3 className="text-lg font-bold text-white mb-1">Upper Body Strength</h3>
-                  <div className="flex items-center justify-center gap-3 text-xs text-white/80 mb-3">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />45 min</span>
-                    <span className="flex items-center gap-1"><Target className="w-3 h-3" />1 exercise</span>
-                  </div>
-                  <Link to="/workout-detail?tutorial=demo">
-                    <Button variant="volt" size="sm" onClick={() => nextStep()} data-tutorial="start-workout-btn">
-                      Start Workout <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </Link>
-                </div>
-              ) : workoutTitle ? (
+              {workoutTitle ? (
                 <>
                   {todayProgramWorkout && (
                     <Badge className="bg-[#1a1a1a]/20 text-white border-none text-xs mb-1.5">
@@ -670,11 +598,11 @@ export default function Dashboard() {
                         </Link>
                       )}
                     </div>
-                  ) : todayCheckIn ? (
-                    /* ── Already checked in: show start button ── */
+                  ) : (
+                    /* ── Start workout (check-in is now a separate card above) ── */
                     <div className="flex gap-2 mt-1">
                       {todayWorkoutLink && (
-                        <Link to={todayWorkoutLink} className="flex-1" onClick={() => tutorialActive && nextStep()}>
+                        <Link to={todayWorkoutLink} className="flex-1">
                           <Button variant="volt" size="sm" className="w-full" data-tutorial="start-workout-btn">
                             Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
                           </Button>
@@ -687,57 +615,6 @@ export default function Dashboard() {
                         </Button>
                       )}
                     </div>
-                  ) : (
-                    /* ── Check-in flow ── */
-                    <>
-                      <div className="border-t border-white/20 mt-1 mb-3" />
-                      <p className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2.5">Check In</p>
-                      {[
-                        { label: "Sleep", value: checkInSleep, set: setCheckInSleep },
-                        { label: "Soreness", value: checkInSoreness, set: setCheckInSoreness },
-                        { label: "Stress", value: checkInStress, set: setCheckInStress },
-                      ].map(({ label, value, set }) => (
-                        <div key={label} className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-white/70 w-14 shrink-0">{label}</span>
-                          <div className="flex gap-1.5">
-                            {[1, 2, 3, 4, 5].map((n) => (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => set(n)}
-                                className={`w-6 h-6 rounded-full text-xs font-bold transition-all ${
-                                  value === n
-                                    ? "bg-brand text-black scale-110"
-                                    : value > n
-                                    ? "bg-[#1a1a1a]/40 text-white"
-                                    : "bg-[#1a1a1a]/15 text-white/50 hover:bg-[#1a1a1a]/25"
-                                }`}
-                              >
-                                {n}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                      <div className="flex items-center gap-2 mt-3">
-                        <Button
-                          variant="volt"
-                          size="sm"
-                          className="flex-1 text-sm font-bold"
-                          disabled={checkInMutation.isPending}
-                          onClick={() => checkInMutation.mutate()}
-                        >
-                          {checkInMutation.isPending ? "Saving…" : <>Check In <ArrowRight className="w-3.5 h-3.5 ml-1" /></>}
-                        </Button>
-                        {todayWorkoutLink && (
-                          <Link to={todayWorkoutLink}>
-                            <Button variant="ghost" size="sm" className="bg-[#1a1a1a]/15 text-white/70 hover:bg-[#1a1a1a]/25 text-xs px-3">
-                              Skip
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
-                    </>
                   )}
                 </>
               ) : activeEnrollment ? (
@@ -921,8 +798,6 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <MedicalDisclaimer />
-
                   {/* Generate Week */}
                   <div className="pt-2 border-t border-[#2a2a2a]">
                     <div className="flex items-center justify-between mb-2">
@@ -978,10 +853,7 @@ export default function Dashboard() {
 
                     <Button
                       variant="dark"
-                      onClick={() => {
-                        handleGenerateAndSchedule();
-                        if (tutorialActive && currentStepData?.id === "generate-week") nextStep();
-                      }}
+                      onClick={() => { handleGenerateAndSchedule(); }}
                       className="w-full h-9"
                       data-tutorial="generate-week-btn"
                     >
@@ -1007,22 +879,6 @@ export default function Dashboard() {
 
         </div>
 
-        {showApprovalModal && pendingSchedule && (
-          <WorkoutApprovalModal
-            schedule={pendingSchedule.schedule}
-            todayCheckIn={todayCheckIn}
-            lastWeekVolume={
-              weeklyLogsWithExercises.length > 0
-                ? weeklyLogsWithExercises.reduce((sum, log) => sum + (log.exercises?.length || 0), 0)
-                : null
-            }
-            onApprove={(schedule) => {
-              handleApproveSchedule(schedule);
-              if (tutorialActive && currentStepData?.id === "approve-schedule") nextStep();
-            }}
-            onCancel={() => { setShowApprovalModal(false); setPendingSchedule(null); }}
-          />
-        )}
 
         {/* Nutrition */}
         <Card className="border border-[#2a2a2a] mb-4" data-tutorial="nutrition-card">
@@ -1128,18 +984,12 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="p-3">
-            {sidebarTab === "training" ? (
-              <TrainingLoadTab
-                cardioSessions={allCardioSessions}
-                workoutLogs={workoutLogs}
-                profile={profile}
-                hasStrava={!!profile?.strava_access_token}
-              />
-            ) : sidebarTab === "weight" ? (
-              <NutritionCoach view="weight" />
-            ) : (
-              <NutritionCoach view="nutrition" />
-            )}
+            <TrainingLoadTab
+              cardioSessions={allCardioSessions}
+              workoutLogs={workoutLogs}
+              profile={profile}
+              hasStrava={!!profile?.strava_access_token}
+            />
           </div>
         </div>
       </aside>

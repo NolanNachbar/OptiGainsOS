@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { analytics } from "@/lib/analytics.js";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTutorial } from "@/hooks/useTutorial";
 import { useProfile, useAllFoodEntries, useCustomFoods, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { calculateMacros, getDailyCalorieTrend, getRecentFoods, UNIT_TO_GRAMS } from "@/utils/nutritionUtils";
@@ -33,7 +31,6 @@ import MealTemplates, { SaveAsTemplateDialog } from "@/components/nutrition/Meal
 import StatsSetupModal from "@/components/nutrition/StatsSetupModal";
 import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
-import WeeklyCheckinBanner from "@/components/nutrition/WeeklyCheckinBanner";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -47,7 +44,6 @@ export default function FoodTracker() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { nextStep, isActive: tutorialActive, currentStepData } = useTutorial();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
@@ -508,7 +504,6 @@ const handleSaveMealTemplate = () => {
       invalidateFood(queryClient);
       setShowAddDialog(false);
       resetForm();
-      analytics.foodLogged(variables?.meal_type);
       toast.success("Food logged successfully!");
     },
     onError: () => {
@@ -1011,10 +1006,6 @@ const handleSaveMealTemplate = () => {
               );
             })()}
 
-            {/* WeeklyCheckinBanner — mobile only */}
-            <div className="lg:hidden">
-              <WeeklyCheckinBanner />
-            </div>
 
             {/* Numbered meal sections */}
             <div className="space-y-4">
@@ -1268,7 +1259,6 @@ const handleSaveMealTemplate = () => {
               <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-brand/[5%] rounded-full blur-2xl pointer-events-none" />
             </div>
 
-            <WeeklyCheckinBanner />
           </div>
 
           {/* ── Tab bar: Templates | Recipes | Ideas ── */}
@@ -1748,13 +1738,6 @@ const handleSaveMealTemplate = () => {
                       updateFoodMutation.mutate({ id: editingEntry.id, data: newFood });
                       return;
                     }
-                    // Advance tutorial if on add-food step
-                    if (tutorialActive && currentStepData?.id === 'add-food') {
-                      setShowAddDialog(false);
-                      nextStep();
-                      return;
-                    }
-
                     addFoodMutation.mutate(newFood);
                     // Save manually-entered foods to custom_foods (fire-and-forget, per-serving values)
                     if (newFood.food_name && baseMacros.calories > 0) {
@@ -1769,7 +1752,7 @@ const handleSaveMealTemplate = () => {
                       });
                     }
                   }}
-                  disabled={tutorialActive && currentStepData?.id === 'add-food' ? false : (!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending)}
+                  disabled={!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending}
                   className="w-full bg-brand"
                   data-tutorial="add-food-submit"
                 >
