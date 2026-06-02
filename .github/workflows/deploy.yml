@@ -18,7 +18,7 @@ jobs:
       - run: npm cache clean --force
       - run: rm -rf node_modules package-lock.json
       - run: npm install
-      - name: Build for GitHub Pages (/VektorPub/)
+      - name: Build for GitHub Pages (/OptiGainsOS/)
         run: npm run build:pages
         env:
           GITHUB_PAGES: "true"
@@ -35,4 +35,4 @@ jobs:
           git config user.name "GitHub Actions"
           git add .
           git commit -m "Deploy from private repo"
-          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/VektorPub.git HEAD:main
+          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/OptiGainsOS.git HEAD:main
