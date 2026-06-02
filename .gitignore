@@ -37,3 +37,6 @@ scripts/capture-demo.mjs
 *.njsproj
 *.sln
 *.sw?
+
+# PDF Guides
+The Complete Guide to Navy Seal Fitness.pdf
