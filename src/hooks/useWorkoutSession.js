@@ -24,7 +24,7 @@ export function useWorkoutSession() {
     let query = supabase
       .from("workout_sessions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("created_by", user.id)
       .eq("status", "in_progress");
 
     if (programWorkoutId) {
@@ -57,7 +57,7 @@ export function useWorkoutSession() {
     const { data, error } = await supabase
       .from("workout_sessions")
       .insert({
-        user_id: user.id,
+        created_by: user.id,
         workout_id: workoutId || null,
         program_workout_id: programWorkoutId || null,
         enrollment_id: enrollmentId || null,

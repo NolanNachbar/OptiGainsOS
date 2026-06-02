@@ -47,13 +47,13 @@ export function useEnrollments() {
   const { data: enrollments = [], isLoading, error } = useQuery({
     queryKey: queryKeys.enrollments(user?.id),
     queryFn: async () => {
-      const enrollments = await db.entities.ProgramEnrollment.filter({ user_id: user.id });
+      const enrollments = await db.entities.ProgramEnrollment.filter({ created_by: user.id });
       const programIds = [...new Set(enrollments.map(e => e.program_id))];
       if (programIds.length === 0) return [];
 
       const { data: programs } = await supabase
         .from('programs')
-        .select('id, name, duration_weeks, days_per_week, difficulty, goal, schema_version, cycle_length, num_cycles')
+        .select('id, title, description, focus, duration_weeks, days_per_week, difficulty, schema_version, num_cycles, tags')
         .in('id', programIds);
 
       const { data: allProgramWorkouts } = await supabase
@@ -90,7 +90,7 @@ export function useEnrollment(programId) {
     queryKey: queryKeys.enrollment(user?.id, programId),
     queryFn: async () => {
       const results = await db.entities.ProgramEnrollment.filter({
-        user_id: user.id,
+        created_by: user.id,
         program_id: programId,
       });
       return results.find(r => r.status === 'active')
@@ -213,13 +213,13 @@ export function useEnrollInProgram() {
       };
 
       // Re-use the existing row if the user previously cancelled (unique constraint on user+program)
-      const existing = await db.entities.ProgramEnrollment.filter({ user_id: user.id, program_id: programId });
+      const existing = await db.entities.ProgramEnrollment.filter({ created_by: user.id, program_id: programId });
       if (existing.length > 0) {
         return db.entities.ProgramEnrollment.update(existing[0].id, enrollmentData);
       }
 
       return db.entities.ProgramEnrollment.create({
-        user_id: user.id,
+        created_by: user.id,
         program_id: programId,
         ...enrollmentData,
       });

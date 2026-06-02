@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { queryKeys, invalidateBodyWeight, invalidateSchedule, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
+import { useProfile, useAllFoodEntries, useBodyWeightEntries, useRecoveryMetrics } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
@@ -39,14 +39,18 @@ import { format, addDays, addWeeks, subWeeks } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateVolume } from "@/utils/exerciseStats";
+import { calculateTrainingCapacity } from "@/utils/recoveryUtils";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
+import ReadinessRing from "@/components/dashboard/ReadinessRing";
+import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
+import TodayActions from "@/components/dashboard/TodayActions";
+import QuickCapture from "@/components/QuickCapture";
 
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [sidebarTab, setSidebarTab] = useState("training");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -450,6 +454,29 @@ export default function Dashboard() {
   // Exercises for today's workout (program or regular)
   const todayExercises = todayProgramWorkout?.exercises || todayWorkoutDetails?.exercises || [];
 
+  const { data: todayBrief } = useQuery({
+    queryKey: ["daily-brief", today, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_briefs")
+        .select("brief_json")
+        .eq("created_by", user.id)
+        .eq("date", today)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { recoveryMetrics } = useRecoveryMetrics(30);
+
+  const capacity = useMemo(() => 
+    calculateTrainingCapacity(recoveryMetrics, profile, todayCheckIn),
+    [recoveryMetrics, profile, todayCheckIn]
+  );
+
   const { data: workoutLogs = [], isLoading: logsLoading, isError: logsError } = useQuery({
     queryKey: queryKeys.workoutLogs(user?.id),
     queryFn: async () => {
@@ -492,7 +519,7 @@ export default function Dashboard() {
     : 0;
   const sortedWeightEntries = [...weightEntries].sort((a, b) => new Date(b.recorded_date) - new Date(a.recorded_date));
   const currentBodyWeight = sortedWeightEntries[0]?.weight;
-  const tdeeResult = getBestTDEE(profile, currentBodyWeight, weightEntries, allFoodEntries || []);
+  const tdeeResult = getBestTDEE(profile, currentBodyWeight, weightEntries, allFoodEntries || [], recoveryMetrics);
   const startBodyWeight = sortedWeightEntries[sortedWeightEntries.length - 1]?.weight;
   const bodyWeightChange = currentBodyWeight && startBodyWeight ? currentBodyWeight - startBodyWeight : null;
 
@@ -515,11 +542,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-2 py-4 md:px-3 md:py-5 bg-[#121212] min-h-screen relative">
-      <div className="max-w-[1400px] mx-auto">
-      <div className="flex gap-6 items-start">
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
+    <div className="px-3 py-4 md:px-6 md:py-8 bg-[#121212] min-h-screen relative">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-end justify-between">
           <div>
@@ -550,15 +574,70 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Morning Check-in ── */}
-        <div className="mb-4">
-          <MorningCheckin
-            today={today}
-            existingCheckin={todayCheckIn}
-          />
+        {/* ── Morning Check-in & Readiness ── */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="md:col-span-3">
+            <MorningCheckin
+              today={today}
+              existingCheckin={todayCheckIn}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <ReadinessRing
+              recoveryMetrics={recoveryMetrics}
+              todayCheckin={todayCheckIn}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" data-tutorial="dashboard-overview">
+        {/* ── Today's Capacity Recommendation ── */}
+        {capacity && (
+          <div className="mb-6 p-4 rounded-xl bg-brand/[8%] border border-brand/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-brand/20">
+                <Zap className="w-5 h-5 text-brand" />
+              </div>
+              <div>
+                <p className="text-[10px] text-brand font-bold uppercase tracking-widest">Recovery Status</p>
+                <h2 className="text-lg font-bold text-white leading-tight">
+                  {workoutTitle ? (
+                    <>
+                      {capacity.minutes >= (workoutDuration || capacity.minutes)
+                        ? <>Run <span className="text-brand">{workoutTitle}</span> as written</>
+                        : <>Shorten <span className="text-brand">{workoutTitle}</span> to <span className="text-brand">{capacity.minutes} min</span></>
+                      }
+                    </>
+                  ) : (
+                    <>Cap today at <span className="text-brand">{capacity.minutes} min</span></>
+                  )}
+                </h2>
+                {capacity.rationale !== "Full capacity recommended" && (
+                  <p className="text-xs text-[#a0a0a0] mt-0.5">{capacity.rationale}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {[
+                { label: "HRV", value: capacity.hvr_factor != null ? (capacity.hvr_factor >= 1 ? "↑ Good" : "↓ Low") : null, ok: capacity.hvr_factor >= 1 },
+                { label: "Load", value: capacity.load_factor != null ? (capacity.load_factor >= 1 ? "↑ Fresh" : "↓ Fatigued") : null, ok: capacity.load_factor >= 1 },
+                { label: "Feel", value: todayCheckIn ? `${todayCheckIn.energy}/10` : null, ok: (todayCheckIn?.energy || 5) >= 6 },
+              ].filter(s => s.value).map(s => (
+                <div key={s.label} className="text-center">
+                  <p className="text-[10px] text-[#555555] uppercase tracking-widest">{s.label}</p>
+                  <p className={`text-xs font-bold ${s.ok ? "text-brand" : "text-yellow-400"}`}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── AI Daily Brief ── */}
+        <DailyBriefCard today={today} />
+
+        {/* ── Today's Actions ── */}
+        <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* ── Today's Workout Card ── */}
           <div
             className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-brand"
@@ -599,7 +678,6 @@ export default function Dashboard() {
                       )}
                     </div>
                   ) : (
-                    /* ── Start workout (check-in is now a separate card above) ── */
                     <div className="flex gap-2 mt-1">
                       {todayWorkoutLink && (
                         <Link to={todayWorkoutLink} className="flex-1">
@@ -638,50 +716,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Cardio workouts for today's program day */}
-            {todayProgramWorkout?.cardio_sessions?.length > 0 && (
-              <div className="mt-2 border-t border-white/20 px-5 py-3">
-                <p className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-2 flex items-center gap-1">
-                  <Activity className="w-3 h-3" /> Cardio
-                </p>
-                <div className="space-y-1.5">
-                  {todayProgramWorkout.cardio_sessions.map((c, i) => {
-                    const sessionDone = todayProgramWorkout.completed || todayProgramWorkout.completedSessions?.has(i);
-                    return (
-                      <div key={i} className="flex items-center gap-2 text-xs bg-[#1a1a1a]/10 rounded-lg px-3 py-1.5">
-                        <span className="font-medium text-white flex-1 truncate">{c.title}</span>
-                        <span className="text-white/60 shrink-0">{c.duration_minutes} min{c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}</span>
-                        {sessionDone ? (
-                          <button
-                            className="shrink-0 hover:opacity-70 transition-opacity"
-                            title="Undo"
-                            disabled={unmarkSession.isPending}
-                            onClick={() => unmarkSession.mutate({ sessionIndex: i })}
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                          </button>
-                        ) : !todayProgramWorkout.exercises?.length && (
-                          <button
-                            className="shrink-0 text-xs font-semibold text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded px-1.5 py-0.5 transition-colors disabled:opacity-50"
-                            disabled={markSessionDone.isPending}
-                            onClick={() => markSessionDone.mutate({ sessionIndex: i })}
-                          >
-                            Done
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {todayProgramWorkout.cardio_sessions.length > 0 && todayExercises.length > 0 && (
-                  <p className="text-xs text-[#a0a0a0] mt-2 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#555555] inline-block" />
-                    High-load day — lifting + cardio
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Expandable exercise list */}
             {showTodayExercises && todayExercises.length > 0 && (
               <div className="mt-2 border-t border-white/20 px-5 py-3">
@@ -704,286 +738,145 @@ export default function Dashboard() {
             <div className="pb-4" />
           </div>
 
-          {/* ── This Week + Muscles Trained (merged, spans 2 cols) ── */}
-          <Card className={`${profile?.strava_access_token ? 'md:col-span-2' : 'md:col-span-2'} flex flex-col`}>
-            <CardHeader className="pb-0">
+          {/* ── This Week + Muscles Trained ── */}
+          <Card className="md:col-span-2 flex flex-col">
+            <CardHeader className="pb-0 pt-4 px-5">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
                   <Brain className="w-4 h-4 text-brand" />
                   This Week
                 </CardTitle>
-                <div className="flex items-center gap-2">
-                  <span className="hidden sm:inline text-xs text-[#a0a0a0] uppercase tracking-wide">Muscles trained</span>
-                  <div className="flex rounded-full overflow-hidden border border-[#333] text-xs font-medium">
-                    <button
-                      onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
-                    >Front</button>
-                    <button
-                      onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#222] text-[#a0a0a0] hover:bg-[#2a2a2a]"}`}
-                    >Back</button>
-                  </div>
+                <div className="flex rounded-full overflow-hidden border border-[#333] text-[10px] font-bold uppercase tracking-wider">
+                  <button
+                    onClick={() => setMuscleView("anterior")}
+                    className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black" : "bg-[#222] text-[#a0a0a0]"}`}
+                  >Front</button>
+                  <button
+                    onClick={() => setMuscleView("posterior")}
+                    className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black" : "bg-[#222] text-[#a0a0a0]"}`}
+                  >Back</button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-3 pb-4 flex flex-col sm:flex-row gap-4 flex-1 min-h-0">
-              {/* Left: stats + AI generator */}
+            <CardContent className="pt-3 pb-4 flex flex-col sm:flex-row gap-4 flex-1 min-h-0 px-5">
               <div className="flex-1 space-y-3 min-w-0">
-                  {/* Workouts this week */}
                   <div>
-                    <div className="flex items-center justify-between text-sm mb-1">
+                    <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-[#a0a0a0]">Workouts</span>
                       <span className="font-semibold text-white">{weeklyCompleted}/{weeklyGoal}</span>
                     </div>
-                    <div className="h-1.5 bg-[#333] rounded-full overflow-hidden">
+                    <div className="h-1 bg-[#333] rounded-full overflow-hidden">
                       <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
                     </div>
                   </div>
 
-                  {/* Food logged this week */}
-                  {(() => {
-                    const daysWithFood = new Set(
-                      (allFoodEntries || []).filter((e) => e.date >= weekStart && e.date <= weekEnd).map((e) => e.date)
-                    ).size;
-                    return (
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-[#a0a0a0]">Food Logged</span>
-                          <span className="font-semibold text-white">{daysWithFood}/7 days</span>
-                        </div>
-                        <div className="h-1.5 bg-[#333] rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${Math.min(100, (daysWithFood / 7) * 100)}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {activePhase && (
-                    <div className="flex items-center justify-between text-sm pt-1 border-t border-[#2a2a2a]">
-                      <span className="text-[#a0a0a0]">Diet Phase</span>
-                      <Badge className="text-xs capitalize">{activePhase.phase_type?.replace("_", " ") || "Active"}</Badge>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm pt-1 border-t border-[#2a2a2a]">
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-[#2a2a2a]">
                     <span className="text-[#a0a0a0]">Body Weight</span>
                     <div className="flex items-center gap-1">
                       <span className="font-semibold text-white">{currentBodyWeight || "—"}{currentBodyWeight ? ` ${weightUnit}` : ""}</span>
                       {bodyWeightChange !== undefined && bodyWeightChange !== null && bodyWeightChange !== 0 && (
-                        <span className={`text-xs ${bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]"}`}>
+                        <span className={`text-[10px] ${bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]"}`}>
                           {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange.toFixed(1)}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Cardio this week (only if Strava connected) */}
+                  {/* Cardio this week */}
                   {profile?.strava_access_token && weeklyCardio.length > 0 && (
                     <div className="pt-1 border-t border-[#2a2a2a]">
-                      <div className="flex items-center justify-between text-sm mb-1.5">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
                         <span className="text-[#a0a0a0] flex items-center gap-1.5">
-                          <Activity className="w-3.5 h-3.5 text-[#a0a0a0]" />
+                          <Activity className="w-3 h-3" />
                           Cardio
                         </span>
-                        <span className="font-semibold text-white">
-                          {weeklyCardio.length} {weeklyCardio.length === 1 ? "session" : "sessions"}
-                        </span>
-                      </div>
-                      <div className="flex gap-3 text-xs text-[#555555]">
-                        {weeklyCardioMiles > 0.05 && <span>{weeklyCardioMiles.toFixed(1)} mi</span>}
-                        {weeklyCardioMinutes > 0 && <span>{weeklyCardioMinutes >= 60 ? `${Math.floor(weeklyCardioMinutes / 60)}h ${weeklyCardioMinutes % 60}m` : `${weeklyCardioMinutes}m`}</span>}
-                        {weeklyCardioCalories > 0 && <span>{weeklyCardioCalories} cal</span>}
+                        <span className="font-semibold text-white">{weeklyCardio.length} sessions</span>
                       </div>
                     </div>
                   )}
-
-                  {/* Generate Week */}
-                  <div className="pt-2 border-t border-[#2a2a2a]">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">Week Generator</span>
-                      <button
-                        onClick={() => setShowWorkoutSettings((s) => !s)}
-                        className="text-xs text-brand hover:text-brand font-medium min-h-[44px] px-2 flex items-center"
-                      >
-                        {showWorkoutSettings ? "Hide" : "Options"}
-                      </button>
-                    </div>
-
-                    {showWorkoutSettings && (
-                      <div className="mb-3 p-3 bg-[#222] rounded-xl space-y-3 text-sm">
-                        <div>
-                          <span className="text-[#a0a0a0] block mb-1.5">
-                            Exercises per day: <strong>{workoutSettings.exercisesPerDay ?? "Auto"}</strong>
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            <button
-                              onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: null }))}
-                              className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === null ? "border-brand bg-brand/10 text-brand" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/40"}`}
-                            >Auto</button>
-                            {[3, 4, 5, 6, 7].map((n) => (
-                              <button
-                                key={n}
-                                onClick={() => setWorkoutSettings((s) => ({ ...s, exercisesPerDay: n }))}
-                                className={`w-8 h-7 rounded-lg border text-xs font-medium transition-all ${workoutSettings.exercisesPerDay === n ? "border-brand bg-brand/10 text-brand" : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/40"}`}
-                              >{n}</button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#a0a0a0]">Cardio finisher</span>
-                          <button
-                            onClick={() => setWorkoutSettings((s) => ({ ...s, includeCardio: !s.includeCardio }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.includeCardio ? "bg-brand" : "bg-[#444]"}`}
-                          >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.includeCardio ? "translate-x-4" : "translate-x-0"}`} />
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#a0a0a0]">Skip deload weeks</span>
-                          <button
-                            onClick={() => setWorkoutSettings((s) => ({ ...s, skipDeload: !s.skipDeload }))}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${workoutSettings.skipDeload ? "bg-brand" : "bg-[#444]"}`}
-                          >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[#1a1a1a] rounded-full shadow transition-transform ${workoutSettings.skipDeload ? "translate-x-4" : "translate-x-0"}`} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      variant="dark"
-                      onClick={() => { handleGenerateAndSchedule(); }}
-                      className="w-full h-9"
-                      data-tutorial="generate-week-btn"
-                    >
-                      <Zap className="w-3.5 h-3.5 mr-1.5" />Generate My Week
-                    </Button>
-                  </div>
                 </div>
 
-              {/* Right: muscle heatmap — fills remaining height */}
-              <div className="hidden sm:block w-px bg-[#333] shrink-0" />
-              <div className="sm:w-[150px] shrink-0 flex flex-col items-center">
+              <div className="sm:w-[120px] shrink-0 flex flex-col items-center border-l border-[#2a2a2a] pl-4">
                 {weeklyBodyData.length > 0 ? (
                   <MuscleHeatMap data={weeklyBodyData} view={muscleView} className="flex-1" />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <Dumbbell className="w-8 h-8 text-white  mb-2" />
-                    <p className="text-xs text-[#a0a0a0]">Log workouts to see<br />which muscles you've hit</p>
+                    <Dumbbell className="w-6 h-6 text-[#333] mb-1" />
+                    <p className="text-[10px] text-[#555555]">No data</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
-
         </div>
 
-
-        {/* Nutrition */}
-        <Card className="border border-[#2a2a2a] mb-4" data-tutorial="nutrition-card">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                <Apple className="w-4 h-4 text-[#4ade80]" />
-                Today's Nutrition
-              </CardTitle>
-              {tdeeResult?.tdee && (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <Flame className="w-3 h-3 text-brand" />
-                  <span className="text-[#555555]">Est. TDEE:</span>
-                  <span className="font-semibold text-[#a0a0a0]">{tdeeResult.tdee.toLocaleString()} cal</span>
-                  {tdeeResult.method === "adaptive" && <span className="text-xs text-[#4ade80] font-medium">observed</span>}
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="py-3">
-            <div className="grid grid-cols-4 gap-2 md:gap-4">
-              {[
-                { label: "Calories", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, unit: "", stroke: "var(--color-brand)" },
-                { label: "Protein", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, unit: "g", stroke: "#60a5fa" },
-                { label: "Carbs", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, unit: "g", stroke: "#fbbf24" },
-                { label: "Fats", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, unit: "g", stroke: "#f87171" },
-              ].map(({ label, value, goal, unit, stroke }) => {
-                const safeValue = value ?? 0;
-                const safeGoal = goal ?? 0;
-                const pct = safeGoal > 0 ? Math.min(1, safeValue / safeGoal) : 0;
-                const r = 32; const circ = 2 * Math.PI * r; const offset = circ * (1 - pct);
-                return (
-                  <div key={label} className="flex flex-col items-center">
-                    <div className="relative w-[76px] h-[76px] md:w-[88px] md:h-[88px]">
-                      <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-                        <circle cx="40" cy="40" r={r} fill="none" stroke="#2a2a2a" strokeWidth="6" />
-                        <circle cx="40" cy="40" r={r} fill="none" stroke={stroke} strokeWidth="6" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} className="transition-all duration-700 ease-out" />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-sm md:text-base font-bold text-white leading-none">{Math.round(safeValue * 10) / 10}</span>
-                        <span className="text-xs text-[#555555] leading-none mt-0.5">/ {safeGoal}{unit}</span>
-                      </div>
+        {/* ── Nutrition & Capture ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Nutrition */}
+          <Card className="border border-[#2a2a2a]">
+            <CardHeader className="pb-2 pt-4 px-5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Apple className="w-4 h-4 text-[#4ade80]" />
+                  Nutrition
+                </CardTitle>
+                {tdeeResult?.tdee && (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-1 text-[11px]">
+                      <Flame className="w-3 h-3 text-brand" />
+                      <span className="text-[#555555]">TDEE:</span>
+                      <span className="font-semibold text-[#a0a0a0]">{tdeeResult.tdee.toLocaleString()}</span>
                     </div>
-                    <span className="text-xs font-medium text-[#555555] mt-1.5">{label}</span>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stat strip + quick weight log */}
-        <div className="flex items-center gap-0 mb-4 bg-[#1a1a1a] rounded-xl overflow-hidden">
-          {[
-            { label: "Workouts", value: totalWorkoutsCount, unit: "" },
-            { label: "Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "—", unit: totalVolume > 0 ? weightUnit : "" },
-            { label: "Avg Duration", value: avgDuration || "—", unit: avgDuration ? "min" : "" },
-            { label: "Body Weight", value: currentBodyWeight || "—", unit: currentBodyWeight ? weightUnit : "", extra: bodyWeightChange && bodyWeightChange !== 0 ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)}` : null, extraColor: bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]" },
-          ].map(({ label, value, unit, extra, extraColor }, i) => (
-            <div key={label} className={`flex-1 px-4 py-3 ${i > 0 ? "border-l border-[#2a2a2a]" : ""}`}>
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-0.5">{label}</div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold tabular-nums text-white">{value}</span>
-                {unit && <span className="text-xs text-[#a0a0a0]">{unit}</span>}
-                {extra && <span className={`text-xs font-semibold ${extraColor}`}>{extra}</span>}
+                )}
               </div>
-            </div>
-          ))}
-          <div className="border-l border-[#2a2a2a] px-3 py-2 flex items-center gap-1.5">
-            <form onSubmit={handleAddBodyWeight} className="flex gap-1.5">
-              <Input type="number" step="0.1" value={newBodyWeight} onChange={(e) => setNewBodyWeight(e.target.value)} placeholder={`Log weight`} className="h-8 text-xs w-28" required />
-              <Input type="date" value={bodyWeightDate} onChange={(e) => setBodyWeightDate(e.target.value)} className="h-8 text-xs w-32" required />
-              <Button type="submit" variant="volt" size="sm" className="h-8 px-2.5" disabled={addBodyWeightMutation.isPending}>
-                <Scale className="w-3.5 h-3.5" />
-              </Button>
-            </form>
-          </div>
+            </CardHeader>
+            <CardContent className="py-3 px-5">
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "Cal", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, stroke: "var(--color-brand)" },
+                  { label: "Pro", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, stroke: "#60a5fa" },
+                  { label: "Carb", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, stroke: "#fbbf24" },
+                  { label: "Fat", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, stroke: "#f87171" },
+                ].map(({ label, value, goal, stroke }) => {
+                  const safeValue = value ?? 0;
+                  const safeGoal = goal ?? 0;
+                  const pct = safeGoal > 0 ? Math.min(1, safeValue / safeGoal) : 0;
+                  const r = 24; const circ = 2 * Math.PI * r; const offset = circ * (1 - pct);
+                  return (
+                    <div key={label} className="flex flex-col items-center">
+                      <div className="relative w-12 h-12">
+                        <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90">
+                          <circle cx="30" cy="30" r={r} fill="none" stroke="#2a2a2a" strokeWidth="4" />
+                          <circle cx="30" cy="30" r={r} fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} className="transition-all duration-700" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-[10px] font-bold text-white">{Math.round(safeValue)}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-medium text-[#555555] mt-1">{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Capture */}
+          <section>
+            <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
+          </section>
         </div>
 
-      </div>
-
-      {/* Sidebar — Training Load + Nutrition tabs */}
-      <aside className="w-[400px] shrink-0 hidden xl:block" style={{ position: 'sticky', top: 'calc(var(--layout-header-height, 56px) + 1.5rem)', maxHeight: 'calc(100vh - var(--layout-header-height, 56px) - 3rem)', overflowY: 'auto' }}>
-        <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
-          <div className="flex gap-1 p-1.5 border-b border-[#2a2a2a] bg-[#111]">
-            {[
-              { id: "training", label: "Training", icon: Activity },
-              { id: "nutrition", label: "Nutrition", icon: Apple },
-              { id: "weight", label: "Weight", icon: Scale },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setSidebarTab(id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                  sidebarTab === id
-                    ? "bg-brand/[10%] text-brand"
-                    : "text-[#555555] hover:text-[#a0a0a0]"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="p-3">
+        {/* ── Training Load Chart ── */}
+        <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
+          <CardHeader className="pb-0 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-brand" />
+              Training Load
+            </CardTitle>
+          </CardHeader>
+          <div className="p-5">
             <TrainingLoadTab
               cardioSessions={allCardioSessions}
               workoutLogs={workoutLogs}
@@ -991,9 +884,33 @@ export default function Dashboard() {
               hasStrava={!!profile?.strava_access_token}
             />
           </div>
+        </Card>
+
+        {/* Stat strip + quick weight log */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
+            {[
+              { label: "Workouts", value: totalWorkoutsCount, unit: "" },
+              { label: "Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "—", unit: "lbs" },
+              { label: "Avg Duration", value: avgDuration || "—", unit: "min" },
+              { label: "Weight", value: currentBodyWeight || "—", unit: weightUnit },
+            ].map(({ label, value, unit }) => (
+              <div key={label}>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#555555] mb-0.5">{label}</div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-white tabular-nums">{value}</span>
+                  <span className="text-[10px] text-[#a0a0a0]">{unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleAddBodyWeight} className="flex gap-2 w-full sm:w-auto">
+            <Input type="number" step="0.1" value={newBodyWeight} onChange={(e) => setNewBodyWeight(e.target.value)} placeholder={`Weight`} className="h-9 text-sm w-full sm:w-24" required />
+            <Button type="submit" variant="volt" size="sm" className="h-9 px-4 shrink-0" disabled={addBodyWeightMutation.isPending}>
+              <Scale className="w-4 h-4 mr-2" /> Log
+            </Button>
+          </form>
         </div>
-      </aside>
-      </div>
       </div>
     </div>
   );

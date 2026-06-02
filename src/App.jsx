@@ -24,8 +24,12 @@ const QuickWorkout = lazy(() => import('./pages/QuickWorkout'));
 const ProgramDetail = lazy(() => import('./pages/ProgramDetail'));
 const ProgramBuilder = lazy(() => import('./pages/ProgramBuilder'));
 const StravaCallback = lazy(() => import('./pages/StravaCallback'));
+const RecoveryDetail = lazy(() => import('./pages/RecoveryDetail'));
 const Mind = lazy(() => import('./pages/Mind'));
 const Career = lazy(() => import('./pages/Career'));
+const BriefHistory = lazy(() => import('./pages/BriefHistory'));
+const Supplements = lazy(() => import('./pages/Supplements'));
+const Progress = lazy(() => import('./pages/Progress'));
 
 const queryClient = new QueryClient();
 
@@ -39,8 +43,12 @@ const protectedRoutes = [
   { path: "/profile", name: "Profile", component: Profile },
   { path: "/workout-detail", name: "WorkoutDetail", component: WorkoutDetail },
   { path: "/quick-workout", name: "QuickWorkout", component: QuickWorkout },
+  { path: "/recovery", name: "Recovery", component: RecoveryDetail },
   { path: "/mind", name: "Mind", component: Mind },
   { path: "/career", name: "Career", component: Career },
+  { path: "/brief-history", name: "BriefHistory", component: BriefHistory },
+  { path: "/supplements", name: "Supplements", component: Supplements },
+  { path: "/progress", name: "Progress", component: Progress },
 ];
 
 function RootRoute() {

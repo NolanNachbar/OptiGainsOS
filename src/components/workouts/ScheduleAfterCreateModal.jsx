@@ -61,7 +61,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
       // to appear alongside the program BookOpen icons on the schedule.
       await db.entities.ProgramEnrollment.create({
         program_id: program.id,
-        user_id: user.id,
+        created_by: user.id,
         status: "active",
         started_at: startDate,
         start_date: startDate,

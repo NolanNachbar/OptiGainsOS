@@ -1,6 +1,12 @@
-const CACHE_NAME = "sisyphus-v1";
+const CACHE_NAME = "optigains-v1";
+
+// App shell — cached on first install for offline support
+const APP_SHELL = ["/", "/index.html", "/manifest.json", "/optigains-icon.svg"];
 
 self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
   self.skipWaiting();
 });
 
@@ -18,49 +24,60 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Only cache same-origin assets (JS, CSS, images), not API calls
+  // Pass through all Supabase API, auth, and storage calls
+  if (url.hostname.includes("supabase.co")) return;
   if (url.origin !== location.origin) return;
-  if (url.pathname.includes("/rest/") || url.pathname.includes("/auth/")) return;
 
+  // Network-first for navigation requests (keeps app fresh)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match("/index.html"))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (JS/CSS/images)
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
-      })
-      .catch(() => caches.match(event.request).then((cached) => cached || Response.error()))
+      });
+    })
   );
 });
 
-// Push notification received from server
+// Push notification received
 self.addEventListener("push", (event) => {
   if (!event.data) return;
-
   let payload;
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Vektor's Schedule", body: event.data.text() };
+    payload = { title: "OptiGainsOS", body: event.data.text() };
   }
-  const { title, body, url = "/", icon = "/vektor-logo.png" } = payload;
+  const { title, body, url = "/dashboard", icon = "/optigains-icon.svg" } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: "/vektor-logo.png",
+      badge: "/optigains-icon.svg",
       data: { url },
       vibrate: [200, 100, 200],
     })
   );
 });
 
-// Navigate to the relevant page when a notification is tapped
+// Notification tap → navigate to relevant page
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
-
+  const url = event.notification.data?.url || "/dashboard";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       const existing = windowClients.find((c) => c.url.includes(self.location.origin));

@@ -44,6 +44,17 @@ class DatabaseAdapter {
       ExerciseReaction: this.createEntity('exercise_reactions'),
       CardioSession: this.createEntity('cardio_sessions'),
       DailyReadiness: this.createEntity('daily_readiness'),
+      RecoveryMetrics: this.createEntity('recovery_metrics'),
+      ReadingLog: this.createEntity('reading_log'),
+      StudyLog: this.createEntity('study_log'),
+      Skill: this.createEntity('skills'),
+      JobApplication: this.createEntity('job_applications'),
+      NetworkingLog: this.createEntity('networking_log'),
+      SupplementType: this.createEntity('supplement_types'),
+      SupplementLog: this.createEntity('supplement_logs'),
+      WaterLog: this.createEntity('water_logs'),
+      DailyBrief: this.createEntity('daily_briefs'),
+      CaptureInbox: this.createEntity('capture_inbox'),
     };
   }
 

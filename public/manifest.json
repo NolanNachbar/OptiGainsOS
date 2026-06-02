@@ -1,7 +1,7 @@
 {
-  "name": "Vektor",
-  "short_name": "Vektor",
-  "description": "The tactical workout tracking and programming platform for serious lifters.",
+  "name": "OptiGainsOS",
+  "short_name": "OptiGains",
+  "description": "Your personal human performance operating system.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,15 +10,15 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "vektor-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "optigains-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "vektor-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "optigains-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     }
   ]

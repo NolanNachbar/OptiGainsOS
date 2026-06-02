@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Trash2, AlertTriangle, Flame, Apple as AppleIcon, Calculator, Dumbbell, Users, Clock, User, LogOut, HelpCircle, BookOpen, Bell, BellOff, Database, ChevronRight, ChevronLeft } from "lucide-react";
 import DataExport from "@/components/DataExport";
+import NotificationSettings from "@/components/NotificationSettings";
 import StravaConnect from "@/components/strava/StravaConnect";
 import { toast } from "sonner";
 import { differenceInDays, addDays, format } from "date-fns";
@@ -119,6 +120,10 @@ export default function Profile() {
     show_rir: true, // Show RIR (Reps In Reserve) in workout logging
     adaptive_training: false,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // Dynamic capacity constraints (Phase 3d)
+    max_daily_training_hours: 2.0,
+    primary_sport_focus: 'concurrent',
+    race_date: '',
   });
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
@@ -194,6 +199,9 @@ export default function Profile() {
         show_rir: profile.show_rir ?? true,
         adaptive_training: profile.adaptive_training ?? false,
         timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        max_daily_training_hours: Number(profile.max_daily_training_hours) || 2.0,
+        primary_sport_focus: String(profile.primary_sport_focus || 'concurrent'),
+        race_date: String(profile.race_date || ''),
       };
       setFormData(initial);
       savedFormDataRef.current = initial;
@@ -329,7 +337,7 @@ export default function Profile() {
     return <LoadingScreen />;
   }
 
-  const tdee = getBestTDEE(formData, latestWeight, weightEntries, allFoodEntries);
+  const tdee = getBestTDEE(formData, latestWeight, weightEntries, allFoodEntries, []);
   const displayName = formData.display_name || profile?.display_name || user.user_metadata?.full_name || user.email;
   const initials = displayName.includes('@')
     ? displayName[0].toUpperCase()
@@ -1023,7 +1031,55 @@ export default function Profile() {
 
                   <SectionDivider />
 
-                  {/* Equipment */}
+                  {/* Endurance Goals (Phase 3d) */}
+                  <div className="mb-6">
+                    <SectionHeader icon={Target} title="Athletic Constraints" />
+                    <div className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="sport-focus">Primary Sport Focus</Label>
+                          <Select
+                            value={formData.primary_sport_focus}
+                            onValueChange={(value) => setFormData({ ...formData, primary_sport_focus: value })}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Select focus" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="concurrent">Concurrent (Lifting + Tri)</SelectItem>
+                              <SelectItem value="strength">Strength Priority</SelectItem>
+                              <SelectItem value="endurance">Endurance Priority</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-[#555555] mt-1">AI brief uses this to resolve volume conflicts</p>
+                        </div>
+                        <div>
+                          <Label htmlFor="max-hours">Max Workout Hours</Label>
+                          <Input
+                            id="max-hours"
+                            type="number"
+                            step="0.1"
+                            value={formData.max_daily_training_hours}
+                            onChange={(e) => setFormData({ ...formData, max_daily_training_hours: parseFloat(e.target.value) || 2.0 })}
+                            className="mt-1"
+                          />
+                          <p className="text-xs text-[#555555] mt-1">Upper limit for scheduled sessions</p>
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="race-date">Target Race Date (Optional)</Label>
+                        <Input
+                          id="race-date"
+                          type="date"
+                          value={formData.race_date}
+                          onChange={(e) => setFormData({ ...formData, race_date: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <SectionDivider />
                   <div className="mb-6">
                     <Label className="text-sm font-semibold mb-1 block">Available Equipment</Label>
                     <p className="text-xs text-[#555555] mb-3">Only exercises you can actually do will be included</p>
@@ -1090,30 +1146,7 @@ export default function Profile() {
           <Card className="mb-4">
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />
-              {!pushSupported ? (
-                <p className="text-sm text-[#555555]">Push notifications are not supported on this browser. Add the app to your home screen to enable them.</p>
-              ) : permission === "denied" ? (
-                <p className="text-sm text-[#f87171]">Notifications are blocked. Enable them in your browser/iOS settings to receive reminders.</p>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">Workout & Check-In Reminders</span>
-                    <p className="text-sm text-[#555555]">Daily workout reminders and weekly check-in prompts.</p>
-                  </div>
-                  <Button
-                    variant={isSubscribed ? "outline" : "primary"}
-                    size="sm"
-                    onClick={isSubscribed ? unsubscribe : subscribe}
-                    className="ml-4 shrink-0"
-                  >
-                    {isSubscribed ? (
-                      <><BellOff className="w-4 h-4 mr-1.5" />Turn Off</>
-                    ) : (
-                      <><Bell className="w-4 h-4 mr-1.5" />Enable</>
-                    )}
-                  </Button>
-                </div>
-              )}
+              <NotificationSettings />
 
               <SectionDivider />
 

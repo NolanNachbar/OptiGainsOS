@@ -117,12 +117,61 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
   });
 
   if (existingCheckin?.energy) {
+    const soreGroups = Object.entries(existingCheckin.soreness_snapshot || {})
+      .filter(([_, level]) => level > 0)
+      .sort((a, b) => b[1] - a[1]);
+
     return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a]">
-        <CheckCircle2 className="w-4 h-4 text-brand shrink-0" />
-        <span className="text-sm text-[#a0a0a0]">
-          Morning check-in done — Energy {existingCheckin.energy}/10 · Mood {existingCheckin.mood}/10
-        </span>
+      <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-brand" />
+            <span className="text-sm font-semibold text-white">Daily Readiness</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => queryClient.setQueryData(["dailyReadiness", todayStr, user?.id], null)}
+            className="h-6 text-[10px] text-[#555555] uppercase tracking-wider hover:text-brand"
+          >
+            Update
+          </Button>
+        </div>
+        <div className="p-4 flex flex-col md:flex-row gap-6">
+          <div className="flex gap-8">
+            <div className="text-center">
+              <div className="text-[10px] text-[#555555] uppercase tracking-widest mb-1">Energy</div>
+              <div className="text-2xl font-bold text-white leading-none">{existingCheckin.energy}<span className="text-xs text-[#555555]">/10</span></div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] text-[#555555] uppercase tracking-widest mb-1">Mood</div>
+              <div className="text-2xl font-bold text-white leading-none">{existingCheckin.mood}<span className="text-xs text-[#555555]">/10</span></div>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <div className="text-[10px] text-[#555555] uppercase tracking-widest mb-2">Today's Soreness</div>
+            {soreGroups.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {soreGroups.map(([group, level]) => (
+                  <div
+                    key={group}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${SORENESS_COLORS[level]}`}
+                  >
+                    {group.toUpperCase()} {SORENESS_LABELS[level].toUpperCase()}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#555555]">All systems fresh. Ready to push.</p>
+            )}
+          </div>
+        </div>
+        {existingCheckin.notes && (
+          <div className="px-4 pb-4">
+            <p className="text-xs text-[#a0a0a0] italic border-l-2 border-[#2a2a2a] pl-3">"{existingCheckin.notes}"</p>
+          </div>
+        )}
       </div>
     );
   }

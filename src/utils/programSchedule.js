@@ -73,19 +73,17 @@ export function getProgramSchedule(enrollment, workouts) {
   if (!trainingDays.length) return [];
 
   // Get cycle settings from enrollment or fallback to program
-  const cycleLength = enrollment.cycle_length
-    || enrollment.program?.cycle_length
+  const cycleLength = enrollment.program?.days_per_week
     || enrollment.days_per_week
-    || enrollment.program?.days_per_week
     || trainingDays.length;
 
-  const numCycles = enrollment.num_cycles
-    || enrollment.program?.num_cycles
-    || enrollment.duration_weeks
+  const numCycles = enrollment.program?.num_cycles
+    || enrollment.num_cycles
     || enrollment.program?.duration_weeks
+    || enrollment.duration_weeks
     || 4;
 
-  const programName = enrollment.program?.name || "";
+  const programName = enrollment.program?.title || enrollment.program?.name || "";
 
   // Build set of completed workout keys: "cycle-dayIndex"
   // completed_workouts is an array of objects: [{program_workout_id, cycle, day_index, completed_at, skipped?, session_index?}, ...]

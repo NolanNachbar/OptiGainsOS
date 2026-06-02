@@ -76,3 +76,25 @@ export function useBodyWeightEntries() {
 
   return { weightEntries, isLoading, error };
 }
+
+export function useRecoveryMetrics(days = 30) {
+  const { user } = useAuth();
+
+  const { data: recoveryMetrics = [], isLoading, error } = useQuery({
+    queryKey: ["recoveryMetrics", user?.id, days],
+    queryFn: async () => {
+      const since = format(subDays(new Date(), days), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('recovery_metrics')
+        .select('*')
+        .eq('created_by', user.id)
+        .gte('date', since)
+        .order('date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  return { recoveryMetrics, isLoading, error };
+}

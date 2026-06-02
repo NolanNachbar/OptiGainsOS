@@ -176,11 +176,10 @@ export default function WorkoutDetail() {
   // Auto-save exercises to Supabase whenever a set is changed while logging
   useEffect(() => {
     if (isLogging && exerciseLogs.length > 0) {
-      saveProgress(exerciseLogs, notes);
+      saveProgress(exerciseLogs, preWorkoutNotes);
     }
-  // We intentionally only watch exerciseLogs to fire after each set update
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exerciseLogs]);
+  // We intentionally watch both exerciseLogs and preWorkoutNotes
+  }, [exerciseLogs, preWorkoutNotes]);
 
   useEffect(() => {
     const loadWorkout = async () => {

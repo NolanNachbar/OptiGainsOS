@@ -290,11 +290,11 @@ export default function ExerciseCard({
                 {showRIR && (
                   <th className="text-left py-2 px-1 w-16 md:w-24 text-xs md:text-xs">
                     <div className="flex items-center gap-1">
-                      <span>RIR</span>
+                      <span>RPE</span>
                       <div className="group relative">
                         <HelpCircle className="w-3 h-3 cursor-help text-[#a0a0a0] hover:text-[#a0a0a0]" />
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-[#121212] text-white text-xs rounded">
-                          Reps In Reserve: How many more reps you could do (0 = failure, 3 = 3 more reps possible)
+                          Rate of Perceived Exertion (1-10): How hard the set felt. 10 = failure, 9 = 1 rep left, 8 = 2 reps left.
                         </div>
                       </div>
                     </div>
@@ -349,15 +349,16 @@ export default function ExerciseCard({
                     <td className="py-2 px-1">
                       <Input
                         type="number"
-                        value={(set.rir ?? set.rpe) ?? ""}
+                        value={(set.rir != null ? 10 - set.rir : set.rpe) ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
-                          handleRirChange(setIndex, val === "" ? null : parseFloat(val));
+                          const rpe = val === "" ? null : parseFloat(val);
+                          handleRirChange(setIndex, rpe === null ? null : 10 - rpe);
                         }}
                         onFocus={(e) => e.target.select()}
                         placeholder="—"
-                        min="0"
-                        max="5"
+                        min="1"
+                        max="10"
                         step="0.5"
                         className="w-14 md:w-24 h-10 md:h-9 text-center text-sm touch-manipulation"
                       />

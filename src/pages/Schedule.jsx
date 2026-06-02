@@ -689,8 +689,9 @@ export default function Schedule() {
         // Enroll — getProgramSchedule computes all dates. No duplicate Workout records needed.
         // cycle_length / num_cycles / days_per_week already stored on the Program record.
         await db.entities.ProgramEnrollment.create({
-          program_id: program.id,
-          user_id: user.id,
+          program_id: programId,
+          created_by: user.id,
+
           status: "active",
           started_at: format(currentWeekStart, "yyyy-MM-dd"),
           start_date: format(currentWeekStart, "yyyy-MM-dd"),

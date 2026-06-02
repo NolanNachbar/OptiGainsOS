@@ -49,7 +49,7 @@ export function usePushNotifications(userId) {
 
       await supabase.from("push_subscriptions").upsert(
         {
-          user_id: userId,
+          created_by: userId,
           endpoint,
           p256dh: keys.p256dh,
           auth: keys.auth,

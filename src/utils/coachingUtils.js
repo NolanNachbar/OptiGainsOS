@@ -236,11 +236,25 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
 
 // --- TDEE & Macro Calculation Functions ---
 
+/**
+ * Maps daily step count to an activity level value.
+ * Phase 3c roadmap logic.
+ */
+export function getActivityLevelFromSteps(avgSteps) {
+  if (avgSteps == null) return null;
+  if (avgSteps < 5000) return "sedentary";
+  if (avgSteps < 7500) return "lightly_active";
+  if (avgSteps < 10000) return "moderately_active";
+  if (avgSteps < 12500) return "very_active";
+  return "extremely_active";
+}
+
 // currentWeight must be in the unit matching profile.weight_unit:
 //   lbs when profile.weight_unit === "lbs" (or unset)
 //   kg  when profile.weight_unit === "kg"
-export function calculateFormulaTDEE(profile, currentWeight) {
-  if (!profile?.height_cm || !profile?.age || !profile?.sex || !profile?.activity_level || !currentWeight) {
+export function calculateFormulaTDEE(profile, currentWeight, activityLevelOverride = null) {
+  const activityLevel = activityLevelOverride || profile?.activity_level;
+  if (!profile?.height_cm || !profile?.age || !profile?.sex || !activityLevel || !currentWeight) {
     return null;
   }
 
@@ -255,11 +269,11 @@ export function calculateFormulaTDEE(profile, currentWeight) {
     ? 10 * weightKg + 6.25 * heightCm - 5 * profile.age + 5
     : 10 * weightKg + 6.25 * heightCm - 5 * profile.age - 161;
 
-  const activityEntry = ACTIVITY_LEVELS.find((a) => a.value === profile.activity_level);
+  const activityEntry = ACTIVITY_LEVELS.find((a) => a.value === activityLevel);
   const multiplier = activityEntry?.multiplier || 1.2;
   const tdee = Math.round(bmr * multiplier);
 
-  return { bmr: Math.round(bmr), tdee, method: "formula" };
+  return { bmr: Math.round(bmr), tdee, method: "formula", activityLevelUsed: activityLevel };
 }
 
 export function calculateAdaptiveTDEE(weightEntries, foodEntries, days = 14) {
@@ -312,7 +326,7 @@ export function calculateAdaptiveTDEE(weightEntries, foodEntries, days = 14) {
   };
 }
 
-export function getBestTDEE(profile, currentWeightLbs, weightEntries, foodEntries) {
+export function getBestTDEE(profile, currentWeightLbs, weightEntries, foodEntries, recoveryMetrics = []) {
   if (profile?.tdee_override) {
     return {
       tdee: Math.round(profile.tdee_override),
@@ -323,9 +337,19 @@ export function getBestTDEE(profile, currentWeightLbs, weightEntries, foodEntrie
     };
   }
 
+  // Phase 3c: Look for 7-day avg steps to derive auto-activity level
+  let autoActivityLevel = null;
+  if (recoveryMetrics?.length > 0) {
+    const validMetrics = recoveryMetrics.filter(m => m.steps != null).slice(0, 7);
+    if (validMetrics.length >= 3) {
+      const avgSteps = validMetrics.reduce((s, m) => s + m.steps, 0) / validMetrics.length;
+      autoActivityLevel = getActivityLevelFromSteps(avgSteps);
+    }
+  }
+
   // Prefer profile.current_weight as the fast path; fall back to passed-in weight
   const weightForFormula = profile?.current_weight ?? currentWeightLbs;
-  const formula = calculateFormulaTDEE(profile, weightForFormula);
+  const formula = calculateFormulaTDEE(profile, weightForFormula, autoActivityLevel);
   const adaptive = calculateAdaptiveTDEE(weightEntries, foodEntries);
 
   const useAdaptive = adaptive && (adaptive.confidence === "medium" || adaptive.confidence === "high");
@@ -336,6 +360,7 @@ export function getBestTDEE(profile, currentWeightLbs, weightEntries, foodEntrie
     confidence: adaptive?.confidence || null,
     formula_tdee: formula?.tdee || null,
     adaptive_tdee: adaptive?.tdee || null,
+    autoActivityLevel,
   };
 }
 
