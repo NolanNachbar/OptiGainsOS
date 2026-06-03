@@ -26,12 +26,12 @@ export default {
         },
         // Cyber Charcoal backgrounds
         charcoal: {
-          DEFAULT: '#121212',
-          surface: '#1a1a1a',
-          surface2: '#202020',
-          elevated: '#242424',
-          border: '#2a2a2a',
-          borderSoft: '#222222',
+          DEFAULT: '#09090e',
+          surface: '#12121a',
+          surface2: '#161622',
+          elevated: '#1b1b29',
+          border: '#1f1f2d',
+          borderSoft: '#171722',
         },
         // Status colors
         success: {
@@ -78,9 +78,10 @@ export default {
       },
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'dark-card': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4)',
-        'neon': '0 0 20px rgba(239, 68, 68, 0.25)',
-        'neon-lg': '0 0 40px rgba(239, 68, 68, 0.3)',
+        'dark-card': '0 8px 32px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4)',
+        'neon': '0 0 20px rgba(255, 107, 59, 0.25)',
+        'neon-lg': '0 0 40px rgba(255, 107, 59, 0.3)',
+        'energy': '0 8px 30px rgba(249, 115, 22, 0.15)',
       },
     },
   },

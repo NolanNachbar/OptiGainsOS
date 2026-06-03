@@ -102,13 +102,13 @@ export default function WeeklySchedule() {
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
       {/* Week nav */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => setWeekStart(w => subWeeks(w, 1))} className="p-2 text-[#555555] hover:text-white transition-colors">
+        <button onClick={() => setWeekStart(w => subWeeks(w, 1))} className="p-2 text-slate-500 hover:text-white transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
           {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
         </span>
-        <button onClick={() => setWeekStart(w => addWeeks(w, 1))} className="p-2 text-[#555555] hover:text-white transition-colors">
+        <button onClick={() => setWeekStart(w => addWeeks(w, 1))} className="p-2 text-slate-500 hover:text-white transition-colors">
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
@@ -129,10 +129,10 @@ export default function WeeklySchedule() {
               className={`flex flex-col items-center py-2.5 rounded-xl border transition-all ${
                 isSelected ? "bg-brand border-brand" :
                 isCurrentDay ? "border-brand bg-transparent" :
-                "border-[#2a2a2a] bg-[#1a1a1a]"
+                "border-charcoal-border bg-charcoal-surface"
               }`}
             >
-              <span className={`text-[9px] font-bold uppercase tracking-wide mb-1 ${isSelected ? "text-black" : "text-[#a0a0a0]"}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-wide mb-1 ${isSelected ? "text-black" : "text-slate-400"}`}>
                 {format(day, "EEE").slice(0, 2)}
               </span>
               <span className={`text-sm font-bold ${isSelected ? "text-black" : isCurrentDay ? "text-brand" : "text-white"}`}>
@@ -140,7 +140,7 @@ export default function WeeklySchedule() {
               </span>
               <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${
                 hasLog ? "bg-green-400" :
-                hasWorkout ? (isSelected ? "bg-black/40" : "bg-[#555555]") :
+                hasWorkout ? (isSelected ? "bg-black/40" : "bg-slate-500") :
                 "bg-transparent"
               }`} />
             </button>
@@ -152,13 +152,13 @@ export default function WeeklySchedule() {
       <div className="mb-6">
         <h2 className="text-lg font-bold text-white mb-3">
           {format(selectedDay, "EEEE")}
-          <span className="text-[#555555] font-normal text-sm ml-2">{format(selectedDay, "MMMM d")}</span>
+          <span className="text-slate-500 font-normal text-sm ml-2">{format(selectedDay, "MMMM d")}</span>
         </h2>
 
         {!hasAnything ? (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl py-10 flex flex-col items-center gap-2">
-            <Moon className="w-6 h-6 text-[#333333]" />
-            <span className="text-sm font-bold text-[#333333] uppercase tracking-widest">Rest Day</span>
+          <div className="bg-charcoal-surface border border-charcoal-border rounded-xl py-10 flex flex-col items-center gap-2">
+            <Moon className="w-6 h-6 text-slate-600" />
+            <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">Rest Day</span>
           </div>
         ) : (
           <div className="space-y-3">
@@ -168,7 +168,7 @@ export default function WeeklySchedule() {
               const logLifts = (selectedLog.exercises || []).filter(ex => !isRun(ex));
               const mins = selectedLog.duration_seconds ? Math.round(selectedLog.duration_seconds / 60) : null;
               return (
-                <div className="bg-[#1a1a1a] border border-green-500/30 rounded-xl overflow-hidden">
+                <div className="bg-charcoal-surface border border-green-500/30 rounded-xl overflow-hidden">
                   <div className="h-0.5 bg-green-500" />
                   <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                     <div>
@@ -176,20 +176,20 @@ export default function WeeklySchedule() {
                       <h3 className="text-xl font-bold text-white">
                         {selectedEntries[0]?.title || "Lifting Session"}
                       </h3>
-                      {mins && <p className="text-xs text-[#555555] mt-0.5">{mins} min</p>}
+                      {mins && <p className="text-xs text-slate-500 mt-0.5">{mins} min</p>}
                     </div>
                     <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-1" />
                   </div>
                   <div className="px-4 pb-3">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <Dumbbell className="w-3 h-3 text-[#555555]" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Exercises</span>
+                      <Dumbbell className="w-3 h-3 text-slate-500" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Exercises</span>
                     </div>
                     <div className="space-y-1.5">
                       {logLifts.map((ex, j) => (
                         <div key={j} className="flex items-baseline justify-between gap-2">
                           <span className="text-sm text-white">{ex.name}</span>
-                          <span className="text-xs text-[#555555] tabular-nums shrink-0">{formatSets(ex)}</span>
+                          <span className="text-xs text-slate-500 tabular-nums shrink-0">{formatSets(ex)}</span>
                         </div>
                       ))}
                     </div>
@@ -203,7 +203,7 @@ export default function WeeklySchedule() {
               const lifts = (entry.exercises || []).filter(ex => !isRun(ex));
               const runs = (entry.exercises || []).filter(ex => isRun(ex));
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
+                <div key={idx} className="bg-charcoal-surface border border-charcoal-border rounded-xl overflow-hidden">
                   <div className="h-0.5 bg-brand" />
                   <div className="px-4 pt-3 pb-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand/70 mb-1">
@@ -214,14 +214,14 @@ export default function WeeklySchedule() {
                   {lifts.length > 0 && (
                     <div className="px-4 py-2">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <Dumbbell className="w-3 h-3 text-[#555555]" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Lifting</span>
+                        <Dumbbell className="w-3 h-3 text-slate-500" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Lifting</span>
                       </div>
                       <div className="space-y-1">
                         {lifts.map((ex, j) => (
                           <div key={j} className="flex items-center justify-between">
                             <span className="text-sm text-white">{ex.name}</span>
-                            <span className="text-xs text-[#555555] tabular-nums">
+                            <span className="text-xs text-slate-500 tabular-nums">
                               {ex.sets > 1 ? `${ex.sets}×` : ""}{ex.rep_target || ex.reps}
                             </span>
                           </div>
@@ -230,7 +230,7 @@ export default function WeeklySchedule() {
                     </div>
                   )}
                   {runs.length > 0 && (
-                    <div className="px-4 py-2 border-t border-[#2a2a2a] bg-[#161616]">
+                    <div className="px-4 py-2 border-t border-charcoal-border bg-charcoal-surface2">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Timer className="w-3 h-3 text-blue-400" />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Cardio — PM</span>
@@ -239,9 +239,9 @@ export default function WeeklySchedule() {
                         <div key={j}>
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-white">{ex.name}</span>
-                            <span className="text-xs text-[#555555]">{ex.rep_target || ex.reps}</span>
+                            <span className="text-xs text-slate-500">{ex.rep_target || ex.reps}</span>
                           </div>
-                          {ex.notes && <p className="text-xs text-[#555555] mt-0.5">{ex.notes}</p>}
+                          {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
                         </div>
                       ))}
                     </div>
@@ -263,7 +263,7 @@ export default function WeeklySchedule() {
               const runs = (entry.exercises || []).filter(ex => isRun(ex));
               if (!runs.length) return null;
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-blue-500/20 rounded-xl overflow-hidden">
+                <div key={idx} className="bg-charcoal-surface border border-blue-500/20 rounded-xl overflow-hidden">
                   <div className="h-0.5 bg-blue-500" />
                   <div className="px-4 py-3">
                     <div className="flex items-center gap-1.5 mb-3">
@@ -277,15 +277,15 @@ export default function WeeklySchedule() {
                           <div key={j} className="flex items-start justify-between gap-3">
                             <div className={done ? "opacity-50" : ""}>
                               <div className="flex items-baseline gap-2">
-                                <span className={`text-base font-bold ${done ? "line-through text-[#555555]" : "text-white"}`}>{ex.name}</span>
-                                <span className="text-sm text-[#555555]">{ex.rep_target || ex.reps}</span>
+                                <span className={`text-base font-bold ${done ? "line-through text-slate-500" : "text-white"}`}>{ex.name}</span>
+                                <span className="text-sm text-slate-500">{ex.rep_target || ex.reps}</span>
                               </div>
-                              {ex.notes && <p className="text-xs text-[#555555] mt-0.5">{ex.notes}</p>}
+                              {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
                             </div>
                             <button
                               onClick={() => toggleCardio(selectedDay, ex.name)}
                               className={`shrink-0 mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                done ? "bg-green-500 border-green-500" : "border-[#444] hover:border-blue-400"
+                                done ? "bg-green-500 border-green-500" : "border-charcoal-border hover:border-blue-400"
                               }`}
                             >
                               {done && <CheckCircle2 className="w-4 h-4 text-white" />}
@@ -305,17 +305,17 @@ export default function WeeklySchedule() {
 
       {/* Program progress */}
       {activeEnrollment?.program && (
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3">
+        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl px-4 py-3">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#555555] truncate flex-1 mr-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 truncate flex-1 mr-2">
               {activeEnrollment.program.title}
             </p>
             <span className="text-xs font-bold text-brand shrink-0">{progressPct}%</span>
           </div>
-          <div className="h-1 bg-[#2a2a2a] rounded-full overflow-hidden mb-1.5">
+          <div className="h-1 bg-charcoal-border rounded-full overflow-hidden mb-1.5">
             <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
-          <p className="text-xs text-[#555555]">
+          <p className="text-xs text-slate-500">
             Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}
             {" · "}{completedCount} sessions logged
           </p>

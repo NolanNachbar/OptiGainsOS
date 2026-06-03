@@ -10,6 +10,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const isBypass = localStorage.getItem('bypass_auth') === 'true' || window.location.search.includes('bypass_auth=true');
+    if (isBypass) {
+      localStorage.setItem('bypass_auth', 'true');
+      setUser({
+        id: '00000000-0000-0000-0000-000000000000',
+        email: 'mock.athlete@optigains.io',
+        user_metadata: { name: 'Mock Athlete' }
+      });
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -58,6 +70,7 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
+    localStorage.removeItem('bypass_auth');
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) throw error;
   };

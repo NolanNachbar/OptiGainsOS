@@ -901,7 +901,6 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     const cleanIngredients = ingredients.map(stripBaseFields);
     const data = {
       name: name.trim(),
-      description: description.trim(),
       servings,
       ingredients: cleanIngredients,
       ...calculateRecipeTotals(cleanIngredients),

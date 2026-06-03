@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
-import { Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X } from "lucide-react";
+import { Calendar, Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { ACTIVITY_TYPE_LABELS } from "@/lib/strava";
 
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
 const StaticRouteMap = lazy(() => import("@/components/strava/StaticRouteMap"));
 
-export default function Workouts() {
+export default function Workouts({ defaultTab = "activity-log", hideHeader = false }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const importProgramRef = useRef(null);
@@ -316,41 +316,49 @@ export default function Workouts() {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
+    <div className={hideHeader ? "w-full" : "p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300"}>
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-          <div>
-            <h1 className="text-[22px] font-bold text-white leading-tight">Workouts</h1>
-            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Library & session history</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to={"/create-workout"}>
-              <Button variant="dim" size="sm">
-                <Plus className="w-3.5 h-3.5" />
-                Create Custom
+        {!hideHeader && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+            <div>
+              <h1 className="text-[22px] font-bold text-white leading-tight">Workouts</h1>
+              <p className="text-[13px] text-[#a0a0a0] mt-0.5">Library & session history</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/weekly-schedule">
+                <Button variant="dim" size="sm" className="gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Weekly Schedule
+                </Button>
+              </Link>
+              <Link to={"/create-workout"}>
+                <Button variant="dim" size="sm">
+                  <Plus className="w-3.5 h-3.5" />
+                  Create Custom
+                </Button>
+              </Link>
+              <Button
+                variant="dark"
+                onClick={generateWorkouts}
+                disabled={isGenerating || !profile}
+              >
+                {isGenerating ? (
+                  <>
+                    <LoadingSpinner size="small" className="mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Generate Workouts
+                  </>
+                )}
               </Button>
-            </Link>
-            <Button
-              variant="dark"
-              onClick={generateWorkouts}
-              disabled={isGenerating || !profile}
-            >
-              {isGenerating ? (
-                <>
-                  <LoadingSpinner size="small" className="mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  Generate Workouts
-                </>
-              )}
-            </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <Tabs defaultValue="activity-log" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="activity-log">
               <Activity className="w-4 h-4 mr-2" />

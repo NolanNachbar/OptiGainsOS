@@ -122,7 +122,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
       .sort((a, b) => b[1] - a[1]);
 
     return (
-      <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+      <div className="rounded-xl bg-charcoal-surface border-charcoal-border shadow-dark-card overflow-hidden">
         <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-brand" />
@@ -177,7 +177,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
   }
 
   return (
-    <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4">
+    <div className="rounded-xl bg-charcoal-surface border-charcoal-border shadow-dark-card p-4">
       <h3 className="text-sm font-semibold text-white mb-4">Morning Check-in</h3>
 
       {/* Energy + Mood */}

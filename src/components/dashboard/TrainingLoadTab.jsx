@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { Activity, Lock, TrendingUp, BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getWeeklyTSSData, getCTLData, hasSufficientLoadData, getMaxHR } from "@/utils/trainingLoad";
 
 function WeeklyTSSBars({ data }) {
@@ -19,8 +18,8 @@ function WeeklyTSSBars({ data }) {
         const y = padT + chartH - chartH * frac;
         return (
           <g key={frac}>
-            <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="#e2e8f0" strokeWidth="1" />
-            <text x={padL - 4} y={y + 3.5} textAnchor="end" fontSize="9" fill="#94a3b8">
+            <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize="9" fill="#64748b" className="font-mono">
               {Math.round(maxTSS * frac)}
             </text>
           </g>
@@ -32,7 +31,6 @@ function WeeklyTSSBars({ data }) {
         const x = padL + i * gap + (gap - barW) / 2;
         const y = padT + chartH - barH;
         const isCurrent = i === data.length - 1;
-        // label always sits above the bar; padT gives enough headroom even at full height
         const labelY = y - 4;
 
         return (
@@ -40,20 +38,20 @@ function WeeklyTSSBars({ data }) {
             {d.tss > 0 && (
               <rect
                 x={x} y={y} width={barW} height={barH} rx="3"
-                fill={isCurrent ? "#7c3aed" : "#a78bfa"}
-                opacity={isCurrent ? 1 : 0.75}
+                fill={isCurrent ? "var(--color-brand)" : "rgba(255, 107, 59, 0.45)"}
               />
             )}
             {d.tss > 5 && (
               <text
                 x={x + barW / 2} y={labelY}
                 textAnchor="middle" fontSize="9"
-                fill={isCurrent ? "#6d28d9" : "#8b5cf6"} fontWeight="600"
+                fill={isCurrent ? "var(--color-brand)" : "rgba(255, 107, 59, 0.75)"}
+                fontWeight="600" className="font-mono"
               >
                 {d.tss}
               </text>
             )}
-            <text x={x + barW / 2} y={H - padB + 14} textAnchor="middle" fontSize="8" fill="#94a3b8">
+            <text x={x + barW / 2} y={H - padB + 14} textAnchor="middle" fontSize="8.5" fill="#64748b" className="font-medium">
               {d.label}
             </text>
           </g>
@@ -99,8 +97,8 @@ function CTLLineChart({ data }) {
         const y = toY(val);
         return (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-            <text x={padL - 4} y={y + 3.5} textAnchor="end" fontSize="9" fill="#94a3b8">
+            <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize="9" fill="#64748b" className="font-mono">
               {Math.round(val)}
             </text>
           </g>
@@ -110,16 +108,16 @@ function CTLLineChart({ data }) {
       {zeroY > padT && zeroY < padT + chartH && (
         <line
           x1={padL} x2={W - padR} y1={zeroY} y2={zeroY}
-          stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4,3"
+          stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" strokeDasharray="4,3"
         />
       )}
 
-      <path d={line("ctl")} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <path d={line("atl")} fill="none" stroke="#f87171" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <path d={line("tsb")} fill="none" stroke="#4ade80" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5,3" />
+      <path d={line("ctl")} fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={line("atl")} fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={line("tsb")} fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5,3" />
 
       {labelIdxs.map((i) => (
-        <text key={i} x={toX(i)} y={H - padB + 16} textAnchor="middle" fontSize="8" fill="#94a3b8">
+        <text key={i} x={toX(i)} y={H - padB + 16} textAnchor="middle" fontSize="8.5" fill="#64748b" className="font-medium">
           {format(parseISO(data[i].date), "MMM d")}
         </text>
       ))}
@@ -128,10 +126,10 @@ function CTLLineChart({ data }) {
 }
 
 function TSBStatusBadge({ tsb }) {
-  if (tsb > 10) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(34,197,94,0.1)] text-[#4ade80]">Fresh — ready to peak</span>;
-  if (tsb >= 0) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.1)] text-[#60a5fa]">Balanced — good training state</span>;
-  if (tsb >= -15) return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(245,158,11,0.1)] text-[#fbbf24]">Fatigued — normal heavy block</span>;
-  return <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(239,68,68,0.1)] text-[#f87171]">Deep fatigue — consider a deload</span>;
+  if (tsb > 10) return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Fresh — ready to peak</span>;
+  if (tsb >= 0) return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">Balanced — good training state</span>;
+  if (tsb >= -15) return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">Fatigued — normal heavy block</span>;
+  return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">Deep fatigue — consider a deload</span>;
 }
 
 export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, hasStrava }) {
@@ -158,119 +156,119 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
   return (
     <div className="space-y-4">
       {!hasStrava && (
-        <div className="flex items-center gap-2 text-xs text-[#555555]  bg-[rgba(249,115,22,0.08)] rounded-xl px-4 py-3 border border-[rgba(249,115,22,0.2)]">
+        <div className="flex items-center gap-2.5 text-xs text-orange-400 bg-orange-500/10 rounded-xl px-4 py-3 border border-orange-500/20 shadow-[0_0_8px_rgba(249,115,22,0.1)]">
           <Activity className="w-4 h-4 text-orange-400 shrink-0" />
           <span>Connect Strava to include cardio TSS. Lifting TSS is calculated from RPE logged in your sets.</span>
         </div>
       )}
 
       {/* Weekly TSS */}
-      <Card className="border border-[#2a2a2a]  bg-[#1a1a1a] ">
-        <CardHeader className="pb-1">
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-indigo-500" />
+      <div className="border border-charcoal-border bg-charcoal-surface2/30 rounded-xl p-4">
+        <div className="mb-2">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-brand" />
             Weekly Training Load (TSS)
-          </CardTitle>
-          <p className="text-xs text-[#555555] mt-0.5">
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
             TSS (Training Stress Score) measures how hard you worked each week — combining workout duration and intensity.
             Higher bars = more total training stress that week.
           </p>
-        </CardHeader>
-        <CardContent className="pb-4 pt-2">
+        </div>
+        <div className="pb-2 pt-2">
           {hasAnyLoad ? (
             <WeeklyTSSBars data={weeklyData} />
           ) : (
-            <div className="text-center py-8 text-sm text-[#555555]">
+            <div className="text-center py-8 text-sm text-slate-600 font-medium">
               Log workouts with RPE or connect Strava to see training load
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* CTL / ATL / TSB */}
-      <Card className="border border-[#2a2a2a]  bg-[#1a1a1a] ">
-        <CardHeader className="pb-1">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-indigo-500" />
+      <div className="border border-charcoal-border bg-charcoal-surface2/30 rounded-xl p-4">
+        <div className="mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-brand" />
               Fitness · Fatigue · Form
-            </CardTitle>
+            </h3>
             {sufficient && current && (
-              <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1.5 text-[#818cf8]">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
+              <div className="flex items-center gap-3 text-xs font-semibold">
+                <span className="flex items-center gap-1.5 text-sky-400">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
                   CTL {current.ctl}
                 </span>
-                <span className="flex items-center gap-1.5 text-[#f87171]">
-                  <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                <span className="flex items-center gap-1.5 text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
                   ATL {current.atl}
                 </span>
-                <span className={`flex items-center gap-1.5 font-semibold ${current.tsb >= 0 ? "text-green-600" : "text-[#f87171]"}`}>
-                  <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                <span className={`flex items-center gap-1.5 ${current.tsb >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
                   TSB {current.tsb >= 0 ? "+" : ""}{current.tsb}
                 </span>
               </div>
             )}
           </div>
           {sufficient && current ? (
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-2 mt-2">
               <TSBStatusBadge tsb={current.tsb} />
             </div>
           ) : (
-            <p className="text-xs text-[#555555] mt-0.5">
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               Tracks your long-term fitness buildup, short-term fatigue, and whether you're ready to train hard or need recovery.
             </p>
           )}
-        </CardHeader>
-        <CardContent className="pb-4 pt-2">
+        </div>
+        <div className="pb-2 pt-2">
           {!sufficient ? (
-            <div className="text-center py-10">
-              <Lock className="w-10 h-10 text-white  mx-auto mb-3" />
-              <p className="text-sm font-medium text-[#555555]  mb-1">
+            <div className="text-center py-8">
+              <Lock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-500 mb-0.5">
                 Unlocks after 28 days of data
               </p>
-              <p className="text-xs text-[#555555]">
+              <p className="text-xs text-slate-600">
                 Log workouts regularly to build your training history
               </p>
             </div>
           ) : (
             <>
               <CTLLineChart data={ctlData} />
-              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-[#555555] ">
+              <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-slate-500 font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#6366f1" strokeWidth="2" /></svg>
+                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#38bdf8" strokeWidth="2.5" /></svg>
                   Fitness (CTL)
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#f87171" strokeWidth="2" /></svg>
+                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#f43f5e" strokeWidth="2.5" /></svg>
                   Fatigue (ATL)
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="4,2" /></svg>
+                  <svg width="20" height="3" viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4,2" /></svg>
                   Form (TSB)
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-xs border-t border-[#2a2a2a]  pt-4">
-                <div className="text-center">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 mx-auto mb-1" />
-                  <div className="font-semibold text-[#a0a0a0] ">Fitness (CTL)</div>
-                  <div className="text-[#555555] mt-0.5 leading-snug">42-day average — how fit you are from consistent training</div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-[10px] border-t border-charcoal-border pt-4 text-center">
+                <div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-sky-400 mx-auto mb-1" />
+                  <div className="font-bold text-slate-400">Fitness (CTL)</div>
+                  <div className="text-slate-600 mt-0.5 leading-snug">42-day avg — consistent load capacity</div>
                 </div>
-                <div className="text-center">
-                  <div className="w-2 h-2 rounded-full bg-red-400 mx-auto mb-1" />
-                  <div className="font-semibold text-[#a0a0a0] ">Fatigue (ATL)</div>
-                  <div className="text-[#555555] mt-0.5 leading-snug">7-day average — how beat up you are from recent training</div>
+                <div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-rose-400 mx-auto mb-1" />
+                  <div className="font-bold text-slate-400">Fatigue (ATL)</div>
+                  <div className="text-slate-600 mt-0.5 leading-snug">7-day avg — recent stress buildup</div>
                 </div>
-                <div className="text-center">
-                  <div className="w-2 h-2 rounded-full bg-green-400 mx-auto mb-1" />
-                  <div className="font-semibold text-[#a0a0a0] ">Form (TSB)</div>
-                  <div className="text-[#555555] mt-0.5 leading-snug">Fitness minus fatigue — positive means fresh, negative means tired</div>
+                <div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mx-auto mb-1" />
+                  <div className="font-bold text-slate-400">Form (TSB)</div>
+                  <div className="text-slate-600 mt-0.5 leading-snug">CTL − ATL — positive means fresh</div>
                 </div>
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

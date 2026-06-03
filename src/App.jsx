@@ -33,11 +33,19 @@ const Supplements = lazy(() => import('./pages/Supplements'));
 const Progress = lazy(() => import('./pages/Progress'));
 const WeeklySchedule = lazy(() => import('./pages/WeeklySchedule'));
 const AthleteState = lazy(() => import('./pages/AthleteState'));
+const LogHub = lazy(() => import('./pages/LogHub'));
+const System = lazy(() => import('./pages/System'));
+const Fuel = lazy(() => import('./pages/Fuel'));
+const Train = lazy(() => import('./pages/Train'));
+const Insights = lazy(() => import('./pages/Insights'));
 
 const queryClient = new QueryClient();
 
 const protectedRoutes = [
   { path: "/dashboard", name: "Dashboard", component: Dashboard },
+  { path: "/fuel", name: "Fuel", component: Fuel },
+  { path: "/train", name: "Train", component: Train },
+  { path: "/insights", name: "Insights", component: Insights },
   { path: "/workouts", name: "Workouts", component: Workouts },
   { path: "/weekly-schedule", name: "WeeklySchedule", component: WeeklySchedule },
   { path: "/program-builder", name: "ProgramBuilder", component: ProgramBuilder },
@@ -54,6 +62,8 @@ const protectedRoutes = [
   { path: "/supplements", name: "Supplements", component: Supplements },
   { path: "/progress", name: "Progress", component: Progress },
   { path: "/athlete-state", name: "AthleteState", component: AthleteState },
+  { path: "/log", name: "Log", component: LogHub },
+  { path: "/system", name: "System", component: System },
 ];
 
 function RootRoute() {

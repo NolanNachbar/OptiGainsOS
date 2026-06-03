@@ -14,7 +14,7 @@ const MUSCLE_GROUPS = [
 
 const LEVEL_LABELS = ["None", "Mild", "Mod", "Severe"];
 const LEVEL_COLORS = [
-  "bg-[#2a2a2a] text-[#555555] border-[#333]",
+  "bg-charcoal-surface2 text-slate-500 border-charcoal-border",
   "bg-[rgba(234,179,8,0.12)] text-yellow-400 border-yellow-500/30",
   "bg-[rgba(249,115,22,0.12)] text-orange-400 border-orange-500/30",
   "bg-[rgba(239,68,68,0.12)] text-red-400 border-red-500/30",
@@ -53,17 +53,17 @@ export default function SorenessCheckin({ today }) {
   const mutation = useMutation({
     mutationFn: async () => {
       const rows = MUSCLE_GROUPS
-        .filter(g => levels[g] > 0)
-        .map(g => ({
-          created_by: user.id,
-          date: todayStr,
-          muscle_group: g,
-          level: levels[g],
-        }));
+          .filter(g => levels[g] > 0)
+          .map(g => ({
+            created_by: user.id,
+            date: todayStr,
+            muscle_group: g,
+            level: levels[g],
+          }));
       if (rows.length === 0) return;
       const { error } = await supabase
-        .from("soreness_logs")
-        .upsert(rows, { onConflict: "created_by,date,muscle_group" });
+          .from("soreness_logs")
+          .upsert(rows, { onConflict: "created_by,date,muscle_group" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -78,7 +78,7 @@ export default function SorenessCheckin({ today }) {
   if (alreadyLogged) {
     const sore = existing.filter(r => r.level > 0).sort((a, b) => b.level - a.level);
     return (
-      <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-4 py-3">
+      <div className="rounded-xl bg-charcoal-surface border border-charcoal-border px-4 py-3.5 shadow-dark-card">
         <div className="flex items-center gap-2 mb-2">
           <CheckCircle2 className="w-4 h-4 text-brand" />
           <span className="text-sm font-semibold text-white">Soreness Logged</span>
@@ -95,14 +95,14 @@ export default function SorenessCheckin({ today }) {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-[#555555]">No soreness reported today.</p>
+          <p className="text-xs text-slate-500">No soreness reported today.</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4">
+    <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-4 shadow-dark-card">
       <p className="text-sm font-semibold text-white mb-3">Soreness Check-in — tap to cycle</p>
       <div className="grid grid-cols-5 gap-1.5 mb-4">
         {MUSCLE_GROUPS.map(muscle => (
@@ -117,7 +117,7 @@ export default function SorenessCheckin({ today }) {
         ))}
       </div>
       <Button
-        variant="volt"
+        variant="energy"
         size="sm"
         className="w-full"
         onClick={() => mutation.mutate()}

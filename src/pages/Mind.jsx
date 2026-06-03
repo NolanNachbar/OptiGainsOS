@@ -593,19 +593,21 @@ function CaptureTab() {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-export default function Mind() {
+export default function Mind({ hideHeader }) {
   return (
-    <div className="px-4 py-6 md:px-8 bg-[#121212] min-h-screen">
+    <div className={`px-4 py-6 md:px-8 bg-[#121212] min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-brand/10">
-              <Brain className="w-5 h-5 text-brand" />
+        {!hideHeader && (
+          <header className="mb-6">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 rounded-lg bg-brand/10">
+                <Brain className="w-5 h-5 text-brand" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Mind & Learning</h1>
             </div>
-            <h1 className="text-2xl font-bold text-white">Mind & Learning</h1>
-          </div>
-          <p className="text-[#a0a0a0] text-sm pl-12">Track what you're reading, studying, and building.</p>
-        </header>
+            <p className="text-[#a0a0a0] text-sm pl-12">Track what you're reading, studying, and building.</p>
+          </header>
+        )}
 
         <Tabs defaultValue="capture">
           <TabsList className="mb-6">

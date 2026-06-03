@@ -5,47 +5,45 @@
 @tailwind utilities;
 
 :root {
-  --color-bg: #121212;
-  --color-surface: #1a1a1a;
-  --color-surface-2: #202020;
-  --color-elevated: #242424;
-  --color-border: #2a2a2a;
-  --color-border-soft: #222222;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0a0;
-  --color-text-muted: #555555;
-  /* Brand color — overridden per gym tenant at runtime */
-  --color-brand: #ef4444;
-  --color-brand-rgb: 239 68 68;  /* RGB channels for Tailwind opacity modifiers */
-  /* --color-brand: #ff0000;
-  --color-brand-rgb: 255 0 0; */
-  --color-action-dark: #121212;
+  --color-bg: #09090e;
+  --color-surface: #12121a;
+  --color-surface-2: #161622;
+  --color-elevated: #1b1b29;
+  --color-border: #1f1f2d;
+  --color-border-soft: #171722;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #475569;
+  /* Brand color — Sunset Orange */
+  --color-brand: #ff6b3b;
+  --color-brand-rgb: 255 107 59;  /* RGB channels for Tailwind opacity modifiers */
+  --color-action-dark: #09090e;
   --color-cardio: #f97316;
-  --color-positive: #22c55e;
-  --color-danger: #ef4444;
+  --color-positive: #10b981;
+  --color-danger: #f43f5e;
 }
 
-/* Force dark mode — Vektor is always dark */
+/* Force dark mode */
 html {
-  @apply bg-[#121212] transition-colors duration-100;
+  @apply bg-[#09090e] transition-colors duration-100;
 }
 
 html.dark {
-  background-color: #121212;
-  color: white;
+  background-color: #09090e;
+  color: #f8fafc;
 }
 
 body {
   @apply antialiased font-sans transition-colors duration-100;
-  background-color: #121212;
-  color: white;
+  background-color: #09090e;
+  color: #f8fafc;
   font-size: 14px;
   line-height: 1.5;
 }
 
 html.dark body {
-  background-color: #121212;
-  color: white;
+  background-color: #09090e;
+  color: #f8fafc;
 }
 
 p {
@@ -76,7 +74,7 @@ input:-webkit-autofill:focus {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #ccff00;
+  background-color: var(--color-brand);
 }
 
 /* Remove native number input spinners */
@@ -87,4 +85,22 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* Body Highlighter SVG overrides */
+svg.rbh, .rbh {
+  background-color: transparent !important;
+}
+
+svg.rbh path, svg.rbh polygon, 
+.rbh path, .rbh polygon {
+  stroke: #12121a !important;
+  stroke-width: 0.8px !important;
+  transition: fill 0.25s ease, stroke 0.25s ease;
+}
+
+svg.rbh path:hover, svg.rbh polygon:hover, 
+.rbh path:hover, .rbh polygon:hover {
+  fill: #27273a !important;
+  stroke: var(--color-brand) !important;
 }

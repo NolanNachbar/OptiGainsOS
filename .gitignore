@@ -40,3 +40,14 @@ scripts/capture-demo.mjs
 
 # PDF Guides
 The Complete Guide to Navy Seal Fitness.pdf
+
+# Images and Screenshots
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.mp4
+*.mov
+

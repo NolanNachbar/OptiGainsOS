@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function QuickCapture({ domain = "general", placeholder = "Capture a note..." }) {
+export default function QuickCapture({ domain = "general", placeholder = "Capture a note...", onCapture }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
@@ -27,6 +27,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
       toast.success("Captured to Second Brain inbox");
       setContent("");
       queryClient.invalidateQueries({ queryKey: ["capture-inbox", domain] });
+      onCapture?.();
     },
     onError: () => toast.error("Failed to capture note"),
   });

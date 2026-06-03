@@ -1,20 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Home, Dumbbell, UtensilsCrossed, Brain, Briefcase, CalendarDays } from "lucide-react";
+import { Home, Dumbbell, PlusSquare, BarChart3, Cpu, User, UtensilsCrossed, Brain, CalendarDays } from "lucide-react";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import Logo from "@/components/Logo";
 import { useStravaAutoSync } from "@/hooks/useStravaAutoSync";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import QuickCapture from "@/components/QuickCapture";
 
 const navigationItems = [
   { title: "Home", url: "/dashboard", icon: Home },
-  { title: "Train", url: "/workouts", icon: Dumbbell },
-  { title: "Schedule", url: "/weekly-schedule", icon: CalendarDays },
-  { title: "Fuel", url: "/food-tracker", icon: UtensilsCrossed },
-  { title: "Mind", url: "/mind", icon: Brain },
+  { title: "Fuel", url: "/fuel", icon: UtensilsCrossed },
+  { title: "Train", url: "/train", icon: Dumbbell },
+  { title: "Insights", url: "/insights", icon: BarChart3 },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -23,6 +24,7 @@ export default function Layout({ children, currentPageName }) {
   useStravaAutoSync();
   const [showCalculators, setShowCalculators] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
   const mobileHeaderRef = useRef(null);
 
   useEffect(() => {
@@ -47,6 +49,9 @@ export default function Layout({ children, currentPageName }) {
 
   const pageDisplayName = {
     Dashboard: "Home",
+    Fuel: "Fuel",
+    Train: "Train",
+    Insights: "Insights",
     Workouts: "Train",
     FoodTracker: "Fuel",
     Schedule: "Schedule",
@@ -63,9 +68,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col w-full bg-[#121212]">
+      <div className="min-h-screen flex flex-col w-full bg-[#09090e]">
         {/* Desktop top navbar */}
-        <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-[#1a1a1a] border-b border-[#2a2a2a] items-center px-5 h-14 gap-1">
+        <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-charcoal-surface/80 backdrop-blur-md border-b border-charcoal-border items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
             <Logo className="w-8 h-8" />
             <span className="text-brand font-bold text-[15px] tracking-tight uppercase">OptiGainsOS</span>
@@ -74,15 +79,17 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center gap-0.5 flex-1">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url ||
-                (item.url === '/workouts' && ['/workouts', '/schedule', '/program-builder', '/create-workout', '/quick-workout'].some(p => location.pathname.startsWith(p)));
+                (item.url === '/fuel' && ['/fuel', '/food-tracker', '/supplements', '/log'].some(p => location.pathname.startsWith(p))) ||
+                (item.url === '/train' && ['/train', '/workouts', '/program-builder', '/create-workout', '/quick-workout', '/weekly-schedule', '/schedule', '/workout-detail', '/program/'].some(p => location.pathname.startsWith(p))) ||
+                (item.url === '/insights' && ['/insights', '/progress', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
               return (
                 <Link
                   key={item.title}
                   to={item.url}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13.5px] font-medium transition-all duration-150 ${
                     isActive
-                      ? 'bg-brand/[8%] text-brand'
-                      : 'text-[#a0a0a0] hover:bg-[#242424] hover:text-white'
+                      ? 'bg-brand/[8%] text-brand font-semibold'
+                      : 'text-slate-400 hover:bg-charcoal-elevated hover:text-white'
                   }`}
                 >
                   <item.icon className="w-[15px] h-[15px]" />
@@ -98,7 +105,7 @@ export default function Layout({ children, currentPageName }) {
                 url={profile?.avatar_url}
                 username={profile?.username}
                 size="sm"
-                className="w-8 h-8 text-xs border border-[#2a2a2a]"
+                className="w-8 h-8 text-xs border border-charcoal-border"
               />
             </Link>
           </div>
@@ -108,7 +115,7 @@ export default function Layout({ children, currentPageName }) {
         <header
           ref={mobileHeaderRef}
           data-mobile-header
-          className="bg-charcoal-surface/90 backdrop-blur-sm border-b border-charcoal-border px-4 py-3 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
+          className="bg-charcoal-surface/80 backdrop-blur-md border-b border-charcoal-border px-4 py-3 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
         >
           <Link to="/dashboard">
             <Logo className="w-10 h-10" />
@@ -125,14 +132,14 @@ export default function Layout({ children, currentPageName }) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 flex flex-col min-h-0 lg:pb-0 bg-[#121212]" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
-          <div className="flex-1 min-h-0 bg-[#121212]">{children}</div>
+        <main className="flex-1 flex flex-col min-h-0 lg:pb-0 bg-[#09090e]" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+          <div className="flex-1 min-h-0 bg-[#09090e]">{children}</div>
         </main>
       </div>
 
       {/* Mobile bottom tab bar */}
       <nav
-        className="bg-charcoal-surface border-t border-charcoal-border z-[9999] lg:hidden"
+        className="bg-charcoal-surface/90 backdrop-blur-md border-t border-charcoal-border z-[9999] lg:hidden"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -145,17 +152,19 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex items-center justify-around px-2 py-1">
           {navigationItems.map((item) => {
             const isActive = location.pathname === item.url ||
-              (item.url === '/workouts' && ['/workouts', '/schedule', '/program-builder', '/create-workout', '/quick-workout'].some(p => location.pathname.startsWith(p)));
+              (item.url === '/fuel' && ['/fuel', '/food-tracker', '/supplements', '/log'].some(p => location.pathname.startsWith(p))) ||
+              (item.url === '/train' && ['/train', '/workouts', '/program-builder', '/create-workout', '/quick-workout', '/weekly-schedule', '/schedule', '/workout-detail', '/program/'].some(p => location.pathname.startsWith(p))) ||
+              (item.url === '/insights' && ['/insights', '/progress', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
             return (
               <Link
                 key={item.title}
                 to={item.url}
                 className={`flex flex-col items-center gap-0.5 px-3 py-2 min-w-0 flex-1 transition-colors ${
-                  isActive ? "text-brand" : "text-[#555555]"
+                  isActive ? "text-brand" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
                 <item.icon className={`w-6 h-6 ${isActive ? "stroke-[2.5]" : ""}`} />
-                <span className={`text-xs font-medium ${isActive ? "text-brand" : "text-[#555555]"}`}>
+                <span className={`text-xs font-medium ${isActive ? "text-brand" : "text-slate-500"}`}>
                   {item.title}
                 </span>
               </Link>
@@ -168,6 +177,7 @@ export default function Layout({ children, currentPageName }) {
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
           onCalculators={() => setShowCalculators(true)}
+          onStreamNote={() => setShowNoteModal(true)}
         />
       )}
 
@@ -177,6 +187,20 @@ export default function Layout({ children, currentPageName }) {
         onClose={() => setShowCalculators(false)}
         weightUnit={profile?.weight_unit || "lbs"}
       />
+      <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
+        <DialogContent className="max-w-md bg-charcoal-surface border-charcoal-border text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Stream Note to Second Brain</DialogTitle>
+          </DialogHeader>
+          <div className="pt-2">
+            <QuickCapture
+              domain="general"
+              placeholder="Stream a note to Second Brain..."
+              onCapture={() => setShowNoteModal(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

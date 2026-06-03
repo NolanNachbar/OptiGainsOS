@@ -17,6 +17,7 @@ import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import {
   Dumbbell,
   Calendar,
@@ -45,7 +46,6 @@ import MorningCheckin from "@/components/dashboard/MorningCheckin";
 import ReadinessRing from "@/components/dashboard/ReadinessRing";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
-import QuickCapture from "@/components/QuickCapture";
 import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
@@ -573,493 +573,210 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-3 py-4 md:px-6 md:py-8 bg-[#121212] min-h-screen relative">
+    <div className="px-3 py-3 md:px-6 md:py-4 bg-[#09090e] min-h-screen relative">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h1 className="text-[22px] font-bold text-white leading-tight">OptiGainsOS</h1>
-            <p className="text-[13px] text-[#a0a0a0] mt-0.5">Training status as of today</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-charcoal-border" />
+            <div>
+              <h1 className="text-lg font-bold text-white leading-none">Dashboard</h1>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">OptiGains Engine</p>
+            </div>
           </div>
-          <Link to="/athlete-state">
-            <Button variant="ghost" size="sm" className="text-[#555555] text-xs gap-1.5 hover:text-brand">
-              <Activity className="w-3.5 h-3.5" /> Athlete State
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+             <Link to="/weekly-schedule">
+              <Button variant="ghost" size="sm" className="text-slate-400 text-xs gap-1.5 hover:text-brand h-8 border-charcoal-border">
+                <Calendar className="w-3.5 h-3.5" /> Schedule
+              </Button>
+            </Link>
+             <Link to="/athlete-state">
+              <Button variant="ghost" size="sm" className="text-slate-400 text-xs gap-1.5 hover:text-brand h-8 border-charcoal-border">
+                <Activity className="w-3.5 h-3.5" /> State
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* First-workout welcome banner — shown until user logs a workout or dismisses */}
-        {welcomeBannerVisible && !logsLoading && !logsError && workoutLogs.length === 0 && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-brand/[5%] border border-brand/[15%] px-5 py-4">
+        {/* ── METABOLIC GRID (The Engine Room) ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+          
+          {/* Expenditure Tile */}
+          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
             <div>
-              <p className="font-semibold text-white">Ready to log your first workout?</p>
-              <p className="text-sm text-[#a0a0a0] mt-0.5">Head to the Schedule to pick a workout and get started.</p>
+              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
+                <Flame className="w-3 h-3 text-orange-400" /> Expenditure
+              </p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-lg font-bold text-white tabular-nums font-mono leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
+                <span className="text-[9px] text-brand font-medium">kcal/day</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link to="/schedule">
-                <Button variant="volt" size="sm">Go to Schedule</Button>
-              </Link>
-              <button
-                onClick={() => { localStorage.setItem('optigains_welcome_dismissed', '1'); setWelcomeBannerVisible(false); }}
-                className="text-[#555555] hover:text-[#a0a0a0] text-lg leading-none px-1 transition-colors"
-                aria-label="Dismiss"
-              >
-                ×
-              </button>
+            {tdeeResult?.method === 'adaptive' ? (
+              <span className="text-[8px] text-orange-400 bg-orange-500/10 px-1 py-0.5 rounded border border-orange-500/20 w-fit leading-none shadow-[0_0_8px_rgba(249,115,22,0.15)]">Adaptive</span>
+            ) : (
+              <span className="text-[8px] text-slate-500 leading-none">Estimated</span>
+            )}
+          </Card>
+
+          {/* Trend Weight Tile */}
+          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
+                <Scale className="w-3 h-3 text-sky-400" /> Trend Weight
+              </p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-lg font-bold text-white tabular-nums font-mono leading-none">{currentBodyWeight || "—"}</span>
+                <span className="text-[9px] text-slate-400 font-medium">{weightUnit}</span>
+              </div>
             </div>
+            <div className="flex items-center gap-1 text-[9px] text-slate-500 leading-none">
+              <span className={bodyWeightChange > 0 ? "text-amber-500 font-mono font-bold" : "text-emerald-400 font-mono font-bold"}>
+                {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange?.toFixed(1) || "0.0"}
+              </span>
+              <span>this wk</span>
+            </div>
+          </Card>
+
+          {/* Readiness Tile */}
+          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
+                <Zap className="w-3 h-3 text-brand" /> Readiness
+              </p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-lg font-bold text-white font-mono leading-none">88</span>
+                <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
+              </div>
+            </div>
+            <div className="flex gap-1 items-center h-2">
+              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
+              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
+              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
+              <div className="w-4 h-1 bg-slate-800 rounded-full" />
+            </div>
+          </Card>
+
+          {/* Nutrition Snapshot */}
+          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
+                <Apple className="w-3 h-3 text-emerald-400" /> Intake
+              </p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-lg font-bold text-white font-mono leading-none">{Math.round(todayMacros.calories)}</span>
+                <span className="text-[9px] text-slate-500 leading-none">/ {profile?.daily_calorie_goal} kcal</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="h-1 bg-slate-800 rounded-full overflow-hidden w-full">
+                <div className="h-full bg-brand" style={{ width: `${Math.min(100, (todayMacros.calories / (profile?.daily_calorie_goal || 1)) * 100)}%` }} />
+              </div>
+              <div className="flex justify-between text-[8px] text-slate-500 font-mono leading-none">
+                <span>P:{Math.round(todayMacros.protein)}g</span>
+                <span>C:{Math.round(todayMacros.carbs)}g</span>
+                <span>F:{Math.round(todayMacros.fats)}g</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Morning Check-in (if not done) */}
+        {!todayCheckIn && (
+          <div className="mb-4">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-brand" /> Daily Readiness Check-in
+            </h2>
+            <MorningCheckin today={today} existingCheckin={todayCheckIn} />
           </div>
         )}
 
-        {/* ── Today's Workouts ── */}
-        <div className="space-y-3 mb-6">
-
-          {/* Completed lift */}
+        {/* ── MAIN WORKOUT CARD ── */}
+        <div className="mb-4">
           {todayLog ? (
-            <div className="rounded-xl bg-[#1a1a1a] border border-green-500/30 overflow-hidden">
-              <div className="h-0.5 bg-green-500" />
-              <div className="px-5 pt-4 pb-3">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-green-400/70 mb-1">Completed</p>
-                    <h3 className="text-lg font-bold text-white">{workoutTitle || "Lifting Session"}</h3>
-                    {todayLog.duration_seconds && (
-                      <p className="text-xs text-[#555555] mt-0.5">{Math.round(todayLog.duration_seconds / 60)} min</p>
-                    )}
+            <div className="rounded-2xl bg-charcoal-surface border border-emerald-500/20 overflow-hidden shadow-dark-card">
+              <div className="p-5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                   </div>
-                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-1" />
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{workoutTitle || "Session Complete"}</h3>
+                    <p className="text-xs text-emerald-400/70 font-bold uppercase tracking-widest">Training Done</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {todayLogLifts.map((ex, i) => {
-                    const sets = (ex.sets || []).filter(s => s.completed !== false);
-                    const w = sets[0]?.weight;
-                    const r = sets[0]?.reps;
-                    const label = sets.length === 1
-                      ? (w ? `${w} × ${r}` : `${r} reps`)
-                      : sets.every(s => s.weight === w && s.reps === r)
-                        ? (w ? `${sets.length}×${r} @ ${w}` : `${sets.length}×${r}`)
-                        : `${sets.length} sets`;
-                    return (
-                      <div key={i} className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm text-white">{ex.name}</span>
-                        <span className="text-xs text-[#555555] tabular-nums shrink-0">{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <Link to={todayWorkoutLink || "#"}>
+                  <Button variant="ghost" size="sm" className="text-xs text-slate-400 border-charcoal-border hover:text-white">View Log</Button>
+                </Link>
               </div>
             </div>
           ) : workoutTitle ? (
-            /* Upcoming lift — not yet done */
-            <div
-              className="rounded-xl bg-[#1a1a1a] border-l-4 border-brand border border-[#2a2a2a] overflow-hidden"
-              data-tutorial="start-workout-btn"
-            >
-              <div className="px-5 pt-4 pb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Dumbbell className="w-4 h-4 text-brand" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Today's Lift</span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1">{workoutTitle}</h3>
-                <div className="flex items-center gap-3 text-xs text-[#555555] mb-3">
-                  {exerciseCount > 0 && <span>{exerciseCount} exercises</span>}
-                  {todayProgramWorkout && <span>Day {todayProgramWorkout.dayIndex}</span>}
-                </div>
-                {todayWorkoutLink && (
-                  <Link to={todayWorkoutLink}>
-                    <Button variant="volt" size="sm" className="w-full" data-tutorial="start-workout-btn">
-                      Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
-          ) : activeEnrollment ? (
-            <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-5 py-4 text-center">
-              <p className="text-sm text-[#555555]">Rest day</p>
-            </div>
-          ) : null}
-
-          {/* Tonight's run */}
-          {todayProgramRuns.length > 0 && (
-            <div className="rounded-xl bg-[#1a1a1a] border border-blue-500/20 overflow-hidden">
-              <div className="h-0.5 bg-blue-500" />
-              <div className="px-5 pt-4 pb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Tonight — Cardio</span>
-                </div>
-                {todayProgramRuns.map((ex, i) => {
-                  const done = !!cardioChecked[ex.name];
-                  return (
-                    <div key={i} className="flex items-start justify-between gap-3">
-                      <div className={done ? "opacity-50" : ""}>
-                        <div className="flex items-baseline gap-2">
-                          <h3 className={`text-lg font-bold ${done ? "line-through text-[#555555]" : "text-white"}`}>{ex.name}</h3>
-                          <span className="text-sm text-[#555555]">{ex.rep_target}</span>
-                        </div>
-                        {ex.notes && <p className="text-xs text-[#555555] mt-0.5">{ex.notes}</p>}
-                      </div>
-                      <button
-                        onClick={() => toggleCardio(ex.name)}
-                        className={`shrink-0 mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          done ? "bg-green-500 border-green-500" : "border-[#444] hover:border-blue-400"
-                        }`}
-                      >
-                        {done && <CheckCircle2 className="w-4 h-4 text-white" />}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* ── AI Suggested Workout ── */}
-        <NextWorkoutCard today={today} />
-
-        {/* ── Morning Check-in & Readiness ── */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="md:col-span-3">
-            <MorningCheckin
-              today={today}
-              existingCheckin={todayCheckIn}
-            />
-          </div>
-          <div className="md:col-span-1">
-            <ReadinessRing
-              recoveryMetrics={recoveryMetrics}
-              todayCheckin={todayCheckIn}
-            />
-          </div>
-        </div>
-
-        {/* ── Today's Capacity Recommendation ── */}
-        {capacity && (
-          <div className="mb-6 p-4 rounded-xl bg-brand/[8%] border border-brand/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-full bg-brand/20">
-                <Zap className="w-5 h-5 text-brand" />
-              </div>
-              <div>
-                <p className="text-[10px] text-brand font-bold uppercase tracking-widest">Recovery Status</p>
-                <h2 className="text-lg font-bold text-white leading-tight">
-                  {workoutTitle ? (
-                    <>
-                      {capacity.minutes >= (workoutDuration || capacity.minutes)
-                        ? <>Run <span className="text-brand">{workoutTitle}</span> as written</>
-                        : <>Shorten <span className="text-brand">{workoutTitle}</span> to <span className="text-brand">{capacity.minutes} min</span></>
-                      }
-                    </>
-                  ) : (
-                    <>Cap today at <span className="text-brand">{capacity.minutes} min</span></>
-                  )}
-                </h2>
-                {capacity.rationale !== "Full capacity recommended" && (
-                  <p className="text-xs text-[#a0a0a0] mt-0.5">{capacity.rationale}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {[
-                { label: "HRV", value: capacity.hvr_factor != null ? (capacity.hvr_factor >= 1 ? "↑ Good" : "↓ Low") : null, ok: capacity.hvr_factor >= 1 },
-                { label: "Load", value: capacity.load_factor != null ? (capacity.load_factor >= 1 ? "↑ Fresh" : "↓ Fatigued") : null, ok: capacity.load_factor >= 1 },
-                { label: "Feel", value: todayCheckIn ? `${todayCheckIn.energy}/10` : null, ok: (todayCheckIn?.energy || 5) >= 6 },
-              ].filter(s => s.value).map(s => (
-                <div key={s.label} className="text-center">
-                  <p className="text-[10px] text-[#555555] uppercase tracking-widest">{s.label}</p>
-                  <p className={`text-xs font-bold ${s.ok ? "text-brand" : "text-yellow-400"}`}>{s.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── AI Daily Brief ── */}
-        <DailyBriefCard today={today} />
-
-        {/* ── Today's Actions ── */}
-        <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
-
-        {/* ── Soreness Check-in ── */}
-        <div className="mb-6">
-          <SorenessCheckin today={today} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* ── Today's Workout Card (hidden here, shown at top) ── */}
-          <div
-            className="hidden"
-            data-tutorial="start-workout-btn"
-          >
-            <div className="px-5 pt-4 pb-1">
-              <div className="flex items-center gap-2 mb-3">
-                <Dumbbell className="w-4 h-4" />
-                <span className="text-sm font-semibold text-white/90">Today's Workout</span>
-              </div>
-
-              {workoutTitle ? (
-                <>
-                  {todayProgramWorkout && (
-                    <Badge className="bg-[#1a1a1a]/20 text-white border-none text-xs mb-1.5">
-                      {todayProgramWorkout.programName}
-                    </Badge>
-                  )}
-                  <h3 className="text-lg font-bold text-white mb-1 leading-snug">{workoutTitle}</h3>
-                  <div className="flex items-center gap-3 text-xs text-white/75 mb-2">
-                    {workoutDuration && (
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{workoutDuration} min</span>
-                    )}
-                    {todayProgramWorkout && (
-                      <span>Cycle {todayProgramWorkout.cycle}, Day {todayProgramWorkout.dayIndex}</span>
-                    )}
-                    <span className="flex items-center gap-1"><Target className="w-3 h-3" />{exerciseCount} exercises</span>
-                  </div>
-
-                  {isCompleted ? (
-                    <div className="flex gap-2 mt-1">
-                      {todayWorkoutLink && (
-                        <Link to={todayWorkoutLink} className="flex-1">
-                          <Button variant="ghost" size="sm" className="w-full text-sm bg-[#1a1a1a]/20 text-white hover:bg-[#1a1a1a]/30">
-                            <Circle className="w-3.5 h-3.5 mr-1 fill-green-400 text-green-400" />Completed — View
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 mt-1">
-                      {todayWorkoutLink && (
-                        <Link to={todayWorkoutLink} className="flex-1">
-                          <Button variant="volt" size="sm" className="w-full" data-tutorial="start-workout-btn">
-                            Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                          </Button>
-                        </Link>
-                      )}
-                      {todayExercises.length > 0 && (
-                        <Button variant="ghost" size="sm" className="bg-[#1a1a1a]/20 text-white hover:bg-[#1a1a1a]/30 text-xs px-3" onClick={() => setShowTodayExercises((v) => !v)}>
-                          {showTodayExercises ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                          <span className="ml-1">More</span>
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : activeEnrollment ? (
-                <div className="text-center py-3">
-                  <Dumbbell className="w-7 h-7 mx-auto mb-1.5 opacity-50" />
-                  <p className="text-sm text-white/80 mb-0.5">Rest day</p>
-                  <p className="text-xs text-white/60">
-                    Next: {activeEnrollment.program?.name} — Cycle {activeEnrollment.current_cycle || 1}, Day {activeEnrollment.current_day_index || 1}
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-3">
-                  <Calendar className="w-7 h-7 mx-auto mb-1.5 text-white/60" />
-                  <p className="text-sm text-white/90 mb-2">No workout scheduled</p>
-                  <Link to="/schedule">
-                    <Button variant="primary">
-                      Schedule a Workout
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Expandable exercise list */}
-            {showTodayExercises && todayExercises.length > 0 && (
-              <div className="mt-2 border-t border-white/20 px-5 py-3">
-                <p className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-2 flex items-center gap-1">
-                  <ListChecks className="w-3 h-3" /> Exercises
-                </p>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {todayExercises.map((ex, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs bg-[#1a1a1a]/10 rounded-lg px-3 py-1.5">
-                      <span className="font-medium text-white truncate mr-2">{ex.name}</span>
-                      <span className="text-white/60 shrink-0">
-                        {ex.sets}×{ex.reps}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="pb-4" />
-          </div>
-
-          {/* ── This Week + Muscles Trained ── */}
-          <Card className="md:col-span-2 flex flex-col">
-            <CardHeader className="pb-0 pt-4 px-5">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-brand" />
-                  This Week
-                </CardTitle>
-                <div className="flex rounded-full overflow-hidden border border-[#333] text-[10px] font-bold uppercase tracking-wider">
-                  <button
-                    onClick={() => setMuscleView("anterior")}
-                    className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black" : "bg-[#222] text-[#a0a0a0]"}`}
-                  >Front</button>
-                  <button
-                    onClick={() => setMuscleView("posterior")}
-                    className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black" : "bg-[#222] text-[#a0a0a0]"}`}
-                  >Back</button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-3 pb-4 flex flex-col sm:flex-row gap-4 flex-1 min-h-0 px-5">
-              <div className="flex-1 space-y-3 min-w-0">
+            <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 to-pink-500/10 border border-orange-500/20 shadow-energy overflow-hidden backdrop-blur-sm relative group hover:border-orange-500/30 transition-all duration-300">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none" />
+              <div className="p-5 relative z-10">
+                <div className="flex items-start justify-between mb-4">
                   <div>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#a0a0a0]">Workouts</span>
-                      <span className="font-semibold text-white">{weeklyCompleted}/{weeklyGoal}</span>
-                    </div>
-                    <div className="h-1 bg-[#333] rounded-full overflow-hidden">
-                      <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${Math.min(100, (weeklyCompleted / weeklyGoal) * 100)}%` }} />
-                    </div>
+                    <p className="text-[10px] text-orange-400 font-bold uppercase tracking-widest mb-1">Today's Mission</p>
+                    <h3 className="text-xl font-bold text-white leading-tight">{workoutTitle}</h3>
+                    <p className="text-xs text-[#a0a0a0] mt-1">{exerciseCount} exercises · ~{workoutDuration} min</p>
                   </div>
-
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-[#2a2a2a]">
-                    <span className="text-[#a0a0a0]">Body Weight</span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-white">{currentBodyWeight || "—"}{currentBodyWeight ? ` ${weightUnit}` : ""}</span>
-                      {bodyWeightChange !== undefined && bodyWeightChange !== null && bodyWeightChange !== 0 && (
-                        <span className={`text-[10px] ${bodyWeightChange > 0 ? "text-[#fbbf24]" : "text-[#4ade80]"}`}>
-                          {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cardio this week */}
-                  {profile?.strava_access_token && weeklyCardio.length > 0 && (
-                    <div className="pt-1 border-t border-[#2a2a2a]">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-[#a0a0a0] flex items-center gap-1.5">
-                          <Activity className="w-3 h-3" />
-                          Cardio
-                        </span>
-                        <span className="font-semibold text-white">{weeklyCardio.length} sessions</span>
-                      </div>
-                    </div>
-                  )}
+                   <Dumbbell className="w-8 h-8 text-orange-500/30 group-hover:text-orange-500/50 transition-colors" />
                 </div>
-
-              <div className="sm:w-[120px] shrink-0 flex flex-col items-center border-l border-[#2a2a2a] pl-4">
-                {weeklyBodyData.length > 0 ? (
-                  <MuscleHeatMap data={weeklyBodyData} view={muscleView} className="flex-1" />
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <Dumbbell className="w-6 h-6 text-[#333] mb-1" />
-                    <p className="text-[10px] text-[#555555]">No data</p>
-                  </div>
-                )}
+                <Link to={todayWorkoutLink}>
+                  <Button variant="energy" className="w-full h-12 text-md font-bold rounded-xl shadow-lg">
+                    Start Workout <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : (
+            <Card className="p-6 text-center border-dashed border-charcoal-border">
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Rest Day</p>
+              <p className="text-sm text-slate-400 mt-1">Focus on recovery and mobility</p>
+            </Card>
+          )}
         </div>
 
-        {/* ── Nutrition & Capture ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Nutrition */}
-          <Card className="border border-[#2a2a2a]">
-            <CardHeader className="pb-2 pt-4 px-5">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Apple className="w-4 h-4 text-[#4ade80]" />
-                  Nutrition
+        {/* ── SECONDARY CONTENT (Tabs/Lists) ── */}
+        <div className="space-y-4">
+          {/* AI Insights */}
+          <DailyBriefCard today={today} hideWhenEmpty={true} />
+
+          {/* Actions & Soreness */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
+            <SorenessCheckin today={today} />
+          </div>
+
+          {/* Heatmap & Training Load */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="md:col-span-2 shadow-dark-card border-charcoal-border">
+              <CardHeader className="pb-0 pt-4 px-5">
+                <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5" /> Training Load
                 </CardTitle>
-                {tdeeResult?.tdee && (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <Flame className="w-3 h-3 text-brand" />
-                      <span className="text-[#555555]">TDEE:</span>
-                      <span className="font-semibold text-[#a0a0a0]">{tdeeResult.tdee.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
+              </CardHeader>
+              <div className="p-5">
+                <TrainingLoadTab
+                  cardioSessions={allCardioSessions}
+                  workoutLogs={workoutLogs}
+                  profile={profile}
+                  hasStrava={!!profile?.strava_access_token}
+                />
               </div>
-            </CardHeader>
-            <CardContent className="py-3 px-5">
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: "Cal", value: todayMacros.calories, goal: profile?.daily_calorie_goal || 0, stroke: "var(--color-brand)" },
-                  { label: "Pro", value: todayMacros.protein, goal: profile?.daily_protein_goal || 0, stroke: "#60a5fa" },
-                  { label: "Carb", value: todayMacros.carbs, goal: profile?.daily_carbs_goal || 0, stroke: "#fbbf24" },
-                  { label: "Fat", value: todayMacros.fats, goal: profile?.daily_fats_goal || 0, stroke: "#f87171" },
-                ].map(({ label, value, goal, stroke }) => {
-                  const safeValue = value ?? 0;
-                  const safeGoal = goal ?? 0;
-                  const pct = safeGoal > 0 ? Math.min(1, safeValue / safeGoal) : 0;
-                  const r = 24; const circ = 2 * Math.PI * r; const offset = circ * (1 - pct);
-                  return (
-                    <div key={label} className="flex flex-col items-center">
-                      <div className="relative w-12 h-12">
-                        <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90">
-                          <circle cx="30" cy="30" r={r} fill="none" stroke="#2a2a2a" strokeWidth="4" />
-                          <circle cx="30" cy="30" r={r} fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} className="transition-all duration-700" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-[10px] font-bold text-white">{Math.round(safeValue)}</span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-medium text-[#555555] mt-1">{label}</span>
-                    </div>
-                  );
-                })}
+            </Card>
+
+            <Card className="shadow-dark-card border-charcoal-border overflow-hidden">
+               <CardHeader className="pb-0 pt-4 px-5">
+                <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5" /> Muscle Fatigue
+                </CardTitle>
+              </CardHeader>
+              <div className="p-4 flex justify-center">
+                 <MuscleHeatMap data={weeklyBodyData} view="anterior" className="h-[200px]" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Capture */}
-          <section>
-            <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
-          </section>
-        </div>
-
-        {/* ── Training Load Chart ── */}
-        <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
-          <CardHeader className="pb-0 pt-4 px-5">
-            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-brand" />
-              Training Load
-            </CardTitle>
-          </CardHeader>
-          <div className="p-5">
-            <TrainingLoadTab
-              cardioSessions={allCardioSessions}
-              workoutLogs={workoutLogs}
-              profile={profile}
-              hasStrava={!!profile?.strava_access_token}
-            />
+            </Card>
           </div>
-        </Card>
-
-        {/* Stat strip + quick weight log */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
-            {[
-              { label: "Workouts", value: totalWorkoutsCount, unit: "" },
-              { label: "Volume", value: totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}k` : "—", unit: "lbs" },
-              { label: "Avg Duration", value: avgDuration || "—", unit: "min" },
-              { label: "Weight", value: currentBodyWeight || "—", unit: weightUnit },
-            ].map(({ label, value, unit }) => (
-              <div key={label}>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[#555555] mb-0.5">{label}</div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold text-white tabular-nums">{value}</span>
-                  <span className="text-[10px] text-[#a0a0a0]">{unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <form onSubmit={handleAddBodyWeight} className="flex gap-2 w-full sm:w-auto">
-            <Input type="number" step="0.1" value={newBodyWeight} onChange={(e) => setNewBodyWeight(e.target.value)} placeholder={`Weight`} className="h-9 text-sm w-full sm:w-24" required />
-            <Button type="submit" variant="volt" size="sm" className="h-9 px-4 shrink-0" disabled={addBodyWeightMutation.isPending}>
-              <Scale className="w-4 h-4 mr-2" /> Log
-            </Button>
-          </form>
         </div>
       </div>
     </div>

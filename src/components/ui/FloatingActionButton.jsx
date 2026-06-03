@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator } from "lucide-react";
+import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
 
 const actions = [
   { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-brand", iconColor: "text-black" },
   { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]", iconColor: "text-white" },
   { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]", iconColor: "text-white" },
+  { label: "Stream Note", icon: Brain, action: "streamNote", color: "bg-[rgba(168,85,247,0.1)]", iconColor: "text-white" },
   { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-brand", iconColor: "text-black" },
   { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]", iconColor: "text-white" },
 ];
 
-export default function FloatingActionButton({ onWeighIn, onCalculators }) {
+export default function FloatingActionButton({ onWeighIn, onCalculators, onStreamNote }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const handleAction = (action) => {
@@ -22,6 +23,8 @@ export default function FloatingActionButton({ onWeighIn, onCalculators }) {
       onWeighIn?.();
     } else if (action.action === "calculators") {
       onCalculators?.();
+    } else if (action.action === "streamNote") {
+      onStreamNote?.();
     }
   };
 

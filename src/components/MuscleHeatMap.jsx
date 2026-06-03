@@ -4,11 +4,13 @@ import Model from "react-body-highlighter";
 function getBrandColors() {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue('--color-brand-rgb').trim();
-  const [r, g, b] = raw ? raw.split(' ').map(Number) : [204, 255, 0];
+  const rgbStr = raw || "255 107 59";
+  // Convert spaces to commas if necessary
+  const formattedRgb = rgbStr.replace(/\s+/g, ',');
   return [
-    `rgb(${Math.round(r * 0.3)} ${Math.round(g * 0.3)} ${Math.round(b * 0.3)})`,
-    `rgb(${Math.round(r * 0.6)} ${Math.round(g * 0.6)} ${Math.round(b * 0.6)})`,
-    `rgb(${r} ${g} ${b})`,
+    `rgba(${formattedRgb}, 0.25)`,
+    `rgba(${formattedRgb}, 0.6)`,
+    `rgba(${formattedRgb}, 1)`,
   ];
 }
 
@@ -29,31 +31,32 @@ export default function MuscleHeatMap({ data = [], className = "", view: control
     <div className={`flex flex-col items-center gap-1.5 ${className}`}>
       {/* Toggle only shown when not controlled externally */}
       {!isControlled && (
-        <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium">
+        <div className="flex rounded-full overflow-hidden border border-charcoal-border text-xs font-medium bg-charcoal-surface">
           <button
             onClick={() => setOwnView("anterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "anterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#242424]"}`}
+            className={`px-2.5 py-0.5 transition-colors ${view === "anterior" ? "bg-brand text-black font-bold" : "text-slate-400 hover:text-white"}`}
           >Front</button>
           <button
             onClick={() => setOwnView("posterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "posterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#242424]"}`}
+            className={`px-2.5 py-0.5 transition-colors ${view === "posterior" ? "bg-brand text-black font-bold" : "text-slate-400 hover:text-white"}`}
           >Back</button>
         </div>
       )}
 
-      <div className="rounded-xl bg-[#1a1a1a] p-2 w-full flex-1 flex justify-center items-center min-h-0">
+      <div className="bg-transparent w-full flex-1 flex justify-center items-center min-h-0 overflow-hidden">
         <Model
           data={data}
           type={view}
           highlightedColors={colors}
-          style={{ width: "100%", maxWidth }}
+          bodyColor="#3a3a4c"
+          style={{ width: "100%", height: "100%", maxHeight: "100%", maxWidth }}
         />
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center gap-2 text-xs text-[#a0a0a0] shrink-0">
+      <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0">
         <span>Low</span>
-        <div className="flex h-2 w-16 rounded-full overflow-hidden">
+        <div className="flex h-2 w-16 rounded-full overflow-hidden bg-charcoal-border">
           <div className="flex-1" style={{ background: colors[0] }} />
           <div className="flex-1" style={{ background: colors[1] }} />
           <div className="flex-1" style={{ background: colors[2] }} />

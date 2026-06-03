@@ -27,30 +27,39 @@ function CoachSection({ coach, content }) {
   const preview = content?.slice(0, 90) + (content?.length > 90 ? "…" : "");
 
   return (
-    <div className="border-b border-[#2a2a2a] last:border-0">
+    <div className="border-b border-charcoal-border last:border-0">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#222] transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-charcoal-surface2 transition-colors text-left"
       >
         <div className="flex items-center gap-2.5">
           <Icon className={`w-3.5 h-3.5 shrink-0 ${coach.color}`} />
-          <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">{coach.label}</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{coach.label}</span>
         </div>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-[#555]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#555]" />}
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-600" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-600" />}
       </button>
       {!open && content && (
-        <p className="px-4 pb-3 text-xs text-[#555555] leading-relaxed">{preview}</p>
+        <p className="px-4 pb-3 text-xs text-slate-500 leading-relaxed">{preview}</p>
       )}
       {open && content && (
-        <p className="px-4 pb-4 text-sm text-[#e0e0e0] leading-relaxed whitespace-pre-wrap">{content}</p>
+        <p className="px-4 pb-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{content}</p>
       )}
     </div>
   );
 }
 
-export default function DailyBriefCard({ today }) {
+export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
   const { user } = useAuth();
   const todayStr = today || getTodayString();
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try { return localStorage.getItem("ai_brief_collapsed") === "true"; } catch { return false; }
+  });
+
+  const toggleCollapse = () => {
+    const nextVal = !isCollapsed;
+    setIsCollapsed(nextVal);
+    try { localStorage.setItem("ai_brief_collapsed", String(nextVal)); } catch {}
+  };
 
   const { data: brief, isLoading } = useQuery({
     queryKey: ["daily-brief", todayStr, user?.id],
@@ -71,20 +80,21 @@ export default function DailyBriefCard({ today }) {
   if (isLoading) return null;
 
   if (!brief) {
+    if (hideWhenEmpty) return null;
     return (
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
-        <CardContent className="py-6 px-5 flex flex-col items-center text-center gap-3">
+      <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
+        <CardContent className="py-5 px-4 flex flex-col items-center text-center gap-3">
           <div className="p-3 rounded-full bg-brand/10">
             <Bot className="w-5 h-5 text-brand" />
           </div>
           <div>
             <p className="text-sm font-semibold text-white">No AI Brief Yet</p>
-            <p className="text-xs text-[#555555] mt-1 max-w-xs">
+            <p className="text-xs text-slate-500 mt-1 max-w-xs">
               Run the Desktop Agent to generate today's coaching brief. It reads your last 7 days of data and writes the result here.
             </p>
           </div>
           <Link to="/brief-history">
-            <Button variant="ghost" size="sm" className="text-[#555555] text-xs gap-1.5">
+            <Button variant="ghost" size="sm" className="text-slate-500 text-xs gap-1.5 border-charcoal-border">
               <History className="w-3.5 h-3.5" /> View Past Briefs
             </Button>
           </Link>
@@ -102,8 +112,8 @@ export default function DailyBriefCard({ today }) {
     : null;
 
   return (
-    <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
-      <CardHeader className="pb-0 pt-4 px-5">
+    <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
+      <CardHeader className={`pt-4 px-4 ${isCollapsed ? 'pb-4' : 'pb-0'}`}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
             <Bot className="w-4 h-4 text-brand" />
@@ -111,37 +121,47 @@ export default function DailyBriefCard({ today }) {
           </CardTitle>
           <div className="flex items-center gap-3">
             {generatedAt && (
-              <span className="text-[10px] text-[#555555]">Generated {generatedAt}</span>
+              <span className="text-[10px] text-slate-500 font-mono">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#555555] uppercase tracking-wider hover:text-brand px-2">
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-500 uppercase tracking-wider hover:text-brand px-2 border-charcoal-border">
                 History
               </Button>
             </Link>
+            <button
+              onClick={toggleCollapse}
+              className="p-1 text-slate-500 hover:text-brand transition-colors rounded"
+            >
+              {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </CardHeader>
 
-      {json.insight && (
-        <div className="mx-5 mt-4 mb-2 flex items-start gap-2.5 p-3 rounded-lg bg-brand/[5%] border border-brand/10">
-          <Lightbulb className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-          <p className="text-xs text-[#e0e0e0] leading-relaxed italic">{json.insight}</p>
-        </div>
-      )}
+      {!isCollapsed && (
+        <>
+          {json.insight && (
+            <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 rounded-lg bg-brand/[5%] border border-brand/10">
+              <Lightbulb className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-300 leading-relaxed italic">{json.insight}</p>
+            </div>
+          )}
 
-      <CardContent className="p-0 mt-3">
-        {COACHES.map(coach => (
-          <CoachSection key={coach.key} coach={coach} content={json[coach.key]} />
-        ))}
-      </CardContent>
+          <CardContent className="p-0 mt-2">
+            {COACHES.map(coach => (
+              <CoachSection key={coach.key} coach={coach} content={json[coach.key]} />
+            ))}
+          </CardContent>
 
-      {approxCost && (
-        <div className="px-5 py-2.5 border-t border-[#2a2a2a] flex items-center gap-1.5">
-          <Coins className="w-3 h-3 text-[#555555]" />
-          <span className="text-[10px] text-[#555555]">
-            {brief.model_used || "claude-haiku-4-5"} · {totalTokens.toLocaleString()} tokens · {approxCost}
-          </span>
-        </div>
+          {approxCost && (
+            <div className="px-4 py-2 border-t border-charcoal-border flex items-center gap-1.5 font-mono">
+              <Bot className="w-3 h-3 text-slate-600" />
+              <span className="text-[9px] text-slate-600">
+                {brief.model_used || "claude-haiku-4-5"} · {totalTokens.toLocaleString()} tokens · {approxCost}
+              </span>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

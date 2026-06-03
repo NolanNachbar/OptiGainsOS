@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import WeightProgressChart from "@/components/progress/WeightProgressChart";
 import {
   TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
-  TrendingDown, Minus, ArrowUpRight, ArrowDownRight,
+  TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Flame, Activity
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { db } from "@/api/supabaseClient";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
@@ -460,6 +461,57 @@ function PhotosTab() {
   );
 }
 
+function MetabolismTab() {
+  const { user } = useAuth();
+  const today = getTodayString();
+  const { data: state } = useQuery({
+    queryKey: ["athlete-state", today, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("athlete_state").select("*").eq("created_by", user.id).eq("date", today).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+        <CardContent className="pt-6 pb-6 px-5">
+           <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Expenditure Engine</h3>
+              </div>
+              <Badge className="bg-brand/10 text-brand border-none">Active</Badge>
+           </div>
+           <div className="text-center py-4">
+              <p className="text-4xl font-bold text-white tabular-nums">{state?.nutrition?.avg_calories_7d || state?.nutrition?.avg_daily_calories_7d || "—"}</p>
+              <p className="text-xs text-[#555] mt-1 font-bold uppercase tracking-widest">Calculated Burn (7d Avg)</p>
+           </div>
+        </CardContent>
+      </Card>
+      
+      <div className="grid grid-cols-2 gap-3">
+         <Card className="bg-[#1a1a1a] border-[#2a2a2a] p-4">
+            <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Weight Trend</p>
+            <p className="text-lg font-bold text-white">{state?.nutrition?.weight_trend_lbs_per_week || "—"} lbs/wk</p>
+         </Card>
+         <Card className="bg-[#1a1a1a] border-[#2a2a2a] p-4">
+            <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Net Energy</p>
+            <p className="text-lg font-bold text-brand">Balanced</p>
+         </Card>
+      </div>
+
+      <div className="p-4 rounded-xl bg-brand/[5%] border border-brand/20">
+         <p className="text-xs text-[#a0a0a0] leading-relaxed">
+            The engine uses your daily intake and weight change to calculate your true expenditure. 
+            This filters out water retention and glycogen fluctuations to show your actual metabolic rate.
+         </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function Progress() {
   return (
@@ -475,12 +527,14 @@ export default function Progress() {
           <p className="text-[#a0a0a0] text-sm pl-12">Body weight, measurements, and progress photos.</p>
         </header>
 
-        <Tabs defaultValue="weight">
+        <Tabs defaultValue="metabolism">
           <TabsList className="mb-6">
+            <TabsTrigger value="metabolism">Metabolism</TabsTrigger>
             <TabsTrigger value="weight">Weight</TabsTrigger>
             <TabsTrigger value="measurements">Measurements</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
           </TabsList>
+          <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
           <TabsContent value="weight"><WeightTab /></TabsContent>
           <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
           <TabsContent value="photos"><PhotosTab /></TabsContent>

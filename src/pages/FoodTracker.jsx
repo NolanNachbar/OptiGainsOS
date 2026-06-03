@@ -780,14 +780,14 @@ const handleSaveMealTemplate = () => {
 
 
   return (
-    <div className="bg-[#121212] text-white ">
+    <div className="bg-[#09090e] text-white min-h-screen">
 
       {/* Date navigation + action bar */}
-      <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-[#2a2a2a] bg-[#121212]/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+      <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-[#09090e]/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => changeDate(-1)}
-            className="p-1.5 rounded-lg text-[#555555] hover:text-white text-[#a0a0a0] hover:bg-[#242424] transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-charcoal-surface transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -795,24 +795,24 @@ const handleSaveMealTemplate = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-none text-sm font-semibold text-white  focus:outline-none cursor-pointer"
+            className="bg-transparent border-none text-sm font-semibold text-white focus:outline-none cursor-pointer font-mono"
           />
           <button
             onClick={() => changeDate(1)}
-            className="p-1.5 rounded-lg text-[#555555] hover:text-white text-[#a0a0a0] hover:bg-[#242424] transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-charcoal-surface transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-            className="text-xs text-[#555555] hover:text-brand hover:text-brand transition-colors ml-1 hidden sm:block"
+            className="text-xs text-slate-500 hover:text-brand transition-colors ml-1 hidden sm:block"
           >
             Today
           </button>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="volt"
+            variant="energy"
             size="sm"
             onClick={() => { resetForm(); setShowAddDialog(true); }}
           >
@@ -837,7 +837,7 @@ const handleSaveMealTemplate = () => {
 
         {/* ── Main scrollable content ── */}
         <div className="flex-1 min-w-0">
-          <div className="max-w-3xl mx-auto px-4 md:px-8 py-4 md:py-5 space-y-5">
+          <div className="max-w-3xl mx-auto px-3 py-3 space-y-3.5">
 
             {/* Calorie ring + macro progress bars */}
             {(() => {
@@ -847,20 +847,20 @@ const handleSaveMealTemplate = () => {
               const calsRemaining = calsGoal - calsConsumed;
               const calsPct = Math.min(1, calsConsumed / calsGoal);
               const macroRows = [
-                { label: 'Protein', consumed: totals.protein, goal: profile?.daily_protein_goal || 150, unit: 'g', barColor: 'bg-brand', textColor: 'text-brand' },
-                { label: 'Carbohydrates', consumed: totals.carbs, goal: profile?.daily_carbs_goal || 200, unit: 'g', barColor: 'bg-brand/70', textColor: 'text-brand' },
-                { label: 'Dietary Fats', consumed: totals.fats, goal: profile?.daily_fats_goal || 65, unit: 'g', barColor: 'bg-brand/50', textColor: 'text-brand' },
+                { label: 'Protein', consumed: totals.protein, goal: profile?.daily_protein_goal || 150, unit: 'g', barColor: 'bg-sky-400', textColor: 'text-sky-400' },
+                { label: 'Carbohydrates', consumed: totals.carbs, goal: profile?.daily_carbs_goal || 200, unit: 'g', barColor: 'bg-amber-500', textColor: 'text-amber-500' },
+                { label: 'Dietary Fats', consumed: totals.fats, goal: profile?.daily_fats_goal || 65, unit: 'g', barColor: 'bg-emerald-500', textColor: 'text-emerald-500' },
               ];
               return (
-                <div className="flex items-center gap-4 md:gap-8 p-3 md:p-4 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]" data-tutorial="nutrition-rings">
+                <div className="flex items-center gap-4 md:gap-8 p-4 rounded-xl border border-charcoal-border bg-charcoal-surface shadow-dark-card" data-tutorial="nutrition-rings">
                   {/* Calorie ring */}
                   <div className="relative shrink-0" style={{ width: 96, height: 96 }}>
                     <svg width="96" height="96" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="48" cy="48" r="38" stroke="#2a2a2a" strokeWidth="7" fill="transparent" />
+                      <circle cx="48" cy="48" r="38" stroke="#161622" strokeWidth="5" fill="transparent" />
                       <circle
                         cx="48" cy="48" r="38"
-                        stroke={calsConsumed > calsGoal ? '#ef4444' : 'var(--color-brand)'}
-                        strokeWidth="7"
+                        stroke={calsConsumed > calsGoal ? '#f43f5e' : 'var(--color-brand)'}
+                        strokeWidth="5"
                         fill="transparent"
                         strokeDasharray={`${calsPct * (2 * Math.PI * 38)} ${2 * Math.PI * 38}`}
                         strokeLinecap="round"
@@ -871,7 +871,7 @@ const handleSaveMealTemplate = () => {
                       <span className="font-mono text-lg font-bold leading-none text-white">
                         {isToday ? Math.abs(Math.round(calsRemaining)) : Math.round(calsConsumed)}
                       </span>
-                      <span className="text-xs font-bold text-[#555555] uppercase mt-0.5 tracking-wider">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase mt-0.5 tracking-wider">
                         {isToday ? (calsRemaining < 0 ? 'over' : 'kcal left') : 'consumed'}
                       </span>
                     </div>
@@ -883,15 +883,15 @@ const handleSaveMealTemplate = () => {
                       return (
                         <div key={label} className="space-y-1">
                           <div className="flex justify-between items-end gap-2">
-                            <span className="text-xs font-bold text-[#a0a0a0] uppercase tracking-tighter truncate">{label}</span>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter truncate">{label}</span>
                             {isToday ? (
-                              <span className={`font-mono text-xs shrink-0 ${textColor}`}>{Math.round(consumed)} / {goal}{unit}</span>
+                              <span className={`font-mono text-[11px] shrink-0 ${textColor}`}>{Math.round(consumed)} / {goal}{unit}</span>
                             ) : (
-                              <span className={`font-mono text-xs shrink-0 ${textColor}`}>{Math.round(consumed)}{unit}</span>
+                              <span className={`font-mono text-[11px] shrink-0 ${textColor}`}>{Math.round(consumed)}{unit}</span>
                             )}
                           </div>
                           {isToday && (
-                            <div className="h-1.5 w-full bg-[#2a2a2a] rounded-full overflow-hidden">
+                            <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
                               <div className={`${barColor} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
                             </div>
                           )}
@@ -916,24 +916,24 @@ const handleSaveMealTemplate = () => {
                 const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
                 const hasEntries = entries.length > 0;
                 return (
-                  <section key={mealType} className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+                  <section key={mealType} className="rounded-xl bg-charcoal-surface border border-charcoal-border overflow-hidden shadow-dark-card transition-all duration-300 hover:border-slate-800">
                     {/* Meal header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-border">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-brand' : 'bg-[#2a2a2a]'}`} />
-                        <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-[#a0a0a0]">{label}</h3>
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-brand' : 'bg-slate-800'}`} />
+                        <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">{label}</h3>
                       </div>
                       <div className="flex items-center gap-2.5">
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
-                            className="text-[#a0a0a0] hover:text-brand text-[#555555] hover:text-brand transition-colors"
+                            className="text-slate-500 hover:text-brand transition-colors"
                             title="Save as template"
                           >
                             <Bookmark className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <span className="font-mono text-xs font-bold text-[#a0a0a0]">
+                        <span className="font-mono text-xs font-bold text-slate-400">
                           {mealCals} <span className="text-xs font-normal opacity-50">KCAL</span>
                         </span>
                       </div>
@@ -945,10 +945,10 @@ const handleSaveMealTemplate = () => {
                         {entries.map((entry, i) => (
                           <div
                             key={entry.id}
-                            className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b border-[#2a2a2a]/60 hover:bg-[#242424] transition-colors group ${i % 2 === 1 ? 'bg-[#202020]/30' : ''}`}
+                            className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b border-charcoal-border/50 hover:bg-charcoal-surface2/60 transition-colors group ${i % 2 === 1 ? 'bg-charcoal-surface2/20' : ''}`}
                           >
                             <div className="col-span-6 md:col-span-7 flex flex-col min-w-0 justify-center">
-                              <span className="text-sm font-semibold tracking-tight text-white  truncate">{entry.food_name}</span>
+                              <span className="text-sm font-semibold tracking-tight text-white truncate">{entry.food_name}</span>
                               {entry.serving_size && (
                                 <span className="text-xs font-mono text-brand mt-0.5">{entry.serving_size}</span>
                               )}
@@ -956,33 +956,33 @@ const handleSaveMealTemplate = () => {
                             <div className="col-span-5 md:col-span-4 grid grid-cols-4 gap-1 text-right items-center">
                               <div className="flex flex-col">
                                 <span className="font-mono text-xs font-bold text-white">{entry.calories}</span>
-                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Cal</span>
+                                <span className="text-[10px] uppercase text-slate-500 tracking-tighter">Cal</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-mono text-xs font-bold text-[#60a5fa]">{entry.protein_grams}</span>
-                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Pro</span>
+                                <span className="font-mono text-xs font-bold text-sky-400">{entry.protein_grams}</span>
+                                <span className="text-[10px] uppercase text-slate-500 tracking-tighter">Pro</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-mono text-xs font-bold text-[#fbbf24]">{entry.carbs_grams}</span>
-                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Car</span>
+                                <span className="font-mono text-xs font-bold text-amber-500">{entry.carbs_grams}</span>
+                                <span className="text-[10px] uppercase text-slate-500 tracking-tighter">Car</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-mono text-xs font-bold text-[#f87171]">{entry.fats_grams}</span>
-                                <span className="text-xs uppercase text-[#a0a0a0] tracking-tighter">Fat</span>
+                                <span className="font-mono text-xs font-bold text-emerald-500">{entry.fats_grams}</span>
+                                <span className="text-[10px] uppercase text-slate-500 tracking-tighter">Fat</span>
                               </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEditEntry(entry)} className="p-1 text-[#a0a0a0] hover:text-brand hover:text-brand transition-colors">
+                              <button onClick={() => startEditEntry(entry)} className="p-1 text-slate-500 hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-1 text-[#a0a0a0] hover:text-[#f87171] transition-colors">
+                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-1 text-slate-500 hover:text-rose-500 transition-colors">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
                         ))}
                         <button
-                          className="w-full py-2.5 flex items-center justify-center gap-1.5 text-[#a0a0a0] hover:text-brand hover:text-brand hover:bg-[#242424] transition-colors"
+                          className="w-full py-2.5 flex items-center justify-center gap-1.5 text-slate-400 hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
                           onClick={() => {
                             setNewFood(prev => ({ ...prev, meal_type: mealType }));
                             setShowAddDialog(true);
@@ -994,14 +994,14 @@ const handleSaveMealTemplate = () => {
                       </>
                     ) : (
                       <button
-                        className="w-full py-4 flex items-center justify-center gap-2 text-[#a0a0a0] hover:text-brand hover:text-brand hover:bg-[#242424] transition-colors group"
+                        className="w-full py-4 flex items-center justify-center gap-2 text-slate-500 hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
                         onClick={() => {
                           setNewFood(prev => ({ ...prev, meal_type: mealType }));
                           setShowAddDialog(true);
                         }}
                       >
-                        <Plus className="w-4 h-4" />
-                        <span className="text-xs font-bold tracking-widest uppercase">Add Item</span>
+                        <Plus className="w-3.5 h-3.5 text-slate-600 group-hover:text-brand" />
+                        <span className="text-xs font-bold tracking-widest uppercase text-slate-500 group-hover:text-brand">Add Item</span>
                       </button>
                     )}
                   </section>
@@ -1014,7 +1014,7 @@ const handleSaveMealTemplate = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); }}
-                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-[#2a2a2a] rounded-xl px-4 py-2.5 text-[#555555] hover:text-brand hover:text-brand hover:border-brand/40 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 text-slate-500 hover:text-brand hover:border-brand/40 transition-all"
                 >
                   <Save className="w-3.5 h-3.5" />
                   Save Day as Template
@@ -1023,12 +1023,12 @@ const handleSaveMealTemplate = () => {
             )}
 
             {/* Mobile: sidebar content shown below meals */}
-            <div className="lg:hidden space-y-6 pt-2">
+            <div className="lg:hidden space-y-4 pt-2">
               {/* Goals card */}
-              <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-5">
+              <div className="rounded-xl border border-charcoal-border bg-charcoal-surface p-4 shadow-dark-card">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-bold tracking-widest text-brand uppercase">NUTRITION GOALS</span>
-                  <button onClick={() => setShowGoalsModal(true)} className="text-[#a0a0a0] hover:text-white transition-colors">
+                  <button onClick={() => setShowGoalsModal(true)} className="text-slate-400 hover:text-white transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -1040,7 +1040,7 @@ const handleSaveMealTemplate = () => {
                     { label: 'Fats', value: profile?.daily_fats_goal || 65, unit: 'g' },
                   ].map(({ label, value, unit }) => (
                     <div key={label} className="flex justify-between items-center">
-                      <span className="text-xs text-[#a0a0a0] uppercase font-bold">{label}</span>
+                      <span className="text-xs text-slate-400 uppercase font-bold">{label}</span>
                       <span className="font-mono text-xs font-bold text-white">{value}<span className="opacity-50 font-normal ml-0.5 text-xs">{unit}</span></span>
                     </div>
                   ))}

@@ -361,7 +361,7 @@ function NutritionSection({ data }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function AthleteState() {
+export default function AthleteState({ hideHeader = false }) {
   const { user } = useAuth();
   const today = getTodayString();
 
@@ -382,19 +382,21 @@ export default function AthleteState() {
   });
 
   return (
-    <div className="px-3 py-4 md:px-6 md:py-8 bg-[#121212] min-h-screen">
+    <div className={`px-3 py-4 md:px-6 md:py-8 bg-[#121212] min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 bg-transparent min-h-0' : ''}`}>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-white">Athlete State</h1>
-          <p className="text-[13px] text-[#a0a0a0] mt-0.5">
-            Computed daily · {today}
-            {state?.computed_at && (
-              <span className="ml-2 text-[#444]">
-                Last updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            )}
-          </p>
-        </div>
+        {!hideHeader && (
+          <div className="mb-6">
+            <h1 className="text-[22px] font-bold text-white">Athlete State</h1>
+            <p className="text-[13px] text-[#a0a0a0] mt-0.5">
+              Computed daily · {today}
+              {state?.computed_at && (
+                <span className="ml-2 text-[#444]">
+                  Last updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </p>
+          </div>
+        )}
 
         {isLoading && (
           <p className="text-sm text-[#555555]">Loading athlete state…</p>

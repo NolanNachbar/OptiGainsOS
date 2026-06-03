@@ -121,7 +121,7 @@ export default function TodayActions({ today, briefActions = [] }) {
   if (total === 0 && !adding) return null;
 
   return (
-    <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
+    <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">

@@ -11,6 +11,192 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// --- Auth Bypass Interception & Mock Data ---
+const isBypassActive = () => localStorage.getItem('bypass_auth') === 'true';
+
+const getTodayLocalDateStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const mockProfiles = [
+  {
+    id: 'p1',
+    created_by: '00000000-0000-0000-0000-000000000000',
+    username: 'mockathlete',
+    display_name: 'Mock Athlete',
+    avatar_url: null,
+    timezone: 'America/Denver',
+    primary_goal: 'muscle_gain',
+    days_per_week: 4,
+    weight_unit: 'lbs',
+    daily_calorie_goal: 2800,
+    daily_protein_goal: 180,
+    daily_carbs_goal: 200,
+    daily_fats_goal: 65,
+    strava_access_token: 'mock-token'
+  }
+];
+
+const mockDailyReadiness = [
+  {
+    id: 'dr1',
+    created_by: '00000000-0000-0000-0000-000000000000',
+    checkin_date: getTodayLocalDateStr(),
+    hrv_score: 78,
+    sleep_score: 85,
+    readiness_score: 88,
+    mood: 'great',
+    soreness: 'none'
+  }
+];
+
+const mockWorkouts = [
+  {
+    id: 'w1',
+    title: 'Hypertrophy Push A',
+    description: 'Chest, shoulders, triceps focus',
+    focus: 'strength',
+    duration_minutes: 45,
+    exercises: [
+      { name: 'Bench Press', sets: 4, reps: '8-12', rest_seconds: 90 },
+      { name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest_seconds: 90 },
+      { name: 'Lateral Raise', sets: 4, reps: '15', rest_seconds: 60 }
+    ],
+    created_by: '00000000-0000-0000-0000-000000000000',
+    created_at: new Date().toISOString()
+  }
+];
+
+const mockSchedules = [
+  {
+    id: 'sch1',
+    workout_id: 'w1',
+    scheduled_date: getTodayLocalDateStr(),
+    time_of_day: 'anytime',
+    completed: false,
+    created_by: '00000000-0000-0000-0000-000000000000',
+    created_at: new Date().toISOString()
+  }
+];
+
+const mockFood = [
+  { id: 'f1', date: getTodayLocalDateStr(), calories: 650, protein_grams: 45, carbs_grams: 70, fats_grams: 20, food_name: 'Oatmeal & Protein Shake', meal_type: 'breakfast', serving_size: 1, serving_unit: 'serving', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date().toISOString() },
+  { id: 'f2', date: getTodayLocalDateStr(), calories: 850, protein_grams: 60, carbs_grams: 90, fats_grams: 25, food_name: 'Chicken, Rice & Broccoli', meal_type: 'lunch', serving_size: 1, serving_unit: 'serving', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date().toISOString() },
+  { id: 'f3', date: getTodayLocalDateStr(), calories: 400, protein_grams: 30, carbs_grams: 40, fats_grams: 12, food_name: 'Greek Yogurt & Almonds', meal_type: 'snack', serving_size: 1, serving_unit: 'serving', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date().toISOString() }
+];
+
+const mockWeights = [
+  { id: 'wt1', weight: 185.4, recorded_date: getTodayLocalDateStr(), created_by: '00000000-0000-0000-0000-000000000000' },
+  { id: 'wt2', weight: 184.8, recorded_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], created_by: '00000000-0000-0000-0000-000000000000' },
+  { id: 'wt3', weight: 185.0, recorded_date: new Date(Date.now() - 172800000).toISOString().split('T')[0], created_by: '00000000-0000-0000-0000-000000000000' }
+];
+
+const mockLogs = [
+  {
+    id: 'l1',
+    log_date: getTodayLocalDateStr(),
+    duration_seconds: 2700,
+    exercises: [
+      { name: 'Bench Press', sets: [{ weight: 225, reps: 8 }, { weight: 225, reps: 8 }] },
+      { name: 'Incline Dumbbell Press', sets: [{ weight: 80, reps: 10 }] }
+    ],
+    created_by: '00000000-0000-0000-0000-000000000000',
+    created_at: new Date().toISOString()
+  }
+];
+
+const mockCardio = [
+  { distance_meters: 5000, moving_time_seconds: 1500, calories: 400, start_date: new Date().toISOString(), created_by: '00000000-0000-0000-0000-000000000000' }
+];
+
+const mockRecovery = [
+  { id: 'r1', date: getTodayLocalDateStr(), hrv: 75, rhr: 54, sleep_score: 82, created_by: '00000000-0000-0000-0000-000000000000' }
+];
+
+const mockEnrollments = [
+  {
+    id: 'pe1',
+    program_id: 'prm1',
+    status: 'active',
+    current_day_index: 1,
+    current_cycle: 1,
+    current_day: 1,
+    current_week: 1,
+    completed_workouts: [],
+    created_by: '00000000-0000-0000-0000-000000000000',
+    created_at: new Date().toISOString()
+  }
+];
+
+const mockPrograms = [
+  {
+    id: 'prm1',
+    title: 'Built Like a Badass',
+    description: '12-week strength and conditioning program',
+    num_cycles: 3,
+    days_per_week: 3,
+    duration_weeks: 12,
+    schema_version: 2,
+    workouts: [
+      { programWorkoutId: 'pw1', title: 'Day 1: Upper Body Strength', dayIndex: 1, cycle: 1, cardio_sessions: [] }
+    ]
+  }
+];
+
+const mockDataMap = {
+  user_profiles: mockProfiles,
+  daily_readiness: mockDailyReadiness,
+  workouts: mockWorkouts,
+  workout_schedules: mockSchedules,
+  food_entries: mockFood,
+  body_weight_entries: mockWeights,
+  workout_logs: mockLogs,
+  cardio_sessions: mockCardio,
+  recovery_metrics: mockRecovery,
+  program_enrollments: mockEnrollments,
+  programs: mockPrograms
+};
+
+const originalFrom = supabase.from;
+supabase.from = function(tableName) {
+  if (isBypassActive()) {
+    const mockList = mockDataMap[tableName] || [];
+    const queryBuilder = {
+      select: () => queryBuilder,
+      insert: (data) => {
+        mockList.push(...(Array.isArray(data) ? data : [data]));
+        return queryBuilder;
+      },
+      update: (updates) => {
+        if (mockList[0]) Object.assign(mockList[0], updates);
+        return queryBuilder;
+      },
+      delete: () => {
+        return queryBuilder;
+      },
+      eq: () => queryBuilder,
+      neq: () => queryBuilder,
+      gte: () => queryBuilder,
+      lte: () => queryBuilder,
+      in: () => queryBuilder,
+      order: () => queryBuilder,
+      limit: () => queryBuilder,
+      maybeSingle: async () => ({ data: mockList[0] || null, error: null }),
+      single: async () => ({ data: mockList[0] || null, error: null }),
+      then: function(onfulfilled) {
+        return Promise.resolve({ data: mockList, error: null }).then(onfulfilled);
+      }
+    };
+    return queryBuilder;
+  }
+  return originalFrom.apply(this, arguments);
+};
+// ---------------------------------------------
+
 // Database helper with entity-based API
 class DatabaseAdapter {
   constructor() {

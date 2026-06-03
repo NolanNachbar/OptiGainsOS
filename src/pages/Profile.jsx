@@ -37,14 +37,14 @@ function SectionDivider() {
   return <div className="border-t border-[#2a2a2a] my-6" />;
 }
 
-export default function Profile() {
+export default function Profile({ hideHeader }) {
   const navigate = useNavigate();
   const { user, deleteAccount, signOut } = useAuth();
   const { isSupported: pushSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user?.id);
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  const [activeSection, setActiveSection] = useState(hideHeader ? 'body' : null);
 
   const { profile, isLoading } = useProfile();
 
@@ -233,14 +233,15 @@ export default function Profile() {
   ];
 
   return (
-    <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
+    <div className={`p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300 ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
       <div className="max-w-6xl mx-auto">
 
         {/* ── Two-column layout (desktop) / single column (mobile) ── */}
-        <div className="md:grid md:grid-cols-[220px_1fr] md:gap-8 md:items-start">
+        <div className={`md:grid md:grid-cols-[220px_1fr] md:gap-8 md:items-start ${hideHeader ? 'md:grid-cols-1 md:block' : ''}`}>
 
           {/* LEFT SIDEBAR — desktop only */}
-          <aside className="hidden md:block">
+          {!hideHeader && (
+            <aside className="hidden md:block">
             <div
               className="flex flex-col gap-3"
               style={{
@@ -300,11 +301,12 @@ export default function Profile() {
               </nav>
             </div>
           </aside>
+          )}
 
           {/* RIGHT CONTENT */}
           <div>
             {/* Mobile: hub view (profile card + nav list) */}
-            <div className={activeSection !== null ? 'hidden' : 'md:hidden mb-4'}>
+            <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
               <h1 className="text-[22px] font-bold text-white leading-tight mb-4">Profile</h1>
               <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
@@ -355,7 +357,7 @@ export default function Profile() {
             </div>
 
             {/* Mobile: back navigation when inside a section */}
-            {activeSection !== null && (
+            {activeSection !== null && !hideHeader && (
               <div className="md:hidden mb-5">
                 <button
                   type="button"
@@ -372,22 +374,24 @@ export default function Profile() {
             )}
 
             {/* Desktop section heading */}
-            <div className="hidden md:block mb-6">
-              <h1 className="text-[22px] font-bold text-white leading-tight">
-                {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
-              </h1>
-              <p className="text-[13px] text-[#a0a0a0] mt-0.5">
-                {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
-                 (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
-                 (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
-                                                                'Notifications, integrations, and account actions'}
-              </p>
-            </div>
+            {!hideHeader && (
+              <div className="hidden md:block mb-6">
+                <h1 className="text-[22px] font-bold text-white leading-tight">
+                  {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
+                </h1>
+                <p className="text-[13px] text-[#a0a0a0] mt-0.5">
+                  {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
+                  (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
+                  (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
+                                                                  'Notifications, integrations, and account actions'}
+                </p>
+              </div>
+            )}
 
         <form onSubmit={handleSubmit}>
 
           {/* ── IDENTITY SECTION ── */}
-          <div className={activeSection === 'identity' ? '' : activeSection === null ? 'hidden md:block' : 'hidden'}>
+          <div className={activeSection === 'identity' ? '' : activeSection === null && !hideHeader ? 'hidden md:block' : 'hidden'}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -719,7 +723,7 @@ export default function Profile() {
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
-        <div className={activeSection === 'settings' ? '' : 'hidden'}>
+        <div className={activeSection === 'settings' ? '' : hideHeader && activeSection === null ? '' : 'hidden'}>
           <Card className="mb-4">
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />

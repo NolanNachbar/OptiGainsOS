@@ -477,19 +477,21 @@ function CaptureTab() {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-export default function Career() {
+export default function Career({ hideHeader }) {
   return (
-    <div className="px-4 py-6 md:px-8 bg-[#121212] min-h-screen">
+    <div className={`px-4 py-6 md:px-8 bg-[#121212] min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-indigo-500/10">
-              <Briefcase className="w-5 h-5 text-indigo-400" />
+        {!hideHeader && (
+          <header className="mb-6">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 rounded-lg bg-indigo-500/10">
+                <Briefcase className="w-5 h-5 text-indigo-400" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Career & Pipeline</h1>
             </div>
-            <h1 className="text-2xl font-bold text-white">Career & Pipeline</h1>
-          </div>
-          <p className="text-[#a0a0a0] text-sm pl-12">Track applications, networking, and job search momentum.</p>
-        </header>
+            <p className="text-[#a0a0a0] text-sm pl-12">Track applications, networking, and job search momentum.</p>
+          </header>
+        )}
 
         <Tabs defaultValue="pipeline">
           <TabsList className="mb-6">

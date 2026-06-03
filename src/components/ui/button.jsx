@@ -12,17 +12,18 @@ const Button = React.forwardRef(({
 
   const variants = {
     /* 4-tier design system */
-    volt:        "bg-brand text-black rounded-md hover:bg-[#d9ff1a]",
-    dark:        "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
+    volt:        "bg-brand text-black rounded-md hover:bg-brand/90 hover:shadow-neon",
+    energy:      "bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-md hover:opacity-95 shadow-energy",
+    dark:        "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
     ghost:       "bg-transparent text-brand border border-brand/25 rounded-md hover:bg-brand/[8%]",
-    dim:         "bg-transparent text-[#a0a0a0] border border-[#2a2a2a] rounded-md hover:bg-[#242424] hover:text-white",
+    dim:         "bg-transparent text-[#a0a0a0] border border-charcoal-border rounded-md hover:bg-charcoal-surface2 hover:text-white",
     /* utility / legacy variants */
-    default:     "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
-    primary:     "bg-brand text-black rounded-md hover:bg-[#d9ff1a]",
-    ai:          "bg-[#202020] text-white border border-[#2a2a2a] rounded-md hover:bg-[#242424]",
+    default:     "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
+    primary:     "bg-brand text-black rounded-md hover:bg-brand/90",
+    ai:          "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
     destructive: "bg-transparent text-[#f87171] border border-[rgba(239,68,68,0.35)] rounded-md hover:bg-[rgba(239,68,68,0.12)] hover:border-[rgba(239,68,68,0.6)]",
-    outline:     "border border-[#2a2a2a] bg-transparent text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
-    secondary:   "bg-[#202020] text-[#a0a0a0] rounded-md hover:bg-[#242424] hover:text-white",
+    outline:     "border border-charcoal-border bg-transparent text-[#a0a0a0] rounded-md hover:bg-charcoal-surface2 hover:text-white",
+    secondary:   "bg-charcoal-surface2 text-[#a0a0a0] rounded-md hover:bg-charcoal-elevated hover:text-white",
     link:        "text-brand underline-offset-4 hover:underline",
   };
 
