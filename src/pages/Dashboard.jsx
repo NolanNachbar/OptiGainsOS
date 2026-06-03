@@ -46,6 +46,8 @@ import ReadinessRing from "@/components/dashboard/ReadinessRing";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import QuickCapture from "@/components/QuickCapture";
+import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
+import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
 
 export default function Dashboard() {
@@ -65,6 +67,24 @@ export default function Dashboard() {
 
   // Today's workout expand state
   const [showTodayExercises, setShowTodayExercises] = useState(false);
+
+  const cardioKey = (name) => `cardio_done_${user?.id}_${today}_${name}`;
+  const [cardioChecked, setCardioChecked] = useState(() => {
+    const stored = {};
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(`cardio_done_${user?.id}_${today}_`))
+        .forEach(k => { stored[k.split('_').slice(4).join('_')] = true; });
+    } catch {}
+    return stored;
+  });
+  const toggleCardio = (name) => {
+    const key = cardioKey(name);
+    const next = !cardioChecked[name];
+    setCardioChecked(prev => ({ ...prev, [name]: next }));
+    if (next) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
+  };
   const [muscleView, setMuscleView] = useState("anterior");
 
   // Schedule state
@@ -537,6 +557,17 @@ export default function Dashboard() {
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
   const exerciseCount = todayExercises.length || todayWorkoutDetails?.exercises?.length || 0;
 
+  const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
+  const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
+
+  // Best log for today = longest duration
+  const todayLog = workoutLogs
+    .filter(l => l.log_date === today)
+    .sort((a, b) => (b.duration_seconds || 0) - (a.duration_seconds || 0))[0] || null;
+
+  const todayLogLifts = (todayLog?.exercises || []).filter(ex => !isRunEx(ex));
+  const todayProgramRuns = (todayProgramWorkout?.exercises || []).filter(isRunEx);
+
   if (!user) {
     return <DashboardSkeleton />;
   }
@@ -550,6 +581,11 @@ export default function Dashboard() {
             <h1 className="text-[22px] font-bold text-white leading-tight">OptiGainsOS</h1>
             <p className="text-[13px] text-[#a0a0a0] mt-0.5">Training status as of today</p>
           </div>
+          <Link to="/athlete-state">
+            <Button variant="ghost" size="sm" className="text-[#555555] text-xs gap-1.5 hover:text-brand">
+              <Activity className="w-3.5 h-3.5" /> Athlete State
+            </Button>
+          </Link>
         </div>
 
         {/* First-workout welcome banner — shown until user logs a workout or dismisses */}
@@ -573,6 +609,115 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Today's Workouts ── */}
+        <div className="space-y-3 mb-6">
+
+          {/* Completed lift */}
+          {todayLog ? (
+            <div className="rounded-xl bg-[#1a1a1a] border border-green-500/30 overflow-hidden">
+              <div className="h-0.5 bg-green-500" />
+              <div className="px-5 pt-4 pb-3">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-green-400/70 mb-1">Completed</p>
+                    <h3 className="text-lg font-bold text-white">{workoutTitle || "Lifting Session"}</h3>
+                    {todayLog.duration_seconds && (
+                      <p className="text-xs text-[#555555] mt-0.5">{Math.round(todayLog.duration_seconds / 60)} min</p>
+                    )}
+                  </div>
+                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-1" />
+                </div>
+                <div className="space-y-1">
+                  {todayLogLifts.map((ex, i) => {
+                    const sets = (ex.sets || []).filter(s => s.completed !== false);
+                    const w = sets[0]?.weight;
+                    const r = sets[0]?.reps;
+                    const label = sets.length === 1
+                      ? (w ? `${w} × ${r}` : `${r} reps`)
+                      : sets.every(s => s.weight === w && s.reps === r)
+                        ? (w ? `${sets.length}×${r} @ ${w}` : `${sets.length}×${r}`)
+                        : `${sets.length} sets`;
+                    return (
+                      <div key={i} className="flex items-baseline justify-between gap-2">
+                        <span className="text-sm text-white">{ex.name}</span>
+                        <span className="text-xs text-[#555555] tabular-nums shrink-0">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : workoutTitle ? (
+            /* Upcoming lift — not yet done */
+            <div
+              className="rounded-xl bg-[#1a1a1a] border-l-4 border-brand border border-[#2a2a2a] overflow-hidden"
+              data-tutorial="start-workout-btn"
+            >
+              <div className="px-5 pt-4 pb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Dumbbell className="w-4 h-4 text-brand" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Today's Lift</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">{workoutTitle}</h3>
+                <div className="flex items-center gap-3 text-xs text-[#555555] mb-3">
+                  {exerciseCount > 0 && <span>{exerciseCount} exercises</span>}
+                  {todayProgramWorkout && <span>Day {todayProgramWorkout.dayIndex}</span>}
+                </div>
+                {todayWorkoutLink && (
+                  <Link to={todayWorkoutLink}>
+                    <Button variant="volt" size="sm" className="w-full" data-tutorial="start-workout-btn">
+                      Start Workout <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : activeEnrollment ? (
+            <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-5 py-4 text-center">
+              <p className="text-sm text-[#555555]">Rest day</p>
+            </div>
+          ) : null}
+
+          {/* Tonight's run */}
+          {todayProgramRuns.length > 0 && (
+            <div className="rounded-xl bg-[#1a1a1a] border border-blue-500/20 overflow-hidden">
+              <div className="h-0.5 bg-blue-500" />
+              <div className="px-5 pt-4 pb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Tonight — Cardio</span>
+                </div>
+                {todayProgramRuns.map((ex, i) => {
+                  const done = !!cardioChecked[ex.name];
+                  return (
+                    <div key={i} className="flex items-start justify-between gap-3">
+                      <div className={done ? "opacity-50" : ""}>
+                        <div className="flex items-baseline gap-2">
+                          <h3 className={`text-lg font-bold ${done ? "line-through text-[#555555]" : "text-white"}`}>{ex.name}</h3>
+                          <span className="text-sm text-[#555555]">{ex.rep_target}</span>
+                        </div>
+                        {ex.notes && <p className="text-xs text-[#555555] mt-0.5">{ex.notes}</p>}
+                      </div>
+                      <button
+                        onClick={() => toggleCardio(ex.name)}
+                        className={`shrink-0 mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          done ? "bg-green-500 border-green-500" : "border-[#444] hover:border-blue-400"
+                        }`}
+                      >
+                        {done && <CheckCircle2 className="w-4 h-4 text-white" />}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ── AI Suggested Workout ── */}
+        <NextWorkoutCard today={today} />
 
         {/* ── Morning Check-in & Readiness ── */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -637,10 +782,15 @@ export default function Dashboard() {
         {/* ── Today's Actions ── */}
         <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
 
+        {/* ── Soreness Check-in ── */}
+        <div className="mb-6">
+          <SorenessCheckin today={today} />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* ── Today's Workout Card ── */}
+          {/* ── Today's Workout Card (hidden here, shown at top) ── */}
           <div
-            className="rounded-xl bg-[#1a1a1a] text-white overflow-hidden relative border-l-4 border-brand"
+            className="hidden"
             data-tutorial="start-workout-btn"
           >
             <div className="px-5 pt-4 pb-1">

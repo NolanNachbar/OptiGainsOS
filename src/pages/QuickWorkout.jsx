@@ -19,6 +19,8 @@ import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
+import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
+import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
 
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
@@ -48,6 +50,9 @@ export default function QuickWorkout() {
 
   const { profile } = useProfile();
   const weightUnit = profile?.weight_unit || 'lbs';
+  const [insightDismissed, setInsightDismissed] = useState(false);
+  // exercise name → suggested weight from accepted pre-session insight
+  const [insightSuggestions, setInsightSuggestions] = useState({});
 
   // Fetch all workout logs for autofill
   const { data: allWorkoutLogs = [] } = useQuery({
@@ -59,6 +64,24 @@ export default function QuickWorkout() {
     },
     enabled: !!user,
   });
+
+  const coachingPhase = useMemo(() => getCoachingPhase(allWorkoutLogs), [allWorkoutLogs]);
+  const preSessionInsight = useMemo(() => {
+    if (coachingPhase < 2 || insightDismissed) return null;
+    return getPreSessionInsight(allWorkoutLogs);
+  }, [allWorkoutLogs, coachingPhase, insightDismissed]);
+
+  const handleInsightAccept = (insight) => {
+    setInsightSuggestions(prev => ({
+      ...prev,
+      [insight.exerciseName.toLowerCase()]: insight.suggestedWeight,
+    }));
+    setInsightDismissed(true);
+  };
+
+  const handleApplyCoachingSuggestion = (exerciseIdx, setIdx, weight) => {
+    updateSetData(exerciseIdx, setIdx, 'weight', weight);
+  };
 
   // All exercise names: DB base + user history, deduped and sorted
   const allHistoryExerciseNames = useMemo(() => {
@@ -82,11 +105,11 @@ export default function QuickWorkout() {
     addExercise: addExerciseRaw,
   } = useWorkoutExercises([]);
 
-  // Wrapper for addExercise that autofills weight from last performance
+  // Wrapper for addExercise that autofills weight from last performance or insight suggestion
   const addExercise = (exerciseName) => {
+    const suggestion = insightSuggestions[exerciseName.toLowerCase()];
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, exerciseName);
-    const defaultWeight = lastPerf?.lastWeight || 0;
-
+    const defaultWeight = suggestion || lastPerf?.lastWeight || 0;
     addExerciseRaw(exerciseName, defaultWeight);
   };
 
@@ -249,6 +272,15 @@ export default function QuickWorkout() {
           <p className="text-[#a0a0a0] text-sm mt-1">Add exercises as you go</p>
         </div>
 
+        {/* Pre-session insight card (Phase 2+) */}
+        {preSessionInsight && (
+          <PreSessionInsightCard
+            insight={preSessionInsight}
+            onAccept={handleInsightAccept}
+            onDismiss={() => setInsightDismissed(true)}
+          />
+        )}
+
         {/* Exercise List */}
         <div className="space-y-4">
           {exercises.map((exercise, exerciseIndex) => {
@@ -267,6 +299,9 @@ export default function QuickWorkout() {
                 onUpdateName={updateExerciseName}
                 lastPerformance={lastPerformance}
                 allExerciseNames={allHistoryExerciseNames}
+                workoutLogs={allWorkoutLogs}
+                coachingPhase={coachingPhase}
+                onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
               />
             );
           })}

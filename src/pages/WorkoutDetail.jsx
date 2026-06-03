@@ -211,7 +211,7 @@ export default function WorkoutDetail() {
             sets: ex.sets || 3,
             reps: ex.rep_target || '10',
             rest_seconds: ex.rest_seconds || 180,
-            notes: null,
+            notes: ex.notes || null,
           })),
           created_by: user.id,
           _isProgramWorkout: true,
@@ -921,15 +921,19 @@ export default function WorkoutDetail() {
                             </table>
                           ) : (
                             <div className="flex flex-wrap gap-4 text-sm text-[#a0a0a0]">
+                              {exercise.sets > 1 && (
+                                <div>
+                                  <span className="font-medium">Sets:</span> {exercise.sets}
+                                </div>
+                              )}
                               <div>
-                                <span className="font-medium">Sets:</span> {exercise.sets}
+                                <span className="font-medium">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> {exercise.reps}
                               </div>
-                              <div>
-                                <span className="font-medium">Reps:</span> {exercise.reps}
-                              </div>
-                              <div>
-                                <span className="font-medium">Rest:</span> {exercise.rest_seconds}s
-                              </div>
+                              {exercise.rest_seconds > 0 && (
+                                <div>
+                                  <span className="font-medium">Rest:</span> {exercise.rest_seconds}s
+                                </div>
+                              )}
                             </div>
                           )}
                           {exercise.notes && (

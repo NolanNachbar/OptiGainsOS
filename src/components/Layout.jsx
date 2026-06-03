@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Home, Dumbbell, UtensilsCrossed, Brain, Briefcase } from "lucide-react";
+import { Home, Dumbbell, UtensilsCrossed, Brain, Briefcase, CalendarDays } from "lucide-react";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -12,9 +12,9 @@ import { useStravaAutoSync } from "@/hooks/useStravaAutoSync";
 const navigationItems = [
   { title: "Home", url: "/dashboard", icon: Home },
   { title: "Train", url: "/workouts", icon: Dumbbell },
+  { title: "Schedule", url: "/weekly-schedule", icon: CalendarDays },
   { title: "Fuel", url: "/food-tracker", icon: UtensilsCrossed },
   { title: "Mind", url: "/mind", icon: Brain },
-  { title: "Career", url: "/career", icon: Briefcase },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -50,6 +50,7 @@ export default function Layout({ children, currentPageName }) {
     Workouts: "Train",
     FoodTracker: "Fuel",
     Schedule: "Schedule",
+    WeeklySchedule: "Schedule",
     Mind: "Mind",
     Career: "Career",
     Profile: "Profile",

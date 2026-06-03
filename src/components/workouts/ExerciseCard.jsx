@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, ChevronRight } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
+import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
 
@@ -44,11 +45,15 @@ export default function ExerciseCard({
   equipment = [],
   currentWeekExerciseNames = [],
   allExerciseNames = [],
+  workoutLogs = [],          // all historical logs for between-set coaching (Phase 3)
+  coachingPhase = 1,         // from getCoachingPhase()
+  onApplyCoachingSuggestion = null, // (exerciseIndex, setIndex, weight) => void
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nudgeMessage, setNudgeMessage] = useState(null);
+  const [coachingChip, setCoachingChip] = useState(null); // { message, suggestedWeight, type, targetSetIndex }
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [replaceAlternatives, setReplaceAlternatives] = useState(null);
   const [customExerciseName, setCustomExerciseName] = useState("");
@@ -85,10 +90,12 @@ export default function ExerciseCard({
       onStartRestTimer(restDuration);
     }
 
-    // Evaluate performance if RIR is logged (program mode)
+    // Evaluate performance if RIR is logged
     if (completed) {
       const set = exercise.sets[setIndex];
       const rir = set.rir ?? set.rpe;
+
+      // Program mode nudge
       if (rir != null && programExercise && progressionTargets) {
         const nudge = evaluateSetPerformance(
           programExercise,
@@ -103,6 +110,21 @@ export default function ExerciseCard({
           nudgeTimerRef.current = setTimeout(() => setNudgeMessage(null), 8000);
         }
       }
+
+      // Phase 3 between-set coaching (free workout mode)
+      if (rir != null && coachingPhase >= 3 && !programExercise) {
+        const chip = getBetweenSetCoaching(
+          workoutLogs,
+          exercise.name,
+          { weight: set.weight, reps: set.reps, rir, set_number: set.set_number ?? setIndex + 1 },
+          exercise.sets.length,
+          exercise.sets.filter(s => s.completed)
+        );
+        if (chip) {
+          const nextSetIndex = setIndex + 1 < exercise.sets.length ? setIndex + 1 : null;
+          setCoachingChip({ ...chip, targetSetIndex: nextSetIndex });
+        }
+      }
     }
   };
 
@@ -110,6 +132,7 @@ export default function ExerciseCard({
     onUpdateSet(exerciseIndex, setIndex, 'rir', rir);
 
     const set = exercise.sets[setIndex];
+
     if (set.completed && programExercise && progressionTargets) {
       const nudge = evaluateSetPerformance(
         programExercise,
@@ -122,6 +145,21 @@ export default function ExerciseCard({
         onNudge?.(nudge);
         if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
         nudgeTimerRef.current = setTimeout(() => setNudgeMessage(null), 8000);
+      }
+    }
+
+    // Phase 3 chip triggered when RIR is entered on a completed set in free mode
+    if (set.completed && coachingPhase >= 3 && !programExercise) {
+      const chip = getBetweenSetCoaching(
+        workoutLogs,
+        exercise.name,
+        { weight: set.weight, reps: set.reps, rir, set_number: set.set_number ?? setIndex + 1 },
+        exercise.sets.length,
+        exercise.sets.filter(s => s.completed)
+      );
+      if (chip) {
+        const nextSetIndex = setIndex + 1 < exercise.sets.length ? setIndex + 1 : null;
+        setCoachingChip({ ...chip, targetSetIndex: nextSetIndex });
       }
     }
   };
@@ -261,7 +299,7 @@ export default function ExerciseCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {/* Advisory nudge */}
+        {/* Advisory nudge (program mode) */}
         {nudgeMessage && (
           <div className={`mb-3 p-2.5 rounded-lg text-sm flex items-start gap-2 ${
             nudgeMessage.type === 'success' ? 'bg-[rgba(34,197,94,0.08)] text-[#4ade80]' :
@@ -275,6 +313,28 @@ export default function ExerciseCard({
             )}
             <span>{nudgeMessage.message}</span>
             <button onClick={() => setNudgeMessage(null)} className="ml-auto flex-shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Between-set coaching chip (Phase 3) */}
+        {coachingChip && (
+          <div className="mb-3 p-2.5 rounded-lg bg-brand/5 border border-brand/20 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-brand flex-shrink-0" />
+            <span className="text-sm text-[#d0d0d0] flex-1">{coachingChip.message}</span>
+            {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
+              <button
+                className="text-xs font-semibold text-brand border border-brand/40 rounded px-2 py-0.5 hover:bg-brand/10"
+                onClick={() => {
+                  onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
+                  setCoachingChip(null);
+                }}
+              >
+                Apply
+              </button>
+            )}
+            <button onClick={() => setCoachingChip(null)} className="text-[#444] hover:text-[#888] flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>

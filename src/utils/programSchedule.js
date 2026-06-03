@@ -1,4 +1,4 @@
-import { addDays, format, isBefore, isEqual, parseISO } from "date-fns";
+import { addDays, format, isBefore, isEqual, parseISO, parse } from "date-fns";
 
 const CARDIO_ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
 
@@ -66,6 +66,13 @@ export function getProgramSchedule(enrollment, workouts) {
   const startDate = enrollment.start_date || enrollment.started_at;
   if (!startDate) return [];
 
+  // Slice to YYYY-MM-DD and parse as local midnight to avoid UTC→local timezone shifts
+  const anchor = parse(
+    (typeof startDate === 'string' ? startDate : format(new Date(startDate), 'yyyy-MM-dd')).slice(0, 10),
+    'yyyy-MM-dd',
+    new Date()
+  );
+
   // Training days only (ignore rest/empty days), sorted by day_index
   const trainingDays = workouts
     .filter((w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0)
@@ -126,7 +133,7 @@ export function getProgramSchedule(enrollment, workouts) {
       // Convert to 0-based offset for calendar calculation
       const dayOffset = workout.day_index - 1;
       const date = format(
-        addDays(parseISO(startDate), cycleStartOffset + dayOffset),
+        addDays(anchor, cycleStartOffset + dayOffset),
         "yyyy-MM-dd"
       );
 
