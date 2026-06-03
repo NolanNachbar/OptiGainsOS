@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,8 +24,9 @@ export default function TodayActions({ today, briefActions = [] }) {
   const todayStr = today || getTodayString();
   const [newText, setNewText] = useState("");
   const [adding, setAdding] = useState(false);
+  const seedingRef = useRef(false);
 
-  const { data: todos = [] } = useQuery({
+  const { data: rawTodos = [] } = useQuery({
     queryKey: ["todos", todayStr, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,11 +41,20 @@ export default function TodayActions({ today, briefActions = [] }) {
     enabled: !!user,
   });
 
+  // Deduplicate by text, keeping the earliest created_at per unique text
+  const seen = new Set();
+  const todos = rawTodos.filter(t => {
+    if (seen.has(t.text)) return false;
+    seen.add(t.text);
+    return true;
+  });
+
   // Seed AI-generated todos from the brief on first load for today
   useEffect(() => {
     if (!user || !briefActions?.length) return;
     const seedKey = `todos_seeded_${user.id}_${todayStr}`;
-    if (localStorage.getItem(seedKey)) return;
+    if (localStorage.getItem(seedKey) || seedingRef.current) return;
+    seedingRef.current = true;
 
     const rows = briefActions.map(text => ({
       created_by: user.id,
@@ -58,6 +68,8 @@ export default function TodayActions({ today, briefActions = [] }) {
       if (!error) {
         localStorage.setItem(seedKey, "1");
         queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
+      } else {
+        seedingRef.current = false;
       }
     });
   }, [briefActions, user, todayStr, queryClient]);
