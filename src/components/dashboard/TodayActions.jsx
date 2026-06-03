@@ -124,24 +124,24 @@ export default function TodayActions({ today, briefActions = [] }) {
     <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+          <CardTitle className="text-xs font-bold tracking-widest text-slate-400 flex items-center gap-2 uppercase">
             <ListChecks className="w-4 h-4 text-brand" />
             Today's Actions
             {total > 0 && (
-              <span className="text-[10px] font-bold text-[#555555] ml-1">{completed}/{total}</span>
+              <span className="font-technical text-[10px] text-slate-500 ml-1.5 font-bold">{completed}/{total}</span>
             )}
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setAdding(v => !v)}
-            className="h-6 w-6 p-0 text-[#555555] hover:text-brand"
+            className="h-6 w-6 p-0 text-slate-600 hover:text-brand"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
         {total > 0 && (
-          <div className="h-0.5 bg-[#2a2a2a] rounded-full mt-2">
+          <div className="h-[2px] bg-slate-900 rounded-full mt-2.5">
             <div
               className="h-full bg-brand rounded-full transition-all duration-500"
               style={{ width: `${(completed / total) * 100}%` }}
@@ -149,40 +149,40 @@ export default function TodayActions({ today, briefActions = [] }) {
           </div>
         )}
       </CardHeader>
-      <CardContent className="px-5 pb-4 pt-1">
-        <div className="space-y-1.5">
+      <CardContent className="px-5 pb-4 pt-1.5">
+        <div className="space-y-1">
           {todos.map(todo => (
             <div
               key={todo.id}
-              className="flex items-center gap-2.5 group py-1"
+              className="flex items-center gap-3 group py-1.5 border-b border-charcoal-border/30 last:border-0"
             >
               <button
                 onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
-                className="shrink-0 text-[#555555] hover:text-brand transition-colors"
+                className="shrink-0 text-slate-600 hover:text-brand transition-colors"
               >
                 {todo.completed
                   ? <CheckCircle2 className="w-4 h-4 text-brand" />
                   : <Circle className="w-4 h-4" />
                 }
               </button>
-              <span className={`flex-1 text-sm leading-snug ${todo.completed ? "line-through text-[#555555]" : "text-[#e0e0e0]"}`}>
+              <span className={`flex-1 text-sm leading-normal ${todo.completed ? "line-through text-slate-500" : "text-slate-200"}`}>
                 {todo.text}
               </span>
               {todo.source === "ai_generated" && (
-                <Bot className={`w-3 h-3 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-[#555555]"}`} />
+                <Bot className={`w-3.5 h-3.5 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-slate-600"}`} />
               )}
               <button
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="opacity-0 group-hover:opacity-100 text-[#555555] hover:text-red-400 transition-all shrink-0"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all shrink-0 p-0.5"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
         </div>
-
+ 
         {adding && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-[#2a2a2a]">
+          <div className="flex gap-2 mt-4 pt-4 border-t border-charcoal-border">
             <Input
               autoFocus
               value={newText}
@@ -192,12 +192,12 @@ export default function TodayActions({ today, briefActions = [] }) {
                 if (e.key === "Escape") { setAdding(false); setNewText(""); }
               }}
               placeholder="Add a task..."
-              className="h-8 text-sm flex-1"
+              className="h-9 text-sm flex-1 bg-slate-900/50 border-charcoal-border focus:border-brand"
             />
             <Button
               size="sm"
               variant="volt"
-              className="h-8 px-3"
+              className="h-9 px-4 font-bold text-xs uppercase tracking-wider"
               disabled={!newText.trim() || addMutation.isPending}
               onClick={() => addMutation.mutate()}
             >

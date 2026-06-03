@@ -104,3 +104,11 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   fill: #27273a !important;
   stroke: var(--color-brand) !important;
 }
+
+/* Technical numbers utility (MacroFactor style) */
+.font-technical {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+

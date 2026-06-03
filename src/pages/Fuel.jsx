@@ -159,7 +159,9 @@ export default function Fuel() {
                   <div className="flex items-center gap-3">
                     {todayWeight ? (
                       <div>
-                        <p className="text-lg font-bold text-white font-mono leading-none">{todayWeight.weight} <span className="text-xs text-slate-400 font-normal">{profile?.weight_unit || "lbs"}</span></p>
+                        <p className="text-lg font-bold text-white font-technical leading-none">
+                          {todayWeight.weight} <span className="text-xs text-slate-400 font-normal">{profile?.weight_unit || "lbs"}</span>
+                        </p>
                         <p className="text-[9px] text-emerald-400 font-bold uppercase mt-1 leading-none">Logged today</p>
                       </div>
                     ) : (
@@ -173,30 +175,30 @@ export default function Fuel() {
                       value={weight}
                       onChange={e => setWeight(e.target.value)}
                       placeholder="0.0"
-                      className="w-20 h-9 text-sm font-semibold"
+                      className="w-20 h-9 text-sm font-technical font-semibold bg-slate-900 border-charcoal-border focus:border-brand"
                     />
-                    <Button variant="volt" size="sm" onClick={() => logWeightMutation.mutate()} disabled={!weight}>
+                    <Button variant="volt" size="sm" className="h-9 px-4 uppercase tracking-wider font-bold text-xs" onClick={() => logWeightMutation.mutate()} disabled={!weight}>
                       Log
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </section>
-
+ 
             {/* Hydration Section */}
             <section className="space-y-2">
               <div className="flex items-center justify-between">
                 <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
                   <Droplets className="w-3.5 h-3.5 text-brand" /> Water Log
                 </h2>
-                <span className="text-sm font-bold text-brand font-mono">{totalWater} ml</span>
+                <span className="text-sm font-bold text-brand font-technical">{totalWater} ml</span>
               </div>
               <div className="flex gap-2">
                 {[250, 500, 750].map(ml => (
                   <Button
                     key={ml}
                     variant="ghost"
-                    className="flex-1 bg-charcoal-surface border border-charcoal-border h-12 text-xs font-bold text-slate-400 hover:bg-brand/10 hover:text-brand transition-all"
+                    className="flex-1 bg-charcoal-surface border border-charcoal-border h-12 text-xs font-bold text-slate-400 hover:bg-brand/10 hover:text-brand hover:border-brand/40 transition-all font-technical"
                     onClick={() => addWater.mutate(ml)}
                   >
                     +{ml}ml
@@ -204,7 +206,7 @@ export default function Fuel() {
                 ))}
               </div>
             </section>
-
+ 
             {/* Supplement Section */}
             {suppTypes.length > 0 && (
               <section className="space-y-2">
@@ -218,15 +220,15 @@ export default function Fuel() {
                       <Button
                         key={type.id}
                         variant="ghost"
-                        className={`h-auto py-3 px-4 justify-start border transition-all ${
+                        className={`h-auto py-3 px-4 justify-start border transition-all rounded-xl ${
                           taken 
                             ? "bg-brand/5 border-brand/20 text-brand font-bold" 
-                            : "bg-charcoal-surface border-charcoal-border text-slate-400"
+                            : "bg-charcoal-surface border-charcoal-border text-slate-400 hover:border-slate-800"
                         }`}
                         onClick={() => logSupp.mutate(type)}
                       >
-                        <div className="flex items-center gap-2">
-                          {taken ? <CheckCircle2 className="w-4 h-4 text-brand" /> : <Plus className="w-4 h-4 text-slate-500" />}
+                        <div className="flex items-center gap-2.5">
+                          {taken ? <CheckCircle2 className="w-4 h-4 text-brand shrink-0" /> : <Plus className="w-4 h-4 text-slate-500 shrink-0" />}
                           <span className="text-xs font-semibold text-left capitalize leading-tight">{type.name}</span>
                         </div>
                       </Button>
@@ -235,35 +237,35 @@ export default function Fuel() {
                 </div>
               </section>
             )}
-
+ 
             {/* Quick Capture */}
             <section className="space-y-2">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Stream Note</h2>
               <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
             </section>
-
+ 
             {/* Recent History */}
             <section className="space-y-2 pt-2 pb-12">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5 text-slate-500" /> Recent Activity
               </h2>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {todaySupps.slice(0, 3).map(s => (
-                  <div key={s.id} className="flex items-center justify-between text-xs text-slate-500 px-3.5 py-2.5 bg-charcoal-surface/60 rounded-xl border border-charcoal-border">
-                    <span>Took {s.supplement_name}</span>
-                    <span className="font-mono text-[10px]">{format(parseISO(s.taken_at), "h:mm a")}</span>
+                  <div key={s.id} className="flex items-center justify-between text-xs text-slate-400 px-4 py-3 bg-charcoal-surface/60 rounded-xl border border-charcoal-border/50">
+                    <span className="font-semibold">Took {s.supplement_name}</span>
+                    <span className="font-technical text-[10px] text-slate-500">{format(parseISO(s.taken_at), "h:mm a")}</span>
                   </div>
                 ))}
                 {todayWater.slice(-3).reverse().map(w => (
-                  <div key={w.id} className="flex items-center justify-between text-xs text-slate-500 px-3.5 py-2.5 bg-charcoal-surface/60 rounded-xl border border-charcoal-border">
-                    <span>Drank {w.amount_ml}ml water</span>
-                    <span className="font-mono text-[10px]">{format(parseISO(w.logged_at), "h:mm a")}</span>
+                  <div key={w.id} className="flex items-center justify-between text-xs text-slate-400 px-4 py-3 bg-charcoal-surface/60 rounded-xl border border-charcoal-border/50">
+                    <span className="font-semibold">Drank {w.amount_ml}ml water</span>
+                    <span className="font-technical text-[10px] text-slate-500">{format(parseISO(w.logged_at), "h:mm a")}</span>
                   </div>
                 ))}
                 {todayWeight && (
-                  <div className="flex items-center justify-between text-xs text-slate-500 px-3.5 py-2.5 bg-charcoal-surface/60 rounded-xl border border-charcoal-border">
-                    <span>Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
-                    <span className="font-mono text-[10px]">{format(parseISO(todayWeight.recorded_date), "MMM d")}</span>
+                  <div className="flex items-center justify-between text-xs text-slate-400 px-4 py-3 bg-charcoal-surface/60 rounded-xl border border-charcoal-border/50">
+                    <span className="font-semibold">Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
+                    <span className="font-technical text-[10px] text-slate-500">{format(parseISO(todayWeight.recorded_date), "MMM d")}</span>
                   </div>
                 )}
               </div>

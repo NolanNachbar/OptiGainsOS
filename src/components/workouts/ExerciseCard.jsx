@@ -194,40 +194,40 @@ export default function ExerciseCard({
                 </div>
                 {/* Program targets */}
                 {isProgramMode && progressionTargets && (
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2.5 mt-1">
                     {progressionTargets.workingWeight && (
-                      <span className="text-xs text-brand font-medium">
-                        Target: {progressionTargets.workingWeight} {weightUnit}
+                      <span className="text-xs text-brand font-semibold">
+                        Target: <span className="font-technical">{progressionTargets.workingWeight}</span> {weightUnit}
                       </span>
                     )}
                     {progressionTargets.dailyMin && (
-                      <span className="text-xs text-[#555555]">
-                        Min: {progressionTargets.dailyMin} {weightUnit}
+                      <span className="text-xs text-slate-500">
+                        Min: <span className="font-technical text-slate-400">{progressionTargets.dailyMin}</span> {weightUnit}
                       </span>
                     )}
                     {programExercise.rir_target && (
-                      <span className="text-xs text-[#555555]">
-                        RIR {programExercise.rir_target}
+                      <span className="text-xs text-slate-500">
+                        RIR <span className="font-technical text-slate-400">{programExercise.rir_target}</span>
                       </span>
                     )}
                   </div>
                 )}
                 {/* Original exercise targets (non-program) */}
                 {!isProgramMode && originalExercise && (
-                  <p className="text-sm text-[#a0a0a0]">
-                    Target: {originalExercise.sets || 3} sets × {originalExercise.reps || 10} reps
+                  <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wide">
+                    Target: <span className="font-technical">{originalExercise.sets || 3}</span> sets × <span className="font-technical">{originalExercise.reps || 10}</span> reps
                   </p>
                 )}
                 {/* Last performance data */}
                 {lastPerformance && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <History className="w-3 h-3 text-[#555555]" />
-                    <span className="text-xs text-[#a0a0a0]">
-                      Last: <span className="font-semibold text-brand">
-                        {lastPerformance.lastWeight} {weightUnit} × {lastPerformance.lastReps}
-                      </span>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <History className="w-3 h-3 text-slate-600" />
+                    <span className="text-xs text-slate-500">
+                      Last: <span className="font-semibold text-brand font-technical">
+                        {lastPerformance.lastWeight}
+                      </span><span className="text-[10px] text-slate-600 ml-0.5">{weightUnit}</span> × <span className="font-technical text-brand font-semibold">{lastPerformance.lastReps}</span>
                       {lastPerformance.lastDate && (
-                        <span className="text-[#555555] text-[#555555] ml-1">
+                        <span className="text-slate-600 ml-1.5 font-technical text-[10px]">
                           ({format(new Date(lastPerformance.lastDate), 'MMM d')})
                         </span>
                       )}
@@ -343,38 +343,40 @@ export default function ExerciseCard({
         <div className="overflow-x-auto -mx-1">
           <table className="w-full min-w-full">
             <thead>
-              <tr className="text-xs md:text-sm text-[#a0a0a0] border-b border-[#2a2a2a]">
-                <th className="text-left py-2 px-1 w-8 md:w-12">Set</th>
-                <th className="text-left py-2 px-1 text-xs md:text-xs">Wt</th>
-                <th className="text-left py-2 px-1 text-xs md:text-xs">Reps</th>
+              <tr className="text-xs text-slate-500 border-b border-charcoal-border/50 uppercase tracking-wider font-semibold">
+                <th className="text-left py-2 px-1.5 w-8 md:w-12">Set</th>
+                <th className="text-left py-2 px-1.5 text-xs">Weight</th>
+                <th className="text-left py-2 px-1.5 text-xs">Reps</th>
                 {showRIR && (
-                  <th className="text-left py-2 px-1 w-16 md:w-24 text-xs md:text-xs">
+                  <th className="text-left py-2 px-1.5 w-16 md:w-24 text-xs">
                     <div className="flex items-center gap-1">
                       <span>RPE</span>
                       <div className="group relative">
-                        <HelpCircle className="w-3 h-3 cursor-help text-[#a0a0a0] hover:text-[#a0a0a0]" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-[#121212] text-white text-xs rounded">
+                        <HelpCircle className="w-3 h-3 cursor-help text-slate-500 hover:text-slate-400" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-[#121212] text-white text-xs rounded border border-charcoal-border shadow-lg">
                           Rate of Perceived Exertion (1-10): How hard the set felt. 10 = failure, 9 = 1 rep left, 8 = 2 reps left.
                         </div>
                       </div>
                     </div>
                   </th>
                 )}
-                <th className="text-center py-2 px-1 w-10 md:w-12 text-xs md:text-xs">✓</th>
-                <th className="text-center py-2 px-1 w-8 md:w-12"></th>
+                <th className="text-center py-2 px-1.5 w-10 md:w-12 text-xs">✓</th>
+                <th className="text-center py-2 px-1.5 w-8 md:w-12"></th>
               </tr>
             </thead>
             <tbody>
               {exercise.sets.map((set, setIndex) => (
-                <tr key={setIndex} className={
+                <tr key={setIndex} className={`transition-colors border-b border-charcoal-border/20 ${
                   set.completed
-                    ? set.set_type === 'daily_min' ? "bg-[rgba(59,130,246,0.08)]" : "bg-[rgba(34,197,94,0.1)]"
-                    : ""
-                }>
-                  <td className="py-2 px-1">
-                    <span className="font-medium text-[#a0a0a0] text-[#a0a0a0] text-sm">{set.set_number}</span>
+                    ? set.set_type === 'daily_min' 
+                      ? "bg-blue-500/5 border-l-2 border-l-blue-500" 
+                      : "bg-emerald-500/5 border-l-2 border-l-emerald-500"
+                    : "border-l-2 border-l-transparent"
+                }`}>
+                  <td className="py-2.5 px-1.5">
+                    <span className="font-technical text-sm font-semibold text-slate-400">{set.set_number}</span>
                   </td>
-                  <td className="py-2 px-1">
+                  <td className="py-2.5 px-1.5">
                     <Input
                       type="number"
                       value={set.weight || ""}
@@ -391,10 +393,10 @@ export default function ExerciseCard({
                       }
                       min="0"
                       step="2.5"
-                      className="w-16 md:w-24 h-10 md:h-9 text-sm touch-manipulation"
+                      className="w-16 md:w-24 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand"
                     />
                   </td>
-                  <td className="py-2 px-1">
+                  <td className="py-2.5 px-1.5">
                     <Input
                       type="number"
                       value={set.reps || ""}
@@ -402,11 +404,11 @@ export default function ExerciseCard({
                       onFocus={(e) => e.target.select()}
                       placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
                       min="0"
-                      className="w-14 md:w-20 h-10 md:h-9 text-sm touch-manipulation"
+                      className="w-14 md:w-20 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand"
                     />
                   </td>
                   {showRIR && (
-                    <td className="py-2 px-1">
+                    <td className="py-2.5 px-1.5">
                       <Input
                         type="number"
                         value={(set.rir != null ? 10 - set.rir : set.rpe) ?? ""}
@@ -420,25 +422,25 @@ export default function ExerciseCard({
                         min="1"
                         max="10"
                         step="0.5"
-                        className="w-14 md:w-24 h-10 md:h-9 text-center text-sm touch-manipulation"
+                        className="w-14 md:w-24 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand text-brand"
                       />
                     </td>
                   )}
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1.5 text-center">
                     <Checkbox
                       checked={set.completed}
                       onCheckedChange={(checked) => handleSetCompleted(setIndex, checked)}
-                      className="h-6 w-6 md:h-6 md:w-6"
+                      className="h-5 w-5 md:h-5 md:w-5 border-charcoal-border data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                     />
                   </td>
-                  <td className="py-2 px-1 text-center">
+                  <td className="py-2.5 px-1.5 text-center">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                      className="h-7 w-7 md:h-8 md:w-8 text-[#a0a0a0] hover:text-[#f87171] hover:bg-red-50"
+                      className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-500/10"
                     >
-                      <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </Button>
                   </td>
                 </tr>

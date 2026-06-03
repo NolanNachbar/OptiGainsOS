@@ -599,86 +599,86 @@ export default function Dashboard() {
         </div>
 
         {/* ── METABOLIC GRID (The Engine Room) ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-charcoal-border rounded-xl overflow-hidden border border-charcoal-border shadow-dark-card mb-4">
           
           {/* Expenditure Tile */}
-          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
-                <Flame className="w-3 h-3 text-orange-400" /> Expenditure
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-orange-400" /> Expenditure
               </p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-lg font-bold text-white tabular-nums font-mono leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
-                <span className="text-[9px] text-brand font-medium">kcal/day</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-xl font-technical text-white leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
+                <span className="text-[9px] text-brand font-medium uppercase">kcal/day</span>
               </div>
             </div>
             {tdeeResult?.method === 'adaptive' ? (
-              <span className="text-[8px] text-orange-400 bg-orange-500/10 px-1 py-0.5 rounded border border-orange-500/20 w-fit leading-none shadow-[0_0_8px_rgba(249,115,22,0.15)]">Adaptive</span>
+              <span className="text-[8px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 w-fit leading-none font-bold uppercase tracking-wider">Adaptive</span>
             ) : (
-              <span className="text-[8px] text-slate-500 leading-none">Estimated</span>
+              <span className="text-[8px] text-slate-500 leading-none uppercase tracking-wider font-semibold">Estimated</span>
             )}
-          </Card>
+          </div>
 
           {/* Trend Weight Tile */}
-          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
-                <Scale className="w-3 h-3 text-sky-400" /> Trend Weight
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-sky-400" /> Trend Weight
               </p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-lg font-bold text-white tabular-nums font-mono leading-none">{currentBodyWeight || "—"}</span>
-                <span className="text-[9px] text-slate-400 font-medium">{weightUnit}</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-xl font-technical text-white leading-none">{currentBodyWeight || "—"}</span>
+                <span className="text-[9px] text-slate-400 font-medium uppercase">{weightUnit}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-[9px] text-slate-500 leading-none">
-              <span className={bodyWeightChange > 0 ? "text-amber-500 font-mono font-bold" : "text-emerald-400 font-mono font-bold"}>
+            <div className="flex items-center gap-1.5 text-[9px] text-slate-500 leading-none">
+              <span className={`font-technical font-bold ${bodyWeightChange > 0 ? "text-amber-500" : "text-emerald-400"}`}>
                 {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange?.toFixed(1) || "0.0"}
               </span>
-              <span>this wk</span>
+              <span className="uppercase tracking-wider font-semibold">this wk</span>
             </div>
-          </Card>
+          </div>
 
           {/* Readiness Tile */}
-          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
-                <Zap className="w-3 h-3 text-brand" /> Readiness
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-brand" /> Readiness
               </p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-lg font-bold text-white font-mono leading-none">88</span>
-                <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-xl font-technical text-white leading-none">88</span>
+                <span className="text-[9px] text-emerald-400 font-medium uppercase">Optimal</span>
               </div>
             </div>
             <div className="flex gap-1 items-center h-2">
-              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
-              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
-              <div className="w-4 h-1 bg-brand rounded-full shadow-[0_0_6px_rgba(255,107,59,0.4)]" />
-              <div className="w-4 h-1 bg-slate-800 rounded-full" />
+              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+              <div className="w-4 h-[3px] bg-slate-800 rounded-sm" />
             </div>
-          </Card>
+          </div>
 
           {/* Nutrition Snapshot */}
-          <Card className="px-3 py-2 flex flex-col justify-between h-[82px] shadow-dark-card border-charcoal-border">
+          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1">
-                <Apple className="w-3 h-3 text-emerald-400" /> Intake
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <Apple className="w-3.5 h-3.5 text-emerald-400" /> Intake
               </p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-lg font-bold text-white font-mono leading-none">{Math.round(todayMacros.calories)}</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-xl font-technical text-white leading-none">{Math.round(todayMacros.calories)}</span>
                 <span className="text-[9px] text-slate-500 leading-none">/ {profile?.daily_calorie_goal} kcal</span>
               </div>
             </div>
-            <div className="space-y-1">
-              <div className="h-1 bg-slate-800 rounded-full overflow-hidden w-full">
+            <div className="space-y-1.5">
+              <div className="h-1 bg-slate-900 rounded-full overflow-hidden w-full">
                 <div className="h-full bg-brand" style={{ width: `${Math.min(100, (todayMacros.calories / (profile?.daily_calorie_goal || 1)) * 100)}%` }} />
               </div>
-              <div className="flex justify-between text-[8px] text-slate-500 font-mono leading-none">
-                <span>P:{Math.round(todayMacros.protein)}g</span>
-                <span>C:{Math.round(todayMacros.carbs)}g</span>
-                <span>F:{Math.round(todayMacros.fats)}g</span>
+              <div className="flex justify-between text-[9px] text-slate-400 font-technical leading-none">
+                <span>P:<span className="text-sky-400">{Math.round(todayMacros.protein)}g</span></span>
+                <span>C:<span className="text-amber-500">{Math.round(todayMacros.carbs)}g</span></span>
+                <span>F:<span className="text-emerald-500">{Math.round(todayMacros.fats)}g</span></span>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Morning Check-in (if not done) */}
