@@ -918,8 +918,8 @@ export default function WorkoutDetail() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  value={postWorkoutNotes}
+                  onChange={(e) => setPostWorkoutNotes(e.target.value)}
                   placeholder="How did the workout feel? Any personal records? Notes for next time..."
                   rows={3}
                 />
