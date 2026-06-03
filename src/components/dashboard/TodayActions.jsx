@@ -43,8 +43,8 @@ export default function TodayActions({ today, briefActions = [] }) {
   // Seed AI-generated todos from the brief on first load for today
   useEffect(() => {
     if (!user || !briefActions?.length) return;
-    const existingAI = todos.filter(t => t.source === "ai_generated");
-    if (existingAI.length > 0) return; // already seeded
+    const seedKey = `todos_seeded_${user.id}_${todayStr}`;
+    if (localStorage.getItem(seedKey)) return;
 
     const rows = briefActions.map(text => ({
       created_by: user.id,
@@ -55,9 +55,12 @@ export default function TodayActions({ today, briefActions = [] }) {
     }));
 
     supabase.from("todos").insert(rows).then(({ error }) => {
-      if (!error) queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
+      if (!error) {
+        localStorage.setItem(seedKey, "1");
+        queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
+      }
     });
-  }, [briefActions, todos, user, todayStr, queryClient]);
+  }, [briefActions, user, todayStr, queryClient]);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, completed }) => {
