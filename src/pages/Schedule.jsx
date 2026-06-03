@@ -635,7 +635,7 @@ export default function Schedule() {
         const workoutTemplate = approvedSchedule.map((day, idx) => ({
           day_index: idx + 1,
           title: day.focus,
-          type: "strength",
+          focus: "strength",
           notes: "",
           week_number: 1,
           day_number: idx + 1,
@@ -711,7 +711,7 @@ export default function Schedule() {
           const workout = await db.entities.Workout.create({
             title: `${daySchedule.focus} - ${daySchedule.dayName}`,
             description: `Generated workout focusing on ${daySchedule.focus.toLowerCase()}`,
-            type: "strength",
+            focus: "strength",
             duration_minutes: parseInt(daySchedule.duration) || 45,
             exercises: daySchedule.exercises.map((ex) => ({
               name: ex.name,
@@ -721,9 +721,6 @@ export default function Schedule() {
               notes: "",
               pattern: ex.pattern || "",
             })),
-            equipment_needed: [],
-            is_custom: true,
-            target_goals: [],
             created_by: user.id,
           });
           await db.entities.WorkoutSchedule.create({
@@ -1153,16 +1150,16 @@ export default function Schedule() {
           ) : (
             /* Workouts list */
             <div className="divide-y divide-[#2a2a2a]">
-              {workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).length === 0 ? (
+              {workouts.filter(w => libraryFilter === "all" || w.focus === libraryFilter).length === 0 ? (
                 <p className="text-xs text-[#555555] text-center py-6">No workouts yet.</p>
               ) : (
-                workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => {
+                workouts.filter(w => libraryFilter === "all" || w.focus === libraryFilter).map((workout) => {
                   const typeBadge = {
                     strength: "text-[#818cf8]",
                     cardio: "text-[#a0a0a0]",
                     hiit: "text-[#f87171]",
                     recovery: "text-[#4ade80]",
-                  }[workout.type] || "text-[#555555]";
+                  }[workout.focus] || "text-[#555555]";
                   return (
                     <button
                       key={workout.id}
@@ -1172,7 +1169,7 @@ export default function Schedule() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${typeBadge}`}>
-                            {workout.type?.toUpperCase() || "WORKOUT"}
+                            {workout.focus?.toUpperCase() || "WORKOUT"}
                           </span>
                         </div>
                         <p className="text-sm font-bold text-white truncate uppercase tracking-wide">{workout.title}</p>
@@ -1591,7 +1588,7 @@ export default function Schedule() {
                 </p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {workouts.filter(w => libraryFilter === "all" || w.type === libraryFilter).map((workout) => (
+                  {workouts.filter(w => libraryFilter === "all" || w.focus === libraryFilter).map((workout) => (
                     <div
                       key={workout.id}
                       draggable
@@ -1600,7 +1597,7 @@ export default function Schedule() {
                       }
                       onDragEnd={handleDragEnd}
                       className="bg-[#202020] p-3 rounded-lg border border-[#2a2a2a] border-l-4 cursor-move hover:border-brand/30 transition-all group relative"
-                      style={{ borderLeftColor: { strength: 'var(--color-brand)', cardio: '#555555', hiit: '#ef4444', mixed: '#a0a0a0' }[workout.type] || '#555555' }}
+                      style={{ borderLeftColor: { strength: 'var(--color-brand)', cardio: '#555555', hiit: '#ef4444', mixed: '#a0a0a0' }[workout.focus] || '#555555' }}
                     >
                       <button
                         onClick={(e) => {
@@ -1623,7 +1620,7 @@ export default function Schedule() {
                         <span>{workout.duration_minutes} min</span>
                         {workout.exercises?.length > 0 && <span className="text-[#444]">·</span>}
                         {workout.exercises?.length > 0 && <span>{workout.exercises.length} exercises</span>}
-                        <Badge className="ml-auto text-xs capitalize">{workout.type || 'general'}</Badge>
+                        <Badge className="ml-auto text-xs capitalize">{workout.focus || 'general'}</Badge>
                       </div>
                     </div>
                   ))}

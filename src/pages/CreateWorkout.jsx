@@ -75,16 +75,13 @@ export default function CreateWorkout() {
   const [workout, setWorkout] = useState({
     title: "",
     description: "",
-    type: "strength",
+    focus: "strength",
     duration_minutes: 30,
     exercises: [defaultStrengthExercise()],
-    equipment_needed: [],
-    is_custom: true,
-    target_goals: [],
     folder: "",
   });
 
-  const isCardio = CARDIO_TYPES.has(workout.type);
+  const isCardio = CARDIO_TYPES.has(workout.focus);
 
   const { data: allWorkouts = [] } = useQuery({
     queryKey: queryKeys.workouts(),
@@ -114,12 +111,9 @@ export default function CreateWorkout() {
           setWorkout({
             title: existingWorkout.title || "",
             description: existingWorkout.description || "",
-            type: existingWorkout.type || "strength",
+            focus: existingWorkout.focus || "strength",
             duration_minutes: existingWorkout.duration_minutes || 30,
             exercises: existingWorkout.exercises || [defaultStrengthExercise()],
-            equipment_needed: existingWorkout.equipment_needed || [],
-            is_custom: existingWorkout.is_custom !== undefined ? existingWorkout.is_custom : true,
-            target_goals: existingWorkout.target_goals || [],
             folder: existingWorkout.folder || "",
           });
         } else {
@@ -137,11 +131,11 @@ export default function CreateWorkout() {
   }, [editId, user, navigate]);
 
   const handleTypeChange = (newType) => {
-    const wasCardio = CARDIO_TYPES.has(workout.type);
+    const wasCardio = CARDIO_TYPES.has(workout.focus);
     const willBeCardio = CARDIO_TYPES.has(newType);
     setWorkout({
       ...workout,
-      type: newType,
+      focus: newType,
       exercises: wasCardio !== willBeCardio
         ? [willBeCardio ? defaultCardioStep() : defaultStrengthExercise()]
         : workout.exercises,
@@ -197,7 +191,13 @@ export default function CreateWorkout() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const workoutData = { ...workout, folder: workout.folder.trim() || null };
+      const workoutData = {
+        title: workout.title,
+        description: workout.description,
+        focus: workout.focus,
+        duration_minutes: workout.duration_minutes,
+        exercises: workout.exercises,
+      };
       const allWorkouts = await db.entities.Workout.filter({ created_by: user.id });
       const duplicateName = allWorkouts.find(w =>
         w.title.toLowerCase() === workoutData.title.toLowerCase() && w.id !== editId
@@ -278,7 +278,7 @@ export default function CreateWorkout() {
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="type">Workout Type *</Label>
-                  <Select value={workout.type} onValueChange={handleTypeChange}>
+                  <Select value={workout.focus} onValueChange={handleTypeChange}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {WORKOUT_TYPES.map(type => (

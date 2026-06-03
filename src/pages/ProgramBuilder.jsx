@@ -74,7 +74,7 @@ function makeEmptyWorkout(dayIndex) {
   return {
     day_index: dayIndex,
     title: `Day ${dayIndex}`,
-    type: "strength",
+    focus: "strength",
     exercises: [],
     cardio_sessions: [],
     notes: "",
@@ -278,7 +278,7 @@ export default function ProgramBuilder() {
     setWorkouts((prev) =>
       prev.map((w) =>
         w.day_index === dayIndex
-          ? { day_index: dayIndex, title: `Day ${dayIndex}`, exercises: [], cardio_sessions: [], type: "strength", notes: "" }
+          ? { day_index: dayIndex, title: `Day ${dayIndex}`, exercises: [], cardio_sessions: [], focus: "strength", notes: "" }
           : w
       )
     );
@@ -367,7 +367,7 @@ export default function ProgramBuilder() {
           ? {
               ...w,
               title: sourceWorkout.title || w.title,
-              type: sourceWorkout.type || w.type,
+              focus: sourceWorkout.focus || w.focus,
               exercises: normalizedExercises,
               source_workout_id: sourceWorkout.id,
             }
@@ -391,7 +391,7 @@ export default function ProgramBuilder() {
         const out = {
           day_index: w.day_index,
           title: w.title,
-          type: w.type,
+          focus: w.focus,
           exercises: (w.exercises || []).map(enrichExercise),
           cardio_sessions: w.cardio_sessions || [],
           notes: w.notes || "",
@@ -867,7 +867,7 @@ function InlineDayEditor({
     queryFn: () => db.entities.Workout.filter({ created_by: user.id }),
     enabled: !!user,
   });
-  const cardioLibrary = libraryWorkouts.filter(w => w.type === 'cardio' || w.type === 'hiit');
+  const cardioLibrary = libraryWorkouts.filter(w => w.focus === 'cardio' || w.focus === 'hiit');
 
   return (
     <Card className="border-none border-l-4 border-l-primary-500">
@@ -898,8 +898,8 @@ function InlineDayEditor({
           <div>
             <Label className="text-xs">Type</Label>
             <Select
-              value={workout.type || "strength"}
-              onValueChange={(v) => updateWorkoutByDay(dayIndex, "type", v)}
+              value={workout.focus || "strength"}
+              onValueChange={(v) => updateWorkoutByDay(dayIndex, "focus", v)}
             >
               <SelectTrigger className="mt-0.5 text-sm">
                 <SelectValue />
@@ -929,7 +929,7 @@ function InlineDayEditor({
             exercise={ex}
             index={exIdx}
             dayIndex={dayIndex}
-            workoutType={workout.type}
+            workoutType={workout.focus}
             updateExercise={updateExercise}
             removeExercise={removeExercise}
             canRemove={(workout.exercises || []).length > 0}

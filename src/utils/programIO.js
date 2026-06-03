@@ -40,7 +40,7 @@ export function exportProgramAsJson(program) {
       workouts: (program.workouts || []).map((w) => ({
         day_index: w.day_index ?? w.day_number,
         title: w.title || `Day ${w.day_index}`,
-        type: w.type || "strength",
+        focus: w.focus || w.type || "strength",
         exercises: (w.exercises || []).map((ex) => ({
           name: ex.name,
           sets: ex.sets,
@@ -99,7 +99,7 @@ export function parseProgramJson(jsonString) {
   const importedWorkouts = (Array.isArray(p.workouts) ? p.workouts : []).map((w, i) => ({
     day_index: parseInt(w.day_index) || i + 1,
     title: String(w.title || `Day ${w.day_index || i + 1}`).slice(0, 100),
-    type: w.type || "strength",
+    focus: w.focus || w.type || "strength",
     exercises: Array.isArray(w.exercises) ? w.exercises.map((ex) => ({
       name: String(ex.name || ""),
       sets: typeof ex.sets === "number" ? ex.sets : parseInt(ex.sets) || 3,
@@ -129,7 +129,7 @@ export function parseProgramJson(jsonString) {
       importedWorkouts.push({
         day_index: d,
         title: `Day ${d}`,
-        type: "strength",
+        focus: "strength",
         exercises: [],
         cardio_sessions: [],
         notes: "",

@@ -48,95 +48,6 @@ export default function Workouts() {
     enabled: !!user,
   });
 
-  // Workout like/dislike — stored in exercise_reactions with key "workout:ID".
-  // The workout_reactions table has no 'reaction' column so we reuse the
-  // exercise_reactions table which already has the right schema.
-  const workoutReactionQueryKey = queryKeys.exerciseReactions(user?.id);
-
-  const { data: allExerciseReactions = [] } = useQuery({
-    queryKey: workoutReactionQueryKey,
-    queryFn: () => db.entities.ExerciseReaction.filter({ created_by: user.id }),
-    enabled: !!user,
-    staleTime: 30_000,
-  });
-
-  // Derive workout reactions from the exercise_reactions rows with "workout:" prefix
-  const reactions = allExerciseReactions
-    .filter(r => r.exercise_name?.startsWith('workout:'))
-    .map(r => ({
-      ...r,
-      workout_id: r.exercise_name.replace('workout:', ''),
-      reaction: r.reaction,
-    }));
-
-  const reactionMutation = useMutation({
-    mutationFn: async ({ workoutId, reaction }) => {
-      const key = `workout:${workoutId}`;
-      // Always query DB directly — never trust the cache for IDs (cache has optimistic fake ids)
-      const rows = await db.entities.ExerciseReaction.filter({
-        created_by: user.id,
-        exercise_name: key,
-      });
-      const existing = rows[0] || null;
-
-      if (existing) {
-        if (existing.reaction === reaction) {
-          await db.entities.ExerciseReaction.delete(existing.id);
-          return { action: 'deleted', workoutId };
-        } else {
-          const updated = await db.entities.ExerciseReaction.update(existing.id, { reaction });
-          return { action: 'updated', workoutId, reaction, record: updated };
-        }
-      } else {
-        const created = await db.entities.ExerciseReaction.create({
-          exercise_name: key,
-          reaction,
-          created_by: user.id,
-        });
-        return { action: 'created', workoutId, reaction, record: created };
-      }
-    },
-
-    onMutate: async ({ workoutId, reaction }) => {
-      await queryClient.cancelQueries({ queryKey: workoutReactionQueryKey });
-      const previous = queryClient.getQueryData(workoutReactionQueryKey) || [];
-      const key = `workout:${workoutId}`;
-      const existing = previous.find(r => r.exercise_name === key);
-
-      let optimistic;
-      if (existing) {
-        if (existing.reaction === reaction) {
-          optimistic = previous.filter(r => r.exercise_name !== key);
-        } else {
-          optimistic = previous.map(r => r.exercise_name === key ? { ...r, reaction } : r);
-        }
-      } else {
-        optimistic = [
-          ...previous,
-          {
-            id: `optimistic-${Date.now()}`,
-            exercise_name: key,
-            reaction,
-            created_by: user.id,
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
-      queryClient.setQueryData(workoutReactionQueryKey, optimistic);
-      return { previous };
-    },
-
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(workoutReactionQueryKey, context.previous);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: workoutReactionQueryKey });
-    },
-  });
-
   const { profile } = useProfile();
 
   const { data: cardioSessions = [] } = useQuery({
@@ -189,9 +100,6 @@ export default function Workouts() {
           rest_seconds: ex.rest || 90, // Use exercise rest or default to 90 seconds
           notes: ''
         })),
-        equipment_needed: profile?.available_equipment || [],
-        is_custom: true,
-        target_goals: [profile?.primary_goal || 'general_fitness'],
       };
 
       return await db.entities.Workout.create(workoutData);
@@ -216,13 +124,9 @@ export default function Workouts() {
       const clonedWorkout = await db.entities.Workout.create({
         title: `${workout.title} (Copy)`,
         description: workout.description,
-        type: workout.type,
+        focus: workout.focus,
         duration_minutes: workout.duration_minutes,
         exercises: workout.exercises,
-        equipment_needed: workout.equipment_needed,
-        is_custom: workout.is_custom,
-        target_goals: workout.target_goals,
-        folder: workout.folder || null,
         created_by: user.id,
       });
       return clonedWorkout;
@@ -250,12 +154,6 @@ export default function Workouts() {
       const schedules = await db.entities.WorkoutSchedule.filter({ workout_id: workoutId });
       for (const schedule of schedules) {
         await db.entities.WorkoutSchedule.delete(schedule.id);
-      }
-
-      // Delete related reactions
-      const reactions = await db.entities.WorkoutReaction.filter({ workout_id: workoutId });
-      for (const reaction of reactions) {
-        await db.entities.WorkoutReaction.delete(reaction.id);
       }
 
       // Finally delete the workout
@@ -303,14 +201,12 @@ export default function Workouts() {
     {
       title: "My Workout",
       description: "Optional description",
-      type: "strength",
+      focus: "strength",
       duration_minutes: 60,
       exercises: [
         { name: "Bench Press", sets: 4, reps: "8-10", rest_seconds: 120, notes: "" },
         { name: "Incline Dumbbell Press", sets: 3, reps: "10-12", rest_seconds: 90, notes: "" },
       ],
-      equipment_needed: ["barbell", "dumbbells", "bench"],
-      target_goals: ["muscle_gain"],
     },
     null,
     2
@@ -330,12 +226,9 @@ export default function Workouts() {
         await db.entities.Workout.create({
           title: data.title,
           description: data.description ?? "",
-          type: data.type ?? "strength",
+          focus: data.focus ?? data.type ?? "strength",
           duration_minutes: data.duration_minutes ?? null,
           exercises: data.exercises,
-          equipment_needed: data.equipment_needed ?? [],
-          target_goals: data.target_goals ?? [],
-          is_custom: true,
           created_by: user.id,
         });
         invalidateWorkouts(queryClient);
@@ -407,8 +300,7 @@ export default function Workouts() {
 
   const filteredWorkouts = workouts.filter(workout => {
     // Type/category filter
-    if (filter === "custom" && !workout.is_custom) return false;
-    if (!["all", "custom", "liked"].includes(filter) && workout.type !== filter) return false;
+    if (filter !== "all" && workout.focus !== filter) return false;
 
     // Folder filter
     if (folderFilter !== "all") {
@@ -528,11 +420,9 @@ export default function Workouts() {
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { value: 'all', label: 'All' },
-                    { value: 'liked', label: 'Liked' },
                     { value: 'strength', label: 'Strength' },
                     { value: 'cardio', label: 'Cardio' },
                     { value: 'hiit', label: 'HIIT' },
-                    { value: 'custom', label: 'My Workouts' },
                   ].map(f => (
                     <button
                       key={f.value}
@@ -620,9 +510,6 @@ export default function Workouts() {
                     <WorkoutCard
                       key={workout.id}
                       workout={workout}
-                      onReactionChange={(workoutId, reaction) =>
-                        reactionMutation.mutate({ workoutId, reaction })
-                      }
                       userId={user.id}
                       onEdit={handleEdit}
                       onClone={handleClone}
@@ -634,12 +521,10 @@ export default function Workouts() {
                 <div className="text-center py-6">
                   <Zap className="w-10 h-10 text-[#555555] mx-auto mb-3" />
                   <h3 className="text-base font-semibold text-white mb-1">
-                    {filter === "liked" ? "No liked workouts yet" : "No workouts yet"}
+                    No workouts yet
                   </h3>
                   <p className="text-sm text-[#555555] mb-4">
-                    {filter === "liked"
-                      ? "Like workouts using the thumbs up button to save them here"
-                      : "Generate personalized workouts or create your own"}
+                    Generate personalized workouts or create your own
                   </p>
                   {filter === "all" && (
                     <Button

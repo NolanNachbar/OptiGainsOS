@@ -1,0 +1,95 @@
+{
+  "vektor_version": "1.0",
+  "type": "program",
+  "program": {
+    "name": "BUD/S Prep: Phase 1 (Foundation)",
+    "description": "The first 4 weeks of the 12-week BUD/S preparation plan. Focuses on acing the PST and building a solid running/swimming base.",
+    "cycle_length": 7,
+    "num_cycles": 4,
+    "goal": "endurance",
+    "tags": ["BUDS", "Navy SEAL", "Cardio", "Stamina"],
+    "workouts": [
+      {
+        "day_index": 1,
+        "title": "PST Baseline / Upper Body Pyramid",
+        "type": "strength",
+        "exercises": [
+          { "name": "Pull-Up", "sets": 1, "rep_target": "Pyramid 1-10-1", "rest_seconds": 30 },
+          { "name": "Push-up", "sets": 1, "rep_target": "Pyramid 1-10-1 (x2)", "rest_seconds": 30 },
+          { "name": "Sit-Up", "sets": 1, "rep_target": "Pyramid 1-10-1 (x3)", "rest_seconds": 30 },
+          { "name": "Tricep Dips", "sets": 1, "rep_target": "Pyramid 1-10-1 (x2)", "rest_seconds": 30 }
+        ],
+        "notes": "Pyramid style: 1 rep, 2 reps... up to 10, then back down to 1. Total: 100 Pullups, 200 Pushups, 300 Situps, 200 Dips."
+      },
+      {
+        "day_index": 2,
+        "title": "LSD Run & Swim",
+        "type": "cardio",
+        "cardio_sessions": [
+          { "title": "LSD Run", "duration_minutes": 30, "time_of_day": "am", "exercises": [{ "name": "Steady Run", "duration_type": "time", "duration_value": 30, "target_type": "heart_rate_zone", "target_low": "2" }] },
+          { "title": "LSD Swim (CSS)", "duration_minutes": 25, "time_of_day": "pm", "exercises": [{ "name": "Combat Side Stroke", "duration_type": "time", "duration_value": 25, "target_type": "heart_rate_zone", "target_low": "2" }] }
+        ],
+        "notes": "Target: 3-4 miles running, 1000m swimming."
+      },
+      {
+        "day_index": 3,
+        "title": "Upper Body Super Sets",
+        "type": "strength",
+        "exercises": [
+          { "name": "Pull-Up", "sets": 5, "rep_target": "10", "rest_seconds": 60 },
+          { "name": "Push-up", "sets": 10, "rep_target": "20", "rest_seconds": 45 },
+          { "name": "Sit-Up", "sets": 10, "rep_target": "30", "rest_seconds": 45 },
+          { "name": "Tricep Dips", "sets": 5, "rep_target": "15", "rest_seconds": 60 }
+        ],
+        "cardio_sessions": [
+          { "title": "Hypoxic Swim", "duration_minutes": 20, "time_of_day": "pm", "exercises": [{ "name": "Freestyle (Hypoxic)", "duration_type": "time", "duration_value": 20 }] }
+        ],
+        "notes": "Move quickly between exercises. Hypoxic: Breathe every 4, 6, 8 strokes."
+      },
+      {
+        "day_index": 4,
+        "title": "Lower Body PT",
+        "type": "strength",
+        "exercises": [
+          { "name": "Bodyweight Squats", "sets": 3, "rep_target": "50", "rest_seconds": 60 },
+          { "name": "Forward Lunge", "sets": 3, "rep_target": "20 per leg", "rest_seconds": 60 },
+          { "name": "Single-Leg Calf Raises", "sets": 3, "rep_target": "50", "rest_seconds": 30 },
+          { "name": "Sprint", "sets": 6, "rep_target": "400m", "rest_seconds": 90 }
+        ],
+        "cardio_sessions": [
+          { "title": "LSD Swim", "duration_minutes": 25, "exercises": [{ "name": "Breaststroke/CSS", "duration_value": 25 }] }
+        ]
+      },
+      {
+        "day_index": 5,
+        "title": "Timed Run & Sprints",
+        "type": "cardio",
+        "cardio_sessions": [
+          { "title": "Timed 4-Mile Run", "duration_minutes": 35, "exercises": [{ "name": "Timed Run", "duration_value": 35, "target_type": "heart_rate_zone", "target_low": "4" }] }
+        ],
+        "notes": "Aim for sub-8:00 pace."
+      },
+      {
+        "day_index": 6,
+        "title": "Max Reps & Long Swim",
+        "type": "strength",
+        "exercises": [
+          { "name": "Pull-Up", "sets": 3, "rep_target": "Max", "rest_seconds": 120 },
+          { "name": "Push-up", "sets": 3, "rep_target": "Max in 2:00", "rest_seconds": 120 },
+          { "name": "Sit-Up", "sets": 3, "rep_target": "Max in 2:00", "rest_seconds": 120 }
+        ],
+        "cardio_sessions": [
+          { "title": "Long Swim", "duration_minutes": 40, "exercises": [{ "name": "LSD CSS", "duration_value": 40 }] }
+        ],
+        "notes": "Test your limits today. Long swim: 1500m+."
+      },
+      {
+        "day_index": 7,
+        "title": "Rest Day",
+        "type": "rest",
+        "exercises": [],
+        "notes": "Active recovery: stretching and foam rolling."
+      }
+    ]
+  }
+}

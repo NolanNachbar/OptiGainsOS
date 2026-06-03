@@ -41,9 +41,9 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap gap-1.5 mb-1.5">
-                {workout.type && (
+                {workout.focus && (
                   <Badge variant="outline" className="text-xs capitalize">
-                    {workout.type}
+                    {workout.focus}
                   </Badge>
                 )}
               </div>

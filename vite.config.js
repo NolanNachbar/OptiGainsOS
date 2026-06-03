@@ -30,7 +30,10 @@ export default defineConfig({
   plugins: [react(), ...(useHttps ? [basicSsl()] : []), pwaManifestBase(base)],
   server: {
     ...(useHttps ? { https: true } : {}),
-    host: true, // expose on LAN
+    host: true,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
   },
   resolve: {
     alias: {

@@ -190,13 +190,11 @@ export default function WorkoutDetail() {
           id: 'tutorial-demo',
           title: 'Upper Body Strength',
           description: 'Tutorial demo workout',
-          type: 'strength',
+          focus: 'strength',
           duration_minutes: 45,
           exercises: [
             { name: 'Bench Press', sets: 1, reps: '10', rest_seconds: 90, notes: null },
           ],
-          equipment_needed: [],
-          is_custom: false,
           created_by: user.id,
           _isTutorialDemo: true,
         });
@@ -206,7 +204,7 @@ export default function WorkoutDetail() {
           id: programWorkout.id,
           title: programWorkout.title,
           description: programWorkout.notes || '',
-          type: programWorkout.type || 'strength',
+          focus: programWorkout.focus || programWorkout.type || 'strength',
           duration_minutes: null,
           exercises: (programWorkout.exercises || []).map((ex) => ({
             name: ex.name,
@@ -215,8 +213,6 @@ export default function WorkoutDetail() {
             rest_seconds: ex.rest_seconds || 180,
             notes: null,
           })),
-          equipment_needed: [],
-          is_custom: false,
           created_by: user.id,
           _isProgramWorkout: true,
         });
@@ -366,12 +362,9 @@ export default function WorkoutDetail() {
       const clonedWorkout = await db.entities.Workout.create({
         title: `${workout.title} (Copy)`,
         description: workout.description,
-        type: workout.type,
+        focus: workout.focus,
         duration_minutes: workout.duration_minutes,
         exercises: workout.exercises,
-        equipment_needed: workout.equipment_needed,
-        is_custom: true,
-        target_goals: workout.target_goals,
         created_by: user.id,
       });
       return clonedWorkout;
@@ -412,12 +405,9 @@ export default function WorkoutDetail() {
             const created = await db.entities.Workout.create({
               title: workout.title,
               description: workout.description || '',
-              type: workout.type || 'strength',
+              focus: workout.focus || 'strength',
               duration_minutes: workout.duration_minutes || 45,
               exercises: workout.exercises || [],
-              equipment_needed: [],
-              is_custom: true,
-              target_goals: [],
               created_by: user.id,
             });
             realWorkoutId = created.id;
@@ -475,18 +465,7 @@ export default function WorkoutDetail() {
         notes: combinedNotes || null,
       });
 
-      // Update reaction if exists
-      const reactions = await db.entities.WorkoutReaction.filter({
-        workout_id: workout.id,
-        created_by: user.id
-      });
 
-      if (reactions.length > 0) {
-        await db.entities.WorkoutReaction.update(reactions[0].id, {
-          completed: true,
-          completion_date: new Date().toISOString()
-        });
-      }
     },
     onSuccess: () => {
       completeSession();
@@ -715,11 +694,8 @@ export default function WorkoutDetail() {
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="capitalize">
-                  {workout.type}
+                  {workout.focus}
                 </Badge>
-                {workout.is_custom && (
-                  <Badge variant="volt">Custom</Badge>
-                )}
                 {isProgramSource && (
                   <Badge variant="slate">Program Workout</Badge>
                 )}
@@ -768,18 +744,6 @@ export default function WorkoutDetail() {
                   </div>
                 </div>
 
-                {workout.equipment_needed?.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold mb-2">Equipment Needed</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {workout.equipment_needed.map((equipment, index) => (
-                        <Badge key={index} variant="secondary">
-                          {equipment}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {!isLogging && (
                   <div className="space-y-3">

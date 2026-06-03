@@ -43,8 +43,7 @@ export default function WorkoutLibrarySidebar() {
     // text search
     if (search.trim() && !w.title?.toLowerCase().includes(search.toLowerCase())) return false;
     // type filter
-    if (filter === "custom" && !w.is_custom) return false;
-    if (!["all", "custom"].includes(filter) && w.type !== filter) return false;
+    if (!["all"].includes(filter) && w.focus !== filter) return false;
     // folder filter
     if (folderFilter !== "all") {
       if (folderFilter === "unfiled") return !w.folder;

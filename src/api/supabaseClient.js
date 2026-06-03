@@ -19,7 +19,6 @@ class DatabaseAdapter {
       Workout: this.createEntity('workouts'),
       WorkoutSchedule: this.createEntity('workout_schedules'),
       FoodEntry: this.createEntity('food_entries'),
-      WorkoutReaction: this.createEntity('workout_reactions'),
       WorkoutLog: this.createEntity('workout_logs'),
       BodyWeightEntry: this.createEntity('body_weight_entries'),
       Recipe: this.createEntity('recipes'),

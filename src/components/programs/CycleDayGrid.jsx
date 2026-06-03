@@ -245,8 +245,8 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
           {hasExercises && (
             <p className="text-xs text-[#555555]">{workout.exercises.length} exercises</p>
           )}
-          {workout.type && (
-            <Badge variant="outline" className="text-xs mt-1 capitalize border-[#2a2a2a] text-[#555555]">{workout.type}</Badge>
+          {workout.focus && (
+            <Badge variant="outline" className="text-xs mt-1 capitalize border-[#2a2a2a] text-[#555555]">{workout.focus}</Badge>
           )}
           {hasCardio && (
             <div className="flex flex-wrap gap-1 mt-1.5">

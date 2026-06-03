@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, MoreVertical, Edit, Copy, Trash2, FolderOpen, Download } from "lucide-react";
+import { MoreVertical, Edit, Copy, Trash2, FolderOpen, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-export default function WorkoutCard({ workout, reaction, onReactionChange, userId, onEdit, onClone, onDelete }) {
+export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete }) {
   const borderColor = '#7c3aed';
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
@@ -29,11 +29,9 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
       _vektor_version: 1,
       title: workout.title,
       description: workout.description,
-      type: workout.type,
+      focus: workout.focus,
       duration_minutes: workout.duration_minutes,
       exercises: workout.exercises,
-      equipment_needed: workout.equipment_needed,
-      target_goals: workout.target_goals,
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -61,7 +59,7 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
                 variant="outline"
                 className="text-xs capitalize text-[#a0a0a0] border-[#2a2a2a] border-[#2a2a2a]"
               >
-                {workout.type}
+                {workout.focus}
               </Badge>
               {workout.folder && (
                 <Badge
@@ -139,40 +137,6 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
               <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Exercises</span>
               <span className="text-lg font-bold tabular-nums text-white mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
-          </div>
-
-          {/* Reaction buttons — native <button> so our bg/border classes
-               always win without fighting shadcn variant specificity */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onReactionChange(workout.id, "like")}
-              className={[
-                "flex-1 inline-flex items-center justify-center gap-1 rounded-md border text-xs font-semibold h-8 px-3 transition-all duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1",
-                reaction === "like"
-                  ? "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:border-emerald-600"
-                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.4)] hover:text-[#4ade80]",
-              ].join(" ")}
-            >
-              <ThumbsUp className="w-3.5 h-3.5" />
-              Like
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onReactionChange(workout.id, "dislike")}
-              className={[
-                "inline-flex items-center justify-center rounded-md border h-8 w-8 transition-all duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1",
-                reaction === "dislike"
-                  ? "bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600"
-                  : "bg-[#1a1a1a] border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)] hover:text-[#f87171]",
-              ].join(" ")}
-              aria-label="Not for me"
-            >
-              <ThumbsDown className="w-3.5 h-3.5" />
-            </button>
           </div>
 
           {/* View Details */}
