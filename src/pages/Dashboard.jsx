@@ -419,7 +419,7 @@ export default function Dashboard() {
         const workout = await db.entities.Workout.create({
           title: `${daySchedule.focus} - ${daySchedule.dayName}`,
           description: `Generated workout focusing on ${daySchedule.focus.toLowerCase()}`,
-          type: "strength", difficulty: "intermediate",
+          type: "strength",
           duration_minutes: parseInt(daySchedule.duration) || 45,
           exercises: daySchedule.exercises.map((ex) => ({
             name: ex.name, sets: ex.sets || 3, reps: ex.reps || "10",

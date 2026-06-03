@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { DIFFICULTY_COLORS } from "@/lib/constants";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
 import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
@@ -192,7 +191,6 @@ export default function WorkoutDetail() {
           title: 'Upper Body Strength',
           description: 'Tutorial demo workout',
           type: 'strength',
-          difficulty: 'intermediate',
           duration_minutes: 45,
           exercises: [
             { name: 'Bench Press', sets: 1, reps: '10', rest_seconds: 90, notes: null },
@@ -209,7 +207,6 @@ export default function WorkoutDetail() {
           title: programWorkout.title,
           description: programWorkout.notes || '',
           type: programWorkout.type || 'strength',
-          difficulty: 'intermediate',
           duration_minutes: null,
           exercises: (programWorkout.exercises || []).map((ex) => ({
             name: ex.name,
@@ -370,7 +367,6 @@ export default function WorkoutDetail() {
         title: `${workout.title} (Copy)`,
         description: workout.description,
         type: workout.type,
-        difficulty: workout.difficulty,
         duration_minutes: workout.duration_minutes,
         exercises: workout.exercises,
         equipment_needed: workout.equipment_needed,
@@ -417,7 +413,6 @@ export default function WorkoutDetail() {
               title: workout.title,
               description: workout.description || '',
               type: workout.type || 'strength',
-              difficulty: workout.difficulty || 'intermediate',
               duration_minutes: workout.duration_minutes || 45,
               exercises: workout.exercises || [],
               equipment_needed: [],
@@ -719,9 +714,6 @@ export default function WorkoutDetail() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
-                <Badge className={DIFFICULTY_COLORS[workout.difficulty]}>
-                  {workout.difficulty}
-                </Badge>
                 <Badge variant="outline" className="capitalize">
                   {workout.type}
                 </Badge>

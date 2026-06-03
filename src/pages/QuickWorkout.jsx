@@ -142,7 +142,6 @@ export default function QuickWorkout() {
       const workout = await db.entities.Workout.create({
         title: workoutTitle,
         description: "Quick workout session",
-        difficulty: "intermediate",
         duration_minutes: Math.ceil(durationSeconds / 60),
         exercises: exercises,
         created_by: user.id,

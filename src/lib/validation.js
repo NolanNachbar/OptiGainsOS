@@ -141,7 +141,6 @@ export const programSchema = z.object({
   description: z.string().max(1000).trim().optional(),
   days_per_week: z.number().int().min(1).max(7),
   duration_weeks: z.number().int().min(1).max(52),
-  difficulty_level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   is_public: z.boolean().optional(),
 });
 

@@ -1,7 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { DIFFICULTY_COLORS } from "@/lib/constants";
 import { GripVertical, Clock, Target } from "lucide-react";
 
 /**
@@ -42,11 +41,6 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap gap-1.5 mb-1.5">
-                {workout.difficulty && (
-                  <Badge className={`text-xs ${DIFFICULTY_COLORS[workout.difficulty]}`}>
-                    {workout.difficulty}
-                  </Badge>
-                )}
                 {workout.type && (
                   <Badge variant="outline" className="text-xs capitalize">
                     {workout.type}

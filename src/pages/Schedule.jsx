@@ -670,7 +670,6 @@ export default function Schedule() {
           num_cycles: totalWeeks,
           duration_weeks: totalWeeks,
           days_per_week: splitArray.length,
-          difficulty: profile?.fitness_level || "intermediate",
           goal: validGoal,
           schema_version: 2,
           is_public: false,
@@ -713,7 +712,6 @@ export default function Schedule() {
             title: `${daySchedule.focus} - ${daySchedule.dayName}`,
             description: `Generated workout focusing on ${daySchedule.focus.toLowerCase()}`,
             type: "strength",
-            difficulty: "intermediate",
             duration_minutes: parseInt(daySchedule.duration) || 45,
             exercises: daySchedule.exercises.map((ex) => ({
               name: ex.name,
@@ -1831,10 +1829,7 @@ export default function Schedule() {
                                           {item.time_of_day}
                                         </span>
                                       )}
-                                      {workout.duration_minutes && <><span className="font-medium">{workout.duration_minutes} min</span><span>-</span></>}
-                                      <span className="capitalize font-medium">
-                                        {workout.difficulty}
-                                      </span>
+                                      {workout.duration_minutes && <span className="font-medium">{workout.duration_minutes} min</span>}
                                     </div>
                                   </div>
                                 </div>

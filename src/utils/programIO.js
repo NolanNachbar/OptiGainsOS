@@ -22,7 +22,6 @@ function migrateCardioSession(s) {
   };
 }
 
-const VALID_DIFFICULTIES = ["beginner", "intermediate", "advanced"];
 const VALID_GOALS = ["muscle_gain", "fat_loss", "strength", "endurance", "general"];
 const FORMAT_VERSION = "1.0";
 
@@ -36,7 +35,6 @@ export function exportProgramAsJson(program) {
       description: program.description || "",
       cycle_length: program.cycle_length || program.days_per_week || 7,
       num_cycles: program.num_cycles || program.duration_weeks || 4,
-      difficulty: program.difficulty || "intermediate",
       goal: program.goal || "general",
       tags: program.tags || [],
       workouts: (program.workouts || []).map((w) => ({
@@ -94,7 +92,6 @@ export function parseProgramJson(jsonString) {
     description: String(p.description || "").slice(0, 1000),
     cycle_length: cycleLength,
     num_cycles: numCycles,
-    difficulty: VALID_DIFFICULTIES.includes(p.difficulty) ? p.difficulty : "intermediate",
     goal: VALID_GOALS.includes(p.goal) ? p.goal : "general",
     tags: Array.isArray(p.tags) ? p.tags.filter((t) => typeof t === "string").slice(0, 10) : [],
   };

@@ -53,7 +53,7 @@ export function useEnrollments() {
 
       const { data: programs } = await supabase
         .from('programs')
-        .select('id, title, description, focus, duration_weeks, days_per_week, difficulty, schema_version, num_cycles, tags')
+        .select('id, title, description, focus, duration_weeks, days_per_week, schema_version, num_cycles, tags')
         .in('id', programIds);
 
       const { data: allProgramWorkouts } = await supabase

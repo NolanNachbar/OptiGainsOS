@@ -181,7 +181,6 @@ export default function Workouts() {
         type: dayWorkout.focus.toLowerCase().includes('cardio') ? 'cardio' :
               dayWorkout.focus.toLowerCase().includes('strength') ? 'strength' :
               dayWorkout.focus.toLowerCase().includes('hiit') ? 'hiit' : 'strength',
-        difficulty: profile?.fitness_level || 'intermediate',
         duration_minutes: durationMinutes,
         exercises: dayWorkout.exercises.map(ex => ({
           name: ex.name,
@@ -218,7 +217,6 @@ export default function Workouts() {
         title: `${workout.title} (Copy)`,
         description: workout.description,
         type: workout.type,
-        difficulty: workout.difficulty,
         duration_minutes: workout.duration_minutes,
         exercises: workout.exercises,
         equipment_needed: workout.equipment_needed,
@@ -306,7 +304,6 @@ export default function Workouts() {
       title: "My Workout",
       description: "Optional description",
       type: "strength",
-      difficulty: "intermediate",
       duration_minutes: 60,
       exercises: [
         { name: "Bench Press", sets: 4, reps: "8-10", rest_seconds: 120, notes: "" },
@@ -334,7 +331,6 @@ export default function Workouts() {
           title: data.title,
           description: data.description ?? "",
           type: data.type ?? "strength",
-          difficulty: data.difficulty ?? "intermediate",
           duration_minutes: data.duration_minutes ?? null,
           exercises: data.exercises,
           equipment_needed: data.equipment_needed ?? [],
@@ -878,7 +874,6 @@ export default function Workouts() {
           <pre className="bg-[#1a1a1a] rounded-lg p-3 text-xs overflow-auto max-h-72 text-white text-[#a0a0a0] border text-left">{WORKOUT_TEMPLATE}</pre>
           <div className="text-xs text-[#555555] space-y-1 mt-1">
             <p><span className="font-semibold">type</span>: <code>strength</code>, <code>cardio</code>, or <code>hiit</code></p>
-            <p><span className="font-semibold">difficulty</span>: <code>beginner</code>, <code>intermediate</code>, or <code>advanced</code></p>
             <p><span className="font-semibold">reps</span>: number or range string like <code>"8-10"</code></p>
           </div>
           <div className="flex gap-2 mt-2">

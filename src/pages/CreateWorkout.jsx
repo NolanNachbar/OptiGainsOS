@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox, ComboboxContent, ComboboxItem } from "@/components/ui/combobox";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { WORKOUT_TYPES, DIFFICULTY_LEVELS } from "@/lib/constants";
+import { WORKOUT_TYPES } from "@/lib/constants";
 import { Plus, Trash2, Save, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -76,7 +76,6 @@ export default function CreateWorkout() {
     title: "",
     description: "",
     type: "strength",
-    difficulty: "intermediate",
     duration_minutes: 30,
     exercises: [defaultStrengthExercise()],
     equipment_needed: [],
@@ -116,7 +115,6 @@ export default function CreateWorkout() {
             title: existingWorkout.title || "",
             description: existingWorkout.description || "",
             type: existingWorkout.type || "strength",
-            difficulty: existingWorkout.difficulty || "intermediate",
             duration_minutes: existingWorkout.duration_minutes || 30,
             exercises: existingWorkout.exercises || [defaultStrengthExercise()],
             equipment_needed: existingWorkout.equipment_needed || [],
@@ -290,20 +288,6 @@ export default function CreateWorkout() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="difficulty">Difficulty *</Label>
-                  <Select
-                    value={workout.difficulty}
-                    onValueChange={(value) => setWorkout({ ...workout, difficulty: value })}
-                  >
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DIFFICULTY_LEVELS.map(level => (
-                        <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div>
                   <Label htmlFor="duration">Duration (minutes) *</Label>

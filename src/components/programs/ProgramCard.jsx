@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { DIFFICULTY_COLORS, DIFFICULTY_LEVELS } from "@/lib/constants";
 import { motion } from "framer-motion";
 
 const GOAL_LABELS = {
@@ -9,12 +8,6 @@ const GOAL_LABELS = {
   strength: "Strength",
   endurance: "Endurance",
   general: "General Fitness",
-};
-
-const DIFFICULTY_LABELS = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
 };
 
 
@@ -44,11 +37,6 @@ export default function ProgramCard({ program, enrollment }) {
           <div className="px-5 pt-4 pb-2">
             {/* Badges */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {program.difficulty && (
-                <Badge className={DIFFICULTY_COLORS[program.difficulty]}>
-                  {DIFFICULTY_LABELS[program.difficulty] || program.difficulty}
-                </Badge>
-              )}
               {program.goal && (
                 <Badge variant="outline">{GOAL_LABELS[program.goal] || program.goal}</Badge>
               )}

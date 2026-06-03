@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DIFFICULTY_LEVELS, WORKOUT_TYPES } from "@/lib/constants";
+import { WORKOUT_TYPES } from "@/lib/constants";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import {
   ArrowLeft,
@@ -99,7 +99,6 @@ export default function ProgramBuilder() {
     description: "",
     cycle_length: 7,
     num_cycles: 4,
-    difficulty: "intermediate",
     goal: "strength",
     tags: [],
   });
@@ -143,7 +142,6 @@ export default function ProgramBuilder() {
       description: existingProgram.description || "",
       cycle_length: isV2 ? (existingProgram.cycle_length || 7) : (existingProgram.days_per_week || 3),
       num_cycles: isV2 ? (existingProgram.num_cycles || 4) : (existingProgram.duration_weeks || 4),
-      difficulty: existingProgram.difficulty || "intermediate",
       goal: existingProgram.goal || "strength",
       tags: existingProgram.tags || [],
     });
@@ -410,7 +408,6 @@ export default function ProgramBuilder() {
       description: program.description,
       cycle_length: program.cycle_length,
       num_cycles: program.num_cycles,
-      difficulty: program.difficulty,
       goal: program.goal,
       schema_version: 2,
       // Keep v1 fields for backward compat (not used in v2)
@@ -693,26 +690,6 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               className="mt-1"
             />
             <p className="text-xs text-[#555555] mt-0.5">Times repeated</p>
-          </div>
-          <div>
-            <Label>Difficulty</Label>
-            <Select
-              value={program.difficulty}
-              onValueChange={(v) => update("difficulty", v)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue>
-                  {DIFFICULTY_LEVELS.find(l => l.value === program.difficulty)?.label || program.difficulty}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {DIFFICULTY_LEVELS.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>
-                    {l.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div>
             <Label>Goal</Label>
@@ -1319,10 +1296,6 @@ function StepConfirm({ program, workouts }) {
           <div>
             <p className="text-xs text-[#555555]">Name</p>
             <p className="font-semibold">{program.name}</p>
-          </div>
-          <div>
-            <p className="text-xs text-[#555555]">Difficulty</p>
-            <p className="font-semibold">{DIFFICULTY_LEVELS.find(l => l.value === program.difficulty)?.label || program.difficulty}</p>
           </div>
           <div>
             <p className="text-xs text-[#555555]">Cycle</p>

@@ -19,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { DIFFICULTY_COLORS } from "@/lib/constants";
 import {
   Dialog,
   DialogContent,
@@ -52,11 +51,6 @@ const GOAL_LABELS = {
   general: "General Fitness",
 };
 
-const DIFFICULTY_LABELS = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-};
 
 export default function ProgramDetail() {
   const { id: programId } = useParams();
@@ -227,11 +221,6 @@ export default function ProgramDetail() {
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {program.difficulty && (
-                    <Badge className={DIFFICULTY_COLORS[program.difficulty]}>
-                      {DIFFICULTY_LABELS[program.difficulty] || program.difficulty}
-                    </Badge>
-                  )}
                   {program.goal && (
                     <Badge variant="outline">
                       {GOAL_LABELS[program.goal] || program.goal}

@@ -6,18 +6,8 @@ import { ThumbsUp, ThumbsDown, MoreVertical, Edit, Copy, Trash2, FolderOpen, Dow
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-const DIFF_BORDER = { beginner: '#10b981', intermediate: '#f59e0b', advanced: '#ef4444', expert: '#a855f7' };
-
-// Capitalized and color-coded difficulty badges
-const DIFFICULTY_STYLES = {
-  beginner:     { label: "Beginner",     className: "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.2)]" },
-  intermediate: { label: "Intermediate", className: "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border-[rgba(245,158,11,0.2)]" },
-  advanced:     { label: "Advanced",     className: "bg-[rgba(239,68,68,0.1)] text-[#f87171] border-[rgba(239,68,68,0.15)]" },
-  expert:       { label: "Expert",       className: "bg-[rgba(168,85,247,0.1)] text-[#c084fc] border-[rgba(168,85,247,0.15)]" },
-};
-
 export default function WorkoutCard({ workout, reaction, onReactionChange, userId, onEdit, onClone, onDelete }) {
-  const borderColor = DIFF_BORDER[workout.difficulty?.toLowerCase()] || '#7c3aed';
+  const borderColor = '#7c3aed';
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -40,7 +30,6 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
       title: workout.title,
       description: workout.description,
       type: workout.type,
-      difficulty: workout.difficulty,
       duration_minutes: workout.duration_minutes,
       exercises: workout.exercises,
       equipment_needed: workout.equipment_needed,
@@ -55,12 +44,6 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
     URL.revokeObjectURL(url);
     toast.success(`"${workout.title}" exported`);
   };
-  const typeLabel = workout.type ? workout.type.charAt(0).toUpperCase() + workout.type.slice(1) : null;
-  const diffStyle = DIFFICULTY_STYLES[workout.difficulty?.toLowerCase()] || {
-    label: typeLabel || "General",
-    className: "bg-[#202020] text-[#a0a0a0] border-[#2a2a2a]",
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -74,13 +57,6 @@ export default function WorkoutCard({ workout, reaction, onReactionChange, userI
         <div className="pb-2 pt-4 px-6">
           <div className="flex justify-between items-start gap-2">
             <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-              {/* Difficulty badge — capitalized + colored */}
-              <Badge
-                variant="outline"
-                className={`text-xs font-semibold capitalize border ${diffStyle.className}`}
-              >
-                {diffStyle.label}
-              </Badge>
               <Badge
                 variant="outline"
                 className="text-xs capitalize text-[#a0a0a0] border-[#2a2a2a] border-[#2a2a2a]"
