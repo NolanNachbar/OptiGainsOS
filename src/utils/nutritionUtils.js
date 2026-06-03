@@ -164,7 +164,8 @@ export function recipeToFoodEntry(recipe, servingCount, mealType, date, userId) 
   return {
     food_name: `${recipe.name} (Recipe)`,
     meal_type: mealType,
-    serving_size: `${servingCount} serving(s)`,
+    serving_size: parseFloat(servingCount) || 1,
+    serving_unit: "serving(s)",
     calories: scaled.calories,
     protein_grams: scaled.protein_grams,
     carbs_grams: scaled.carbs_grams,

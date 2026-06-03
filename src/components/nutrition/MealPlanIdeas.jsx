@@ -12,7 +12,11 @@ const MEAL_LABELS = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", 
 const MEAL_ORDER  = ["breakfast", "lunch", "dinner", "snack"];
 
 function isSuspicious(entry) {
-  const { serving_amount: amt, serving_unit: unit, calories } = entry;
+  // Use either serving_amount or parse numeric part from serving_size string
+  const amt = entry.serving_amount ?? parseFloat(String(entry.serving_size || ""));
+  const unit = entry.serving_unit ?? (String(entry.serving_size || "").split(' ')[1] || "serving");
+  const calories = entry.calories;
+  
   if (amt > 0 && (unit === "g" || unit === "oz")) {
     const calPerG = unit === "oz" ? calories / (amt * 28.35) : calories / amt;
     if (calPerG > 10) return true; // physically impossible (fat = 9 cal/g max)
@@ -30,13 +34,20 @@ function buildMealPool(entries, excluded, additions) {
     const key = `${e.date}|${e.meal_type}`;
     if (excluded.has(key)) continue;
     if (!byKey[key]) byKey[key] = { key, date: e.date, meal_type: e.meal_type, foods: [] };
+    
+    // Format serving size for display
+    let displayServing = e.serving_size;
+    if (typeof e.serving_size === 'number') {
+      displayServing = `${e.serving_size} ${e.serving_unit || 'serving'}`;
+    }
+
     byKey[key].foods.push({
       name: e.food_name,
       calories: e.calories,
       protein: e.protein_grams || 0,
       carbs:   e.carbs_grams   || 0,
       fats:    e.fats_grams    || 0,
-      serving_size: e.serving_size || "1 serving",
+      serving_size: displayServing || "1 serving",
     });
   }
 
@@ -120,10 +131,14 @@ function buildSearchIndex(entries) {
   for (const e of entries) {
     if (!e.calories || e.calories <= 0 || isSuspicious(e)) continue;
     if (!seen.has(e.food_name)) {
+      let displayServing = e.serving_size;
+      if (typeof e.serving_size === 'number') {
+        displayServing = `${e.serving_size} ${e.serving_unit || 'serving'}`;
+      }
       seen.set(e.food_name, {
         name: e.food_name, calories: e.calories,
         protein: e.protein_grams || 0, carbs: e.carbs_grams || 0, fats: e.fats_grams || 0,
-        serving_size: e.serving_size || "1 serving", meal_type: e.meal_type,
+        serving_size: displayServing || "1 serving", meal_type: e.meal_type,
       });
     }
   }
@@ -244,7 +259,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
             <button key={i} onClick={() => setActiveDay(i)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeDay === i
-                  ? "bg-brand/[8%]0 text-black font-bold"
+                  ? "bg-brand text-black font-bold"
                   : "bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] hover:bg-[#2a2a2a] "
               }`}
             >

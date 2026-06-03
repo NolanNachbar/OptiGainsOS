@@ -15,8 +15,8 @@
   --color-text-secondary: #a0a0a0;
   --color-text-muted: #555555;
   /* Brand color — overridden per gym tenant at runtime */
-  --color-brand: #ccff00;
-  --color-brand-rgb: 204 255 0;  /* RGB channels for Tailwind opacity modifiers */
+  --color-brand: #ef4444;
+  --color-brand-rgb: 239 68 68;  /* RGB channels for Tailwind opacity modifiers */
   /* --color-brand: #ff0000;
   --color-brand-rgb: 255 0 0; */
   --color-action-dark: #121212;

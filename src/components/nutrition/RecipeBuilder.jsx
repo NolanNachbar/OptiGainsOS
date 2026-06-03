@@ -135,7 +135,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </button>
                   <button
                     onClick={() => handleLog(recipe)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand/[8%]0 hover:bg-brand text-black font-bold text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand hover:bg-brand text-black font-bold text-xs font-bold transition-colors"
                   >
                     <UtensilsCrossed className="w-2.5 h-2.5" />Log
                   </button>
@@ -240,7 +240,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 </p>
                 {/* Actions */}
                 <div className="flex gap-1.5">
-                  <Button size="sm" onClick={() => handleLog(recipe)} className="flex-1 bg-brand/[8%]0 h-8 text-xs">
+                  <Button size="sm" onClick={() => handleLog(recipe)} className="flex-1 bg-brand h-8 text-xs">
                     <UtensilsCrossed className="w-3 h-3 mr-1" />Log
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setSharingRecipe(recipe)} title="Share" className="h-8 w-8 p-0">
@@ -700,7 +700,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
 
       <Button
         onClick={handleAdd}
-        className="w-full h-10 bg-brand/[8%]0 rounded-lg text-sm font-medium"
+        className="w-full h-10 bg-brand rounded-lg text-sm font-medium"
       >
         <Plus className="w-4 h-4 mr-1.5" />
         Add Ingredient
@@ -940,14 +940,14 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 1
-                        ? "bg-brand/[8%]0"
+                        ? "bg-brand"
                         : "bg-[#2a2a2a]"
                     }`}
                   />
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 2
-                        ? "bg-brand/[8%]0"
+                        ? "bg-brand"
                         : "bg-[#2a2a2a]"
                     }`}
                   />
@@ -1062,7 +1062,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       }
                       goToStep(2);
                     }}
-                    className="w-full h-11 bg-brand/[8%]0 rounded-xl text-sm font-medium"
+                    className="w-full h-11 bg-brand rounded-xl text-sm font-medium"
                   >
                     Next: Add Ingredients
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1240,7 +1240,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}
-                    className="w-full h-11 bg-brand/[8%]0 rounded-xl text-sm font-medium disabled:opacity-50"
+                    className="w-full h-11 bg-brand rounded-xl text-sm font-medium disabled:opacity-50"
                   >
                     {isSaving ? (
                       <>
@@ -1380,7 +1380,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
           <Button
             onClick={handleLog}
             disabled={logMutation.isPending}
-            className="w-full bg-brand/[8%]0"
+            className="w-full bg-brand"
           >
             {logMutation.isPending ? (
               <>

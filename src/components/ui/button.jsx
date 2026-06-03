@@ -4,6 +4,7 @@ const Button = React.forwardRef(({
   className = "",
   variant = "default",
   size = "default",
+  asChild = false,
   children,
   ...props
 }, ref) => {
@@ -32,10 +33,20 @@ const Button = React.forwardRef(({
     icon:    "h-9 w-9",
   };
 
+  const combinedClassName = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      ...props,
+      className: `${combinedClassName} ${children.props.className || ""}`,
+      ref: ref,
+    });
+  }
+
   return (
     <button
       ref={ref}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={combinedClassName}
       {...props}
     >
       {children}

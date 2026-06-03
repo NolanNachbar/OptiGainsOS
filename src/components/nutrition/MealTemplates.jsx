@@ -253,7 +253,7 @@ export default function MealTemplates({ compact = false }) {
                     <Button
                       size="sm"
                       onClick={() => handleApply(template)}
-                      className="flex-1 bg-brand/[8%]0"
+                      className="flex-1 bg-brand"
                     >
                       <Play className="w-3 h-3 mr-1" />
                       Apply
@@ -338,17 +338,25 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
 
   const applyMutation = useMutation({
     mutationFn: async () => {
-      const entries = (template.items || []).map((item) => ({
-        food_name: item.food_name,
-        meal_type: item.meal_type || template.meal_type || "snack",
-        serving_size: item.serving_size,
-        calories: item.calories,
-        protein_grams: item.protein_grams,
-        carbs_grams: item.carbs_grams,
-        fats_grams: item.fats_grams,
-        date,
-        created_by: userId,
-      }));
+      const entries = (template.items || []).map((item) => {
+        // Parse "300 g" into amount=300, unit="g"
+        const parts = String(item.serving_size || "").split(" ");
+        const amount = parseFloat(parts[0]) || 1;
+        const unit = parts.slice(1).join(" ") || "serving";
+
+        return {
+          food_name: item.food_name,
+          meal_type: item.meal_type || template.meal_type || "snack",
+          serving_size: amount,
+          serving_unit: unit,
+          calories: item.calories,
+          protein_grams: item.protein_grams,
+          carbs_grams: item.carbs_grams,
+          fats_grams: item.fats_grams,
+          date,
+          created_by: userId,
+        };
+      });
       await Promise.all(entries.map((e) => db.entities.FoodEntry.create(e)));
     },
     onSuccess: () => {
@@ -404,7 +412,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           <Button
             onClick={() => applyMutation.mutate()}
             disabled={applyMutation.isPending}
-            className="w-full bg-brand/[8%]0"
+            className="w-full bg-brand"
           >
             {applyMutation.isPending ? (
               <>
@@ -614,7 +622,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-[#2a2a2a] bg-[#121212] shrink-0 space-y-2">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-brand/[8%]0 hover:bg-brand text-black font-bold">
+            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-brand hover:bg-brand text-black font-bold">
               {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
             </Button>
             <Button
@@ -727,7 +735,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
           <Button
             onClick={handleSave}
             disabled={createMutation.isPending || !name.trim()}
-            className="w-full bg-brand/[8%]0"
+            className="w-full bg-brand"
           >
             {createMutation.isPending ? (
               <>

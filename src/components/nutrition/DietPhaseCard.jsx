@@ -550,7 +550,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           <div className="px-6 py-4 border-t border-[#2a2a2a] flex-shrink-0 flex gap-2">
             <Button
               onClick={handleStartPhase}
-              className="flex-1 bg-brand/[8%]0 hover:bg-brand text-black font-bold"
+              className="flex-1 bg-brand hover:bg-brand text-black font-bold"
               disabled={startPhaseMutation.isPending}
             >
               {startPhaseMutation.isPending

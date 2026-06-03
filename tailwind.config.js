@@ -10,19 +10,19 @@ export default {
       colors: {
         // Brand accent — driven by CSS var so gym tenants can override at runtime
         brand: 'rgb(var(--color-brand-rgb) / <alpha-value>)',
-        // Primary brand colors — Volt Neon Green (kept for static references)
+        // Primary brand colors — Red
         primary: {
-          50: '#f7ffe0',
-          100: '#eeffb3',
-          200: '#e0ff80',
-          300: '#d6ff4d',
-          400: '#d4ff1a',
-          500: '#ccff00',
-          600: '#a3cc00',
-          700: '#7a9900',
-          800: '#526600',
-          900: '#293300',
-          950: '#141a00',
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d',
+          950: '#450a0a',
         },
         // Cyber Charcoal backgrounds
         charcoal: {
@@ -43,6 +43,8 @@ export default {
           700: '#15803d',
         },
         warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
           50: '#fffbeb',
           100: '#fef3c7',
           500: '#f59e0b',
@@ -77,8 +79,8 @@ export default {
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'dark-card': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4)',
-        'neon': '0 0 20px rgba(204, 255, 0, 0.25)',
-        'neon-lg': '0 0 40px rgba(204, 255, 0, 0.3)',
+        'neon': '0 0 20px rgba(239, 68, 68, 0.25)',
+        'neon-lg': '0 0 40px rgba(239, 68, 68, 0.3)',
       },
     },
   },

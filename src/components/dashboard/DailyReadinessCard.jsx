@@ -162,7 +162,7 @@ export default function DailyReadinessCard() {
             <div className="text-center py-3">
               <Activity className="w-8 h-8 text-white mx-auto mb-2" />
               <p className="text-sm text-[#555555] mb-3">How are you feeling today?</p>
-              <Button size="sm" className="bg-brand/[8%]0 hover:bg-brand text-black font-bold text-xs h-8" onClick={handleOpen}>
+              <Button size="sm" className="bg-brand hover:bg-brand text-black font-bold text-xs h-8" onClick={handleOpen}>
                 <Plus className="w-3 h-3 mr-1" />Log Readiness
               </Button>
             </div>
@@ -219,7 +219,7 @@ export default function DailyReadinessCard() {
               />
             </div>
             <Button
-              className="w-full bg-brand/[8%]0 hover:bg-brand text-black font-bold"
+              className="w-full bg-brand hover:bg-brand text-black font-bold"
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >

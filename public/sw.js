@@ -1,7 +1,10 @@
 const CACHE_NAME = "optigains-v1";
 
+// Derive base path from where the SW was registered (e.g. "/OptiGainsOS/" or "/")
+const BASE = new URL(self.registration.scope).pathname;
+
 // App shell — cached on first install for offline support
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/optigains-icon.svg"];
+const APP_SHELL = [BASE, BASE + "index.html", BASE + "manifest.json", BASE + "optigains-icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -32,7 +35,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
-        .catch(() => caches.match("/index.html"))
+        .catch(() => caches.match(BASE + "index.html"))
     );
     return;
   }
@@ -61,13 +64,13 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = { title: "OptiGainsOS", body: event.data.text() };
   }
-  const { title, body, url = "/dashboard", icon = "/optigains-icon.svg" } = payload;
+  const { title, body, url = BASE + "dashboard", icon = BASE + "optigains-icon.svg" } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: "/optigains-icon.svg",
+      badge: BASE + "optigains-icon.svg",
       data: { url },
       vibrate: [200, 100, 200],
     })
@@ -77,7 +80,7 @@ self.addEventListener("push", (event) => {
 // Notification tap → navigate to relevant page
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/dashboard";
+  const url = event.notification.data?.url || BASE + "dashboard";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       const existing = windowClients.find((c) => c.url.includes(self.location.origin));

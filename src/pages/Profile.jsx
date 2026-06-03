@@ -10,18 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingScreen, LoadingSpinner } from "@/components/ui/loading-spinner";
-import { invalidateProfile, invalidateBodyWeight, invalidateDietPhases } from "@/lib/queryKeys";
-import { useDietPhase } from "@/hooks/useDietPhase";
-import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK, EQUIPMENT_OPTIONS } from "@/lib/constants";
-import { calculateMacroSplit, suggestProtein, getBestTDEE } from "@/utils/coachingUtils";
+import { invalidateProfile, invalidateBodyWeight } from "@/lib/queryKeys";
+import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK } from "@/lib/constants";
+import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
+import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Save, Trash2, AlertTriangle, Flame, Apple as AppleIcon, Calculator, Dumbbell, Users, Clock, User, LogOut, HelpCircle, BookOpen, Bell, BellOff, Database, ChevronRight, ChevronLeft } from "lucide-react";
+import { Save, Trash2, AlertTriangle, Flame, Users, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import StravaConnect from "@/components/strava/StravaConnect";
 import { toast } from "sonner";
-import { differenceInDays, addDays, format } from "date-fns";
+import { format } from "date-fns";
 
 function SectionHeader({ icon: Icon, title }) {
   return (
@@ -45,11 +44,9 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [phaseConflict, setPhaseConflict] = useState(null); // { phase, pendingSubmit }
   const [activeSection, setActiveSection] = useState(null);
 
   const { profile, isLoading } = useProfile();
-  const { activePhase } = useDietPhase();
 
   const { data: profileStats } = useQuery({
     queryKey: ['profile-stats', user?.id],
@@ -103,30 +100,12 @@ export default function Profile() {
     tdee_override: '',
     current_weight: '',
     checkin_day: 0,
-    username: '',
-    bio: '',
-    privacy_level: 'private',
     display_name: '',
-    // Fitness questionnaire
-    fitness_level: '',
-    primary_goal: [],
-    available_equipment: [],
-    days_per_week: 3,
-    workout_duration_preference: '',
-    injuries_limitations: '',
-    exercises_per_day: null,
-    include_cardio: false,
-    skip_deload: false,
-    show_rir: true, // Show RIR (Reps In Reserve) in workout logging
-    adaptive_training: false,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    // Dynamic capacity constraints (Phase 3d)
-    max_daily_training_hours: 2.0,
-    primary_sport_focus: 'concurrent',
-    race_date: '',
   });
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
+  const [proteinPerLb, setProteinPerLb] = useState(0.8);
 
   const savedFormDataRef = useRef(null);
 
@@ -137,144 +116,67 @@ export default function Profile() {
     ? [...weightEntries].sort((a, b) => new Date(b.recorded_date) - new Date(a.recorded_date))[0].weight
     : null;
 
-  // Only initialize form data ONCE when the profile first loads.
-  // We intentionally do NOT re-run this when profile refetches after save —
-  // that was causing goals to uncheck because the refetch overwrote formData.
+  // Initialize form data ONCE after the profile query settles (profile may be null for new users).
   const initializedRef = useRef(false);
   useEffect(() => {
-    if (profile && !initializedRef.current) {
-      initializedRef.current = true;
-      const initial = {
-        daily_calorie_goal: profile.daily_calorie_goal || DEFAULT_GOALS.calories,
-        daily_protein_goal: profile.daily_protein_goal || DEFAULT_GOALS.protein,
-        daily_carbs_goal: profile.daily_carbs_goal || DEFAULT_GOALS.carbs,
-        daily_fats_goal: profile.daily_fats_goal || DEFAULT_GOALS.fats,
-        weight_unit: profile.weight_unit || 'lbs',
-        height_cm: profile.height_cm || '',
-        age: profile.age || '',
-        sex: profile.sex || '',
-        activity_level: profile.activity_level || '',
-        height_unit: profile.height_unit || 'in',
-        tdee_override: profile.tdee_override || '',
-        current_weight: profile.current_weight || '',
-        checkin_day: profile.checkin_day ?? 0,
-        username: profile.username || '',
-        bio: profile.bio || '',
-        privacy_level: profile.privacy_level || 'private',
-        display_name: profile.display_name || '',
-        fitness_level: profile.fitness_level || '',
-        // Always normalize to array — handle incorrectly serialized data
-        primary_goal: (() => {
-          let goal = profile.primary_goal;
-          // If it's a string, try to parse it (handles double-stringified JSON)
-          while (typeof goal === 'string') {
-            try {
-              goal = JSON.parse(goal);
-            } catch {
-              // Not valid JSON, treat as single value
-              return [goal];
-            }
-          }
-          // Now it should be an array or null
-          return Array.isArray(goal) ? goal : (goal ? [goal] : []);
-        })(),
-        available_equipment: (() => {
-          let equip = profile.available_equipment;
-          // Same logic for equipment
-          while (typeof equip === 'string') {
-            try {
-              equip = JSON.parse(equip);
-            } catch {
-              return equip ? [equip] : [];
-            }
-          }
-          return Array.isArray(equip) ? equip : [];
-        })(),
-        days_per_week: profile.days_per_week || 3,
-        workout_duration_preference: profile.workout_duration_preference || '',
-        injuries_limitations: profile.injuries_limitations || '',
-        exercises_per_day: profile.exercises_per_day ?? null,
-        include_cardio: profile.include_cardio ?? false,
-        skip_deload: profile.skip_deload ?? false,
-        show_rir: profile.show_rir ?? true,
-        adaptive_training: profile.adaptive_training ?? false,
-        timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-        max_daily_training_hours: Number(profile.max_daily_training_hours) || 2.0,
-        primary_sport_focus: String(profile.primary_sport_focus || 'concurrent'),
-        race_date: String(profile.race_date || ''),
-      };
-      setFormData(initial);
-      savedFormDataRef.current = initial;
-      if (profile.height_unit === 'in' && profile.height_cm) {
-        const totalInches = profile.height_cm;
-        setHeightFeet(Math.floor(totalInches / 12).toString());
-        setHeightInches((totalInches % 12).toString());
-      }
+    if (isLoading || initializedRef.current) return;
+    initializedRef.current = true;
+    const p = profile || {};
+    const initial = {
+      daily_calorie_goal: p.daily_calorie_goal || DEFAULT_GOALS.calories,
+      daily_protein_goal: p.daily_protein_goal || DEFAULT_GOALS.protein,
+      daily_carbs_goal:   p.daily_carbs_goal   || DEFAULT_GOALS.carbs,
+      daily_fats_goal:    p.daily_fats_goal    || DEFAULT_GOALS.fats,
+      weight_unit:        p.weight_unit        || 'lbs',
+      height_cm:          p.height_cm          || '',
+      age:                p.age                || '',
+      sex:                p.sex                || '',
+      activity_level:     p.activity_level     || '',
+      height_unit:        p.height_unit        || 'in',
+      tdee_override:      p.tdee_override      || '',
+      current_weight:     p.current_weight     || '',
+      checkin_day:  p.checkin_day  ?? 0,
+      display_name: p.display_name || '',
+      timezone:     p.timezone     || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+    setFormData(initial);
+    savedFormDataRef.current = initial;
+    if (p.height_unit === 'in' && p.height_cm) {
+      const totalInches = p.height_cm;
+      setHeightFeet(Math.floor(totalInches / 12).toString());
+      setHeightInches((totalInches % 12).toString());
     }
-  }, [profile]);
+  }, [profile, isLoading]);
 
   const isDirty = useMemo(() => {
     if (!savedFormDataRef.current) return false;
     return JSON.stringify(formData) !== JSON.stringify(savedFormDataRef.current);
   }, [formData]);
 
-  // Username cooldown
-  const isUsernameLocked = useMemo(() => {
-    if (!profile?.username_changed_at) return false;
-    return differenceInDays(new Date(), new Date(profile.username_changed_at)) < 30;
-  }, [profile?.username_changed_at]);
-
-  const usernameUnlockDate = useMemo(() => {
-    if (!profile?.username_changed_at) return null;
-    return addDays(new Date(profile.username_changed_at), 30);
-  }, [profile?.username_changed_at]);
-
   const updateProfileMutation = useMutation({
     mutationFn: async ({ profileData, weightToLog }) => {
       if (profile) {
         await db.entities.UserProfile.update(profile.id, profileData);
-        if (weightToLog) {
-          await db.entities.BodyWeightEntry.create({
-            weight: parseFloat(weightToLog),
-            recorded_date: format(new Date(), "yyyy-MM-dd"),
-            notes: null,
-            created_by: user.id,
-          });
-        }
+      } else {
+        await db.entities.UserProfile.create({ ...profileData, created_by: user.id });
+        invalidateProfile(queryClient);
+      }
+      if (weightToLog) {
+        await db.entities.BodyWeightEntry.create({
+          weight: parseFloat(weightToLog),
+          recorded_date: format(new Date(), "yyyy-MM-dd"),
+          notes: null,
+          created_by: user.id,
+        });
       }
     },
     onSuccess: (_, { profileData, weightToLog }) => {
-      // Update the saved snapshot to match what we just wrote to the DB.
-      // We do NOT call invalidateProfile here because that triggers a refetch
-      // which would re-run the useEffect and overwrite the user's selections.
-      // The form already has the correct state — no need to reload from DB.
-      savedFormDataRef.current = {
-        ...profileData,
-        primary_goal: Array.isArray(profileData.primary_goal)
-          ? profileData.primary_goal
-          : profileData.primary_goal ? [profileData.primary_goal] : [],
-        available_equipment: Array.isArray(profileData.available_equipment)
-          ? profileData.available_equipment
-          : [],
-      };
+      savedFormDataRef.current = { ...profileData };
       if (weightToLog) invalidateBodyWeight(queryClient);
       toast.success("Profile saved!");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update profile");
-    },
-  });
-
-  const endPhaseMutation = useMutation({
-    mutationFn: async (phaseId) => {
-      const { error } = await supabase
-        .from("diet_phases")
-        .update({ end_date: format(new Date(), "yyyy-MM-dd") })
-        .eq("id", phaseId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidateDietPhases(queryClient);
     },
   });
 
@@ -311,25 +213,6 @@ export default function Profile() {
     if (cleaned.activity_level === '') delete cleaned.activity_level;
     if (cleaned.current_weight === '') delete cleaned.current_weight;
 
-    // If username changed, set the cooldown timestamp
-    if (profile && formData.username !== profile.username && formData.username) {
-      cleaned.username_changed_at = new Date().toISOString();
-    }
-
-    // Detect goal ↔ active phase conflict before saving
-    if (activePhase && (activePhase.phase_type === 'cut' || activePhase.phase_type === 'bulk')) {
-      const newGoals = (cleaned.primary_goal || []).map(g => g.toLowerCase().replace(' ', '_'));
-      const phaseWantsCut = activePhase.phase_type === 'cut';
-      const goalConflicts = phaseWantsCut
-        ? newGoals.some(g => g === 'muscle_gain')
-        : newGoals.some(g => g === 'weight_loss');
-
-      if (goalConflicts) {
-        setPhaseConflict({ phase: activePhase, pendingSubmit: cleaned });
-        return;
-      }
-    }
-
     doSubmit(cleaned);
   };
 
@@ -344,57 +227,14 @@ export default function Profile() {
     : displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const NAV = [
-    { id: 'identity', label: 'Identity',         icon: User },
-    { id: 'body',     label: 'Body & Nutrition',  icon: Flame },
-    { id: 'fitness',  label: 'Training',          icon: Dumbbell },
-    { id: 'settings', label: 'Settings',          icon: Database },
+    { id: 'identity', label: 'Identity',        icon: User },
+    { id: 'body',     label: 'Body & Nutrition', icon: Flame },
+    { id: 'settings', label: 'Settings',         icon: Database },
   ];
 
   return (
     <div className="p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
-
-        {phaseConflict && (
-          <div className="mb-6 bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg p-4">
-            <p className="font-medium text-amber-800 mb-1">Your new goal conflicts with your active {phaseConflict.phase.phase_type === 'cut' ? 'cut' : 'bulk'} phase</p>
-            <p className="text-sm text-[#fbbf24] mb-4">
-              End your active {phaseConflict.phase.phase_type} phase now so your coaching recommendations match your new goal?
-            </p>
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-                disabled={endPhaseMutation.isPending}
-                onClick={async () => {
-                  await endPhaseMutation.mutateAsync(phaseConflict.phase.id);
-                  const pending = phaseConflict.pendingSubmit;
-                  setPhaseConflict(null);
-                  doSubmit(pending);
-                }}
-              >
-                End phase & save
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const pending = phaseConflict.pendingSubmit;
-                  setPhaseConflict(null);
-                  doSubmit(pending);
-                }}
-              >
-                Keep phase & save anyway
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setPhaseConflict(null)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* ── Two-column layout (desktop) / single column (mobile) ── */}
         <div className="md:grid md:grid-cols-[220px_1fr] md:gap-8 md:items-start">
@@ -537,7 +377,7 @@ export default function Profile() {
                 {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
               </h1>
               <p className="text-[13px] text-[#a0a0a0] mt-0.5">
-                {(activeSection ?? 'identity') === 'identity' ? 'Your account and social profile' :
+                {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
                  (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
                  (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
                                                                 'Notifications, integrations, and account actions'}
@@ -741,7 +581,7 @@ export default function Profile() {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-[#a0a0a0]">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-white text-white">{tdee.tdee} cal/day</div>
+                            <div className="text-2xl font-bold text-white">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             tdee.method === 'adaptive' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]' : 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
@@ -755,8 +595,60 @@ export default function Profile() {
 
                   <SectionDivider />
 
+                  {/* Section: Nutrition Goals */}
+                  <SectionHeader icon={Calculator} title="Nutrition Goals" />
+                  <div className="space-y-4">
+                    {tdee.tdee && latestWeight && (
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            type="number"
+                            step="0.05"
+                            min="0.5"
+                            max="2.5"
+                            value={proteinPerLb}
+                            onChange={(e) => setProteinPerLb(e.target.value)}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-[#555555] whitespace-nowrap">
+                            g protein / lb = {Math.round(proteinPerLb * (formData.weight_unit === 'kg' ? (latestWeight * 2.205) : latestWeight))}g/day
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => {
+                            const weightLbs = formData.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight;
+                            const protein = Math.round(weightLbs * (parseFloat(proteinPerLb) || 0.8));
+                            const macros = calculateMacroSplit(tdee.tdee, protein);
+                            setFormData(prev => ({
+                              ...prev,
+                              daily_calorie_goal: macros.calories,
+                              daily_protein_goal: macros.protein,
+                              daily_carbs_goal: macros.carbs,
+                              daily_fats_goal: macros.fats,
+                            }));
+                          }}
+                        >
+                          <Calculator className="w-4 h-4 mr-2" />
+                          Auto-calculate from TDEE ({tdee.tdee} cal)
+                        </Button>
+                      </div>
+                    )}
+                    {!tdee.tdee && (
+                      <p className="text-sm text-[#555555]">Fill in your body stats above to enable auto-calculation.</p>
+                    )}
+                    <MacroGoalsEditor
+                      values={formData}
+                      onChange={(v) => setFormData(prev => ({ ...prev, ...v }))}
+                    />
+                  </div>
+
+                  <SectionDivider />
+
                   {/* Section D: Preferences */}
-                  <SectionHeader icon={Dumbbell} title="Preferences" />
+                  <SectionHeader icon={Flame} title="Preferences" />
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="weight_unit">Weight Unit</Label>
@@ -818,324 +710,9 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* RIR Display Toggle */}
-                  <div className="mt-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.show_rir}
-                        onChange={(e) => setFormData({ ...formData, show_rir: e.target.checked })}
-                        className="w-4 h-4 rounded border-[#2a2a2a] text-brand focus:ring-brand/30"
-                      />
-                      <div>
-                        <span className="font-medium">Show RIR (Reps In Reserve)</span>
-                        <p className="text-sm text-[#555555]">Display RIR tracking column when logging workouts. RIR indicates how many more reps you could have done (0 = failure, 3 = 3 more reps possible).</p>
-                      </div>
-                    </label>
-                  </div>
-
-                  {/* Adaptive Training Toggle */}
-                  <div className="mt-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.adaptive_training}
-                        onChange={(e) => setFormData({ ...formData, adaptive_training: e.target.checked })}
-                        className="w-4 h-4 rounded border-[#2a2a2a] text-brand focus:ring-brand/30"
-                      />
-                      <div>
-                        <span className="font-medium">Adaptive Cardio Suggestions</span>
-                        <p className="text-sm text-[#555555]">During your weekly check-in, suggest cardio session duration adjustments based on how many runs you completed via Strava. Only applies to AI-generated running programs — never modifies your strength workouts or manually built plans.</p>
-                      </div>
-                    </label>
-                  </div>
-
                 </CardContent>
               </Card>
           </div>{/* end body section */}
-
-          {/* ── FITNESS SECTION ── */}
-          <div className={activeSection === 'fitness' ? '' : 'hidden'}>
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <SectionHeader icon={Dumbbell} title="Fitness Profile" />
-
-                  {/* Fitness Level */}
-                  <div className="mb-6">
-                    <Label className="text-sm font-semibold mb-2 block">Fitness Level</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { value: "beginner",     label: "Beginner",     desc: "New to working out" },
-                        { value: "intermediate", label: "Intermediate", desc: "Some experience" },
-                        { value: "advanced",     label: "Advanced",     desc: "Regular training" },
-                      ].map(opt => {
-                        const selected = formData.fitness_level === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, fitness_level: opt.value }))}
-                            className={`p-3 rounded-xl border-2 text-center transition-all ${
-                              selected
-                                ? "border-brand bg-brand/[5%]"
-                                : "border-[#2a2a2a] hover:border-brand/30 border-[#2a2a2a]"
-                            }`}
-                          >
-                            <div className={`text-sm font-semibold ${selected ? "text-brand text-brand" : "text-white"}`}>
-                              {opt.label}
-                            </div>
-                            <div className="text-xs text-[#555555] mt-0.5 hidden sm:block">{opt.desc}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <SectionDivider />
-
-                  {/* Primary Goals */}
-                  <div className="mb-6">
-                    <Label className="text-sm font-semibold mb-1 block">Primary Goals</Label>
-                    <p className="text-xs text-[#555555] mb-3">Select all that apply — the AI tailors sets, reps, and exercises to your goals</p>
-                    <div className="grid sm:grid-cols-2 gap-2">
-                      {[
-                        {
-                          value: "weight_loss",
-                          label: "Weight Loss",
-                          desc: "Higher reps, shorter rest, calorie-burning circuits",
-                        },
-                        {
-                          value: "muscle_gain",
-                          label: "Muscle Gain",
-                          desc: "Heavy compound lifts, 4–5 sets, longer rest periods",
-                        },
-                        {
-                          value: "endurance",
-                          label: "Build Endurance",
-                          desc: "High reps, minimal rest, sustained effort sets",
-                        },
-                        {
-                          value: "general_fitness",
-                          label: "General Fitness",
-                          desc: "Balanced mix of strength, cardio, and mobility",
-                        },
-                        {
-                          value: "flexibility",
-                          label: "Improve Flexibility",
-                          desc: "Mobility drills, stretches, recovery work",
-                        },
-                      ].map(opt => {
-                        const selected = (formData.primary_goal || []).includes(opt.value);
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              primary_goal: selected
-                                ? prev.primary_goal.filter(g => g !== opt.value)
-                                : [...(prev.primary_goal || []), opt.value],
-                            }))}
-                            className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
-                              selected
-                                ? "border-brand bg-brand/[5%]"
-                                : "border-[#2a2a2a] hover:border-brand/30 border-[#2a2a2a]"
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-sm font-semibold ${selected ? "text-brand text-brand" : "text-white"}`}>
-                                {opt.label}
-                              </div>
-                              <div className="text-xs text-[#555555] mt-0.5 leading-snug">{opt.desc}</div>
-                            </div>
-                            <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 ${
-                              selected ? "bg-brand border-brand" : "border-[#2a2a2a]"
-                            }`}>
-                              {selected && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
-                                </svg>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <SectionDivider />
-
-                  {/* Schedule */}
-                  <div className="grid md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">Workout Duration</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { value: "15 min", label: "15 min", desc: "Quick" },
-                          { value: "30 min", label: "30 min", desc: "Short" },
-                          { value: "45 min", label: "45 min", desc: "Standard" },
-                          { value: "60+ min", label: "60+ min", desc: "Extended" },
-                        ].map(opt => {
-                          const selected = formData.workout_duration_preference === opt.value;
-                          return (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, workout_duration_preference: opt.value }))}
-                              className={`p-2.5 rounded-lg border-2 text-center transition-all ${
-                                selected
-                                  ? "border-brand bg-brand/[5%]"
-                                  : "border-[#2a2a2a] hover:border-brand/30 border-[#2a2a2a]"
-                              }`}
-                            >
-                              <div className={`text-sm font-semibold ${selected ? "text-brand text-brand" : "text-[#a0a0a0] text-[#a0a0a0]"}`}>
-                                {opt.label}
-                              </div>
-                              <div className="text-xs text-[#a0a0a0]">{opt.desc}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">
-                        Training Days / Week
-                        <span className="ml-2 text-brand font-bold">{formData.days_per_week}</span>
-                        {formData.days_per_week === 6 && (
-                          <span className="ml-2 text-xs text-amber-500 font-normal">High frequency — recover well</span>
-                        )}
-                      </Label>
-                      <div className="flex gap-2 mt-1">
-                        {[1,2,3,4,5,6].map(n => {
-                          const sel = formData.days_per_week === n;
-                          return (
-                            <button
-                              key={n}
-                              type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, days_per_week: n }))}
-                              className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-bold transition-all ${
-                                sel
-                                  ? "border-brand/50 bg-brand text-black font-bold"
-                                  : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30  text-[#a0a0a0]"
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-[#a0a0a0] mt-1.5">days per week</p>
-                    </div>
-                  </div>
-
-                  <SectionDivider />
-
-                  {/* Endurance Goals (Phase 3d) */}
-                  <div className="mb-6">
-                    <SectionHeader icon={Target} title="Athletic Constraints" />
-                    <div className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="sport-focus">Primary Sport Focus</Label>
-                          <Select
-                            value={formData.primary_sport_focus}
-                            onValueChange={(value) => setFormData({ ...formData, primary_sport_focus: value })}
-                          >
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Select focus" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="concurrent">Concurrent (Lifting + Tri)</SelectItem>
-                              <SelectItem value="strength">Strength Priority</SelectItem>
-                              <SelectItem value="endurance">Endurance Priority</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-[#555555] mt-1">AI brief uses this to resolve volume conflicts</p>
-                        </div>
-                        <div>
-                          <Label htmlFor="max-hours">Max Workout Hours</Label>
-                          <Input
-                            id="max-hours"
-                            type="number"
-                            step="0.1"
-                            value={formData.max_daily_training_hours}
-                            onChange={(e) => setFormData({ ...formData, max_daily_training_hours: parseFloat(e.target.value) || 2.0 })}
-                            className="mt-1"
-                          />
-                          <p className="text-xs text-[#555555] mt-1">Upper limit for scheduled sessions</p>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="race-date">Target Race Date (Optional)</Label>
-                        <Input
-                          id="race-date"
-                          type="date"
-                          value={formData.race_date}
-                          onChange={(e) => setFormData({ ...formData, race_date: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <SectionDivider />
-                  <div className="mb-6">
-                    <Label className="text-sm font-semibold mb-1 block">Available Equipment</Label>
-                    <p className="text-xs text-[#555555] mb-3">Only exercises you can actually do will be included</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {(EQUIPMENT_OPTIONS || []).map(opt => {
-                        const selected = (formData.available_equipment || []).includes(opt.value);
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              available_equipment: selected
-                                ? prev.available_equipment.filter(e => e !== opt.value)
-                                : [...(prev.available_equipment || []), opt.value],
-                            }))}
-                            className={`flex items-center gap-2 p-2.5 rounded-lg border-2 text-left transition-all ${
-                              selected
-                                ? "border-brand bg-brand/[5%]"
-                                : "border-[#2a2a2a] hover:border-brand/30 border-[#2a2a2a]"
-                            }`}
-                          >
-                            <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
-                              selected ? "bg-brand border-brand" : "border-[#2a2a2a]"
-                            }`}>
-                              {selected && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
-                                </svg>
-                              )}
-                            </div>
-                            <span className={`text-xs font-medium ${selected ? "text-brand text-brand" : "text-[#a0a0a0] text-[#a0a0a0]"}`}>
-                              {opt.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <SectionDivider />
-
-                  {/* Injuries */}
-                  <div>
-                    <Label className="text-sm font-semibold mb-1 block">Injuries or Limitations</Label>
-                    <p className="text-xs text-[#555555] mb-2">Helps the AI avoid exercises that could aggravate existing issues</p>
-                    <Textarea
-                      value={formData.injuries_limitations}
-                      onChange={e => setFormData({ ...formData, injuries_limitations: e.target.value })}
-                      placeholder="e.g. Lower back pain — avoid heavy deadlifts. Left knee issue — no deep squats."
-                      className="min-h-[80px] text-sm"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-          </div>{/* end fitness section */}
 
           {/* Spacer for sticky bar */}
           {isDirty && <div className="h-28 md:h-20" />}

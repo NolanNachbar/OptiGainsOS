@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Barbell Bar -->
+  <rect x="80" y="236" width="352" height="40" rx="20" fill="#ef4444"/>
+  
+  <!-- Main Plates (Inner) -->
+  <rect x="120" y="156" width="48" height="200" rx="12" fill="#ef4444"/>
+  <rect x="344" y="156" width="48" height="200" rx="12" fill="#ef4444"/>
+  
+  <!-- Secondary Plates (Outer) -->
+  <rect x="70" y="186" width="30" height="140" rx="8" fill="#ef4444"/>
+  <rect x="412" y="186" width="30" height="140" rx="8" fill="#ef4444"/>
+</svg>

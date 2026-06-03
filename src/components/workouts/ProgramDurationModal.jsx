@@ -335,7 +335,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             onClick={handleConfirm}
             disabled={activeWeeks < 3}
             variant="primary"
-            className="flex-1 bg-brand/[8%]0 hover:bg-brand text-black font-bold"
+            className="flex-1 bg-brand hover:bg-brand text-black font-bold"
           >
             <ChevronRight className="w-4 h-4 mr-2" />
             Generate Program

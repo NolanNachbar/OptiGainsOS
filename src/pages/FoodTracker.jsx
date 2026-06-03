@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import RecipeBuilder from "@/components/nutrition/RecipeBuilder";
+import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import MealTemplates, { SaveAsTemplateDialog } from "@/components/nutrition/MealTemplates";
 import StatsSetupModal from "@/components/nutrition/StatsSetupModal";
 import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
@@ -375,42 +376,73 @@ export default function FoodTracker() {
   // Re-log a previously logged food entry.
   // Macros are already fully scaled to the recorded serving — treat baseMacros as per-1-serving.
   const selectRecentFood = (entry) => {
+    // 1. Determine original amount and unit from the entry's serving_size string/number
+    const servingStr = String(entry.serving_size || "");
+    const parts = servingStr.split(' ');
+    const originalAmount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
+    const originalUnit = parts.slice(1).join(' ') || entry.serving_unit || 'serving';
+
+    // 2. Calculate the scale factor the entry used (per 100g for mass/volume, or per unit)
+    const originalScale = ['g', 'ml'].includes(originalUnit) ? originalAmount / 100 : originalAmount;
+    const safeScale = originalScale > 0 ? originalScale : 1;
+
+    // 3. Normalize macros to "per 100g/ml" or "per 1 unit" so they can be re-scaled safely
     const baseMacroValues = {
-      calories: Math.round(entry.calories),
-      protein_grams: Math.round((entry.protein_grams || 0) * 10) / 10,
-      carbs_grams: Math.round((entry.carbs_grams || 0) * 10) / 10,
-      fats_grams: Math.round((entry.fats_grams || 0) * 10) / 10,
+      calories: Math.round((entry.calories || 0) / safeScale),
+      protein_grams: Math.round(((entry.protein_grams || 0) / safeScale) * 10) / 10,
+      carbs_grams: Math.round(((entry.carbs_grams || 0) / safeScale) * 10) / 10,
+      fats_grams: Math.round(((entry.fats_grams || 0) / safeScale) * 10) / 10,
     };
+
     setFoodServingSizeGrams(null);
     setIsUsdaFood(false);
     setBaseMacros(baseMacroValues);
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
-      serving_unit: 'serving',
-      serving_amount: 1,
-      ...baseMacroValues,
+      serving_unit: originalUnit,
+      serving_amount: originalAmount,
+      calories: Math.round(entry.calories) || 0,
+      protein_grams: entry.protein_grams || 0,
+      carbs_grams: entry.carbs_grams || 0,
+      fats_grams: entry.fats_grams || 0,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
   };
 
   const selectCustomFood = (food) => {
+    // Custom foods store macros per 'serving_size' units. Normalize to per-100 or per-1.
+    const originalAmount = food.serving_size || 1;
+    const originalUnit = food.serving_unit || "serving";
+    
+    const originalScale = ['g', 'ml'].includes(originalUnit) ? originalAmount / 100 : originalAmount;
+    const safeScale = originalScale > 0 ? originalScale : 1;
+
     const baseMacroValues = {
-      calories: Math.round(food.calories),
-      protein_grams: Math.round((food.protein_grams || 0) * 10) / 10,
-      carbs_grams: Math.round((food.carbs_grams || 0) * 10) / 10,
-      fats_grams: Math.round((food.fats_grams || 0) * 10) / 10,
+      calories: Math.round((food.calories || 0) / safeScale),
+      protein_grams: Math.round(((food.protein_grams || 0) / safeScale) * 10) / 10,
+      carbs_grams: Math.round(((food.carbs_grams || 0) / safeScale) * 10) / 10,
+      fats_grams: Math.round(((food.fats_grams || 0) / safeScale) * 10) / 10,
     };
+
     setFoodServingSizeGrams(null);
     setIsUsdaFood(false);
     setBaseMacros(baseMacroValues);
+    
+    // Set default amount: 100 for g/ml, otherwise 1
+    const defaultAmount = ['g', 'ml'].includes(originalUnit) ? 100 : 1;
+    const defaultScale = ['g', 'ml'].includes(originalUnit) ? 1 : 1; // 100/100 or 1/1
+
     setNewFood({
       ...newFood,
       food_name: food.food_name,
-      serving_unit: food.serving_unit || "serving",
-      serving_amount: ['g', 'ml'].includes(food.serving_unit) ? 100 : 1,
-      ...baseMacroValues,
+      serving_unit: originalUnit,
+      serving_amount: defaultAmount,
+      calories: Math.round(baseMacroValues.calories * defaultScale),
+      protein_grams: Math.round(baseMacroValues.protein_grams * defaultScale * 10) / 10,
+      carbs_grams: Math.round(baseMacroValues.carbs_grams * defaultScale * 10) / 10,
+      fats_grams: Math.round(baseMacroValues.fats_grams * defaultScale * 10) / 10,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
@@ -438,7 +470,7 @@ export default function FoodTracker() {
   if (newFood.food_name && baseMacros.calories > 0) {
     saveCustomFoodMutation.mutate({
       food_name: newFood.food_name,
-      serving_size: 1,
+      serving_size: ['g', 'ml'].includes(newFood.serving_unit) ? 100 : 1,
       serving_unit: newFood.serving_unit,
       calories: Math.round(baseMacros.calories),
       protein_grams: Math.round(baseMacros.protein_grams * 10) / 10,
@@ -491,7 +523,8 @@ const handleSaveMealTemplate = () => {
       await db.entities.FoodEntry.create({
         food_name: data.food_name,
         meal_type: data.meal_type,
-        serving_size: `${data.serving_amount} ${data.serving_unit}`,
+        serving_size: parseFloat(data.serving_amount) || 1,
+        serving_unit: data.serving_unit,
         calories: Math.round(data.calories),
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
@@ -526,7 +559,8 @@ const handleSaveMealTemplate = () => {
       await db.entities.FoodEntry.update(id, {
         food_name: data.food_name,
         meal_type: data.meal_type,
-        serving_size: `${data.serving_amount} ${data.serving_unit}`,
+        serving_size: parseFloat(data.serving_amount) || 1,
+        serving_unit: data.serving_unit,
         calories: Math.round(data.calories),
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
@@ -546,9 +580,12 @@ const handleSaveMealTemplate = () => {
   });
 
   const startEditEntry = (entry) => {
-    const parts = entry.serving_size?.split(' ') || [];
-    const amount = parseFloat(parts[0]) || 1;
-    const unit = parts.slice(1).join(' ') || 'serving';
+    // Handle both string ("300 g") and numeric (300) serving_size from DB
+    const servingStr = String(entry.serving_size || "");
+    const parts = servingStr.split(' ');
+    const amount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
+    const unit = parts.slice(1).join(' ') || entry.serving_unit || 'serving';
+    
     const scale = ['g', 'ml'].includes(unit) ? amount / 100 : amount;
     const safeScale = scale > 0 ? scale : 1;
     const baseMacroValues = {
@@ -606,6 +643,7 @@ const handleSaveMealTemplate = () => {
     const unit = food.servingSizeUnit?.toLowerCase() === 'ml' ? 'ml' : 'g';
     // Default amount = food's actual serving size from the database
     const servingG = food.servingSize || 100;
+    const initialScale = servingG / 100;
 
     setFoodServingSizeGrams(servingG);
     setIsUsdaFood(true);
@@ -615,7 +653,10 @@ const handleSaveMealTemplate = () => {
       food_name: food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
       serving_unit: unit,
       serving_amount: servingG,
-      ...baseMacroValues,
+      calories: Math.round(baseMacroValues.calories * initialScale),
+      protein_grams: Math.round(baseMacroValues.protein_grams * initialScale * 10) / 10,
+      carbs_grams: Math.round(baseMacroValues.carbs_grams * initialScale * 10) / 10,
+      fats_grams: Math.round(baseMacroValues.fats_grams * initialScale * 10) / 10,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
@@ -737,150 +778,6 @@ const handleSaveMealTemplate = () => {
     setSelectedDate(format(d, 'yyyy-MM-dd'));
   };
 
-  const GoalsFormContent = () => (
-    <div className="space-y-6">
-      {activePhase && tdee.tdee && (() => {
-        const phaseCalories = activePhase.phase_type === 'reverse'
-          ? (profile?.daily_calorie_goal || tdee.tdee)
-          : calculatePhaseCalories(tdee.tdee, activePhase.weekly_rate);
-        const goalsOutOfSync = Math.abs((profile?.daily_calorie_goal || 0) - phaseCalories) > 50;
-        return (
-          <div className={`rounded-xl border p-4 space-y-3 ${goalsOutOfSync ? 'border-amber-300 bg-[rgba(245,158,11,0.08)]' : 'border-[#2a2a2a]'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    activePhase.phase_type === 'cut' ? 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
-                    : activePhase.phase_type === 'bulk' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]'
-                    : 'bg-[#202020] text-[#a0a0a0] bg-[#202020] text-[#a0a0a0]'
-                  }`}>
-                    {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
-                  </span>
-                  <span className="text-sm text-[#a0a0a0]">
-                    {activePhase.phase_type === 'reverse'
-                      ? `+${activePhase.weekly_rate} cal/wk`
-                      : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
-                  </span>
-                </div>
-                <div className="text-sm font-medium text-white mt-1">
-                  {phaseCalories.toLocaleString()} cal/day phase target
-                </div>
-              </div>
-              <Button type="button" variant="ghost" size="sm" className="text-brand shrink-0" onClick={() => { setShowGoalsModal(false); navigate('/dashboard?tab=coach'); }}>
-                Manage ↗
-              </Button>
-            </div>
-            {goalsOutOfSync && (
-              <div className="flex items-center justify-between gap-3 pt-1 border-t border-amber-200">
-                <p className="text-xs text-[#fbbf24]">
-                  Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
-                </p>
-                <Button type="button" size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white text-xs h-7"
-                  onClick={() => {
-                    const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
-                    const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;
-                    const macros = calculateMacroSplit(phaseCalories, protein);
-                    setGoalForm({ daily_calorie_goal: macros.calories, daily_protein_goal: macros.protein, daily_carbs_goal: macros.carbs, daily_fats_goal: macros.fats });
-                    toast.info('Goals updated to match your phase — save to apply.');
-                  }}
-                >
-                  Sync Goals
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {!tdee.tdee && (
-        <div className="rounded-xl border border-dashed border-[#2a2a2a] p-4 text-center space-y-2">
-          <p className="text-sm text-[#a0a0a0]">Set up your stats to auto-calculate daily calorie and macro targets.</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => { setShowGoalsModal(false); setShowStatsModal(true); }}>
-            <Calculator className="w-4 h-4 mr-2" />Set up TDEE calculation
-          </Button>
-        </div>
-      )}
-
-      {tdee.tdee && latestWeight && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Label className="whitespace-nowrap text-sm shrink-0">Protein target</Label>
-            <div className="flex items-center gap-2 flex-1">
-              <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb} onChange={(e) => setProteinPerLb(e.target.value)} className="w-24" />
-              <span className="text-sm text-[#555555] whitespace-nowrap">
-                g / lb{latestWeight ? ` = ${Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day` : ''}
-              </span>
-            </div>
-          </div>
-          <Button type="button" variant="outline" className="w-full border-dashed"
-            onClick={() => {
-              const weightLbs = profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight;
-              const protein = Math.round(weightLbs * (parseFloat(proteinPerLb) || 0.8));
-              const targetCalories = activePhase
-                ? (activePhase.phase_type === 'reverse' ? (profile?.daily_calorie_goal || tdee.tdee) : calculatePhaseCalories(tdee.tdee, activePhase.weekly_rate))
-                : tdee.tdee;
-              const macros = calculateMacroSplit(targetCalories, protein);
-              setGoalForm({ daily_calorie_goal: macros.calories, daily_protein_goal: macros.protein, daily_carbs_goal: macros.carbs, daily_fats_goal: macros.fats });
-              const label = activePhase ? `${activePhase.phase_type} phase (${targetCalories} cal)` : `maintenance (${tdee.tdee} cal)`;
-              toast.info(`Set to ${label}. Adjust as needed.`);
-            }}
-          >
-            <Calculator className="w-4 h-4 mr-2" />Auto-calculate from TDEE ({tdee.tdee} cal)
-          </Button>
-        </div>
-      )}
-
-      <Card className="">
-        <CardContent className="pt-6">
-          {(() => {
-            const totalCals = goalForm.daily_calorie_goal || 1;
-            const proteinPct = Math.round((goalForm.daily_protein_goal * 4 / totalCals) * 100);
-            const carbsPct   = Math.round((goalForm.daily_carbs_goal   * 4 / totalCals) * 100);
-            const fatsPct    = Math.round((goalForm.daily_fats_goal    * 9 / totalCals) * 100);
-            return (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>Daily Calories</Label>
-                  <Input type="number" value={goalForm.daily_calorie_goal} onChange={(e) => setGoalForm({ ...goalForm, daily_calorie_goal: e.target.value })} min="0" className="mt-1" />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label>Protein (g)</Label>
-                    <span className="text-xs text-[#a0a0a0]">{proteinPct}% of cals</span>
-                  </div>
-                  <Input type="number" value={goalForm.daily_protein_goal} onChange={(e) => setGoalForm({ ...goalForm, daily_protein_goal: e.target.value })} min="0" className="mt-1" />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label>Carbs (g)</Label>
-                    <span className="text-xs text-[#a0a0a0]">{carbsPct}% of cals</span>
-                  </div>
-                  <Input type="number" value={goalForm.daily_carbs_goal} onChange={(e) => setGoalForm({ ...goalForm, daily_carbs_goal: e.target.value })} min="0" className="mt-1" />
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Fats (g)</Label>
-                    <span className="text-xs text-[#a0a0a0]">{fatsPct}% of cals</span>
-                  </div>
-                  <Input type="number" value={goalForm.daily_fats_goal} onChange={(e) => setGoalForm({ ...goalForm, daily_fats_goal: e.target.value })} min="0" className="mt-1" />
-                </div>
-              </div>
-            );
-          })()}
-          <Button className="w-full mt-4 bg-brand" disabled={updateGoalsMutation.isPending}
-            onClick={() => updateGoalsMutation.mutate({
-              daily_calorie_goal: parseInt(goalForm.daily_calorie_goal) || 0,
-              daily_protein_goal: parseInt(goalForm.daily_protein_goal) || 0,
-              daily_carbs_goal: parseInt(goalForm.daily_carbs_goal) || 0,
-              daily_fats_goal: parseInt(goalForm.daily_fats_goal) || 0,
-            })}
-          >
-            {updateGoalsMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : <><Save className="w-4 h-4 mr-2" />Save Goals</>}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   return (
     <div className="bg-[#121212] text-white ">
@@ -1341,28 +1238,31 @@ const handleSaveMealTemplate = () => {
 
                 <div>
                   <Label htmlFor="search">Search USDA Database</Label>
-                  <div className="relative mt-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0]" />
-                    <Input
-                      id="search"
-                      ref={searchRef}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search for a food..."
-                      className="pl-10 pr-10 lg:pr-3"
-                    />
-                    {isSearching ? (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0] animate-spin" />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowBarcodeScanner(true)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a0a0a0] hover:text-brand transition-colors lg:hidden"
-                        aria-label="Scan barcode"
-                      >
-                        <Camera className="w-4 h-4" />
-                      </button>
-                    )}
+                  <div className="flex gap-2 mt-1">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0]" />
+                      <Input
+                        id="search"
+                        ref={searchRef}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search for a food..."
+                        className="pl-10 pr-3"
+                      />
+                      {isSearching && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0] animate-spin" />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowBarcodeScanner(true)}
+                      className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-[#a0a0a0] hover:text-brand hover:border-brand/40 transition-colors shrink-0"
+                      aria-label="Scan barcode"
+                      title="Scan a barcode"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span className="text-xs font-medium hidden sm:inline">Scan</span>
+                    </button>
                   </div>
 
                       {/* Search results: My Foods → Generic → Branded */}
@@ -1743,7 +1643,7 @@ const handleSaveMealTemplate = () => {
                     if (newFood.food_name && baseMacros.calories > 0) {
                       saveCustomFoodMutation.mutate({
                         food_name: newFood.food_name,
-                        serving_size: 1,
+                        serving_size: ['g', 'ml'].includes(newFood.serving_unit) ? 100 : 1,
                         serving_unit: newFood.serving_unit,
                         calories: Math.round(baseMacros.calories),
                         protein_grams: Math.round(baseMacros.protein_grams * 10) / 10,
@@ -1776,7 +1676,20 @@ const handleSaveMealTemplate = () => {
             <DialogTitle>Nutrition Goals</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <GoalsFormContent />
+            <GoalsFormContent
+              activePhase={activePhase}
+              tdee={tdee}
+              profile={profile}
+              latestWeight={latestWeight}
+              proteinPerLb={proteinPerLb}
+              setProteinPerLb={setProteinPerLb}
+              goalForm={goalForm}
+              setGoalForm={setGoalForm}
+              updateGoalsMutation={updateGoalsMutation}
+              navigate={navigate}
+              setShowGoalsModal={setShowGoalsModal}
+              setShowStatsModal={setShowStatsModal}
+            />
           </div>
         </DialogContent>
       </Dialog>
@@ -2150,6 +2063,125 @@ Oats,389,17,66,7,100g`}</pre>
           toast.info("Product not found. Try searching manually.");
         }}
       />
+    </div>
+  );
+}
+
+function GoalsFormContent({
+  activePhase, tdee, profile, latestWeight,
+  proteinPerLb, setProteinPerLb,
+  goalForm, setGoalForm,
+  updateGoalsMutation,
+  navigate, setShowGoalsModal, setShowStatsModal,
+}) {
+
+
+  return (
+    <div className="space-y-6">
+      {activePhase && tdee.tdee && (() => {
+        const phaseCalories = activePhase.phase_type === 'reverse'
+          ? (profile?.daily_calorie_goal || tdee.tdee)
+          : calculatePhaseCalories(tdee.tdee, activePhase.weekly_rate);
+        const goalsOutOfSync = Math.abs((profile?.daily_calorie_goal || 0) - phaseCalories) > 50;
+        return (
+          <div className={`rounded-xl border p-4 space-y-3 ${goalsOutOfSync ? 'border-amber-300 bg-[rgba(245,158,11,0.08)]' : 'border-[#2a2a2a]'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    activePhase.phase_type === 'cut'  ? 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
+                    : activePhase.phase_type === 'bulk' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]'
+                    : 'bg-[#202020] text-[#a0a0a0]'
+                  }`}>
+                    {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
+                  </span>
+                  <span className="text-sm text-[#a0a0a0]">
+                    {activePhase.phase_type === 'reverse'
+                      ? `+${activePhase.weekly_rate} cal/wk`
+                      : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
+                  </span>
+                </div>
+                <div className="text-sm font-medium text-white mt-1">
+                  {phaseCalories.toLocaleString()} cal/day phase target
+                </div>
+              </div>
+              <Button type="button" variant="ghost" size="sm" className="text-brand shrink-0"
+                onClick={() => { setShowGoalsModal(false); navigate('/dashboard?tab=coach'); }}>
+                Manage ↗
+              </Button>
+            </div>
+            {goalsOutOfSync && (
+              <div className="flex items-center justify-between gap-3 pt-1 border-t border-amber-200">
+                <p className="text-xs text-[#fbbf24]">
+                  Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
+                </p>
+                <Button type="button" size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white text-xs h-7"
+                  onClick={() => {
+                    const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
+                    const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;
+                    setGoalForm(calculateMacroSplit(phaseCalories, protein));
+                    toast.info('Goals updated to match your phase — save to apply.');
+                  }}
+                >
+                  Sync Goals
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {!tdee.tdee && (
+        <div className="rounded-xl border border-dashed border-[#2a2a2a] p-4 text-center space-y-2">
+          <p className="text-sm text-[#a0a0a0]">Set up your stats to auto-calculate daily calorie and macro targets.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => { setShowGoalsModal(false); setShowStatsModal(true); }}>
+            <Calculator className="w-4 h-4 mr-2" />Set up TDEE calculation
+          </Button>
+        </div>
+      )}
+
+      {tdee.tdee && latestWeight && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Label className="whitespace-nowrap text-sm shrink-0">Protein target</Label>
+            <div className="flex items-center gap-2 flex-1">
+              <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
+                onChange={(e) => setProteinPerLb(e.target.value)} className="w-24" />
+              <span className="text-sm text-[#555555] whitespace-nowrap">
+                g / lb{latestWeight ? ` = ${Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day` : ''}
+              </span>
+            </div>
+          </div>
+          <Button type="button" variant="outline" className="w-full border-dashed"
+            onClick={() => {
+              const weightLbs = profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight;
+              const protein = Math.round(weightLbs * (parseFloat(proteinPerLb) || 0.8));
+              const targetCalories = activePhase
+                ? (activePhase.phase_type === 'reverse' ? (profile?.daily_calorie_goal || tdee.tdee) : calculatePhaseCalories(tdee.tdee, activePhase.weekly_rate))
+                : tdee.tdee;
+              setGoalForm(calculateMacroSplit(targetCalories, protein));
+              const label = activePhase ? `${activePhase.phase_type} phase (${targetCalories} cal)` : `maintenance (${tdee.tdee} cal)`;
+              toast.info(`Set to ${label}. Adjust as needed.`);
+            }}
+          >
+            <Calculator className="w-4 h-4 mr-2" />Auto-calculate from TDEE ({tdee.tdee} cal)
+          </Button>
+        </div>
+      )}
+
+      <MacroGoalsEditor values={goalForm} onChange={setGoalForm} />
+      <Button className="w-full bg-brand" disabled={updateGoalsMutation.isPending}
+        onClick={() => updateGoalsMutation.mutate({
+          daily_calorie_goal: parseInt(goalForm.daily_calorie_goal) || 0,
+          daily_protein_goal: parseInt(goalForm.daily_protein_goal) || 0,
+          daily_carbs_goal:   parseInt(goalForm.daily_carbs_goal)   || 0,
+          daily_fats_goal:    parseInt(goalForm.daily_fats_goal)    || 0,
+        })}
+      >
+        {updateGoalsMutation.isPending
+          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+          : <><Save className="w-4 h-4 mr-2" />Save Goals</>}
+      </Button>
     </div>
   );
 }

@@ -106,7 +106,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                 {result.platesNeeded.map((plate, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-brand/[8%]0 rounded-full flex items-center justify-center text-black font-bold font-bold">
+                      <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center text-black font-bold font-bold">
                         {plate.count}×
                       </div>
                       <div>

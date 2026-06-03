@@ -112,7 +112,7 @@ const SegmentedCircularProgress = ({
           <span className="text-[#a0a0a0]">{Math.round(calories)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-brand/[8%]0"></div>
+          <div className="w-2 h-2 rounded-full bg-brand"></div>
           <span className="text-[#a0a0a0]">{Math.round(protein)}%</span>
         </div>
         <div className="flex items-center gap-1">
@@ -120,7 +120,7 @@ const SegmentedCircularProgress = ({
           <span className="text-[#a0a0a0]">{Math.round(carbs)}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-brand/[8%]0"></div>
+          <div className="w-2 h-2 rounded-full bg-brand"></div>
           <span className="text-[#a0a0a0]">{Math.round(fats)}%</span>
         </div>
       </div>
@@ -1560,7 +1560,7 @@ export default function Schedule() {
                           {enrollment && (
                             <div className="flex items-center gap-2">
                               <div className="h-1.5 bg-[#202020] rounded-full overflow-hidden w-32">
-                                <div className="h-full bg-brand/[8%]0 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                                <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                               </div>
                               <span className="text-xs text-[#a0a0a0]">{progressPct}%</span>
                             </div>
@@ -1718,7 +1718,7 @@ export default function Schedule() {
                               {item.isCurrent && !item.completed && item.exercises?.length > 0 && (
                                 <Button
                                   size="sm"
-                                  className="bg-brand/[8%]0 flex-shrink-0"
+                                  className="bg-brand flex-shrink-0"
                                   onClick={() =>
                                     navigate(`/workout-detail?source=program&enrollmentId=${item.enrollmentId}&programWorkoutId=${item.programWorkoutId}`)
                                   }
@@ -1921,7 +1921,7 @@ export default function Schedule() {
                           time: timeOfDay,
                         })
                       }
-                      className="bg-brand/[8%]0"
+                      className="bg-brand"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -2227,7 +2227,7 @@ export default function Schedule() {
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-brand/[8%]0"
+                    className="flex-1 bg-brand"
                     disabled={
                       !selectedProgramStartDate ||
                       selectedProgramStartDate === activeEnrollment.start_date ||
