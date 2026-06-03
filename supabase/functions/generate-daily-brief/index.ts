@@ -10,19 +10,21 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 const CARDIO_PROGRAM = `
-Phase 1 — Secondary Cardio (Ironman base, runs alongside lifting)
+BUD/S Prep — Conditioning Block (runs alongside lifting, June 3 → August 31 2026)
+Goal: pass PST at competitive levels (swim <9:00, push-ups 100+, sit-ups 100+, pull-ups 20+, 1.5mi run <9:30)
 
-Day        Type        Workout                   Target
-Monday     —           Lifting only              No cardio
-Tuesday    Intervals   4-6 × 400m track sprints  Fast but repeatable, 90s rest between. Scale reps with body battery: <60→4, >75→6.
-Wednesday  —           Lifting only              No cardio (or 15 min easy walk if restless)
-Thursday   Easy Run    2-3 miles                 Zone 2. Conversational pace. Focus: technique/form.
-Friday     —           Lifting only              No cardio
-Saturday   Endurance   45-60 min ruck or run     Zone 2. 20lb pack if rucking. This is the Ironman anchor — priority session.
-Sunday     Active Rec  Mobility / yoga           Hip flexors + ankles. Not a training day.
+Day        Type              Workout                             Target
+Monday     Calisthenics      Push-up/sit-up/pull-up pyramid      3-4 rounds: max push-ups, 2-min sit-ups, max pull-ups. Rest 90s between rounds. Log reps.
+Tuesday    Run — Intervals   6-8 × 400m track sprints            Hard effort, 90s rest. Scale reps with body battery: <60→6, >75→8. Building to 1.5mi pace.
+Wednesday  Calisthenics      Push-up/sit-up/pull-up volume       Submaximal sets (60-70% max) every hour if possible. Grease the groove. Low CNS cost.
+Thursday   Run — Easy        3-5 miles                           Zone 2, conversational pace. Building weekly mileage base toward 30+ mi/week.
+Friday     Calisthenics      Push-up/sit-up/pull-up pyramid      Same as Monday. Track weekly rep totals.
+Saturday   Long Run + Ruck   45-90 min run OR 4-mile boot ruck   Priority session. Alternate weekly: long Zone 2 run one week, timed boot ruck next. Ruck = boots + 20lb pack, target sub-40min 4 miles.
+Sunday     Active Rec        Swim + mobility                     500m easy swim (sidestroke/breaststroke — PST stroke). Time it. Hip flexors + shoulders.
 
-Saturday is the most important cardio day. As capacity grows, stretch it toward 2-3 hours over months.
-Bike or hill sprints are valid swaps for Tuesday if shins/knees are beat up.
+Saturday and Sunday are the most important conditioning days. PST benchmark test every 4 weeks.
+Soft sand running substitutes for Thursday easy run when accessible — double the training stimulus.
+Cold water exposure (ocean/lake swims) prioritized when available for mental hardening.
 `.trim();
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -138,15 +140,15 @@ function buildPrompt(data: {
     `Age: ${p.age} | Height: ${p.height_cm}cm | Weight: ${p.current_weight}lbs`,
     `Goal: ${p.primary_goal} | Training: ${p.days_per_week}x/week | Phase: ${p.training_phase}`,
     `Calorie goal: ${p.daily_calorie_goal} kcal | Protein: ${p.daily_protein_goal}g`,
-    `Race: ${p.race_name} (${p.race_type}) on ${p.race_date}`,
+    `BUD/S Prep Goal: Pass PST at competitive levels by August 31, 2026 (swim <9:00, push-ups 100+, sit-ups 100+, pull-ups 20+, 1.5mi run <9:30)`,
     ``,
     `=== TRAINING STRUCTURE ===`,
     `Nolan runs TWO separate sessions most days:`,
     `  1. GYM/STRENGTH — always priority. Covered by "performance" field.`,
-    `  2. CARDIO/ENDURANCE — second session on top of lifting. Covered by "endurance" field.`,
+    `  2. CARDIO/CONDITIONING — second session on top of lifting. Covered by "endurance" field.`,
     `These are additive, not alternatives.`,
     ``,
-    `=== CARDIO PROGRAM (Phase 1) ===`,
+    `=== CONDITIONING PROGRAM (BUD/S Prep) ===`,
     CARDIO_PROGRAM,
     ``,
     `=== CARDIO CUT RULES (strict) ===`,
