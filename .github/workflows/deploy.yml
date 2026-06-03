@@ -6,6 +6,12 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -27,12 +33,16 @@ jobs:
           VITE_USDA_API_KEY: ${{ secrets.VITE_USDA_API_KEY }}
           VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
       - run: cp dist/index.html dist/404.html
-      - name: Push dist to public repo
-        run: |
-          cd dist
-          git init
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          git add .
-          git commit -m "Deploy from private repo"
-          git push --force https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/NolanNachbar/OptiGainsOS.git HEAD:main
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
