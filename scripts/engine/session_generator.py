@@ -116,18 +116,9 @@ EXERCISES = [
      "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 75},
 
     # ── Horizontal pull ────────────────────────────────────────────────────
-    {"name": "Barbell Row",           "pattern": "horizontal_pull", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 4.0, "muscles": ["upper_back", "biceps", "rear_delt"],
-     "sets": 4, "rep_target": "5",    "rir_target": 2, "rest_seconds": 120, "is_primary": True},
-    {"name": "Pendlay Row",           "pattern": "horizontal_pull", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 3.5, "muscles": ["upper_back", "rear_delt"],
-     "sets": 4, "rep_target": "5",    "rir_target": 2, "rest_seconds": 120, "is_primary": True},
-    {"name": "Yates Row",             "pattern": "horizontal_pull", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 3.5, "muscles": ["lats", "upper_back"],
-     "sets": 4, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 120, "is_primary": True},
     {"name": "Chest-Supported Row",   "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
-     "fatigue_cost": 3.0, "muscles": ["upper_back", "rear_delt"],
-     "sets": 3, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 75},
+     "fatigue_cost": 3.5, "muscles": ["upper_back", "rear_delt"],
+     "sets": 4, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 90, "is_primary": True},
     {"name": "Cable Row",             "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
      "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 75},
@@ -320,17 +311,20 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float) -> str:
             return "lower_hinge_primary"
         return "upper_volume" if recent_upper % 2 == 0 else "upper_intensity"
 
-    if mtorc1 < 0.25:
-        return "upper_volume"
-
-    if recent_lower + 2 <= recent_upper:
+    # Enforce upper/lower day alternation balance first so workouts don't repeat indefinitely
+    if recent_upper >= 2 and recent_lower < 2:
         last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
         return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
 
-    if recent_upper + 2 <= recent_lower:
+    if recent_lower >= 2 and recent_upper < 2:
         last_upper = next((t for t in reversed(recent_types) if "upper" in t), "")
         return "upper_intensity" if "volume" in last_upper else "upper_volume"
 
+    # If mTORC1 is extremely low, prioritize upper body volume to kickstart translation
+    if mtorc1 < 0.25 and recent_upper < 2:
+        return "upper_volume"
+
+    # Default to standard alternating split based on the last session
     last = next((t for t in reversed(recent_types) if t), "")
     if "upper" in last:
         last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
@@ -582,6 +576,7 @@ class SessionGenerator:
         mpc_action: str,
         mpc_intensity: float,
         weekly_set_targets: dict = None,
+        recent_session_types: list = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -605,7 +600,7 @@ class SessionGenerator:
             intensity=mpc_intensity,
             sim_date=sim_date,
             cellular_state=cellular_state,
-            recent_session_types=[],
+            recent_session_types=recent_session_types or [],
             recent_run_tss=0.0,
             vdot=vdot,
             weekly_set_targets=weekly_set_targets,
@@ -738,8 +733,12 @@ class SessionGenerator:
         if cellular_state.get("interference_score", 0.0) > 0.5:
             warning = "High concurrent training load detected. Heavy AMPK activity may limit mTORC1 translation."
 
+        # Resolve split title or split key
+        split = get_split(mpc_action, mpc_intensity, sim_date, cellular_state, recent_session_types)
+
         return {
             "session_type": session_type,
+            "split": split,
             "rationale": rationale,
             "interference_warning": warning,
             "strength_block": strength_block,

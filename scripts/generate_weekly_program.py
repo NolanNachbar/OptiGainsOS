@@ -326,12 +326,32 @@ def main():
 
     # ── Recent session history ────────────────────────────────────────────────
     prescription_rows = sb_get("training_prescription", {
-        "select": "date,action,session_type",
+        "select": "date,mpc_action,session_type,prescription",
         "created_by": f"eq.{USER_ID}",
         "order": "date.desc", "limit": "7",
     })
+    
+    def determine_split_from_row(r: dict) -> str:
+        pres = r.get("prescription") or {}
+        if isinstance(pres, str):
+            try: pres = json.loads(pres)
+            except: pres = {}
+        if "split" in pres and pres["split"]:
+            return pres["split"].lower()
+        s_type = (r.get("session_type") or r.get("mpc_action") or "").lower()
+        if "upper" in s_type or "lower" in s_type:
+            return s_type
+        exercises = pres.get("exercises") or []
+        upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip"]))
+        lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust"]))
+        if upper_count > lower_count:
+            return "upper_volume"
+        elif lower_count > upper_count:
+            return "lower_squat_primary"
+        return s_type
+
     recent_session_types = [
-        (r.get("session_type") or r.get("action") or "").lower()
+        determine_split_from_row(r)
         for r in reversed(prescription_rows)
     ]
 
