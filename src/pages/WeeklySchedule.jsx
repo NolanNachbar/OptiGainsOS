@@ -201,7 +201,7 @@ export default function WeeklySchedule() {
             {/* ── Upcoming program workout (no log yet) ── */}
             {!selectedLog && selectedEntries.map((entry, idx) => {
               const lifts = (entry.exercises || []).filter(ex => !isRun(ex));
-              const runs = (entry.exercises || []).filter(ex => isRun(ex));
+              const runs = entry.cardio_sessions || [];
               return (
                 <div key={idx} className="bg-charcoal-surface border border-charcoal-border rounded-xl overflow-hidden">
                   <div className="h-0.5 bg-brand" />
@@ -233,17 +233,20 @@ export default function WeeklySchedule() {
                     <div className="px-4 py-2 border-t border-charcoal-border bg-charcoal-surface2">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Timer className="w-3 h-3 text-blue-400" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Cardio — PM</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Cardio</span>
                       </div>
-                      {runs.map((ex, j) => (
-                        <div key={j}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-white">{ex.name}</span>
-                            <span className="text-xs text-slate-500">{ex.rep_target || ex.reps}</span>
+                      {runs.map((ex, j) => {
+                        const title = ex.title || `${ex.zone || "Z2"} ${ex.activity_type || "run"}`;
+                        return (
+                          <div key={j} className="mb-2 last:mb-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-white font-medium">{title}</span>
+                              <span className="text-xs text-slate-500">{ex.duration_minutes} min</span>
+                            </div>
+                            {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
                           </div>
-                          {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   <div className="px-4 pb-4 pt-2">
@@ -260,7 +263,7 @@ export default function WeeklySchedule() {
 
             {/* ── Pending cardio for today when lift is already logged ── */}
             {selectedEntries.map((entry, idx) => {
-              const runs = (entry.exercises || []).filter(ex => isRun(ex));
+              const runs = entry.cardio_sessions || [];
               if (!runs.length) return null;
               return (
                 <div key={idx} className="bg-charcoal-surface border border-blue-500/20 rounded-xl overflow-hidden">
@@ -272,18 +275,19 @@ export default function WeeklySchedule() {
                     </div>
                     <div className="space-y-3">
                       {runs.map((ex, j) => {
-                        const done = isCardioDone(selectedDay, ex.name);
+                        const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
+                        const done = isCardioDone(selectedDay, name);
                         return (
                           <div key={j} className="flex items-start justify-between gap-3">
                             <div className={done ? "opacity-50" : ""}>
                               <div className="flex items-baseline gap-2">
-                                <span className={`text-base font-bold ${done ? "line-through text-slate-500" : "text-white"}`}>{ex.name}</span>
-                                <span className="text-sm text-slate-500">{ex.rep_target || ex.reps}</span>
+                                <span className={`text-base font-bold ${done ? "line-through text-slate-500" : "text-white"}`}>{name}</span>
+                                <span className="text-sm text-slate-500">{ex.duration_minutes} min</span>
                               </div>
                               {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
                             </div>
                             <button
-                              onClick={() => toggleCardio(selectedDay, ex.name)}
+                              onClick={() => toggleCardio(selectedDay, name)}
                               className={`shrink-0 mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                 done ? "bg-green-500 border-green-500" : "border-charcoal-border hover:border-blue-400"
                               }`}

@@ -303,33 +303,29 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float) -> str:
     """
     Upper vs lower based on AMPK interference + recent session balance.
     """
-    recent_lower = sum(1 for t in recent_types[-4:] if "lower" in t)
-    recent_upper = sum(1 for t in recent_types[-4:] if "upper" in t)
+    # 1. Find the last strength session split to prevent consecutive identical splits
+    last_strength = next((t for t in reversed(recent_types) if "upper" in t or "lower" in t), "")
 
+    # 2. Apply cellular overrides only if they don't violate the consecutive split guardrail
     if ampk > 0.55:
-        if recent_upper >= 3:
+        # If the last strength session was upper, we can safely do lower
+        if "upper" in last_strength:
             return "lower_hinge_primary"
-        return "upper_volume" if recent_upper % 2 == 0 else "upper_intensity"
+        # Otherwise, if the last was lower, we must do upper to allow legs to recover
+        else:
+            recent_upper = sum(1 for t in recent_types[-4:] if "upper" in t)
+            return "upper_volume" if recent_upper % 2 == 0 else "upper_intensity"
 
-    # Enforce upper/lower day alternation balance first so workouts don't repeat indefinitely
-    if recent_upper >= 2 and recent_lower < 2:
-        last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
-        return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
-
-    if recent_lower >= 2 and recent_upper < 2:
-        last_upper = next((t for t in reversed(recent_types) if "upper" in t), "")
-        return "upper_intensity" if "volume" in last_upper else "upper_volume"
-
-    # If mTORC1 is extremely low, prioritize upper body volume to kickstart translation
-    if mtorc1 < 0.25 and recent_upper < 2:
+    # If mTORC1 is extremely low, prioritize upper body volume to kickstart translation,
+    # but only if the last strength session wasn't already upper body
+    if mtorc1 < 0.25 and "lower" in last_strength:
         return "upper_volume"
 
-    # Default to standard alternating split based on the last session
-    last = next((t for t in reversed(recent_types) if t), "")
-    if "upper" in last:
+    # 3. Default alternating split logic based on the last strength session
+    if "upper" in last_strength:
         last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
         return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
-    elif "lower" in last:
+    elif "lower" in last_strength:
         last_upper = next((t for t in reversed(recent_types) if "upper" in t), "")
         return "upper_intensity" if "volume" in last_upper else "upper_volume"
 

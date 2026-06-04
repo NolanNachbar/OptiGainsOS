@@ -101,8 +101,8 @@ def sb_upsert(table, row, conflict_cols="program_id,scheduled_date"):
         return False
 
 def sb_upsert_engine(row):
-    """Upsert engine_params — conflict on created_by."""
-    url  = f"{SUPABASE_URL}/rest/v1/engine_params?on_conflict=created_by"
+    """Upsert engine_params — conflict on created_by,date."""
+    url  = f"{SUPABASE_URL}/rest/v1/engine_params?on_conflict=created_by,date"
     data = json.dumps(row).encode()
     req  = urllib.request.Request(
         url, data=data, method="POST",

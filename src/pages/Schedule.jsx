@@ -952,6 +952,24 @@ export default function Schedule() {
                       )}
                     </div>
                   )}
+                  {item.cardio_sessions?.length > 0 && (
+                    <div className="space-y-2 mb-4 border-t border-[#2a2a2a] pt-3">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#555555]">Conditioning</p>
+                      {item.cardio_sessions.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Activity className="w-3.5 h-3.5 text-[#555555]" />
+                            <span className="text-white text-xs font-semibold uppercase tracking-wide">
+                              {c.title || `${c.zone || 'Z2'} ${c.activity_type || 'run'}`}
+                            </span>
+                          </div>
+                          <span className="text-[#555555] text-[11px] font-mono shrink-0 ml-2">
+                            {c.duration_minutes} min
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {item.completed ? (
                     <div className="flex items-center justify-center gap-1.5 py-1" onClick={e => e.stopPropagation()}>
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#4ade80]" />
