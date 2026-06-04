@@ -25,7 +25,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          FORCE_WEEKLY: "1"
         run: python scripts/compute_athlete_state.py
 
   prescribe:

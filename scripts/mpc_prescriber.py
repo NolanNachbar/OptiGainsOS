@@ -85,7 +85,9 @@ if not USER_ID:
 
 # ── MPC configuration ─────────────────────────────────────────────────────────
 
-# TSS load associated with each candidate action
+# TSS load associated with each candidate action.
+# TWO_A_DAY = heavy lift + quality PM conditioning session.
+# Only selected by MPC when TSB > 5, ACWR < 1.2, and recovery score is high.
 ACTION_TSS = {
     "REST":          0.0,
     "LIGHT":        25.0,   # walk, easy swim, mobility
@@ -93,6 +95,7 @@ ACTION_TSS = {
     "CALISTHENICS": 45.0,   # bodyweight PT session
     "STRENGTH":     70.0,   # heavy barbell session
     "MIXED":        85.0,   # strength + calisthenics or cardio
+    "TWO_A_DAY":   120.0,   # strength AM (70) + conditioning PM (50)
     "DELOAD":       20.0,   # 55% load across all movements
 }
 
@@ -288,14 +291,23 @@ def select_action(
     ranked = sorted(scores.items(), key=lambda x: x[1]["score"], reverse=True)
     best_action = ranked[0][0]
 
+    # TWO_A_DAY gate: only valid when fresh and load is manageable
+    tsb = float(kalman.x[0, 0] - kalman.x[1, 0])
+    two_a_day_eligible = (tsb > 5.0 and acwr < 1.2)
+    if best_action == "TWO_A_DAY" and not two_a_day_eligible:
+        # Fall back to the next best single-session action
+        for action, _ in ranked[1:]:
+            if action != "TWO_A_DAY":
+                best_action = action
+                break
+
     # Apply ACWR gate (guardrail override)
     load_action_map = {
-        "INCREASE": ["MIXED", "STRENGTH"],
+        "INCREASE": ["MIXED", "STRENGTH", "TWO_A_DAY"],
         "MAINTAIN": ["CALISTHENICS", "CARDIO", "LIGHT"],
         "DECREASE": ["REST", "DELOAD", "LIGHT"],
     }
     if acwr > 1.5 and best_action not in load_action_map["DECREASE"] + load_action_map["MAINTAIN"]:
-        # Override to LIGHT or REST
         best_action = "LIGHT"
 
     # Intensity scalar based on TSB
