@@ -86,9 +86,9 @@ class RLSParameterLearner:
         if float(np.var(phi_vec)) < MIN_PHI_VAR:
             return
 
-        denom    = self.lambda_forget + float(phi_vec.T @ self.P_theta @ phi_vec)
+        denom    = self.lambda_forget + (phi_vec.T @ self.P_theta @ phi_vec).item()
         K        = (self.P_theta @ phi_vec) / denom
-        pred_err = y_t - float(phi_vec.T @ self.theta)
+        pred_err = y_t - (phi_vec.T @ self.theta).item()
 
         self.theta   = self.theta + K * pred_err
         self.P_theta = ((self.P_theta - K @ phi_vec.T @ self.P_theta)

@@ -807,7 +807,7 @@ def compute_normalized_cardio_trimp(recovery_rows: list) -> float:
     Derived from Garmin acute training load.
     """
     for r in recovery_rows:
-        if r.get("date", "") == TODAY and r.get("training_load_acute"):
+        if r.get("date") == TODAY and r.get("training_load_acute"):
             # Garmin ATL is roughly in TSS units. Normalize to 0-1 (150 TSS = 1.0).
             return round(min(float(r["training_load_acute"]) / 150.0, 1.0), 3)
     return 0.0
@@ -909,8 +909,8 @@ def main():
     # Fetch cardio sessions for VDOT updates
     cardio_rows = sb_get("cardio_sessions", {
         "select": "*",
-        "date": f"gte.{days_before(14)}",
-        "order": "date.desc",
+        "start_date": f"gte.{days_before(14)}",
+        "order": "start_date.desc",
     })
     print(f"  cardio_sessions: {len(cardio_rows)} records")
 
@@ -992,7 +992,7 @@ def main():
 
         # 7. VDOT: update from any timed runs logged today or this week
         for row in cardio_rows:
-            if row.get("date", "") == TODAY:
+            if row.get("start_date", "") == TODAY:
                 dist_m = float(row.get("distance_meters") or 0)
                 secs   = float(row.get("duration_seconds") or 0)
                 if dist_m >= 800 and secs > 0:
