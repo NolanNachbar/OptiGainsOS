@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
@@ -199,14 +199,18 @@ export default function WorkoutDetail() {
           _isTutorialDemo: true,
         });
       } else if (isProgramSource && programWorkout) {
-        // Program mode: build a synthetic workout object from program workout data
+        // Program mode: build a synthetic workout object from program workout data.
+        // Filter out run/cardio exercises — those are rendered separately as conditioning.
+        const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
+        const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
+        const liftExercises = (programWorkout.exercises || []).filter(ex => !isRunEx(ex));
         setWorkout({
           id: programWorkout.id,
           title: programWorkout.title,
           description: programWorkout.notes || '',
           focus: programWorkout.focus || programWorkout.type || 'strength',
           duration_minutes: null,
-          exercises: (programWorkout.exercises || []).map((ex) => ({
+          exercises: liftExercises.map((ex) => ({
             name: ex.name,
             sets: ex.sets || 3,
             reps: ex.rep_target || '10',
@@ -863,6 +867,45 @@ export default function WorkoutDetail() {
                 </div>
               );
             })}
+
+            {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
+            {isProgramSource && (() => {
+              const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
+              const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
+              const runExercises = (programWorkout?.exercises || []).filter(isRunEx).map(ex => ({
+                title: ex.name,
+                duration_minutes: ex.duration_minutes || null,
+                time_of_day: ex.time_of_day || null,
+                zone: ex.zone || null,
+              }));
+              const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
+              return allCardio.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[#a0a0a0] uppercase tracking-wide">Conditioning</p>
+                {allCardio.map((c, i) => (
+                  <div
+                    key={`cardio-${i}`}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#2a2a2a]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#a0a0a0]" />
+                      <div>
+                        <p className="font-medium text-sm text-white">{c.title}</p>
+                        <p className="text-xs text-[#555555]">
+                          {c.duration_minutes} min
+                          {c.time_of_day && c.time_of_day !== "anytime"
+                            ? ` · ${c.time_of_day.toUpperCase()}`
+                            : ""}
+                          {c.zone ? ` · ${c.zone}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-[#2a2a2a] text-[#a0a0a0] text-xs border-0">Cardio</Badge>
+                  </div>
+                ))}
+              </div>
+              );
+            })()}
 
             {/* Add Exercise Form */}
             <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />

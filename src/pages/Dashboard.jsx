@@ -552,13 +552,18 @@ export default function Dashboard() {
     ? `/workout-detail?id=${todayWorkoutDetails.id}`
     : null;
 
+  const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
+  const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
+
   const isCompleted = todayProgramWorkout?.completed || todayWorkout?.completed;
   const workoutTitle = todayProgramWorkout?.title || todayWorkoutDetails?.title;
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
-  const exerciseCount = todayExercises.length || todayWorkoutDetails?.exercises?.length || 0;
-
-  const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
-  const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
+  const todayProgramLifts = todayExercises.filter(ex => !isRunEx(ex));
+  const todayProgramRuns = [
+    ...(todayProgramWorkout?.exercises || []).filter(isRunEx),
+    ...(todayProgramWorkout?.cardio_sessions || []),
+  ];
+  const exerciseCount = todayProgramLifts.length || todayWorkoutDetails?.exercises?.length || 0;
 
   // Best log for today = longest duration
   const todayLog = workoutLogs
@@ -566,7 +571,6 @@ export default function Dashboard() {
     .sort((a, b) => (b.duration_seconds || 0) - (a.duration_seconds || 0))[0] || null;
 
   const todayLogLifts = (todayLog?.exercises || []).filter(ex => !isRunEx(ex));
-  const todayProgramRuns = (todayProgramWorkout?.exercises || []).filter(isRunEx);
 
   if (!user) {
     return <DashboardSkeleton />;
@@ -718,7 +722,11 @@ export default function Dashboard() {
                   <div>
                     <p className="text-[10px] text-orange-400 font-bold uppercase tracking-widest mb-1">Today's Mission</p>
                     <h3 className="text-xl font-bold text-white leading-tight">{workoutTitle}</h3>
-                    <p className="text-xs text-[#a0a0a0] mt-1">{exerciseCount} exercises · ~{workoutDuration} min</p>
+                    <p className="text-xs text-[#a0a0a0] mt-1">
+                      {exerciseCount} lift{exerciseCount !== 1 ? "s" : ""}
+                      {todayProgramRuns.length > 0 && ` · ${todayProgramRuns.length} conditioning`}
+                      {workoutDuration ? ` · ~${workoutDuration} min` : ""}
+                    </p>
                   </div>
                    <Dumbbell className="w-8 h-8 text-orange-500/30 group-hover:text-orange-500/50 transition-colors" />
                 </div>
