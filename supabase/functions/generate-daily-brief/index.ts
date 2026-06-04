@@ -88,22 +88,43 @@ function fmtRecovery(r: Record<string, unknown> | null): string {
 function fmtEndurance(e: Record<string, unknown> | null): string {
   if (!e) return "No endurance data.";
   const pst = e.pst_latest as Record<string, unknown> | undefined;
+  const daysSinceRun  = e.days_since_run  != null ? `${e.days_since_run}d ago`  : "never";
+  const daysSinceSwim = e.days_since_swim != null ? `${e.days_since_swim}d ago` : "never";
+  const missed = (e.missed_sessions_7d as Array<Record<string,string>> | undefined) ?? [];
   const lines = [
     `  ${e.days_to_aug31} days to Aug 31 BUD/S PST deadline`,
     `  VO2max: ${e.vo2max ?? "—"} | Aerobic fitness: ${e.aerobic_fitness_proxy != null ? pct(Number(e.aerobic_fitness_proxy)) : "—"}`,
-    `  Running ATL: ${e.running_fatigue_atl ?? "—"}`,
+    `  This week: ${e.run_sessions_7d ?? 0} runs (${e.run_km_7d ?? 0} km) | ${e.swim_sessions_7d ?? 0} swims (${e.swim_m_7d ?? 0} m)`,
+    `  Last run: ${daysSinceRun} | Last swim: ${daysSinceSwim}`,
   ];
-  if (pst && pst.date) {
+  if (missed.length > 0) {
+    const missedStr = missed.slice(0, 4).map(m => `${m.day} ${m.expected}`).join(", ");
+    lines.push(`  ⚠ Missed conditioning sessions this week: ${missedStr}`);
+  } else {
+    lines.push("  ✓ All conditioning sessions completed this week");
+  }
+  if (pst && pst.test_date) {
     lines.push(
-      `  Latest PST (${pst.date}): swim ${fmtTime(Number(pst.swim_seconds))} | ` +
+      `  PST (${pst.test_date}): swim ${fmtTime(Number(pst.swim_seconds))} | ` +
       `push-ups ${pst.pushups ?? "—"} | sit-ups ${pst.situps ?? "—"} | ` +
-      `pull-ups ${pst.pullups ?? "—"} | run ${fmtTime(Number(pst.run_seconds))}`
+      `pull-ups ${pst.pullups ?? "—"} | 1.5mi ${fmtTime(Number(pst.run_seconds))} (target <9:00)`
     );
     if (e.pst_readiness_pct != null) {
-      lines.push(`  Overall PST readiness: ${Number(e.pst_readiness_pct).toFixed(0)}% of competitive target`);
+      lines.push(`  PST readiness: ${Number(e.pst_readiness_pct).toFixed(0)}% of competitive target`);
+    }
+    // 4-mile is a BUDS prep standard, not a PST event
+    if (pst.run_4mile_seconds) {
+      lines.push(
+        `  4-mile (BUDS prep): ${fmtTime(Number(pst.run_4mile_seconds))} (target <26:00) — ` +
+        `readiness ${e.run_4mile_readiness_pct != null ? Number(e.run_4mile_readiness_pct).toFixed(0) + "%" : "?"}`
+      );
+    } else if (e.run_4mile_estimated_secs) {
+      lines.push(`  4-mile (BUDS prep): ~${fmtTime(Number(e.run_4mile_estimated_secs))} estimated from recent runs — log a test effort to confirm`);
+    } else {
+      lines.push("  4-mile (BUDS prep): not yet tested — target <26:00");
     }
   } else {
-    lines.push("  No PST test logged yet. Log first baseline in PST Tracker.");
+    lines.push("  No PST test logged yet — schedule a baseline ASAP.");
   }
   return lines.join("\n");
 }

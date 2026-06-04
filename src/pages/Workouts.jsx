@@ -14,9 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
-import { Calendar, Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X } from "lucide-react";
+import { Calendar, Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
-import { ACTIVITY_TYPE_LABELS } from "@/lib/strava";
 
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
@@ -51,13 +50,13 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const { profile } = useProfile();
 
   const { data: cardioSessions = [] } = useQuery({
-    queryKey: ['cardioSessions', user?.id],
+    queryKey: ['garminActivities', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('garmin_activities')
         .select('*')
         .eq('created_by', user.id)
-        .order('start_date', { ascending: false });
+        .order('activity_date', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -815,8 +814,16 @@ function fmtDuration(seconds) {
   return `${m}m ${s}s`;
 }
 
-function fmtPace(metersPerSecond, type) {
-  if (!metersPerSecond || !['Run', 'VirtualRun', 'Walk', 'Hike'].includes(type)) return null;
+function fmtPace(metersPerSecond, type, avgPaceSecPerKm) {
+  // Use pre-computed pace from Garmin if available
+  if (avgPaceSecPerKm && ['running', 'walking', 'hiking'].includes(type)) {
+    const minPerMile = (avgPaceSecPerKm * 1.60934) / 60;
+    const min = Math.floor(minPerMile);
+    const sec = Math.round((minPerMile - min) * 60);
+    return `${min}:${sec.toString().padStart(2, '0')} /mi`;
+  }
+  // Fallback: compute from speed
+  if (!metersPerSecond || !['running', 'walking', 'hiking'].includes(type)) return null;
   const minPerMile = (1609.34 / metersPerSecond) / 60;
   const min = Math.floor(minPerMile);
   const sec = Math.round((minPerMile - min) * 60);
@@ -890,52 +897,60 @@ function StrengthEntryCard({ entry }) {
   );
 }
 
-function CardioEntryCard({ entry, onShare }) {
-  const typeLabel = ACTIVITY_TYPE_LABELS[entry.activityType] || entry.activityType || 'Cardio';
+function ActivityTypeIcon({ type, className = "w-4 h-4" }) {
+  const props = { className };
+  switch (type) {
+    case 'running':    return <PersonStanding {...props} />;
+    case 'swimming':   return <Waves {...props} />;
+    case 'cycling':    return <Bike {...props} />;
+    case 'walking':    return <Footprints {...props} />;
+    case 'hiking':     return <Footprints {...props} />;
+    case 'rowing':     return <Rows3 {...props} />;
+    case 'elliptical': return <Repeat {...props} />;
+    case 'strength':   return <Dumbbell {...props} />;
+    default:           return <Activity {...props} />;
+  }
+}
+
+function CardioEntryCard({ entry }) {
+  const typeLabel = entry.activityType
+    ? entry.activityType.charAt(0).toUpperCase() + entry.activityType.slice(1)
+    : 'Cardio';
   const distance = fmtDistance(entry.distance);
   const duration = fmtDuration(entry.movingTime);
-  const pace = fmtPace(entry.avgSpeed, entry.activityType);
+  const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
   return (
-    <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all"
-      style={{ borderLeftColor: '#3a3a3a' }}
-    >
-      <div className="flex justify-between items-start p-4 pb-3">
-        <div>
-          <h4 className="text-base font-bold text-white">{entry.title}</h4>
+    <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all">
+      <div className="flex items-start p-4 pb-3 gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center shrink-0 text-brand">
+          <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-base font-bold text-white truncate">{entry.title}</h4>
           <p className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0] mt-0.5">
             {typeLabel} · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
-        <button
-          onClick={onShare}
-          className="text-[#a0a0a0] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"
-        >
-          <Share2 className="w-4 h-4" />
-        </button>
       </div>
 
-      {entry.polyline && (
-        <div className="overflow-hidden mb-3">
-          <Suspense fallback={<div style={{ height: 180 }} className="bg-[#1a1a1a] rounded animate-pulse" />}>
-            <StaticRouteMap polyline={entry.polyline} mapKey={entry.id} height={180} />
-          </Suspense>
-        </div>
-      )}
-
-      <div className="flex flex-wrap px-4 pb-4">
+      <div className="flex flex-wrap px-4 pb-4 gap-y-2">
         {distance && <StatBlock label="Distance" value={distance} />}
         {duration && <StatBlock label="Time" value={duration} bordered={!!distance} />}
         {pace && <StatBlock label="Pace" value={pace} bordered />}
-        {entry.avgPower && <StatBlock label="Avg Power" value={`${entry.avgPower}w`} bordered />}
         {entry.avgHeartrate && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgPower) ? 'border-l border-[#2a2a2a] pl-6' : ''}`}>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Heart Rate</span>
+          <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l border-[#2a2a2a] pl-6' : ''}`}>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Avg HR</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-bold tabular-nums text-white">{Math.round(entry.avgHeartrate)}</span>
               <span className="text-xs font-bold uppercase tracking-widest text-[#f87171]">bpm</span>
             </div>
+          </div>
+        )}
+        {entry.aerobicEffect != null && (
+          <div className="flex-1 flex flex-col border-l border-[#2a2a2a] pl-6">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Aerobic Effect</span>
+            <span className="text-xl font-bold tabular-nums text-white">{Number(entry.aerobicEffect).toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -947,7 +962,6 @@ function CardioEntryCard({ entry, onShare }) {
 
 function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   const [filter, setFilter] = useState('all');
-  const [shareSession, setShareSession] = useState(null);
 
   const strengthEntries = workoutLogs.map(log => {
     const workout = workouts.find(w => w.id === log.workout_id);
@@ -976,16 +990,16 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   const cardioEntries = cardioSessions.map(session => ({
     type: 'cardio',
     id: session.id,
-    date: new Date(session.start_date),
-    title: session.name,
+    date: new Date(session.activity_date),
+    title: session.name || session.activity_type,
     activityType: session.activity_type,
     distance: session.distance_meters,
-    movingTime: session.moving_time_seconds,
-    avgSpeed: session.average_speed,
-    avgHeartrate: session.average_heartrate,
-    avgPower: session.average_watts,
-    polyline: session.map_polyline || null,
-    hasMap: !!session.map_polyline,
+    movingTime: session.duration_seconds,
+    avgSpeed: session.avg_speed_mps,
+    avgPaceSecPerKm: session.avg_pace_sec_per_km,
+    avgHeartrate: session.avg_hr,
+    trainingLoad: session.training_load,
+    aerobicEffect: session.aerobic_effect,
     rawSession: session,
   }));
 
@@ -1061,19 +1075,11 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
             <h3 className="text-base font-semibold text-white mb-1">No activity yet</h3>
             <p className="text-sm text-[#555555] mb-2">
               {filter === 'cardio'
-                ? 'Log a cardio session or sync Strava in your Profile.'
+                ? 'Cardio sessions sync automatically from Garmin each morning.'
                 : filter === 'strength'
                 ? 'Complete a workout to see it here.'
-                : 'Complete workouts or sync Strava to build your log.'}
+                : 'Complete workouts — cardio syncs from Garmin overnight.'}
             </p>
-            {filter !== 'strength' && !profile?.strava_access_token && (
-              <Link to="/profile">
-                <Button className="mt-4 bg-[#FC4C02] hover:bg-[#e04400] text-white">
-                  <Link2 className="w-4 h-4 mr-2" />
-                  Connect Strava
-                </Button>
-              </Link>
-            )}
           </CardContent>
         </Card>
       ) : (
@@ -1089,7 +1095,6 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
                     <CardioEntryCard
                       key={entry.id}
                       entry={entry}
-                      onShare={() => setShareSession(entry.rawSession)}
                     />
                   )
                 )}

@@ -4,10 +4,11 @@ compute_athlete_state.py — Daily athlete state computation for OptiGains.
 
 Runs at 4am MT (11am UTC) after garmin-sync (3am MT / 10am UTC).
 Writes one deterministic row to `athlete_state` in Supabase.
-No LLM calls — pure math. The daily brief reads this as primary input.
+Also runs all adaptive engine modules and writes to `engine_params`.
+No LLM calls — pure math. The daily brief reads both tables.
 
 Requirements:
-    pip install python-dotenv        # optional, for loading .env
+    pip install python-dotenv numpy
 
 Env vars (loaded from ../.env or environment):
     SUPABASE_URL
@@ -25,6 +26,24 @@ import urllib.parse
 import urllib.error
 from typing import Optional
 
+# ── Engine modules ────────────────────────────────────────────────────────────
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _SCRIPT_DIR)
+
+try:
+    import numpy as np
+    from engine.banister_kalman     import BanisterKalman
+    from engine.rls_learner         import RLSParameterLearner
+    from engine.cellular_model      import CellularInterferenceModel
+    from engine.vdot_engine         import VDOTEngine, vdot_from_effort
+    from engine.nutrition_modulator import NutritionModulator
+    from engine.guardrail           import SystemGuardrail
+    _ENGINE_AVAILABLE = True
+except ImportError as _e:
+    print(f"  WARN: Engine modules not available ({_e}). "
+          "Run: pip install numpy")
+    _ENGINE_AVAILABLE = False
+
 # ── Load .env ─────────────────────────────────────────────────────────────────
 
 try:
@@ -34,15 +53,38 @@ try:
 except ImportError:
     pass  # python-dotenv not installed; env vars must be set externally
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 USER_ID      = os.environ.get("USER_ID", "")
 
-if not all([SUPABASE_URL, SUPABASE_KEY, USER_ID]):
-    print("ERROR: Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, USER_ID")
+if not all([SUPABASE_URL, SUPABASE_KEY]):
+    print("ERROR: Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY")
     sys.exit(1)
 
 TODAY = datetime.date.today().isoformat()
+
+
+def _resolve_user_id() -> str:
+    """Look up the single user's ID from user_profiles when USER_ID env var is not set."""
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by&limit=1"
+    req = urllib.request.Request(url, headers={
+        "apikey":        SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            rows = json.loads(resp.read())
+            if rows:
+                return rows[0]["created_by"]
+    except Exception as e:
+        print(f"ERROR: Could not resolve USER_ID from user_profiles: {e}")
+    print("ERROR: USER_ID not set and no user_profiles row found.")
+    sys.exit(1)
+
+
+if not USER_ID:
+    USER_ID = _resolve_user_id()
+    print(f"  Resolved USER_ID from DB: {USER_ID}")
 
 # ── Supabase REST helpers ─────────────────────────────────────────────────────
 
@@ -687,6 +729,130 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
     }
 
 
+# ── Engine helpers ────────────────────────────────────────────────────────────
+
+def compute_training_load_tss(workout_logs: list, recovery_rows: list) -> float:
+    """
+    Compute today's training stress score (TSS) for the Kalman filter u_t input.
+
+    Priority: use Garmin's EPOC/training-load-acute delta if available.
+    Fallback: compute from workout volume normalized to 0–150 TSS scale.
+    """
+    today_str = TODAY
+
+    # Check Garmin acute load for today
+    for r in recovery_rows:
+        if r.get("date", "") == today_str and r.get("training_load_acute"):
+            # Garmin reports a cumulative ATL; approximate today's TSS as delta
+            return min(float(r["training_load_acute"]), 150.0)
+
+    # Fallback: sum volume from today's workout logs
+    today_tss = 0.0
+    for log in workout_logs:
+        if log.get("log_date", "") != today_str:
+            continue
+        session_vol = sum(
+            float(s.get("weight") or 0) * int(s.get("reps") or 0)
+            for ex in (log.get("exercises") or [])
+            for s in (ex.get("sets") or [])
+        )
+        today_tss += min(session_vol / 100.0, 150.0)
+
+    return round(today_tss, 1)
+
+
+def compute_hrv_zscore(recovery_rows: list) -> float:
+    """
+    Compute 7-day rolling HRV z-score for today's reading.
+    Positive = above personal baseline = reliable / recovered.
+    """
+    hrv_series = sorted(
+        [(r.get("date", ""), float(r.get("hrv") or 0))
+         for r in recovery_rows if r.get("hrv")],
+        key=lambda x: x[0],
+    )
+    if len(hrv_series) < 3:
+        return 0.0
+
+    values = [h for _, h in hrv_series[-7:]]
+    mean   = sum(values) / len(values)
+    std    = (sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5 + 1e-6
+    today_hrv = values[-1]
+    return round((today_hrv - mean) / std, 2)
+
+
+def compute_soreness_composite(checkin: Optional[dict]) -> float:
+    """Composite soreness 1–10 from morning check-in for Kalman noise scaling."""
+    if not checkin:
+        return 5.0
+    soreness_fields = [
+        checkin.get("soreness_chest"),
+        checkin.get("soreness_back"),
+        checkin.get("soreness_legs"),
+        checkin.get("soreness_shoulders"),
+        checkin.get("soreness_arms"),
+    ]
+    valid = [float(v) for v in soreness_fields if v is not None]
+    if not valid:
+        return 5.0
+    # Convert 0-3 scale to 1-10
+    avg_03 = sum(valid) / len(valid)
+    return round(1.0 + avg_03 * 3.0, 1)
+
+
+def compute_normalized_cardio_trimp(recovery_rows: list) -> float:
+    """
+    Normalized running TRIMP for today ∈ [0, 1].
+    Used as input to the cellular interference ODE.
+    Derived from Garmin acute training load.
+    """
+    for r in recovery_rows:
+        if r.get("date", "") == TODAY and r.get("training_load_acute"):
+            # Garmin ATL is roughly in TSS units. Normalize to 0-1 (150 TSS = 1.0).
+            return round(min(float(r["training_load_acute"]) / 150.0, 1.0), 3)
+    return 0.0
+
+
+def compute_normalized_strength_vol(workout_logs: list) -> float:
+    """
+    Normalized strength training volume for today ∈ [0, 1].
+    Used as input to the cellular interference ODE.
+    25 hard sets = 1.0 (typical hard session upper bound).
+    """
+    total_sets = 0
+    for log in workout_logs:
+        if log.get("log_date", "") != TODAY:
+            continue
+        for ex in (log.get("exercises") or []):
+            sets = ex.get("sets") or []
+            hard = sum(1 for s in sets if s.get("weight") or s.get("reps"))
+            total_sets += hard
+    return round(min(total_sets / 25.0, 1.0), 3)
+
+
+def is_sunday() -> bool:
+    return datetime.date.today().weekday() == 6 or os.environ.get("FORCE_WEEKLY") == "1"
+
+
+def compute_observation_y(recovery: dict, fatigue: dict) -> Optional[float]:
+    """
+    Map today's recovery/fatigue state to a Kalman observation y_t.
+
+    y_t represents observed performance proxy on the Banister scale (baseline 100).
+    We use the recovery score (0-100) centered at 50 → maps to performance space.
+
+    When no recovery data is available, returns None (no Kalman update this step).
+    """
+    if not recovery.get("data_available"):
+        return None
+    score = recovery.get("score")
+    if score is None:
+        return None
+    # Map recovery 0-100 → performance 85-115
+    # Recovery 50 = baseline (100), each 10 points = 3 performance units
+    return round(100.0 + (float(score) - 50.0) * 0.30, 2)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -740,6 +906,14 @@ def main():
     checkin = checkin_rows[0] if checkin_rows else None
     print(f"  daily_readiness: {'found' if checkin else 'none'}")
 
+    # Fetch cardio sessions for VDOT updates
+    cardio_rows = sb_get("cardio_sessions", {
+        "select": "*",
+        "date": f"gte.{days_before(14)}",
+        "order": "date.desc",
+    })
+    print(f"  cardio_sessions: {len(cardio_rows)} records")
+
     print("\nComputing metrics...")
 
     strength    = compute_strength(workout_logs)
@@ -758,17 +932,164 @@ def main():
     print(f"  Fatigue:  TSB={fatigue.get('tsb')}  CNS={fatigue.get('cns_fatigue')}  interp={fatigue.get('interpretation')}")
     print(f"  Nutrition: {nutrition.get('avg_calories_7d')} kcal avg  {nutrition.get('avg_protein_7d')}g protein  trend={nutrition.get('weight_trend_lbs_per_week')} lbs/wk")
 
+    # ── Adaptive engine ───────────────────────────────────────────────────────
+    banister_out      = None
+    cellular_out      = None
+    vdot_zones_out    = None
+    nutrition_mod_out = None
+    overreach_out     = None
+    engine_params_row = None
+
+    if _ENGINE_AVAILABLE:
+        print("\nRunning adaptive engine...")
+
+        # 1. Load yesterday's engine params
+        prev_params = sb_get("engine_params", {
+            "select": "*",
+            "order":  "date.desc",
+            "limit":  "1",
+        })
+        prev = prev_params[0] if prev_params else {}
+
+        kalman    = BanisterKalman.from_dict(prev.get("kalman_state")    or {})
+        rls       = RLSParameterLearner.from_dict(prev.get("rls_params") or {})
+        cellular  = CellularInterferenceModel.from_dict(prev.get("cellular_state") or {})
+        vdot_eng  = VDOTEngine.from_dict(prev.get("vdot_state")          or {})
+        guardrail = SystemGuardrail.from_dict(prev.get("guardrail_state") or {})
+
+        # 2. Apply RLS parameters to Kalman if learner is mature
+        if rls.is_mature():
+            kalman.update_params(**rls.params_dict())
+
+        # 3. Compute today's inputs
+        u_t       = compute_training_load_tss(workout_logs, recovery_rows)
+        hrv_z     = compute_hrv_zscore(recovery_rows)
+        soreness  = compute_soreness_composite(checkin)
+        y_t       = compute_observation_y(recovery, fatigue)
+        run_trimp = compute_normalized_cardio_trimp(recovery_rows)
+        str_vol   = compute_normalized_strength_vol(workout_logs)
+
+        # 4. Kalman step (predict + update)
+        banister_out = kalman.step(u_t, y_t, hrv_z=hrv_z, soreness=soreness)
+        print(f"  Banister: F={banister_out['fitness']:.2f}  f={banister_out['fatigue']:.2f}  "
+              f"TSB={banister_out['tsb_banister']:.2f}  conf={banister_out['confidence']}")
+
+        # 5. Cellular ODE step
+        cellular_out = cellular.step(run_trimp, str_vol)
+        print(f"  Cellular: AMPK={cellular_out['ampk']:.3f}  mTORC1={cellular_out['mtorc1']:.3f}  "
+              f"interference={cellular_out['interference_level']}")
+
+        # 6. Nutrition modulation
+        maintenance_kcal  = float(profile.get("maintenance_kcal") or 3200)
+        nutrition_mod_obj = NutritionModulator(maintenance_kcal=maintenance_kcal)
+        avg_kcal          = float(nutrition.get("avg_calories_7d") or maintenance_kcal)
+        nutrition_mod_out = nutrition_mod_obj.modulate(
+            avg_kcal, kalman.tau_fat, base_mrv_sets=16.0
+        )
+        print(f"  Nutrition: deficit_ratio={nutrition_mod_out['deficit_ratio']:.2f}  "
+              f"tau_fat_adj={nutrition_mod_out['tau_fat_adj']}  "
+              f"reliability={nutrition_mod_out['metric_reliability']}")
+
+        # 7. VDOT: update from any timed runs logged today or this week
+        for row in cardio_rows:
+            if row.get("date", "") == TODAY:
+                dist_m = float(row.get("distance_meters") or 0)
+                secs   = float(row.get("duration_seconds") or 0)
+                if dist_m >= 800 and secs > 0:
+                    vdot_eng.record_effort(dist_m, secs)
+                    print(f"  VDOT updated from run: {dist_m}m in {secs}s → VDOT={vdot_eng.vdot}")
+        vdot_zones_out = vdot_eng.pace_zones()
+        print(f"  VDOT: {vdot_zones_out['current_vdot']} (target {vdot_zones_out['target_vdot']}, "
+              f"gap {vdot_zones_out['vdot_gap']})")
+
+        # 8. Overreaching check
+        hrv_hist = [float(r.get("hrv") or 0) for r in sorted(recovery_rows, key=lambda r: r.get("date",""))
+                    if r.get("hrv")][-7:]
+        rhr_hist = [float(r.get("resting_hr") or 0) for r in sorted(recovery_rows, key=lambda r: r.get("date",""))
+                    if r.get("resting_hr")][-7:]
+        acwr     = float(fatigue.get("atl") or 0) / (float(fatigue.get("ctl") or 1) + 1e-5)
+        overreach_out = guardrail.check_overreaching(hrv_hist, rhr_hist, acwr)
+        if overreach_out["overreaching"]:
+            print(f"  ⚠️  OVERREACHING DETECTED: HRV_z={overreach_out['hrv_z_3d']}  "
+                  f"RHR_z={overreach_out['rhr_z_3d']}")
+        else:
+            print(f"  Fatigue state: {overreach_out['fatigue_state']}")
+
+        # 9. Weekly updates (Sunday only)
+        if is_sunday():
+            print("  Running weekly updates (Sunday)...")
+
+            # RLS: accumulate today's data point and run weekly update
+            phi = [
+                banister_out.get("fitness", 0),
+                banister_out.get("fatigue", 0),
+                u_t / 100.0,
+                1.0 - nutrition_mod_out.get("deficit_ratio", 0),
+            ]
+            rls.accumulate(phi, y_t if y_t is not None else 100.0)
+            rls_params = rls.weekly_update()
+            print(f"    RLS update: tau_fit={rls_params['tau_fit']}  "
+                  f"tau_fat={rls_params['tau_fat']}  updates={rls_params['updates']}")
+
+            # Cellular closed-loop: use best-tracked lift slope as mTOR proxy
+            best_slope      = 0.0
+            best_sessions   = 0
+            for lift_data in strength.values():
+                slope    = lift_data.get("progression_rate_lbs_per_week", 0) or 0
+                sessions = lift_data.get("sessions", 0) or 0
+                if sessions > best_sessions:
+                    best_slope    = slope
+                    best_sessions = sessions
+            cellular.close_loop_update(best_slope, best_sessions)
+            print(f"    Cellular closed-loop: slope={best_slope:.1f} lbs/wk  "
+                  f"α₂={cellular.alpha2:.4f}  γᵢ={cellular.gamma_i:.3f}")
+        else:
+            # Non-Sunday: still buffer the RLS data point
+            phi = [
+                banister_out.get("fitness", 0),
+                banister_out.get("fatigue", 0),
+                u_t / 100.0,
+                1.0 - nutrition_mod_out.get("deficit_ratio", 0),
+            ]
+            rls.accumulate(phi, y_t if y_t is not None else 100.0)
+
+        # 10. Guardrail state tracking
+        guardrail.record_state(overreach_out["fatigue_state"])
+
+        # 11. Save engine params
+        engine_params_row = {
+            "created_by":     USER_ID,
+            "date":           TODAY,
+            "kalman_state":   kalman.to_dict(),
+            "rls_params":     rls.to_dict(),
+            "cellular_state": cellular.to_dict(),
+            "vdot_state":     vdot_eng.to_dict(),
+            "guardrail_state": guardrail.to_dict(),
+            "computed_at":    datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        ok_engine = sb_upsert("engine_params", engine_params_row)
+        if ok_engine:
+            print("  ✓  Engine params saved")
+        else:
+            print("  ✗  Engine params save FAILED")
+
+    # ── Write athlete_state ───────────────────────────────────────────────────
     print("\nUpserting to athlete_state...")
     row = {
-        "created_by":  USER_ID,
-        "date":        TODAY,
-        "strength":    strength,
-        "hypertrophy": hypertrophy,
-        "fatigue":     fatigue,
-        "recovery":    recovery,
-        "endurance":   endurance,
-        "nutrition":   nutrition,
-        "computed_at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "created_by":           USER_ID,
+        "date":                 TODAY,
+        "strength":             strength,
+        "hypertrophy":          hypertrophy,
+        "fatigue":              fatigue,
+        "recovery":             recovery,
+        "endurance":            endurance,
+        "nutrition":            nutrition,
+        "banister":             banister_out,
+        "cellular":             cellular_out,
+        "vdot_zones":           vdot_zones_out,
+        "nutrition_modulation": nutrition_mod_out,
+        "overreach_signal":     overreach_out,
+        "computed_at":          datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
     ok = sb_upsert("athlete_state", row)
