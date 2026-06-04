@@ -118,7 +118,7 @@ def sb_get(table: str, params: dict) -> list:
 
 def sb_upsert(table: str, row: dict) -> bool:
     """Upsert a row; merges on UNIQUE(created_by, date)."""
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    url = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=created_by,date"
     data = json.dumps(row).encode()
     req = urllib.request.Request(
         url, data=data, method="POST",

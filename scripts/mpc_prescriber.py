@@ -144,7 +144,7 @@ def sb_get(table, params):
 
 
 def sb_upsert(table, row):
-    url  = f"{SUPABASE_URL}/rest/v1/{table}"
+    url  = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=created_by,date"
     data = json.dumps(row).encode()
     req  = urllib.request.Request(
         url, data=data, method="POST",
