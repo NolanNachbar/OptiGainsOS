@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-generate_weekly_program.py — MPC-driven weekly program generator.
+generate_weekly_program.py — Full engine-driven weekly program generator.
 
-Uses your existing Week 1 workout templates as the base structure and
-applies MPC intensity scaling on top. This preserves the program design
-(Upper Max Effort on Fri, Lower Light + Long Run on Sat, etc.) while
-letting the engine manage load based on current athlete state.
+Uses the complete athlete state — Kalman fitness/fatigue, cellular AMPK/mTORC1
+interference, recent session history, and cumulative cardio load — to generate
+workouts from first principles rather than fixed templates.
 
-The MPC selects a day-level action (STRENGTH / DELOAD / REST / etc.) and
-an intensity scalar (0.7–1.1). That scalar modifies:
-  - rep_target on the back-off sets (±1-2 reps)
-  - RIR targets (+1 if fatigued, -1 if fresh)
-  - Set counts (deload: -1 set, fresh: +1 set on primaries)
-  - Notes annotated with today's load context
+Decision hierarchy per day:
+  1. MPC forward simulation → action (STRENGTH / TWO_A_DAY / DELOAD / REST / etc.)
+  2. Kalman TSB → intensity scalar [0.7–1.1]
+  3. AMPK/mTORC1 → split selection (upper vs lower) + cardio zone
+  4. Recent session history → prevents repeating same split consecutively
+  5. 7-day run TSS → aerobic volume management
+
+Cardio uses Garmin HR zones (Z1–Z5), not pace targets.
 
 Run via GitHub Actions → Generate Weekly Program → Run workflow.
-Set DAYS_AHEAD=7 to program the full next week (Sunday cron does this).
 Default (DAYS_AHEAD=0): programs remaining days of the current week.
+Sunday cron runs with DAYS_AHEAD=0 on Monday → programs full week.
 """
 
 import os
@@ -26,7 +27,6 @@ import datetime
 import urllib.request
 import urllib.parse
 import urllib.error
-import copy
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -39,17 +39,13 @@ except ImportError:
     pass
 
 import numpy as np
-from engine.banister_kalman    import BanisterKalman
-from engine.guardrail          import SystemGuardrail
+from engine.banister_kalman import BanisterKalman
+from engine.guardrail       import SystemGuardrail
+from engine.session_generator import generate as gen_session, get_split, build_title
 
-SUPABASE_URL       = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
-SUPABASE_KEY       = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
-USER_ID            = os.environ.get("USER_ID", "")
-# Optional: load workout templates from a separate (protected) program.
-# Set this to the ID of the program whose Week 1 templates you want to use
-# as the base structure. The generated workouts are written to the ACTIVE
-# enrollment's program — this program's templates are never modified.
-TEMPLATE_PROGRAM_ID = os.environ.get("TEMPLATE_PROGRAM_ID", "")
+SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
+SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
+USER_ID      = os.environ.get("USER_ID", "")
 TODAY        = datetime.date.today()
 
 if not all([SUPABASE_URL, SUPABASE_KEY]):
@@ -155,202 +151,6 @@ def select_action(kalman, load_history, acwr, overreaching):
     return best, round(intensity, 2)
 
 
-# ── Template modifier — core of the approach ─────────────────────────────────
-
-def _parse_reps(rep_target: str) -> tuple:
-    """Parse '5', '3-5', '8-12', 'Max', '1→7→1', '25-30 min' → (lo, hi, is_range, raw)."""
-    raw = str(rep_target).strip()
-    if "-" in raw and "min" not in raw.lower():
-        parts = raw.split("-")
-        try:
-            lo, hi = int(parts[0]), int(parts[1])
-            return lo, hi, True, raw
-        except ValueError:
-            pass
-    try:
-        v = int(raw)
-        return v, v, False, raw
-    except ValueError:
-        return None, None, False, raw  # non-numeric (Max, pyramid, min, etc.)
-
-
-def apply_mpc_to_exercises(exercises: list, action: str, intensity: float) -> list:
-    """
-    Scale the template exercises based on MPC action + intensity scalar.
-
-    Intensity scalar interpretation:
-      1.10 → very fresh, push: +1 rep on working sets, RIR -1
-      1.00 → standard: no change
-      0.90 → slightly fatigued: +1 RIR, note to stay conservative
-      0.78 → heavily fatigued: +2 RIR, -1 set on accessories, flag recovery
-    """
-    result = []
-    for ex in exercises:
-        ex = copy.deepcopy(ex)
-        name  = (ex.get("name") or "").lower()
-        notes = ex.get("notes") or ""
-        lo, hi, is_range, raw_reps = _parse_reps(ex.get("rep_target", ""))
-        rir   = ex.get("rir_target")
-        sets  = int(ex.get("sets") or 1)
-
-        # Skip modifying run/swim/active recovery entries
-        is_cardio = any(k in name for k in ("run","swim","cardio","zone","active recovery","sprint"))
-        if is_cardio:
-            result.append(ex)
-            continue
-
-        # ── REST day: keep structure but flag as optional ──────────────────
-        if action == "REST":
-            ex["notes"] = "REST DAY — skip unless feeling genuinely good."
-            result.append(ex)
-            continue
-
-        # ── DELOAD: reduce load, cut accessories ──────────────────────────
-        if action == "DELOAD":
-            if "daily single" in name or "top set" in name or "max effort" in name:
-                ex["notes"] = (notes + " DELOAD: hit daily single at comfortable weight, no max attempt.").strip()
-            elif "back-off" in name or "speed work" in name:
-                ex["sets"]      = max(1, sets - 1)
-                ex["rep_target"] = str(lo) if lo else raw_reps
-                if rir is not None:
-                    ex["rir_target"] = min(rir + 2, 4)
-                ex["notes"] = (notes + f" DELOAD week: -{1} set, conservative load.").strip()
-            else:
-                # Accessories: drop 1 set
-                ex["sets"] = max(1, sets - 1)
-                if rir is not None:
-                    ex["rir_target"] = min(rir + 1, 4)
-            result.append(ex)
-            continue
-
-        # ── Normal intensity scaling ───────────────────────────────────────
-        if intensity >= 1.05:
-            # Very fresh — push rep targets up, reduce RIR
-            if is_range and lo and hi:
-                ex["rep_target"] = f"{lo}-{hi + 1}"
-            if rir is not None:
-                ex["rir_target"] = max(0, rir - 1)
-            if "daily single" in name or "top set" in name:
-                ex["notes"] = (notes + " Feeling fresh — push the single.").strip()
-
-        elif intensity >= 0.95:
-            # Standard — no change
-            pass
-
-        elif intensity >= 0.85:
-            # Slightly fatigued — conservative
-            if rir is not None:
-                ex["rir_target"] = min(rir + 1, 4)
-            if "daily single" in name or "top set" in name:
-                ex["notes"] = (notes + " Stay conservative on the single today.").strip()
-
-        else:
-            # Heavily fatigued (intensity < 0.85)
-            if is_range and lo and hi:
-                ex["rep_target"] = f"{lo}-{max(lo, hi - 1)}"
-            if rir is not None:
-                ex["rir_target"] = min(rir + 2, 4)
-            # Cut 1 accessory set when deeply fatigued
-            if rir is not None and rir <= 2 and "daily single" not in name:
-                ex["sets"] = max(1, sets - 1)
-            if "daily single" in name or "top set" in name:
-                ex["notes"] = (notes + " High fatigue — treat as technique single, not a max.").strip()
-            elif "back-off" in name:
-                ex["notes"] = (notes + " Back off 5-10% from normal working weight today.").strip()
-
-        result.append(ex)
-    return result
-
-
-def build_cardio_sessions(action: str, intensity: float) -> list:
-    """
-    Return a list of cardio session prescriptions driven by MPC intensity.
-    Intensity comes from the Kalman TSB, so this IS the optimal decision —
-    not hardcoded by day of week.
-
-    TWO_A_DAY  → 1 PM cardio session (type scales with freshness)
-    CARDIO     → 1 primary cardio session (same logic)
-    MIXED      → 1 easy conditioning block
-    Everything else → no prescribed cardio
-    """
-    if action not in ("TWO_A_DAY", "CARDIO", "MIXED"):
-        return []
-
-    if action == "MIXED" or intensity < 0.85:
-        return [{
-            "activity_type": "run",
-            "zone": "Z2",
-            "duration_minutes": 40,
-            "notes": "Easy aerobic — conversational pace, nasal breathing if possible.",
-        }]
-    elif intensity < 0.95:
-        return [{
-            "activity_type": "run",
-            "zone": "Z2",
-            "duration_minutes": 50,
-            "notes": "Steady Z2 run. Keep HR under aerobic threshold.",
-        }]
-    elif intensity < 1.05:
-        return [{
-            "activity_type": "run",
-            "zone": "Z3",
-            "duration_minutes": 35,
-            "notes": "Tempo / Z3 effort. Comfortably hard — 20-min tempo block or continuous.",
-        }]
-    else:
-        # Very fresh — intervals
-        return [{
-            "activity_type": "run",
-            "zone": "Z4",
-            "duration_minutes": 40,
-            "notes": "Interval session. 6×800m @ Z4-Z5 effort, 90s rest. Or 4×1mi @ tempo.",
-        }]
-
-
-def build_cardio_sessions(action: str, intensity: float) -> list:
-    """
-    Return prescribed cardio sessions driven purely by MPC action + intensity.
-    Intensity comes from the Kalman TSB (fresh vs. fatigued), so this IS
-    the optimal decision — not hardcoded by day of week.
-
-      TWO_A_DAY → 1 PM cardio session (type scales with freshness)
-      CARDIO    → 1 primary cardio session
-      MIXED     → 1 easy conditioning block
-      All others → no cardio prescribed
-    """
-    if action not in ("TWO_A_DAY", "CARDIO", "MIXED"):
-        return []
-
-    if action == "MIXED" or intensity < 0.85:
-        return [{
-            "activity_type": "run", "zone": "Z2", "duration_minutes": 40,
-            "notes": "Easy aerobic — conversational pace, nasal breathing if possible.",
-        }]
-    elif intensity < 0.95:
-        return [{
-            "activity_type": "run", "zone": "Z2", "duration_minutes": 50,
-            "notes": "Steady Z2 run. Keep HR under aerobic threshold.",
-        }]
-    elif intensity < 1.05:
-        return [{
-            "activity_type": "run", "zone": "Z3", "duration_minutes": 35,
-            "notes": "Tempo / Z3 effort. 20-min tempo block or comfortably-hard continuous.",
-        }]
-    else:
-        return [{
-            "activity_type": "run", "zone": "Z4", "duration_minutes": 40,
-            "notes": "Interval session. 6×800m @ Z4-Z5 effort, 90s rest. Or 4×1mi @ tempo.",
-        }]
-
-
-def mpc_title_suffix(action: str, intensity: float) -> str:
-    if action == "REST":    return " (Rest)"
-    if action == "DELOAD":  return " (Deload)"
-    if intensity >= 1.05:   return " ↑ Push"
-    if intensity >= 0.95:   return ""
-    if intensity >= 0.85:   return " → Steady"
-    return " ↓ Back Off"
-
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -360,7 +160,6 @@ def main():
         USER_ID = resolve_user_id()
         print(f"  Resolved USER_ID: {USER_ID}")
 
-    # ── Days to generate ──────────────────────────────────────────────────────
     days_ahead_env = int(os.environ.get("DAYS_AHEAD", 0))
     if days_ahead_env > 0:
         days_to_generate = [TODAY + datetime.timedelta(days=i) for i in range(days_ahead_env)]
@@ -371,15 +170,16 @@ def main():
     print(f"=== generate_weekly_program  {TODAY} ===")
     print(f"  Generating for: {[d.isoformat() for d in days_to_generate]}")
 
-    # ── Load state ────────────────────────────────────────────────────────────
-    engine_rows  = sb_get("engine_params", {
+    # ── Load engine state ─────────────────────────────────────────────────────
+    engine_rows = sb_get("engine_params", {
         "select": "*", "order": "date.desc", "limit": "1",
         "created_by": f"eq.{USER_ID}",
     })
     engine = engine_rows[0] if engine_rows else {}
 
     athlete_rows = sb_get("athlete_state", {
-        "select": "date,fatigue,recovery", "order": "date.desc", "limit": "30",
+        "select": "date,fatigue,recovery,cellular_state,vdot",
+        "order": "date.desc", "limit": "30",
         "created_by": f"eq.{USER_ID}",
     })
 
@@ -391,7 +191,33 @@ def main():
         atl = (row.get("fatigue") or {}).get("atl")
         load_history.append(float(atl) if atl is not None else 0.0)
 
-    # ── Find active enrollment + program ──────────────────────────────────────
+    # Current cellular state (AMPK/mTORC1) from most recent athlete_state
+    latest_athlete = athlete_rows[0] if athlete_rows else {}
+    cellular_state = latest_athlete.get("cellular_state") or {}
+    vdot           = latest_athlete.get("vdot")
+
+    # ── Recent session history (for split decision) ───────────────────────────
+    # Read last 7 days of training_prescription for session type history
+    prescription_rows = sb_get("training_prescription", {
+        "select": "date,action,session_type",
+        "created_by": f"eq.{USER_ID}",
+        "order": "date.desc", "limit": "7",
+    })
+    # Build list of recent session focus strings, oldest first
+    recent_session_types = [
+        (r.get("session_type") or r.get("action") or "").lower()
+        for r in reversed(prescription_rows)
+    ]
+
+    # ── Recent cardio TSS (for aerobic load management) ───────────────────────
+    cardio_rows = sb_get("cardio_sessions", {
+        "select": "tss,start_date",
+        "created_by": f"eq.{USER_ID}",
+        "order": "start_date.desc", "limit": "7",
+    })
+    recent_run_tss = sum(float(r.get("tss") or 0) for r in cardio_rows)
+
+    # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
         "select": "*", "status": "eq.active", "limit": "1",
         "created_by": f"eq.{USER_ID}",
@@ -405,88 +231,89 @@ def main():
     current_week = int(enrollment.get("current_week") or 1)
     cycle_length = int(enrollment.get("days_per_week") or 7)
 
-    # Parse enrollment start date — must match how the frontend computes dates
-    raw_start = enrollment.get("started_at") or enrollment.get("start_date") or ""
+    raw_start        = enrollment.get("started_at") or enrollment.get("start_date") or ""
     enrollment_start = datetime.date.fromisoformat(raw_start[:10])
-    print(f"  Active program: {program_id} | Enrollment week: {current_week} | Start: {enrollment_start}")
 
-    # Load week-1 templates — use TEMPLATE_PROGRAM_ID if set, otherwise fall
-    # back to the active program.  The template source is NEVER written to;
-    # all generated rows go into the active program keyed by scheduled_date.
-    template_src = TEMPLATE_PROGRAM_ID or program_id
-    if TEMPLATE_PROGRAM_ID:
-        print(f"  Template source (read-only): {TEMPLATE_PROGRAM_ID}")
-
-    templates = sb_get("program_workouts", {
-        "select":       "*",
-        "program_id":   f"eq.{template_src}",
-        "week_number":  "eq.1",
-        "scheduled_date": "is.null",   # base templates only, never MPC-generated rows
-        "order":        "day_index.asc",
-    })
-    template_by_day = {int(t["day_index"]): t for t in templates}
-    print(f"  Loaded {len(templates)} week-1 templates (day_index 1–{max(template_by_day) if template_by_day else '?'})")
+    print(f"  Program: {program_id} | Week: {current_week} | Start: {enrollment_start}")
+    print(f"  Cellular — AMPK: {cellular_state.get('ampk', 'n/a'):.2f}  mTORC1: {cellular_state.get('mtorc1', 'n/a'):.2f}" if cellular_state else "  Cellular state: none yet")
+    print(f"  Recent session types: {recent_session_types}")
+    print(f"  7-day run TSS: {recent_run_tss:.1f}")
 
     # ── Generate each day ─────────────────────────────────────────────────────
     for sim_day in days_to_generate:
-        day_name  = sim_day.strftime("%A")
+        day_name = sim_day.strftime("%A")
 
-        # day_index must match the frontend's getProgramSchedule logic exactly:
+        # day_index matches frontend getProgramSchedule:
         #   date = addDays(anchor, cycleStartOffset + (day_index - 1))
-        # So: day_index = (days_since_start % cycle_length) + 1
         days_since_start = (sim_day - enrollment_start).days
-        day_index = (days_since_start % cycle_length) + 1
+        day_index        = (days_since_start % cycle_length) + 1
 
-        # ACWR for this simulated day
+        # ACWR
         acwr = 1.0
         if len(load_history) >= 7:
             acute   = sum(load_history[-7:])  / 7.0
             chronic = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
             acwr    = acute / (chronic + 1e-5)
 
-        hrv_hist = []
-        rhr_hist = []
-        overreach = guardrail.check_overreaching(hrv_hist, rhr_hist, acwr)
+        overreach = guardrail.check_overreaching([], [], acwr)
+        action, intensity = select_action(kalman, load_history, acwr, overreach["overreaching"])
 
-        action, intensity = select_action(
-            kalman, load_history, acwr, overreach["overreaching"]
+        # Forward-step cellular state (simple decay approximation for future days)
+        sim_cellular = dict(cellular_state)
+        days_ahead = (sim_day - TODAY).days
+        if days_ahead > 0 and sim_cellular:
+            decay = 0.85 ** days_ahead  # ~15%/day decay toward baseline
+            sim_cellular = {
+                "ampk":              float(sim_cellular.get("ampk", 0.2)) * decay,
+                "mtorc1":            min(0.8, float(sim_cellular.get("mtorc1", 0.3)) + (1 - decay) * 0.3),
+                "interference_score": float(sim_cellular.get("interference_score", 0.1)) * decay,
+            }
+
+        # Generate session using full engine state
+        exercises, cardio = gen_session(
+            action=action,
+            intensity=intensity,
+            sim_date=sim_day,
+            cellular_state=sim_cellular,
+            recent_session_types=recent_session_types,
+            recent_run_tss=recent_run_tss,
+            vdot=vdot,
         )
 
+        split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types)
+        title = build_title(action, split, intensity)
+
         print(f"\n  [{sim_day}] {day_name} (day_index={day_index})")
-        print(f"    MPC: {action}  intensity={intensity}  ACWR={acwr:.2f}  overreach={overreach['overreaching']}")
-
-        # Get the template for this day
-        template = template_by_day.get(day_index)
-        if not template:
-            print(f"    WARN: No week-1 template found for day_index={day_index}, skipping.")
-            continue
-
-        # Apply MPC scaling to template exercises
-        base_exercises = template.get("exercises") or []
-        scaled         = apply_mpc_to_exercises(base_exercises, action, intensity)
-        suffix         = mpc_title_suffix(action, intensity)
-        title          = (template.get("title") or day_name) + suffix
-
-        cardio = build_cardio_sessions(action, intensity)
+        print(f"    MPC: {action}  intensity={intensity}  ACWR={acwr:.2f}  split={split}")
+        print(f"    AMPK={sim_cellular.get('ampk', 0):.2f}  mTORC1={sim_cellular.get('mtorc1', 0):.2f}")
 
         pw_row = {
             "program_id":       program_id,
             "created_by":       USER_ID,
             "title":            title,
-            "focus":            template.get("focus", "strength"),
+            "focus":            "strength" if action not in ("CARDIO",) else "cardio",
             "week_number":      current_week,
             "day_index":        day_index,
             "day_of_week":      sim_day.weekday(),
             "scheduled_date":   sim_day.isoformat(),
-            "exercises":        scaled,
+            "exercises":        exercises,
             "cardio_sessions":  cardio,
-            "duration_minutes": template.get("duration_minutes"),
+            "duration_minutes": None,
         }
 
         ok = sb_upsert("program_workouts", pw_row)
-        print(f"    {'✓' if ok else '✗'}  '{title}' — {len(scaled)} exercises + {len(cardio)} cardio")
+        print(f"    {'✓' if ok else '✗'}  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
 
-        # Advance Kalman state for next simulated day
+        # Update recent session types for next day's split decision
+        recent_session_types.append(split)
+        if len(recent_session_types) > 7:
+            recent_session_types.pop(0)
+
+        # Update aerobic load estimate
+        if cardio:
+            recent_run_tss += ACTION_TSS.get(action, 0) * 0.5  # rough proxy
+
+        # Advance Kalman + guardrail
         projected_tss = ACTION_TSS.get(action, 50.0)
         kalman.step(projected_tss, None)
         load_history.append(projected_tss)

@@ -32,7 +32,4 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DAYS_AHEAD: ${{ github.event.inputs.days_ahead || '0' }}
-          # Read-only template source — Bench Everyday Peaking Phase (intact templates).
-          # Generated workouts are written to the active enrollment's program only.
-          TEMPLATE_PROGRAM_ID: "8fc04901-6033-41ad-92b6-24191501d9e3"
         run: python scripts/generate_weekly_program.py
