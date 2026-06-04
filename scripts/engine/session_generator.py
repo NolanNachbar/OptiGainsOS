@@ -9,7 +9,8 @@ NOT by randomly sampling category pools. This ensures:
   3. Every upper day has one vertical pull AND one horizontal pull — never two of the same
   4. Intra-session movement pattern diversity is enforced structurally
   5. AMPK/mTORC1 state adjusts volume and bias, doesn't just gate sessions
-  6. MILP daily_set_allocations drive per-muscle set counts when provided
+  6. MILP weekly_set_targets drive per-muscle set counts when provided
+     (MILP influences set counts only — never gates exercise inclusion)
 
 Design spec: ~/Claude/BBrain/10-Projects/OptiGains/ENGINE.md#Session-Generator-Design
 
@@ -125,9 +126,9 @@ EXERCISES = [
      "sets": 3, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
 
     # ── BUD/S calisthenics ─────────────────────────────────────────────────
-    {"name": "Push-ups",          "pattern": "calisthenics", "muscles": ["chest", "triceps"],
+    {"name": "Push-ups",              "pattern": "calisthenics", "muscles": ["chest", "triceps"],
      "sets": 3, "rep_target": "25-30","rir_target": 2, "rest_seconds": 60},
-    {"name": "Pull-ups",          "pattern": "calisthenics", "muscles": ["lats", "biceps"],
+    {"name": "Bodyweight Pull-ups",   "pattern": "calisthenics", "muscles": ["lats", "biceps"],
      "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 75},
     {"name": "Dips",              "pattern": "calisthenics", "muscles": ["chest", "triceps"],
      "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60},
@@ -145,6 +146,24 @@ def _by_pattern(pattern: str, primary_only=False, goal_only=False) -> list:
             if e["pattern"] == pattern
             and (not primary_only or e.get("is_primary"))
             and (not goal_only   or e.get("is_goal"))]
+
+
+# ── Weekly target → per-session set conversion ────────────────────────────────
+
+# Expected sessions per week per muscle by session type
+_UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 2}
+_LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
+
+
+def _session_sets(muscle: str, weekly_target: int, session_type: str) -> int:
+    """Convert weekly target → per-session set count based on expected frequency."""
+    if weekly_target <= 0:
+        return 0  # only return 0 if MILP explicitly says 0 — never gate based on this
+    if "upper" in session_type:
+        freq = _UPPER_FREQ.get(muscle, 3)
+    else:
+        freq = _LOWER_FREQ.get(muscle, 3)
+    return max(1, round(weekly_target / freq))
 
 
 # ── Scaling ───────────────────────────────────────────────────────────────────
@@ -257,56 +276,6 @@ SESSION_TITLE = {
 }
 
 
-# ── MILP allocation helpers ───────────────────────────────────────────────────
-
-# Map exercise muscles[] tags → MILP muscle group names
-_MUSCLE_TAG_MAP = {
-    "chest":      "chest",
-    "triceps":    "triceps",
-    "front_delt": "shoulders",
-    "side_delt":  "shoulders",
-    "rear_delt":  "shoulders",
-    "lats":       "lats",
-    "upper_back": "upper_back",
-    "biceps":     "biceps",
-    "brachialis": "biceps",
-    "quads":      "quads",
-    "glutes":     "glutes",
-    "hamstrings": "hamstrings",
-    "calves":     "calves",
-    "core":       "core",
-    "erectors":   "upper_back",
-    "back":       "upper_back",
-    "adductors":  "glutes",
-    "hip_flexors":"core",
-    "rotator_cuff": "shoulders",
-}
-
-
-def _primary_milp_muscle(ex: dict) -> str | None:
-    """Return the first MILP muscle group hit by this exercise, or None."""
-    for tag in (ex.get("muscles") or []):
-        mapped = _MUSCLE_TAG_MAP.get(tag)
-        if mapped:
-            return mapped
-    return None
-
-
-def _sets_remaining(allocs: dict) -> dict:
-    """Return a mutable copy of allocations dict."""
-    return {m: max(0, int(v)) for m, v in allocs.items()}
-
-
-def _consume(remaining: dict, ex: dict, sets_override: int | None = None) -> dict:
-    """Deduct sets from remaining for all muscles touched by this exercise."""
-    ex_sets = sets_override if sets_override is not None else ex.get("sets", 0)
-    for tag in (ex.get("muscles") or []):
-        milp_m = _MUSCLE_TAG_MAP.get(tag)
-        if milp_m and milp_m in remaining:
-            remaining[milp_m] = max(0, remaining[milp_m] - ex_sets)
-    return remaining
-
-
 # ── Session builders ──────────────────────────────────────────────────────────
 
 def _build_upper(
@@ -315,111 +284,81 @@ def _build_upper(
     ampk: float,
     rng: random.Random,
     readiness_z: float = 0.0,
-    daily_set_allocations: dict = None,
+    weekly_set_targets: dict = None,
     e1rm_registry: dict = None,
 ) -> list:
     """
-    Upper session structure.
+    Upper session — always produces a complete session.
 
-    When daily_set_allocations is provided:
-      - Goal exercises get their slot if chest allocation >= 2
-      - Set counts reflect MILP allocation rather than template defaults
-      - Compounds added first, then isolation
-
-    Without allocations: original behaviour preserved.
+    weekly_set_targets drives set counts when provided; it never gates
+    exercise inclusion. MILP saying 0 for a muscle only means 0 sets
+    for that specific accessory, not that the compound slot disappears.
     """
-    exercises  = []
-    use_milp   = bool(daily_set_allocations)
-    remaining  = _sets_remaining(daily_set_allocations) if use_milp else {}
+    wt = weekly_set_targets or {}
+    exercises = []
 
-    # ── Slot 1-2: Bench ──────────────────────────────────────────────────────
-    chest_alloc = remaining.get("chest", 0) if use_milp else 99
-    if not use_milp or chest_alloc >= 2:
-        bench_single = _scale(_EX_BY_NAME["Bench Press (Daily Single)"], intensity, True, readiness_z)
-        exercises.append(bench_single)
-        if use_milp:
-            remaining = _consume(remaining, _EX_BY_NAME["Bench Press (Daily Single)"], 1)
+    # Slot 1: Bench daily single (always)
+    bench = copy.deepcopy(_EX_BY_NAME["Bench Press (Daily Single)"])
+    bench["sets"] = 1  # always 1 for daily single
+    exercises.append(_scale(bench, intensity, True, readiness_z))
 
-        backoff_name = "Bench Press (Back-off Int)" if "intensity" in split else "Bench Press (Back-off Vol)"
-        backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
-        if use_milp:
-            # Match sets to remaining chest allocation
-            backoff["sets"] = min(backoff["sets"], max(1, remaining.get("chest", backoff["sets"])))
-        backoff = _scale(backoff, intensity, True, readiness_z)
-        exercises.append(backoff)
-        if use_milp:
-            remaining = _consume(remaining, backoff)
+    # Slot 2: Bench back-off (always — bench everyday program)
+    backoff_name = "Bench Press (Back-off Int)" if "intensity" in split else "Bench Press (Back-off Vol)"
+    backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
+    if wt.get("chest", 0) > 0:
+        backoff["sets"] = _session_sets("chest", wt["chest"], split)
+    exercises.append(_scale(backoff, intensity, True, readiness_z))
 
-    # ── Slot 3: Vertical pull ─────────────────────────────────────────────────
-    lats_alloc = remaining.get("lats", 0) if use_milp else 99
-    if not use_milp or lats_alloc >= 1:
-        v_pulls = _by_pattern("vertical_pull")
-        if intensity >= 1.00:
-            v_pick = rng.choice([e for e in v_pulls if "Weighted" in e["name"]] or v_pulls)
-        else:
-            v_pick = rng.choice([e for e in v_pulls if "Weighted" not in e["name"]] or v_pulls)
-        if use_milp:
-            v_pick = copy.deepcopy(v_pick)
-            v_pick["sets"] = max(1, min(v_pick["sets"], lats_alloc))
-        exercises.append(_scale(v_pick, intensity, v_pick.get("is_primary", False), readiness_z))
-        if use_milp:
-            remaining = _consume(remaining, v_pick)
-
-    # ── Slot 4: Horizontal pull ───────────────────────────────────────────────
-    ub_alloc = remaining.get("upper_back", 0) if use_milp else 99
-    if not use_milp or ub_alloc >= 1:
-        h_pulls = _by_pattern("horizontal_pull")
-        if intensity >= 0.95:
-            h_pool = [e for e in h_pulls if e.get("is_primary")] or h_pulls
-        else:
-            h_pool = [e for e in h_pulls if not e.get("is_primary")] or h_pulls
-        h_pick = rng.choice(h_pool)
-        if use_milp:
-            h_pick = copy.deepcopy(h_pick)
-            h_pick["sets"] = max(1, min(h_pick["sets"], ub_alloc))
-        exercises.append(_scale(h_pick, intensity, h_pick.get("is_primary", False), readiness_z))
-        if use_milp:
-            remaining = _consume(remaining, h_pick)
-
-    # ── Slots 5-7: Isolation accessories ─────────────────────────────────────
-    if use_milp:
-        n_acc = sum(1 for m in ("triceps", "biceps", "shoulders") if remaining.get(m, 0) >= 1)
-        n_acc = min(n_acc, 3)
+    # Slot 3: ONE vertical pull (always on upper days)
+    v_pulls = _by_pattern("vertical_pull")
+    if intensity >= 1.00:
+        v_pick = rng.choice([e for e in v_pulls if "Weighted" in e["name"]] or v_pulls)
     else:
-        n_acc = 3 if intensity >= 0.95 and ampk < 0.5 else 2
+        v_pick = rng.choice([e for e in v_pulls if "Weighted" not in e["name"]] or v_pulls)
+    v_pick = copy.deepcopy(v_pick)
+    if wt.get("lats", 0) > 0:
+        v_pick["sets"] = _session_sets("lats", wt["lats"], split)
+    exercises.append(_scale(v_pick, intensity, v_pick.get("is_primary", False), readiness_z))
 
+    # Slot 4: ONE horizontal pull (always on upper days — enforces pattern diversity)
+    h_pulls = _by_pattern("horizontal_pull")
+    if intensity >= 0.95:
+        h_pool = [e for e in h_pulls if e.get("is_primary")] or h_pulls
+    else:
+        h_pool = [e for e in h_pulls if not e.get("is_primary")] or h_pulls
+    h_pick = copy.deepcopy(rng.choice(h_pool))
+    if wt.get("upper_back", 0) > 0:
+        h_pick["sets"] = _session_sets("upper_back", wt["upper_back"], split)
+    exercises.append(_scale(h_pick, intensity, h_pick.get("is_primary", False), readiness_z))
+
+    # Slots 5-7: isolation accessories
+    n_acc = 3 if intensity >= 0.95 and ampk < 0.5 else 2
     acc_picks = []
-
     face_pull_opts = [e for e in EXERCISES if e["pattern"] == "isolation_upper"
                       and ("rear" in e["name"].lower() or "face" in e["name"].lower())]
-    tri_opts       = [e for e in EXERCISES if e["pattern"] == "isolation_upper"
-                      and "tricep" in e["name"].lower()]
-    other_acc      = [e for e in EXERCISES if e["pattern"] == "isolation_upper"
-                      and not any(k in e["name"].lower() for k in ("tricep", "rear", "face"))]
+    tri_opts = [e for e in EXERCISES if e["pattern"] == "isolation_upper"
+                and "tricep" in e["name"].lower()]
+    other_acc = [e for e in EXERCISES if e["pattern"] == "isolation_upper"
+                 and not any(k in e["name"].lower() for k in ("tricep", "rear", "face"))]
 
-    # Only include isolation if there's MILP budget (or no MILP)
-    def _milp_ok(ex):
-        if not use_milp:
-            return True
-        pm = _primary_milp_muscle(ex)
-        return pm is None or remaining.get(pm, 0) >= 1
-
-    if face_pull_opts and _milp_ok(face_pull_opts[0]):
+    if face_pull_opts:
         acc_picks.append(rng.choice(face_pull_opts))
-    if tri_opts and len(acc_picks) < n_acc and _milp_ok(tri_opts[0]):
+    if tri_opts and len(acc_picks) < n_acc:
         acc_picks.append(rng.choice(tri_opts))
     while len(acc_picks) < n_acc and other_acc:
         pick = rng.choice(other_acc)
         other_acc = [e for e in other_acc if e["name"] != pick["name"]]
-        if _milp_ok(pick):
-            acc_picks.append(pick)
+        acc_picks.append(pick)
 
+    iso_muscle_map = {"tricep": "triceps", "bicep": "biceps", "lateral": "shoulders",
+                      "rear": "shoulders", "face": "shoulders"}
     for acc in acc_picks:
         acc_copy = copy.deepcopy(acc)
-        if use_milp:
-            pm = _primary_milp_muscle(acc_copy)
-            if pm:
-                acc_copy["sets"] = max(1, min(acc_copy["sets"], remaining.get(pm, acc_copy["sets"])))
+        # Scale iso sets from weekly target if available
+        for kw, milp_m in iso_muscle_map.items():
+            if kw in acc_copy["name"].lower() and wt.get(milp_m, 0) > 0:
+                acc_copy["sets"] = _session_sets(milp_m, wt[milp_m], split)
+                break
         exercises.append(_scale(acc_copy, intensity, readiness_z=readiness_z))
 
     return [_clean(e) for e in exercises]
@@ -431,143 +370,106 @@ def _build_lower(
     ampk: float,
     rng: random.Random,
     readiness_z: float = 0.0,
-    daily_set_allocations: dict = None,
+    weekly_set_targets: dict = None,
     e1rm_registry: dict = None,
 ) -> list:
     """
-    Lower session structure — ALWAYS includes both squat and hinge patterns.
+    Lower session — ALWAYS includes both squat and hinge patterns.
 
-    When daily_set_allocations is provided, set counts come from MILP budget.
-    Goal exercises get their slot if their muscle has >= 2 sets allocated.
+    weekly_set_targets scales set counts; it never gates exercise inclusion.
     """
-    exercises  = []
-    use_milp   = bool(daily_set_allocations)
-    remaining  = _sets_remaining(daily_set_allocations) if use_milp else {}
+    wt = weekly_set_targets or {}
+    exercises = []
 
-    # Bench always
-    chest_alloc = remaining.get("chest", 0) if use_milp else 99
-    if not use_milp or chest_alloc >= 1:
-        bench_single = _scale(_EX_BY_NAME["Bench Press (Daily Single)"], intensity, True, readiness_z)
-        exercises.append(bench_single)
-        if use_milp:
-            remaining = _consume(remaining, _EX_BY_NAME["Bench Press (Daily Single)"], 1)
+    # Bench always (even on lower days — bench everyday program)
+    bench = copy.deepcopy(_EX_BY_NAME["Bench Press (Daily Single)"])
+    bench["sets"] = 1
+    exercises.append(_scale(bench, intensity, True, readiness_z))
 
-        backoff_name = "Bench Press (Back-off Int)" if "hinge" in split else "Bench Press (Back-off Vol)"
-        backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
-        if use_milp:
-            backoff["sets"] = min(backoff["sets"], max(1, remaining.get("chest", backoff["sets"])))
-        backoff = _scale(backoff, intensity, True, readiness_z)
-        exercises.append(backoff)
-        if use_milp:
-            remaining = _consume(remaining, backoff)
+    backoff_name = "Bench Press (Back-off Int)" if "hinge" in split else "Bench Press (Back-off Vol)"
+    backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
+    if wt.get("chest", 0) > 0:
+        backoff["sets"] = _session_sets("chest", wt["chest"], split)
+    exercises.append(_scale(backoff, intensity, True, readiness_z))
 
     squat_primaries = _by_pattern("squat", primary_only=True)
     hinge_primaries = _by_pattern("hinge", primary_only=True)
 
-    quads_alloc = remaining.get("quads", 0) if use_milp else 99
-    hams_alloc  = remaining.get("hamstrings", 0) if use_milp else 99
-
     if "squat_primary" in split:
-        # Slot 3: Squat primary
-        if not use_milp or quads_alloc >= 2:
-            if intensity >= 0.95 and ampk < 0.6:
-                primary = _EX_BY_NAME["Back Squat (Top Set)"]
-            else:
-                primary = rng.choice(squat_primaries)
-            p_copy = copy.deepcopy(primary)
-            if use_milp:
-                p_copy["sets"] = max(1, min(p_copy["sets"], quads_alloc))
-            exercises.append(_scale(p_copy, intensity, True, readiness_z))
-            if use_milp:
-                remaining = _consume(remaining, p_copy)
+        # Slot 3: Squat primary (always)
+        if intensity >= 0.95 and ampk < 0.6:
+            primary = _EX_BY_NAME["Back Squat (Top Set)"]
+        else:
+            primary = rng.choice(squat_primaries)
+        p_copy = copy.deepcopy(primary)
+        if wt.get("quads", 0) > 0:
+            p_copy["sets"] = _session_sets("quads", wt["quads"], split)
+        exercises.append(_scale(p_copy, intensity, True, readiness_z))
 
-            # Back-off squat
-            quads_rem = remaining.get("quads", 0) if use_milp else 99
-            if "Top Set" in primary["name"] and intensity >= 0.90 and (not use_milp or quads_rem >= 3):
-                bo = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
-                if use_milp:
-                    bo["sets"] = max(1, min(bo["sets"], quads_rem))
-                exercises.append(_scale(bo, intensity, readiness_z=readiness_z))
-                if use_milp:
-                    remaining = _consume(remaining, bo)
+        # Back-off squat (when top set selected and intensity allows)
+        if "Top Set" in primary["name"] and intensity >= 0.90:
+            bo = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
+            if wt.get("quads", 0) > 0:
+                bo["sets"] = max(1, _session_sets("quads", wt["quads"], split) - 1)
+            exercises.append(_scale(bo, intensity, readiness_z=readiness_z))
 
-        # Slot 4: Hinge secondary
-        if not use_milp or hams_alloc >= 1:
-            if ampk < 0.5:
-                hinge_sec = rng.choice(
-                    [e for e in hinge_primaries if "Romanian" in e["name"] or "Back Ext" in e["name"]]
-                    or [_EX_BY_NAME["Romanian Deadlift"]]
-                )
-            else:
-                hinge_sec = _EX_BY_NAME["Back Extension"]
-            h_copy = copy.deepcopy(hinge_sec)
-            if use_milp:
-                h_copy["sets"] = max(1, min(h_copy["sets"], remaining.get("hamstrings", h_copy["sets"])))
-            exercises.append(_scale(h_copy, intensity, readiness_z=readiness_z))
-            if use_milp:
-                remaining = _consume(remaining, h_copy)
+        # Slot 4: Hinge secondary (always — posterior chain must be covered)
+        if ampk < 0.5:
+            hinge_sec = rng.choice(
+                [e for e in hinge_primaries if "Romanian" in e["name"] or "Back Ext" in e["name"]]
+                or [_EX_BY_NAME["Romanian Deadlift"]]
+            )
+        else:
+            hinge_sec = _EX_BY_NAME["Back Extension"]
+        h_copy = copy.deepcopy(hinge_sec)
+        if wt.get("hamstrings", 0) > 0:
+            h_copy["sets"] = _session_sets("hamstrings", wt["hamstrings"], split)
+        exercises.append(_scale(h_copy, intensity, readiness_z=readiness_z))
 
     else:  # hinge_primary
-        if not use_milp or hams_alloc >= 2:
-            if intensity >= 0.95 and ampk < 0.5:
-                primary = _EX_BY_NAME["Deadlift (Top Set)"]
-            else:
-                primary = rng.choice(
-                    [e for e in hinge_primaries if "Deadlift (Top Set)" not in e["name"]]
-                    or hinge_primaries
-                )
-            p_copy = copy.deepcopy(primary)
-            if use_milp:
-                p_copy["sets"] = max(1, min(p_copy["sets"], hams_alloc))
-            exercises.append(_scale(p_copy, intensity, True, readiness_z))
-            if use_milp:
-                remaining = _consume(remaining, p_copy)
+        # Slot 3: Hinge primary (always)
+        if intensity >= 0.95 and ampk < 0.5:
+            primary = _EX_BY_NAME["Deadlift (Top Set)"]
+        else:
+            primary = rng.choice(
+                [e for e in hinge_primaries if "Deadlift (Top Set)" not in e["name"]]
+                or hinge_primaries
+            )
+        p_copy = copy.deepcopy(primary)
+        if wt.get("hamstrings", 0) > 0:
+            p_copy["sets"] = _session_sets("hamstrings", wt["hamstrings"], split)
+        exercises.append(_scale(p_copy, intensity, True, readiness_z))
 
-        # Slot 4: Squat secondary
-        quads_rem = remaining.get("quads", 0) if use_milp else 99
-        if not use_milp or quads_rem >= 1:
-            if ampk > 0.5:
-                squat_sec = rng.choice(
-                    [e for e in _by_pattern("squat")
-                     if e["name"] in ("Leg Press", "Leg Extension", "Bulgarian Split Squat")]
-                )
-            else:
-                squat_sec = rng.choice(
-                    [e for e in _by_pattern("squat") if not e.get("is_goal")]
-                    or _by_pattern("squat")
-                )
-            s_copy = copy.deepcopy(squat_sec)
-            if use_milp:
-                s_copy["sets"] = max(1, min(s_copy["sets"], quads_rem))
-            exercises.append(_scale(s_copy, intensity, readiness_z=readiness_z))
-            if use_milp:
-                remaining = _consume(remaining, s_copy)
+        # Slot 4: Squat secondary (always — quad work must be covered)
+        if ampk > 0.5:
+            squat_sec = rng.choice(
+                [e for e in _by_pattern("squat")
+                 if e["name"] in ("Leg Press", "Leg Extension", "Bulgarian Split Squat")]
+            )
+        else:
+            squat_sec = rng.choice(
+                [e for e in _by_pattern("squat") if not e.get("is_goal")]
+                or _by_pattern("squat")
+            )
+        s_copy = copy.deepcopy(squat_sec)
+        if wt.get("quads", 0) > 0:
+            s_copy["sets"] = _session_sets("quads", wt["quads"], split)
+        exercises.append(_scale(s_copy, intensity, readiness_z=readiness_z))
 
-    # Slot 5-6: isolation_lower accessories
-    if use_milp:
-        calves_alloc = remaining.get("calves", 0)
-        hams_rem     = remaining.get("hamstrings", 0)
-        n_iso = sum([calves_alloc >= 1, hams_rem >= 1])
-        n_iso = min(n_iso, 2)
-    else:
-        n_iso = 1 if ampk > 0.5 or intensity < 0.85 else 2
+    # Slots 5-6: isolation_lower accessories (always at least 1)
+    n_iso = 1 if ampk > 0.5 or intensity < 0.85 else 2
 
     iso_lower = [e for e in EXERCISES if e["pattern"] == "isolation_lower"]
     iso_lower += [_EX_BY_NAME["Hamstring Curl"]]
-    used_muscles = set()
-    for ex in exercises:
-        pass  # used_muscles tracking removed — handled by remaining dict
 
-    iso_pool = iso_lower
-    for iso in rng.sample(iso_pool, min(n_iso, len(iso_pool))):
+    for iso in rng.sample(iso_lower, min(n_iso, len(iso_lower))):
         i_copy = copy.deepcopy(iso)
-        if use_milp:
-            pm = _primary_milp_muscle(i_copy)
-            if pm:
-                i_copy["sets"] = max(1, min(i_copy["sets"], remaining.get(pm, i_copy["sets"])))
+        # Scale calves/hamstring iso sets from weekly target
+        for muscle_kw, milp_m in (("calve", "calves"), ("hamstring", "hamstrings")):
+            if muscle_kw in iso["name"].lower() and wt.get(milp_m, 0) > 0:
+                i_copy["sets"] = _session_sets(milp_m, wt[milp_m], split)
+                break
         exercises.append(_scale(i_copy, intensity, readiness_z=readiness_z))
-        if use_milp:
-            remaining = _consume(remaining, i_copy)
 
     # BUD/S calisthenics
     if intensity >= 0.90 and ampk < 0.65:
@@ -589,7 +491,7 @@ def generate(
     recent_session_types: list = None,
     recent_run_tss: float = 0.0,
     vdot: float = None,
-    daily_set_allocations: dict = None,
+    weekly_set_targets: dict = None,   # {muscle: total_sets_this_week} from MILP — drives set counts
     readiness_z: float = 0.0,
     e1rm_registry: dict = None,
 ) -> tuple:
@@ -604,7 +506,8 @@ def generate(
         recent_session_types    Focus strings for last 5–7 days
         recent_run_tss          Sum of run TSS from last 7 days
         vdot                    Current VDOT (informational)
-        daily_set_allocations   {muscle: sets} from MILP (optional)
+        weekly_set_targets      {muscle: sets} weekly totals from MILP (optional).
+                                Drives per-session set counts; never gates exercise inclusion.
         readiness_z             3-day HRV z-score for RIR adjustment
         e1rm_registry           Serialised StrengthProgressionRegistry (optional)
 
@@ -658,12 +561,12 @@ def generate(
     if "upper" in split:
         exercises = _build_upper(split, intensity, ampk, rng,
                                  readiness_z=readiness_z,
-                                 daily_set_allocations=daily_set_allocations,
+                                 weekly_set_targets=weekly_set_targets,
                                  e1rm_registry=e1rm_registry)
     else:
         exercises = _build_lower(split, intensity, ampk, rng,
                                  readiness_z=readiness_z,
-                                 daily_set_allocations=daily_set_allocations,
+                                 weekly_set_targets=weekly_set_targets,
                                  e1rm_registry=e1rm_registry)
 
     cardio = _build_cardio(action, intensity, ampk, recent_run_tss)

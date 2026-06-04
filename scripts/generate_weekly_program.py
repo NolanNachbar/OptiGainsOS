@@ -388,9 +388,15 @@ def main():
         reserve_score, allocation_matrix, MUSCLE_GROUPS
     )
 
+    # Compute weekly totals (sum across all 7 days) — these are the targets
+    weekly_targets = {
+        m: int(allocation_matrix[mi].sum())
+        for mi, m in enumerate(MUSCLE_GROUPS)
+    }
+
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
     print(f"  Alloc metadata: {alloc_metadata}")
-    print(f"  Weekly set totals: {dict(zip(MUSCLE_GROUPS, allocation_matrix.sum(axis=1).tolist()))}")
+    print(f"  Weekly set targets: {weekly_targets}")
 
     # ── 7. Per-day generation ─────────────────────────────────────────────────
     for i, sim_day in enumerate(days_to_generate):
@@ -420,14 +426,7 @@ def main():
                 "interference_score": float(sim_cellular.get("interference_score", 0.1)) * decay,
             }
 
-        # Daily MILP allocations (column i of matrix, clamped to days_to_generate length)
-        col_idx = i % 7
-        daily_allocs = {
-            m: int(allocation_matrix[mi, col_idx])
-            for mi, m in enumerate(MUSCLE_GROUPS)
-        }
-
-        # Generate session with MILP allocations
+        # Generate session with weekly MILP targets (session gen handles per-session distribution)
         exercises, cardio = gen_session(
             action=action,
             intensity=intensity,
@@ -436,7 +435,7 @@ def main():
             recent_session_types=recent_session_types,
             recent_run_tss=recent_run_tss,
             vdot=vdot,
-            daily_set_allocations=daily_allocs,
+            weekly_set_targets=weekly_targets,  # weekly totals, session gen handles per-session distribution
             readiness_z=hrv_z_3d,
             e1rm_registry=progression_registry.to_dict(),
         )
@@ -453,7 +452,6 @@ def main():
         print(f"\n  [{sim_day}] {day_name} (day_index={day_index})")
         print(f"    MPC: {action}  intensity={intensity}  ACWR={acwr:.2f}  split={split}")
         print(f"    AMPK={sim_cellular.get('ampk', 0):.2f}  mTORC1={sim_cellular.get('mtorc1', 0):.2f}")
-        print(f"    MILP allocs: {daily_allocs}")
         print(f"    two_a_day={_split_2a} ({_split_reason})")
 
         pw_row = {
