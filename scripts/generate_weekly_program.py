@@ -42,9 +42,14 @@ import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
 
-SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
-SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
-USER_ID      = os.environ.get("USER_ID", "")
+SUPABASE_URL       = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
+SUPABASE_KEY       = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
+USER_ID            = os.environ.get("USER_ID", "")
+# Optional: load workout templates from a separate (protected) program.
+# Set this to the ID of the program whose Week 1 templates you want to use
+# as the base structure. The generated workouts are written to the ACTIVE
+# enrollment's program — this program's templates are never modified.
+TEMPLATE_PROGRAM_ID = os.environ.get("TEMPLATE_PROGRAM_ID", "")
 TODAY        = datetime.date.today()
 
 if not all([SUPABASE_URL, SUPABASE_KEY]):
@@ -317,14 +322,20 @@ def main():
     enrollment   = enrollments[0]
     program_id   = enrollment["program_id"]
     current_week = int(enrollment.get("current_week") or 1)
-    print(f"  Program: {program_id} | Enrollment week: {current_week}")
+    print(f"  Active program: {program_id} | Enrollment week: {current_week}")
 
-    # Load the week 1 templates (canonical base structure)
+    # Load week-1 templates — use TEMPLATE_PROGRAM_ID if set, otherwise fall
+    # back to the active program.  The template source is NEVER written to;
+    # all generated rows go into the active program keyed by scheduled_date.
+    template_src = TEMPLATE_PROGRAM_ID or program_id
+    if TEMPLATE_PROGRAM_ID:
+        print(f"  Template source (read-only): {TEMPLATE_PROGRAM_ID}")
+
     templates = sb_get("program_workouts", {
         "select":       "*",
-        "program_id":   f"eq.{program_id}",
+        "program_id":   f"eq.{template_src}",
         "week_number":  "eq.1",
-        "created_by":   f"eq.{USER_ID}",
+        "scheduled_date": "is.null",   # base templates only, never MPC-generated rows
         "order":        "day_index.asc",
     })
     template_by_day = {int(t["day_index"]): t for t in templates}
