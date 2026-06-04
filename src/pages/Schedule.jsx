@@ -128,6 +128,46 @@ const SegmentedCircularProgress = ({
   );
 };
 
+const getWorkoutSplitTitle = (log, scheduledTitle) => {
+  if (!log || !log.exercises) return scheduledTitle || "Lifting Session";
+  
+  const upperKeywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"];
+  const lowerKeywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"];
+  
+  let upperCount = 0;
+  let lowerCount = 0;
+  
+  log.exercises.forEach(ex => {
+    const name = (ex.name || "").toLowerCase();
+    if (upperKeywords.some(k => name.includes(k))) upperCount++;
+    if (lowerKeywords.some(k => name.includes(k))) lowerCount++;
+  });
+  
+  if (upperCount > lowerCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Volume")) suffix = " — Volume";
+      else if (scheduledTitle.includes("Intensity")) suffix = " — Intensity";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Upper Body Session${suffix}`;
+  } else if (lowerCount > upperCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Squat")) suffix = " — Squat";
+      else if (scheduledTitle.includes("Hinge")) suffix = " — Hinge";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Lower Body Session${suffix}`;
+  }
+  
+  return scheduledTitle || "Lifting Session";
+};
+
 export default function Schedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -930,7 +970,10 @@ export default function Schedule() {
                     }
                   </div>
                   <h2 className="text-xl font-black uppercase tracking-tight text-white leading-tight mb-3">
-                    {item.title}
+                    {(() => {
+                      const logForDay = weeklyWorkoutLogs.find(l => l.log_date === item.date);
+                      return item.completed && logForDay ? getWorkoutSplitTitle(logForDay, item.title) : item.title;
+                    })()}
                   </h2>
                   {item.exercises?.length > 0 && (
                     <div className="space-y-2 mb-4">
@@ -1717,7 +1760,10 @@ export default function Schedule() {
                                   <div className={`font-bold text-base ${
                                     item.completed ? "line-through text-green-700" : "text-white"
                                   }`}>
-                                    {item.title}
+                                    {(() => {
+                                      const logForDay = weeklyWorkoutLogs.find(l => l.log_date === item.date);
+                                      return item.completed && logForDay ? getWorkoutSplitTitle(logForDay, item.title) : item.title;
+                                    })()}
                                   </div>
                                   <div className="text-sm text-[#a0a0a0] flex items-center gap-2 mt-1 flex-wrap">
                                     <Badge variant="outline" className="text-xs bg-brand/10 text-brand border-brand/30">

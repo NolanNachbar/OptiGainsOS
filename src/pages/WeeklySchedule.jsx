@@ -23,6 +23,46 @@ function formatSets(exercise) {
   return `${sets.length} sets`;
 }
 
+const getWorkoutSplitTitle = (log, scheduledTitle) => {
+  if (!log || !log.exercises) return scheduledTitle || "Lifting Session";
+  
+  const upperKeywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"];
+  const lowerKeywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"];
+  
+  let upperCount = 0;
+  let lowerCount = 0;
+  
+  log.exercises.forEach(ex => {
+    const name = (ex.name || "").toLowerCase();
+    if (upperKeywords.some(k => name.includes(k))) upperCount++;
+    if (lowerKeywords.some(k => name.includes(k))) lowerCount++;
+  });
+  
+  if (upperCount > lowerCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Volume")) suffix = " — Volume";
+      else if (scheduledTitle.includes("Intensity")) suffix = " — Intensity";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Upper Body Session${suffix}`;
+  } else if (lowerCount > upperCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Squat")) suffix = " — Squat";
+      else if (scheduledTitle.includes("Hinge")) suffix = " — Hinge";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Lower Body Session${suffix}`;
+  }
+  
+  return scheduledTitle || "Lifting Session";
+};
+
 export default function WeeklySchedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -174,7 +214,7 @@ export default function WeeklySchedule() {
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-green-400/70 mb-1">Completed</p>
                       <h3 className="text-xl font-bold text-white">
-                        {selectedEntries[0]?.title || "Lifting Session"}
+                        {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
                       {mins && <p className="text-xs text-slate-500 mt-0.5">{mins} min</p>}
                     </div>

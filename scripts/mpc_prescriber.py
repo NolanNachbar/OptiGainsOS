@@ -370,36 +370,62 @@ def main():
     profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
     profile      = profile_rows[0] if profile_rows else {}
 
-    # ── Recent session history ────────────────────────────────────────────────
-    prescription_rows = sb_get("training_prescription", {
-        "select": "date,mpc_action,session_type,prescription",
-        "order":  "date.desc",
-        "limit":  "7",
+    # ── Recent session history from actual logged workouts ───────────────────
+    workout_log_rows = sb_get("workout_logs", {
+        "select": "log_date,exercises",
+        "order": "log_date.desc",
+        "limit": "7",
     })
-
-    def determine_split_from_row(r: dict) -> str:
-        pres = r.get("prescription") or {}
-        if isinstance(pres, str):
-            try: pres = json.loads(pres)
-            except: pres = {}
-        if "split" in pres and pres["split"]:
-            return pres["split"].lower()
-        s_type = (r.get("session_type") or r.get("mpc_action") or "").lower()
-        if "upper" in s_type or "lower" in s_type:
-            return s_type
-        exercises = pres.get("exercises") or []
-        upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip"]))
-        lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust"]))
+    
+    def determine_split_from_log(log: dict) -> str:
+        exercises = log.get("exercises") or []
+        upper_keywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"]
+        lower_keywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"]
+        upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in upper_keywords))
+        lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in lower_keywords))
         if upper_count > lower_count:
             return "upper_volume"
         elif lower_count > upper_count:
             return "lower_squat_primary"
-        return s_type
+        return ""
 
-    recent_session_types = [
-        determine_split_from_row(r)
-        for r in reversed(prescription_rows)
-    ]
+    recent_session_types = []
+    for log in reversed(workout_log_rows):
+        split = determine_split_from_log(log)
+        if split:
+            recent_session_types.append(split)
+
+    # Fallback to training prescription if no actual workouts have been logged
+    if not recent_session_types:
+        prescription_rows = sb_get("training_prescription", {
+            "select": "date,mpc_action,session_type,prescription",
+            "order":  "date.desc",
+            "limit":  "7",
+        })
+
+        def determine_split_from_row(r: dict) -> str:
+            pres = r.get("prescription") or {}
+            if isinstance(pres, str):
+                try: pres = json.loads(pres)
+                except: pres = {}
+            if "split" in pres and pres["split"]:
+                return pres["split"].lower()
+            s_type = (r.get("session_type") or r.get("mpc_action") or "").lower()
+            if "upper" in s_type or "lower" in s_type:
+                return s_type
+            exercises = pres.get("exercises") or []
+            upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip"]))
+            lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust"]))
+            if upper_count > lower_count:
+                return "upper_volume"
+            elif lower_count > upper_count:
+                return "lower_squat_primary"
+            return s_type
+
+        recent_session_types = [
+            determine_split_from_row(r)
+            for r in reversed(prescription_rows)
+        ]
 
     # ── Restore engine state ──────────────────────────────────────────────────
     kalman_dict    = engine_params.get("kalman_state")    or {}

@@ -50,6 +50,46 @@ import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
 
+const getWorkoutSplitTitle = (log, scheduledTitle) => {
+  if (!log || !log.exercises) return scheduledTitle || "Lifting Session";
+  
+  const upperKeywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"];
+  const lowerKeywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"];
+  
+  let upperCount = 0;
+  let lowerCount = 0;
+  
+  log.exercises.forEach(ex => {
+    const name = (ex.name || "").toLowerCase();
+    if (upperKeywords.some(k => name.includes(k))) upperCount++;
+    if (lowerKeywords.some(k => name.includes(k))) lowerCount++;
+  });
+  
+  if (upperCount > lowerCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Volume")) suffix = " — Volume";
+      else if (scheduledTitle.includes("Intensity")) suffix = " — Intensity";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Upper Body Session${suffix}`;
+  } else if (lowerCount > upperCount) {
+    let suffix = "";
+    if (scheduledTitle) {
+      if (scheduledTitle.includes("Squat")) suffix = " — Squat";
+      else if (scheduledTitle.includes("Hinge")) suffix = " — Hinge";
+      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
+      else if (scheduledTitle.includes("Push")) suffix = " — Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+    }
+    return `Lower Body Session${suffix}`;
+  }
+  
+  return scheduledTitle || "Lifting Session";
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -557,6 +597,9 @@ export default function Dashboard() {
 
   const isCompleted = todayProgramWorkout?.completed || todayWorkout?.completed;
   const workoutTitle = todayProgramWorkout?.title || todayWorkoutDetails?.title;
+  const displayWorkoutTitle = todayLog
+    ? getWorkoutSplitTitle(todayLog, workoutTitle)
+    : workoutTitle;
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
   const todayProgramLifts = todayExercises.filter(ex => !isRunEx(ex));
   const todayProgramRuns = [
@@ -705,7 +748,7 @@ export default function Dashboard() {
                     <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{workoutTitle || "Session Complete"}</h3>
+                    <h3 className="text-lg font-bold text-white">{displayWorkoutTitle || "Session Complete"}</h3>
                     <p className="text-xs text-emerald-400/70 font-bold uppercase tracking-widest">Training Done</p>
                   </div>
                 </div>

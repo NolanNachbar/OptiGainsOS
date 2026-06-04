@@ -377,11 +377,6 @@ def _build_session(
 
     for muscle in relevant:
         weekly = wt.get(muscle, 0)
-        if weekly <= 0:
-            continue
-        freq = freq_map.get(muscle, 3)
-        session_sets = max(1, round(weekly / freq))
-
         # All exercises that hit this muscle as primary, excluding back-off variants
         pool = [e for e in EXERCISES
                 if muscle in (e.get("muscles") or [])
@@ -407,7 +402,15 @@ def _build_session(
             continue
 
         ex_copy = copy.deepcopy(chosen)
-        ex_copy["sets"] = session_sets
+        
+        # Adaptive set calculation: scale exercise's default sets by current weekly target vs baseline weekly target
+        if ex_copy.get("is_goal") and ("Daily Single" in ex_copy.get("name", "") or "Top Set" in ex_copy.get("name", "")):
+            ex_copy["sets"] = ex_copy.get("sets", 1)
+        else:
+            baseline_weekly = 8 if muscle in ("triceps", "biceps") else 12
+            volume_scalar = weekly / baseline_weekly
+            ex_copy["sets"] = max(1, round(ex_copy.get("sets", 3) * volume_scalar))
+            
         slots.append((ex_copy, muscle))
 
     # Sort by fatigue_cost descending (compounds first)
@@ -415,15 +418,15 @@ def _build_session(
 
     exercises = []
     for ex_copy, muscle in slots:
-        # Bench daily single is always exactly 1 set
-        if ex_copy.get("is_goal") and "Daily Single" in ex_copy.get("name", ""):
-            ex_copy["sets"] = 1
+        # Goal/Top Set exercises are always exactly their default sets (usually 1)
+        if ex_copy.get("is_goal") and ("Daily Single" in ex_copy.get("name", "") or "Top Set" in ex_copy.get("name", "")):
+            ex_copy["sets"] = ex_copy.get("sets", 1)
 
         scaled = _scale(ex_copy, intensity, ex_copy.get("is_primary", False), readiness_z)
 
-        # Bench daily single — _scale must not inflate it
-        if scaled.get("name") == "Bench Press (Daily Single)":
-            scaled["sets"] = 1
+        # Goal/Top Set exercises — _scale must not inflate them
+        if scaled.get("is_goal") and ("Daily Single" in scaled.get("name", "") or "Top Set" in scaled.get("name", "")):
+            scaled["sets"] = ex_copy.get("sets", 1)
 
         exercises.append(scaled)
 
@@ -435,13 +438,23 @@ def _build_session(
             bench_bo = copy.deepcopy(_EX_BY_NAME[bo_name])
             chest_weekly = wt.get("chest", 0)
             if chest_weekly > 0:
-                bench_bo["sets"] = _session_sets("chest", chest_weekly, split)
+                baseline_weekly = 12
+                volume_scalar = chest_weekly / baseline_weekly
+                bench_bo["sets"] = max(1, round(bench_bo.get("sets", 5) * volume_scalar))
+            else:
+                bench_bo["sets"] = bench_bo.get("sets", 5)
             exercises.append(_scale(bench_bo, intensity, True, readiness_z))
 
         # Back Squat top set → add back-off when intensity allows
         if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:
             backoff = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
-            backoff["sets"] = max(1, ex_copy["sets"] - 1)
+            quads_weekly = wt.get("quads", 0)
+            if quads_weekly > 0:
+                baseline_weekly = 12
+                volume_scalar = quads_weekly / baseline_weekly
+                backoff["sets"] = max(1, round(backoff.get("sets", 3) * volume_scalar))
+            else:
+                backoff["sets"] = 3
             exercises.append(_scale(backoff, intensity, readiness_z=readiness_z))
 
         # Generic: goal "Top Set" exercises → add back-off when intensity warrants
@@ -453,7 +466,14 @@ def _build_session(
             backoff_name = ex_copy["name"].replace("Top Set", "Back-off")
             if backoff_name in _EX_BY_NAME:
                 backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
-                backoff["sets"] = max(1, ex_copy["sets"] - 1)
+                pm = ex_copy.get("muscles", [""])[0]
+                weekly_tgt = wt.get(pm, 0)
+                if weekly_tgt > 0:
+                    baseline_weekly = 8 if pm in ("triceps", "biceps") else 12
+                    volume_scalar = weekly_tgt / baseline_weekly
+                    backoff["sets"] = max(1, round(backoff.get("sets", 3) * volume_scalar))
+                else:
+                    backoff["sets"] = max(1, backoff.get("sets", 3))
                 exercises.append(_scale(backoff, intensity, readiness_z=readiness_z))
 
     return [_clean(e) for e in exercises]
