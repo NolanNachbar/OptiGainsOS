@@ -73,11 +73,22 @@ export function getProgramSchedule(enrollment, workouts) {
     new Date()
   );
 
-  // Training days only (ignore rest/empty days), sorted by day_index
+  // MPC-generated overrides: keyed by scheduled_date (yyyy-MM-dd)
+  const dateOverrideMap = new Map();
+  workouts.forEach((w) => {
+    if (w.scheduled_date) {
+      const d = typeof w.scheduled_date === 'string'
+        ? w.scheduled_date.slice(0, 10)
+        : format(new Date(w.scheduled_date), 'yyyy-MM-dd');
+      dateOverrideMap.set(d, w);
+    }
+  });
+
+  // Base templates: no scheduled_date, used as fallback for any cycle
   const trainingDays = workouts
-    .filter((w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0)
+    .filter((w) => !w.scheduled_date && (w.exercises?.length > 0 || w.cardio_sessions?.length > 0))
     .sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
-  if (!trainingDays.length) return [];
+  if (!trainingDays.length && dateOverrideMap.size === 0) return [];
 
   // Get cycle settings from enrollment or fallback to program
   const cycleLength = enrollment.program?.days_per_week
@@ -125,10 +136,13 @@ export function getProgramSchedule(enrollment, workouts) {
 
   const entries = [];
 
+  // If there are no base templates (edge case), synthesize day slots from override dates
+  const effectiveTrainingDays = trainingDays.length > 0 ? trainingDays : [];
+
   for (let cycle = 1; cycle <= numCycles; cycle++) {
     const cycleStartOffset = (cycle - 1) * calDaysPerCycle;
 
-    for (const workout of trainingDays) {
+    for (const workout of effectiveTrainingDays) {
       // day_index represents the day within the cycle (1-based)
       // Convert to 0-based offset for calendar calculation
       const dayOffset = workout.day_index - 1;
@@ -137,11 +151,15 @@ export function getProgramSchedule(enrollment, workouts) {
         "yyyy-MM-dd"
       );
 
+      // If an MPC-generated override exists for this exact date, use it
+      const override = dateOverrideMap.get(date);
+      const activeWorkout = override || workout;
+
       // Check if this specific workout (cycle + day_index) is completed
       const completedKey = `${cycle}-${workout.day_index}`;
       const completedSessions = sessionCompletions.get(completedKey) || new Set();
-      const cardioCount = (workout.cardio_sessions || []).length;
-      const hasExercises = (workout.exercises || []).length > 0;
+      const cardioCount = (activeWorkout.cardio_sessions || []).length;
+      const hasExercises = (activeWorkout.exercises || []).length > 0;
       // Whole-workout complete if: legacy whole-workout entry exists, OR all individual sessions done
       const isCompleted = completedWorkouts.has(completedKey)
         || (!hasExercises && cardioCount > 0 && completedSessions.size >= cardioCount);
@@ -152,13 +170,13 @@ export function getProgramSchedule(enrollment, workouts) {
 
       entries.push({
         date,
-        title: workout.title,
-        programWorkoutId: workout.id,
+        title: activeWorkout.title,
+        programWorkoutId: activeWorkout.id,
         enrollmentId: enrollment.id,
         cycle,
         dayIndex: workout.day_index,
-        exercises: workout.exercises || [],
-        cardio_sessions: (workout.cardio_sessions || []).map(normalizeCardioSession),
+        exercises: activeWorkout.exercises || [],
+        cardio_sessions: (activeWorkout.cardio_sessions || []).map(normalizeCardioSession),
         programName,
         // isCurrent means "this is today's workout" (for highlighting in UI)
         // It's the workout scheduled for today, whether completed or not

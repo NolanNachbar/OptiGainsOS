@@ -75,7 +75,7 @@ def sb_get(table, params):
         return []
 
 def sb_upsert(table, row):
-    url  = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=program_id,week_number,day_index"
+    url  = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=program_id,scheduled_date"
     data = json.dumps(row).encode()
     req  = urllib.request.Request(
         url, data=data, method="POST",
@@ -374,7 +374,9 @@ def main():
             "week_number":      current_week,
             "day_index":        day_index,
             "day_of_week":      weekday,
+            "scheduled_date":   sim_day.isoformat(),
             "exercises":        scaled,
+            "cardio_sessions":  template.get("cardio_sessions") or [],
             "duration_minutes": template.get("duration_minutes"),
         }
 
