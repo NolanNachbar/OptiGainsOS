@@ -166,6 +166,15 @@ EXERCISES = [
      "sets": 3, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
 
     # ── Calisthenics (selected by knapsack when AMPK/session-type warrants) ─
+    {"name": "Pull-up Pyramid",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 3.0,
+     "muscles": ["lats","biceps"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
+     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: 1 rep rest 2 reps rest... peak at 5 back down. 25 total reps."},
+    {"name": "Push-up Pyramid",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
+     "muscles": ["chest","triceps"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
+     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: 1 rep rest 2 reps... peak at 5. 25 total. Add rounds to scale."},
+    {"name": "Dip Pyramid",      "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
+     "muscles": ["triceps","chest"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
+     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: same structure as pull-up pyramid. 25 total."},
     {"name": "Push-ups",              "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["chest", "triceps"],
      "sets": 3, "rep_target": "25-30","rir_target": 2, "rest_seconds": 60},
@@ -200,6 +209,18 @@ LOWER_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
 
 UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 2}
 LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
+
+PUSH_MUSCLES = ["chest", "shoulders", "triceps"]
+PULL_MUSCLES = ["upper_back", "lats", "biceps"]
+LEGS_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
+FULL_BODY_A  = ["chest", "quads", "lats", "calves", "core"]
+FULL_BODY_B  = ["hamstrings", "shoulders", "upper_back", "triceps", "glutes"]
+
+PUSH_FREQ = {"chest": 2, "shoulders": 2, "triceps": 3}
+PULL_FREQ = {"upper_back": 2, "lats": 2, "biceps": 3}
+LEGS_FREQ = {"quads": 2, "hamstrings": 2, "glutes": 2, "calves": 2, "core": 2}
+FULL_FREQ = {"chest": 3, "quads": 3, "lats": 3, "calves": 3, "core": 3,
+             "hamstrings": 3, "shoulders": 3, "upper_back": 3, "triceps": 3, "glutes": 3}
 
 # Kept for internal _session_sets helper compatibility
 _UPPER_FREQ = UPPER_FREQ
@@ -272,37 +293,52 @@ def _clean(ex: dict) -> dict:
 
 # ── Cardio ────────────────────────────────────────────────────────────────────
 
-def _build_cardio(intensity: float, ampk: float, recent_run_tss: float) -> list:
+def _build_cardio(intensity: float, ampk: float, recent_run_tss: float,
+                  readiness_z: float = 0.0, quad_soreness_avg: float = 0.0) -> list:
     """
-    Cardio zone driven by engine state. Uses Garmin HR zones (Z1–Z5).
-    Called only when generate() determines cardio is warranted (CARDIO action
-    or TWO_A_DAY/MIXED). Action-based filtering happens in generate().
+    Zone prescribed by running_intensity_index. No VDOT.
+    running_intensity_index = 1.5*readiness_z - 4.0*ampk - 1.5*quad_soreness_avg
+    Duration scales 25-60 min based on soreness and readiness.
     """
-    aerobic_stress = ampk + min(recent_run_tss / 400.0, 0.8)
+    rii = 1.5 * readiness_z - 4.0 * ampk - 1.5 * quad_soreness_avg
 
-    if aerobic_stress > 1.4 or intensity < 0.80:
-        return [{"activity_type": "run", "zone": "Z1", "duration_minutes": 30,
-                 "notes": "Recovery jog. Garmin zone 1 only. Active recovery, not training stimulus."}]
-    elif aerobic_stress > 0.9 or intensity < 0.90:
-        return [{"activity_type": "run", "zone": "Z2", "duration_minutes": 45,
-                 "notes": "Aerobic base. Garmin zone 2 throughout. Nasal breathing if possible."}]
-    elif aerobic_stress > 0.5 or intensity < 1.00:
-        return [{"activity_type": "run", "zone": "Z2", "duration_minutes": 55,
-                 "notes": "Long aerobic run. Garmin zone 2. Build base, hold pace steady."}]
-    elif aerobic_stress > 0.2 or intensity < 1.05:
-        return [{"activity_type": "run", "zone": "Z3", "duration_minutes": 40,
-                 "notes": "Tempo run. Garmin zone 3. 20–25 min continuous or 3×8 min cruise intervals."}]
+    if rii > 1.5:
+        zone, base_dur, notes = "Z4-Z5", 45, "Intervals. Garmin Z4-Z5. 6x800m or 5x1km w/ 90s rest."
+    elif rii > 0.3:
+        zone, base_dur, notes = "Z3",    40, "Tempo. Garmin Z3. 20-25 min continuous or 3x8 min cruise."
+    elif rii > -1.2:
+        zone, base_dur, notes = "Z2",    50, "Aerobic base. Garmin Z2. Nasal breathing if possible."
     else:
-        return [{"activity_type": "run", "zone": "Z4-Z5", "duration_minutes": 45,
-                 "notes": "Interval session. Garmin zone 4–5. 6×800m or 5×1km w/ 90s rest."}]
+        zone, base_dur, notes = "Z1",    30, "Recovery jog. Garmin Z1. Active recovery only."
+
+    soreness_scalar = max(0.6, 1.0 - 0.1 * quad_soreness_avg)
+    readiness_scale = 1.0 + 0.1 * readiness_z
+    duration = int(round(base_dur * soreness_scalar * readiness_scale))
+    duration = max(25, min(60, duration))
+
+    return [{"activity_type": "run", "zone": zone, "duration_minutes": duration, "notes": notes}]
 
 
 # ── Split decision ────────────────────────────────────────────────────────────
 
-def _decide_split(recent_types: list, ampk: float, mtorc1: float) -> str:
+def _decide_split(recent_types: list, ampk: float, mtorc1: float,
+                  split_framework: str = "upper_lower") -> str:
     """
     Upper vs lower based on AMPK interference + recent session balance.
+    Supports split_framework: 'upper_lower' | 'ppl' | 'full_body'
     """
+    if split_framework == "full_body":
+        last = next((t for t in reversed(recent_types) if "full_body" in t), "full_body_b")
+        return "full_body_b" if last == "full_body_a" else "full_body_a"
+
+    if split_framework == "ppl":
+        ppl_order = ["push", "pull", "legs"]
+        last_ppl = next((t for t in reversed(recent_types) if t in ppl_order), None)
+        if last_ppl is None:
+            return "push"
+        return ppl_order[(ppl_order.index(last_ppl) + 1) % 3]
+
+    # upper_lower: existing logic unchanged below
     # 1. Find the last strength session split to prevent consecutive identical splits
     last_strength = next((t for t in reversed(recent_types) if "upper" in t or "lower" in t), "")
 
@@ -337,6 +373,11 @@ SESSION_TITLE = {
     "upper_intensity":     "Upper — Intensity",
     "lower_squat_primary": "Lower — Squat",
     "lower_hinge_primary": "Lower — Hinge",
+    "push":                "Push Session",
+    "pull":                "Pull Session",
+    "legs":                "Legs Session",
+    "full_body_a":         "Full Body A",
+    "full_body_b":         "Full Body B",
 }
 
 
@@ -363,11 +404,20 @@ def _build_session(
     scoring and pattern logic surface them naturally without a hardcoded branch.
     """
     wt = weekly_set_targets or {}
-    is_upper = "upper" in split
-    relevant = UPPER_MUSCLES if is_upper else LOWER_MUSCLES
+    split_map = {
+        "upper_volume":        (UPPER_MUSCLES, UPPER_FREQ),
+        "upper_intensity":     (UPPER_MUSCLES, UPPER_FREQ),
+        "lower_squat_primary": (LOWER_MUSCLES, LOWER_FREQ),
+        "lower_hinge_primary": (LOWER_MUSCLES, LOWER_FREQ),
+        "push":                (PUSH_MUSCLES,  PUSH_FREQ),
+        "pull":                (PULL_MUSCLES,  PULL_FREQ),
+        "legs":                (LEGS_MUSCLES,  LEGS_FREQ),
+        "full_body_a":         (FULL_BODY_A,   FULL_FREQ),
+        "full_body_b":         (FULL_BODY_B,   FULL_FREQ),
+    }
+    relevant, freq_map = split_map.get(split, (UPPER_MUSCLES, UPPER_FREQ))
     if not wt:
         wt = {m: 12 for m in relevant}
-    freq_map = UPPER_FREQ if is_upper else LOWER_FREQ
 
     # Patterns that may repeat (not subject to compound-pattern uniqueness constraint)
     _REPEATABLE_PATTERNS = {"isolation_upper", "isolation_lower", "calisthenics", "hip_thrust"}
@@ -492,6 +542,8 @@ def generate(
     weekly_set_targets: dict = None,
     readiness_z: float = 0.0,
     e1rm_registry: dict = None,
+    quad_soreness_avg: float = 0.0,
+    split_framework: str = "upper_lower",
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -532,26 +584,27 @@ def generate(
         return [], []
 
     if action == "CARDIO":
-        return [], _build_cardio(intensity, ampk, recent_run_tss)
+        return [], _build_cardio(intensity, ampk, recent_run_tss, readiness_z, quad_soreness_avg)
 
     # All other actions: build strength session via knapsack.
     # The MPC intensity scalar already encodes the physiological prescription —
     # LIGHT/DELOAD → intensity ~0.78 → _scale reduces sets and adds RIR.
     # CALISTHENICS → high-AMPK state prioritises bodyweight movements naturally.
     # No special branches needed.
-    split = _decide_split(recent_session_types, ampk, mtorc1)
+    split = _decide_split(recent_session_types, ampk, mtorc1, split_framework)
     exercises = _build_session(
         split, intensity, ampk, rng,
         readiness_z=readiness_z,
         weekly_set_targets=weekly_set_targets or {},
     )
-    cardio = _build_cardio(intensity, ampk, recent_run_tss) if action in ("TWO_A_DAY", "MIXED") else []
+    cardio = _build_cardio(intensity, ampk, recent_run_tss, readiness_z, quad_soreness_avg) if action in ("TWO_A_DAY", "MIXED") else []
 
     return exercises, cardio
 
 
 def get_split(action: str, intensity: float, sim_date: date,
-              cellular_state: dict = None, recent_session_types: list = None) -> str:
+              cellular_state: dict = None, recent_session_types: list = None,
+              split_framework: str = "upper_lower") -> str:
     if action == "REST":
         return "rest"
     if action == "CARDIO":
@@ -560,7 +613,7 @@ def get_split(action: str, intensity: float, sim_date: date,
     if recent_session_types is None: recent_session_types = []
     ampk   = float(cellular_state.get("ampk")   or 0.20)
     mtorc1 = float(cellular_state.get("mtorc1") or 0.30)
-    return _decide_split(recent_session_types, ampk, mtorc1)
+    return _decide_split(recent_session_types, ampk, mtorc1, split_framework)
 
 
 def build_title(action: str, split: str, intensity: float) -> str:

@@ -189,6 +189,7 @@ def save_engine_state(
     synthesis_engine: ProgramSynthesisEngine = None,
     weekly_targets: dict = None,
     step_count: int = None,
+    extra_synthesis: dict = None,
 ) -> bool:
     """Single upsert of all engine state blobs to engine_params."""
     prev_rows = sb_get("engine_params", {
@@ -207,6 +208,8 @@ def save_engine_state(
         synthesis_dict = synthesis_engine.to_dict()
         if weekly_targets is not None:
             synthesis_dict["weekly_targets"] = weekly_targets
+        if extra_synthesis:
+            synthesis_dict.update(extra_synthesis)
         guardrail_dict["synthesis_state"] = synthesis_dict
 
     row = {
@@ -221,6 +224,21 @@ def save_engine_state(
     ok = sb_upsert_engine(row)
     print(f"  {'✓' if ok else '✗'}  Engine state saved")
     return ok
+
+
+# ── Split framework selection ────────────────────────────────────────────────
+
+def determine_optimal_split_framework(compliance_rate, avg_soreness, performance_trend, days_to_deadline):
+    """
+    PPL: lower per-muscle frequency, good when recovery is excellent and schedule allows 6 days
+    Upper/Lower: default, balanced frequency
+    Full Body: highest per-muscle frequency, best when compliance is low or soreness is high
+    """
+    if compliance_rate < 0.70 or avg_soreness > 7.0:
+        return "full_body"
+    if compliance_rate > 0.85 and avg_soreness < 4.0:
+        return "ppl"
+    return "upper_lower"
 
 
 # ── HRV helpers ───────────────────────────────────────────────────────────────
@@ -364,6 +382,16 @@ def main():
     recent_run_tss = sum((float(r.get("duration_seconds") or 0) / 60.0) * 0.9 for r in cardio_rows)
     weekly_km      = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
 
+    soreness_rows = sb_get("athlete_state", {
+        "select": "date,soreness",
+        "created_by": f"eq.{USER_ID}",
+        "order": "date.desc", "limit": "4",
+    })
+    quad_soreness_avg = 0.0
+    if soreness_rows:
+        vals = [float((r.get("soreness") or {}).get("quads", 0)) for r in soreness_rows]
+        quad_soreness_avg = sum(vals) / len(vals) if vals else 0.0
+
     # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
         "select": "*", "status": "eq.active", "limit": "1",
@@ -451,6 +479,23 @@ def main():
     print(f"  Alloc metadata: {alloc_metadata}")
     print(f"  Weekly set targets: {weekly_targets}")
 
+    # ── 6b. Determine split framework ─────────────────────────────────────────
+    days_to_deadline = (DEADLINE - TODAY).days
+    compliance_rate = float((engine.get("guardrail_state") or {}).get("synthesis_state", {}).get("compliance_rate", 0.80))
+
+    perf_slopes = []
+    for ex_name in ["Bench Press (Daily Single)", "Back Squat (Top Set)", "Deadlift (Top Set)"]:
+        hist = progression_registry.registry.get(ex_name, [])
+        if len(hist) >= 3:
+            x = np.arange(len(hist))
+            perf_slopes.append(float(np.polyfit(x, hist, 1)[0]))
+    perf_trend = sum(perf_slopes) / len(perf_slopes) if perf_slopes else 0.0
+
+    split_framework = determine_optimal_split_framework(
+        compliance_rate, quad_soreness_avg * 10, perf_trend, days_to_deadline
+    )
+    print(f"  Split framework: {split_framework}  compliance={compliance_rate:.0%}  soreness={quad_soreness_avg:.2f}")
+
     # ── 7. Per-day generation ─────────────────────────────────────────────────
     for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
@@ -491,9 +536,12 @@ def main():
             weekly_set_targets=weekly_targets,  # weekly totals, session gen handles per-session distribution
             readiness_z=hrv_z_3d,
             e1rm_registry=progression_registry.to_dict(),
+            quad_soreness_avg=quad_soreness_avg,
+            split_framework=split_framework,
         )
 
-        split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types)
+        split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types,
+                          split_framework=split_framework)
         title = build_title(action, split, intensity)
 
         # Two-a-day split evaluation
@@ -542,7 +590,8 @@ def main():
     save_engine_state(
         USER_ID, kalman, guardrail, volume_engine,
         progression_registry, exploration_manager, synthesis_engine,
-        weekly_targets=weekly_targets, step_count=new_step
+        weekly_targets=weekly_targets, step_count=new_step,
+        extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate},
     )
 
     print(f"\n  Step count: {step_count} → {new_step}")

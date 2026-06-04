@@ -50,45 +50,18 @@ import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
 
-const getWorkoutSplitTitle = (log, scheduledTitle) => {
-  if (!log || !log.exercises) return scheduledTitle || "Lifting Session";
-  
-  const upperKeywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"];
-  const lowerKeywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"];
-  
-  let upperCount = 0;
-  let lowerCount = 0;
-  
-  log.exercises.forEach(ex => {
-    const name = (ex.name || "").toLowerCase();
-    if (upperKeywords.some(k => name.includes(k))) upperCount++;
-    if (lowerKeywords.some(k => name.includes(k))) lowerCount++;
-  });
-  
-  if (upperCount > lowerCount) {
-    let suffix = "";
-    if (scheduledTitle) {
-      if (scheduledTitle.includes("Volume")) suffix = " — Volume";
-      else if (scheduledTitle.includes("Intensity")) suffix = " — Intensity";
-      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
-      else if (scheduledTitle.includes("Push")) suffix = " — Push";
-      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
-    }
-    return `Upper Body Session${suffix}`;
-  } else if (lowerCount > upperCount) {
-    let suffix = "";
-    if (scheduledTitle) {
-      if (scheduledTitle.includes("Squat")) suffix = " — Squat";
-      else if (scheduledTitle.includes("Hinge")) suffix = " — Hinge";
-      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
-      else if (scheduledTitle.includes("Push")) suffix = " — Push";
-      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
-    }
-    return `Lower Body Session${suffix}`;
-  }
-  
-  return scheduledTitle || "Lifting Session";
-};
+function getWorkoutSplitTitle(exercises) {
+  if (!exercises?.length) return null;
+  const names = exercises.map(e => (e.name || '').toLowerCase()).join(' ');
+  const hasSquat = names.includes('squat') || names.includes('deadlift') || names.includes('leg press') || names.includes('hip thrust');
+  const hasPush  = names.includes('bench') || names.includes('overhead press') || names.includes('push-up');
+  const hasPull  = names.includes('row') || names.includes('pull-up') || names.includes('pulldown');
+  if (hasSquat && !hasPush && !hasPull) return 'Legs Session';
+  if (hasPush && !hasPull && !hasSquat) return 'Push Session';
+  if (hasPull && !hasPush && !hasSquat) return 'Pull Session';
+  if ((hasPush || hasPull) && hasSquat) return 'Full Body';
+  return null;
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -597,9 +570,7 @@ export default function Dashboard() {
 
   const isCompleted = todayProgramWorkout?.completed || todayWorkout?.completed;
   const workoutTitle = todayProgramWorkout?.title || todayWorkoutDetails?.title;
-  const displayWorkoutTitle = todayLog
-    ? getWorkoutSplitTitle(todayLog, workoutTitle)
-    : workoutTitle;
+  const displayWorkoutTitle = (todayLog ? getWorkoutSplitTitle(todayLog.exercises) : null) || workoutTitle;
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
   const todayProgramLifts = todayExercises.filter(ex => !isRunEx(ex));
   const todayProgramRuns = [
