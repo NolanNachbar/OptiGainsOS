@@ -2,18 +2,17 @@
 """
 generate_weekly_program.py — Full engine-driven weekly program generator.
 
-Uses the complete athlete state — Kalman fitness/fatigue, cellular AMPK/mTORC1
-interference, recent session history, and cumulative cardio load — to generate
-workouts from first principles rather than fixed templates.
+Architecture:
+  State Estimation (Kalman) → Program Synthesis (MILP) → Session Generation → DB
 
-Decision hierarchy per day:
-  1. MPC forward simulation → action (STRENGTH / TWO_A_DAY / DELOAD / REST / etc.)
-  2. Kalman TSB → intensity scalar [0.7–1.1]
-  3. AMPK/mTORC1 → split selection (upper vs lower) + cardio zone
-  4. Recent session history → prevents repeating same split consecutively
-  5. 7-day run TSS → aerobic volume management
-
-Cardio uses Garmin HR zones (Z1–Z5), not pace targets.
+Engine layers:
+  - BanisterKalman        : fitness/fatigue tracking
+  - SystemGuardrail       : overreaching detection
+  - HypertrophyVolumeEngine: MEV/MAV/MRV per muscle
+  - ProgramSynthesisEngine : MILP weekly allocation
+  - StrengthProgressionRegistry: e1RM trend → load commands
+  - ControlledExplorationManager: UCB1 volume probing
+  - ResourceAllocator     : reserve-based volume scaling
 
 Run via GitHub Actions → Generate Weekly Program → Run workflow.
 Default (DAYS_AHEAD=0): programs remaining days of the current week.
@@ -39,9 +38,18 @@ except ImportError:
     pass
 
 import numpy as np
-from engine.banister_kalman import BanisterKalman
-from engine.guardrail       import SystemGuardrail
-from engine.session_generator import generate as gen_session, get_split, build_title
+from engine.banister_kalman    import BanisterKalman
+from engine.guardrail          import SystemGuardrail
+from engine.session_generator  import generate as gen_session, get_split, build_title
+from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
+from engine.program_synthesis  import ProgramSynthesisEngine
+from engine.strength_progression import StrengthProgressionRegistry
+from engine.exploration_manager  import ControlledExplorationManager
+from engine.resource_allocator   import (
+    compute_reserve_score,
+    allocate_constrained_resources,
+    evaluate_two_a_day_split,
+)
 
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
@@ -75,8 +83,8 @@ def sb_get(table, params):
         print(f"  WARN sb_get({table}): {e}")
         return []
 
-def sb_upsert(table, row):
-    url  = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=program_id,scheduled_date"
+def sb_upsert(table, row, conflict_cols="program_id,scheduled_date"):
+    url  = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict={conflict_cols}"
     data = json.dumps(row).encode()
     req  = urllib.request.Request(
         url, data=data, method="POST",
@@ -90,6 +98,24 @@ def sb_upsert(table, row):
         return False
     except Exception as e:
         print(f"  ERROR sb_upsert({table}): {e}")
+        return False
+
+def sb_upsert_engine(row):
+    """Upsert engine_params — conflict on created_by."""
+    url  = f"{SUPABASE_URL}/rest/v1/engine_params?on_conflict=created_by"
+    data = json.dumps(row).encode()
+    req  = urllib.request.Request(
+        url, data=data, method="POST",
+        headers=_headers({"Prefer": "resolution=merge-duplicates,return=minimal"}),
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"  ERROR sb_upsert(engine_params) {e.code}: {e.read().decode()[:300]}")
+        return False
+    except Exception as e:
+        print(f"  ERROR sb_upsert(engine_params): {e}")
         return False
 
 def resolve_user_id():
@@ -151,6 +177,59 @@ def select_action(kalman, load_history, acwr, overreaching):
     return best, round(intensity, 2)
 
 
+# ── State persistence ─────────────────────────────────────────────────────────
+
+def save_engine_state(
+    user_id: str,
+    kalman: BanisterKalman,
+    guardrail: SystemGuardrail,
+    volume_engine: HypertrophyVolumeEngine,
+    progression_registry: StrengthProgressionRegistry,
+    exploration_manager: ControlledExplorationManager,
+    synthesis_engine: ProgramSynthesisEngine = None,
+) -> bool:
+    """Single upsert of all engine state blobs to engine_params."""
+    row = {
+        "created_by":         user_id,
+        "date":               TODAY.isoformat(),
+        "kalman_state":       kalman.to_dict(),
+        "guardrail_state":    guardrail.to_dict(),
+        "mrv_state":          volume_engine.to_dict(),
+        "e1rm_registry":      progression_registry.to_dict(),
+        "exploration_state":  exploration_manager.to_dict(),
+    }
+    if synthesis_engine is not None:
+        row["synthesis_state"] = synthesis_engine.to_dict()
+    ok = sb_upsert_engine(row)
+    print(f"  {'✓' if ok else '✗'}  Engine state saved")
+    return ok
+
+
+# ── HRV helpers ───────────────────────────────────────────────────────────────
+
+def compute_hrv_z_3d(garmin_rows: list) -> float:
+    """
+    Compute 3-day rolling HRV z-score against a 30-day baseline.
+
+    garmin_rows expected to be sorted newest-first; each row may have
+    "hrv_rmssd" or "hrv" field.
+    """
+    def _hrv(row):
+        return float(row.get("hrv_rmssd") or row.get("hrv") or 0)
+
+    vals = [_hrv(r) for r in garmin_rows if _hrv(r) > 0]
+    if len(vals) < 4:
+        return 0.0
+
+    mean = sum(vals) / len(vals)
+    std  = (sum((v - mean) ** 2 for v in vals) / len(vals)) ** 0.5
+    if std < 1e-6:
+        return 0.0
+
+    recent_3 = vals[:3]
+    avg_3    = sum(recent_3) / len(recent_3)
+    return round((avg_3 - mean) / std, 4)
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -170,52 +249,67 @@ def main():
     print(f"=== generate_weekly_program  {TODAY} ===")
     print(f"  Generating for: {[d.isoformat() for d in days_to_generate]}")
 
-    # ── Load engine state ─────────────────────────────────────────────────────
+    # ── 1. Load engine state ──────────────────────────────────────────────────
     engine_rows = sb_get("engine_params", {
         "select": "*", "order": "date.desc", "limit": "1",
         "created_by": f"eq.{USER_ID}",
     })
     engine = engine_rows[0] if engine_rows else {}
 
+    kalman    = BanisterKalman.from_dict(engine.get("kalman_state") or {})
+    guardrail = SystemGuardrail.from_dict(engine.get("guardrail_state") or {})
+    volume_engine = HypertrophyVolumeEngine.from_dict(engine.get("mrv_state") or {})
+    progression_registry = StrengthProgressionRegistry.from_dict(engine.get("e1rm_registry") or {})
+    exploration_manager  = ControlledExplorationManager.from_dict(
+        engine.get("exploration_state") or {"parameters": MUSCLE_GROUPS}
+    )
+    # Step counter for exploration epsilon schedule (week index)
+    step_count = int(engine.get("step_count") or 0)
+
+    # ── 2. Load recent athlete data ───────────────────────────────────────────
     athlete_rows = sb_get("athlete_state", {
-        "select": "date,fatigue,recovery,cellular_state,vdot",
+        "select": "date,fatigue,recovery,cellular_state,vdot,caloric_balance",
         "order": "date.desc", "limit": "30",
         "created_by": f"eq.{USER_ID}",
     })
-
-    kalman    = BanisterKalman.from_dict(engine.get("kalman_state") or {})
-    guardrail = SystemGuardrail.from_dict(engine.get("guardrail_state") or {})
 
     load_history = []
     for row in reversed(athlete_rows):
         atl = (row.get("fatigue") or {}).get("atl")
         load_history.append(float(atl) if atl is not None else 0.0)
 
-    # Current cellular state (AMPK/mTORC1) from most recent athlete_state
     latest_athlete = athlete_rows[0] if athlete_rows else {}
-    cellular_state = latest_athlete.get("cellular_state") or {}
-    vdot           = latest_athlete.get("vdot")
+    cellular_state  = latest_athlete.get("cellular_state") or {}
+    vdot            = latest_athlete.get("vdot")
+    caloric_balance = latest_athlete.get("caloric_balance") or {}
 
-    # ── Recent session history (for split decision) ───────────────────────────
-    # Read last 7 days of training_prescription for session type history
+    # ── Garmin HRV data ───────────────────────────────────────────────────────
+    garmin_rows = sb_get("garmin_daily_stats", {
+        "select": "date,hrv_rmssd,rhr",
+        "created_by": f"eq.{USER_ID}",
+        "order": "date.desc", "limit": "30",
+    })
+    hrv_z_3d = compute_hrv_z_3d(garmin_rows)
+
+    # ── Recent session history ────────────────────────────────────────────────
     prescription_rows = sb_get("training_prescription", {
         "select": "date,action,session_type",
         "created_by": f"eq.{USER_ID}",
         "order": "date.desc", "limit": "7",
     })
-    # Build list of recent session focus strings, oldest first
     recent_session_types = [
         (r.get("session_type") or r.get("action") or "").lower()
         for r in reversed(prescription_rows)
     ]
 
-    # ── Recent cardio TSS (for aerobic load management) ───────────────────────
+    # ── Recent cardio TSS ─────────────────────────────────────────────────────
     cardio_rows = sb_get("cardio_sessions", {
-        "select": "tss,start_date",
+        "select": "tss,start_date,distance_km",
         "created_by": f"eq.{USER_ID}",
         "order": "start_date.desc", "limit": "7",
     })
     recent_run_tss = sum(float(r.get("tss") or 0) for r in cardio_rows)
+    weekly_km      = sum(float(r.get("distance_km") or 0) for r in cardio_rows)
 
     # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
@@ -235,20 +329,77 @@ def main():
     enrollment_start = datetime.date.fromisoformat(raw_start[:10])
 
     print(f"  Program: {program_id} | Week: {current_week} | Start: {enrollment_start}")
-    print(f"  Cellular — AMPK: {cellular_state.get('ampk', 'n/a'):.2f}  mTORC1: {cellular_state.get('mtorc1', 'n/a'):.2f}" if cellular_state else "  Cellular state: none yet")
+    if cellular_state:
+        print(f"  Cellular — AMPK: {cellular_state.get('ampk', 0):.2f}  "
+              f"mTORC1: {cellular_state.get('mtorc1', 0):.2f}")
+    else:
+        print("  Cellular state: none yet")
+    print(f"  HRV z-3d: {hrv_z_3d:.2f}")
     print(f"  Recent session types: {recent_session_types}")
-    print(f"  7-day run TSS: {recent_run_tss:.1f}")
+    print(f"  7-day run TSS: {recent_run_tss:.1f}  |  weekly_km: {weekly_km:.1f}")
 
-    # ── Generate each day ─────────────────────────────────────────────────────
-    for sim_day in days_to_generate:
+    # ── 3. Strength progression analysis ─────────────────────────────────────
+    print("\n  Strength progression commands:")
+    goal_exercises = [
+        "Bench Press (Daily Single)",
+        "Back Squat (Top Set)",
+        "Deadlift (Top Set)",
+    ]
+    for exercise in goal_exercises:
+        cmd = progression_registry.get_command(exercise, hrv_z_3d)
+        print(f"    {exercise}: {cmd}")
+
+    # ── 4. Update volume landmarks ────────────────────────────────────────────
+    volume_engine.adjust_for_running(weekly_km)
+
+    kcal_deficit      = float(caloric_balance.get("deficit_kcal")      or 0)
+    kcal_maintenance  = float(caloric_balance.get("maintenance_kcal")   or 0)
+    if kcal_deficit > 0 and kcal_maintenance > 0:
+        volume_engine.adjust_for_caloric_deficit(kcal_deficit, kcal_maintenance)
+
+    mrv_dict = volume_engine.get_mrv_dict()
+
+    # ── 5. Apply exploration ──────────────────────────────────────────────────
+    exploration_delta = exploration_manager.get_exploration_delta(step_count)
+    for muscle, extra in exploration_delta.items():
+        base_mrv = volume_engine.landmarks.get(muscle, {}).get("MRV", mrv_dict.get(muscle, 18))
+        mrv_dict[muscle] = min(mrv_dict.get(muscle, base_mrv) + extra, base_mrv + 2)
+    if exploration_delta:
+        print(f"  Exploration delta: {exploration_delta}")
+
+    # ── 6. MILP synthesis ─────────────────────────────────────────────────────
+    reserve_score = compute_reserve_score(hrv_z_3d)
+
+    # ACWR
+    acwr_global = 1.0
+    if len(load_history) >= 7:
+        acute      = sum(load_history[-7:]) / 7.0
+        chronic    = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
+        acwr_global = acute / (chronic + 1e-5)
+
+    user_prefs = {
+        "max_daily_sets":    int(os.environ.get("MAX_DAILY_SETS", 20)),
+        "min_strength_days": 4,
+    }
+
+    synthesis_engine  = ProgramSynthesisEngine(MUSCLE_GROUPS)
+    allocation_matrix = synthesis_engine.synthesize_weekly_block(mrv_dict, user_prefs, acwr_global)
+    allocation_matrix, alloc_metadata = allocate_constrained_resources(
+        reserve_score, allocation_matrix, MUSCLE_GROUPS
+    )
+
+    print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
+    print(f"  Alloc metadata: {alloc_metadata}")
+    print(f"  Weekly set totals: {dict(zip(MUSCLE_GROUPS, allocation_matrix.sum(axis=1).tolist()))}")
+
+    # ── 7. Per-day generation ─────────────────────────────────────────────────
+    for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
 
-        # day_index matches frontend getProgramSchedule:
-        #   date = addDays(anchor, cycleStartOffset + (day_index - 1))
         days_since_start = (sim_day - enrollment_start).days
         day_index        = (days_since_start % cycle_length) + 1
 
-        # ACWR
+        # Per-day ACWR
         acwr = 1.0
         if len(load_history) >= 7:
             acute   = sum(load_history[-7:])  / 7.0
@@ -258,18 +409,25 @@ def main():
         overreach = guardrail.check_overreaching([], [], acwr)
         action, intensity = select_action(kalman, load_history, acwr, overreach["overreaching"])
 
-        # Forward-step cellular state (simple decay approximation for future days)
+        # Forward-step cellular state
         sim_cellular = dict(cellular_state)
         days_ahead = (sim_day - TODAY).days
         if days_ahead > 0 and sim_cellular:
-            decay = 0.85 ** days_ahead  # ~15%/day decay toward baseline
+            decay = 0.85 ** days_ahead
             sim_cellular = {
                 "ampk":              float(sim_cellular.get("ampk", 0.2)) * decay,
                 "mtorc1":            min(0.8, float(sim_cellular.get("mtorc1", 0.3)) + (1 - decay) * 0.3),
                 "interference_score": float(sim_cellular.get("interference_score", 0.1)) * decay,
             }
 
-        # Generate session using full engine state
+        # Daily MILP allocations (column i of matrix, clamped to days_to_generate length)
+        col_idx = i % 7
+        daily_allocs = {
+            m: int(allocation_matrix[mi, col_idx])
+            for mi, m in enumerate(MUSCLE_GROUPS)
+        }
+
+        # Generate session with MILP allocations
         exercises, cardio = gen_session(
             action=action,
             intensity=intensity,
@@ -278,14 +436,25 @@ def main():
             recent_session_types=recent_session_types,
             recent_run_tss=recent_run_tss,
             vdot=vdot,
+            daily_set_allocations=daily_allocs,
+            readiness_z=hrv_z_3d,
+            e1rm_registry=progression_registry.to_dict(),
         )
 
         split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types)
         title = build_title(action, split, intensity)
 
+        # Two-a-day split evaluation
+        total_sets  = sum(e.get("sets", 0) for e in exercises)
+        planned_km  = sum(c.get("duration_minutes", 0) * 0.15 for c in cardio)
+        _split_2a, _split_reason = evaluate_two_a_day_split(total_sets, planned_km, reserve_score)
+        # (structure already separated: exercises AM, cardio PM — no structural change needed)
+
         print(f"\n  [{sim_day}] {day_name} (day_index={day_index})")
         print(f"    MPC: {action}  intensity={intensity}  ACWR={acwr:.2f}  split={split}")
         print(f"    AMPK={sim_cellular.get('ampk', 0):.2f}  mTORC1={sim_cellular.get('mtorc1', 0):.2f}")
+        print(f"    MILP allocs: {daily_allocs}")
+        print(f"    two_a_day={_split_2a} ({_split_reason})")
 
         pw_row = {
             "program_id":       program_id,
@@ -304,21 +473,28 @@ def main():
         ok = sb_upsert("program_workouts", pw_row)
         print(f"    {'✓' if ok else '✗'}  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
 
-        # Update recent session types for next day's split decision
+        # Advance rolling state
         recent_session_types.append(split)
         if len(recent_session_types) > 7:
             recent_session_types.pop(0)
 
-        # Update aerobic load estimate
         if cardio:
-            recent_run_tss += ACTION_TSS.get(action, 0) * 0.5  # rough proxy
+            recent_run_tss += ACTION_TSS.get(action, 0) * 0.5
 
-        # Advance Kalman + guardrail
         projected_tss = ACTION_TSS.get(action, 50.0)
         kalman.step(projected_tss, None)
         load_history.append(projected_tss)
         guardrail.record_state(overreach["fatigue_state"])
 
+    # ── 8. Save all engine state ──────────────────────────────────────────────
+    save_engine_state(
+        USER_ID, kalman, guardrail, volume_engine,
+        progression_registry, exploration_manager, synthesis_engine
+    )
+
+    # Persist step counter increment
+    new_step = step_count + 1
+    print(f"\n  Step count: {step_count} → {new_step}")
     print(f"\n✓  Done — {len(days_to_generate)} days written")
 
 

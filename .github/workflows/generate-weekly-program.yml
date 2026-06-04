@@ -25,7 +25,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install python-dotenv numpy
+        run: pip install python-dotenv numpy "scipy>=1.11"
 
       - name: Generate weekly program
         env:
