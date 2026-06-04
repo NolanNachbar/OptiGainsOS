@@ -160,15 +160,54 @@ Sunday     Active Rec        500m easy swim (sidestroke/breaststroke — PST str
 Saturday and Sunday are the most important conditioning days. PST benchmark test every 4 weeks.
 `.trim();
 
+function fmtPrescription(p: Record<string, unknown> | null): string {
+  if (!p) return "No prescription computed yet for today.";
+  const lines: string[] = [
+    `  Action: ${p.mpc_action} | Session type: ${p.session_type} | Intensity: ${p.mpc_intensity}`,
+    `  Rationale: ${p.rationale}`,
+    `  ACWR: ${p.acwr} | Overreach: ${(p.overreach as Record<string,unknown>)?.overreaching ?? false}`,
+  ];
+  if (p.interference_warning) lines.push(`  ⚠ ${p.interference_warning}`);
+
+  const sb = p.strength_block as Array<Record<string,unknown>> | null;
+  if (sb && sb.length > 0) {
+    lines.push("  Strength:");
+    for (const ex of sb) {
+      lines.push(`    ${ex.name}: ${ex.sets}×${ex.reps} @ ${ex.load_lbs}lbs (${Math.round(Number(ex.load_pct)*100)}% e1RM)`);
+    }
+  }
+
+  const cb = p.calisthenics_block as Record<string,unknown> | null;
+  if (cb) {
+    const pu = cb.pullups as Record<string,unknown> | undefined;
+    const ps = cb.pushups as Record<string,unknown> | undefined;
+    const su = cb.situps  as Record<string,unknown> | undefined;
+    if (pu) lines.push(`  Pull-ups: ${pu.sets}×${pu.reps_each} (GTG)`);
+    if (ps) lines.push(`  Push-ups: ${ps.sets}×${ps.reps_each}`);
+    if (su) lines.push(`  Sit-ups:  ${su.sets}×${su.reps_each}`);
+  }
+
+  const rb = p.run_block as Record<string,unknown> | null;
+  if (rb) {
+    lines.push(`  Run: ${rb.session_miles ?? rb.reps + "×" + rb.distance_m + "m"} @ ${rb.pace ?? ""} (${rb.zone ?? rb.type ?? ""})`);
+  }
+
+  const swim = p.swim_block as Record<string,unknown> | null;
+  if (swim) lines.push(`  Swim: ${swim.meters}m ${swim.stroke}`);
+
+  return lines.join("\n");
+}
+
 function buildPrompt(data: {
-  state:      Record<string, unknown> | null;
-  profile:    Record<string, unknown>;
-  recovery7d: Array<Record<string, unknown>>;
-  checkin:    Record<string, unknown> | null;
-  jobs:       Array<Record<string, unknown>>;
-  skills:     Array<Record<string, unknown>>;
-  today:      string;
-  dayOfWeek:  string;
+  state:        Record<string, unknown> | null;
+  prescription: Record<string, unknown> | null;
+  profile:      Record<string, unknown>;
+  recovery7d:   Array<Record<string, unknown>>;
+  checkin:      Record<string, unknown> | null;
+  jobs:         Array<Record<string, unknown>>;
+  skills:       Array<Record<string, unknown>>;
+  today:        string;
+  dayOfWeek:    string;
 }): string {
   const p       = data.profile;
   const state   = data.state;
@@ -221,6 +260,9 @@ function buildPrompt(data: {
     `=== TODAY ===`,
     `Date: ${data.today} (${data.dayOfWeek})`,
   ];
+
+  lines.push(`\n=== TODAY'S TRAINING PRESCRIPTION (engine-computed — use this, do not invent sessions) ===`);
+  lines.push(fmtPrescription(data.prescription));
 
   if (data.checkin) {
     const c = data.checkin;
@@ -333,6 +375,7 @@ Deno.serve(async (req) => {
     checkinRes,
     jobsRes,
     skillsRes,
+    prescriptionRes,
   ] = await Promise.all([
     supabase.from("athlete_state").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
     sb("user_profiles").limit(1).single(),
@@ -340,18 +383,24 @@ Deno.serve(async (req) => {
     sb("daily_readiness").eq("date", today).limit(1).maybeSingle(),
     sb("job_applications").order("created_at", { ascending: false }).limit(10),
     sb("skills").order("name"),
+    supabase.from("training_prescription").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
   ]);
 
-  const state = athleteStateRes.data as Record<string, unknown> | null;
+  const state        = athleteStateRes.data as Record<string, unknown> | null;
+  const prescription = prescriptionRes.data as Record<string, unknown> | null;
 
   if (!state) {
     console.warn("athlete_state not found for today — brief will use fallback raw data");
   } else {
     console.log("athlete_state loaded, computed_at:", state.computed_at);
   }
+  if (prescription) {
+    console.log("prescription loaded, session_type:", prescription.session_type);
+  }
 
   const prompt = buildPrompt({
     state,
+    prescription,
     profile:    (profileRes.data as Record<string, unknown>) || {},
     recovery7d: (recovery7dRes.data as Array<Record<string, unknown>>) || [],
     checkin:    checkinRes.data as Record<string, unknown> | null,
