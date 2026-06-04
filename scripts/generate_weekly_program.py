@@ -262,6 +262,87 @@ def apply_mpc_to_exercises(exercises: list, action: str, intensity: float) -> li
     return result
 
 
+def build_cardio_sessions(action: str, intensity: float) -> list:
+    """
+    Return a list of cardio session prescriptions driven by MPC intensity.
+    Intensity comes from the Kalman TSB, so this IS the optimal decision —
+    not hardcoded by day of week.
+
+    TWO_A_DAY  → 1 PM cardio session (type scales with freshness)
+    CARDIO     → 1 primary cardio session (same logic)
+    MIXED      → 1 easy conditioning block
+    Everything else → no prescribed cardio
+    """
+    if action not in ("TWO_A_DAY", "CARDIO", "MIXED"):
+        return []
+
+    if action == "MIXED" or intensity < 0.85:
+        return [{
+            "activity_type": "run",
+            "zone": "Z2",
+            "duration_minutes": 40,
+            "notes": "Easy aerobic — conversational pace, nasal breathing if possible.",
+        }]
+    elif intensity < 0.95:
+        return [{
+            "activity_type": "run",
+            "zone": "Z2",
+            "duration_minutes": 50,
+            "notes": "Steady Z2 run. Keep HR under aerobic threshold.",
+        }]
+    elif intensity < 1.05:
+        return [{
+            "activity_type": "run",
+            "zone": "Z3",
+            "duration_minutes": 35,
+            "notes": "Tempo / Z3 effort. Comfortably hard — 20-min tempo block or continuous.",
+        }]
+    else:
+        # Very fresh — intervals
+        return [{
+            "activity_type": "run",
+            "zone": "Z4",
+            "duration_minutes": 40,
+            "notes": "Interval session. 6×800m @ Z4-Z5 effort, 90s rest. Or 4×1mi @ tempo.",
+        }]
+
+
+def build_cardio_sessions(action: str, intensity: float) -> list:
+    """
+    Return prescribed cardio sessions driven purely by MPC action + intensity.
+    Intensity comes from the Kalman TSB (fresh vs. fatigued), so this IS
+    the optimal decision — not hardcoded by day of week.
+
+      TWO_A_DAY → 1 PM cardio session (type scales with freshness)
+      CARDIO    → 1 primary cardio session
+      MIXED     → 1 easy conditioning block
+      All others → no cardio prescribed
+    """
+    if action not in ("TWO_A_DAY", "CARDIO", "MIXED"):
+        return []
+
+    if action == "MIXED" or intensity < 0.85:
+        return [{
+            "activity_type": "run", "zone": "Z2", "duration_minutes": 40,
+            "notes": "Easy aerobic — conversational pace, nasal breathing if possible.",
+        }]
+    elif intensity < 0.95:
+        return [{
+            "activity_type": "run", "zone": "Z2", "duration_minutes": 50,
+            "notes": "Steady Z2 run. Keep HR under aerobic threshold.",
+        }]
+    elif intensity < 1.05:
+        return [{
+            "activity_type": "run", "zone": "Z3", "duration_minutes": 35,
+            "notes": "Tempo / Z3 effort. 20-min tempo block or comfortably-hard continuous.",
+        }]
+    else:
+        return [{
+            "activity_type": "run", "zone": "Z4", "duration_minutes": 40,
+            "notes": "Interval session. 6×800m @ Z4-Z5 effort, 90s rest. Or 4×1mi @ tempo.",
+        }]
+
+
 def mpc_title_suffix(action: str, intensity: float) -> str:
     if action == "REST":    return " (Rest)"
     if action == "DELOAD":  return " (Deload)"
@@ -377,6 +458,8 @@ def main():
         suffix         = mpc_title_suffix(action, intensity)
         title          = (template.get("title") or day_name) + suffix
 
+        cardio = build_cardio_sessions(action, intensity)
+
         pw_row = {
             "program_id":       program_id,
             "created_by":       USER_ID,
@@ -387,12 +470,12 @@ def main():
             "day_of_week":      weekday,
             "scheduled_date":   sim_day.isoformat(),
             "exercises":        scaled,
-            "cardio_sessions":  template.get("cardio_sessions") or [],
+            "cardio_sessions":  cardio,
             "duration_minutes": template.get("duration_minutes"),
         }
 
         ok = sb_upsert("program_workouts", pw_row)
-        print(f"    {'✓' if ok else '✗'}  '{title}' — {len(scaled)} exercises")
+        print(f"    {'✓' if ok else '✗'}  '{title}' — {len(scaled)} exercises + {len(cardio)} cardio")
 
         # Advance Kalman state for next simulated day
         projected_tss = ACTION_TSS.get(action, 50.0)
