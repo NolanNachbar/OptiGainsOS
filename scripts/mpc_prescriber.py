@@ -291,16 +291,6 @@ def select_action(
     ranked = sorted(scores.items(), key=lambda x: x[1]["score"], reverse=True)
     best_action = ranked[0][0]
 
-    # TWO_A_DAY gate: only valid when fresh and load is manageable
-    tsb = float(kalman.x[0, 0] - kalman.x[1, 0])
-    two_a_day_eligible = (tsb > 5.0 and acwr < 1.2)
-    if best_action == "TWO_A_DAY" and not two_a_day_eligible:
-        # Fall back to the next best single-session action
-        for action, _ in ranked[1:]:
-            if action != "TWO_A_DAY":
-                best_action = action
-                break
-
     # Apply ACWR gate (guardrail override)
     load_action_map = {
         "INCREASE": ["MIXED", "STRENGTH", "TWO_A_DAY"],
