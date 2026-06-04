@@ -483,7 +483,7 @@ def main():
 
     perf_slopes = []
     for ex_name in ["Bench Press (Daily Single)", "Back Squat (Top Set)", "Deadlift (Top Set)"]:
-        hist = progression_registry.registry.get(ex_name, [])
+        hist = progression_registry.get_history(ex_name)
         if len(hist) >= 3:
             x = np.arange(len(hist))
             perf_slopes.append(float(np.polyfit(x, hist, 1)[0]))
