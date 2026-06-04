@@ -230,14 +230,12 @@ def save_engine_state(
 
 def determine_optimal_split_framework(compliance_rate, avg_soreness, performance_trend, days_to_deadline):
     """
-    PPL: lower per-muscle frequency, good when recovery is excellent and schedule allows 6 days
-    Upper/Lower: default, balanced frequency
-    Full Body: highest per-muscle frequency, best when compliance is low or soreness is high
+    High frequency is preferred — upper/lower is the default.
+    Full body when compliance is low or soreness is high (easier to recover from per session).
+    PPL is never auto-selected — lower per-muscle frequency doesn't match training response.
     """
     if compliance_rate < 0.70 or avg_soreness > 7.0:
         return "full_body"
-    if compliance_rate > 0.85 and avg_soreness < 4.0:
-        return "ppl"
     return "upper_lower"
 
 
