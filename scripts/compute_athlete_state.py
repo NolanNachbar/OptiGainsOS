@@ -1056,6 +1056,13 @@ def main():
         # 10. Guardrail state tracking
         guardrail.record_state(overreach_out["fatigue_state"])
 
+        # Preserve nested weekly engine states from prev_params to avoid overwriting them
+        prev_guardrail = prev.get("guardrail_state") or {}
+        guardrail_dict = guardrail.to_dict()
+        for key in ["mrv_state", "e1rm_registry", "exploration_state", "synthesis_state", "step_count"]:
+            if key in prev_guardrail:
+                guardrail_dict[key] = prev_guardrail[key]
+
         # 11. Save engine params
         engine_params_row = {
             "created_by":     USER_ID,
@@ -1064,7 +1071,7 @@ def main():
             "rls_params":     rls.to_dict(),
             "cellular_state": cellular.to_dict(),
             "vdot_state":     vdot_eng.to_dict(),
-            "guardrail_state": guardrail.to_dict(),
+            "guardrail_state": guardrail_dict,
             "computed_at":    datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         ok_engine = sb_upsert("engine_params", engine_params_row)

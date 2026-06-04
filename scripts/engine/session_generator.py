@@ -375,6 +375,8 @@ def _build_session(
     wt = weekly_set_targets or {}
     is_upper = "upper" in split
     relevant = UPPER_MUSCLES if is_upper else LOWER_MUSCLES
+    if not wt:
+        wt = {m: 12 for m in relevant}
     freq_map = UPPER_FREQ if is_upper else LOWER_FREQ
 
     # Patterns that may repeat (not subject to compound-pattern uniqueness constraint)
@@ -559,3 +561,191 @@ def build_title(action: str, split: str, intensity: float) -> str:
               " ↓ Back Off"  if intensity < 0.85  else
               " → Steady"    if intensity < 0.95  else "")
     return base + suffix
+
+
+class SessionGenerator:
+    """
+    Wrapper class to maintain compatibility with the old SessionGenerator API
+    used in mpc_prescriber.py.
+    """
+    def generate(
+        self,
+        banister_state: dict,
+        interference: dict,
+        overreach: dict,
+        acwr: float,
+        strength: dict,
+        latest_pst: dict,
+        nutrition_mod: dict,
+        vdot_zones: dict,
+        mileage_cap: float,
+        mpc_action: str,
+        mpc_intensity: float,
+        weekly_set_targets: dict = None,
+    ) -> dict:
+        from datetime import date
+        sim_date = date.today()
+
+        # Build cellular state
+        cellular_state = {
+            "ampk": interference.get("ampk", 0.20),
+            "mtorc1": interference.get("mtorc1", 0.30),
+            "interference_score": interference.get("interference_score", 0.10)
+        }
+
+        # Build readiness_z
+        readiness_z = float(overreach.get("hrv_z_3d") or 0.0)
+
+        # Retrieve VDOT
+        vdot = vdot_zones.get("current_vdot", 45.0)
+
+        # Call module-level generate function
+        exercises, cardio = generate(
+            action=mpc_action,
+            intensity=mpc_intensity,
+            sim_date=sim_date,
+            cellular_state=cellular_state,
+            recent_session_types=[],
+            recent_run_tss=0.0,
+            vdot=vdot,
+            weekly_set_targets=weekly_set_targets,
+            readiness_z=readiness_z,
+        )
+
+        # Format complete prescription dict
+        strength_block = []
+        calisthenics_block = {}
+        run_block = None
+        swim_block = None
+
+        # Build blocks
+        for ex in exercises:
+            name = ex.get("name", "")
+            # Check if this is calisthenics
+            is_cal = False
+            for k in ["pull-up", "push-up", "dip", "hanging leg", "plank", "sit-up"]:
+                if k in name.lower():
+                    is_cal = True
+                    break
+            
+            # Map exercise fields
+            sets = ex.get("sets", 3)
+            reps = ex.get("rep_target", "10")
+            rir = ex.get("rir_target", 2)
+            
+            # Estimate loads if possible
+            load_lbs = 0.0
+            load_pct = 0.0
+            
+            # Simple heuristic mapping for lift names to keys
+            lift_key = None
+            name_l = name.lower()
+            if "bench" in name_l:
+                lift_key = "bench"
+            elif "squat" in name_l:
+                lift_key = "squat"
+            elif "deadlift" in name_l:
+                lift_key = "deadlift"
+            elif "rdl" in name_l:
+                lift_key = "rdl"
+            elif "ohp" in name_l:
+                lift_key = "ohp"
+
+            if lift_key and strength.get(lift_key):
+                e1rm = float(strength[lift_key].get("current_e1rm") or 0.0)
+                if e1rm > 0:
+                    rep_val = 5
+                    if "-" in str(reps):
+                        try: rep_val = int(str(reps).split("-")[0])
+                        except: pass
+                    else:
+                        try: rep_val = int(reps)
+                        except: pass
+                    
+                    load_pct = 1.0 / (1.0 + 0.0333 * (rep_val + rir))
+                    load_pct = load_pct * mpc_intensity
+                    load_lbs = round((e1rm * load_pct) / 5.0) * 5.0
+                    load_pct = round(load_pct, 3)
+
+            ex_detail = {
+                "name": name,
+                "sets": sets,
+                "reps": reps,
+                "rir": rir,
+                "load_lbs": load_lbs,
+                "load_pct": load_pct,
+                "rest_seconds": ex.get("rest_seconds", 90),
+                "notes": ex.get("notes", "")
+            }
+
+            if is_cal:
+                key = "pullups" if "pull-up" in name.lower() else ("pushups" if "push-up" in name.lower() else ("situps" if "sit-up" in name.lower() else "other"))
+                if key != "other":
+                    rep_val = 10
+                    if "-" in str(reps):
+                        try: rep_val = int(str(reps).split("-")[0])
+                        except: pass
+                    else:
+                        try: rep_val = int(reps)
+                        except: pass
+                    calisthenics_block[key] = {
+                        "sets": sets,
+                        "reps_each": rep_val
+                    }
+                else:
+                    strength_block.append(ex_detail)
+            else:
+                strength_block.append(ex_detail)
+
+        # Build run block
+        for c in cardio:
+            if c.get("activity_type") == "run":
+                dur = c.get("duration_minutes", 30)
+                session_miles = round(dur * 0.12, 1)
+                run_block = {
+                    "zone": c.get("zone", "Z2"),
+                    "session_miles": session_miles,
+                    "pace": c.get("notes", "").split(".")[0],
+                    "duration_minutes": dur,
+                    "notes": c.get("notes", "")
+                }
+            elif c.get("activity_type") == "swim":
+                swim_block = {
+                    "meters": c.get("meters", 500),
+                    "stroke": c.get("stroke", "sidestroke")
+                }
+
+        # Resolve session type
+        session_type = "rest"
+        if mpc_action == "REST":
+            session_type = "rest"
+        elif mpc_action == "CARDIO":
+            session_type = "cardio"
+        elif mpc_action == "CALISTHENICS":
+            session_type = "calisthenics"
+        elif mpc_action == "DELOAD":
+            session_type = "deload"
+        elif mpc_action == "STRENGTH":
+            session_type = "strength"
+        elif mpc_action in ("TWO_A_DAY", "MIXED"):
+            session_type = "mixed"
+
+        rationale = f"Prescribed {mpc_action} action at {mpc_intensity:.2f} intensity based on TSB and safety guardrails."
+        if overreach.get("overreaching"):
+            rationale = "CRITICAL: Rest forced due to overreaching flags (suppressed HRV and elevated RHR)."
+        
+        warning = None
+        if cellular_state.get("interference_score", 0.0) > 0.5:
+            warning = "High concurrent training load detected. Heavy AMPK activity may limit mTORC1 translation."
+
+        return {
+            "session_type": session_type,
+            "rationale": rationale,
+            "interference_warning": warning,
+            "strength_block": strength_block,
+            "calisthenics_block": calisthenics_block,
+            "run_block": run_block,
+            "swim_block": swim_block,
+            "exercises": exercises,
+            "cardio_sessions": cardio
+        }

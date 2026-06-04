@@ -362,7 +362,7 @@ def main():
     latest_pst = pst_rows[0] if pst_rows else {}
 
     soreness_rows = sb_get("soreness_logs", {
-        "select": "date,muscle_group,soreness_level",
+        "select": "date,muscle_group,level",
         "date":   f"gte.{(datetime.date.today() - datetime.timedelta(days=4)).isoformat()}",
         "order":  "date.desc",
     })
@@ -437,13 +437,77 @@ def main():
     quad_soreness = []
     for row in soreness_rows:
         if row.get("muscle_group", "").lower() in ("quads", "quad", "quadriceps"):
-            quad_soreness.append(int(row.get("soreness_level") or 0))
+            quad_soreness.append(int(row.get("level") or 0))
     quad_soreness = (quad_soreness + [0, 0, 0, 0])[:4]
     mileage_cap = vdot_eng.mileage_cap(quad_soreness)
 
     strength = (today_state.get("strength") or {})
     banister_state = kalman.state_dict()
     interference   = cellular.state_dict()
+
+    # Retrieve weekly set targets from engine_params or synthesize on-the-fly
+    weekly_set_targets = guardrail_dict.get("synthesis_state", {}).get("weekly_targets")
+    if not weekly_set_targets:
+        print("  WARN: weekly_targets not found in engine_params. Synthesizing on-the-fly...")
+        try:
+            from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
+            from engine.program_synthesis  import ProgramSynthesisEngine
+            from engine.exploration_manager  import ControlledExplorationManager
+            from engine.resource_allocator   import (
+                compute_reserve_score,
+                allocate_constrained_resources,
+            )
+            
+            volume_engine = HypertrophyVolumeEngine.from_dict(guardrail_dict.get("mrv_state") or {})
+            exploration_manager = ControlledExplorationManager.from_dict(
+                guardrail_dict.get("exploration_state") or {"parameters": MUSCLE_GROUPS}
+            )
+            step_count = int(guardrail_dict.get("step_count") or 0)
+            
+            hrv_z_3d = overreach.get("hrv_z_3d") or 0.0
+            
+            cardio_rows = sb_get("cardio_sessions", {
+                "select": "start_date,duration_seconds,distance_meters",
+                "order": "start_date.desc", "limit": "7",
+            })
+            weekly_km = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
+            
+            volume_engine.adjust_for_running(weekly_km)
+            
+            # Fetch caloric balance
+            kcal_maintenance = float(profile.get("maintenance_kcal") or 3200.0)
+            avg_cal = float(nutrition.get("avg_calories_7d") or nutrition.get("avg_daily_calories_7d") or kcal_maintenance)
+            kcal_deficit = max(0.0, kcal_maintenance - avg_cal)
+            if kcal_deficit > 0 and kcal_maintenance > 0:
+                volume_engine.adjust_for_caloric_deficit(kcal_deficit, kcal_maintenance)
+                
+            mrv_dict = volume_engine.get_mrv_dict()
+            
+            # Apply UCB1 exploration delta
+            exploration_delta = exploration_manager.get_exploration_delta(step_count)
+            for muscle, extra in exploration_delta.items():
+                base_mrv = volume_engine.landmarks.get(muscle, {}).get("MRV", mrv_dict.get(muscle, 18))
+                mrv_dict[muscle] = min(mrv_dict.get(muscle, base_mrv) + extra, base_mrv + 2)
+                
+            reserve_score = compute_reserve_score(hrv_z_3d)
+            user_prefs = {
+                "max_daily_sets": int(os.environ.get("MAX_DAILY_SETS", 20)),
+                "min_strength_days": 4,
+            }
+            synthesis_engine = ProgramSynthesisEngine(MUSCLE_GROUPS)
+            allocation_matrix = synthesis_engine.synthesize_weekly_block(mrv_dict, user_prefs, acwr)
+            allocation_matrix, alloc_metadata = allocate_constrained_resources(
+                reserve_score, allocation_matrix, MUSCLE_GROUPS
+            )
+            weekly_set_targets = {
+                m: int(allocation_matrix[mi].sum())
+                for mi, m in enumerate(MUSCLE_GROUPS)
+            }
+            print(f"  Synthesized on-the-fly weekly targets: {weekly_set_targets}")
+        except Exception as e:
+            print(f"  ERROR: Failed to synthesize weekly targets on-the-fly: {e}. Using default landmarks fallback.")
+            from engine.hypertrophy_volume import MUSCLES as MUSCLE_GROUPS
+            weekly_set_targets = {m: 12 for m in MUSCLE_GROUPS}
 
     generator    = SessionGenerator()
     prescription = generator.generate(
@@ -458,6 +522,7 @@ def main():
         mileage_cap     = mileage_cap,
         mpc_action      = best_action,
         mpc_intensity   = intensity,
+        weekly_set_targets = weekly_set_targets,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

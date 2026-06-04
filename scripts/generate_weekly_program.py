@@ -187,19 +187,37 @@ def save_engine_state(
     progression_registry: StrengthProgressionRegistry,
     exploration_manager: ControlledExplorationManager,
     synthesis_engine: ProgramSynthesisEngine = None,
+    weekly_targets: dict = None,
+    step_count: int = None,
 ) -> bool:
     """Single upsert of all engine state blobs to engine_params."""
+    prev_rows = sb_get("engine_params", {
+        "select": "*", "order": "date.desc", "limit": "1",
+        "created_by": f"eq.{user_id}",
+    })
+    prev = prev_rows[0] if prev_rows else {}
+
+    guardrail_dict = guardrail.to_dict()
+    guardrail_dict["mrv_state"] = volume_engine.to_dict()
+    guardrail_dict["e1rm_registry"] = progression_registry.to_dict()
+    guardrail_dict["exploration_state"] = exploration_manager.to_dict()
+    if step_count is not None:
+        guardrail_dict["step_count"] = step_count
+    if synthesis_engine is not None:
+        synthesis_dict = synthesis_engine.to_dict()
+        if weekly_targets is not None:
+            synthesis_dict["weekly_targets"] = weekly_targets
+        guardrail_dict["synthesis_state"] = synthesis_dict
+
     row = {
         "created_by":         user_id,
         "date":               TODAY.isoformat(),
         "kalman_state":       kalman.to_dict(),
-        "guardrail_state":    guardrail.to_dict(),
-        "mrv_state":          volume_engine.to_dict(),
-        "e1rm_registry":      progression_registry.to_dict(),
-        "exploration_state":  exploration_manager.to_dict(),
+        "guardrail_state":    guardrail_dict,
+        "rls_params":         prev.get("rls_params") or {},
+        "cellular_state":     prev.get("cellular_state") or {},
+        "vdot_state":         prev.get("vdot_state") or {},
     }
-    if synthesis_engine is not None:
-        row["synthesis_state"] = synthesis_engine.to_dict()
     ok = sb_upsert_engine(row)
     print(f"  {'✓' if ok else '✗'}  Engine state saved")
     return ok
@@ -257,18 +275,19 @@ def main():
     engine = engine_rows[0] if engine_rows else {}
 
     kalman    = BanisterKalman.from_dict(engine.get("kalman_state") or {})
-    guardrail = SystemGuardrail.from_dict(engine.get("guardrail_state") or {})
-    volume_engine = HypertrophyVolumeEngine.from_dict(engine.get("mrv_state") or {})
-    progression_registry = StrengthProgressionRegistry.from_dict(engine.get("e1rm_registry") or {})
+    guardrail_state = engine.get("guardrail_state") or {}
+    guardrail = SystemGuardrail.from_dict(guardrail_state)
+    volume_engine = HypertrophyVolumeEngine.from_dict(guardrail_state.get("mrv_state") or {})
+    progression_registry = StrengthProgressionRegistry.from_dict(guardrail_state.get("e1rm_registry") or {})
     exploration_manager  = ControlledExplorationManager.from_dict(
-        engine.get("exploration_state") or {"parameters": MUSCLE_GROUPS}
+        guardrail_state.get("exploration_state") or {"parameters": MUSCLE_GROUPS}
     )
     # Step counter for exploration epsilon schedule (week index)
-    step_count = int(engine.get("step_count") or 0)
+    step_count = int(guardrail_state.get("step_count") or 0)
 
     # ── 2. Load recent athlete data ───────────────────────────────────────────
     athlete_rows = sb_get("athlete_state", {
-        "select": "date,fatigue,recovery,cellular_state,vdot,caloric_balance",
+        "select": "date,fatigue,recovery,cellular,vdot_zones,nutrition,nutrition_modulation",
         "order": "date.desc", "limit": "30",
         "created_by": f"eq.{USER_ID}",
     })
@@ -279,9 +298,23 @@ def main():
         load_history.append(float(atl) if atl is not None else 0.0)
 
     latest_athlete = athlete_rows[0] if athlete_rows else {}
-    cellular_state  = latest_athlete.get("cellular_state") or {}
-    vdot            = latest_athlete.get("vdot")
-    caloric_balance = latest_athlete.get("caloric_balance") or {}
+    cellular_state  = latest_athlete.get("cellular") or latest_athlete.get("cellular_state") or {}
+    vdot_zones      = latest_athlete.get("vdot_zones") or {}
+    vdot            = latest_athlete.get("vdot") or vdot_zones.get("current_vdot")
+    
+    # Load profile to obtain maintenance_kcal
+    profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
+    profile      = profile_rows[0] if profile_rows else {}
+    kcal_maintenance = float(profile.get("maintenance_kcal") or 3200.0)
+    
+    nutrition = latest_athlete.get("nutrition") or {}
+    avg_cal   = float(nutrition.get("avg_calories_7d") or nutrition.get("avg_daily_calories_7d") or kcal_maintenance)
+    kcal_deficit = max(0.0, kcal_maintenance - avg_cal)
+    
+    caloric_balance = {
+        "deficit_kcal": kcal_deficit,
+        "maintenance_kcal": kcal_maintenance
+    }
 
     # ── Garmin HRV data ───────────────────────────────────────────────────────
     garmin_rows = sb_get("garmin_daily_stats", {
@@ -304,12 +337,12 @@ def main():
 
     # ── Recent cardio TSS ─────────────────────────────────────────────────────
     cardio_rows = sb_get("cardio_sessions", {
-        "select": "tss,start_date,distance_km",
+        "select": "start_date,duration_seconds,distance_meters",
         "created_by": f"eq.{USER_ID}",
         "order": "start_date.desc", "limit": "7",
     })
-    recent_run_tss = sum(float(r.get("tss") or 0) for r in cardio_rows)
-    weekly_km      = sum(float(r.get("distance_km") or 0) for r in cardio_rows)
+    recent_run_tss = sum((float(r.get("duration_seconds") or 0) / 60.0) * 0.9 for r in cardio_rows)
+    weekly_km      = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
 
     # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
@@ -485,13 +518,13 @@ def main():
         guardrail.record_state(overreach["fatigue_state"])
 
     # ── 8. Save all engine state ──────────────────────────────────────────────
+    new_step = step_count + 1
     save_engine_state(
         USER_ID, kalman, guardrail, volume_engine,
-        progression_registry, exploration_manager, synthesis_engine
+        progression_registry, exploration_manager, synthesis_engine,
+        weekly_targets=weekly_targets, step_count=new_step
     )
 
-    # Persist step counter increment
-    new_step = step_count + 1
     print(f"\n  Step count: {step_count} → {new_step}")
     print(f"\n✓  Done — {len(days_to_generate)} days written")
 
