@@ -403,7 +403,12 @@ def main():
     enrollment   = enrollments[0]
     program_id   = enrollment["program_id"]
     current_week = int(enrollment.get("current_week") or 1)
-    print(f"  Active program: {program_id} | Enrollment week: {current_week}")
+    cycle_length = int(enrollment.get("days_per_week") or 7)
+
+    # Parse enrollment start date — must match how the frontend computes dates
+    raw_start = enrollment.get("started_at") or enrollment.get("start_date") or ""
+    enrollment_start = datetime.date.fromisoformat(raw_start[:10])
+    print(f"  Active program: {program_id} | Enrollment week: {current_week} | Start: {enrollment_start}")
 
     # Load week-1 templates — use TEMPLATE_PROGRAM_ID if set, otherwise fall
     # back to the active program.  The template source is NEVER written to;
@@ -424,9 +429,13 @@ def main():
 
     # ── Generate each day ─────────────────────────────────────────────────────
     for sim_day in days_to_generate:
-        weekday   = sim_day.weekday()       # 0=Mon … 6=Sun
-        day_index = weekday + 1             # program uses 1=Mon … 7=Sun
         day_name  = sim_day.strftime("%A")
+
+        # day_index must match the frontend's getProgramSchedule logic exactly:
+        #   date = addDays(anchor, cycleStartOffset + (day_index - 1))
+        # So: day_index = (days_since_start % cycle_length) + 1
+        days_since_start = (sim_day - enrollment_start).days
+        day_index = (days_since_start % cycle_length) + 1
 
         # ACWR for this simulated day
         acwr = 1.0
@@ -467,7 +476,7 @@ def main():
             "focus":            template.get("focus", "strength"),
             "week_number":      current_week,
             "day_index":        day_index,
-            "day_of_week":      weekday,
+            "day_of_week":      sim_day.weekday(),
             "scheduled_date":   sim_day.isoformat(),
             "exercises":        scaled,
             "cardio_sessions":  cardio,

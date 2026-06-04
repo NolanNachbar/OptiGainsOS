@@ -1707,6 +1707,11 @@ export default function Schedule() {
                                     </Badge>
                                     <span className="text-xs">Cycle {item.cycle}, Day {item.dayIndex}</span>
                                     {item.exercises.length > 0 && <span className="text-xs">{item.exercises.length} exercises</span>}
+                                    {item.cardio_sessions?.length > 0 && (
+                                      <span className="text-xs text-[#f97316]">
+                                        {item.cardio_sessions.map(c => c.title || `${c.zone || 'Z2'} ${c.activity_type || 'run'} ${c.duration_minutes ? `· ${c.duration_minutes}min` : ''}`).join(' + ')}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

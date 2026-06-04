@@ -526,7 +526,8 @@ export default function WorkoutDetail() {
   const isAlreadyCompleted = isProgramSource && enrollment?.completed_workouts?.some(
     cw => cw.program_workout_id === programWorkoutId
   );
-  const shouldAutoStart = isProgramSource && workout && enrollment && programWorkout && !isLogging && !isAlreadyCompleted && sessionCheckDone && !resumeSession;
+  // Don't auto-start — user must explicitly press Start
+  const shouldAutoStart = false;
   const hasAutoStartedRef = useRef(false);
 
   useEffect(() => {
