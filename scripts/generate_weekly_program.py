@@ -311,6 +311,37 @@ def muscle_perf_slopes(registry: StrengthProgressionRegistry) -> dict:
     return {m: sum(v) / len(v) for m, v in acc.items() if v}
 
 
+# ── Daily-state refresh ────────────────────────────────────────────────────────
+
+def refresh_athlete_state():
+    """Recompute athlete_state + engine_params + training_prescription before
+    generating, so a standalone `python generate_weekly_program.py` run isn't
+    reading stale engine output.
+
+    The generator only READS engine_params (VDOT, Kalman, guardrail), athlete_state
+    (vdot_zones, fatigue), and training_prescription — all written by the daily
+    engine (compute_athlete_state.py → mpc_prescriber.py). Run as fresh
+    subprocesses to mirror the daily-engine workflow and avoid module-global
+    bleed (TODAY/USER_ID are module-level in those scripts).
+
+    Set SKIP_STATE_REFRESH=1 to opt out (e.g. the daily-engine workflow, which
+    already runs both steps itself).
+    """
+    if os.environ.get("SKIP_STATE_REFRESH"):
+        print("  SKIP_STATE_REFRESH set — using existing engine state")
+        return
+    import subprocess
+    for script in ("compute_athlete_state.py", "mpc_prescriber.py"):
+        path = os.path.join(SCRIPT_DIR, script)
+        print(f"  ── refreshing state: {script} ──")
+        result = subprocess.run([sys.executable, path], cwd=SCRIPT_DIR)
+        if result.returncode != 0:
+            raise SystemExit(
+                f"State refresh failed: {script} exited {result.returncode}. "
+                f"Aborting before generation to avoid writing a program off stale state."
+            )
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -318,6 +349,8 @@ def main():
     if not USER_ID:
         USER_ID = resolve_user_id()
         print(f"  Resolved USER_ID: {USER_ID}")
+
+    refresh_athlete_state()
 
     days_ahead_env = int(os.environ.get("DAYS_AHEAD", 0))
     if days_ahead_env > 0:
