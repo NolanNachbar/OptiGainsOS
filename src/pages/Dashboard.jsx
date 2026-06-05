@@ -568,6 +568,11 @@ export default function Dashboard() {
   const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
   const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
 
+  // Best log for today = longest duration
+  const todayLog = workoutLogs
+    .filter(l => l.log_date === today)
+    .sort((a, b) => (b.duration_seconds || 0) - (a.duration_seconds || 0))[0] || null;
+
   const isCompleted = todayProgramWorkout?.completed || todayWorkout?.completed;
   const workoutTitle = todayProgramWorkout?.title || todayWorkoutDetails?.title;
   const displayWorkoutTitle = (todayLog ? getWorkoutSplitTitle(todayLog.exercises) : null) || workoutTitle;
@@ -578,11 +583,6 @@ export default function Dashboard() {
     ...(todayProgramWorkout?.cardio_sessions || []),
   ];
   const exerciseCount = todayProgramLifts.length || todayWorkoutDetails?.exercises?.length || 0;
-
-  // Best log for today = longest duration
-  const todayLog = workoutLogs
-    .filter(l => l.log_date === today)
-    .sort((a, b) => (b.duration_seconds || 0) - (a.duration_seconds || 0))[0] || null;
 
   const todayLogLifts = (todayLog?.exercises || []).filter(ex => !isRunEx(ex));
 

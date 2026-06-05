@@ -43,9 +43,6 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom'],
   },
-  optimizeDeps: {
-    dedupe: ['react', 'react-dom'],
-  },
   build: {
     modulePreload: { polyfill: false },
     rollupOptions: {

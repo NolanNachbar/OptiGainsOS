@@ -44,6 +44,7 @@ from engine.session_generator  import generate as gen_session, get_split, build_
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.program_synthesis  import ProgramSynthesisEngine
 from engine.strength_progression import StrengthProgressionRegistry
+from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
 from engine.exploration_manager  import ControlledExplorationManager
 from engine.resource_allocator   import (
     compute_reserve_score,
@@ -298,6 +299,20 @@ def main():
     exploration_manager  = ControlledExplorationManager.from_dict(
         guardrail_state.get("exploration_state") or {"parameters": MUSCLE_GROUPS}
     )
+    # ── Rebuild strength registry from logged sets (the previously-missing wire).
+    # The persisted e1rm_registry was never fed by anything — generate never
+    # called log_set. Rebuild it from workout_logs each run via the shared
+    # log_ingest module (idempotent, single source of truth with audit_strength).
+    workout_log_rows = sb_get("workout_logs", {
+        "select": "log_date,exercises",
+        "created_by": f"eq.{USER_ID}",
+        "order": "log_date.desc", "limit": "365",
+    })
+    log_rows = normalize_workout_logs(workout_log_rows)
+    progression_registry = StrengthProgressionRegistry()
+    populate_registry(progression_registry, log_rows)
+    print(f"  Strength registry rebuilt: {len(workout_log_rows)} logs, "
+          f"{len(log_rows)} sets → {len(progression_registry.to_dict()['history'])} tracked lifts")
     # Step counter for exploration epsilon schedule (week index)
     step_count = int(guardrail_state.get("step_count") or 0)
 
@@ -419,14 +434,14 @@ def main():
 
     # ── 3. Strength progression analysis ─────────────────────────────────────
     print("\n  Strength progression commands:")
-    goal_exercises = [
-        "Bench Press (Daily Single)",
-        "Back Squat (Top Set)",
-        "Deadlift (Top Set)",
-    ]
+    # GOAL aggregates keyed by log_ingest.GOAL_LIFTS — bench = paused competition
+    # (NOT the touch-and-go cheat), deadlift = conventional, squat = competition.
+    goal_exercises = list(GOAL_LIFTS)
     for exercise in goal_exercises:
         cmd = progression_registry.get_command(exercise, hrv_z_3d)
-        print(f"    {exercise}: {cmd}")
+        hist = progression_registry.get_history(exercise)
+        latest = f"{hist[-1]:.0f}" if hist else "—"
+        print(f"    {exercise:28s}: {cmd:13s} (latest e1RM {latest}, {len(hist)} sess)")
 
     # ── 4. Update volume landmarks ────────────────────────────────────────────
     volume_engine.adjust_for_running(weekly_km)
@@ -482,7 +497,7 @@ def main():
     compliance_rate = float((engine.get("guardrail_state") or {}).get("synthesis_state", {}).get("compliance_rate", 0.80))
 
     perf_slopes = []
-    for ex_name in ["Bench Press (Daily Single)", "Back Squat (Top Set)", "Deadlift (Top Set)"]:
+    for ex_name in GOAL_LIFTS:
         hist = progression_registry.get_history(ex_name)
         if len(hist) >= 3:
             x = np.arange(len(hist))
