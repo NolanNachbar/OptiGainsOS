@@ -154,7 +154,9 @@ async function pullDay(headers: Record<string, string>, ds: string): Promise<Rec
   }
 
   if (hrv.status === "fulfilled" && hrv.value) {
-    row.hrv = safe(hrv.value as Record<string, unknown>, "hrvSummary", "lastNight");
+    // Garmin's hrv-service key is `lastNightAvg` (the previous `lastNight` never
+    // matched, so hrv synced as null on every row).
+    row.hrv = safe(hrv.value as Record<string, unknown>, "hrvSummary", "lastNightAvg");
   }
 
   if (hr.status === "fulfilled" && hr.value) {

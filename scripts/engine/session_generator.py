@@ -26,6 +26,8 @@ import copy
 import random
 from datetime import date
 
+from engine.vdot_engine import VDOTEngine
+
 
 # ── Exercise pool ─────────────────────────────────────────────────────────────
 # pattern: squat | hinge | vertical_pull | horizontal_pull | vertical_push |
@@ -52,6 +54,27 @@ EXERCISES = [
      "fatigue_cost": 3.5, "muscles": ["chest", "triceps"],
      "sets": 6, "rep_target": "2",   "rir_target": 4, "progression": {"daily_min_pct": 0.60},
      "rest_seconds": 60, "notes": "60% 1RM, bar speed focus.", "is_backoff": True},
+
+    # ── Bench assistance (paused-comp 315 build: raw press, lockout, upper chest) ─
+    # Appended after the bench back-off — not knapsack-selected (is_assistance).
+    {"name": "Close-Grip Bench Press", "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.5, "muscles": ["triceps", "chest"],
+     "sets": 3, "rep_target": "5",   "rir_target": 2, "rest_seconds": 150,
+     "notes": "Triceps/lockout for the paused bench.", "is_assistance": True, "assist_for": "bench"},
+    {"name": "Larsen Press",           "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.5, "muscles": ["chest", "triceps"],
+     "sets": 3, "rep_target": "4-6", "rir_target": 2, "rest_seconds": 150,
+     "notes": "Legs up, no leg drive — raw pressing strength off the chest.",
+     "is_assistance": True, "assist_for": "bench"},
+    {"name": "Incline Bench Press",    "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.5, "muscles": ["chest", "front_delt", "triceps"],
+     "sets": 3, "rep_target": "6-8", "rir_target": 2, "rest_seconds": 120,
+     "notes": "Upper chest + press strength.", "is_assistance": True, "assist_for": "bench"},
+    {"name": "Weighted Dip",           "pattern": "dip", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 3.0, "muscles": ["chest", "triceps"],
+     "sets": 3, "rep_target": "6-10","rir_target": 2, "rest_seconds": 120,
+     "notes": "Loaded dips — bottom-range pressing strength.",
+     "is_assistance": True, "assist_for": "bench"},
 
     # ── Squat (goal exercise) ──────────────────────────────────────────────
     {"name": "Back Squat (Top Set)",   "pattern": "squat", "type": "COMPOUND_AXIAL",
@@ -103,6 +126,24 @@ EXERCISES = [
     {"name": "Back Extension",        "pattern": "hinge", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["hamstrings", "glutes", "erectors"],
      "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 60},
+
+    # ── Deadlift assistance (submax build toward 500 CONVENTIONAL, not grind) ─
+    # Appended after the deadlift top set — not knapsack-selected (is_assistance).
+    {"name": "Deficit Deadlift",      "pattern": "hinge", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 4.0, "muscles": ["hamstrings", "glutes", "back"],
+     "sets": 4, "rep_target": "3",    "rir_target": 2, "rest_seconds": 180,
+     "notes": "1-2 in deficit. Off-the-floor strength for the conventional pull.",
+     "is_assistance": True, "assist_for": "deadlift"},
+    {"name": "Deadlift (Speed/Light)","pattern": "hinge", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.0, "muscles": ["hamstrings", "glutes", "back"],
+     "sets": 6, "rep_target": "2",    "rir_target": 4, "progression": {"daily_min_pct": 0.65},
+     "rest_seconds": 90, "notes": "Submaximal speed pulls ~65-70%. Bar speed, not grind.",
+     "is_assistance": True, "assist_for": "deadlift"},
+    {"name": "Paused Deadlift",       "pattern": "hinge", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.5, "muscles": ["hamstrings", "glutes", "back"],
+     "sets": 3, "rep_target": "3",    "rir_target": 2, "rest_seconds": 150,
+     "notes": "1-2 ct pause below the knee. Positional strength off the floor.",
+     "is_assistance": True, "assist_for": "deadlift"},
 
     # ── Vertical pull ──────────────────────────────────────────────────────
     {"name": "Weighted Pull-up",  "pattern": "vertical_pull", "type": "COMPOUND_AXIAL",
@@ -201,6 +242,13 @@ EXERCISES = [
 # Quick lookup by name
 _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 
+# Assistance pools appended after the main goal lift (rotated by date, not
+# knapsack-selected). Bench → paused-comp 315; deadlift → 500 conventional via
+# submaximal work rather than heavy grinding.
+BENCH_ASSISTANCE    = ["Close-Grip Bench Press", "Larsen Press",
+                       "Incline Bench Press", "Weighted Dip"]
+DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
+
 
 # ── Muscle groups per session type ───────────────────────────────────────────
 
@@ -288,35 +336,84 @@ def _clean(ex: dict) -> dict:
     """Strip internal engine tags before writing to DB."""
     return {k: v for k, v in ex.items()
             if k not in ("pattern", "muscles", "is_primary", "is_backoff", "is_goal",
-                         "type", "fatigue_cost")}
+                         "type", "fatigue_cost", "is_assistance", "assist_for")}
 
 
 # ── Cardio ────────────────────────────────────────────────────────────────────
 
-def _build_cardio(intensity: float, ampk: float, recent_run_tss: float,
-                  readiness_z: float = 0.0, quad_soreness_avg: float = 0.0) -> list:
-    """
-    Zone prescribed by running_intensity_index. No VDOT.
-    running_intensity_index = 1.5*readiness_z - 4.0*ampk - 1.5*quad_soreness_avg
-    Duration scales 25-60 min based on soreness and readiness.
-    """
-    rii = 1.5 * readiness_z - 4.0 * ampk - 1.5 * quad_soreness_avg
+# Polarized weekly run STRUCTURE (80/20). Each run day has a base slot keyed on
+# weekday so quality + long runs are spread across the week instead of every day
+# collapsing to one reactively-chosen zone. Readiness can only DOWNGRADE the slot
+# (concurrent heavy strength → protect recovery), never upgrade it.
+#   slot order (hardest→easiest): interval > threshold > long > easy > recovery
+_RUN_SLOTS = ["recovery", "easy", "long", "threshold", "interval"]
 
-    if rii > 1.5:
-        zone, base_dur, notes = "Z4-Z5", 45, "Intervals. Garmin Z4-Z5. 6x800m or 5x1km w/ 90s rest."
-    elif rii > 0.3:
-        zone, base_dur, notes = "Z3",    40, "Tempo. Garmin Z3. 20-25 min continuous or 3x8 min cruise."
-    elif rii > -1.2:
-        zone, base_dur, notes = "Z2",    50, "Aerobic base. Garmin Z2. Nasal breathing if possible."
-    else:
-        zone, base_dur, notes = "Z1",    30, "Recovery jog. Garmin Z1. Active recovery only."
+# weekday() : 0=Mon … 6=Sun → base slot. ~2 quality + 1 long, rest easy.
+_WEEKDAY_SLOT = {
+    0: "easy",       # Mon
+    1: "threshold",  # Tue  — tempo/threshold quality
+    2: "easy",       # Wed
+    3: "interval",   # Thu  — VO2 / race-pace quality
+    4: "easy",       # Fri
+    5: "long",       # Sat  — long aerobic run
+    6: "easy",       # Sun
+}
+
+_SLOT_SPEC = {
+    "interval":  {"zone": "Z4-Z5", "base_dur": 45, "pace_key": "interval_pace",
+                  "note": "Intervals. 6x800m or 5x1km w/ 90s jog. Target {pace}/mi."},
+    "threshold": {"zone": "Z3-Z4", "base_dur": 40, "pace_key": "threshold_pace",
+                  "note": "Threshold. 20-25 min continuous or 3x8 min cruise. Target {pace}/mi."},
+    "long":      {"zone": "Z2",    "base_dur": 80, "pace_key": "easy_pace",
+                  "note": "Long aerobic run. Conversational. Target {pace}/mi."},
+    "easy":      {"zone": "Z2",    "base_dur": 50, "pace_key": "easy_pace",
+                  "note": "Aerobic base. Nasal breathing. Target {pace}/mi."},
+    "recovery":  {"zone": "Z1",    "base_dur": 30, "pace_key": "easy_pace",
+                  "note": "Recovery jog. Easy effort only, slower than {pace}/mi."},
+}
+
+
+def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss: float,
+                  readiness_z: float = 0.0, quad_soreness_avg: float = 0.0,
+                  vdot: float = None) -> list:
+    """
+    Polarized run prescription: weekly STRUCTURE (weekday slot) + VDOT pacing,
+    autoregulated DOWN by readiness. Fixes the old behavior where, with no HRV
+    stream, the reactive index sat at ~-0.8 and locked every run to Z2.
+
+    Readiness index (lower = more fatigued) downgrades the base slot by 1-2 levels;
+    it never upgrades, so quality days only happen when the athlete can absorb them.
+    """
+    base_slot = _WEEKDAY_SLOT.get(sim_date.weekday(), "easy")
+    idx = _RUN_SLOTS.index(base_slot)
+
+    # Readiness/fatigue downgrade: poor HRV, high AMPK (glycogen-depleted / endurance
+    # residual), or high quad soreness pull intensity down a notch or two.
+    readiness = 1.5 * readiness_z - 4.0 * ampk - 1.5 * quad_soreness_avg
+    if readiness < -1.6:
+        idx -= 2
+    elif readiness < -0.7:
+        idx -= 1
+    slot = _RUN_SLOTS[max(0, idx)]
+    spec = _SLOT_SPEC[slot]
+
+    paces = VDOTEngine(current_vdot=float(vdot) if vdot else 45.0).pace_zones()
+    pace = paces.get(spec["pace_key"], "—")
 
     soreness_scalar = max(0.6, 1.0 - 0.1 * quad_soreness_avg)
     readiness_scale = 1.0 + 0.1 * readiness_z
-    duration = int(round(base_dur * soreness_scalar * readiness_scale))
-    duration = max(25, min(60, duration))
+    max_dur = 95 if slot == "long" else 60
+    duration = int(round(spec["base_dur"] * soreness_scalar * readiness_scale))
+    duration = max(25, min(max_dur, duration))
 
-    return [{"activity_type": "run", "zone": zone, "duration_minutes": duration, "notes": notes}]
+    return [{
+        "activity_type":   "run",
+        "run_type":        slot,
+        "zone":            spec["zone"],
+        "duration_minutes": duration,
+        "pace":            pace,
+        "notes":           f"Garmin {spec['zone']}. " + spec["note"].format(pace=pace),
+    }]
 
 
 # ── Split decision ────────────────────────────────────────────────────────────
@@ -381,6 +478,20 @@ SESSION_TITLE = {
 }
 
 
+# ── Assistance ────────────────────────────────────────────────────────────────
+
+def _assistance_slot(name: str, wt: dict, intensity: float, readiness_z: float) -> dict:
+    """Scale an assistance accessory by its primary muscle's weekly target, then
+    apply the usual intensity/readiness scaling — same treatment as a back-off."""
+    ex = copy.deepcopy(_EX_BY_NAME[name])
+    pm = (ex.get("muscles") or ["chest"])[0]
+    weekly = wt.get(pm, 0)
+    if weekly > 0:
+        baseline = 8 if pm in ("triceps", "biceps") else 12
+        ex["sets"] = max(1, round(ex.get("sets", 3) * weekly / baseline))
+    return _scale(ex, intensity, False, readiness_z)
+
+
 # ── Knapsack session builder ──────────────────────────────────────────────────
 
 def _build_session(
@@ -390,6 +501,7 @@ def _build_session(
     rng: random.Random,
     readiness_z: float = 0.0,
     weekly_set_targets: dict = None,
+    assist_week: int = 0,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -427,10 +539,12 @@ def _build_session(
 
     for muscle in relevant:
         weekly = wt.get(muscle, 0)
-        # All exercises that hit this muscle as primary, excluding back-off variants
+        # All exercises that hit this muscle as primary, excluding back-off and
+        # assistance variants (both are appended explicitly after the goal lift).
         pool = [e for e in EXERCISES
                 if muscle in (e.get("muscles") or [])
-                and not e.get("is_backoff")]
+                and not e.get("is_backoff")
+                and not e.get("is_assistance")]
         if not pool:
             continue
 
@@ -494,6 +608,23 @@ def _build_session(
             else:
                 bench_bo["sets"] = bench_bo.get("sets", 5)
             exercises.append(_scale(bench_bo, intensity, True, readiness_z))
+
+            # Bench assistance toward the paused-comp 315 (Larsen / close-grip /
+            # incline / weighted dip). Deterministic ISO-week rotation — each
+            # variant gets equal, consistent exposure so its own e1RM history
+            # accrues (instrumentation for a future assistance bandit), rather
+            # than the old date-seeded random pick that sampled unevenly.
+            bench_assist = BENCH_ASSISTANCE[assist_week % len(BENCH_ASSISTANCE)]
+            exercises.append(
+                _assistance_slot(bench_assist, wt, intensity, readiness_z))
+
+        # Deadlift top set → build the conventional 500 via SUBMAX assistance
+        # (deficit / speed-light / paused) rather than heavy grinding back-offs.
+        # Same deterministic weekly rotation as bench.
+        if ex_copy.get("name") == "Deadlift (Top Set)":
+            dl_assist = DEADLIFT_ASSISTANCE[assist_week % len(DEADLIFT_ASSISTANCE)]
+            exercises.append(
+                _assistance_slot(dl_assist, wt, intensity, readiness_z))
 
         # Back Squat top set → add back-off when intensity allows
         if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:
@@ -584,7 +715,8 @@ def generate(
         return [], []
 
     if action == "CARDIO":
-        return [], _build_cardio(intensity, ampk, recent_run_tss, readiness_z, quad_soreness_avg)
+        return [], _build_cardio(sim_date, intensity, ampk, recent_run_tss,
+                                 readiness_z, quad_soreness_avg, vdot)
 
     # All other actions: build strength session via knapsack.
     # The MPC intensity scalar already encodes the physiological prescription —
@@ -596,8 +728,11 @@ def generate(
         split, intensity, ampk, rng,
         readiness_z=readiness_z,
         weekly_set_targets=weekly_set_targets or {},
+        assist_week=sim_date.isocalendar()[1],
     )
-    cardio = _build_cardio(intensity, ampk, recent_run_tss, readiness_z, quad_soreness_avg) if action in ("TWO_A_DAY", "MIXED") else []
+    cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
+                            readiness_z, quad_soreness_avg, vdot)
+              if action in ("TWO_A_DAY", "MIXED") else [])
 
     return exercises, cardio
 
@@ -701,19 +836,18 @@ class SessionGenerator:
             load_lbs = 0.0
             load_pct = 0.0
             
-            # Simple heuristic mapping for lift names to keys
+            # Map lift names → the goal-lift keys emitted by compute_strength
+            # (GOAL_TARGETS names). Assistance variants (close-grip, incline,
+            # deficit, paused) inherit their parent goal lift's e1RM for load
+            # estimation; the RIR target then autoregulates the actual weight.
             lift_key = None
             name_l = name.lower()
             if "bench" in name_l:
-                lift_key = "bench"
+                lift_key = "Bench (paused comp)"
             elif "squat" in name_l:
-                lift_key = "squat"
+                lift_key = "Squat (comp)"
             elif "deadlift" in name_l:
-                lift_key = "deadlift"
-            elif "rdl" in name_l:
-                lift_key = "rdl"
-            elif "ohp" in name_l:
-                lift_key = "ohp"
+                lift_key = "Deadlift (conventional comp)"
 
             if lift_key and strength.get(lift_key):
                 e1rm = float(strength[lift_key].get("current_e1rm") or 0.0)

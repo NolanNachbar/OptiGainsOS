@@ -72,6 +72,33 @@ class HypertrophyVolumeEngine:
         self.landmarks[muscle] = lm
         return dict(lm)
 
+    def learn_from_response(
+        self,
+        muscle_slopes: dict,
+        soreness_by_muscle: dict,
+    ) -> dict:
+        """
+        Adapt every muscle's landmarks from its own measured response.
+
+        muscle_slopes      {muscle: e1RM-per-session slope} — the performance
+                           signal. Muscles absent from this dict have NO real
+                           strength signal yet, so their landmarks are left
+                           untouched (we don't move a landmark on noise).
+        soreness_by_muscle {muscle: [soreness, …]} from the check-in snapshot.
+
+        Returns {muscle: updated_landmark_dict} for the muscles that moved.
+        This closes the N=1 volume-landmark loop: MRV ratchets down only when
+        a muscle is both stalling AND sore, MAV creeps up while it's responding.
+        """
+        updated = {}
+        for muscle, slope in muscle_slopes.items():
+            if muscle not in self.landmarks:
+                continue
+            updated[muscle] = self.update_landmarks(
+                muscle, slope, soreness_by_muscle.get(muscle, [])
+            )
+        return updated
+
     def adjust_for_caloric_deficit(
         self,
         kcal_deficit: float,

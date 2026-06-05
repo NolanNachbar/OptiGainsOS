@@ -43,8 +43,9 @@ from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.program_synthesis  import ProgramSynthesisEngine
-from engine.strength_progression import StrengthProgressionRegistry
+from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
+from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
 from engine.exploration_manager  import ControlledExplorationManager
 from engine.resource_allocator   import (
     compute_reserve_score,
@@ -191,6 +192,7 @@ def save_engine_state(
     weekly_targets: dict = None,
     step_count: int = None,
     extra_synthesis: dict = None,
+    last_explored: list = None,
 ) -> bool:
     """Single upsert of all engine state blobs to engine_params."""
     prev_rows = sb_get("engine_params", {
@@ -205,6 +207,8 @@ def save_engine_state(
     guardrail_dict["exploration_state"] = exploration_manager.to_dict()
     if step_count is not None:
         guardrail_dict["step_count"] = step_count
+    if last_explored is not None:
+        guardrail_dict["last_explored"] = list(last_explored)
     if synthesis_engine is not None:
         synthesis_dict = synthesis_engine.to_dict()
         if weekly_targets is not None:
@@ -242,28 +246,69 @@ def determine_optimal_split_framework(compliance_rate, avg_soreness, performance
 
 # ── HRV helpers ───────────────────────────────────────────────────────────────
 
-def compute_hrv_z_3d(garmin_rows: list) -> float:
+def _metric_z_3d(recovery_rows: list, key: str, invert: bool = False):
     """
-    Compute 3-day rolling HRV z-score against a 30-day baseline.
-
-    garmin_rows expected to be sorted newest-first; each row may have
-    "hrv_rmssd" or "hrv" field.
+    3-day rolling z-score of one recovery metric vs its ~30-day baseline.
+    Positive = more recovered. `invert` for metrics where LOWER is better
+    (resting HR). Returns None when there isn't enough signal.
     """
-    def _hrv(row):
-        return float(row.get("hrv_rmssd") or row.get("hrv") or 0)
-
-    vals = [_hrv(r) for r in garmin_rows if _hrv(r) > 0]
+    series = sorted(
+        ((r.get("date", ""), float(r.get(key) or 0)) for r in recovery_rows if (r.get(key) or 0) > 0),
+        reverse=True,  # newest first
+    )
+    vals = [v for _, v in series]
     if len(vals) < 4:
-        return 0.0
-
+        return None
     mean = sum(vals) / len(vals)
     std  = (sum((v - mean) ** 2 for v in vals) / len(vals)) ** 0.5
     if std < 1e-6:
-        return 0.0
+        return None
+    avg_3 = sum(vals[:3]) / len(vals[:3])
+    z = (avg_3 - mean) / std
+    return -z if invert else z
 
-    recent_3 = vals[:3]
-    avg_3    = sum(recent_3) / len(recent_3)
-    return round((avg_3 - mean) / std, 4)
+
+def compute_readiness_z(recovery_rows: list) -> float:
+    """
+    Composite 3-day recovery z-score (positive = ready) from recovery_metrics.
+
+    Prefers HRV, but the current Garmin sync only populates resting_hr/sleep_score
+    (HRV comes back null), so this falls back to resting HR (inverted: lower RHR =
+    more recovered) and sleep score. Whichever signals are present are weighted-
+    averaged, so the engine autoregulates off real data instead of sitting at 0.
+    """
+    parts = []  # (weight, z)
+    for key, weight, invert in (("hrv", 1.0, False),
+                                ("resting_hr", 0.7, True),
+                                ("sleep_score", 0.5, False)):
+        z = _metric_z_3d(recovery_rows, key, invert)
+        if z is not None:
+            parts.append((weight, z))
+    if not parts:
+        return 0.0
+    return round(sum(w * z for w, z in parts) / sum(w for w, _ in parts), 4)
+
+
+# ── Per-muscle performance signal ─────────────────────────────────────────────
+
+def muscle_perf_slopes(registry: StrengthProgressionRegistry) -> dict:
+    """
+    {muscle: mean e1RM-per-session slope} derived from every tracked lift.
+
+    Each lift's e1RM trend (>=3 sessions) is attributed to the muscles it trains
+    via the shared muscle_map, then averaged per muscle. This is the only
+    response signal the volume-landmark loop and the exploration bandit get, so
+    muscles with no loaded-lift history simply don't appear (and stay un-nudged).
+    """
+    history = registry.to_dict().get("history", {})
+    acc: dict[str, list] = {}
+    for lift, e1rms in history.items():
+        if len(e1rms) < 3:
+            continue
+        slope = compute_trend_slope(e1rms)
+        for muscle in hypertrophy_muscles(lift):
+            acc.setdefault(muscle, []).append(slope)
+    return {m: sum(v) / len(v) for m, v in acc.items() if v}
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -315,6 +360,9 @@ def main():
           f"{len(log_rows)} sets → {len(progression_registry.to_dict()['history'])} tracked lifts")
     # Step counter for exploration epsilon schedule (week index)
     step_count = int(guardrail_state.get("step_count") or 0)
+    # Muscles the bandit probed (+1 set) last run — their reward gets recorded
+    # this run now that a week of response data has accrued.
+    last_explored = list(guardrail_state.get("last_explored") or [])
 
     # ── 2. Load recent athlete data ───────────────────────────────────────────
     athlete_rows = sb_get("athlete_state", {
@@ -347,13 +395,15 @@ def main():
         "maintenance_kcal": kcal_maintenance
     }
 
-    # ── Garmin HRV data ───────────────────────────────────────────────────────
-    garmin_rows = sb_get("garmin_daily_stats", {
-        "select": "date,hrv_rmssd,rhr",
+    # ── Garmin recovery data (HRV / resting HR / sleep) ───────────────────────
+    # Source of truth is recovery_metrics (written by the garmin-sync edge fn);
+    # the old garmin_daily_stats table does not exist.
+    recovery_rows = sb_get("recovery_metrics", {
+        "select": "date,hrv,resting_hr,sleep_score",
         "created_by": f"eq.{USER_ID}",
         "order": "date.desc", "limit": "30",
     })
-    hrv_z_3d = compute_hrv_z_3d(garmin_rows)
+    hrv_z_3d = compute_readiness_z(recovery_rows)
 
     # ── Recent session history ────────────────────────────────────────────────
     prescription_rows = sb_get("training_prescription", {
@@ -395,15 +445,25 @@ def main():
     recent_run_tss = sum((float(r.get("duration_seconds") or 0) / 60.0) * 0.9 for r in cardio_rows)
     weekly_km      = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
 
-    soreness_rows = sb_get("athlete_state", {
-        "select": "date,soreness",
+    # Per-region soreness from the morning check-in (daily_readiness.soreness_snapshot).
+    # athlete_state has no soreness column, so the previous read here was always 0 —
+    # the orthopedic mileage cap and the MRV-downgrade rule never saw real soreness.
+    soreness_rows = sb_get("daily_readiness", {
+        "select": "checkin_date,soreness_snapshot",
         "created_by": f"eq.{USER_ID}",
-        "order": "date.desc", "limit": "4",
+        "order": "checkin_date.desc", "limit": "7",
     })
-    quad_soreness_avg = 0.0
-    if soreness_rows:
-        vals = [float((r.get("soreness") or {}).get("quads", 0)) for r in soreness_rows]
-        quad_soreness_avg = sum(vals) / len(vals) if vals else 0.0
+    snapshots = [r.get("soreness_snapshot") for r in soreness_rows]
+    # soreness_snapshot is a 0–3 severity scale; the landmark/bandit/split rules
+    # all threshold on a 0–10 scale (avg_soreness > 7). Convert once here with the
+    # same 1+raw*3 mapping compute_athlete_state uses for its composite, so every
+    # downstream consumer sees one scale instead of silently never firing.
+    soreness_muscle = {
+        m: [1.0 + v * 3.0 for v in vals]
+        for m, vals in soreness_by_muscle(snapshots[:4]).items()  # last 4 days
+    }
+    quad_vals = soreness_muscle.get("quads", [])
+    quad_soreness_avg = sum(quad_vals) / len(quad_vals) if quad_vals else 0.0
 
     # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
@@ -444,6 +504,33 @@ def main():
         print(f"    {exercise:28s}: {cmd:13s} (latest e1RM {latest}, {len(hist)} sess)")
 
     # ── 4. Update volume landmarks ────────────────────────────────────────────
+    # Per-muscle e1RM response — drives both the landmark loop and the bandit.
+    perf_slopes = muscle_perf_slopes(progression_registry)
+
+    # 4a. Close last week's exploration loop: reward the muscle(s) we probed by
+    #     their actual response, penalised by soreness. Only muscles with a real
+    #     slope signal are scored — an un-measurable probe stays "unpulled" so
+    #     UCB keeps it eligible instead of pinning its value at a fake zero.
+    for muscle in last_explored:
+        slope = perf_slopes.get(muscle)
+        if slope is None:
+            continue
+        sore_vals = soreness_muscle.get(muscle, [])
+        avg_sore = sum(sore_vals) / len(sore_vals) if sore_vals else 0.0
+        reward = slope - 0.5 * max(0.0, avg_sore - 7.0)
+        exploration_manager.record_outcome(muscle, reward)
+        print(f"  Bandit reward: {muscle} ← {reward:+.3f} "
+              f"(slope {slope:+.3f}, soreness {avg_sore:.1f})")
+
+    # 4b. Learn each muscle's MEV/MAV/MRV from its own response + soreness
+    #     (the previously-dormant update_landmarks loop). MRV ratchets down only
+    #     when a muscle stalls AND is sore; MAV creeps up while it's responding.
+    learned = volume_engine.learn_from_response(perf_slopes, soreness_muscle)
+    if learned:
+        print(f"  Landmarks learned: "
+              f"{ {m: lm['MRV'] for m, lm in learned.items()} }")
+
+    # 4c. Environmental scaling on top of the learned landmarks.
     volume_engine.adjust_for_running(weekly_km)
 
     kcal_deficit      = float(caloric_balance.get("deficit_kcal")      or 0)
@@ -460,6 +547,8 @@ def main():
         mrv_dict[muscle] = min(mrv_dict.get(muscle, base_mrv) + extra, base_mrv + 2)
     if exploration_delta:
         print(f"  Exploration delta: {exploration_delta}")
+    # Remember which muscles were probed so next week can score their response.
+    new_last_explored = list(exploration_delta.keys())
 
     # ── 6. MILP synthesis ─────────────────────────────────────────────────────
     reserve_score = compute_reserve_score(hrv_z_3d)
@@ -505,7 +594,7 @@ def main():
     perf_trend = sum(perf_slopes) / len(perf_slopes) if perf_slopes else 0.0
 
     split_framework = determine_optimal_split_framework(
-        compliance_rate, quad_soreness_avg * 10, perf_trend, days_to_deadline
+        compliance_rate, quad_soreness_avg, perf_trend, days_to_deadline
     )
     print(f"  Split framework: {split_framework}  compliance={compliance_rate:.0%}  soreness={quad_soreness_avg:.2f}")
 
@@ -605,6 +694,7 @@ def main():
         progression_registry, exploration_manager, synthesis_engine,
         weekly_targets=weekly_targets, step_count=new_step,
         extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate},
+        last_explored=new_last_explored,
     )
 
     print(f"\n  Step count: {step_count} → {new_step}")

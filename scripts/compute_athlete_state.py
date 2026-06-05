@@ -30,6 +30,14 @@ from typing import Optional
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _SCRIPT_DIR)
 
+# Single source of truth for logged-sets → e1RM (canonical names, RIR-aware
+# Epley, ≤12-rep cap, competition-variant goal rollup). Imported outside the
+# numpy guard because compute_strength always runs and this needs no numpy.
+from engine.log_ingest import normalize_workout_logs, goal_histories, GOAL_TARGETS
+# Single source of truth for exercise/region → muscle mapping (shared with the
+# weekly orchestrator so per-muscle slopes and soreness never disagree).
+from engine.muscle_map import EXERCISE_MUSCLE_MAP, get_muscles
+
 try:
     import numpy as np
     from engine.banister_kalman     import BanisterKalman
@@ -142,15 +150,6 @@ def days_before(n: int) -> str:
 
 # ── Math helpers ──────────────────────────────────────────────────────────────
 
-def epley_e1rm(weight: float, reps: int) -> float:
-    """Epley estimated 1RM: weight × (1 + reps/30). Returns 0 for invalid input."""
-    if reps <= 0 or weight <= 0:
-        return 0.0
-    if reps == 1:
-        return float(weight)
-    return weight * (1.0 + reps / 30.0)
-
-
 def linear_regression(x_vals: list, y_vals: list) -> tuple:
     """Returns (slope, intercept). slope is per unit of x."""
     n = len(x_vals)
@@ -167,80 +166,8 @@ def linear_regression(x_vals: list, y_vals: list) -> tuple:
 
 
 # ── Exercise / muscle mappings ────────────────────────────────────────────────
-
-# Keyword → primary muscle groups.
-# Longer keywords checked first (via sorted by length) to prefer specific matches.
-EXERCISE_MUSCLE_MAP: dict[str, list[str]] = {
-    "romanian deadlift": ["hamstrings", "glutes"],
-    "rdl":               ["hamstrings", "glutes"],
-    "good morning":      ["hamstrings", "lower_back"],
-    "nordic curl":       ["hamstrings"],
-    "leg curl":          ["hamstrings"],
-    "hip thrust":        ["glutes", "hamstrings"],
-    "glute bridge":      ["glutes"],
-    "cable kickback":    ["glutes"],
-    "bulgarian split":   ["quads", "glutes"],
-    "leg extension":     ["quads"],
-    "leg press":         ["quads", "glutes"],
-    "hack squat":        ["quads"],
-    "lunge":             ["quads", "glutes"],
-    "step up":           ["quads", "glutes"],
-    "squat":             ["quads", "glutes"],
-    "deadlift":          ["back", "hamstrings", "glutes"],
-    "incline bench":     ["chest", "triceps"],
-    "decline bench":     ["chest", "triceps"],
-    "bench press":       ["chest", "triceps"],
-    "flat bench":        ["chest", "triceps"],
-    "dumbbell press":    ["chest", "triceps"],
-    "chest fly":         ["chest"],
-    "cable fly":         ["chest"],
-    "pec fly":           ["chest"],
-    "close grip":        ["triceps", "chest"],
-    "skull crusher":     ["triceps"],
-    "tricep pushdown":   ["triceps"],
-    "tricep extension":  ["triceps"],
-    "overhead tricep":   ["triceps"],
-    "tricep":            ["triceps"],
-    "dip":               ["chest", "triceps"],
-    "push up":           ["chest", "triceps"],
-    "pushup":            ["chest", "triceps"],
-    "overhead press":    ["shoulders", "triceps"],
-    "military press":    ["shoulders", "triceps"],
-    "shoulder press":    ["shoulders", "triceps"],
-    "lateral raise":     ["shoulders"],
-    "face pull":         ["rear_delts"],
-    "rear delt fly":     ["rear_delts"],
-    "reverse fly":       ["rear_delts"],
-    "reverse pec":       ["rear_delts"],
-    "upright row":       ["shoulders", "traps"],
-    "shrug":             ["traps"],
-    "barbell row":       ["back", "biceps"],
-    "bent over row":     ["back", "biceps"],
-    "pendlay row":       ["back", "biceps"],
-    "t-bar row":         ["back", "biceps"],
-    "chest supported":   ["back", "biceps"],
-    "seal row":          ["back", "biceps"],
-    "pull up":           ["back", "biceps"],
-    "pullup":            ["back", "biceps"],
-    "chin up":           ["back", "biceps"],
-    "chinup":            ["back", "biceps"],
-    "lat pulldown":      ["back", "biceps"],
-    "seated row":        ["back", "biceps"],
-    "cable row":         ["back", "biceps"],
-    "row":               ["back", "biceps"],
-    "preacher curl":     ["biceps"],
-    "hammer curl":       ["biceps"],
-    "incline curl":      ["biceps"],
-    "curl":              ["biceps"],
-    "ohp":               ["shoulders", "triceps"],
-    "plank":             ["abs"],
-    "crunch":            ["abs"],
-    "ab wheel":          ["abs"],
-    "hanging leg":       ["abs"],
-    "leg raise":         ["abs"],
-    "calf raise":        ["calves"],
-    "seated calf":       ["calves"],
-}
+# EXERCISE_MUSCLE_MAP and get_muscles() now live in engine.muscle_map (imported
+# above) so the daily compute and the weekly orchestrator share one definition.
 
 # Volume landmarks (sets/week): MEV=minimum effective, MAV=maximum adaptive, MRV=maximum recoverable
 MUSCLE_TARGETS: dict[str, dict] = {
@@ -259,34 +186,9 @@ MUSCLE_TARGETS: dict[str, dict] = {
     "calves":     {"mev": 8,  "mav": 16, "mrv": 24},
 }
 
-# Primary lifts to track — update targets as goals change
-TRACKED_LIFTS: dict[str, dict] = {
-    "squat": {
-        "keywords": ["back squat", "front squat", "squat"],
-        "exclude":  ["goblet", "box squat", "jump squat"],
-        "target":   405,
-    },
-    "bench": {
-        "keywords": ["bench press", "flat bench", "barbell bench"],
-        "exclude":  [],
-        "target":   315,
-    },
-    "deadlift": {
-        "keywords": ["deadlift"],
-        "exclude":  ["romanian", " rdl", "sumo", "trap bar", "hex bar"],
-        "target":   495,
-    },
-    "rdl": {
-        "keywords": ["romanian deadlift", "rdl"],
-        "exclude":  [],
-        "target":   365,
-    },
-    "ohp": {
-        "keywords": ["overhead press", "ohp", "military press", "standing press"],
-        "exclude":  [],
-        "target":   185,
-    },
-}
+# Goal lifts (the three competition variants) and their targets come from
+# engine.log_ingest — GOAL_TARGETS — so this file, the orchestrator, and the
+# audit can never drift on definitions or numbers.
 
 # Exercises that heavily tax the CNS (for CNS fatigue calculation)
 CNS_HEAVY: list[str] = [
@@ -294,51 +196,25 @@ CNS_HEAVY: list[str] = [
     "overhead press", "ohp", "pendlay", "military press",
 ]
 
-# Sorted keyword list (longest first) for O(n) muscle lookup
-_MUSCLE_KEYWORDS = sorted(EXERCISE_MUSCLE_MAP.keys(), key=len, reverse=True)
-
-
-def get_muscles(exercise_name: str) -> list[str]:
-    name = exercise_name.lower()
-    found: set[str] = set()
-    for kw in _MUSCLE_KEYWORDS:
-        if kw in name:
-            found.update(EXERCISE_MUSCLE_MAP[kw])
-    return list(found)
-
-
-def matches_lift(exercise_name: str, cfg: dict) -> bool:
-    name = exercise_name.lower()
-    for ex in cfg.get("exclude", []):
-        if ex in name:
-            return False
-    return any(kw in name for kw in cfg["keywords"])
-
-
 # ── Strength computation ──────────────────────────────────────────────────────
 
 def compute_strength(workout_logs: list) -> dict:
+    """
+    e1RM tracking for the three COMPETITION goal lifts, computed through the
+    shared engine.log_ingest pipeline (canonical names, RIR-aware Epley, ≤12-rep
+    cap, competition-variant rollup) so these numbers match the orchestrator's
+    StrengthProgressionRegistry and the offline audit exactly. The old keyword
+    tracker is gone — it used no RIR, stale targets (squat 405 / DL 495), and a
+    "bench press" keyword that matched the invalid touch-and-go single.
+    """
+    rows      = normalize_workout_logs(workout_logs)
+    goal_hist = goal_histories(rows)  # {goal: [(date, e1rm), ...]} chronological
+
     result: dict[str, dict] = {}
 
-    for lift_name, cfg in TRACKED_LIFTS.items():
-        # Collect max e1RM per date
-        by_date: dict[str, float] = {}
-        for log in workout_logs:
-            date = log.get("log_date", "")
-            for ex in log.get("exercises", []) or []:
-                if not matches_lift(ex.get("name", ""), cfg):
-                    continue
-                for s in ex.get("sets", []) or []:
-                    w = float(s.get("weight") or 0)
-                    r = int(s.get("reps") or 0)
-                    e = epley_e1rm(w, r)
-                    if e > by_date.get(date, 0):
-                        by_date[date] = e
-
-        if not by_date:
+    for lift_name, sorted_sessions in goal_hist.items():
+        if not sorted_sessions:
             continue
-
-        sorted_sessions = sorted(by_date.items())  # [(date, e1rm), ...]
         n = len(sorted_sessions)
 
         # Current e1RM: average of last 3 sessions (smoothed, not just latest)
@@ -371,7 +247,7 @@ def compute_strength(workout_logs: list) -> dict:
             stall_risk = 0.0
 
         # ETA to target
-        target = cfg.get("target")
+        target = GOAL_TARGETS.get(lift_name)
         eta_days = None
         if target:
             if current_e1rm >= target:
@@ -782,22 +658,29 @@ def compute_hrv_zscore(recovery_rows: list) -> float:
 
 
 def compute_soreness_composite(checkin: Optional[dict]) -> float:
-    """Composite soreness 1–10 from morning check-in for Kalman noise scaling."""
+    """
+    Composite soreness 1–10 from the morning check-in for Kalman noise scaling.
+
+    Reads the per-region `soreness_snapshot` jsonb (keys Chest/Back/Quads/…),
+    which is what the check-in actually writes — the old per-column fields
+    (soreness_chest, …) never existed, so this always returned the 5.0 default.
+    Falls back to the `soreness` / `soreness_score` scalar, then to 5.0.
+    """
     if not checkin:
         return 5.0
-    soreness_fields = [
-        checkin.get("soreness_chest"),
-        checkin.get("soreness_back"),
-        checkin.get("soreness_legs"),
-        checkin.get("soreness_shoulders"),
-        checkin.get("soreness_arms"),
-    ]
-    valid = [float(v) for v in soreness_fields if v is not None]
-    if not valid:
-        return 5.0
-    # Convert 0-3 scale to 1-10
-    avg_03 = sum(valid) / len(valid)
-    return round(1.0 + avg_03 * 3.0, 1)
+    snapshot = checkin.get("soreness_snapshot")
+    if isinstance(snapshot, dict) and snapshot:
+        valid = [float(v) for v in snapshot.values() if v is not None]
+        if valid:
+            # Snapshot regions are a 0-3 severity scale → map to 1-10.
+            avg_03 = sum(valid) / len(valid)
+            return round(1.0 + avg_03 * 3.0, 1)
+    scalar = checkin.get("soreness")
+    if scalar is None:
+        scalar = checkin.get("soreness_score")
+    if scalar is not None:
+        return round(float(scalar), 1)
+    return 5.0
 
 
 def compute_normalized_cardio_trimp(recovery_rows: list) -> float:
@@ -925,9 +808,9 @@ def main():
 
     # Summary to console
     print(f"\n  Strength lifts tracked: {list(strength.keys())}")
-    if strength.get("squat"):
-        sq = strength["squat"]
-        print(f"    squat e1RM={sq['current_e1rm']}lbs  rate={sq['progression_rate_lbs_per_week']}lbs/wk  stall={sq['stall_risk']}")
+    for _lift, _d in strength.items():
+        print(f"    {_lift}: e1RM={_d['current_e1rm']}lbs  rate={_d['progression_rate_lbs_per_week']}lbs/wk  "
+              f"stall={_d['stall_risk']}  (target {_d['target']}, {_d['sessions']} sessions)")
     print(f"  Recovery: score={recovery.get('score')}  readiness={recovery.get('push_readiness')}  hrv_trend={recovery.get('hrv_trend')}")
     print(f"  Fatigue:  TSB={fatigue.get('tsb')}  CNS={fatigue.get('cns_fatigue')}  interp={fatigue.get('interpretation')}")
     print(f"  Nutrition: {nutrition.get('avg_calories_7d')} kcal avg  {nutrition.get('avg_protein_7d')}g protein  trend={nutrition.get('weight_trend_lbs_per_week')} lbs/wk")

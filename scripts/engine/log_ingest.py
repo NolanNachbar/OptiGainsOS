@@ -34,6 +34,7 @@ ALIASES = {
     "barbell squats": "Barbell Squat",
     "zercher squats": "Zercher Squat",
     "chest-supported row": "Chest-Supported Row",
+    "chest-supported rows": "Chest-Supported Row",
     "chest-supported row (machine)": "Chest-Supported Row",
     "lat pulldowns": "Lat Pulldown",
     "rdl": "Romanian Deadlift",
@@ -99,13 +100,21 @@ def load_sets_csv(path: str) -> list:
                 continue
             if reps <= 0:
                 continue
+            # Bench-Everyday multi-rep back-offs carried reps in reserve (RIR 2);
+            # their heavy TOP SINGLES (1 rep) were max-effort, so RIR 0 — applying
+            # +2 to a 310x1 single wrongly inflated its e1RM to ~341 (Nolan's clean
+            # max is ~275; those singles were touch-and-go, not a clean-bench proxy).
+            if is_bench_everyday(r["workout_name"]) and reps >= 2:
+                rir = BENCH_EVERYDAY_RIR
+            else:
+                rir = FAILURE_RIR
             rows.append({
                 "date": r["date"].strip(),
                 "workout": r["workout_name"].strip(),
                 "exercise": canon(r["exercise"]),
                 "weight": weight,
                 "reps": reps,
-                "rir": BENCH_EVERYDAY_RIR if is_bench_everyday(r["workout_name"]) else FAILURE_RIR,
+                "rir": rir,
             })
     rows.sort(key=lambda x: x["date"])
     return rows
@@ -186,6 +195,46 @@ def build_histories(rows: list):
     return e1rm_hist, rep_hist, best_set
 
 
+# ── rows → goal series ────────────────────────────────────────────────────────
+
+def _goal_best_sets(rows: list, goal_lifts: dict) -> dict:
+    """
+    {goal: [(date, best_set_dict), ...]} — per training-day best member set for
+    each GOAL aggregate. Single definition of the competition-variant rollup,
+    shared by populate_registry (→ engine) and goal_histories (→ athlete_state).
+    """
+    _, _, best_set = build_histories(rows)
+    out = {}
+    for goal, members in goal_lifts.items():
+        per_day = {}  # date -> (e1rm, set)
+        for ex, series in best_set.items():
+            if ex not in members:
+                continue
+            for d, s in series:
+                e = compute_e1rm(s["weight"], s["reps"], s["rir"])
+                if e > per_day.get(d, (0.0, None))[0]:
+                    per_day[d] = (e, s)
+        out[goal] = [(d, per_day[d][1]) for d in sorted(per_day)]
+    return out
+
+
+def goal_histories(rows: list, goal_lifts: dict = None) -> dict:
+    """
+    {goal: [(date, best_e1rm), ...]} chronological per-day e1RM for each GOAL
+    aggregate. Empty goals are dropped. Same RIR-aware, ≤12-rep-cap, canonical
+    pipeline the orchestrator's registry uses — so any consumer (e.g.
+    compute_athlete_state) lands on identical numbers.
+    """
+    if goal_lifts is None:
+        goal_lifts = GOAL_LIFTS
+    out = {}
+    for goal, series in _goal_best_sets(rows, goal_lifts).items():
+        if not series:
+            continue
+        out[goal] = [(d, compute_e1rm(s["weight"], s["reps"], s["rir"])) for d, s in series]
+    return out
+
+
 # ── rows → registry ───────────────────────────────────────────────────────────
 
 def populate_registry(registry, rows: list, goal_lifts: dict = None):
@@ -205,17 +254,8 @@ def populate_registry(registry, rows: list, goal_lifts: dict = None):
         for _d, s in series:
             registry.log_set(ex, s["weight"], s["reps"], s["rir"])
 
-    for goal, members in goal_lifts.items():
-        per_day = {}  # date -> (e1rm, set)
-        for ex, series in best_set.items():
-            if ex not in members:
-                continue
-            for d, s in series:
-                e = compute_e1rm(s["weight"], s["reps"], s["rir"])
-                if e > per_day.get(d, (0.0, None))[0]:
-                    per_day[d] = (e, s)
-        for d in sorted(per_day):
-            s = per_day[d][1]
+    for goal, series in _goal_best_sets(rows, goal_lifts).items():
+        for _d, s in series:
             registry.log_set(goal, s["weight"], s["reps"], s["rir"])
 
     return registry
