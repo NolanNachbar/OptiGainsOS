@@ -1,4 +1,4 @@
-import { useState, useRef, lazy, Suspense } from "react";
+import { useState, useRef } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,6 @@ import { supabase } from "@/api/supabaseClient";
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
-const StaticRouteMap = lazy(() => import("@/components/strava/StaticRouteMap"));
 
 export default function Workouts({ defaultTab = "activity-log", hideHeader = false }) {
   const { user } = useAuth();

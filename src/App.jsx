@@ -24,7 +24,6 @@ const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
 const QuickWorkout = lazy(() => import('./pages/QuickWorkout'));
 const ProgramDetail = lazy(() => import('./pages/ProgramDetail'));
 const ProgramBuilder = lazy(() => import('./pages/ProgramBuilder'));
-const StravaCallback = lazy(() => import('./pages/StravaCallback'));
 const RecoveryDetail = lazy(() => import('./pages/RecoveryDetail'));
 const Mind = lazy(() => import('./pages/Mind'));
 const Career = lazy(() => import('./pages/Career'));
@@ -87,14 +86,6 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route
-                    path="/strava-callback"
-                    element={
-                      <ProtectedRoute>
-                        <StravaCallback />
-                      </ProtectedRoute>
-                    }
-                  />
                   <Route path="/app" element={<Navigate to="/dashboard" replace />} />
                   <Route
                     path="/program/:id"

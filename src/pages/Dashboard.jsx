@@ -168,15 +168,15 @@ export default function Dashboard() {
     queryKey: ['weeklyCardio', weekStart, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cardio_sessions')
-        .select('distance_meters, moving_time_seconds, calories')
+        .from('garmin_activities')
+        .select('distance_meters, moving_time_seconds:duration_seconds, calories')
         .eq('created_by', user.id)
-        .gte('start_date', weekStart + 'T00:00:00')
-        .lte('start_date', weekEnd + 'T23:59:59');
+        .gte('activity_date', weekStart)
+        .lte('activity_date', weekEnd);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!profile?.strava_access_token,
+    enabled: !!user,
   });
   const weeklyCardioMiles = weeklyCardio.reduce((s, c) => s + (c.distance_meters || 0) / 1609.34, 0);
   const weeklyCardioMinutes = Math.round(weeklyCardio.reduce((s, c) => s + (c.moving_time_seconds || 0) / 60, 0));
@@ -186,14 +186,14 @@ export default function Dashboard() {
     queryKey: ['allCardioSessions', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cardio_sessions')
-        .select('start_date, moving_time_seconds, average_heartrate')
+        .from('garmin_activities')
+        .select('start_date:activity_date, moving_time_seconds:duration_seconds, average_heartrate:avg_hr')
         .eq('created_by', user.id)
-        .order('start_date', { ascending: false });
+        .order('activity_date', { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!profile?.strava_access_token,
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -783,7 +783,6 @@ export default function Dashboard() {
                   cardioSessions={allCardioSessions}
                   workoutLogs={workoutLogs}
                   profile={profile}
-                  hasStrava={!!profile?.strava_access_token}
                 />
               </div>
             </Card>

@@ -87,9 +87,6 @@ export const queryKeys = {
   // Shared programs
   sharedPrograms: (userId) => ['sharedPrograms', userId],
 
-  // Cardio sessions (Strava)
-  cardioSessions: (userId) => ['cardioSessions', userId],
-
   // Misc
   weeklyWorkoutLogs: (weekStart, userId) => ['weeklyWorkoutLogs', weekStart, userId],
   lastWorkoutLog: (workoutId, userId) => ['lastWorkoutLog', workoutId, userId],

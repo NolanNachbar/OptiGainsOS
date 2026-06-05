@@ -36,8 +36,7 @@ const mockProfiles = [
     daily_calorie_goal: 2800,
     daily_protein_goal: 180,
     daily_carbs_goal: 200,
-    daily_fats_goal: 65,
-    strava_access_token: 'mock-token'
+    daily_fats_goal: 65
   }
 ];
 
@@ -109,8 +108,8 @@ const mockLogs = [
   }
 ];
 
-const mockCardio = [
-  { distance_meters: 5000, moving_time_seconds: 1500, calories: 400, start_date: new Date().toISOString(), created_by: '00000000-0000-0000-0000-000000000000' }
+const mockGarminActivities = [
+  { activity_date: getTodayLocalDateStr(), activity_type: 'running', distance_meters: 5000, duration_seconds: 1500, avg_hr: 152, max_hr: 171, calories: 400, created_by: '00000000-0000-0000-0000-000000000000' }
 ];
 
 const mockRecovery = [
@@ -155,7 +154,7 @@ const mockDataMap = {
   food_entries: mockFood,
   body_weight_entries: mockWeights,
   workout_logs: mockLogs,
-  cardio_sessions: mockCardio,
+  garmin_activities: mockGarminActivities,
   recovery_metrics: mockRecovery,
   program_enrollments: mockEnrollments,
   programs: mockPrograms
@@ -227,7 +226,6 @@ class DatabaseAdapter {
       SharedRecipeReaction: this.createEntity('shared_recipe_reactions'),
       SharedRecipeComment: this.createEntity('shared_recipe_comments'),
       ExerciseReaction: this.createEntity('exercise_reactions'),
-      CardioSession: this.createEntity('cardio_sessions'),
       DailyReadiness: this.createEntity('daily_readiness'),
       RecoveryMetrics: this.createEntity('recovery_metrics'),
       ReadingLog: this.createEntity('reading_log'),

@@ -65,6 +65,43 @@ def vdot_from_effort(distance_m: float, time_secs: float) -> float:
     return round(vo2 / frac, 2)
 
 
+def pct_vo2max_from_hr(avg_hr: float, hr_max: float) -> float:
+    """
+    Fraction of VO2max sustained during a run, inferred from heart rate.
+
+    Uses Swain et al. (1994): %VO2max = 1.5472·%HRmax − 57.53. This lets a
+    *submaximal* run (an easy/base effort) yield a true VO2max estimate — the
+    duration-based Daniels fraction assumes the run was a max race effort and so
+    would badly underestimate VDOT from easy mileage.
+
+    Clamped to [0.45, 1.0]; returns 0 on bad input so callers can skip the run.
+    """
+    if avg_hr <= 0 or hr_max <= 0:
+        return 0.0
+    pct_hrmax = (avg_hr / hr_max) * 100.0
+    frac = (1.5472 * pct_hrmax - 57.53) / 100.0
+    return max(0.45, min(1.0, frac))
+
+
+def vdot_from_hr_effort(distance_m: float, time_secs: float,
+                        avg_hr: float, hr_max: float) -> float:
+    """
+    HR-corrected VDOT from a (possibly submaximal) run.
+
+    VO2 cost of the pace is a biomechanical constant; dividing by the
+    HR-inferred %VO2max recovers VO2max regardless of how hard the run was.
+    Returns 0 if inputs are invalid.
+    """
+    if distance_m <= 0 or time_secs <= 0:
+        return 0.0
+    frac = pct_vo2max_from_hr(avg_hr, hr_max)
+    if frac <= 0:
+        return 0.0
+    v   = distance_m / (time_secs / 60.0)   # m/min
+    vo2 = vo2_at_velocity(v)
+    return round(vo2 / frac, 2)
+
+
 def velocity_for_fraction(vdot: float, fraction: float) -> float:
     """
     Invert the VO2-velocity curve to find pace for a given VO2max fraction.
@@ -125,6 +162,38 @@ class VDOTEngine:
         # Rolling 3-effort average for noise resistance
         recent     = self._vdot_history[-3:]
         self.vdot  = round(sum(recent) / len(recent), 1)
+
+    def set_from_recent_runs(self, runs: list, hr_max: float,
+                             window: int = 4) -> Optional[float]:
+        """
+        Deterministically (re)derive VDOT from recent Garmin runs.
+
+        `runs`: dicts with distance_meters, duration_seconds, avg_hr — newest
+        first. Each qualifying run (≥800 m, has HR) is HR-corrected via
+        `vdot_from_hr_effort`; VDOT is the mean over the most recent `window`.
+
+        This is idempotent: it recomputes from source rows every call rather than
+        accumulating, so re-running the daily compute on the same Garmin data
+        won't drift the number. Returns the new VDOT, or None if no run qualified
+        (in which case VDOT is left untouched).
+        """
+        ests: list = []
+        for r in runs:
+            dist = float(r.get("distance_meters") or 0)
+            secs = float(r.get("duration_seconds") or 0)
+            hr   = float(r.get("avg_hr") or 0)
+            if dist < 800 or secs <= 0 or hr <= 0:
+                continue
+            v = vdot_from_hr_effort(dist, secs, hr, hr_max)
+            if 20 <= v <= 85:
+                ests.append(v)
+            if len(ests) >= window:
+                break
+        if not ests:
+            return None
+        self._vdot_history = ests
+        self.vdot = round(sum(ests) / len(ests), 1)
+        return self.vdot
 
     # ── Pace zones ────────────────────────────────────────────────────────────
 

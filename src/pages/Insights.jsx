@@ -56,14 +56,14 @@ export default function Insights() {
     queryKey: ['allCardioSessions', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cardio_sessions')
-        .select('start_date, moving_time_seconds, average_heartrate')
+        .from('garmin_activities')
+        .select('start_date:activity_date, moving_time_seconds:duration_seconds, average_heartrate:avg_hr')
         .eq('created_by', user.id)
-        .order('start_date', { ascending: false });
+        .order('activity_date', { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!profile?.strava_access_token,
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -217,7 +217,6 @@ export default function Insights() {
                   cardioSessions={allCardioSessions}
                   workoutLogs={workoutLogs}
                   profile={profile}
-                  hasStrava={!!profile?.strava_access_token}
                 />
               </div>
 

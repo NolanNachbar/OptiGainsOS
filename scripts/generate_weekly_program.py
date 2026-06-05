@@ -436,11 +436,12 @@ def main():
         for r in reversed(prescription_rows)
     ]
 
-    # ── Recent cardio TSS ─────────────────────────────────────────────────────
-    cardio_rows = sb_get("cardio_sessions", {
-        "select": "start_date,duration_seconds,distance_meters",
+    # ── Recent cardio TSS (from Garmin runs) ──────────────────────────────────
+    cardio_rows = sb_get("garmin_activities", {
+        "select": "activity_date,duration_seconds,distance_meters",
+        "activity_type": "eq.running",
         "created_by": f"eq.{USER_ID}",
-        "order": "start_date.desc", "limit": "7",
+        "order": "activity_date.desc", "limit": "7",
     })
     recent_run_tss = sum((float(r.get("duration_seconds") or 0) / 60.0) * 0.9 for r in cardio_rows)
     weekly_km      = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)

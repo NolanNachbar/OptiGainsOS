@@ -36,7 +36,6 @@ import ProgramDurationModal from "@/components/workouts/ProgramDurationModal";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { BookOpen, Activity } from "lucide-react";
-import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPE_COLORS } from "@/lib/strava";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SegmentedCircularProgress = ({
@@ -228,23 +227,23 @@ export default function Schedule() {
   };
 
   const { data: weeklyCardio = [] } = useQuery({
-    queryKey: ['cardioSessions', user?.id, format(currentWeekStart, 'yyyy-MM-dd')],
+    queryKey: ['garminActivities', user?.id, format(currentWeekStart, 'yyyy-MM-dd')],
     queryFn: async () => {
       const weekEnd = addDays(currentWeekStart, 7);
       const { data, error } = await supabase
-        .from('cardio_sessions')
-        .select('*')
+        .from('garmin_activities')
+        .select('id, name, distance_meters, moving_time_seconds:duration_seconds, average_heartrate:avg_hr, start_date:activity_date')
         .eq('created_by', user.id)
-        .gte('start_date', currentWeekStart.toISOString())
-        .lt('start_date', weekEnd.toISOString());
+        .gte('activity_date', format(currentWeekStart, 'yyyy-MM-dd'))
+        .lt('activity_date', format(weekEnd, 'yyyy-MM-dd'));
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!profile?.strava_access_token,
+    enabled: !!user,
   });
 
   const getCardioForDate = (day) =>
-    weeklyCardio.filter(s => isSameDay(new Date(s.start_date), day));
+    weeklyCardio.filter(s => s.start_date === format(day, 'yyyy-MM-dd'));
 
   const schedule = [
     ...dbSchedule,
@@ -1973,7 +1972,7 @@ export default function Schedule() {
                       Cardio
                     </h3>
                     <div className="space-y-2">
-                      {/* Show logged Strava sessions if any exist, otherwise show planned program sessions */}
+                      {/* Show logged Garmin runs if any exist, otherwise show planned program sessions */}
                       {getCardioForDate(dayDetailDate).length > 0
                         ? getCardioForDate(dayDetailDate).map((session) => {
                             const secs = session.moving_time_seconds;

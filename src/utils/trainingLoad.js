@@ -1,6 +1,6 @@
 import { format, subDays, parseISO, differenceInDays } from "date-fns";
 
-// ─── hrTSS for Strava cardio sessions ───────────────────────────────────────
+// ─── hrTSS for Garmin cardio sessions ───────────────────────────────────────
 // Uses TRIMP-based heart rate training stress score.
 // maxHR estimated from age (220 - age) if not provided.
 

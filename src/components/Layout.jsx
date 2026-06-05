@@ -7,7 +7,6 @@ import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import Logo from "@/components/Logo";
-import { useStravaAutoSync } from "@/hooks/useStravaAutoSync";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
 
@@ -21,7 +20,6 @@ const navigationItems = [
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const { profile } = useProfile();
-  useStravaAutoSync();
   const [showCalculators, setShowCalculators] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);

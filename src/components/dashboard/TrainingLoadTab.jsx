@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { Activity, Lock, TrendingUp, BarChart3 } from "lucide-react";
+import { Lock, TrendingUp, BarChart3 } from "lucide-react";
 import { getWeeklyTSSData, getCTLData, hasSufficientLoadData, getMaxHR } from "@/utils/trainingLoad";
 
 function WeeklyTSSBars({ data }) {
@@ -132,7 +132,7 @@ function TSBStatusBadge({ tsb }) {
   return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">Deep fatigue — consider a deload</span>;
 }
 
-export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, hasStrava }) {
+export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile }) {
   const maxHR = getMaxHR(profile);
 
   const weeklyData = useMemo(
@@ -155,13 +155,6 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
 
   return (
     <div className="space-y-4">
-      {!hasStrava && (
-        <div className="flex items-center gap-2.5 text-xs text-orange-400 bg-orange-500/10 rounded-xl px-4 py-3 border border-orange-500/20 shadow-[0_0_8px_rgba(249,115,22,0.1)]">
-          <Activity className="w-4 h-4 text-orange-400 shrink-0" />
-          <span>Connect Strava to include cardio TSS. Lifting TSS is calculated from RPE logged in your sets.</span>
-        </div>
-      )}
-
       {/* Weekly TSS */}
       <div className="border border-charcoal-border bg-charcoal-surface2/30 rounded-xl p-4">
         <div className="mb-2">
@@ -179,7 +172,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
             <WeeklyTSSBars data={weeklyData} />
           ) : (
             <div className="text-center py-8 text-sm text-slate-600 font-medium">
-              Log workouts with RPE or connect Strava to see training load
+              Log workouts with RPE or sync a Garmin run to see training load
             </div>
           )}
         </div>

@@ -523,9 +523,10 @@ def main():
             
             hrv_z_3d = overreach.get("hrv_z_3d") or 0.0
             
-            cardio_rows = sb_get("cardio_sessions", {
-                "select": "start_date,duration_seconds,distance_meters",
-                "order": "start_date.desc", "limit": "7",
+            cardio_rows = sb_get("garmin_activities", {
+                "select": "activity_date,duration_seconds,distance_meters",
+                "activity_type": "eq.running",
+                "order": "activity_date.desc", "limit": "7",
             })
             weekly_km = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
             

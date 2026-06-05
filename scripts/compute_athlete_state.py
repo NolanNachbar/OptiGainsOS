@@ -789,13 +789,14 @@ def main():
     checkin = checkin_rows[0] if checkin_rows else None
     print(f"  daily_readiness: {'found' if checkin else 'none'}")
 
-    # Fetch cardio sessions for VDOT updates
-    cardio_rows = sb_get("cardio_sessions", {
-        "select": "*",
-        "start_date": f"gte.{days_before(14)}",
-        "order": "start_date.desc",
+    # Fetch Garmin runs for VDOT derivation (newest first, recent window).
+    garmin_runs = sb_get("garmin_activities", {
+        "select": "activity_date,activity_type,distance_meters,duration_seconds,avg_hr,max_hr",
+        "activity_type": "eq.running",
+        "activity_date": f"gte.{days_before(42)}",
+        "order": "activity_date.desc",
     })
-    print(f"  cardio_sessions: {len(cardio_rows)} records")
+    print(f"  garmin_activities (runs, 42d): {len(garmin_runs)} records")
 
     print("\nComputing metrics...")
 
@@ -873,14 +874,20 @@ def main():
               f"tau_fat_adj={nutrition_mod_out['tau_fat_adj']}  "
               f"reliability={nutrition_mod_out['metric_reliability']}")
 
-        # 7. VDOT: update from any timed runs logged today or this week
-        for row in cardio_rows:
-            if row.get("start_date", "") == TODAY:
-                dist_m = float(row.get("distance_meters") or 0)
-                secs   = float(row.get("duration_seconds") or 0)
-                if dist_m >= 800 and secs > 0:
-                    vdot_eng.record_effort(dist_m, secs)
-                    print(f"  VDOT updated from run: {dist_m}m in {secs}s → VDOT={vdot_eng.vdot}")
+        # 7. VDOT: derive from real Garmin runs (HR-corrected for effort).
+        # Garmin run data lives in garmin_activities with avg_hr, so submax base
+        # runs can be effort-corrected via HR instead of being mistaken for max
+        # efforts (which would lowball VDOT).
+        hr_max = max(
+            float(max((float(r.get("max_hr") or 0) for r in garmin_runs), default=0)),
+            round(208.0 - 0.7 * float(profile.get("age") or 25)),
+        )
+        new_vdot = vdot_eng.set_from_recent_runs(garmin_runs, hr_max)
+        if new_vdot is not None:
+            print(f"  VDOT derived from {len(garmin_runs)} Garmin runs "
+                  f"(HRmax={hr_max:.0f}) → VDOT={new_vdot}")
+        else:
+            print(f"  VDOT: no qualifying Garmin runs; holding VDOT={vdot_eng.vdot}")
         vdot_zones_out = vdot_eng.pace_zones()
         print(f"  VDOT: {vdot_zones_out['current_vdot']} (target {vdot_zones_out['target_vdot']}, "
               f"gap {vdot_zones_out['vdot_gap']})")

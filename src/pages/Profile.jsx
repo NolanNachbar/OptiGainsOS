@@ -15,10 +15,9 @@ import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK
 import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
 import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Trash2, AlertTriangle, Flame, Users, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
+import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
-import StravaConnect from "@/components/strava/StravaConnect";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -728,11 +727,6 @@ export default function Profile({ hideHeader }) {
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />
               <NotificationSettings />
-
-              <SectionDivider />
-
-              <SectionHeader icon={Users} title="Connected Apps" />
-              <StravaConnect />
 
               <SectionDivider />
 
