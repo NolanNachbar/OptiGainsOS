@@ -6,8 +6,8 @@ import { calculateEWMA } from "@/utils/coachingUtils";
 export default function WeightProgressChart({ data, weightUnit = 'lbs', className }) {
   if (!data || data.length === 0) {
     return (
-      <div className={`w-full ${className || 'h-80'} flex items-center justify-center bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]`}>
-        <p className="text-[#555555] text-[13px]">No weight data available</p>
+      <div className={`w-full ${className || 'h-80'} flex items-center justify-center bg-charcoal-surface rounded-xl border border-charcoal-border`}>
+        <p className="text-slate-500 text-[13px]">No weight data available</p>
       </div>
     );
   }
@@ -29,9 +29,9 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       const rawEntry = payload.find(p => p.dataKey === 'weight');
       const trendEntry = payload.find(p => p.dataKey === 'trendWeight');
       return (
-        <div className="bg-[#202020] p-3 rounded-xl border border-[#2a2a2a]">
+        <div className="bg-charcoal-elevated p-3 rounded-xl border border-charcoal-border">
           <p className="font-semibold text-[13px] text-white">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {rawEntry && <p className="text-[12px] text-[#a0a0a0] font-mono">{rawEntry.value} {weightUnit}</p>}
+          {rawEntry && <p className="text-[12px] text-slate-400 font-mono">{rawEntry.value} {weightUnit}</p>}
           {trendEntry && <p className="text-[12px] font-mono text-brand">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
@@ -42,24 +42,24 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
   return (
     <div className="w-full">
       <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Starting</div>
-          <div className="text-[18px] font-bold font-mono text-white">{startWeight} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span></div>
+        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Starting</div>
+          <div className="text-[18px] font-bold font-mono text-white">{startWeight} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Current</div>
-          <div className="text-[18px] font-bold font-mono text-white">{currentWeight} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span></div>
+        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Current</div>
+          <div className="text-[18px] font-bold font-mono text-white">{currentWeight} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Trend</div>
-          <div className="text-[18px] font-bold font-mono text-brand">{currentTrend} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span></div>
+        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Trend</div>
+          <div className="text-[18px] font-bold font-mono text-brand">{currentTrend} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-xs text-[#555555] uppercase tracking-wide mb-1">Change</div>
+        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Change</div>
           <div className={`text-[18px] font-bold font-mono ${weightChange > 0 ? 'text-[#fbbf24]' : weightChange < 0 ? 'text-[#4ade80]' : 'text-white'}`}>
-            {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-[#555555] font-sans font-normal">{weightUnit}</span>
+            {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span>
           </div>
-          <div className="text-xs text-[#555555] font-mono mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
+          <div className="text-xs text-slate-500 font-mono mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
       </div>
 
@@ -105,9 +105,9 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-[#555555] font-mono">
+      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-slate-500 font-mono">
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px bg-[#333333]" />
+          <div className="w-4 h-px bg-slate-700" />
           Raw
         </span>
         <span className="flex items-center gap-1.5">

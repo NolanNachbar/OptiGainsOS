@@ -53,12 +53,12 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-charcoal flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-16 h-16 mx-auto mb-4" />
           <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
-          <p className="text-[13px] text-[#a0a0a0] mt-2">Set your new password</p>
+          <p className="text-[13px] text-slate-400 mt-2">Set your new password</p>
         </div>
 
         <Card>
@@ -70,7 +70,7 @@ export default function ResetPassword() {
               <div>
                 <Label htmlFor="password" className="text-white">New Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
                     id="password"
                     type="password"
@@ -87,7 +87,7 @@ export default function ResetPassword() {
               <div>
                 <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -118,7 +118,7 @@ export default function ResetPassword() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-[#a0a0a0]">
+              <p className="text-slate-400">
                 Remember your password?{' '}
                 <Link to="/login" className="text-brand hover:text-[#d9ff1a] font-medium">
                   Sign in

@@ -28,7 +28,7 @@ export default function Train() {
   }, [tabParam]);
 
   return (
-    <div className="bg-[#09090e] min-h-screen text-white">
+    <div className="bg-charcoal min-h-screen text-white">
       {/* Sub-Tab Navigation Header */}
       <div className="border-b border-charcoal-border bg-charcoal-surface/60 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">

@@ -98,6 +98,101 @@ class NutritionModulator:
             "note":               note,
         }
 
+    # ── Recovery-gated deficit recommendation ────────────────────────────────
+    # The inverse of modulate(): instead of "given intake, what's the recovery
+    # cost?", this answers "given recovery, how aggressive a deficit is safe?".
+    # Goal: stay as lean as possible WITHOUT compromising recovery. Start from an
+    # aggressive target deficit and gate it down by the recovery signals.
+
+    # Tunables (documented so they're easy to dial in):
+    AGGRESSIVE_TARGET_DEFICIT = 0.25   # the deficit we'd run if recovery were perfect
+    OVERREACH_HEADROOM        = 0.15   # overreaching → collapse deficit toward maintenance
+    HRV_GATE_GAIN             = 0.30   # how hard suppressed HRV pulls the deficit down
+    RHR_GATE_GAIN             = 0.25   # how hard elevated RHR pulls it down
+    TSB_GATE_GAIN             = 0.04   # per unit of deep negative form (fatigue)
+    POOR_SLEEP_SCORE          = 60     # below this, multiply headroom by POOR_SLEEP_FACTOR
+    POOR_SLEEP_FACTOR         = 0.70
+    PROTEIN_G_PER_LB          = 1.0    # high protein to retain muscle in a deficit
+    MIN_FAT_G_PER_LB          = 0.30   # hormonal floor on fat
+
+    @staticmethod
+    def _clamp(x, lo, hi):
+        return max(lo, min(hi, x))
+
+    def recommend_deficit(self, signals: dict, target_deficit_ratio: float = None) -> dict:
+        """
+        Recommend today's calorie target from recovery state.
+
+        signals (all optional, sensible defaults if missing):
+          overreaching : bool   — engine overreach guardrail tripped
+          hrv_z        : float   — 7d HRV z-score (negative = below baseline = bad)
+          rhr_z        : float   — resting-HR z-score (positive = elevated = bad)
+          tsb_banister : float   — Banister form (very negative = deep fatigue)
+          sleep_score  : float   — last night / recent sleep score 0-100
+          bodyweight_lb: float   — for protein/fat floors
+        """
+        target = target_deficit_ratio if target_deficit_ratio is not None else self.AGGRESSIVE_TARGET_DEFICIT
+        target = self._clamp(target, 0.0, MAX_DEFICIT_RATIO)
+
+        overreaching = bool(signals.get("overreaching"))
+        hrv_z   = float(signals.get("hrv_z") or 0.0)
+        rhr_z   = float(signals.get("rhr_z") or 0.0)
+        tsb     = float(signals.get("tsb_banister") or 0.0)
+        sleep   = signals.get("sleep_score")
+        bw      = float(signals.get("bodyweight_lb") or 0.0)
+
+        # Recovery headroom multiplier in [0, 1.1]. 1.0 = run the full target deficit.
+        headroom = 1.0
+        gates = []
+        if overreaching:
+            headroom = min(headroom, self.OVERREACH_HEADROOM)
+            gates.append("overreaching")
+        # Suppressed HRV (hrv_z < 0) trims the deficit; above-baseline HRV earns a little extra.
+        headroom *= self._clamp(1.0 + self.HRV_GATE_GAIN * hrv_z, 0.40, 1.10)
+        if hrv_z <= -1.0:
+            gates.append("hrv_suppressed")
+        # Elevated RHR (rhr_z > 0) trims it.
+        headroom *= self._clamp(1.0 - self.RHR_GATE_GAIN * max(0.0, rhr_z), 0.50, 1.0)
+        if rhr_z >= 1.0:
+            gates.append("rhr_elevated")
+        # Deep negative form (accumulated fatigue) trims it.
+        headroom *= self._clamp(1.0 - self.TSB_GATE_GAIN * max(0.0, -tsb), 0.50, 1.0)
+        # Poor sleep trims it.
+        if sleep is not None and float(sleep) < self.POOR_SLEEP_SCORE:
+            headroom *= self.POOR_SLEEP_FACTOR
+            gates.append("poor_sleep")
+
+        headroom = self._clamp(headroom, 0.0, 1.0)
+        deficit_ratio = round(target * headroom, 3)
+        kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
+        calorie_target = round(self.maintenance_kcal - kcal_deficit)
+
+        protein_g = round(self.PROTEIN_G_PER_LB * bw) if bw > 0 else None
+        fat_floor_g = round(self.MIN_FAT_G_PER_LB * bw) if bw > 0 else None
+
+        if not gates:
+            rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
+                         f"({kcal_deficit} kcal) for max fat loss.")
+        elif "overreaching" in gates:
+            rationale = ("Overreaching flagged — deficit collapsed toward maintenance to protect "
+                         f"recovery (target {calorie_target} kcal). Leanness can wait a day; recovery can't.")
+        else:
+            rationale = (f"Easing the deficit to {round(deficit_ratio*100)}% ({kcal_deficit} kcal) — "
+                         f"{', '.join(gates)} signalling reduced recovery headroom.")
+
+        return {
+            "maintenance_kcal":      round(self.maintenance_kcal),
+            "target_deficit_ratio":  round(target, 3),
+            "recovery_headroom":     round(headroom, 3),
+            "deficit_ratio":         deficit_ratio,
+            "kcal_deficit":          kcal_deficit,
+            "calorie_target":        calorie_target,
+            "protein_g":             protein_g,
+            "fat_floor_g":           fat_floor_g,
+            "gates":                 gates,
+            "rationale":             rationale,
+        }
+
     def to_dict(self) -> dict:
         return {"maintenance_kcal": self.maintenance_kcal}
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { Dumbbell, Pencil, Check } from "lucide-react";
+import { Dumbbell, Pencil, Check, Cpu } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
@@ -36,13 +36,39 @@ const formatTimeAgo = (startTimeStr) => {
 
 export default function QuickWorkout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // When launched from the engine's PrescribedSessionCard ("Log this session"),
+  // pre-load the prescribed lifts with their target load/reps/RIR so the athlete
+  // logs *against* training_prescription instead of a blank slate. This is the
+  // wire that connects the engine's prescription to the actual logging UI.
+  const prescribed = location.state?.prescribedSession || null;
+  const prescribedInitial = useMemo(() => {
+    if (!prescribed?.exercises?.length) return [];
+    return prescribed.exercises.map((ex, i) => ({
+      name: ex.name,
+      exercise_index: i,
+      prescribed: { reps: ex.reps, rir: ex.rir, targetWeight: ex.targetWeight },
+      sets: Array.from({ length: Math.max(1, Number(ex.sets) || 1) }, (_, s) => ({
+        set_number: s + 1,
+        reps: ex.reps || 0,
+        weight: ex.targetWeight || 0,
+        rir: ex.rir ?? null,
+        completed: false,
+      })),
+    }));
+  }, [prescribed]);
+
   const [startTime, setStartTime] = useState(Date.now());
-  const [workoutTitle, setWorkoutTitle] = useState(`Quick Workout - ${format(new Date(), "MMM d, yyyy")}`);
+  const [workoutTitle, setWorkoutTitle] = useState(
+    prescribed?.title
+      ? `${prescribed.title} — ${format(new Date(), "MMM d")}`
+      : `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`
+  );
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
   const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
@@ -104,7 +130,7 @@ export default function QuickWorkout() {
     updateExerciseNotes,
     updateExerciseName,
     addExercise: addExerciseRaw,
-  } = useWorkoutExercises([]);
+  } = useWorkoutExercises(prescribedInitial);
 
   // Wrapper for addExercise that autofills weight from last performance or insight suggestion
   const addExercise = (exerciseName) => {
@@ -138,12 +164,12 @@ export default function QuickWorkout() {
         const ageMs = Date.now() - new Date(session.start_time).getTime();
         if (ageMs >= 8 * 60 * 60 * 1000) {
           autoFinishSession(session.id);
-          createSession({ exercises: [], startTime });
+          createSession({ exercises: prescribedInitial, startTime });
         } else {
           setResumeSession(session);
         }
       } else {
-        createSession({ exercises: [], startTime });
+        createSession({ exercises: prescribedInitial, startTime });
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -232,7 +258,7 @@ export default function QuickWorkout() {
   }
 
   return (
-    <div className="bg-[#1a1a1a]  min-h-screen relative transition-colors duration-300">
+    <div className="bg-charcoal-surface  min-h-screen relative transition-colors duration-300">
       <WorkoutLoggingHeader
         workoutTitle={workoutTitle}
         showTitleInHeader={showTitleInHeader}
@@ -262,7 +288,7 @@ export default function QuickWorkout() {
               variant="ghost"
               size="icon"
               onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="h-8 w-8 text-[#a0a0a0] hover:text-white"
+              className="h-8 w-8 text-slate-400 hover:text-white"
             >
               {editingTitle ? (
                 <Check className="w-4 h-4 text-[#4ade80]" />
@@ -271,11 +297,24 @@ export default function QuickWorkout() {
               )}
             </Button>
           </div>
-          <p className="text-[#a0a0a0] text-sm mt-1">Add exercises as you go</p>
+          <p className="text-slate-400 text-sm mt-1">
+            {prescribed ? "Logging the engine's prescribed session — targets pre-filled" : "Add exercises as you go"}
+          </p>
         </div>
 
-        {/* Pre-session insight card (Phase 2+) */}
-        {preSessionInsight && (
+        {/* Engine prescription banner */}
+        {prescribed && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl bg-brand/10 border border-brand/20 px-4 py-2.5 text-xs">
+            <Cpu className="w-4 h-4 text-brand shrink-0" />
+            <span className="text-slate-300">
+              Loaded from <span className="text-brand font-semibold">Engine Prescription</span> — confirm or adjust each set, then finish.
+            </span>
+          </div>
+        )}
+
+        {/* Pre-session insight card (Phase 2+) — suppressed when the engine has
+            already prescribed loads, to avoid two coaches contradicting. */}
+        {!prescribed && preSessionInsight && (
           <PreSessionInsightCard
             insight={preSessionInsight}
             onAccept={handleInsightAccept}
@@ -324,7 +363,7 @@ export default function QuickWorkout() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#a0a0a0] ">
+          <p className="text-sm text-slate-400 ">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">

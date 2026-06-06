@@ -31,7 +31,7 @@ export default function ProgramCard({ program, enrollment }) {
     >
       <Link to={`/program/${program.id}`}>
         <div
-          className="group relative overflow-hidden rounded-xl border-l-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#242424] transition-all duration-200 cursor-pointer"
+          className="group relative overflow-hidden rounded-xl border-l-4 bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-elevated transition-all duration-200 cursor-pointer"
           style={{ borderLeftColor: 'var(--color-brand)' }}
         >
           <div className="px-5 pt-4 pb-2">
@@ -49,12 +49,12 @@ export default function ProgramCard({ program, enrollment }) {
               {program.name}
             </h3>
             {program.description && (
-              <p className="text-xs text-[#555555] line-clamp-2 mb-3">{program.description}</p>
+              <p className="text-xs text-slate-500 line-clamp-2 mb-3">{program.description}</p>
             )}
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="h-1 bg-[#202020] rounded-full overflow-hidden mb-3">
+              <div className="h-1 bg-charcoal-elevated rounded-full overflow-hidden mb-3">
                 <div
                   className="h-full bg-brand rounded-full"
                   style={{ width: `${progressPercent}%` }}
@@ -68,26 +68,26 @@ export default function ProgramCard({ program, enrollment }) {
             {enrollment ? (
               <>
                 <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Progress</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Progress</span>
                   <span className="text-lg font-bold tabular-nums text-white mt-0.5">{progressPercent}%</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-[#2a2a2a] pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">{positionLabel ? 'Position' : 'Cycle'}</span>
+                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{positionLabel ? 'Position' : 'Cycle'}</span>
                   <span className="text-lg font-bold tabular-nums text-white mt-0.5">{positionLabel || `${frequencyLabel}`}</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-[#2a2a2a] pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Sessions</span>
+                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sessions</span>
                   <span className="text-lg font-bold tabular-nums text-white mt-0.5">{completedCount} / {totalWorkouts}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Cycle</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Cycle</span>
                   <span className="text-lg font-bold tabular-nums text-white mt-0.5">{durationLabel}</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-[#2a2a2a] pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#a0a0a0]">Length</span>
+                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Length</span>
                   <span className="text-lg font-bold tabular-nums text-white mt-0.5">{frequencyLabel}</span>
                 </div>
               </>

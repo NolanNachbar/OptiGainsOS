@@ -663,7 +663,7 @@ export default function WorkoutDetail() {
   }
 
   return (
-    <div className="bg-[#121212] min-h-screen relative transition-colors duration-300">
+    <div className="bg-charcoal min-h-screen relative transition-colors duration-300">
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
@@ -710,15 +710,15 @@ export default function WorkoutDetail() {
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
                 <div className="hidden md:flex items-center gap-2 shrink-0 lg:hidden">
-                  <span className="text-xs text-[#555555] uppercase tracking-wide">Muscles worked</span>
-                  <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium">
+                  <span className="text-xs text-slate-500 uppercase tracking-wide">Muscles worked</span>
+                  <div className="flex rounded-full overflow-hidden border border-charcoal-border text-xs font-medium">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -730,20 +730,20 @@ export default function WorkoutDetail() {
               {/* Title + description */}
               <CardTitle className="text-[22px] font-bold mb-1">{workout.title}</CardTitle>
               {workout.description && (
-                <p className="text-[#a0a0a0] mb-4">{workout.description}</p>
+                <p className="text-slate-400 mb-4">{workout.description}</p>
               )}
               <div className="flex flex-wrap gap-6 mb-6">
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-brand" />
                     <div>
-                      <div className="text-sm text-[#a0a0a0]">Duration</div>
+                      <div className="text-sm text-slate-400">Duration</div>
                       <div className="font-semibold">{workout.duration_minutes} minutes</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Target className="w-5 h-5 text-brand" />
                     <div>
-                      <div className="text-sm text-[#a0a0a0]">Exercises</div>
+                      <div className="text-sm text-slate-400">Exercises</div>
                       <div className="font-semibold">{workout.exercises?.length || 0} exercises</div>
                     </div>
                   </div>
@@ -804,7 +804,7 @@ export default function WorkoutDetail() {
             {/* Pre-workout Notes */}
             <Card className="border-brand/20 bg-brand/5">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[#a0a0a0]">Pre-workout Notes</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-400">Pre-workout Notes</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -882,17 +882,17 @@ export default function WorkoutDetail() {
               const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
               return allCardio.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-[#a0a0a0] uppercase tracking-wide">Conditioning</p>
+                <p className="text-sm font-medium text-slate-400 uppercase tracking-wide">Conditioning</p>
                 {allCardio.map((c, i) => (
                   <div
                     key={`cardio-${i}`}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#2a2a2a]"
+                    className="flex items-center justify-between p-3 rounded-xl bg-charcoal-elevated border border-charcoal-border"
                   >
                     <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-[#a0a0a0]" />
+                      <Activity className="w-4 h-4 text-slate-400" />
                       <div>
                         <p className="font-medium text-sm text-white">{c.title}</p>
-                        <p className="text-xs text-[#555555]">
+                        <p className="text-xs text-slate-500">
                           {c.duration_minutes} min
                           {c.time_of_day && c.time_of_day !== "anytime"
                             ? ` · ${c.time_of_day.toUpperCase()}`
@@ -901,7 +901,7 @@ export default function WorkoutDetail() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-[#2a2a2a] text-[#a0a0a0] text-xs border-0">Cardio</Badge>
+                    <Badge className="bg-charcoal-elevated text-slate-400 text-xs border-0">Cardio</Badge>
                   </div>
                 ))}
               </div>
@@ -936,7 +936,7 @@ export default function WorkoutDetail() {
               {workout.exercises?.map((exercise, index) => {
                 const isLogFormat = Array.isArray(exercise.sets);
                 return (
-                  <Card key={index} className="bg-[#202020]">
+                  <Card key={index} className="bg-charcoal-elevated">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-black font-bold flex-shrink-0 font-mono text-sm shrink-0">
@@ -947,7 +947,7 @@ export default function WorkoutDetail() {
                           {isLogFormat ? (
                             <table className="w-full text-sm mt-2">
                               <thead>
-                                <tr className="border-b border-[#2a2a2a]">
+                                <tr className="border-b border-charcoal-border">
                                   <th className="text-left py-2 px-2">Set</th>
                                   <th className="text-left py-2 px-2">Weight</th>
                                   <th className="text-left py-2 px-2">Reps</th>
@@ -955,7 +955,7 @@ export default function WorkoutDetail() {
                               </thead>
                               <tbody>
                                 {exercise.sets.map((set, si) => (
-                                  <tr key={si} className="border-b border-[#2a2a2a]">
+                                  <tr key={si} className="border-b border-charcoal-border">
                                     <td className="py-2 px-2 font-medium">{set.set_number}</td>
                                     <td className="py-2 px-2">{set.weight} {weightUnit}</td>
                                     <td className="py-2 px-2">{set.reps}</td>
@@ -964,7 +964,7 @@ export default function WorkoutDetail() {
                               </tbody>
                             </table>
                           ) : (
-                            <div className="flex flex-wrap gap-4 text-sm text-[#a0a0a0]">
+                            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
                               {exercise.sets > 1 && (
                                 <div>
                                   <span className="font-medium">Sets:</span> {exercise.sets}
@@ -981,7 +981,7 @@ export default function WorkoutDetail() {
                             </div>
                           )}
                           {exercise.notes && (
-                            <p className="text-sm text-[#a0a0a0] mt-2 italic">{exercise.notes}</p>
+                            <p className="text-sm text-slate-400 mt-2 italic">{exercise.notes}</p>
                           )}
                         </div>
                       </div>
@@ -1002,15 +1002,15 @@ export default function WorkoutDetail() {
               className="hidden lg:flex flex-col items-center w-52 shrink-0 sticky"
               style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
             >
-              <p className="text-xs text-[#555555] uppercase tracking-wide mb-2 self-start">Muscles worked</p>
-              <div className="flex rounded-full overflow-hidden border border-[#2a2a2a] text-xs font-medium mb-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 self-start">Muscles worked</p>
+              <div className="flex rounded-full overflow-hidden border border-charcoal-border text-xs font-medium mb-3">
                 <button
                   onClick={() => setMuscleView("anterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
                 >Front</button>
                 <button
                   onClick={() => setMuscleView("posterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-[#1a1a1a] text-[#555555] hover:bg-[#242424] hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
                 >Back</button>
               </div>
               <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />
@@ -1026,7 +1026,7 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#a0a0a0]">
+          <p className="text-sm text-slate-400">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
@@ -1046,7 +1046,7 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Incomplete Sets</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#a0a0a0]">
+          <p className="text-sm text-slate-400">
             Some sets haven't been checked off. Would you like to mark them all as complete?
           </p>
           <div className="flex gap-3 pt-2">
@@ -1068,7 +1068,7 @@ export default function WorkoutDetail() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#a0a0a0]">Post-workout Notes</label>
+              <label className="text-sm font-medium text-slate-400">Post-workout Notes</label>
               <Textarea
                 value={postWorkoutNotes}
                 onChange={(e) => setPostWorkoutNotes(e.target.value)}

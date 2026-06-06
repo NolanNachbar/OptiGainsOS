@@ -2,21 +2,16 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FoodTracker from "./FoodTracker";
 import Supplements from "./Supplements";
+import Progress from "./Progress";
+import WeeklyPlanCard from "@/components/nutrition/WeeklyPlanCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, supabase } from "@/api/supabaseClient";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/api/supabaseClient";
 import { getTodayString } from "@/utils/dateUtils";
 import { format, parseISO } from "date-fns";
-import { toast } from "sonner";
-import {
-  Scale, Droplets, Pill, Plus, CheckCircle2, History, Bot, Apple, Utensils
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Droplets, History, Utensils, TrendingUp } from "lucide-react";
 import QuickCapture from "@/components/QuickCapture";
 import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
-import { invalidateBodyWeight } from "@/lib/queryKeys";
 
 export default function Fuel() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,30 +21,11 @@ export default function Fuel() {
     setSearchParams(t === "nutrition" ? {} : { tab: t });
   };
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
 
-  const [weight, setWeight] = useState("");
-
   const { weightEntries } = useBodyWeightEntries();
   const todayWeight = weightEntries.find(e => e.recorded_date === today);
-
-  const logWeightMutation = useMutation({
-    mutationFn: async () => {
-      if (!weight) return;
-      return await db.entities.BodyWeightEntry.create({
-        weight: parseFloat(weight),
-        recorded_date: today,
-        created_by: user.id,
-      });
-    },
-    onSuccess: () => {
-      invalidateBodyWeight(queryClient);
-      setWeight("");
-      toast.success("Weight logged");
-    },
-  });
 
   const { data: todayWater = [] } = useQuery({
     queryKey: ["water-logs", today],
@@ -80,7 +56,7 @@ export default function Fuel() {
     enabled: !!user,
   });
   return (
-    <div className="bg-[#09090e] min-h-screen text-white">
+    <div className="bg-charcoal min-h-screen text-white">
       {/* Tab Switcher */}
       <div className="border-b border-charcoal-border bg-charcoal-surface/60 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
@@ -118,46 +94,24 @@ export default function Fuel() {
 
       <div className="max-w-5xl mx-auto">
         {activeTab === "nutrition" ? (
-          <FoodTracker />
+          <>
+            <div className="px-4 pt-4 max-w-2xl mx-auto">
+              <WeeklyPlanCard />
+            </div>
+            <FoodTracker />
+          </>
         ) : (
           <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">
-            
-            {/* Weight Section */}
+
+            {/* Body & Progress — weight (logger + trend), measurements, photos.
+                Merged in from the retired standalone /progress route. */}
             <section className="space-y-2">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-sky-400" /> Weight Logger
+                <TrendingUp className="w-3.5 h-3.5 text-sky-400" /> Body & Progress
               </h2>
-              <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    {todayWeight ? (
-                      <div>
-                        <p className="text-lg font-bold text-white font-technical leading-none">
-                          {todayWeight.weight} <span className="text-xs text-slate-400 font-normal">{profile?.weight_unit || "lbs"}</span>
-                        </p>
-                        <p className="text-[9px] text-emerald-400 font-bold uppercase mt-1 leading-none">Logged today</p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 font-medium">No weight logged today</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={weight}
-                      onChange={e => setWeight(e.target.value)}
-                      placeholder="0.0"
-                      className="w-20 h-9 text-sm font-technical font-semibold bg-slate-900 border-charcoal-border focus:border-brand"
-                    />
-                    <Button variant="volt" size="sm" className="h-9 px-4 uppercase tracking-wider font-bold text-xs" onClick={() => logWeightMutation.mutate()} disabled={!weight}>
-                      Log
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <Progress embedded />
             </section>
- 
+
             {/* Water + supplements (full type management) — reused from Supplements */}
             <Supplements embedded />
 

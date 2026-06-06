@@ -66,7 +66,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col w-full bg-[#09090e]">
+      <div className="min-h-screen flex flex-col w-full bg-charcoal">
         {/* Desktop top navbar */}
         <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] glass-elevated items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
@@ -79,7 +79,7 @@ export default function Layout({ children, currentPageName }) {
               const isActive = location.pathname === item.url ||
                 (item.url === '/fuel' && ['/fuel', '/food-tracker', '/supplements', '/log'].some(p => location.pathname.startsWith(p))) ||
                 (item.url === '/train' && ['/train', '/workouts', '/program-builder', '/create-workout', '/quick-workout', '/weekly-schedule', '/schedule', '/workout-detail', '/program/'].some(p => location.pathname.startsWith(p))) ||
-                (item.url === '/insights' && ['/insights', '/progress', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
+                (item.url === '/insights' && ['/insights', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
               return (
                 <Link
                   key={item.title}
@@ -130,8 +130,8 @@ export default function Layout({ children, currentPageName }) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 flex flex-col min-h-0 lg:pb-0 bg-[#09090e]" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
-          <div className="flex-1 min-h-0 bg-[#09090e]">{children}</div>
+        <main className="flex-1 flex flex-col min-h-0 lg:pb-0 bg-charcoal" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+          <div className="flex-1 min-h-0 bg-charcoal">{children}</div>
         </main>
       </div>
 
@@ -152,7 +152,7 @@ export default function Layout({ children, currentPageName }) {
             const isActive = location.pathname === item.url ||
               (item.url === '/fuel' && ['/fuel', '/food-tracker', '/supplements', '/log'].some(p => location.pathname.startsWith(p))) ||
               (item.url === '/train' && ['/train', '/workouts', '/program-builder', '/create-workout', '/quick-workout', '/weekly-schedule', '/schedule', '/workout-detail', '/program/'].some(p => location.pathname.startsWith(p))) ||
-              (item.url === '/insights' && ['/insights', '/progress', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
+              (item.url === '/insights' && ['/insights', '/athlete-state', '/brief-history', '/mind', '/career'].some(p => location.pathname.startsWith(p)));
             return (
               <Link
                 key={item.title}

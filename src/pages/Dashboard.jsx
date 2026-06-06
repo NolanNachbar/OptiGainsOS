@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { calculateMacros } from "@/utils/nutritionUtils";
 import { getBestTDEE } from "@/utils/coachingUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
-import { queryKeys, invalidateBodyWeight, invalidateSchedule, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
+import { queryKeys } from "@/lib/queryKeys";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries, useRecoveryMetrics } from "@/hooks/useUserQueries";
-import { useDietPhase } from "@/hooks/useDietPhase";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
-import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
+import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -37,18 +36,14 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
-import { format, addDays, addWeeks, subWeeks } from "date-fns";
+import { format } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
-import { toast } from "sonner";
-import { calculateVolume } from "@/utils/exerciseStats";
-import { calculateTrainingCapacity, calculateReadinessScore, getReadinessCategory } from "@/utils/recoveryUtils";
+import { calculateReadinessScore, getReadinessCategory } from "@/utils/recoveryUtils";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
-import ReadinessRing from "@/components/dashboard/ReadinessRing";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
-import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
 import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
@@ -68,45 +63,7 @@ function getWorkoutSplitTitle(exercises) {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  const { activePhase } = useDietPhase();
-
-  const [newBodyWeight, setNewBodyWeight] = useState("");
-  const [bodyWeightDate, setBodyWeightDate] = useState(() => getTodayString(null));
-  const [bodyWeightNotes, setBodyWeightNotes] = useState("");
-  const [welcomeBannerVisible, setWelcomeBannerVisible] = useState(
-    () => !localStorage.getItem('optigains_welcome_dismissed')
-  );
-
-  // Today's workout expand state
-  const [showTodayExercises, setShowTodayExercises] = useState(false);
-
-  // Prescribed-cardio completion now persists in the cardio_completions table
-  // (see useCardioCompletions / PrescribedSessionCard) instead of localStorage.
-  const [muscleView, setMuscleView] = useState("anterior");
-
-  // Schedule state
-  const [currentWeekStart, setCurrentWeekStart] = useState(
-    getWeekStart(null, 1)
-  );
-  const [draggedWorkout, setDraggedWorkout] = useState(null);
-  const [selectedWorkout, setSelectedWorkout] = useState("");
-  const [timeOfDay, setTimeOfDay] = useState("anytime");
-  const [dayDetailDate, setDayDetailDate] = useState(null);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [pendingSchedule, setPendingSchedule] = useState(null);
-  const [showWorkoutSettings, setShowWorkoutSettings] = useState(false);
-  const [workoutSettings, setWorkoutSettings] = useState({
-    exercisesPerDay: null,
-    includeCardio: false,
-    skipDeload: false,
-  });
-
-
 
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
@@ -151,26 +108,6 @@ export default function Dashboard() {
   const weekStart = format(getWeekStart(profile?.timezone, 0), "yyyy-MM-dd");
   const weekEnd = format(getWeekEnd(profile?.timezone, 0), "yyyy-MM-dd");
 
-  const weeklyGoal = profile?.days_per_week || 3;
-
-  const { data: weeklyCardio = [] } = useQuery({
-    queryKey: ['weeklyCardio', weekStart, user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('garmin_activities')
-        .select('distance_meters, moving_time_seconds:duration_seconds, calories')
-        .eq('created_by', user.id)
-        .gte('activity_date', weekStart)
-        .lte('activity_date', weekEnd);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
-  const weeklyCardioMiles = weeklyCardio.reduce((s, c) => s + (c.distance_meters || 0) / 1609.34, 0);
-  const weeklyCardioMinutes = Math.round(weeklyCardio.reduce((s, c) => s + (c.moving_time_seconds || 0) / 60, 0));
-  const weeklyCardioCalories = Math.round(weeklyCardio.reduce((s, c) => s + (c.calories || 0), 0));
-
   const { data: allCardioSessions = [] } = useQuery({
     queryKey: ['allCardioSessions', user?.id],
     queryFn: async () => {
@@ -201,7 +138,6 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const weeklyCompleted = weeklyLogsWithExercises.length;
   const weeklyBodyData = getRecoveryHeatmapData(weeklyLogsWithExercises);
 
   const { enrollments } = useEnrollments();
@@ -211,263 +147,7 @@ export default function Dashboard() {
     ? getTodayProgramWorkout(activeEnrollment, activeProgram.workouts || [])
     : null;
 
-  const markSessionDone = useMutation({
-    mutationFn: async ({ sessionIndex }) => {
-      if (!activeEnrollment || !todayProgramWorkout) return;
-      const item = todayProgramWorkout;
-      const existing = activeEnrollment.completed_workouts || [];
-      const alreadyDone = existing.some(
-        (cw) => cw && cw.cycle === item.cycle && cw.day_index === item.dayIndex && cw.session_index === sessionIndex
-      );
-      if (alreadyDone) return;
-
-      const newEntry = {
-        program_workout_id: item.programWorkoutId,
-        cycle: item.cycle,
-        day_index: item.dayIndex,
-        session_index: sessionIndex,
-        completed_at: new Date().toISOString(),
-      };
-      const updated = [...existing, newEntry];
-
-      const completedCount = updated.filter(
-        (cw) => cw && cw.cycle === item.cycle && cw.day_index === item.dayIndex && cw.session_index != null
-      ).length;
-      const allDone = completedCount >= item.cardio_sessions.length;
-
-      if (allDone) {
-        const wholeEntry = {
-          program_workout_id: item.programWorkoutId,
-          cycle: item.cycle,
-          day_index: item.dayIndex,
-          completed_at: new Date().toISOString(),
-        };
-        const final = [...updated, wholeEntry];
-        const program = await db.entities.Program.get(activeEnrollment.program_id);
-        const isV2 = program.schema_version === 2;
-        let updateFields = { completed_workouts: final, updated_at: new Date().toISOString() };
-
-        if (isV2) {
-          const allWorkouts = await db.entities.ProgramWorkout.filter({ program_id: activeEnrollment.program_id });
-          const sorted = allWorkouts.sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
-          let new_day = item.dayIndex + 1;
-          let new_cycle = item.cycle;
-          let status = 'active';
-          if (new_day > sorted.length) { new_day = 1; new_cycle += 1; }
-          if (new_cycle > (program.num_cycles || 1)) { new_cycle = program.num_cycles || 1; new_day = sorted.length; status = 'completed'; }
-          updateFields = { ...updateFields, current_day_index: new_day, current_cycle: new_cycle, current_day: new_day, current_week: new_cycle, status };
-        } else {
-          let { current_day, current_week } = activeEnrollment;
-          current_day = (current_day || 1) + 1;
-          if (current_day > (program.days_per_week || 1)) { current_day = 1; current_week = (current_week || 1) + 1; }
-          const status = current_week > (program.duration_weeks || 1) ? 'completed' : 'active';
-          updateFields = { ...updateFields, current_day, current_week, status };
-        }
-
-        await db.entities.ProgramEnrollment.update(item.enrollmentId, updateFields);
-      } else {
-        await db.entities.ProgramEnrollment.update(item.enrollmentId, {
-          completed_workouts: updated,
-          updated_at: new Date().toISOString(),
-        });
-      }
-    },
-    onSuccess: () => {
-      invalidatePrograms(queryClient);
-      invalidateSchedule(queryClient);
-      toast.success("Session marked complete!");
-    },
-    onError: () => toast.error("Failed to mark complete"),
-  });
-
-  const unmarkSession = useMutation({
-    mutationFn: async ({ sessionIndex }) => {
-      if (!activeEnrollment || !todayProgramWorkout) return;
-      const item = todayProgramWorkout;
-      const existing = activeEnrollment.completed_workouts || [];
-      const wasFullyComplete = existing.some(
-        (cw) => cw && typeof cw !== 'string' && cw.cycle === item.cycle && cw.day_index === item.dayIndex && cw.session_index == null && !cw.skipped
-      );
-      const updated = existing.filter((cw) => {
-        if (typeof cw === 'string') return true;
-        if (!cw || cw.cycle !== item.cycle || cw.day_index !== item.dayIndex) return true;
-        if (cw.session_index === sessionIndex) return false;
-        if (wasFullyComplete && cw.session_index == null) return false;
-        return true;
-      });
-      const updateFields = { completed_workouts: updated, updated_at: new Date().toISOString() };
-      if (wasFullyComplete) {
-        Object.assign(updateFields, {
-          current_day_index: item.dayIndex,
-          current_cycle: item.cycle,
-          current_day: item.dayIndex,
-          current_week: item.cycle,
-          status: 'active',
-        });
-      }
-      await db.entities.ProgramEnrollment.update(item.enrollmentId, updateFields);
-    },
-    onSuccess: () => {
-      invalidatePrograms(queryClient);
-      invalidateSchedule(queryClient);
-      toast.success("Session unmarked");
-    },
-    onError: () => toast.error("Failed to unmark"),
-  });
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
-  const weekDates = weekDays.map((day) => format(day, "yyyy-MM-dd"));
-
-  const { data: weekSchedule = [] } = useQuery({
-    queryKey: [...queryKeys.schedule(user?.id), currentWeekStart.toISOString()],
-    queryFn: async () => {
-      const allSchedule = await db.entities.WorkoutSchedule.filter({ created_by: user.id });
-      return allSchedule.filter((s) => weekDates.includes(s.scheduled_date));
-    },
-    enabled: !!user,
-  });
-
-  const programScheduleEntries = activeEnrollment && activeProgram
-    ? getProgramSchedule(activeEnrollment, activeProgram.workouts || [])
-    : [];
-
-  const getProgramForDate = (date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return programScheduleEntries.filter((e) => e.date === dateStr);
-  };
-
   const { allFoodEntries } = useAllFoodEntries();
-
-  const getFoodForDate = (date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return allFoodEntries.filter((entry) => entry.date === dateStr);
-  };
-
-  const getMacrosForDate = (date) => calculateMacros(getFoodForDate(date));
-
-  const getScheduleForDate = (date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return weekSchedule.filter((s) => s.scheduled_date === dateStr);
-  };
-
-  const scheduleWorkoutMutation = useMutation({
-    mutationFn: async ({ workoutId, date, time }) => {
-      return await db.entities.WorkoutSchedule.create({
-        workout_id: workoutId,
-        scheduled_date: date,
-        time_of_day: time || "anytime",
-        completed: false,
-        created_by: user.id,
-      });
-    },
-    onSuccess: () => {
-      invalidateSchedule(queryClient);
-      toast.success("Workout scheduled!");
-      setDayDetailDate(null);
-      setSelectedWorkout("");
-      setTimeOfDay("anytime");
-    },
-  });
-
-  const moveWorkoutMutation = useMutation({
-    mutationFn: async ({ scheduleId, newDate }) => {
-      return await db.entities.WorkoutSchedule.update(scheduleId, { scheduled_date: newDate });
-    },
-    onSuccess: () => { invalidateSchedule(queryClient); toast.success("Workout moved!"); },
-  });
-
-  const toggleCompleteMutation = useMutation({
-    mutationFn: async ({ scheduleId, completed }) => {
-      await db.entities.WorkoutSchedule.update(scheduleId, {
-        completed,
-        completed_at: completed ? new Date().toISOString() : null,
-      });
-    },
-    onSuccess: () => invalidateSchedule(queryClient),
-  });
-
-  const deleteScheduleMutation = useMutation({
-    mutationFn: async (scheduleId) => await db.entities.WorkoutSchedule.delete(scheduleId),
-    onSuccess: () => { invalidateSchedule(queryClient); toast.success("Workout removed"); },
-  });
-
-  const handleDragStart = (e, workout) => { setDraggedWorkout(workout); e.dataTransfer.effectAllowed = "move"; };
-  const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
-  const handleDrop = (e, date) => {
-    e.preventDefault();
-    if (!draggedWorkout) return;
-    const dateStr = format(date, "yyyy-MM-dd");
-    if (draggedWorkout.isLibrary) {
-      scheduleWorkoutMutation.mutate({ workoutId: draggedWorkout.id, date: dateStr });
-    } else {
-      moveWorkoutMutation.mutate({ scheduleId: draggedWorkout.scheduleId, newDate: dateStr });
-    }
-    setDraggedWorkout(null);
-  };
-
-  const handleGenerateAndSchedule = () => {
-    try {
-      let plan = queryClient.getQueryData(["workoutPlan"]);
-      const settingsChanged =
-        workoutSettings.exercisesPerDay !== (plan?.exercisesPerDay ?? null) ||
-        workoutSettings.includeCardio !== (plan?.includeCardio ?? false) ||
-        workoutSettings.skipDeload !== (plan?.skipDeload ?? false);
-
-      if (!plan || settingsChanged) {
-        if (!profile) { navigate("/workouts"); return; }
-        const goalMapping = {
-          weight_loss: "Weight Loss", muscle_gain: "Muscle Gain",
-          endurance: "Build Endurance", general_fitness: "General Fitness",
-          flexibility: "Improve Flexibility",
-        };
-        const goals = Array.isArray(profile.primary_goal)
-          ? profile.primary_goal.map(g => goalMapping[g] || g)
-          : goalMapping[profile.primary_goal] || "General Fitness";
-      }
-      navigate("/schedule");
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to load workout plan");
-    }
-  };
-
-  const handleApproveSchedule = async (approvedSchedule) => {
-    try {
-      if (false) {
-        // tutorial path removed
-        return;
-      }
-      for (const daySchedule of approvedSchedule) {
-        const workout = await db.entities.Workout.create({
-          title: `${daySchedule.focus} - ${daySchedule.dayName}`,
-          description: `Generated workout focusing on ${daySchedule.focus.toLowerCase()}`,
-          focus: "strength",
-          duration_minutes: parseInt(daySchedule.duration) || 45,
-          exercises: daySchedule.exercises.map((ex) => ({
-            name: ex.name, sets: ex.sets || 3, reps: ex.reps || "10",
-            rest_seconds: ex.rest || 60, notes: "", pattern: ex.pattern || "",
-          })),
-          created_by: user.id,
-        });
-        await db.entities.WorkoutSchedule.create({
-          workout_id: workout.id, scheduled_date: daySchedule.date,
-          time_of_day: "anytime", completed: false, created_by: user.id,
-        });
-      }
-      invalidateSchedule(queryClient);
-      invalidateWorkouts(queryClient);
-      toast.success("Weekly schedule created!");
-      setShowApprovalModal(false);
-      setPendingSchedule(null);
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to create schedule");
-    }
-  };
-
-  const navigateWeek = (direction) => {
-    setCurrentWeekStart(direction === "next" ? addWeeks(currentWeekStart, 1) : subWeeks(currentWeekStart, 1));
-  };
 
   const todayMacros = calculateMacros(todayFood);
   const todayWorkout = todaySchedule[0];
@@ -493,11 +173,6 @@ export default function Dashboard() {
   });
 
   const { recoveryMetrics } = useRecoveryMetrics(30);
-
-  const capacity = useMemo(() =>
-    calculateTrainingCapacity(recoveryMetrics, profile, todayCheckIn),
-    [recoveryMetrics, profile, todayCheckIn]
-  );
 
   // Real readiness (replaces the previously hardcoded "88"). recoveryMetrics is
   // sorted descending by date, so [0] is the most recent row.
@@ -526,7 +201,7 @@ export default function Dashboard() {
     return d > 0 ? d : null;
   }, [profile, today]);
 
-  const { data: workoutLogs = [], isLoading: logsLoading, isError: logsError } = useQuery({
+  const { data: workoutLogs = [] } = useQuery({
     queryKey: queryKeys.workoutLogs(user?.id),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -543,36 +218,12 @@ export default function Dashboard() {
   });
   const { weightEntries } = useBodyWeightEntries();
 
-  const addBodyWeightMutation = useMutation({
-    mutationFn: async () => {
-      if (!newBodyWeight || !bodyWeightDate) throw new Error("Weight and date are required");
-      return await db.entities.BodyWeightEntry.create({
-        weight: parseFloat(newBodyWeight), recorded_date: bodyWeightDate,
-        notes: bodyWeightNotes, created_by: user.id,
-      });
-    },
-    onSuccess: () => {
-      invalidateBodyWeight(queryClient);
-      toast.success("Weight entry added");
-      setNewBodyWeight(""); setBodyWeightNotes("");
-      setBodyWeightDate(format(new Date(), "yyyy-MM-dd"));
-    },
-    onError: () => toast.error("Failed to add weight entry"),
-  });
-
   const weightUnit = profile?.weight_unit || "lbs";
-  const totalWorkoutsCount = workoutLogs.length;
-  const totalVolume = workoutLogs.reduce((sum, log) => sum + calculateVolume(log), 0);
-  const avgDuration = workoutLogs.length > 0
-    ? Math.round(workoutLogs.reduce((sum, log) => sum + (log.duration_seconds || 0), 0) / workoutLogs.length / 60)
-    : 0;
   const sortedWeightEntries = [...weightEntries].sort((a, b) => new Date(b.recorded_date) - new Date(a.recorded_date));
   const currentBodyWeight = sortedWeightEntries[0]?.weight;
   const tdeeResult = getBestTDEE(profile, currentBodyWeight, weightEntries, allFoodEntries || [], recoveryMetrics);
   const startBodyWeight = sortedWeightEntries[sortedWeightEntries.length - 1]?.weight;
   const bodyWeightChange = currentBodyWeight && startBodyWeight ? currentBodyWeight - startBodyWeight : null;
-
-  const handleAddBodyWeight = (e) => { e.preventDefault(); addBodyWeightMutation.mutate(); };
 
   // Derive the link URL for today's workout
   const todayWorkoutLink = todayProgramWorkout
@@ -589,7 +240,6 @@ export default function Dashboard() {
     .filter(l => l.log_date === today)
     .sort((a, b) => (b.duration_seconds || 0) - (a.duration_seconds || 0))[0] || null;
 
-  const isCompleted = todayProgramWorkout?.completed || todayWorkout?.completed;
   const workoutTitle = todayProgramWorkout?.title || todayWorkoutDetails?.title;
   const displayWorkoutTitle = (todayLog ? getWorkoutSplitTitle(todayLog.exercises) : null) || workoutTitle;
   const workoutDuration = todayWorkoutDetails?.duration_minutes;
@@ -600,14 +250,12 @@ export default function Dashboard() {
   ];
   const exerciseCount = todayProgramLifts.length || todayWorkoutDetails?.exercises?.length || 0;
 
-  const todayLogLifts = (todayLog?.exercises || []).filter(ex => !isRunEx(ex));
-
   if (!user) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="px-3 py-3 md:px-6 md:py-4 bg-[#09090e] min-h-screen relative">
+    <div className="px-3 py-3 md:px-6 md:py-4 bg-charcoal min-h-screen relative">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
@@ -690,11 +338,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Readiness Tile */}
-          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
+          {/* Readiness Tile → Recovery detail */}
+          <Link to="/recovery" className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px] hover:bg-charcoal-elevated transition-colors group">
             <div>
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-brand" /> Readiness
+                <ArrowRight className="w-2.5 h-2.5 text-slate-600 group-hover:text-brand ml-auto transition-colors" />
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical text-white leading-none">{readinessScore ?? "—"}</span>
@@ -718,7 +367,7 @@ export default function Dashboard() {
                 );
               })}
             </div>
-          </div>
+          </Link>
 
           {/* Nutrition Snapshot */}
           <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
@@ -781,7 +430,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-[10px] text-orange-400 font-bold uppercase tracking-widest mb-1">Today's Mission</p>
                     <h3 className="text-xl font-bold text-white leading-tight">{workoutTitle}</h3>
-                    <p className="text-xs text-[#a0a0a0] mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       {exerciseCount} lift{exerciseCount !== 1 ? "s" : ""}
                       {todayProgramRuns.length > 0 && ` · ${todayProgramRuns.length} conditioning`}
                       {workoutDuration ? ` · ~${workoutDuration} min` : ""}

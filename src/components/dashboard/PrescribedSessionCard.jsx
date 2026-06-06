@@ -234,9 +234,26 @@ export default function PrescribedSessionCard({ today }) {
           </div>
         )}
 
-        {/* Act on it */}
+        {/* Act on it — carry the engine's prescribed lifts (load/reps/RIR) into
+            the logger so the athlete trains against training_prescription, not a
+            blank slate. */}
         {!isRest && (
-          <Link to="/quick-workout" className="mt-3 flex items-center justify-center gap-1.5 w-full h-10 rounded-xl bg-brand/10 text-brand text-sm font-semibold hover:bg-brand/15 transition-colors">
+          <Link
+            to="/quick-workout"
+            state={{
+              prescribedSession: {
+                title: titleText,
+                exercises: strength.map((ex) => ({
+                  name: ex.name,
+                  sets: ex.sets,
+                  reps: ex.reps ?? ex.rep_target,
+                  rir: ex.rir ?? ex.rir_target,
+                  targetWeight: ex.load_lbs,
+                })),
+              },
+            }}
+            className="mt-3 flex items-center justify-center gap-1.5 w-full h-10 rounded-xl bg-brand/10 text-brand text-sm font-semibold hover:bg-brand/15 transition-colors"
+          >
             Log this session <ChevronRight className="w-4 h-4" />
           </Link>
         )}

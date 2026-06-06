@@ -18,8 +18,8 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
 
   if (!data || data.length === 0) {
     return (
-      <div className={`w-full ${className || 'h-80'} flex items-center justify-center bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]`}>
-        <p className="text-xs text-[#555555]">No data available for this exercise</p>
+      <div className={`w-full ${className || 'h-80'} flex items-center justify-center bg-charcoal-surface rounded-xl border border-charcoal-border`}>
+        <p className="text-xs text-slate-500">No data available for this exercise</p>
       </div>
     );
   }
@@ -29,9 +29,9 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
       const raw = payload.find(p => p.dataKey === 'maxWeight');
       const trend = payload.find(p => p.dataKey === 'trend');
       return (
-        <div className="bg-[#202020] p-3 rounded-xl border border-[#2a2a2a]">
+        <div className="bg-charcoal-elevated p-3 rounded-xl border border-charcoal-border">
           <p className="font-semibold text-xs text-white mb-1">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {raw && <p className="text-xs font-mono text-[#555555]">{raw.value} {weightUnit}</p>}
+          {raw && <p className="text-xs font-mono text-slate-500">{raw.value} {weightUnit}</p>}
           {trend && <p className="text-xs font-mono text-brand">Trend: {trend.value} {weightUnit}</p>}
         </div>
       );
@@ -83,9 +83,9 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
         </LineChart>
       </ResponsiveContainer>
       {hasTrend && (
-        <div className="flex items-center gap-5 mt-2 text-xs text-[#555555] font-mono">
+        <div className="flex items-center gap-5 mt-2 text-xs text-slate-500 font-mono">
           <span className="flex items-center gap-1.5">
-            <div className="w-4 h-px bg-[#333333]" />
+            <div className="w-4 h-px bg-slate-700" />
             Raw
           </span>
           <span className="flex items-center gap-1.5">

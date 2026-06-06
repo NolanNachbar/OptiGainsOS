@@ -52,7 +52,7 @@ export default function WorkoutLoggingHeader({
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-[9998] bg-[#121212] border-b border-[#2a2a2a]" style={{ top: 'var(--layout-header-height, 0px)' }}>
+      <div className="fixed top-0 left-0 right-0 z-[9998] bg-charcoal border-b border-charcoal-border" style={{ top: 'var(--layout-header-height, 0px)' }}>
         <div className="max-w-4xl mx-auto px-3 md:px-8 py-2">
           {/* Workout Title (when scrolled) - Desktop Only */}
           {showTitleInHeader && (
@@ -68,7 +68,7 @@ export default function WorkoutLoggingHeader({
               {/* Workout Timer */}
               {startTime && (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs md:text-xs uppercase text-[#555555] font-medium tracking-wide">Workout</span>
+                  <span className="text-xs md:text-xs uppercase text-slate-500 font-medium tracking-wide">Workout</span>
                   <div className="flex items-center gap-1 font-mono">
                     <Clock className="w-3 h-3 md:w-4 md:h-4 text-brand flex-shrink-0" />
                     <span className="font-semibold text-white text-sm md:text-base">{formatTime(elapsedTime)}</span>
@@ -80,9 +80,9 @@ export default function WorkoutLoggingHeader({
               {restTimer !== null && restTimer >= 0 && (
                 <>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs md:text-xs uppercase text-[#555555] font-medium tracking-wide">Rest</span>
+                    <span className="text-xs md:text-xs uppercase text-slate-500 font-medium tracking-wide">Rest</span>
                     <div className="flex items-center gap-1 font-mono">
-                      <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-[#555555]'}`} />
+                      <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-slate-500'}`} />
                       <span className={`font-semibold text-sm md:text-base ${restTimer <= 10 ? 'text-[#fbbf24]' : restTimer === 0 ? 'text-[#4ade80]' : 'text-white'}`}>
                         {restTimer === 0 ? 'Done!' : formatRestTime(restTimer)}
                       </span>
@@ -93,13 +93,13 @@ export default function WorkoutLoggingHeader({
                     <div className="flex gap-1 items-center">
                       <button
                         onClick={() => onAddRestTime?.(30)}
-                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-[#202020] hover:bg-[#242424] text-[#a0a0a0] hover:text-white border border-[#2a2a2a] font-medium"
+                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-charcoal-elevated hover:bg-charcoal-elevated text-slate-400 hover:text-white border border-charcoal-border font-medium"
                       >
                         +30s
                       </button>
                       <button
                         onClick={() => onSkipRest?.()}
-                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-[#202020] hover:bg-[#242424] text-[#a0a0a0] hover:text-white border border-[#2a2a2a] font-medium"
+                        className="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-charcoal-elevated hover:bg-charcoal-elevated text-slate-400 hover:text-white border border-charcoal-border font-medium"
                       >
                         Skip
                       </button>
@@ -151,7 +151,7 @@ export default function WorkoutLoggingHeader({
                 Cancel Workout?
               </DialogTitle>
             </DialogHeader>
-            <p className="text-[13px] text-[#a0a0a0]">
+            <p className="text-[13px] text-slate-400">
               Your progress for this workout will be lost. Are you sure you want to cancel?
             </p>
             <div className="flex gap-2 mt-2">

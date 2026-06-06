@@ -138,7 +138,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           <DialogTitle>Set Up TDEE Calculation</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-[#a0a0a0] ">
+        <p className="text-sm text-slate-400 ">
           Fill in your stats and we'll automatically calculate your daily calorie and macro targets.
         </p>
 
@@ -178,7 +178,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label>Height</Label>
-              <div className="flex gap-1 bg-[#202020] rounded-lg p-0.5">
+              <div className="flex gap-1 bg-charcoal-elevated rounded-lg p-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -190,7 +190,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("in");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "in" ? "bg-[#1a1a1a] shadow text-brand font-medium" : "text-[#555555]"
+                    heightUnit === "in" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-slate-500"
                   }`}
                 >ft/in</button>
                 <button
@@ -203,7 +203,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("cm");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "cm" ? "bg-[#1a1a1a] shadow text-brand font-medium" : "text-[#555555]"
+                    heightUnit === "cm" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-slate-500"
                   }`}
                 >cm</button>
               </div>
@@ -292,12 +292,12 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 onChange={e => setProteinPerLb(e.target.value)}
                 className="w-24"
               />
-              <span className="text-sm text-[#555555] ">
+              <span className="text-sm text-slate-500 ">
                 g / lb
                 {proteinGrams ? ` = ${proteinGrams}g/day` : ""}
               </span>
             </div>
-            <p className="text-xs text-[#555555] mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Typical range: 0.7–1.2 g/lb. Higher end for muscle gain or cutting.
             </p>
           </div>

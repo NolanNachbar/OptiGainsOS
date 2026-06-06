@@ -209,7 +209,7 @@ export function ProgressContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-[#a0a0a0] flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Total Workouts
                   </CardTitle>
@@ -221,7 +221,7 @@ export function ProgressContent() {
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-[#a0a0a0] flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
                     <Dumbbell className="w-4 h-4" />
                     Total Volume
                   </CardTitle>
@@ -229,14 +229,14 @@ export function ProgressContent() {
                 <CardContent>
                   <div className="text-3xl font-bold text-white">
                     {(totalVolume / 1000).toFixed(1)}k
-                    <span className="text-lg text-[#555555] ml-1">{weightUnit}</span>
+                    <span className="text-lg text-slate-500 ml-1">{weightUnit}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-[#a0a0a0] flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     Avg Duration
                   </CardTitle>
@@ -244,14 +244,14 @@ export function ProgressContent() {
                 <CardContent>
                   <div className="text-3xl font-bold text-white">
                     {avgDuration}
-                    <span className="text-lg text-[#555555] ml-1">min</span>
+                    <span className="text-lg text-slate-500 ml-1">min</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-[#a0a0a0] flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
                     <Scale className="w-4 h-4" />
                     Body Weight
                   </CardTitle>
@@ -261,7 +261,7 @@ export function ProgressContent() {
                     <>
                       <div className="text-3xl font-bold text-white">
                         {currentWeight}
-                        <span className="text-lg text-[#555555] ml-1">{weightUnit}</span>
+                        <span className="text-lg text-slate-500 ml-1">{weightUnit}</span>
                       </div>
                       {weightChange !== null && weightChange !== 0 && (
                         <div className={`text-sm mt-1 ${weightChange > 0 ? 'text-[#fbbf24]' : 'text-[#4ade80]'}`}>
@@ -270,7 +270,7 @@ export function ProgressContent() {
                       )}
                     </>
                   ) : (
-                    <div className="text-sm text-[#555555]">No data</div>
+                    <div className="text-sm text-slate-500">No data</div>
                   )}
                 </CardContent>
               </Card>
@@ -309,7 +309,7 @@ export function ProgressContent() {
                     weightUnit={weightUnit}
                   />
                 ) : (
-                  <div className="h-80 flex items-center justify-center text-[#555555]">
+                  <div className="h-80 flex items-center justify-center text-slate-500">
                     {uniqueExercises.length === 0
                       ? "No workout logs yet. Complete some workouts to see your progress!"
                       : "Select an exercise to view progress"}
@@ -325,25 +325,25 @@ export function ProgressContent() {
               </CardHeader>
               <CardContent>
                 {Object.keys(allPRs).length === 0 ? (
-                  <div className="text-center py-8 text-[#555555]">
+                  <div className="text-center py-8 text-slate-500">
                     No personal records yet. Keep logging workouts!
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-[#2a2a2a]">
-                          <th className="text-left py-3 px-4 font-semibold text-[#a0a0a0]">Exercise</th>
-                          <th className="text-left py-3 px-4 font-semibold text-[#a0a0a0]">Weight</th>
-                          <th className="text-left py-3 px-4 font-semibold text-[#a0a0a0]">Reps</th>
-                          <th className="text-left py-3 px-4 font-semibold text-[#a0a0a0]">Date</th>
+                        <tr className="border-b border-charcoal-border">
+                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Exercise</th>
+                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Weight</th>
+                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Reps</th>
+                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Date</th>
                         </tr>
                       </thead>
                       <tbody>
                         {Object.entries(allPRs)
                           .sort((a, b) => b[1].weight - a[1].weight)
                           .map(([exercise, pr]) => (
-                            <tr key={exercise} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
+                            <tr key={exercise} className="border-b border-charcoal-border hover:bg-charcoal-surface">
                               <td className="py-3 px-4 font-medium">{exercise}</td>
                               <td className="py-3 px-4">
                                 <span className="font-semibold text-brand">
@@ -351,7 +351,7 @@ export function ProgressContent() {
                                 </span>
                               </td>
                               <td className="py-3 px-4">{pr.reps}</td>
-                              <td className="py-3 px-4 text-[#a0a0a0]">
+                              <td className="py-3 px-4 text-slate-400">
                                 {new Date(pr.date).toLocaleDateString()}
                               </td>
                             </tr>
@@ -370,7 +370,7 @@ export function ProgressContent() {
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-[#a0a0a0] mb-2 block">
+                    <label className="text-sm font-medium text-slate-400 mb-2 block">
                       Search Exercise
                     </label>
                     <Input
@@ -380,7 +380,7 @@ export function ProgressContent() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-[#a0a0a0] mb-2 block">
+                    <label className="text-sm font-medium text-slate-400 mb-2 block">
                       Workout Type
                     </label>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -403,11 +403,11 @@ export function ProgressContent() {
             {filteredLogs.length === 0 ? (
               <Card className=" text-center py-12">
                 <CardContent>
-                  <Dumbbell className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
+                  <Dumbbell className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">
                     {workoutLogs.length === 0 ? "No workout history yet" : "No matching workouts"}
                   </h3>
-                  <p className="text-[#a0a0a0]">
+                  <p className="text-slate-400">
                     {workoutLogs.length === 0
                       ? "Complete some workouts to see your history here"
                       : "Try adjusting your filters"}
@@ -429,7 +429,7 @@ export function ProgressContent() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-xl mb-2">{log.workoutTitle}</CardTitle>
-                            <div className="flex flex-wrap gap-4 text-sm text-[#a0a0a0]">
+                            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
                                 {format(parseISO(log.log_date), "MMM d, yyyy")}
@@ -464,9 +464,9 @@ export function ProgressContent() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                             {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-[#555555]" />
+                              <ChevronUp className="w-5 h-5 text-slate-500" />
                             ) : (
-                              <ChevronDown className="w-5 h-5 text-[#555555]" />
+                              <ChevronDown className="w-5 h-5 text-slate-500" />
                             )}
                           </div>
                         </div>
@@ -476,12 +476,12 @@ export function ProgressContent() {
                         <CardContent className="pt-0">
                           <div className="space-y-4">
                             {log.exercises?.map((exercise, idx) => (
-                              <div key={idx} className="bg-[#1a1a1a] rounded-lg p-4">
+                              <div key={idx} className="bg-charcoal-surface rounded-lg p-4">
                                 <h4 className="font-semibold text-lg mb-3">{exercise.name}</h4>
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-sm">
                                     <thead>
-                                      <tr className="border-b border-[#2a2a2a]">
+                                      <tr className="border-b border-charcoal-border">
                                         <th className="text-left py-2 px-2">Set</th>
                                         <th className="text-left py-2 px-2">Weight</th>
                                         <th className="text-left py-2 px-2">Reps</th>
@@ -490,7 +490,7 @@ export function ProgressContent() {
                                     </thead>
                                     <tbody>
                                       {exercise.sets?.map((set, setIdx) => (
-                                        <tr key={setIdx} className="border-b border-[#2a2a2a]">
+                                        <tr key={setIdx} className="border-b border-charcoal-border">
                                           <td className="py-2 px-2 font-medium">{set.set_number}</td>
                                           <td className="py-2 px-2">{set.weight} {weightUnit}</td>
                                           <td className="py-2 px-2">{set.reps}</td>
@@ -503,7 +503,7 @@ export function ProgressContent() {
                                   </table>
                                 </div>
                                 {exercise.notes && (
-                                  <div className="mt-3 text-sm text-[#a0a0a0] italic border-l-2 border-brand/20 pl-3">
+                                  <div className="mt-3 text-sm text-slate-400 italic border-l-2 border-brand/20 pl-3">
                                     {exercise.notes}
                                   </div>
                                 )}
@@ -511,10 +511,10 @@ export function ProgressContent() {
                             ))}
                             {log.notes && (
                               <div className="bg-brand/[5%] border border-brand/20 rounded-lg p-4">
-                                <div className="font-semibold text-sm text-[#a0a0a0] mb-1">
+                                <div className="font-semibold text-sm text-slate-400 mb-1">
                                   Workout Notes
                                 </div>
-                                <div className="text-sm text-[#a0a0a0]">{log.notes}</div>
+                                <div className="text-sm text-slate-400">{log.notes}</div>
                               </div>
                             )}
                           </div>
@@ -537,7 +537,7 @@ export function ProgressContent() {
                 <form onSubmit={handleAddWeight} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-[#a0a0a0] mb-2 block">
+                      <label className="text-sm font-medium text-slate-400 mb-2 block">
                         Weight ({weightUnit}) *
                       </label>
                       <Input
@@ -550,7 +550,7 @@ export function ProgressContent() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-[#a0a0a0] mb-2 block">
+                      <label className="text-sm font-medium text-slate-400 mb-2 block">
                         Date *
                       </label>
                       <Input
@@ -572,7 +572,7 @@ export function ProgressContent() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-[#a0a0a0] mb-2 block">
+                    <label className="text-sm font-medium text-slate-400 mb-2 block">
                       Notes (optional)
                     </label>
                     <Input
@@ -599,11 +599,11 @@ export function ProgressContent() {
             {weightEntries.length === 0 ? (
               <Card className=" text-center py-12">
                 <CardContent>
-                  <Scale className="w-16 h-16 text-[#a0a0a0] mx-auto mb-4" />
+                  <Scale className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">
                     No weight entries yet
                   </h3>
-                  <p className="text-[#a0a0a0]">
+                  <p className="text-slate-400">
                     Start logging your weight to track your progress over time
                   </p>
                 </CardContent>
@@ -618,19 +618,19 @@ export function ProgressContent() {
                     {weightEntries.map((entry) => (
                       <div
                         key={entry.id}
-                        className="flex items-center justify-between p-4 bg-[#1a1a1a] rounded-lg hover:bg-[#202020] transition-colors"
+                        className="flex items-center justify-between p-4 bg-charcoal-surface rounded-lg hover:bg-charcoal-elevated transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
                             <div className="text-2xl font-bold text-white">
                               {entry.weight} {weightUnit}
                             </div>
-                            <div className="text-sm text-[#a0a0a0]">
+                            <div className="text-sm text-slate-400">
                               {format(parseISO(entry.recorded_date), "MMM d, yyyy")}
                             </div>
                           </div>
                           {entry.notes && (
-                            <p className="text-sm text-[#a0a0a0] mt-1 italic">{entry.notes}</p>
+                            <p className="text-sm text-slate-400 mt-1 italic">{entry.notes}</p>
                           )}
                         </div>
                         <Button

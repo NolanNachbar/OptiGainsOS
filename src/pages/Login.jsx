@@ -35,15 +35,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-charcoal flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-20 h-20 mx-auto mb-4" />
           <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
-          <p className="text-[#a0a0a0] mt-2">Sign in to your account</p>
+          <p className="text-slate-400 mt-2">Sign in to your account</p>
         </div>
 
-        <Card className="bg-[#1a1a1a] border-[#2a2a2a] text-white">
+        <Card className="bg-charcoal-surface border-charcoal-border text-white">
           <CardHeader>
             <CardTitle className="text-white text-center">Welcome Back</CardTitle>
           </CardHeader>
@@ -52,7 +52,7 @@ export default function Login() {
               <div>
                 <Label htmlFor="email" className="text-white">Email</Label>
                 <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
                     id="email"
                     type="email"
@@ -68,7 +68,7 @@ export default function Login() {
               <div>
                 <Label htmlFor="password" className="text-white">Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
                     id="password"
                     type="password"

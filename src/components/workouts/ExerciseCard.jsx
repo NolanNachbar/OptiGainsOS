@@ -166,7 +166,7 @@ export default function ExerciseCard({
 
   return (
     <>
-    <Card className="bg-[#1a1a1a]">
+    <Card className="bg-charcoal-surface">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -187,7 +187,7 @@ export default function ExerciseCard({
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg text-white">{exercise.name}</CardTitle>
                   {dbEntry && (
-                    <Badge variant="outline" className="text-xs capitalize border-[#2a2a2a] border-[#2a2a2a] text-[#a0a0a0] text-[#a0a0a0]">
+                    <Badge variant="outline" className="text-xs capitalize border-charcoal-border border-charcoal-border text-slate-400 text-slate-400">
                       {dbEntry.type}
                     </Badge>
                   )}
@@ -248,13 +248,13 @@ export default function ExerciseCard({
               <MoreVertical className="w-5 h-5" />
             </Button>
             {openMenu && (
-              <div className="absolute right-0 top-9 rounded-lg border border-[#2a2a2a] py-1 z-20 min-w-[160px] bg-[#1a1a1a] text-white ">
+              <div className="absolute right-0 top-9 rounded-lg border border-charcoal-border py-1 z-20 min-w-[160px] bg-charcoal-surface text-white ">
                 <button
                   onClick={() => {
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -265,7 +265,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -276,7 +276,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-[#a0a0a0]  hover:bg-[#202020] hover:bg-[#242424] flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -322,7 +322,7 @@ export default function ExerciseCard({
         {coachingChip && (
           <div className="mb-3 p-2.5 rounded-lg bg-brand/5 border border-brand/20 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-brand flex-shrink-0" />
-            <span className="text-sm text-[#d0d0d0] flex-1">{coachingChip.message}</span>
+            <span className="text-sm text-slate-300 flex-1">{coachingChip.message}</span>
             {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
               <button
                 className="text-xs font-semibold text-brand border border-brand/40 rounded px-2 py-0.5 hover:bg-brand/10"
@@ -334,7 +334,7 @@ export default function ExerciseCard({
                 Apply
               </button>
             )}
-            <button onClick={() => setCoachingChip(null)} className="text-[#444] hover:text-[#888] flex-shrink-0">
+            <button onClick={() => setCoachingChip(null)} className="text-slate-600 hover:text-slate-400 flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -353,7 +353,7 @@ export default function ExerciseCard({
                       <span>RPE</span>
                       <div className="group relative">
                         <HelpCircle className="w-3 h-3 cursor-help text-slate-500 hover:text-slate-400" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-[#121212] text-white text-xs rounded border border-charcoal-border shadow-lg">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-charcoal text-white text-xs rounded border border-charcoal-border shadow-lg">
                           Rate of Perceived Exertion (1-10): How hard the set felt. 10 = failure, 9 = 1 rep left, 8 = 2 reps left.
                         </div>
                       </div>
@@ -479,13 +479,13 @@ export default function ExerciseCard({
           </div>
         ) : exercise.notes ? (
           <p
-            className="mt-3 text-sm text-[#a0a0a0] italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-[#1a1a1a] py-1"
+            className="mt-3 text-sm text-slate-400 italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-charcoal-surface py-1"
             onClick={() => setEditingNotes(true)}
           >
             {exercise.notes}
           </p>
         ) : originalExercise?.notes ? (
-          <p className="text-sm text-[#a0a0a0] mt-3 italic border-l-2 border-[#2a2a2a] pl-3">
+          <p className="text-sm text-slate-400 mt-3 italic border-l-2 border-charcoal-border pl-3">
             {originalExercise.notes}
           </p>
         ) : null}
@@ -532,34 +532,34 @@ export default function ExerciseCard({
                   if (onReplaceExercise) onReplaceExercise(exercise.name, alt);
                   setShowReplaceDialog(false);
                 }}
-                className="w-full text-left p-4 rounded-xl border border-[#2a2a2a] hover:border-brand/30 hover:bg-brand/[8%] transition-all group"
+                className="w-full text-left p-4 rounded-xl border border-charcoal-border hover:border-brand/30 hover:bg-brand/[8%] transition-all group"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-[#a0a0a0] group-hover:text-brand">{icon}</span>
-                      <span className="text-xs font-semibold text-[#555555] uppercase tracking-wide">{label}</span>
+                      <span className="text-lg font-bold text-slate-400 group-hover:text-brand">{icon}</span>
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
                       {alt.pattern && (
-                        <span className="text-xs text-[#555555] border border-[#2a2a2a] rounded px-1.5 py-0.5">{alt.pattern}</span>
+                        <span className="text-xs text-slate-500 border border-charcoal-border rounded px-1.5 py-0.5">{alt.pattern}</span>
                       )}
                     </div>
                     <p className="font-semibold text-white group-hover:text-brand">{alt.name}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-                      {muscles && <span className="text-xs text-[#a0a0a0]">{muscles}</span>}
-                      <span className="text-xs text-[#555555]">{alt.sets} × {alt.reps} · {alt.rest}s</span>
+                      {muscles && <span className="text-xs text-slate-400">{muscles}</span>}
+                      <span className="text-xs text-slate-500">{alt.sets} × {alt.reps} · {alt.rest}s</span>
                     </div>
                     {loadHint && (
                       <p className="text-xs text-[#fbbf24] mt-1">{loadHint}</p>
                     )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#a0a0a0] group-hover:text-brand mt-1 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand mt-1 flex-shrink-0" />
                 </div>
               </button>
             );
           })}
         </div>
-        <div className="mt-3 border-t border-[#2a2a2a] pt-3">
-          <p className="text-xs font-semibold text-[#555555] uppercase tracking-wide mb-2">Custom exercise</p>
+        <div className="mt-3 border-t border-charcoal-border pt-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom exercise</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox
@@ -590,7 +590,7 @@ export default function ExerciseCard({
             </Button>
           </div>
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-[#555555]" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
+        <Button variant="ghost" className="w-full mt-2 text-slate-500" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
           Keep current exercise
         </Button>
       </DialogContent>

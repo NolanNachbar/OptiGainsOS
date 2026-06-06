@@ -19,8 +19,8 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 flex items-center justify-center bg-[#1a1a1a] rounded-lg">
-        <p className="text-[#555555]">No data available for this exercise</p>
+      <div className="w-full h-80 flex items-center justify-center bg-charcoal-surface rounded-lg">
+        <p className="text-slate-500">No data available for this exercise</p>
       </div>
     );
   }
@@ -30,9 +30,9 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
       const raw = payload.find(p => p.dataKey === 'maxWeight');
       const trend = payload.find(p => p.dataKey === 'trend');
       return (
-        <div className="bg-[#1a1a1a] p-3 rounded-lg border border-[#2a2a2a]">
+        <div className="bg-charcoal-surface p-3 rounded-lg border border-charcoal-border">
           <p className="font-semibold text-xs">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {raw && <p className="text-xs text-[#555555]">{raw.value} {weightUnit}</p>}
+          {raw && <p className="text-xs text-slate-500">{raw.value} {weightUnit}</p>}
           {trend && <p className="text-xs text-[#5d3cc7]">Trend: {trend.value} {weightUnit}</p>}
         </div>
       );
@@ -83,9 +83,9 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
         </LineChart>
       </ResponsiveContainer>
       {hasTrend && (
-        <div className="flex items-center gap-5 mt-2 text-xs text-[#555555]">
+        <div className="flex items-center gap-5 mt-2 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <div className="w-4 h-px bg-[#333333]" />
+            <div className="w-4 h-px bg-slate-700" />
             Raw
           </span>
           <span className="flex items-center gap-1.5">
@@ -101,8 +101,8 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
 export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 flex items-center justify-center bg-[#1a1a1a] rounded-lg ">
-        <p className="text-[#555555]">No weight data available</p>
+      <div className="w-full h-80 flex items-center justify-center bg-charcoal-surface rounded-lg ">
+        <p className="text-slate-500">No weight data available</p>
       </div>
     );
   }
@@ -124,9 +124,9 @@ export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
       const rawEntry = payload.find(p => p.dataKey === 'weight');
       const trendEntry = payload.find(p => p.dataKey === 'trendWeight');
       return (
-        <div className="bg-[#1a1a1a] p-3 rounded-lg border border-[#2a2a2a]">
+        <div className="bg-charcoal-surface p-3 rounded-lg border border-charcoal-border">
           <p className="font-semibold text-sm">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {rawEntry && <p className="text-sm text-[#555555]">{rawEntry.value} {weightUnit}</p>}
+          {rawEntry && <p className="text-sm text-slate-500">{rawEntry.value} {weightUnit}</p>}
           {trendEntry && <p className="text-sm font-medium text-[#5d3cc7]">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
@@ -137,24 +137,24 @@ export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
   return (
     <div className="w-full">
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#1a1a1a] rounded-lg p-4">
-          <div className="text-xs text-[#555555] mb-1">Starting</div>
+        <div className="bg-charcoal-surface rounded-lg p-4">
+          <div className="text-xs text-slate-500 mb-1">Starting</div>
           <div className="text-xl font-bold text-white">{startWeight} {weightUnit}</div>
         </div>
-        <div className="bg-[#1a1a1a] rounded-lg p-4">
-          <div className="text-xs text-[#555555] mb-1">Current</div>
+        <div className="bg-charcoal-surface rounded-lg p-4">
+          <div className="text-xs text-slate-500 mb-1">Current</div>
           <div className="text-xl font-bold text-white">{currentWeight} {weightUnit}</div>
         </div>
-        <div className="bg-[#1a1a1a] rounded-lg p-4">
-          <div className="text-xs text-[#555555] mb-1">Trend</div>
+        <div className="bg-charcoal-surface rounded-lg p-4">
+          <div className="text-xs text-slate-500 mb-1">Trend</div>
           <div className="text-xl font-bold text-[#5d3cc7]">{currentTrend} {weightUnit}</div>
         </div>
-        <div className="bg-[#1a1a1a] rounded-lg p-4">
-          <div className="text-xs text-[#555555] mb-1">Change</div>
+        <div className="bg-charcoal-surface rounded-lg p-4">
+          <div className="text-xs text-slate-500 mb-1">Change</div>
           <div className={`text-xl font-bold ${weightChange > 0 ? 'text-[#fbbf24]' : weightChange < 0 ? 'text-[#4ade80]' : 'text-white'}`}>
             {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} {weightUnit}
           </div>
-          <div className="text-xs text-[#555555] mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
+          <div className="text-xs text-slate-500 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
       </div>
 
@@ -200,9 +200,9 @@ export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-[#555555]">
+      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-slate-500">
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px bg-[#333333]" />
+          <div className="w-4 h-px bg-slate-700" />
           Raw
         </span>
         <span className="flex items-center gap-1.5">

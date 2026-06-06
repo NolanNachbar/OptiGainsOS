@@ -48,7 +48,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-md text-[#555555] transition-opacity hover:text-white focus:outline-none"
+          className="absolute right-4 top-4 rounded-md text-slate-500 transition-opacity hover:text-white focus:outline-none"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -79,7 +79,7 @@ DialogTitle.displayName = "DialogTitle";
 const DialogDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-[13px] text-[#a0a0a0] ${className}`}
+    className={`text-[13px] text-slate-400 ${className}`}
     {...props}
   />
 ));

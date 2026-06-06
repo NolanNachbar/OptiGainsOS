@@ -28,9 +28,9 @@ export const ActionBar = ({ className = "", children, ...props }) => {
       )}
       {/* Header Navigation */}
       <nav
-        className={`fixed md:sticky top-0 left-0 right-0 w-full h-screen md:h-auto bg-[#1a1a1a]  flex flex-col md:flex-row md:items-center md:px-6 md:py-4 flex-shrink-0 transition-transform duration-300 z-50 ${
+        className={`fixed md:sticky top-0 left-0 right-0 w-full h-screen md:h-auto bg-charcoal-surface  flex flex-col md:flex-row md:items-center md:px-6 md:py-4 flex-shrink-0 transition-transform duration-300 z-50 ${
           open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        } md:border-b md:border-[#2a2a2a] ${className}`}
+        } md:border-b md:border-charcoal-border ${className}`}
         {...props}
       >
         {children}

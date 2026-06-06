@@ -47,6 +47,13 @@ export function useCardioCompletions(date) {
             { onConflict: "created_by,cardio_date,name" }
           );
         if (error) throw error;
+        // Marking cardio done → pull the real Garmin activity into
+        // garmin_activities so the VDOT/cardio engine has fresh data.
+        // Fire-and-forget: idempotent + self-backfilling, so a Garmin sync lag
+        // or an expired token must never break the (optimistic) checkbox.
+        supabase.functions
+          .invoke("garmin-activities-sync")
+          .catch((e) => console.warn("garmin-activities-sync failed (non-fatal):", e?.message || e));
       }
     },
     // Optimistic toggle so the checkbox feels instant.

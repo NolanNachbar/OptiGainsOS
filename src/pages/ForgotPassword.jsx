@@ -32,12 +32,12 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-charcoal flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo className="w-16 h-16 mx-auto mb-4" />
           <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
-          <p className="text-[13px] text-[#a0a0a0] mt-2">Reset your password</p>
+          <p className="text-[13px] text-slate-400 mt-2">Reset your password</p>
         </div>
 
         <Card>
@@ -49,16 +49,16 @@ export default function ForgotPassword() {
           <CardContent>
             {emailSent ? (
               <div className="text-center space-y-4">
-                <p className="text-[#a0a0a0]">
+                <p className="text-slate-400">
                   We've sent a password reset link to <span className="font-medium text-white">{email}</span>
                 </p>
-                <p className="text-[#555555] text-sm">
+                <p className="text-slate-500 text-sm">
                   Didn't receive the email? Check your spam folder or try again.
                 </p>
                 <Button
                   onClick={() => setEmailSent(false)}
                   variant="outline"
-                  className="w-full bg-[#202020] border-[#2a2a2a] text-white hover:bg-[#242424]"
+                  className="w-full bg-charcoal-elevated border-charcoal-border text-white hover:bg-charcoal-elevated"
                 >
                   Try another email
                 </Button>
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                 <div>
                   <Label htmlFor="email" className="text-white">Email</Label>
                   <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <Input
                       id="email"
                       type="email"

@@ -11,24 +11,24 @@ export default function NotificationSettings() {
 
   if (!isSupported) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a]">
-        <BellOff className="w-4 h-4 text-[#555555] shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-charcoal-surface border border-charcoal-border">
+        <BellOff className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-white">Push Notifications</p>
-          <p className="text-xs text-[#555555] mt-0.5">Not supported in this browser.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Not supported in this browser.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a]">
+    <div className="p-4 rounded-xl bg-charcoal-surface border border-charcoal-border">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <Bell className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-white">Push Notifications</p>
-            <p className="text-xs text-[#555555] mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               Morning check-in reminder (7am) and supplement timing alerts.
             </p>
           </div>
@@ -64,9 +64,9 @@ export default function NotificationSettings() {
       )}
 
       {!hasVapid && !isSubscribed && permission !== "denied" && (
-        <div className="mt-3 text-xs text-[#555555] border-t border-[#2a2a2a] pt-3">
+        <div className="mt-3 text-xs text-slate-500 border-t border-charcoal-border pt-3">
           <p className="font-mono">VITE_VAPID_PUBLIC_KEY</p>
-          <p className="mt-1">not set. Generate VAPID keys and add to your <code className="bg-[#222] px-1 rounded">.env</code> file to enable push.</p>
+          <p className="mt-1">not set. Generate VAPID keys and add to your <code className="bg-charcoal-elevated px-1 rounded">.env</code> file to enable push.</p>
           <p className="mt-1 font-mono text-[10px]">npx web-push generate-vapid-keys</p>
         </div>
       )}

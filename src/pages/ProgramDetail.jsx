@@ -77,7 +77,7 @@ export default function ProgramDetail() {
   if (!program) {
     return (
       <div className="p-6 text-center">
-        <p className="text-[#555555]">Program not found.</p>
+        <p className="text-slate-500">Program not found.</p>
         <Link to="/workouts">
           <Button variant="outline" className="mt-4">Back to Workouts</Button>
         </Link>
@@ -204,19 +204,19 @@ export default function ProgramDetail() {
     : null;
 
   return (
-    <div className="p-4 md:p-6 bg-[#1a1a1a]  min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal-surface  min-h-screen transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-[#555555] hover:text-[#a0a0a0] mb-4 text-sm"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-400 mb-4 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Workouts
         </button>
 
         {/* Header */}
-        <Card className="border border-[#2a2a2a]  mb-6 bg-[#1a1a1a]  border-l-4 border-l-purple-500 overflow-hidden">
+        <Card className="border border-charcoal-border  mb-6 bg-charcoal-surface  border-l-4 border-l-purple-500 overflow-hidden">
           <CardContent className="pt-5 pb-5">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
@@ -234,7 +234,7 @@ export default function ProgramDetail() {
                           ? "bg-brand/10 text-brand border-brand/25"
                           : enrollment.status === "completed"
                           ? "bg-brand/[5%] text-brand border-brand/20"
-                          : "bg-[#1a1a1a] text-[#a0a0a0] border-[#2a2a2a]   "
+                          : "bg-charcoal-surface text-slate-400 border-charcoal-border   "
                       }
                     >
                       {enrollment.status}
@@ -245,20 +245,20 @@ export default function ProgramDetail() {
                   {program.name}
                 </h1>
                 {program.description && (
-                  <p className="text-[#555555] text-sm">{program.description}</p>
+                  <p className="text-slate-500 text-sm">{program.description}</p>
                 )}
 
-                <div className="flex flex-wrap gap-4 mt-3 text-sm text-[#a0a0a0] ">
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-400 ">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-[#555555] " />
+                    <Calendar className="w-4 h-4 text-slate-500 " />
                     {durationLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-[#555555] " />
+                    <Repeat className="w-4 h-4 text-slate-500 " />
                     {frequencyLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Dumbbell className="w-4 h-4 text-[#555555] " />
+                    <Dumbbell className="w-4 h-4 text-slate-500 " />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export default function ProgramDetail() {
                       {user ? "Start Program" : "Sign in to Start"}
                     </Button>
                     {!user && (
-                      <p className="text-xs text-center text-[#555555]">
+                      <p className="text-xs text-center text-slate-500">
                         New here?{' '}
                         <Link
                           to="/signup"
@@ -367,9 +367,9 @@ export default function ProgramDetail() {
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="mt-4 pt-4 border-t border-[#2a2a2a] ">
+              <div className="mt-4 pt-4 border-t border-charcoal-border ">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-[#a0a0a0] ">
+                  <span className="text-slate-400 ">
                     {positionLabel && (
                       <span className="font-medium mr-2">{positionLabel}</span>
                     )}
@@ -377,7 +377,7 @@ export default function ProgramDetail() {
                   </span>
                   <span className="font-semibold text-white">{progressPercent}%</span>
                 </div>
-                <div className="h-2 bg-[#2a2a2a]  rounded-full overflow-hidden">
+                <div className="h-2 bg-charcoal-elevated  rounded-full overflow-hidden">
                   <div
                     className="h-full bg-brand rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
@@ -390,10 +390,10 @@ export default function ProgramDetail() {
 
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (
-          <Card className="border border-[#2a2a2a]  mb-4 border-l-4 border-l-warning-400 bg-[#1a1a1a] ">
+          <Card className="border border-charcoal-border  mb-4 border-l-4 border-l-warning-400 bg-charcoal-surface ">
             <CardContent className="py-3">
               {recoveryWarnings.map((w) => (
-                <div key={w.muscle} className="flex items-start gap-2 text-sm text-[#a0a0a0]">
+                <div key={w.muscle} className="flex items-start gap-2 text-sm text-slate-400">
                   <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{w.message}</span>
                 </div>
@@ -403,7 +403,7 @@ export default function ProgramDetail() {
         )}
 
         {/* Schedule Grid */}
-        <Card className="border border-[#2a2a2a]  mb-6 bg-[#1a1a1a] ">
+        <Card className="border border-charcoal-border  mb-6 bg-charcoal-surface ">
           <CardHeader>
             <CardTitle className="text-lg text-white">Schedule</CardTitle>
           </CardHeader>
@@ -422,7 +422,7 @@ export default function ProgramDetail() {
 
         {/* Exercise progression state */}
         {enrollment?.progression_state && Object.keys(enrollment.progression_state).filter(k => !k.startsWith('_')).length > 0 && (
-          <Card className="border border-[#2a2a2a]  bg-[#1a1a1a] ">
+          <Card className="border border-charcoal-border  bg-charcoal-surface ">
             <CardHeader>
               <CardTitle className="text-lg text-white">Progression Tracking</CardTitle>
             </CardHeader>
@@ -433,11 +433,11 @@ export default function ProgramDetail() {
                   .map(([name, state]) => (
                     <div
                       key={name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] 60"
+                      className="flex items-center justify-between p-3 rounded-xl bg-charcoal-surface 60"
                     >
                       <div>
                         <p className="font-medium text-sm text-white">{name}</p>
-                        <p className="text-xs text-[#555555] ">
+                        <p className="text-xs text-slate-500 ">
                           {state.sessions_at_current_weight || 0} sessions at current weight
                           {state.last_session_rpe_avg != null && (
                             <> &middot; Avg RIR {state.last_session_rpe_avg.toFixed(1)}</>
@@ -464,12 +464,12 @@ export default function ProgramDetail() {
         {/* Workout detail dialog */}
         <Dialog open={!!showWorkoutDetail} onOpenChange={() => setShowWorkoutDetail(null)}>
           <DialogContent className="max-w-lg flex flex-col max-h-[85vh] p-0">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#2a2a2a]  flex-shrink-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border  flex-shrink-0">
               <DialogTitle>{showWorkoutDetail?.title}</DialogTitle>
             </DialogHeader>
             {showWorkoutDetail && (
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
-                <div className="flex gap-2 text-sm text-[#555555]">
+                <div className="flex gap-2 text-sm text-slate-500">
                   <span>Day {showWorkoutDetail.day_index || showWorkoutDetail.day_number}</span>
                   {showWorkoutDetail.type && (
                     <>
@@ -481,7 +481,7 @@ export default function ProgramDetail() {
                   )}
                 </div>
                 {showWorkoutDetail.notes && (
-                  <p className="text-sm text-[#a0a0a0] ">{showWorkoutDetail.notes}</p>
+                  <p className="text-sm text-slate-400 ">{showWorkoutDetail.notes}</p>
                 )}
                 <div className="space-y-2">
                   {(showWorkoutDetail.exercises || []).map((ex, i) => {
@@ -493,11 +493,11 @@ export default function ProgramDetail() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] 60"
+                        className="flex items-center justify-between p-3 rounded-xl bg-charcoal-surface 60"
                       >
                         <div>
                           <p className="font-medium text-sm text-white">{ex.name}</p>
-                          <p className="text-xs text-[#555555] ">
+                          <p className="text-xs text-slate-500 ">
                             {ex.sets} sets &times; {ex.rep_target || "?"} reps
                             {ex.rir_target && ` @ RIR ${ex.rir_target}`}
                           </p>
@@ -505,7 +505,7 @@ export default function ProgramDetail() {
                         {targets?.workingWeight && (
                           <div className="text-right">
                             <p className="font-bold text-sm text-white">{targets.workingWeight} lbs</p>
-                            <p className="text-xs text-[#555555] ">
+                            <p className="text-xs text-slate-500 ">
                               Min: {targets.dailyMin} lbs
                             </p>
                           </div>
@@ -516,18 +516,18 @@ export default function ProgramDetail() {
                   {(showWorkoutDetail.cardio_sessions || []).map((c, i) => (
                     <div
                       key={`cardio-${i}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f]"
+                      className="flex items-center justify-between p-3 rounded-xl bg-charcoal-elevated"
                     >
                       <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-[#a0a0a0]" />
+                        <Activity className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="font-medium text-sm text-white">{c.title}</p>
-                          <p className="text-xs text-[#555555] ">
+                          <p className="text-xs text-slate-500 ">
                             {c.duration_minutes} min{c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-[#2a2a2a] text-[#a0a0a0] text-xs border-0">
+                      <Badge className="bg-charcoal-elevated text-slate-400 text-xs border-0">
                         Cardio
                       </Badge>
                     </div>
@@ -545,7 +545,7 @@ export default function ProgramDetail() {
               <DialogHeader>
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-[#555555]  mt-2">
+              <p className="text-sm text-slate-500  mt-2">
                 Enter your current working weight for each exercise (optional — you can also
                 enter these during your first session).
               </p>
@@ -553,7 +553,7 @@ export default function ProgramDetail() {
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div>
-                <Label className="text-sm text-[#a0a0a0] ">Start Date</Label>
+                <Label className="text-sm text-slate-400 ">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -565,12 +565,12 @@ export default function ProgramDetail() {
               <div className="space-y-3">
               {allExercises.map((ex) => (
                 <div key={ex.name} className="flex items-center gap-3">
-                  <Label className="flex-1 text-sm text-[#a0a0a0] ">{ex.name}</Label>
+                  <Label className="flex-1 text-sm text-slate-400 ">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
                       placeholder="lbs"
-                      className="w-24 bg-[#1a1a1a]  border-[#2a2a2a]  text-white placeholder:text-[#555555] "
+                      className="w-24 bg-charcoal-surface  border-charcoal-border  text-white placeholder:text-slate-500 "
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({
@@ -579,13 +579,13 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-xs text-[#555555] ">lbs</span>
+                    <span className="text-xs text-slate-500 ">lbs</span>
                   </div>
                 </div>
               ))}
               </div>
             </div>
-            <div className="flex gap-2 px-6 py-4 border-t border-[#2a2a2a] bg-[#1a1a1a]  shrink-0">
+            <div className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0">
               <Button variant="outline" className="flex-1" onClick={() => setShowEnrollDialog(false)}>
                 Cancel
               </Button>
@@ -607,7 +607,7 @@ export default function ProgramDetail() {
             <DialogHeader>
               <DialogTitle>Cancel Enrollment?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-[#a0a0a0] ">
+            <p className="text-sm text-slate-400 ">
               Are you sure you want to cancel your enrollment in this program? Future scheduled workouts will be removed, but your completed workout history will be preserved. You can re-enroll later to start fresh.
             </p>
             <div className="flex gap-3 mt-4">

@@ -339,6 +339,20 @@ def _clean(ex: dict) -> dict:
                          "type", "fatigue_cost", "is_assistance", "assist_for")}
 
 
+def interference_attenuation(ampk, interference_score):
+    """
+    #19: how much to back the lift off under concurrent-training interference.
+    High AMPK suppresses mTORC1 → heavy lifting that window is lower-quality and
+    less recoverable, so trim load. Returns (atten, high_interference):
+      atten ∈ [0.88, 1.0]   — multiply onto strength load_pct (1.0 = rested)
+      high_interference bool — also drop a working set when True
+    """
+    a = float(ampk or 0.20)
+    s = float(interference_score or 0.0)
+    atten = round(max(0.88, 1.0 - 0.30 * max(0.0, a - 0.30)), 3)
+    return atten, (s > 0.5 or a > 0.55)
+
+
 # ── Cardio ────────────────────────────────────────────────────────────────────
 
 # Polarized weekly run STRUCTURE (80/20). Each run day has a base slot keyed on
@@ -817,6 +831,15 @@ class SessionGenerator:
         run_block = None
         swim_block = None
 
+        # ── #19: interference actually PROTECTS the lift (not just a banner) ──
+        # High AMPK / concurrent-endurance load suppresses mTORC1, so heavy lifting
+        # in that window is both lower-quality and less recoverable. Back the lift
+        # off — trim the load and a working set — instead of only warning.
+        # interference_atten: 1.0 when rested (AMPK≈0.20) → floor 0.88 when very hot.
+        interference_atten, high_interference = interference_attenuation(
+            cellular_state.get("ampk"), cellular_state.get("interference_score")
+        )
+
         # Build blocks
         for ex in exercises:
             name = ex.get("name", "")
@@ -829,6 +852,10 @@ class SessionGenerator:
             
             # Map exercise fields
             sets = ex.get("sets", 3)
+            # Strength volume backs off a working set in a high-interference window
+            # (calisthenics are already AMPK-prioritised, so leave them).
+            if high_interference and not is_cal and sets > 1:
+                sets = sets - 1
             reps = ex.get("rep_target", "10")
             rir = ex.get("rir_target", 2)
             
@@ -861,7 +888,7 @@ class SessionGenerator:
                         except: pass
                     
                     load_pct = 1.0 / (1.0 + 0.0333 * (rep_val + rir))
-                    load_pct = load_pct * mpc_intensity
+                    load_pct = load_pct * mpc_intensity * interference_atten
                     load_lbs = round((e1rm * load_pct) / 5.0) * 5.0
                     load_pct = round(load_pct, 3)
 
@@ -873,7 +900,11 @@ class SessionGenerator:
                 "load_lbs": load_lbs,
                 "load_pct": load_pct,
                 "rest_seconds": ex.get("rest_seconds", 90),
-                "notes": ex.get("notes", "")
+                "notes": (
+                    (ex.get("notes", "") + " · " if ex.get("notes") else "")
+                    + "load backed off — high concurrent-training interference"
+                ) if (not is_cal and (high_interference or interference_atten < 0.97))
+                else ex.get("notes", ""),
             }
 
             if is_cal:

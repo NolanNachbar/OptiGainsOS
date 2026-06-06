@@ -35,7 +35,7 @@ const SelectTrigger = React.forwardRef(({ className = "", children, ...props }, 
       type="button"
       ref={mergedRef}
       onClick={() => setOpen(!open)}
-      className={`flex h-[38px] w-full items-center justify-between rounded-xl border border-transparent bg-[#151515] px-3 text-[14px] text-white placeholder:text-[#555555] focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-[38px] w-full items-center justify-between rounded-xl border border-transparent bg-charcoal-surface px-3 text-[14px] text-white placeholder:text-slate-500 focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -100,7 +100,7 @@ const SelectContent = ({ className = "", children, ...props }) => {
     <>
       <div className="fixed inset-0 z-[10001]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10002] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
+        className={`fixed z-[10002] max-h-60 overflow-auto rounded-xl border border-charcoal-border bg-charcoal-surface p-1 ${className}`}
         style={style}
         {...props}
       >
@@ -125,7 +125,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
         onValueChange(value);
         setOpen(false);
       }}
-      className={`relative flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] outline-none text-[#a0a0a0] hover:bg-[#242424] hover:text-white ${selectedValue === value ? 'bg-brand/[8%] text-brand' : ''} ${className}`}
+      className={`relative flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] outline-none text-slate-400 hover:bg-charcoal-elevated hover:text-white ${selectedValue === value ? 'bg-brand/[8%] text-brand' : ''} ${className}`}
       {...props}
     >
       {children}

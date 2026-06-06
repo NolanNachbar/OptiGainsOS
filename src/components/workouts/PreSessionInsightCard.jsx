@@ -27,7 +27,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
   const iconColor = insight.action === 'deload' ? 'text-yellow-400' : 'text-brand';
 
   return (
-    <Card className="bg-[#111] border-brand/20 mb-4 p-4">
+    <Card className="bg-charcoal border-brand/20 mb-4 p-4">
       <div className="flex items-start gap-3">
         <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0 mt-0.5">
           <Brain className="w-4 h-4 text-brand" />
@@ -37,7 +37,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
             <span className="text-[10px] text-brand uppercase tracking-widest font-semibold">Coach</span>
             <Icon className={`w-3 h-3 ${iconColor}`} />
           </div>
-          <p className="text-sm text-[#d0d0d0] leading-snug">{insight.message}</p>
+          <p className="text-sm text-slate-300 leading-snug">{insight.message}</p>
           {insight.suggestedWeight && (
             <div className="flex items-center gap-2 mt-3">
               <Button
@@ -50,7 +50,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-[#555] hover:text-[#a0a0a0] text-xs h-7 px-2"
+                className="text-slate-500 hover:text-slate-400 text-xs h-7 px-2"
                 onClick={handleDismiss}
               >
                 Keep my plan
@@ -61,14 +61,14 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
             <Button
               size="sm"
               variant="ghost"
-              className="text-[#555] hover:text-[#a0a0a0] text-xs h-7 px-0 mt-2"
+              className="text-slate-500 hover:text-slate-400 text-xs h-7 px-0 mt-2"
               onClick={handleDismiss}
             >
               Got it
             </Button>
           )}
         </div>
-        <button onClick={handleDismiss} className="text-[#333] hover:text-[#666] mt-0.5">
+        <button onClick={handleDismiss} className="text-slate-700 hover:text-slate-500 mt-0.5">
           <X className="w-4 h-4" />
         </button>
       </div>

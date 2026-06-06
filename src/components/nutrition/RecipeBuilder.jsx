@@ -113,7 +113,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     return (
       <div className="space-y-2">
         {recipes.length === 0 ? (
-          <div className="text-center py-6 text-[#555555] text-sm">
+          <div className="text-center py-6 text-slate-500 text-sm">
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p>No recipes yet.</p>
             <p className="text-xs mt-1">Use the + button to create your first recipe.</p>
@@ -121,16 +121,16 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
         ) : recipes.map((recipe) => {
           const perServing = scaleRecipeToServings(recipe, 1);
           return (
-            <div key={recipe.id} className="p-3 rounded-xl border border-[#2a2a2a]/50 bg-[#1a1a1a]/60 space-y-2">
+            <div key={recipe.id} className="p-3 rounded-xl border border-charcoal-border/50 bg-charcoal-surface/60 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <span className="text-sm font-semibold text-white truncate block">{recipe.name}</span>
-                  <span className="text-xs text-[#555555] capitalize">
+                  <span className="text-xs text-slate-500 capitalize">
                     {recipe.ingredients?.length || 0} ingredients · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-[#a0a0a0] hover:text-[#a0a0a0] transition-colors">
+                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-slate-400 hover:text-slate-400 transition-colors">
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
@@ -142,7 +142,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 </div>
               </div>
               <div className="flex gap-3 text-xs font-mono">
-                <span className="text-white font-bold">{Math.round(perServing.calories)}<span className="text-[#a0a0a0] font-normal ml-0.5">cal</span></span>
+                <span className="text-white font-bold">{Math.round(perServing.calories)}<span className="text-slate-400 font-normal ml-0.5">cal</span></span>
                 <span className="text-[#60a5fa]">P{perServing.protein_grams}g</span>
                 <span className="text-[#fbbf24]">C{perServing.carbs_grams}g</span>
                 <span className="text-[#f87171]">F{perServing.fats_grams}g</span>
@@ -185,7 +185,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
       {!hideHeader && (
         <div>
           <h2 className="text-xl font-bold text-left text-white">Your Recipes</h2>
-          <p className="text-sm text-left text-[#a0a0a0]">
+          <p className="text-sm text-left text-slate-400">
             Create custom recipes and log them to your daily tracker
           </p>
         </div>
@@ -193,26 +193,26 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
 
 
       {recipes.length === 0 ? (
-        <div className="text-center py-12 rounded-xl border border-dashed border-[#2a2a2a]">
-          <BookOpen className="w-12 h-12 text-[#a0a0a0] mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-[#a0a0a0] text-[#a0a0a0] mb-1">No recipes yet</h3>
-          <p className="text-sm text-[#555555] text-[#555555]">Use the "New Recipe" button above to get started</p>
+        <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
+          <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-slate-400 text-slate-400 mb-1">No recipes yet</h3>
+          <p className="text-sm text-slate-500 text-slate-500">Use the "New Recipe" button above to get started</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {recipes.map((recipe) => {
             const perServing = scaleRecipeToServings(recipe, 1);
             return (
-              <div key={recipe.id} className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 flex flex-col gap-3">
+              <div key={recipe.id} className="rounded-xl border border-charcoal-border bg-charcoal-surface p-4 flex flex-col gap-3">
                 {/* Name row */}
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white leading-snug">{recipe.name}</p>
                     {recipe.description && (
-                      <p className="text-xs text-[#555555] mt-0.5 truncate">{recipe.description}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-semibold bg-[#202020] bg-[#202020] text-[#a0a0a0] text-[#a0a0a0] rounded-md px-1.5 py-0.5">
+                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated bg-charcoal-elevated text-slate-400 text-slate-400 rounded-md px-1.5 py-0.5">
                     {recipe.servings}×
                   </span>
                 </div>
@@ -220,22 +220,22 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 <div className="flex gap-4">
                   <div>
                     <p className="text-sm font-bold text-white">{Math.round(perServing.calories)}</p>
-                    <p className="text-xs text-[#a0a0a0]">Cal</p>
+                    <p className="text-xs text-slate-400">Cal</p>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[#60a5fa]">{perServing.protein_grams}g</p>
-                    <p className="text-xs text-[#a0a0a0]">Pro</p>
+                    <p className="text-xs text-slate-400">Pro</p>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[#fbbf24]">{perServing.carbs_grams}g</p>
-                    <p className="text-xs text-[#a0a0a0]">Carb</p>
+                    <p className="text-xs text-slate-400">Carb</p>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[#f87171]">{perServing.fats_grams}g</p>
-                    <p className="text-xs text-[#a0a0a0]">Fat</p>
+                    <p className="text-xs text-slate-400">Fat</p>
                   </div>
                 </div>
-                <p className="text-xs text-[#a0a0a0] -mt-1">
+                <p className="text-xs text-slate-400 -mt-1">
                   {recipe.ingredients?.length || 0} ingredients · per serving
                 </p>
                 {/* Actions */}
@@ -318,7 +318,7 @@ function StickyMacroBar({ ingredients, servings }) {
 
   return (
     <div
-      className={`sticky top-0 z-10 bg-[#1a1a1a]/95 backdrop-blur-sm border-b px-4 py-3 -mx-6 transition-opacity duration-300 ${
+      className={`sticky top-0 z-10 bg-charcoal-surface/95 backdrop-blur-sm border-b px-4 py-3 -mx-6 transition-opacity duration-300 ${
         hasIngredients ? "" : "opacity-40"
       }`}
     >
@@ -357,7 +357,7 @@ function StickyMacroBar({ ingredients, servings }) {
         </div>
       </div>
       {servings > 1 && hasIngredients && (
-        <div className="text-xs text-[#555555] text-center mt-1.5">
+        <div className="text-xs text-slate-500 text-center mt-1.5">
           Per serving: {Math.round(totals.total_calories / servings)} cal{" · "}
           {Math.round((totals.total_protein / servings) * 10) / 10}g P{" · "}
           {Math.round((totals.total_carbs / servings) * 10) / 10}g C{" · "}
@@ -376,7 +376,7 @@ function FoodSearchResult({ food, onClick, icon }) {
     >
       <div className="flex items-start gap-3">
         {icon && (
-          <div className="mt-0.5 text-[#a0a0a0] group-hover:text-brand transition-colors">
+          <div className="mt-0.5 text-slate-400 group-hover:text-brand transition-colors">
             {icon}
           </div>
         )}
@@ -385,7 +385,7 @@ function FoodSearchResult({ food, onClick, icon }) {
             {food.description || food.food_name}
           </div>
           {food.brandOwner && (
-            <div className="text-xs text-[#555555]">{food.brandOwner}</div>
+            <div className="text-xs text-slate-500">{food.brandOwner}</div>
           )}
           <div className="flex gap-3 mt-1 text-xs">
             <span className="text-orange-600 font-medium">
@@ -402,7 +402,7 @@ function FoodSearchResult({ food, onClick, icon }) {
             </span>
           </div>
         </div>
-        <Plus className="w-4 h-4 text-[#a0a0a0] group-hover:text-brand mt-1 transition-colors" />
+        <Plus className="w-4 h-4 text-slate-400 group-hover:text-brand mt-1 transition-colors" />
       </div>
     </button>
   );
@@ -418,16 +418,16 @@ function CollapsibleFoodSection({ label, icon, count, children }) {
         className="flex items-center gap-1.5 w-full text-left group"
       >
         <ChevronRight
-          className={`w-3.5 h-3.5 text-[#a0a0a0] transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />
         {icon}
-        <span className="text-xs font-medium text-[#a0a0a0] uppercase tracking-wide">
+        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
           {label}
         </span>
-        <span className="text-xs text-[#a0a0a0] ml-auto">{count}</span>
+        <span className="text-xs text-slate-400 ml-auto">{count}</span>
       </button>
       {open && (
-        <div className="max-h-48 overflow-y-auto border rounded-xl bg-[#1a1a1a] mt-2">
+        <div className="max-h-48 overflow-y-auto border rounded-xl bg-charcoal-surface mt-2">
           {children}
         </div>
       )}
@@ -437,14 +437,14 @@ function CollapsibleFoodSection({ label, icon, count, children }) {
 
 function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRemove }) {
   return (
-    <div className="p-3 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] hover:border-[#2a2a2a] transition-colors">
+    <div className="p-3 bg-charcoal-surface rounded-xl border border-charcoal-border hover:border-charcoal-border transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm text-white truncate">
             {ingredient.food_name}
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs">
-            <span className="text-[#555555] font-medium">Per serving:</span>
+            <span className="text-slate-500 font-medium">Per serving:</span>
             <span className="text-orange-600 font-medium">{ingredient.calories} cal</span>
             <span className="text-[#60a5fa]">{ingredient.protein_grams}g P</span>
             <span className="text-green-600">{ingredient.carbs_grams}g C</span>
@@ -467,7 +467,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
             value={ingredient.serving_size}
             onChange={(e) => onUpdateServing(index, e.target.value)}
             onFocus={(e) => e.target.select()}
-            className="w-16 h-8 text-sm text-center rounded-md border border-[#2a2a2a] bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-slate-950"
+            className="w-16 h-8 text-sm text-center rounded-md border border-charcoal-border bg-charcoal-surface focus:outline-none focus:ring-2 focus:ring-slate-950"
             min="0"
             step="1"
           />
@@ -589,7 +589,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </button>
 
       <div>
-        <Label className="text-xs font-medium text-[#555555]">Food Name *</Label>
+        <Label className="text-xs font-medium text-slate-500">Food Name *</Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -600,7 +600,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-[#555555]">Serving</Label>
+        <Label className="text-xs font-medium text-slate-500">Serving</Label>
         <div className="flex items-center gap-2 mt-1">
           <Input
             type="number"
@@ -626,7 +626,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-[#555555]">
+        <Label className="text-xs font-medium text-slate-500">
           Nutrition (per serving)
         </Label>
         <div className="grid grid-cols-4 gap-2 mt-1">
@@ -925,7 +925,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
             {currentStep === 2 && (
               <button
                 onClick={() => goToStep(1)}
-                className="text-[#a0a0a0] hover:text-[#a0a0a0] transition-colors p-1 -ml-1 rounded-lg hover:bg-[#202020]"
+                className="text-slate-400 hover:text-slate-400 transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -940,18 +940,18 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 1
                         ? "bg-brand"
-                        : "bg-[#2a2a2a]"
+                        : "bg-charcoal-elevated"
                     }`}
                   />
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 2
                         ? "bg-brand"
-                        : "bg-[#2a2a2a]"
+                        : "bg-charcoal-elevated"
                     }`}
                   />
                 </div>
-                <span className="text-xs text-[#a0a0a0]">
+                <span className="text-xs text-slate-400">
                   {currentStep === 1 ? "Details" : "Ingredients"}
                 </span>
               </div>
@@ -959,7 +959,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-[#a0a0a0] hover:text-[#a0a0a0] transition-colors p-1 rounded-lg hover:bg-[#202020]"
+            className="text-slate-400 hover:text-slate-400 transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
           >
             <X className="w-5 h-5" />
           </button>
@@ -988,7 +988,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       <h3 className="text-lg font-semibold text-white">
                         Recipe Details
                       </h3>
-                      <p className="text-sm text-[#555555] mt-1">
+                      <p className="text-sm text-slate-500 mt-1">
                         Give your recipe a name and set the serving size
                       </p>
                     </div>
@@ -1052,7 +1052,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 </div>
 
                 {/* Step 1 footer */}
-                <div className="px-6 py-4 border-t bg-[#1a1a1a]/50">
+                <div className="px-6 py-4 border-t bg-charcoal-surface/50">
                   <Button
                     onClick={() => {
                       if (!name.trim()) {
@@ -1089,13 +1089,13 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       {!showManualEntry ? (
                         <>
                           <div className="relative">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0]" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <Input
                               ref={searchRef}
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               placeholder="Search foods to add..."
-                              className="pl-10 h-11 rounded-xl glass glass-interactive focus:bg-[#1a1a1a]"
+                              className="pl-10 h-11 rounded-xl glass glass-interactive focus:bg-charcoal-surface"
                             />
                             {isSearching && (
                               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand animate-spin" />
@@ -1104,7 +1104,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
 
                           {/* Search results: custom foods first, then USDA */}
                           {(matchingCustomFoods.length > 0 || searchResults.length > 0) && (
-                            <div className="mt-2 max-h-64 overflow-y-auto border rounded-xl bg-[#1a1a1a]">
+                            <div className="mt-2 max-h-64 overflow-y-auto border rounded-xl bg-charcoal-surface">
                               {matchingCustomFoods.map((food) => (
                                 <FoodSearchResult
                                   key={"custom-" + food.id}
@@ -1114,7 +1114,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
-                                <div className="px-4 py-1.5 bg-[#1a1a1a] text-xs font-medium text-[#a0a0a0] uppercase tracking-wide">
+                                <div className="px-4 py-1.5 bg-charcoal-surface text-xs font-medium text-slate-400 uppercase tracking-wide">
                                   USDA Database
                                 </div>
                               )}
@@ -1152,7 +1152,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               {recentFoods.length > 0 && (
                                 <CollapsibleFoodSection
                                   label="Recent Foods"
-                                  icon={<Clock className="w-3.5 h-3.5 text-[#a0a0a0]" />}
+                                  icon={<Clock className="w-3.5 h-3.5 text-slate-400" />}
                                   count={recentFoods.length}
                                 >
                                   {recentFoods.map((food, i) => (
@@ -1172,7 +1172,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           <div className="flex justify-center mt-3">
                             <button
                               onClick={() => setShowManualEntry(true)}
-                              className="flex items-center gap-1.5 text-xs font-medium text-[#a0a0a0] hover:text-brand transition-colors"
+                              className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-brand transition-colors"
                             >
                               <PenLine className="w-3.5 h-3.5" />
                               or add manually from label
@@ -1192,7 +1192,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-semibold text-[#a0a0a0]">
+                          <span className="text-sm font-semibold text-slate-400">
                             Ingredients
                           </span>
                           <Badge variant="secondary" className="text-xs">
@@ -1226,7 +1226,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length === 0 && (
                       <div className="text-center py-8">
                         <Search className="w-10 h-10 text-white mx-auto mb-3" />
-                        <p className="text-sm text-[#a0a0a0]">
+                        <p className="text-sm text-slate-400">
                           Search above to start adding ingredients
                         </p>
                       </div>
@@ -1235,7 +1235,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 </div>
 
                 {/* Step 2 footer */}
-                <div className="px-6 pt-4 pb-6 border-t bg-[#1a1a1a]/50 flex-shrink-0">
+                <div className="px-6 pt-4 pb-6 border-t bg-charcoal-surface/50 flex-shrink-0">
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}

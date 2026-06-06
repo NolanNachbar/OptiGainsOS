@@ -58,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-[#151515] pr-3 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] transition-[border-color,box-shadow] duration-150"
+      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-charcoal-surface pr-3 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] transition-[border-color,box-shadow] duration-150"
     >
       <input
         type="text"
@@ -67,9 +67,9 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-white outline-none placeholder:text-[#555555]"
+        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-white outline-none placeholder:text-slate-500"
       />
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-[#555555]">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-slate-500">
         <ChevronDown className="h-4 w-4" />
       </button>
     </div>
@@ -84,7 +84,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
             <>
               <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
               <div
-                className="fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1"
+                className="fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-charcoal-border bg-charcoal-surface p-1"
                 style={dropdownStyle}
               >
                 {filtered.length > 0 ? (
@@ -94,7 +94,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                       <div
                         key={name}
                         onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
-                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-[#a0a0a0]"}`}
+                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-slate-400"}`}
                       >
                         {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
                         {name}
@@ -102,7 +102,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                     );
                   })
                 ) : (
-                  <div className="px-2 py-1.5 text-[13px] text-[#555555]">
+                  <div className="px-2 py-1.5 text-[13px] text-slate-500">
                     {query ? `No results for "${value}". Press Enter to use it.` : "No options available."}
                   </div>
                 )}
@@ -154,11 +154,11 @@ const ComboboxContent = ({ className = "", children }) => {
     <>
       <div className="fixed inset-0 z-[10100]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-1 ${className}`}
+        className={`fixed z-[10200] max-h-60 overflow-auto rounded-xl border border-charcoal-border bg-charcoal-surface p-1 ${className}`}
         style={style}
       >
         {filtered.length > 0 ? filtered : (
-          <div className="px-2 py-1.5 text-[13px] text-[#555555]">
+          <div className="px-2 py-1.5 text-[13px] text-slate-500">
             {query ? `No results for "${inputValue}".` : "No options available."}
           </div>
         )}
@@ -174,7 +174,7 @@ const ComboboxItem = ({ value, children }) => {
   return (
     <div
       onMouseDown={(e) => { e.preventDefault(); handleSelect(value); }}
-      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-[#242424] hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-[#a0a0a0]"}`}
+      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-slate-400"}`}
     >
       {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
       {children}

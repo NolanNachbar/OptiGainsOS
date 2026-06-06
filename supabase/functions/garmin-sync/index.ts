@@ -69,7 +69,7 @@ async function getConsumer(): Promise<{ key: string; secret: string }> {
   return { key: CONSUMER_KEY_FALLBACK, secret: CONSUMER_SECRET_FALLBACK };
 }
 
-async function getOAuth2(oauth1: { token: string; secret: string }, consumer: { key: string; secret: string }): Promise<string> {
+async function exchangeOAuth2(oauth1: { token: string; secret: string }, consumer: { key: string; secret: string }): Promise<{ token: string; expiresIn: number }> {
   const url = `${CONNECTAPI}/oauth-service/oauth/exchange/user/2.0`;
   const auth = await oauth1Header("POST", url, consumer.key, consumer.secret, oauth1.token, oauth1.secret);
   const r = await fetch(url, {
@@ -81,21 +81,39 @@ async function getOAuth2(oauth1: { token: string; secret: string }, consumer: { 
   if (!r.ok) throw new Error(`OAuth2 exchange failed: ${r.status}`);
   const j = await r.json();
   if (!j.access_token) throw new Error("OAuth2 access_token missing.");
-  return j.access_token as string;
+  return { token: j.access_token as string, expiresIn: Number(j.expires_in) || 3600 };
+}
+
+function bearerHeaders(accessToken: string): Record<string, string> {
+  return { "User-Agent": UA, "Authorization": `Bearer ${accessToken}`, "NK": "NT", "Di-Backend": "connectapi.garmin.com" };
 }
 
 async function garminLogin(): Promise<Record<string, string>> {
   const { data, error } = await supabase
     .from("garmin_tokens")
-    .select("oauth_token, oauth_token_secret")
+    .select("oauth_token, oauth_token_secret, oauth2_token, oauth2_expires_at")
     .eq("created_by", USER_ID)
     .maybeSingle();
   if (error) throw new Error(`garmin_tokens read failed: ${error.message}`);
   if (!data?.oauth_token) throw new Error("No Garmin OAuth1 token stored — run the one-time seed (see setup notes).");
 
+  // Reuse the cached OAuth2 bearer while it's fresh (2-min buffer). Shared with
+  // garmin-activities-sync via garmin_tokens so the two functions don't each
+  // re-exchange and trip Garmin's 429 rate limit on the exchange endpoint.
+  const now = Date.now();
+  const cachedExp = data.oauth2_expires_at ? Date.parse(data.oauth2_expires_at) : 0;
+  if (data.oauth2_token && cachedExp > now + 120_000) return bearerHeaders(data.oauth2_token);
+
   const consumer = await getConsumer();
-  const accessToken = await getOAuth2({ token: data.oauth_token, secret: data.oauth_token_secret }, consumer);
-  return { "User-Agent": UA, "Authorization": `Bearer ${accessToken}`, "NK": "NT", "Di-Backend": "connectapi.garmin.com" };
+  try {
+    const { token, expiresIn } = await exchangeOAuth2({ token: data.oauth_token, secret: data.oauth_token_secret }, consumer);
+    const expiresAt = new Date(now + Math.max(60, expiresIn - 60) * 1000).toISOString();
+    await supabase.from("garmin_tokens").update({ oauth2_token: token, oauth2_expires_at: expiresAt }).eq("created_by", USER_ID);
+    return bearerHeaders(token);
+  } catch (e) {
+    if ((e as Error).message.includes("429") && data.oauth2_token) return bearerHeaders(data.oauth2_token);
+    throw e;
+  }
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────

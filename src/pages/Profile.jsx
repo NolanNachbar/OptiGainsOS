@@ -24,8 +24,8 @@ import { format } from "date-fns";
 function SectionHeader({ icon: Icon, title }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="p-2 rounded-lg bg-[#202020]">
-        <Icon className="w-4 h-4 text-[#a0a0a0]" />
+      <div className="p-2 rounded-lg bg-charcoal-elevated">
+        <Icon className="w-4 h-4 text-slate-400" />
       </div>
       <h3 className="text-sm font-semibold text-white">{title}</h3>
     </div>
@@ -33,7 +33,7 @@ function SectionHeader({ icon: Icon, title }) {
 }
 
 function SectionDivider() {
-  return <div className="border-t border-[#2a2a2a] my-6" />;
+  return <div className="border-t border-charcoal-border my-6" />;
 }
 
 export default function Profile({ hideHeader }) {
@@ -232,7 +232,7 @@ export default function Profile({ hideHeader }) {
   ];
 
   return (
-    <div className={`p-4 md:p-6 bg-[#121212] min-h-screen transition-colors duration-300 ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
+    <div className={`p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300 ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
       <div className="max-w-6xl mx-auto">
 
         {/* ── Two-column layout (desktop) / single column (mobile) ── */}
@@ -249,7 +249,7 @@ export default function Profile({ hideHeader }) {
               }}
             >
               {/* Avatar card */}
-              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-4 text-center">
+              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
@@ -259,10 +259,10 @@ export default function Profile({ hideHeader }) {
                   {formData.display_name || user.email}
                 </p>
                 {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
+                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
                       <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
                       <p className="text-white font-bold text-lg leading-tight">
@@ -270,18 +270,18 @@ export default function Profile({ hideHeader }) {
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Section nav */}
-              <nav className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-2 flex flex-col gap-0.5">
+              <nav className="rounded-xl bg-charcoal-surface border border-charcoal-border p-2 flex flex-col gap-0.5">
                 {NAV.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -290,7 +290,7 @@ export default function Profile({ hideHeader }) {
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                       activeSection === id
                         ? 'bg-brand/[8%] text-brand'
-                        : 'text-[#a0a0a0] hover:text-white hover:bg-[#242424]'
+                        : 'text-slate-400 hover:text-white hover:bg-charcoal-elevated'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -307,7 +307,7 @@ export default function Profile({ hideHeader }) {
             {/* Mobile: hub view (profile card + nav list) */}
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
               <h1 className="text-[22px] font-bold text-white leading-tight mb-4">Profile</h1>
-              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-5 text-center mb-3">
+              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
@@ -317,10 +317,10 @@ export default function Profile({ hideHeader }) {
                   {formData.display_name || user.email}
                 </p>
                 {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-[#2a2a2a]">
+                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
                       <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
                       <p className="text-white font-bold text-lg leading-tight">
@@ -328,28 +328,28 @@ export default function Profile({ hideHeader }) {
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
-                      <p className="text-[#555555] text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden">
+              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setActiveSection(id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-[#242424] hover:bg-[#242424] ${idx < NAV.length - 1 ? 'border-b border-[#2a2a2a]' : ''}`}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-charcoal-elevated hover:bg-charcoal-elevated ${idx < NAV.length - 1 ? 'border-b border-charcoal-border' : ''}`}
                   >
-                    <div className="p-1.5 rounded-md bg-[#242424]">
+                    <div className="p-1.5 rounded-md bg-charcoal-elevated">
                       <Icon className="w-3.5 h-3.5 text-brand" />
                     </div>
                     <span className="text-white flex-1">{label}</span>
-                    <ChevronRight className="w-4 h-4 text-[#555555]" />
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
                   </button>
                 ))}
               </div>
@@ -378,7 +378,7 @@ export default function Profile({ hideHeader }) {
                 <h1 className="text-[22px] font-bold text-white leading-tight">
                   {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
                 </h1>
-                <p className="text-[13px] text-[#a0a0a0] mt-0.5">
+                <p className="text-[13px] text-slate-400 mt-0.5">
                   {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
                   (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
                   (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
@@ -410,7 +410,7 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" value={user.email} disabled className="mt-1" />
-                      <p className="text-sm text-[#555555] mt-1">This is your login email and cannot be changed</p>
+                      <p className="text-sm text-slate-500 mt-1">This is your login email and cannot be changed</p>
                     </div>
                   </div>
 
@@ -463,7 +463,7 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
-                        <div className="flex gap-1 bg-[#202020] rounded-lg p-0.5">
+                        <div className="flex gap-1 bg-charcoal-elevated rounded-lg p-0.5">
                           <button
                             type="button"
                             onClick={() => {
@@ -477,7 +477,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'bg-[#1a1a1a] shadow text-brand font-medium' : 'text-[#555555]'
+                              formData.height_unit === 'in' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-slate-500'
                             }`}
                           >ft/in</button>
                           <button
@@ -491,7 +491,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'bg-[#1a1a1a] shadow text-brand font-medium' : 'text-[#555555]'
+                              formData.height_unit === 'cm' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-slate-500'
                             }`}
                           >cm</button>
                         </div>
@@ -576,14 +576,14 @@ export default function Profile({ hideHeader }) {
                         className="mt-1"
                         placeholder="e.g. 175"
                       />
-                      <p className="text-xs text-[#555555] mt-1">Saving a new weight also adds an entry to your weight log.</p>
+                      <p className="text-xs text-slate-500 mt-1">Saving a new weight also adds an entry to your weight log.</p>
                     </div>
 
                     {tdee.tdee && (
                       <div className="bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="text-sm text-[#a0a0a0]">Estimated TDEE</div>
+                            <div className="text-sm text-slate-400">Estimated TDEE</div>
                             <div className="text-2xl font-bold text-white">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -613,7 +613,7 @@ export default function Profile({ hideHeader }) {
                             onChange={(e) => setProteinPerLb(e.target.value)}
                             className="w-24"
                           />
-                          <span className="text-sm text-[#555555] whitespace-nowrap">
+                          <span className="text-sm text-slate-500 whitespace-nowrap">
                             g protein / lb = {Math.round(proteinPerLb * (formData.weight_unit === 'kg' ? (latestWeight * 2.205) : latestWeight))}g/day
                           </span>
                         </div>
@@ -640,7 +640,7 @@ export default function Profile({ hideHeader }) {
                       </div>
                     )}
                     {!tdee.tdee && (
-                      <p className="text-sm text-[#555555]">Fill in your body stats above to enable auto-calculation.</p>
+                      <p className="text-sm text-slate-500">Fill in your body stats above to enable auto-calculation.</p>
                     )}
                     <MacroGoalsEditor
                       values={formData}
@@ -672,7 +672,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-[#555555] mt-1">Used when logging workout weights</p>
+                      <p className="text-sm text-slate-500 mt-1">Used when logging workout weights</p>
                     </div>
 
                     <div>
@@ -694,7 +694,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-[#555555] mt-1">Nutrition coach suggests adjustments on this day</p>
+                      <p className="text-sm text-slate-500 mt-1">Nutrition coach suggests adjustments on this day</p>
                     </div>
 
                     <div>
@@ -703,13 +703,13 @@ export default function Profile({ hideHeader }) {
                         id="timezone"
                         value={formData.timezone}
                         onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                        className="mt-1 w-full rounded-md border border-charcoal-border bg-charcoal-surface text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
                       >
                         {Intl.supportedValuesOf('timeZone').map(tz => (
                           <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                         ))}
                       </select>
-                      <p className="text-sm text-[#555555] mt-1">Used to determine today's date for your schedule</p>
+                      <p className="text-sm text-slate-500 mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
 
@@ -739,7 +739,7 @@ export default function Profile({ hideHeader }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-white">Report a Bug</p>
-                  <p className="text-sm text-[#a0a0a0]">Found something broken? Let us know.</p>
+                  <p className="text-sm text-slate-400">Found something broken? Let us know.</p>
                 </div>
                 <Button variant="outline" asChild>
                   <a
@@ -768,7 +768,7 @@ export default function Profile({ hideHeader }) {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="font-medium text-white">Sign Out</p>
-                  <p className="text-sm text-[#a0a0a0]">Sign out of your account</p>
+                  <p className="text-sm text-slate-400">Sign out of your account</p>
                 </div>
                 <Button
                   variant="outline"
@@ -789,7 +789,7 @@ export default function Profile({ hideHeader }) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-white">Delete Account</p>
-                    <p className="text-sm text-[#a0a0a0]">Permanently delete your account and all data</p>
+                    <p className="text-sm text-slate-400">Permanently delete your account and all data</p>
                   </div>
                   <Button
                     variant="outline"
@@ -845,12 +845,12 @@ export default function Profile({ hideHeader }) {
 
       {/* Sticky Save Bar */}
       <div
-        className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-[#1a1a1a] border-t border-[#2a2a2a] transition-transform duration-300 ease-out ${
+        className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
           isDirty ? 'translate-y-0' : 'translate-y-[200%]'
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-[#a0a0a0]">You have unsaved changes</p>
+          <p className="text-sm text-slate-400">You have unsaved changes</p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel

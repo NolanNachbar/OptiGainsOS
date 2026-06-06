@@ -5,7 +5,7 @@
 export default function AppCard({ children, accent, className = "", ...props }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl bg-[#1a1a1a]  border border-[#2a2a2a]  ${accent ? 'border-l-4' : ''} ${className}`}
+      className={`relative overflow-hidden rounded-xl bg-charcoal-surface  border border-charcoal-border  ${accent ? 'border-l-4' : ''} ${className}`}
       style={accent ? { borderLeftColor: accent } : undefined}
       {...props}
     >

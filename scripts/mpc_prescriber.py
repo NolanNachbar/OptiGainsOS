@@ -112,6 +112,22 @@ PENALTY_FATIGUE_SCALE  = 0.08   # per unit of f_t above threshold
 PENALTY_ACWR_SCALE     = 2.00   # per unit of ACWR above 1.3
 FATIGUE_THRESHOLD      = 8.0    # f_t above this incurs penalty
 
+# #13: per-action goal-readiness values for the dual reward. simulate_trajectory
+# only sees an action's LOAD (TSS), so two equal-load actions otherwise score
+# identically and w_pst couldn't actually steer toward PST development. These give
+# each action a real PST-readiness vs strength-progress value, weighted by the
+# deadline weights — so as the Aug 31 PST nears (w_pst↑) the MPC genuinely shifts
+# toward conditioning instead of just reweighting the same fitness scalar.
+PST_READINESS_VALUE = {
+    "CARDIO": 1.0, "TWO_A_DAY": 0.9, "CALISTHENICS": 0.85, "MIXED": 0.7,
+    "LIGHT": 0.4, "STRENGTH": 0.15, "DELOAD": 0.1, "REST": 0.0,
+}
+STRENGTH_PROGRESS_VALUE = {
+    "STRENGTH": 1.0, "TWO_A_DAY": 0.7, "MIXED": 0.6, "DELOAD": 0.3,
+    "CALISTHENICS": 0.25, "LIGHT": 0.2, "CARDIO": 0.1, "REST": 0.0,
+}
+GOAL_REWARD_SCALE      = 3.0    # magnitude of the goal-readiness reward
+
 # Deadline
 DEADLINE = datetime.date(2026, 8, 31)
 
@@ -237,17 +253,27 @@ def simulate_trajectory(
     }
 
 
-def score_trajectory(traj: dict, w_pst: float, w_str: float) -> float:
+def score_trajectory(traj: dict, w_pst: float, w_str: float, action: str = "REST") -> float:
     """
     Score a 14-day simulated trajectory for the dual reward function.
 
     Higher is better. Components:
+      + Goal-readiness reward: w_pst × PST-readiness(action) + w_str × strength(action)
       + Fitness gain signal (F_t at end of horizon)
       + TSB quality (want TSB positive at deadline, not just at day 14)
       - Fatigue penalty (excessive f_t slows adaptation and injury risk)
       - ACWR penalty (injury risk)
     """
-    # Primary signal: fitness trajectory value
+    # The dual goal-readiness reward the docstring promised — this is what makes
+    # today's ACTION CHOICE matter beyond its raw load (the trajectory sim is
+    # otherwise load-only). Conditioning actions earn PST readiness, lifting earns
+    # strength progress, each weighted by how close the deadline is.
+    goal_term = GOAL_REWARD_SCALE * (
+        w_pst * PST_READINESS_VALUE.get(action, 0.3)
+        + w_str * STRENGTH_PROGRESS_VALUE.get(action, 0.3)
+    )
+
+    # Recovery/health signal: fitness trajectory value
     fitness_score = traj["final_fitness"] * (w_pst * 0.6 + w_str * 0.4)
 
     # TSB bonus: positive TSB = freshness = better performance expression
@@ -261,7 +287,7 @@ def score_trajectory(traj: dict, w_pst: float, w_str: float) -> float:
     acwr_excess = max(0.0, traj["max_acwr"] - 1.3)
     acwr_penalty = PENALTY_ACWR_SCALE * (acwr_excess ** 2)
 
-    return round(fitness_score + tsb_bonus - fatigue_penalty - acwr_penalty, 4)
+    return round(goal_term + fitness_score + tsb_bonus - fatigue_penalty - acwr_penalty, 4)
 
 
 def select_action(
@@ -284,7 +310,7 @@ def select_action(
     scores = {}
     for action in ACTION_TSS:
         traj          = simulate_trajectory(kalman, action, load_history)
-        raw_score     = score_trajectory(traj, w_pst, w_str)
+        raw_score     = score_trajectory(traj, w_pst, w_str, action)
         scores[action] = {"score": raw_score, "trajectory": traj}
 
     # Sort by score descending

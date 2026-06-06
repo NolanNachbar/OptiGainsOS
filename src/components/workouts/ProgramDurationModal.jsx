@@ -89,14 +89,14 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
   return (
     <Dialog open={true} onOpenChange={(open) => { if (!open) onCancel(); }}>
-      <DialogContent className="max-w-2xl p-0 flex flex-col overflow-hidden bg-[#121212]">
+      <DialogContent className="max-w-2xl p-0 flex flex-col overflow-hidden bg-charcoal">
 
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-[#2a2a2a] p-6 pb-4">
+        <DialogHeader className="shrink-0 border-b border-charcoal-border p-6 pb-4">
           <DialogTitle className="text-xl text-white">
             Program Settings
           </DialogTitle>
-          <p className="text-sm text-[#555555] mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Configure how long and how progressively your program runs
           </p>
         </DialogHeader>
@@ -108,12 +108,12 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         >
 
           {/* Split summary chips */}
-          <div className="flex flex-wrap gap-2 p-3 bg-[#202020] bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+          <div className="flex flex-wrap gap-2 p-3 bg-charcoal-elevated bg-charcoal-surface rounded-xl border border-charcoal-border">
             {split.map((day, i) => (
               <Badge
                 key={i}
                 variant="outline"
-                className="text-xs text-[#a0a0a0] text-[#a0a0a0] border-[#2a2a2a] border-[#2a2a2a] bg-[#1a1a1a] bg-[#202020]"
+                className="text-xs text-slate-400 text-slate-400 border-charcoal-border border-charcoal-border bg-charcoal-surface bg-charcoal-elevated"
               >
                 Day {i + 1}: {day}
               </Badge>
@@ -137,13 +137,13 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       "p-3 rounded-xl border-2 text-left transition-all",
                       isActive
                         ? "border-brand/30 bg-brand/[8%]"
-                        : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-brand/30",
+                        : "border-charcoal-border bg-charcoal-surface hover:border-brand/30",
                     ].join(" ")}
                   >
                     <div className={`font-bold text-sm ${isActive ? "text-brand text-brand" : "text-white "}`}>
                       {preset.label}
                     </div>
-                    <div className="text-xs text-[#555555] mt-0.5 leading-snug">
+                    <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                       {preset.description}
                     </div>
                   </button>
@@ -159,9 +159,9 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 min={3}
                 max={52}
                 onChange={(e) => setCustomWeeks(e.target.value)}
-                className="w-40 glass glass-interactive text-white placeholder:text-[#a0a0a0]"
+                className="w-40 glass glass-interactive text-white placeholder:text-slate-400"
               />
-              <span className="text-sm text-[#555555]">weeks (min 3)</span>
+              <span className="text-sm text-slate-500">weeks (min 3)</span>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
               <Label className="text-base font-semibold block mb-1 text-white">
                 Weekly Weight Increase
               </Label>
-              <p className="text-xs text-[#555555] mb-2">
+              <p className="text-xs text-slate-500 mb-2">
                 Lbs added to compound lifts each progression week
               </p>
               <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   onChange={(e) => setWeeklyIncrement(e.target.value)}
                   className="w-28 glass glass-interactive text-white"
                 />
-                <span className="text-sm text-[#555555]">lbs / week</span>
+                <span className="text-sm text-slate-500">lbs / week</span>
               </div>
 
               {/* Quick-pick buttons */}
@@ -200,7 +200,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                         "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
                         isActive
                           ? "border-brand/30 bg-brand/[8%] text-brand text-brand"
-                          : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30 bg-[#1a1a1a]",
+                          : "border-charcoal-border text-slate-400 hover:border-brand/30 bg-charcoal-surface",
                       ].join(" ")}
                     >
                       +{v}
@@ -215,7 +215,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
               <Label className="text-base font-semibold block mb-1 text-white">
                 Deload Week Weight
               </Label>
-              <p className="text-xs text-[#555555] mb-2">
+              <p className="text-xs text-slate-500 mb-2">
                 How much to reduce weight on the final recovery week
               </p>
 
@@ -227,7 +227,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "match_intro"
                       ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
-                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(245,158,11,0.4)]",
+                      : "border-charcoal-border bg-charcoal-surface hover:border-[rgba(245,158,11,0.4)]",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       Match Intro Week
                     </span>
                   </div>
-                  <p className="text-xs text-[#555555] mt-0.5 ml-6">
+                  <p className="text-xs text-slate-500 mt-0.5 ml-6">
                     Use the same weight as Week 1
                   </p>
                 </button>
@@ -248,7 +248,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "reduce"
                       ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
-                      : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[rgba(245,158,11,0.4)]",
+                      : "border-charcoal-border bg-charcoal-surface hover:border-[rgba(245,158,11,0.4)]",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
@@ -257,14 +257,14 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       Reduce from Previous
                     </span>
                   </div>
-                  <p className="text-xs text-[#555555] mt-0.5 ml-6">
+                  <p className="text-xs text-slate-500 mt-0.5 ml-6">
                     Drop a set amount from the last progression week
                   </p>
                 </button>
 
                 {deloadMode === "reduce" && (
                   <div className="flex items-center gap-2 pl-2">
-                    <span className="text-sm text-[#a0a0a0]">Drop by</span>
+                    <span className="text-sm text-slate-400">Drop by</span>
                     <Input
                       type="number"
                       value={deloadReduction}
@@ -273,7 +273,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       onChange={(e) => setDeloadReduction(e.target.value)}
                       className="w-24 glass glass-interactive text-white"
                     />
-                    <span className="text-sm text-[#555555]">lbs</span>
+                    <span className="text-sm text-slate-500">lbs</span>
                   </div>
                 )}
               </div>
@@ -298,7 +298,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#555555]">
+            <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-brand" />
                 1 intro week
@@ -327,7 +327,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#2a2a2a] px-6 py-4 flex gap-3 bg-[#121212]">
+        <div className="shrink-0 border-t border-charcoal-border px-6 py-4 flex gap-3 bg-charcoal">
           <Button variant="outline" onClick={onCancel} className="flex-1">
             Cancel
           </Button>

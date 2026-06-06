@@ -44,7 +44,7 @@ export function calculateReadinessScore(metrics, checkin) {
  * Categorizes a readiness score into a human-readable state.
  */
 export function getReadinessCategory(score) {
-  if (score == null) return { label: "Unknown", color: "text-[#555555]", bg: "bg-[#555555]/10" };
+  if (score == null) return { label: "Unknown", color: "text-slate-500", bg: "bg-slate-600/10" };
   if (score >= 85) return { label: "Optimal", color: "text-brand", bg: "bg-brand/10" };
   if (score >= 70) return { label: "Good", color: "text-[#4ade80]", bg: "bg-[#4ade80]/10" };
   if (score >= 50) return { label: "Moderate", color: "text-[#fbbf24]", bg: "bg-[#fbbf24]/10" };

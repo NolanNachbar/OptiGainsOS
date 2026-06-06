@@ -11,6 +11,22 @@ toward what your actual data suggests.
 Update schedule: once per week (Sunday), not daily. Daily updates amplify noise.
 Skipped entirely when input variance is too low (e.g., uniform training) to prevent
 covariance windup — a covariance that explodes causes wild parameter swings.
+
+KNOWN LIMITATION (do not "fix" the windup guard expecting τ to start learning):
+This linear regression of absolute performance (y_t ~ 100) onto
+phi = [fitness, fatigue, load, nutrition] with theta = [tau_fit, tau_fat, c_fit, c_fat]
+is NOT a sound system-identification of the Banister time-constants:
+  - Scale mismatch: phi·theta is not on the performance scale, so any update that
+    passes the guard drives theta toward its clamp bounds rather than toward the
+    athlete's true values.
+  - Identifiability: load builds fitness AND fatigue; from a single daily
+    performance number you only observe the net (c_fit − c_fat), so c_fit and c_fat
+    cannot be separated here.
+The MIN_PHI_VAR guard is therefore conservative BY DESIGN — it keeps theta near the
+(sane) population defaults instead of corrupting them. Properly personalising τ
+requires a structural estimator (EKF / joint state-parameter Kalman, or an offline
+multi-day Banister fit), which is a separate piece of work. Until then, treat the
+learned params as advisory and lean on the Kalman's online STATE adaptation.
 """
 import math
 import numpy as np

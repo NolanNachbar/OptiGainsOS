@@ -103,7 +103,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
       <DialogContent className="max-w-2xl p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 border-b p-6 pb-4">
           <DialogTitle>Choose Your {daysPerWeek}-Day Split</DialogTitle>
-          <p className="text-sm text-[#a0a0a0]  mt-1">
+          <p className="text-sm text-slate-400  mt-1">
             Select a preset or build your own custom schedule
           </p>
         </DialogHeader>
@@ -121,7 +121,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                       selectedPreset === preset.id && !isCustomMode
                         ? 'border-brand bg-brand/[5%]'
-                        : 'border-[#2a2a2a]  hover:border-brand/30 bg-[#1a1a1a] '
+                        : 'border-charcoal-border  hover:border-brand/30 bg-charcoal-surface '
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -160,13 +160,13 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
 
             {isCustomMode && (
               <div className="p-4 border-2 border-brand/30 rounded-lg bg-brand/[5%]/50">
-                <p className="text-sm text-[#a0a0a0]  mb-3">
+                <p className="text-sm text-slate-400  mb-3">
                   Choose the focus for each day of your split
                 </p>
                 <div className="space-y-3">
                   {Array.from({ length: daysPerWeek }).map((_, dayIndex) => (
                     <div key={dayIndex} className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-[#a0a0a0]  min-w-[60px]">
+                      <span className="text-sm font-medium text-slate-400  min-w-[60px]">
                         Day {dayIndex + 1}:
                       </span>
                       <Select value={customSplit[dayIndex]} onValueChange={(value) => handleCustomDayChange(dayIndex, value)}>
@@ -199,7 +199,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                   <p className="text-sm font-semibold text-white">
                     Exercises per day
                   </p>
-                  <p className="text-xs text-[#555555]">
+                  <p className="text-xs text-slate-500">
                     You have 60+ min — choose how many exercises per session
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
                       exercisesPerDay === n
                         ? "border-brand/50 bg-brand text-black font-bold"
-                        : "border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30  "
+                        : "border-charcoal-border text-slate-400 hover:border-brand/30  "
                     }`}
                   >
                     {n}

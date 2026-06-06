@@ -24,13 +24,13 @@ const STATUS_COLORS = {
   reading: "bg-brand/10 text-brand border-brand/20",
   finished: "bg-green-500/10 text-green-400 border-green-500/20",
   paused: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  "want-to-read": "bg-[#2a2a2a] text-[#a0a0a0] border-[#333]",
+  "want-to-read": "bg-charcoal-elevated text-slate-400 border-charcoal-border",
 };
 const CAT_COLORS = {
   technical: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   business: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
   philosophy: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  other: "bg-[#2a2a2a] text-[#555] border-[#333]",
+  other: "bg-charcoal-elevated text-slate-500 border-charcoal-border",
 };
 const MEDIUM_COLORS = {
   video: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -47,7 +47,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-brand"} ${n <= (value || 0) ? "text-brand" : "text-[#333]"}`}
+          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-brand"} ${n <= (value || 0) ? "text-brand" : "text-slate-700"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -137,7 +137,7 @@ function ReadingTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-[#555555]">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
+          <p className="text-xs text-slate-500">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
         <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
           <Plus className="w-3.5 h-3.5" /> Add Book
@@ -155,7 +155,7 @@ function ReadingTab() {
 
       {rest.length > 0 && (
         <div>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#555555] mb-3">All Books</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">All Books</h3>
           <div className="space-y-3">
             {[...rest].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status)).map(book => (
               <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={del.mutate} onStatusChange={updateStatus.mutate} />
@@ -165,9 +165,9 @@ function ReadingTab() {
       )}
 
       {books.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-[#2a2a2a] rounded-2xl">
-          <BookOpen className="w-8 h-8 text-[#2a2a2a] mx-auto mb-2" />
-          <p className="text-sm text-[#555555]">No books yet.</p>
+        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+          <BookOpen className="w-8 h-8 text-slate-800 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">No books yet.</p>
         </div>
       )}
 
@@ -176,16 +176,16 @@ function ReadingTab() {
           <DialogHeader><DialogTitle className="text-white">{editing ? "Edit Book" : "Add Book"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Title</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Title</Label>
               <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" className="h-9" />
             </div>
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Author</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Author</Label>
               <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" className="h-9" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Category</Label>
+                <Label className="text-xs text-slate-400 mb-1.5 block">Category</Label>
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -194,7 +194,7 @@ function ReadingTab() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Status</Label>
+                <Label className="text-xs text-slate-400 mb-1.5 block">Status</Label>
                 <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -204,11 +204,11 @@ function ReadingTab() {
               </div>
             </div>
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Rating</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Rating</Label>
               <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
             </div>
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Notes</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Notes</Label>
               <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." className="h-9" />
             </div>
             <div className="flex gap-2 pt-1">
@@ -225,17 +225,17 @@ function ReadingTab() {
 function BookCard({ book, onEdit, onDelete, onStatusChange }) {
   const STATUS_NEXT = { "want-to-read": "reading", reading: "finished", finished: "finished", paused: "reading" };
   return (
-    <div className="p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] group">
+    <div className="p-4 rounded-xl bg-charcoal-surface border border-charcoal-border group">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{book.title}</p>
-          {book.author && <p className="text-xs text-[#555555]">{book.author}</p>}
+          {book.author && <p className="text-xs text-slate-500">{book.author}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => onEdit(book)} className="p-1 text-[#555555] hover:text-brand opacity-0 group-hover:opacity-100 transition-all">
+          <button onClick={() => onEdit(book)} className="p-1 text-slate-500 hover:text-brand opacity-0 group-hover:opacity-100 transition-all">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(book.id)} className="p-1 text-[#555555] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+          <button onClick={() => onDelete(book.id)} className="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -254,7 +254,7 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
         )}
         {book.rating > 0 && <StarRating value={book.rating} readonly />}
       </div>
-      {book.notes && <p className="text-xs text-[#a0a0a0] mt-2 italic border-l-2 border-[#2a2a2a] pl-2">{book.notes}</p>}
+      {book.notes && <p className="text-xs text-slate-400 mt-2 italic border-l-2 border-charcoal-border pl-2">{book.notes}</p>}
     </div>
   );
 }
@@ -305,7 +305,7 @@ function StudyTab() {
     <div className="space-y-6">
       <Card className="glass glass-interactive">
         <CardContent className="pt-4 px-5 pb-5">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4 flex items-center gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
             <Zap className="w-3 h-3" /> Log Study Session
           </h3>
           <div className="space-y-3">
@@ -335,42 +335,42 @@ function StudyTab() {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-center">
+        <div className="p-4 rounded-xl bg-charcoal-surface border border-charcoal-border text-center">
           <p className="text-2xl font-bold text-white">{weeklyHours.toFixed(1)}</p>
-          <p className="text-[10px] text-[#555555] uppercase tracking-widest mt-0.5">hrs this week</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">hrs this week</p>
         </div>
-        <div className="p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-center">
+        <div className="p-4 rounded-xl bg-charcoal-surface border border-charcoal-border text-center">
           <p className="text-2xl font-bold text-white">{logs.length}</p>
-          <p className="text-[10px] text-[#555555] uppercase tracking-widest mt-0.5">total sessions</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">total sessions</p>
         </div>
       </div>
 
       <div>
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#555555] mb-3 flex items-center gap-2">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Sessions
         </h3>
         <div className="space-y-2">
           {logs.length === 0 && (
-            <div className="py-12 text-center border-2 border-dashed border-[#2a2a2a] rounded-2xl">
-              <GraduationCap className="w-7 h-7 text-[#2a2a2a] mx-auto mb-2" />
-              <p className="text-sm text-[#555555]">No study sessions yet.</p>
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <GraduationCap className="w-7 h-7 text-slate-800 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">No study sessions yet.</p>
             </div>
           )}
           {logs.map(log => (
-            <div key={log.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] group">
+            <div key={log.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-charcoal-surface border border-charcoal-border group">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-sm font-medium text-white truncate">{log.topic}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-[10px] text-[#555555]">
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
                     <Timer className="w-3 h-3" />{log.duration_min} min
                   </div>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${MEDIUM_COLORS[log.medium] || ""}`}>{log.medium}</span>
-                  <span className="text-[10px] text-[#555555]">{format(parseISO(log.logged_at), "MMM d")}</span>
+                  <span className="text-[10px] text-slate-500">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
-              <button onClick={() => del.mutate(log.id)} className="opacity-0 group-hover:opacity-100 text-[#555555] hover:text-red-400 transition-all shrink-0">
+              <button onClick={() => del.mutate(log.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -467,9 +467,9 @@ function SkillsTab() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-semibold text-white">{skill.name}</p>
-                  {skill.category && <p className="text-[10px] text-[#555555]">{skill.category}</p>}
+                  {skill.category && <p className="text-[10px] text-slate-500">{skill.category}</p>}
                 </div>
-                <button onClick={() => del.mutate(skill.id)} className="opacity-0 group-hover:opacity-100 text-[#555555] hover:text-red-400 transition-all p-0.5">
+                <button onClick={() => del.mutate(skill.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all p-0.5">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -478,10 +478,10 @@ function SkillsTab() {
                   <button
                     key={n}
                     onClick={() => updateLevel.mutate({ id: skill.id, level: n })}
-                    className={`w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-brand" : "bg-[#333]"}`}
+                    className={`w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-brand" : "bg-slate-700"}`}
                   />
                 ))}
-                <span className="text-[10px] text-[#555555] ml-1">Level {skill.level || 0}/5</span>
+                <span className="text-[10px] text-slate-500 ml-1">Level {skill.level || 0}/5</span>
               </div>
               <div className="flex items-center justify-between">
                 {isStale ? (
@@ -490,7 +490,7 @@ function SkillsTab() {
                     {daysSince === null ? "Never practiced" : `${daysSince}d ago`}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-[#555555]">{daysSince}d ago</span>
+                  <span className="text-[10px] text-slate-500">{daysSince}d ago</span>
                 )}
                 <Button size="sm" variant="ghost" className="h-6 text-[10px] text-brand hover:bg-brand/10 px-2" onClick={() => practiced.mutate(skill.id)}>
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Practiced
@@ -502,9 +502,9 @@ function SkillsTab() {
       </div>
 
       {skills.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-[#2a2a2a] rounded-2xl">
-          <Layers className="w-8 h-8 text-[#2a2a2a] mx-auto mb-2" />
-          <p className="text-sm text-[#555555]">No skills tracked yet.</p>
+        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+          <Layers className="w-8 h-8 text-slate-800 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">No skills tracked yet.</p>
         </div>
       )}
 
@@ -513,21 +513,21 @@ function SkillsTab() {
           <DialogHeader><DialogTitle className="text-white">Add Skill</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Skill name</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Skill name</Label>
               <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. TypeScript" className="h-9" />
             </div>
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Category (optional)</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Category (optional)</Label>
               <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. Frontend, Machine Learning" className="h-9" />
             </div>
             <div>
-              <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Current level</Label>
+              <Label className="text-xs text-slate-400 mb-1.5 block">Current level</Label>
               <div className="flex gap-2">
                 {[1,2,3,4,5].map(n => (
                   <button
                     key={n}
                     onClick={() => setForm(p => ({ ...p, level: n }))}
-                    className={`w-8 h-8 rounded-full text-xs font-bold border transition-colors ${n === form.level ? "bg-brand text-black border-brand" : "bg-[#222] text-[#555] border-[#333]"}`}
+                    className={`w-8 h-8 rounded-full text-xs font-bold border transition-colors ${n === form.level ? "bg-brand text-black border-brand" : "bg-charcoal-elevated text-slate-500 border-charcoal-border"}`}
                   >{n}</button>
                 ))}
               </div>
@@ -559,31 +559,31 @@ function CaptureTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
           <BookOpen className="w-3 h-3" /> New Learning Log
         </h2>
         <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
-        <p className="text-[10px] text-[#555555] mt-2 italic">Picked up by your desktop agent and organized into Obsidian.</p>
+        <p className="text-[10px] text-slate-500 mt-2 italic">Picked up by your desktop agent and organized into Obsidian.</p>
       </div>
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Streams
         </h2>
         <div className="space-y-3">
           {recentLogs.length > 0 ? recentLogs.map(log => (
-            <div key={log.id} className="p-4 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a]">
+            <div key={log.id} className="p-4 rounded-xl bg-charcoal-surface border border-charcoal-border">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-[10px] text-brand font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand/5">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-[10px] text-[#4ade80] font-bold uppercase tracking-wider">Synced</span>}
+                {log.processed && <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Synced</span>}
               </div>
-              <p className="text-sm text-[#e0e0e0] whitespace-pre-wrap leading-relaxed">{log.content}</p>
+              <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (
-            <div className="py-12 text-center border-2 border-dashed border-[#2a2a2a] rounded-2xl">
-              <GraduationCap className="w-8 h-8 text-[#2a2a2a] mx-auto mb-2" />
-              <p className="text-sm text-[#555555]">No recent learning logs.</p>
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <GraduationCap className="w-8 h-8 text-slate-800 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">No recent learning logs.</p>
             </div>
           )}
         </div>
@@ -595,7 +595,7 @@ function CaptureTab() {
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function Mind({ hideHeader }) {
   return (
-    <div className={`px-4 py-6 md:px-8 bg-[#121212] min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
+    <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6">
@@ -605,7 +605,7 @@ export default function Mind({ hideHeader }) {
               </div>
               <h1 className="text-2xl font-bold text-white">Mind & Learning</h1>
             </div>
-            <p className="text-[#a0a0a0] text-sm pl-12">Track what you're reading, studying, and building.</p>
+            <p className="text-slate-400 text-sm pl-12">Track what you're reading, studying, and building.</p>
           </header>
         )}
 

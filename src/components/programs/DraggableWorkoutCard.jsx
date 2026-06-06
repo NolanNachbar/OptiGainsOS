@@ -51,11 +51,11 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                 {workout.title}
               </p>
               {workout.description && (
-                <p className="text-xs text-[#555555]  line-clamp-1 mt-0.5">
+                <p className="text-xs text-slate-500  line-clamp-1 mt-0.5">
                   {workout.description}
                 </p>
               )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-[#555555] ">
+                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 ">
                 {workout.duration_minutes && (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -68,7 +68,7 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                 </span>
               </div>
             </div>
-            <GripVertical className="w-4 h-4 text-[#a0a0a0]  flex-shrink-0 mt-1" />
+            <GripVertical className="w-4 h-4 text-slate-400  flex-shrink-0 mt-1" />
           </div>
         </div>
       </Card>

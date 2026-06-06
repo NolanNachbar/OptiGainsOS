@@ -38,7 +38,7 @@ export function ConfirmDialog({
             <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <p className="text-[13px] text-[#a0a0a0] mt-2">
+        <p className="text-[13px] text-slate-400 mt-2">
           {description}
         </p>
         <div className="flex gap-3 mt-6">

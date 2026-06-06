@@ -34,6 +34,7 @@ sys.path.insert(0, _SCRIPT_DIR)
 # Epley, ≤12-rep cap, competition-variant goal rollup). Imported outside the
 # numpy guard because compute_strength always runs and this needs no numpy.
 from engine.log_ingest import normalize_workout_logs, goal_histories, GOAL_TARGETS
+from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
 from engine.muscle_map import EXERCISE_MUSCLE_MAP, get_muscles
@@ -197,6 +198,16 @@ CNS_HEAVY: list[str] = [
 ]
 
 # ── Strength computation ──────────────────────────────────────────────────────
+
+# #14: when a goal lift stalls for weeks despite decent recovery, the engine emits
+# SWAP_EXERCISE — break the plateau with a close variation, then re-test the comp
+# lift. These are the concrete swaps surfaced to the athlete.
+SWAP_SUGGESTIONS = {
+    "Bench (paused comp)":          "Close-Grip or Larsen Press for ~3 weeks to break the sticking point, then re-test the paused bench.",
+    "Squat (comp)":                 "Pause or Tempo Squat for ~3 weeks to rebuild positional strength, then re-test the comp squat.",
+    "Deadlift (conventional comp)": "Deficit or Paused Deadlift for ~3 weeks to attack the off-the-floor weakness, then re-test the comp pull.",
+}
+
 
 def compute_strength(workout_logs: list) -> dict:
     """
@@ -717,23 +728,86 @@ def is_sunday() -> bool:
     return datetime.date.today().weekday() == 6 or os.environ.get("FORCE_WEEKLY") == "1"
 
 
-def compute_observation_y(recovery: dict, fatigue: dict) -> Optional[float]:
-    """
-    Map today's recovery/fatigue state to a Kalman observation y_t.
+# Banister observation (y_t) tuning — relative-e1RM strength performance index.
+PERF_BASELINE          = 100.0  # Banister scale: performance = 100 + F − f
+PERF_BASELINE_WINDOW   = 28     # days of prior sessions that define "recent baseline"
+PERF_MIN_BASELINE_N    = 4      # min prior sessions in-window to trust a baseline
+PERF_OBS_MAX_AGE_DAYS  = 1      # only observe a lift trained ~today (absorbs tz/late-night)
+PERF_GAIN_K            = 100.0  # 1% e1RM deviation from baseline = 1 performance unit
+PERF_DEV_CLAMP         = 20.0   # cap |deviation| at ±20 units to reject Epley outliers
 
-    y_t represents observed performance proxy on the Banister scale (baseline 100).
-    We use the recovery score (0-100) centered at 50 → maps to performance space.
 
-    When no recovery data is available, returns None (no Kalman update this step).
+def compute_observation_y(workout_logs: list) -> Optional[float]:
     """
-    if not recovery.get("data_available"):
+    Kalman observation y_t = today's STRENGTH performance relative to recent baseline,
+    on the Banister scale (100 = at baseline / neutral form).
+
+    For each competition goal lift trained ~today, compare its latest e1RM to that
+    lift's trailing-28d baseline (mean of prior in-window sessions, excluding the
+    latest). A fresh-day PR lands above 100 (positive form); a fatigued grind lands
+    below 100 — which is exactly the fitness-minus-fatigue residual the filter models.
+    Deviations are averaged across the lifts trained that day.
+
+    Why RELATIVE, not absolute: Banister "performance" must be stationary around a
+    load-driven equilibrium. Raw e1RM trends upward over months (long-term adaptation,
+    already tracked in compute_strength), which would force the fitness state F to
+    chase a non-stationary target while its 45-day decay fights it — a miscalibrated,
+    perpetually-lagging filter. Detrending against the recent baseline keeps y_t
+    centered at 100 so F stays well-behaved.
+
+    Deliberately does NOT use the recovery score: performance is observed from actual
+    lifts, not from how rested the athlete feels (the prior recovery→performance
+    mapping made the "fitness-fatigue" state an HRV/sleep smoother in disguise).
+
+    Returns None when no goal lift was trained ~today or there's insufficient history
+    to form a baseline — the Kalman runs predict-only on those days (step handles it).
+    """
+    goal_hist = goal_histories(normalize_workout_logs(workout_logs))
+    if not goal_hist:
         return None
-    score = recovery.get("score")
-    if score is None:
+
+    today = datetime.date.today()
+    deviations: list[float] = []
+
+    for _lift, sessions in goal_hist.items():
+        # Need the latest session plus enough prior history for a baseline.
+        if len(sessions) < PERF_MIN_BASELINE_N + 1:
+            continue
+
+        latest_date_str, latest_e1rm = sessions[-1]
+        try:
+            latest_date = datetime.date.fromisoformat(latest_date_str)
+        except (ValueError, TypeError):
+            continue
+
+        # Only treat this as today's observation if the lift was trained ~today.
+        if (today - latest_date).days > PERF_OBS_MAX_AGE_DAYS:
+            continue
+
+        window_start = latest_date - datetime.timedelta(days=PERF_BASELINE_WINDOW)
+        prior: list[float] = []
+        for d_str, e1rm in sessions[:-1]:
+            try:
+                d = datetime.date.fromisoformat(d_str)
+            except (ValueError, TypeError):
+                continue
+            if window_start <= d < latest_date:
+                prior.append(float(e1rm))
+
+        if len(prior) < PERF_MIN_BASELINE_N:
+            continue
+        baseline = sum(prior) / len(prior)
+        if baseline <= 0:
+            continue
+
+        dev = (float(latest_e1rm) / baseline - 1.0) * PERF_GAIN_K
+        dev = max(-PERF_DEV_CLAMP, min(PERF_DEV_CLAMP, dev))
+        deviations.append(dev)
+
+    if not deviations:
         return None
-    # Map recovery 0-100 → performance 85-115
-    # Recovery 50 = baseline (100), each 10 points = 3 performance units
-    return round(100.0 + (float(score) - 50.0) * 0.30, 2)
+
+    return round(PERF_BASELINE + sum(deviations) / len(deviations), 2)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -849,11 +923,28 @@ def main():
         u_t       = compute_training_load_tss(workout_logs, recovery_rows)
         hrv_z     = compute_hrv_zscore(recovery_rows)
         soreness  = compute_soreness_composite(checkin)
-        y_t       = compute_observation_y(recovery, fatigue)
+
+        # #14: consume the per-lift progression command (was emitted but never
+        # acted on). Surfaces INCREASE_LOAD / HOLD / DELOAD / SWAP_EXERCISE per goal
+        # lift; on SWAP_EXERCISE (multi-week stall despite recovery) attach a concrete
+        # variation so the plateau actually gets broken instead of silently persisting.
+        _goal_hist = goal_histories(normalize_workout_logs(workout_logs))
+        for _lift, _d in strength.items():
+            _hist = [e for _, e in _goal_hist.get(_lift, [])]
+            cmd = process_strength_progression(_hist, hrv_z)
+            _d["progression_command"] = cmd
+            if cmd == "SWAP_EXERCISE":
+                _d["swap_suggestion"] = SWAP_SUGGESTIONS.get(
+                    _lift, "Swap to a close variation for ~3 weeks, then re-test the comp lift."
+                )
+                print(f"  ⚠️  {_lift}: extended stall → SWAP_EXERCISE recommended")
+        y_t       = compute_observation_y(workout_logs)
         run_trimp = compute_normalized_cardio_trimp(recovery_rows)
         str_vol   = compute_normalized_strength_vol(workout_logs)
 
         # 4. Kalman step (predict + update)
+        _obs = f"{y_t:.2f} (strength perf vs baseline)" if y_t is not None else "none → predict-only"
+        print(f"  Observation y_t: {_obs}")
         banister_out = kalman.step(u_t, y_t, hrv_z=hrv_z, soreness=soreness)
         print(f"  Banister: F={banister_out['fitness']:.2f}  f={banister_out['fatigue']:.2f}  "
               f"TSB={banister_out['tsb_banister']:.2f}  conf={banister_out['confidence']}")
@@ -905,18 +996,54 @@ def main():
         else:
             print(f"  Fatigue state: {overreach_out['fatigue_state']}")
 
+        # 8b. Recovery-gated deficit recommendation — how aggressive a cut is
+        # safe TODAY given recovery (overreach / HRV / RHR / form / sleep). Goal:
+        # max leanness without compromising recovery. Written into the nutrition
+        # block so the app + weekly meal plan can target it (apply only when cutting).
+        latest_weight_lb = None
+        for w in sorted(weight_entries, key=lambda x: x.get("recorded_date", ""), reverse=True):
+            try:
+                latest_weight_lb = float(w.get("weight"))
+                break
+            except (ValueError, TypeError):
+                continue
+        latest_sleep = next(
+            (r.get("sleep_score") for r in sorted(recovery_rows, key=lambda r: r.get("date", ""), reverse=True)
+             if r.get("sleep_score") is not None),
+            None,
+        )
+        nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
+            "overreaching":  overreach_out.get("overreaching"),
+            "hrv_z":         overreach_out.get("hrv_z_3d"),
+            "rhr_z":         overreach_out.get("rhr_z_3d"),
+            "tsb_banister":  banister_out.get("tsb_banister"),
+            "sleep_score":   latest_sleep,
+            "bodyweight_lb": latest_weight_lb,
+        })
+        _rec = nutrition["recommended_intake"]
+        print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "
+              f"deficit={round(_rec['deficit_ratio']*100)}%  "
+              f"gates={_rec['gates'] or ['clear']}")
+
         # 9. Weekly updates (Sunday only)
         if is_sunday():
             print("  Running weekly updates (Sunday)...")
 
-            # RLS: accumulate today's data point and run weekly update
-            phi = [
-                banister_out.get("fitness", 0),
-                banister_out.get("fatigue", 0),
-                u_t / 100.0,
-                1.0 - nutrition_mod_out.get("deficit_ratio", 0),
-            ]
-            rls.accumulate(phi, y_t if y_t is not None else 100.0)
+            # RLS: accumulate today's point ONLY when there is a real performance
+            # observation. Previously a neutral 100 was injected on non-lift days,
+            # teaching the learner that performance never moves with load — exactly
+            # the wrong lesson. Pairs with the e1RM Kalman observation (y_t is None
+            # on days without a fresh lift). NOTE: the RLS regression itself is
+            # under-identified for the Banister time-constants (see rls_learner.py
+            # header) — this only cleans the input, it does not make τ-learning sound.
+            if y_t is not None:
+                phi = [
+                    banister_out.get("fitness", 0),
+                    banister_out.get("fatigue", 0),
+                    u_t / 100.0,
+                    1.0 - nutrition_mod_out.get("deficit_ratio", 0),
+                ]
+                rls.accumulate(phi, y_t)
             rls_params = rls.weekly_update()
             print(f"    RLS update: tau_fit={rls_params['tau_fit']}  "
                   f"tau_fat={rls_params['tau_fat']}  updates={rls_params['updates']}")
@@ -934,14 +1061,16 @@ def main():
             print(f"    Cellular closed-loop: slope={best_slope:.1f} lbs/wk  "
                   f"α₂={cellular.alpha2:.4f}  γᵢ={cellular.gamma_i:.3f}")
         else:
-            # Non-Sunday: still buffer the RLS data point
-            phi = [
-                banister_out.get("fitness", 0),
-                banister_out.get("fatigue", 0),
-                u_t / 100.0,
-                1.0 - nutrition_mod_out.get("deficit_ratio", 0),
-            ]
-            rls.accumulate(phi, y_t if y_t is not None else 100.0)
+            # Non-Sunday: buffer the RLS point only on a real performance
+            # observation (see the Sunday branch).
+            if y_t is not None:
+                phi = [
+                    banister_out.get("fitness", 0),
+                    banister_out.get("fatigue", 0),
+                    u_t / 100.0,
+                    1.0 - nutrition_mod_out.get("deficit_ratio", 0),
+                ]
+                rls.accumulate(phi, y_t)
 
         # 10. Guardrail state tracking
         guardrail.record_state(overreach_out["fatigue_state"])

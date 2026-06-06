@@ -167,11 +167,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Not found state */}
       {scanState === "not_found" && (
-        <div className="bg-[#1a1a1a]  p-6 flex flex-col items-center gap-3 text-center">
-          <PackageSearch className="w-10 h-10 text-[#555555]" />
+        <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
+          <PackageSearch className="w-10 h-10 text-slate-500" />
           <div>
             <p className="font-semibold text-white">Product not found</p>
-            <p className="text-sm text-[#555555] mt-1">Barcode: {foundBarcode}</p>
+            <p className="text-sm text-slate-500 mt-1">Barcode: {foundBarcode}</p>
           </div>
           <div className="flex gap-2 w-full">
             <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
@@ -186,11 +186,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Error state */}
       {scanState === "error" && (
-        <div className="bg-[#1a1a1a]  p-6 flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-10 h-10 text-[#f87171]" />
           <div>
             <p className="font-semibold text-white">Camera unavailable</p>
-            <p className="text-sm text-[#555555] mt-1">{errorMessage}</p>
+            <p className="text-sm text-slate-500 mt-1">{errorMessage}</p>
           </div>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Close

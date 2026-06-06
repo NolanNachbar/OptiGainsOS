@@ -15,7 +15,7 @@ export function LoadingSpinner({ size = 'default', className = '' }) {
 
 export function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a]">
+    <div className="flex items-center justify-center min-h-screen bg-charcoal-surface">
       <LoadingSpinner />
     </div>
   );

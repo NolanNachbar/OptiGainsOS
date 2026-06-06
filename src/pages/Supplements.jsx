@@ -79,11 +79,11 @@ function WaterCard({ today }) {
         <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
           <Droplets className="w-4 h-4 text-blue-400" />
           Water
-          <span className="text-[#555555] font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
+          <span className="text-slate-500 font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4">
-        <div className="h-2 bg-[#2a2a2a] rounded-full mb-4 overflow-hidden">
+        <div className="h-2 bg-charcoal-elevated rounded-full mb-4 overflow-hidden">
           <div
             className="h-full bg-blue-400 rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
@@ -97,7 +97,7 @@ function WaterCard({ today }) {
               size="sm"
               onClick={() => addWater.mutate(ml)}
               disabled={addWater.isPending}
-              className="flex-1 h-9 bg-[#222] hover:bg-blue-500/10 hover:text-blue-400 border border-[#2a2a2a] text-[#a0a0a0] text-xs font-bold"
+              className="flex-1 h-9 bg-charcoal-elevated hover:bg-blue-500/10 hover:text-blue-400 border border-charcoal-border text-slate-400 text-xs font-bold"
             >
               +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
             </Button>
@@ -106,7 +106,7 @@ function WaterCard({ today }) {
         {todayWater.length > 0 && (
           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
             {[...todayWater].reverse().map(entry => (
-              <div key={entry.id} className="flex items-center justify-between group text-xs text-[#555555]">
+              <div key={entry.id} className="flex items-center justify-between group text-xs text-slate-500">
                 <span>{format(parseISO(entry.logged_at), "h:mm a")} · {entry.amount_ml}ml</span>
                 <button
                   onClick={() => deleteEntry.mutate(entry.id)}
@@ -133,21 +133,21 @@ function SupplementForm({ initial, onSave, onClose }) {
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Name</Label>
+        <Label className="text-xs text-slate-400 mb-1.5 block">Name</Label>
         <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Creatine" className="h-9" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Default Dose</Label>
+          <Label className="text-xs text-slate-400 mb-1.5 block">Default Dose</Label>
           <Input type="number" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" className="h-9" />
         </div>
         <div>
-          <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Unit</Label>
+          <Label className="text-xs text-slate-400 mb-1.5 block">Unit</Label>
           <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="mg, g, IU, cap" className="h-9" />
         </div>
       </div>
       <div>
-        <Label className="text-xs text-[#a0a0a0] mb-1.5 block">Timing note (optional)</Label>
+        <Label className="text-xs text-slate-400 mb-1.5 block">Timing note (optional)</Label>
         <Input value={timing} onChange={e => setTiming(e.target.value)} placeholder="e.g. With breakfast" className="h-9" />
       </div>
       <div className="flex gap-2 pt-2">
@@ -281,7 +281,7 @@ export default function Supplements({ embedded = false }) {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">Supplements & Water</h1>
-                <p className="text-xs text-[#555555] mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
               </div>
             </div>
             <Button variant="volt" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5">
@@ -298,7 +298,7 @@ export default function Supplements({ embedded = false }) {
         {/* Today's supplement status */}
         {suppTypes.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-3">Today's Log</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Today's Log</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {suppTypes.map(type => {
                 const taken = takenNames.has(type.name);
@@ -316,21 +316,21 @@ export default function Supplements({ embedded = false }) {
                         </div>
                         {type.timing_note && (
                           <div className="flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3 text-[#555555]" />
-                            <span className="text-[10px] text-[#555555]">{type.timing_note}</span>
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span className="text-[10px] text-slate-500">{type.timing_note}</span>
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setEditingType(type)}
-                          className="p-1 text-[#555555] hover:text-brand transition-colors"
+                          className="p-1 text-slate-500 hover:text-brand transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => deleteType.mutate(type.id)}
-                          className="p-1 text-[#555555] hover:text-red-400 transition-colors"
+                          className="p-1 text-slate-500 hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -342,7 +342,7 @@ export default function Supplements({ embedded = false }) {
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
                         placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}
-                        className="h-7 text-xs flex-1 bg-[#111] border-[#333]"
+                        className="h-7 text-xs flex-1 bg-charcoal border-charcoal-border"
                       />
                       <Button
                         size="sm"
@@ -364,24 +364,24 @@ export default function Supplements({ embedded = false }) {
         {/* Today's log entries */}
         {todayLogs.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-3">Taken Today</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Taken Today</h2>
             <div className="space-y-2">
               {todayLogs.map(log => (
-                <div key={log.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] group">
+                <div key={log.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-charcoal-surface border border-charcoal-border group">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="text-sm text-white font-medium">{log.supplement_name}</span>
                     {log.dose && (
-                      <Badge variant="outline" className="text-[10px] text-[#555555] border-[#333] bg-transparent">
+                      <Badge variant="outline" className="text-[10px] text-slate-500 border-charcoal-border bg-transparent">
                         {log.dose}{log.unit || ""}
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#555555]">{format(parseISO(log.taken_at), "h:mm a")}</span>
+                    <span className="text-[10px] text-slate-500">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
                       onClick={() => deleteLog.mutate(log.id)}
-                      className="opacity-0 group-hover:opacity-100 text-[#555555] hover:text-red-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -393,10 +393,10 @@ export default function Supplements({ embedded = false }) {
         )}
 
         {suppTypes.length === 0 && (
-          <div className="py-16 text-center border-2 border-dashed border-[#2a2a2a] rounded-2xl">
-            <Pill className="w-8 h-8 text-[#2a2a2a] mx-auto mb-3" />
-            <p className="text-sm text-[#555555]">No supplements configured.</p>
-            <p className="text-xs text-[#333] mt-1">Add your stack to enable one-tap daily logging.</p>
+          <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+            <Pill className="w-8 h-8 text-slate-800 mx-auto mb-3" />
+            <p className="text-sm text-slate-500">No supplements configured.</p>
+            <p className="text-xs text-slate-700 mt-1">Add your stack to enable one-tap daily logging.</p>
             <Button variant="volt" size="sm" className="mt-4" onClick={() => setShowAddType(true)}>
               <Plus className="w-3.5 h-3.5 mr-1.5" /> Add First Supplement
             </Button>

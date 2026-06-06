@@ -22,8 +22,8 @@ const STEP_TYPES = [
   { value: 'warmup',   label: 'Warmup',   border: 'border-l-blue-400',   text: 'text-[#60a5fa]' },
   { value: 'active',   label: 'Active',   border: 'border-l-green-500',  text: 'text-green-600' },
   { value: 'recovery', label: 'Recovery', border: 'border-l-amber-400',  text: 'text-[#fbbf24]' },
-  { value: 'rest',     label: 'Rest',     border: 'border-l-slate-300',  text: 'text-[#555555] ' },
-  { value: 'cooldown', label: 'Cooldown', border: 'border-l-slate-400',  text: 'text-[#555555] ' },
+  { value: 'rest',     label: 'Rest',     border: 'border-l-slate-300',  text: 'text-slate-500 ' },
+  { value: 'cooldown', label: 'Cooldown', border: 'border-l-slate-400',  text: 'text-slate-500 ' },
 ];
 
 const TARGET_TYPES = [
@@ -224,10 +224,10 @@ export default function CreateWorkout() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 bg-[#1a1a1a]  min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal-surface  min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <p className="text-[#555555] text-sm">
+          <p className="text-slate-500 text-sm">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
@@ -385,7 +385,7 @@ export default function CreateWorkout() {
 
 function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, onRemove, onChange }) {
   return (
-    <Card className="bg-[#1a1a1a] ">
+    <Card className="bg-charcoal-surface ">
       <CardContent className="pt-6">
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold">Exercise {index + 1}</h4>
@@ -479,14 +479,14 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <button type="button" onClick={onRemove} className="text-[#555555] hover:text-[#f87171] transition-colors ml-auto shrink-0">
+          <button type="button" onClick={onRemove} className="text-slate-500 hover:text-[#f87171] transition-colors ml-auto shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
 
       {/* Nested steps */}
-      <div className="p-3 space-y-2 bg-[#1a1a1a] 50">
+      <div className="p-3 space-y-2 bg-charcoal-surface 50">
         {(block.steps || []).map((step, si) => (
           <CardioStepCard
             key={si}
@@ -517,8 +517,8 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
   const meta = STEP_TYPES.find(s => s.value === step.step_type) || STEP_TYPES[1];
 
   const card = nested
-    ? `bg-[#1a1a1a]  border border-[#2a2a2a]  rounded-lg border-l-4 ${meta.border}`
-    : `bg-[#1a1a1a]  border-l-4 ${meta.border}`;
+    ? `bg-charcoal-surface  border border-charcoal-border  rounded-lg border-l-4 ${meta.border}`
+    : `bg-charcoal-surface  border-l-4 ${meta.border}`;
 
   return (
     <Card className={card}>
@@ -622,14 +622,14 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                     placeholder={step.target_type === 'pace' ? "5:30" : "min"}
                     className="w-20"
                   />
-                  <span className="text-[#555555] text-sm">–</span>
+                  <span className="text-slate-500 text-sm">–</span>
                   <Input
                     value={step.target_high}
                     onChange={(e) => onChange("target_high", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "6:00" : "max"}
                     className="w-20"
                   />
-                  <span className="text-xs text-[#555555] shrink-0">
+                  <span className="text-xs text-slate-500 shrink-0">
                     {step.target_type === 'pace' ? '/km'
                       : step.target_type === 'speed' ? 'km/h'
                       : step.target_type === 'cadence' ? 'spm'

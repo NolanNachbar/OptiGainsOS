@@ -116,8 +116,9 @@ class BanisterKalman:
         """
         Update step. Incorporate an observation.
 
-        y_t:      observed performance proxy (recovery score mapped to perf scale,
-                  or actual e1RM / run time when available).
+        y_t:      observed performance on the Banister scale (100 = baseline form).
+                  Supplied by compute_observation_y as today's e1RM relative to the
+                  athlete's recent baseline (NOT the recovery score).
         hrv_z:    rolling 7-day HRV z-score. Positive = above baseline = reliable.
         soreness: composite muscle soreness 1–10. High = noisy measurement.
         """

@@ -103,9 +103,9 @@ export function MacroGoalsEditor({ values, onChange }) {
             <div className="flex items-center justify-between mb-1.5">
               <span className={`text-sm font-semibold ${text}`}>{label}</span>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#555555] text-xs">{pct}%</span>
+                <span className="text-slate-500 text-xs">{pct}%</span>
                 <span className={`font-bold tabular-nums ${text}`}>{g}g</span>
-                {!onSlide && <span className="text-[10px] text-[#555555] uppercase tracking-wider">auto</span>}
+                {!onSlide && <span className="text-[10px] text-slate-500 uppercase tracking-wider">auto</span>}
               </div>
             </div>
             {onSlide ? (
@@ -115,10 +115,10 @@ export function MacroGoalsEditor({ values, onChange }) {
                 max={max}
                 value={pct}
                 onChange={(e) => onSlide(parseInt(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-[#2a2a2a]"
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-charcoal-elevated"
               />
             ) : (
-              <div className="h-1.5 w-full rounded-full bg-[#2a2a2a] overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-charcoal-elevated overflow-hidden">
                 <div className={`${bar} h-full rounded-full transition-all duration-150`} style={{ width: `${pct}%` }} />
               </div>
             )}

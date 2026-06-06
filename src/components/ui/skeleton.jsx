@@ -1,7 +1,7 @@
 export function Skeleton({ className = "", ...props }) {
   return (
     <div
-      className={`animate-pulse bg-[#2a2a2a] rounded-lg ${className}`}
+      className={`animate-pulse bg-charcoal-elevated rounded-lg ${className}`}
       {...props}
     />
   );
@@ -9,7 +9,7 @@ export function Skeleton({ className = "", ...props }) {
 
 export function DashboardSkeleton() {
   return (
-    <div className="p-4 md:p-6 bg-[#1a1a1a] min-h-screen">
+    <div className="p-4 md:p-6 bg-charcoal-surface min-h-screen">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8 text-center">
           <Skeleton className="h-8 w-72 mx-auto mb-2" />

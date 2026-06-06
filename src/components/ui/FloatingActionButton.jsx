@@ -9,7 +9,7 @@ const actions = [
   { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]", iconColor: "text-white" },
   { label: "Stream Note", icon: Brain, action: "streamNote", color: "bg-[rgba(168,85,247,0.1)]", iconColor: "text-white" },
   { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-brand", iconColor: "text-black" },
-  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-[#333333]", iconColor: "text-white" },
+  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-slate-700", iconColor: "text-white" },
 ];
 
 export default function FloatingActionButton({ onWeighIn, onCalculators, onStreamNote }) {

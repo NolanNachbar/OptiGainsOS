@@ -15,7 +15,7 @@ const DOMAIN_COLORS = {
   career:    "text-indigo-400",
   mind:      "text-purple-400",
   recovery:  "text-blue-400",
-  admin:     "text-[#a0a0a0]",
+  admin:     "text-slate-400",
 };
 
 export default function TodayActions({ today, briefActions = [] }) {
