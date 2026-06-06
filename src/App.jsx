@@ -16,7 +16,6 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Workouts = lazy(() => import('./pages/Workouts'));
-const Schedule = lazy(() => import('./pages/Schedule'));
 const FoodTracker = lazy(() => import('./pages/FoodTracker'));
 const CreateWorkout = lazy(() => import('./pages/CreateWorkout'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -45,7 +44,6 @@ const protectedRoutes = [
   { path: "/workouts", name: "Workouts", component: Workouts },
   { path: "/weekly-schedule", name: "WeeklySchedule", component: WeeklySchedule },
   { path: "/program-builder", name: "ProgramBuilder", component: ProgramBuilder },
-  { path: "/schedule", name: "Schedule", component: Schedule },
   { path: "/food-tracker", name: "FoodTracker", component: FoodTracker },
   { path: "/create-workout", name: "CreateWorkout", component: CreateWorkout },
   { path: "/profile", name: "Profile", component: Profile },
@@ -84,6 +82,8 @@ function App() {
                   {/* LogHub + Supplements consolidated into Fuel's Hydration & Wellness tab */}
                   <Route path="/log" element={<Navigate to="/fuel?tab=wellness" replace />} />
                   <Route path="/supplements" element={<Navigate to="/fuel?tab=wellness" replace />} />
+                  {/* Legacy Schedule page retired — WeeklySchedule is canonical */}
+                  <Route path="/schedule" element={<Navigate to="/weekly-schedule" replace />} />
                   <Route
                     path="/program/:id"
                     element={

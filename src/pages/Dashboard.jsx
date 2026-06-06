@@ -50,6 +50,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
 import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
+import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
 
@@ -84,23 +85,8 @@ export default function Dashboard() {
   // Today's workout expand state
   const [showTodayExercises, setShowTodayExercises] = useState(false);
 
-  const cardioKey = (name) => `cardio_done_${user?.id}_${today}_${name}`;
-  const [cardioChecked, setCardioChecked] = useState(() => {
-    const stored = {};
-    try {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith(`cardio_done_${user?.id}_${today}_`))
-        .forEach(k => { stored[k.split('_').slice(4).join('_')] = true; });
-    } catch {}
-    return stored;
-  });
-  const toggleCardio = (name) => {
-    const key = cardioKey(name);
-    const next = !cardioChecked[name];
-    setCardioChecked(prev => ({ ...prev, [name]: next }));
-    if (next) localStorage.setItem(key, '1');
-    else localStorage.removeItem(key);
-  };
+  // Prescribed-cardio completion now persists in the cardio_completions table
+  // (see useCardioCompletions / PrescribedSessionCard) instead of localStorage.
   const [muscleView, setMuscleView] = useState("anterior");
 
   // Schedule state
@@ -820,6 +806,9 @@ export default function Dashboard() {
 
         {/* ── SECONDARY CONTENT (Tabs/Lists) ── */}
         <div className="space-y-4">
+          {/* The engine's actual prescribed session for today (was never surfaced) */}
+          <PrescribedSessionCard today={today} />
+
           {/* AI Insights */}
           <DailyBriefCard today={today} hideWhenEmpty={true} />
 

@@ -6,6 +6,16 @@ import { useTodayPrescription } from "@/hooks/useEngineQueries";
 // that the app previously never read: ACWR, cellular interference, and the
 // HRV/RHR overreaching detector. Renders nothing until the engine has computed
 // today's row.
+// Relative "last computed" so a failed/stale nightly engine run is visible
+// rather than silently leaving the card frozen on old data.
+function computedAgo(computedAt) {
+  if (!computedAt) return null;
+  const days = Math.floor((Date.now() - new Date(computedAt).getTime()) / 86400000);
+  if (days <= 0) return { label: "Today", stale: false };
+  if (days === 1) return { label: "1d ago", stale: true };
+  return { label: `${days}d ago`, stale: true };
+}
+
 function acwrZone(acwr) {
   if (acwr == null) return { label: "—", color: "text-slate-500" };
   if (acwr > 1.5) return { label: "Overload", color: "text-red-400" };
@@ -32,11 +42,15 @@ export default function EngineStatusCard({ today }) {
         <div className="flex items-center gap-2 mb-3">
           <Activity className="w-4 h-4 text-brand" />
           <span className="text-sm font-semibold text-white">Engine Guardrails</span>
-          {prescription.computed_at && (
-            <span className="ml-auto text-[10px] text-slate-600 uppercase tracking-wider">
-              {new Date(prescription.computed_at).toLocaleDateString()}
-            </span>
-          )}
+          {(() => {
+            const ago = computedAgo(prescription.computed_at);
+            if (!ago) return null;
+            return (
+              <span className={`ml-auto text-[10px] uppercase tracking-wider ${ago.stale ? "text-amber-500/80" : "text-slate-600"}`}>
+                {ago.stale ? "⚠ " : ""}Computed {ago.label}
+              </span>
+            );
+          })()}
         </div>
 
         <div className="grid grid-cols-3 gap-3 text-center">

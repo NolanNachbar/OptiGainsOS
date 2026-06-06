@@ -264,26 +264,30 @@ export default function RecoveryDetail() {
         </>
         )}
 
-        {/* Endurance TSS (Placeholder for 3b data) */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-brand" />
-            Endurance Stress (TSS)
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            {['Swim', 'Cycling', 'Run'].map(sport => {
-              const field = `tss_${sport.toLowerCase()}`;
-              const val = latest?.[field] ?? 0;
-              return (
-                <Card key={sport} className="glass-interactive p-4">
-                  <div className="text-[10px] text-[#555555] uppercase font-bold mb-1">{sport}</div>
-                  <div className="text-2xl font-bold">{val}</div>
-                  <div className="text-[10px] text-[#555555] mt-1">Today's Load</div>
-                </Card>
-              );
-            })}
+        {/* Endurance TSS — only rendered once the pipeline actually populates
+            tss_run/tss_cycling/tss_swim. Previously this showed a permanent
+            row of zeros because garmin-sync never writes these fields. */}
+        {['swim', 'cycling', 'run'].some((s) => Number(latest?.[`tss_${s}`]) > 0) && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-brand" />
+              Endurance Stress (TSS)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              {['Swim', 'Cycling', 'Run'].map(sport => {
+                const field = `tss_${sport.toLowerCase()}`;
+                const val = latest?.[field] ?? 0;
+                return (
+                  <Card key={sport} className="glass-interactive p-4">
+                    <div className="text-[10px] text-[#555555] uppercase font-bold mb-1">{sport}</div>
+                    <div className="text-2xl font-bold">{val}</div>
+                    <div className="text-[10px] text-[#555555] mt-1">Today's Load</div>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

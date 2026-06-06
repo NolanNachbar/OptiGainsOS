@@ -28,6 +28,25 @@ function AdaptiveEnginePanel() {
   const personalization = updates >= 4 ? "Personalized" : updates >= 1 ? `Calibrating ${updates}/4` : "Population defaults";
   const confidence = prescription?.banister_state?.confidence;
 
+  // RLS-learned physiological constants vs population defaults — the literal
+  // "it converges to you" signal that previously lived only in a JSON column.
+  const kalman = engineParams?.kalman_state || {};
+  const tauFat = kalman.tau_fat != null ? Number(kalman.tau_fat) : null;   // default 15d
+  const tauFit = kalman.tau_fit != null ? Number(kalman.tau_fit) : null;   // default 45d
+
+  // UCB1 volume-tolerance bandit — what the engine is currently probing /
+  // what it has learned tolerates the most volume.
+  const expl = engineParams?.guardrail_state?.exploration_state;
+  let probe = null;
+  if (expl?.parameters?.length && Array.isArray(expl.counts)) {
+    let bi = -1, bc = 0;
+    expl.counts.forEach((c, i) => { if (c > bc) { bc = c; bi = i; } });
+    if (bi >= 0) {
+      const reward = Array.isArray(expl.values) ? expl.values[bi] : null;
+      probe = { muscle: expl.parameters[bi], pulls: bc, reward };
+    }
+  }
+
   return (
     <Card className="glass-interactive mb-4">
       <CardHeader className="pb-2 pt-4 px-5">
@@ -59,6 +78,30 @@ function AdaptiveEnginePanel() {
             <div className="text-sm font-semibold text-white mt-1.5">{prescription?.interference?.interference_level || "—"}</div>
           </div>
         </div>
+
+        {/* What the engine has learned about you (RLS constants + volume probe) */}
+        {(tauFat != null || probe) && (
+          <div className="mt-4 pt-3 border-t border-white/[6%] space-y-1.5">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Learnings</div>
+            {tauFat != null && (
+              <p className="text-xs text-slate-300">
+                Fatigue clears in <span className="font-technical text-white">{tauFat.toFixed(0)}d</span>
+                <span className="text-slate-600"> (pop. avg 15d)</span>
+                {tauFit != null && <>, fitness decays over <span className="font-technical text-white">{tauFit.toFixed(0)}d</span><span className="text-slate-600"> (pop. 45d)</span></>}
+                {updates < 4 && <span className="text-slate-600"> — still calibrating</span>}
+              </p>
+            )}
+            {probe && (
+              <p className="text-xs text-slate-300">
+                Volume probe: <span className="text-white font-semibold">{String(probe.muscle).replace(/_/g, " ")}</span>
+                <span className="text-slate-600"> · {probe.pulls} test{probe.pulls === 1 ? "" : "s"}</span>
+                {probe.reward != null && Number.isFinite(probe.reward) && (
+                  <span className={probe.reward >= 0 ? "text-emerald-400" : "text-rose-400"}> · responds {probe.reward >= 0 ? "well" : "poorly"}</span>
+                )}
+              </p>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -126,14 +126,15 @@ async function pullDay(headers: Record<string, string>, ds: string, displayName:
     ? `/wellness-service/wellness/dailySleepData/${displayName}?date=${ds}&nonSleepBufferMinutes=60`
     : `/wellness-service/wellness/dailySleepData/user?date=${ds}`;
 
-  const [sleep, hrv, hr, bb, stress, status, steps] = await Promise.allSettled([
+  const [sleep, hrv, hr, bb, stress, status, steps, maxmet] = await Promise.allSettled([
     garminGet(sleepPath, headers),
     garminGet(`/hrv-service/hrv/${ds}`, headers),
     garminGet(`/wellness-service/wellness/dailyHeartRate?date=${ds}`, headers),
-    garminGet(`/wellness-service/wellness/bodyBattery/range/${ds}/${ds}`, headers),
+    garminGet(`/wellness-service/wellness/bodyBattery/reports/daily?startDate=${ds}&endDate=${ds}`, headers),
     garminGet(`/wellness-service/wellness/dailyStress/${ds}`, headers),
     garminGet(`/training-info-service/trainingInfo/status/daily/${ds}`, headers),
     garminGet(`/wellness-service/wellness/dailySummaryChart?date=${ds}`, headers),
+    garminGet(`/metrics-service/metrics/maxmet/daily/${ds}/${ds}`, headers),
   ]);
 
   if (sleep.status === "fulfilled" && sleep.value) {
@@ -147,16 +148,31 @@ async function pullDay(headers: Record<string, string>, ds: string, displayName:
   if (hrv.status === "fulfilled" && hrv.value) row.hrv = safe(hrv.value as Record<string, unknown>, "hrvSummary", "lastNightAvg");
   if (hr.status === "fulfilled" && hr.value) row.resting_hr = safe(hr.value as Record<string, unknown>, "restingHeartRate");
   if (bb.status === "fulfilled" && bb.value) {
-    const arr = bb.value as Array<Record<string, unknown>>;
-    if (Array.isArray(arr) && arr.length > 0) row.body_battery = arr[0].charged;
+    // reports/daily → [{ bodyBatteryValuesArray: [[ts, status, level], ...], charged, ... }]
+    const day = (Array.isArray(bb.value) ? bb.value[0] : bb.value) as Record<string, unknown> | undefined;
+    const series = (day?.bodyBatteryValuesArray || day?.bodyBatteryValuesList) as unknown[] | undefined;
+    if (Array.isArray(series) && series.length) {
+      let maxLevel: number | null = null;
+      for (const e of series) {
+        const lvl = Array.isArray(e) ? Number(e[2] ?? e[1]) : Number((e as Record<string, unknown>)?.level);
+        if (Number.isFinite(lvl)) maxLevel = maxLevel == null ? lvl : Math.max(maxLevel, lvl);
+      }
+      row.body_battery = maxLevel;
+    } else if (day && typeof day.charged === "number") {
+      row.body_battery = day.charged;
+    }
   }
   if (stress.status === "fulfilled" && stress.value) row.stress_score = safe(stress.value as Record<string, unknown>, "avgStressLevel");
   if (status.status === "fulfilled" && status.value) {
     const s = status.value as Record<string, unknown>;
     row.training_load_acute = safe(s, "acuteLoad") ?? safe(s, "latestTrainingLoad");
     row.training_load_chronic = safe(s, "chronicLoad");
-    const vo2obj = safe(s, "mostRecentVO2Max") as Record<string, unknown> | null;
-    row.vo2max_run = typeof vo2obj === "object" && vo2obj ? (vo2obj.vo2MaxPreciseValue ?? vo2obj.vo2MaxValue) : safe(s, "vo2MaxValue");
+  }
+  if (maxmet.status === "fulfilled" && maxmet.value) {
+    // maxmet/daily → [{ generic: { vo2MaxValue, vo2MaxPreciseValue } }]
+    const m = (Array.isArray(maxmet.value) ? maxmet.value[0] : maxmet.value) as Record<string, unknown> | undefined;
+    const g = (m?.generic || m) as Record<string, unknown> | undefined;
+    row.vo2max_run = (g?.vo2MaxPreciseValue ?? g?.vo2MaxValue ?? null) as number | null;
   }
   if (steps.status === "fulfilled" && steps.value) {
     const arr = steps.value as Array<Record<string, unknown>>;

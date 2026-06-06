@@ -496,10 +496,22 @@ function MetabolismTab() {
             <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Weight Trend</p>
             <p className="text-lg font-bold text-white">{state?.nutrition?.weight_trend_lbs_per_week || "—"} lbs/wk</p>
          </Card>
-         <Card className="glass glass-interactive p-4">
-            <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Net Energy</p>
-            <p className="text-lg font-bold text-brand">Balanced</p>
-         </Card>
+         {(() => {
+            // Net energy derived from the measured weight trend rather than a
+            // hardcoded label: a sustained weight change *is* the energy balance.
+            const trend = Number(state?.nutrition?.weight_trend_lbs_per_week);
+            const known = state?.nutrition?.weight_trend_lbs_per_week != null && !Number.isNaN(trend);
+            const net = !known ? { label: "—", cls: "text-slate-500" }
+              : trend > 0.15 ? { label: "Surplus", cls: "text-amber-400" }
+              : trend < -0.15 ? { label: "Deficit", cls: "text-sky-400" }
+              : { label: "Balanced", cls: "text-brand" };
+            return (
+              <Card className="glass glass-interactive p-4">
+                <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Net Energy</p>
+                <p className={`text-lg font-bold ${net.cls}`}>{net.label}</p>
+              </Card>
+            );
+         })()}
       </div>
 
       <div className="p-4 rounded-xl bg-brand/[5%] border border-brand/20">
