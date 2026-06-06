@@ -464,10 +464,52 @@ def main():
             return "lower_squat_primary"
         return s_type
 
-    recent_session_types = [
-        determine_split_from_row(r)
-        for r in reversed(prescription_rows)
-    ]
+    # Classify an actually-logged session as upper/lower from its exercises.
+    # The freshness signal MUST reflect what Nolan did, not what was prescribed —
+    # he routinely deviates (e.g. logged UPPER on a day the MPC prescribed lower),
+    # and feeding _decide_split the prescription instead of the log is exactly how
+    # it scheduled upper-on-upper. Lower keywords are checked first so "leg press"
+    # / "calf raise" don't get miscounted as upper by "press"/"raise".
+    _LOWER_KW = ("squat", "deadlift", "rdl", "lunge", "calf", "leg press",
+                 "leg extension", "leg curl", "hamstring", "hip thrust", "glute")
+    _UPPER_KW = ("bench", "press", "pull-up", "pullup", "pulldown", "row", "curl",
+                 "raise", "fly", "push-up", "pushup", "dip", "shrug", "overhead",
+                 "triceps", "bicep", "lat ")
+
+    def classify_log_split(exercises) -> str | None:
+        up = lo = 0
+        for ex in (exercises or []):
+            n = (ex.get("name") or "").lower()
+            if any(k in n for k in _LOWER_KW):
+                lo += 1
+            elif any(k in n for k in _UPPER_KW):
+                up += 1
+        if up == 0 and lo == 0:
+            return None
+        return "upper_volume" if up > lo else "lower_squat_primary"
+
+    # Prefer real logs (deduped to one per date, most-recent-first), classify each,
+    # then put oldest→newest so _decide_split's reversed() lookback sees the true
+    # last session. Fall back to prescription-derived splits only if no logs exist.
+    logged_splits = []
+    seen_dates = set()
+    for r in workout_log_rows:  # already ordered log_date.desc
+        d = r.get("log_date")
+        if d in seen_dates:
+            continue
+        seen_dates.add(d)
+        s = classify_log_split(r.get("exercises"))
+        if s:
+            logged_splits.append(s)
+        if len(logged_splits) >= 7:
+            break
+    if logged_splits:
+        recent_session_types = list(reversed(logged_splits))
+    else:
+        recent_session_types = [
+            determine_split_from_row(r)
+            for r in reversed(prescription_rows)
+        ]
 
     # ── Recent cardio TSS (from Garmin runs) ──────────────────────────────────
     cardio_rows = sb_get("garmin_activities", {

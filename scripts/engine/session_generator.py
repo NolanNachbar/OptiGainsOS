@@ -368,8 +368,8 @@ _SLOT_SPEC = {
                   "note": "Long aerobic run. Conversational. Target {pace}/mi."},
     "easy":      {"zone": "Z2",    "base_dur": 50, "pace_key": "easy_pace",
                   "note": "Aerobic base. Nasal breathing. Target {pace}/mi."},
-    "recovery":  {"zone": "Z1",    "base_dur": 30, "pace_key": "easy_pace",
-                  "note": "Recovery jog. Easy effort only, slower than {pace}/mi."},
+    "recovery":  {"zone": "Z1",    "base_dur": 30, "pace_key": "recovery_pace",
+                  "note": "Keep HR in Z1 on your watch — let pace fall where it must (~{pace}/mi or slower). Walk if HR drifts up."},
 }
 
 

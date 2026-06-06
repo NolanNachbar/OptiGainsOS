@@ -23,6 +23,7 @@ PST_RUN_TARGETS = {
 }
 
 # VO2max intensity fractions for pace zones
+ZONE_RECOVERY_FRAC  = 0.62    # Z1 recovery floor: ~62% VO2max (bottom of Daniels E)
 ZONE_EASY_FRAC      = 0.70    # LISS ceiling: ≤70% VO2max
 ZONE_THRESHOLD_FRAC = 0.88    # threshold floor: ≥88% VO2max
 ZONE_INTERVAL_FRAC  = 0.98    # interval / race-pace: ~98% VO2max
@@ -202,6 +203,7 @@ class VDOTEngine:
         Current training pace prescriptions for polarized training.
         Also includes gap-to-target analysis for PST deadline.
         """
+        v_recovery  = velocity_for_fraction(self.vdot, ZONE_RECOVERY_FRAC)
         v_easy      = velocity_for_fraction(self.vdot, ZONE_EASY_FRAC)
         v_threshold = velocity_for_fraction(self.vdot, ZONE_THRESHOLD_FRAC)
         v_interval  = velocity_for_fraction(self.vdot, ZONE_INTERVAL_FRAC)
@@ -219,9 +221,11 @@ class VDOTEngine:
             "vdot_gap":          round(target_vdot - self.vdot, 1),
             "pst_required_vdots": pst_vdots,
             # Training paces
+            "recovery_pace":     pace_string(v_recovery),
             "easy_pace":         pace_string(v_easy),
             "threshold_pace":    pace_string(v_threshold),
             "interval_pace":     pace_string(v_interval),
+            "recovery_v_m_min":  round(v_recovery, 1),
             "easy_v_m_min":      round(v_easy, 1),
             "threshold_v_m_min": round(v_threshold, 1),
             "interval_v_m_min":  round(v_interval, 1),
