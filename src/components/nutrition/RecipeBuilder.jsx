@@ -1095,7 +1095,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                               placeholder="Search foods to add..."
-                              className="pl-10 h-11 rounded-xl bg-[#1a1a1a] border-[#2a2a2a] focus:bg-[#1a1a1a]"
+                              className="pl-10 h-11 rounded-xl glass glass-interactive focus:bg-[#1a1a1a]"
                             />
                             {isSearching && (
                               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand animate-spin" />

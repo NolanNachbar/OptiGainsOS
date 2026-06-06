@@ -28,12 +28,9 @@ const RecoveryDetail = lazy(() => import('./pages/RecoveryDetail'));
 const Mind = lazy(() => import('./pages/Mind'));
 const Career = lazy(() => import('./pages/Career'));
 const BriefHistory = lazy(() => import('./pages/BriefHistory'));
-const Supplements = lazy(() => import('./pages/Supplements'));
 const Progress = lazy(() => import('./pages/Progress'));
 const WeeklySchedule = lazy(() => import('./pages/WeeklySchedule'));
 const AthleteState = lazy(() => import('./pages/AthleteState'));
-const LogHub = lazy(() => import('./pages/LogHub'));
-const System = lazy(() => import('./pages/System'));
 const Fuel = lazy(() => import('./pages/Fuel'));
 const Train = lazy(() => import('./pages/Train'));
 const Insights = lazy(() => import('./pages/Insights'));
@@ -58,11 +55,8 @@ const protectedRoutes = [
   { path: "/mind", name: "Mind", component: Mind },
   { path: "/career", name: "Career", component: Career },
   { path: "/brief-history", name: "BriefHistory", component: BriefHistory },
-  { path: "/supplements", name: "Supplements", component: Supplements },
   { path: "/progress", name: "Progress", component: Progress },
   { path: "/athlete-state", name: "AthleteState", component: AthleteState },
-  { path: "/log", name: "Log", component: LogHub },
-  { path: "/system", name: "System", component: System },
 ];
 
 function RootRoute() {
@@ -87,6 +81,9 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+                  {/* LogHub + Supplements consolidated into Fuel's Hydration & Wellness tab */}
+                  <Route path="/log" element={<Navigate to="/fuel?tab=wellness" replace />} />
+                  <Route path="/supplements" element={<Navigate to="/fuel?tab=wellness" replace />} />
                   <Route
                     path="/program/:id"
                     element={

@@ -68,7 +68,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                   onClick={() => handleAction(action)}
                   className="flex items-center gap-3"
                 >
-                  <span className="bg-[#1a1a1a] text-[#a0a0a0] text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
+                  <span className="glass text-slate-200 text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
                     {action.label}
                   </span>
                   <div className={`w-12 h-12 ${action.color} ${action.iconColor} rounded-full flex items-center justify-center`}>

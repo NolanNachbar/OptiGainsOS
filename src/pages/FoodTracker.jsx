@@ -1090,7 +1090,7 @@ const handleSaveMealTemplate = () => {
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="bg-[#1a1a1a] border-[#2a2a2a] rounded-lg px-2.5 py-1.5 shadow text-xs text-[#a0a0a0] space-y-0.5">
+                            <div className="glass glass-interactive rounded-lg px-2.5 py-1.5 shadow text-xs text-[#a0a0a0] space-y-0.5">
                               <p className="font-semibold">{d.label}</p>
                               <p className="text-brand">{d.calories} cal eaten</p>
                               {d.goal > 0 && <p className="text-[#a0a0a0]">Goal: {d.goal} cal</p>}

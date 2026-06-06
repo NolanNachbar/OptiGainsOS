@@ -3,7 +3,7 @@ import * as React from "react";
 const Card = React.forwardRef(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`rounded-xl border border-charcoal-border bg-charcoal-surface text-white shadow-dark-card transition-all duration-300 ${className}`}
+    className={`rounded-xl glass text-white transition-all duration-300 ${className}`}
     {...props}
   />
 ));

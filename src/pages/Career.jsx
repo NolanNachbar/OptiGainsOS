@@ -243,7 +243,7 @@ function PipelineTab() {
       )}
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader><DialogTitle className="text-white">{editing ? "Edit Application" : "Add Application"}</DialogTitle></DialogHeader>
           <AppForm
             initial={editing}
@@ -372,7 +372,7 @@ function NetworkingTab() {
         {contacts.map(contact => {
           const isOverdue = contact.follow_up_date && contact.follow_up_date < today;
           return (
-            <div key={contact.id} className={`p-4 rounded-xl border group ${isOverdue ? "bg-red-500/[3%] border-red-500/15" : "bg-[#1a1a1a] border-[#2a2a2a]"}`}>
+            <div key={contact.id} className={`p-4 rounded-xl border group ${isOverdue ? "bg-red-500/[3%] border-red-500/15" : "glass glass-interactive"}`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ function NetworkingTab() {
       </div>
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader><DialogTitle className="text-white">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle></DialogHeader>
           <NetworkForm
             initial={editing}

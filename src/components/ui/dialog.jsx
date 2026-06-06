@@ -41,7 +41,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
   return (
     <div
       ref={ref}
-      className={`relative z-50 bg-[#1a1a1a] text-white border border-[#2a2a2a] rounded-xl w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
+      className={`relative z-50 glass-elevated text-white rounded-xl w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
       style={{ maxHeight: 'calc(100vh - var(--layout-header-height, 0px) - 56px - env(safe-area-inset-bottom, 0px) - 1rem)' }}
       {...props}
     >

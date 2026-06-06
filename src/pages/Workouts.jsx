@@ -389,7 +389,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     filter !== 'all' || folderFilter !== 'all'
                       ? 'bg-brand text-white border-brand/30'
-                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:border-brand/30 hover:text-brand'
+                      : 'glass glass-interactive text-[#a0a0a0] hover:border-brand/30 hover:text-brand'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -561,7 +561,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
             </CardHeader>
             <CardContent className="space-y-4">
               {workoutPlan.week.map((day) => (
-                <div key={day.dayIndex} className="p-4 rounded-lg border bg-[#1a1a1a] border-[#2a2a2a]">
+                <div key={day.dayIndex} className="p-4 rounded-lg border glass glass-interactive">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold">
                       Day {day.dayIndex + 1}: {day.focus}

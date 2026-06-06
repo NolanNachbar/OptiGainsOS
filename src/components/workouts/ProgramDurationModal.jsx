@@ -159,7 +159,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 min={3}
                 max={52}
                 onChange={(e) => setCustomWeeks(e.target.value)}
-                className="w-40 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#a0a0a0]"
+                className="w-40 glass glass-interactive text-white placeholder:text-[#a0a0a0]"
               />
               <span className="text-sm text-[#555555]">weeks (min 3)</span>
             </div>
@@ -183,7 +183,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   min={0}
                   step={2.5}
                   onChange={(e) => setWeeklyIncrement(e.target.value)}
-                  className="w-28 bg-[#1a1a1a] border-[#2a2a2a] text-white"
+                  className="w-28 glass glass-interactive text-white"
                 />
                 <span className="text-sm text-[#555555]">lbs / week</span>
               </div>
@@ -271,7 +271,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                       min={0}
                       step={2.5}
                       onChange={(e) => setDeloadReduction(e.target.value)}
-                      className="w-24 bg-[#1a1a1a] border-[#2a2a2a] text-white"
+                      className="w-24 glass glass-interactive text-white"
                     />
                     <span className="text-sm text-[#555555]">lbs</span>
                   </div>

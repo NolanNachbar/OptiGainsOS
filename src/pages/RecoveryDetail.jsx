@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecoveryMetrics } from "@/hooks/useUserQueries";
+import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { calculateReadinessScore, getReadinessCategory, calculateACWR } from "@/utils/recoveryUtils";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -32,15 +33,29 @@ export default function RecoveryDetail() {
   }, [recoveryMetrics]);
 
   const latest = recoveryMetrics[0];
-  const acwr = useMemo(() => calculateACWR(recoveryMetrics), [recoveryMetrics]);
-  
+
+  // Prefer the engine's integrated-TSS ACWR (training_prescription) over the
+  // local steps-only proxy — single source of truth.
+  const { prescription } = useTodayPrescription();
+  const acwr = useMemo(() => {
+    const engineAcwr = prescription?.acwr;
+    return engineAcwr != null ? Number(Number(engineAcwr).toFixed(2)) : calculateACWR(recoveryMetrics);
+  }, [prescription, recoveryMetrics]);
+  const acwrSource = prescription?.acwr != null ? "engine load model" : "step proxy";
+
   const score = useMemo(() => calculateReadinessScore(latest, null), [latest]);
   const category = getReadinessCategory(score);
+
+  // Which series actually have data — used to collapse empty chart shells
+  // instead of reserving ~250px of void per chart.
+  const hasHrv = chartData.some((d) => d.displayHrv != null);
+  const hasSteps = chartData.some((d) => d.displaySteps != null);
+  const hasSleep = chartData.some((d) => d.displaySleep > 0);
 
   if (isLoading) return <div className="p-8 text-white">Loading recovery data...</div>;
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 bg-[#121212] min-h-screen text-white">
+    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-white">
       <div className="max-w-6xl mx-auto">
         <Button 
           variant="ghost" 
@@ -58,7 +73,7 @@ export default function RecoveryDetail() {
 
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="md:col-span-1 bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="md:col-span-1 glass-interactive">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-[#a0a0a0] uppercase tracking-wider">Today's Readiness</CardTitle>
             </CardHeader>
@@ -82,7 +97,7 @@ export default function RecoveryDetail() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="md:col-span-2 glass-interactive">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-[#a0a0a0] uppercase tracking-wider">Training Load (ACWR)</CardTitle>
             </CardHeader>
@@ -91,6 +106,7 @@ export default function RecoveryDetail() {
                 <div className="text-center">
                   <div className="text-4xl font-bold text-white mb-1">{acwr ?? "—"}</div>
                   <div className="text-[10px] text-[#555555] uppercase font-bold">Current Ratio</div>
+                  <div className="text-[9px] text-slate-600 mt-0.5">{acwrSource}</div>
                 </div>
                 <div className="flex-1">
                   <div className="h-2 w-full bg-[#2a2a2a] rounded-full relative mb-2">
@@ -118,14 +134,33 @@ export default function RecoveryDetail() {
           </Card>
         </div>
 
+        {(!hasHrv && !hasSteps && !hasSleep) ? (
+          <Card className="mb-8 glass">
+            <CardContent className="py-6 flex items-center gap-3">
+              <Info className="w-5 h-5 text-slate-500 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">No biometric trends yet</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Connect your wearable to populate HRV, step, and sleep charts.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+        <>
         {/* HRV Trend */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold text-[#a0a0a0] uppercase tracking-wider">HRV Trend (ms)</CardTitle>
               <Activity className="w-4 h-4 text-brand" />
             </CardHeader>
-            <CardContent className="h-[250px] pt-4">
+            <CardContent className={hasHrv ? "h-[250px] pt-4" : "py-5"}>
+              {!hasHrv ? (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
+                </div>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData.slice(-14)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
@@ -153,10 +188,11 @@ export default function RecoveryDetail() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold text-[#a0a0a0] uppercase tracking-wider">Step Count</CardTitle>
               <Zap className="w-4 h-4 text-brand" />
@@ -189,7 +225,7 @@ export default function RecoveryDetail() {
 
         {/* Sleep Detail */}
         <div className="grid grid-cols-1 gap-6 mb-8">
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold text-[#a0a0a0] uppercase tracking-wider">Sleep Duration (Hours)</CardTitle>
               <Moon className="w-4 h-4 text-indigo-400" />
@@ -225,6 +261,8 @@ export default function RecoveryDetail() {
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
 
         {/* Endurance TSS (Placeholder for 3b data) */}
         <div className="mb-8">
@@ -237,7 +275,7 @@ export default function RecoveryDetail() {
               const field = `tss_${sport.toLowerCase()}`;
               const val = latest?.[field] ?? 0;
               return (
-                <Card key={sport} className="bg-[#1a1a1a] border-[#2a2a2a] p-4">
+                <Card key={sport} className="glass-interactive p-4">
                   <div className="text-[10px] text-[#555555] uppercase font-bold mb-1">{sport}</div>
                   <div className="text-2xl font-bold">{val}</div>
                   <div className="text-[10px] text-[#555555] mt-1">Today's Load</div>

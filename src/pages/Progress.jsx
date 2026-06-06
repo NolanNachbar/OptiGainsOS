@@ -60,7 +60,7 @@ function WeightTab() {
   return (
     <div className="space-y-6">
       {/* Quick log */}
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-4 pb-5 px-5">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4">Log Weight</h3>
           <div className="flex gap-3 items-end">
@@ -84,7 +84,7 @@ function WeightTab() {
       </Card>
 
       {/* Chart */}
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-5 pb-5 px-5">
           <WeightProgressChart data={sorted} weightUnit={weightUnit} className="h-72" />
         </CardContent>
@@ -191,7 +191,7 @@ function MeasurementsTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555]">Log Measurements (cm)</h3>
@@ -353,7 +353,7 @@ function PhotosTab() {
   return (
     <div className="space-y-6">
       {/* Upload */}
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-4 pb-5 px-5">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4">Add Photo</h3>
           <div className="flex gap-3 items-end flex-wrap">
@@ -382,7 +382,7 @@ function PhotosTab() {
 
       {/* Side-by-side comparison */}
       {photos.length >= 2 && (
-        <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+        <Card className="glass glass-interactive">
           <CardContent className="pt-4 pb-5 px-5">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4">Compare</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -475,7 +475,7 @@ function MetabolismTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-6 pb-6 px-5">
            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -492,11 +492,11 @@ function MetabolismTab() {
       </Card>
       
       <div className="grid grid-cols-2 gap-3">
-         <Card className="bg-[#1a1a1a] border-[#2a2a2a] p-4">
+         <Card className="glass glass-interactive p-4">
             <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Weight Trend</p>
             <p className="text-lg font-bold text-white">{state?.nutrition?.weight_trend_lbs_per_week || "—"} lbs/wk</p>
          </Card>
-         <Card className="bg-[#1a1a1a] border-[#2a2a2a] p-4">
+         <Card className="glass glass-interactive p-4">
             <p className="text-[10px] text-[#555] uppercase font-bold tracking-widest mb-1">Net Energy</p>
             <p className="text-lg font-bold text-brand">Balanced</p>
          </Card>

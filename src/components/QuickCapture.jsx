@@ -39,7 +39,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
   };
 
   return (
-    <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+    <Card className="glass glass-interactive">
       <CardContent className="pt-4">
         <div className="relative">
           <Textarea

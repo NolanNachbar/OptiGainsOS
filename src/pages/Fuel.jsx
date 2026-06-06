@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import FoodTracker from "./FoodTracker";
+import Supplements from "./Supplements";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, supabase } from "@/api/supabaseClient";
@@ -17,7 +19,12 @@ import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
 
 export default function Fuel() {
-  const [activeTab, setActiveTab] = useState("nutrition");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "wellness" ? "wellness" : "nutrition");
+  const switchTab = (t) => {
+    setActiveTab(t);
+    setSearchParams(t === "nutrition" ? {} : { tab: t });
+  };
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { profile } = useProfile();
@@ -58,25 +65,6 @@ export default function Fuel() {
     },
     enabled: !!user,
   });
-  const totalWater = todayWater.reduce((s, e) => s + e.amount_ml, 0);
-
-  const addWater = useMutation({
-    mutationFn: async (ml) => {
-      await supabase.from("water_logs").insert({ created_by: user.id, amount_ml: ml });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["water-logs", today] }),
-  });
-
-  const { data: suppTypes = [] } = useQuery({
-    queryKey: ["supplement-types", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("supplement_types").select("*").eq("created_by", user.id);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
-
   const { data: todaySupps = [] } = useQuery({
     queryKey: ["supplement-logs", today, user?.id],
     queryFn: async () => {
@@ -91,21 +79,6 @@ export default function Fuel() {
     },
     enabled: !!user,
   });
-  const takenSuppNames = new Set(todaySupps.map(s => s.supplement_name));
-
-  const logSupp = useMutation({
-    mutationFn: async (type) => {
-      await supabase.from("supplement_logs").insert({
-        created_by: user.id,
-        supplement_type_id: type.id,
-        supplement_name: type.name,
-        dose: type.default_dose,
-        unit: type.unit,
-      });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["supplement-logs", today] }),
-  });
-
   return (
     <div className="bg-[#09090e] min-h-screen text-white">
       {/* Tab Switcher */}
@@ -113,7 +86,7 @@ export default function Fuel() {
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
           <div className="flex gap-1">
             <button
-              onClick={() => setActiveTab("nutrition")}
+              onClick={() => switchTab("nutrition")}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${
                 activeTab === "nutrition"
                   ? "border-brand text-brand"
@@ -125,7 +98,7 @@ export default function Fuel() {
               </div>
             </button>
             <button
-              onClick={() => setActiveTab("wellness")}
+              onClick={() => switchTab("wellness")}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${
                 activeTab === "wellness"
                   ? "border-brand text-brand"
@@ -185,59 +158,9 @@ export default function Fuel() {
               </Card>
             </section>
  
-            {/* Hydration Section */}
-            <section className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                  <Droplets className="w-3.5 h-3.5 text-brand" /> Water Log
-                </h2>
-                <span className="text-sm font-bold text-brand font-technical">{totalWater} ml</span>
-              </div>
-              <div className="flex gap-2">
-                {[250, 500, 750].map(ml => (
-                  <Button
-                    key={ml}
-                    variant="ghost"
-                    className="flex-1 bg-charcoal-surface border border-charcoal-border h-12 text-xs font-bold text-slate-400 hover:bg-brand/10 hover:text-brand hover:border-brand/40 transition-all font-technical"
-                    onClick={() => addWater.mutate(ml)}
-                  >
-                    +{ml}ml
-                  </Button>
-                ))}
-              </div>
-            </section>
- 
-            {/* Supplement Section */}
-            {suppTypes.length > 0 && (
-              <section className="space-y-2">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                  <Pill className="w-3.5 h-3.5 text-emerald-400" /> Supplement Checklist
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {suppTypes.map(type => {
-                    const taken = takenSuppNames.has(type.name);
-                    return (
-                      <Button
-                        key={type.id}
-                        variant="ghost"
-                        className={`h-auto py-3 px-4 justify-start border transition-all rounded-xl ${
-                          taken 
-                            ? "bg-brand/5 border-brand/20 text-brand font-bold" 
-                            : "bg-charcoal-surface border-charcoal-border text-slate-400 hover:border-slate-800"
-                        }`}
-                        onClick={() => logSupp.mutate(type)}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          {taken ? <CheckCircle2 className="w-4 h-4 text-brand shrink-0" /> : <Plus className="w-4 h-4 text-slate-500 shrink-0" />}
-                          <span className="text-xs font-semibold text-left capitalize leading-tight">{type.name}</span>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
- 
+            {/* Water + supplements (full type management) — reused from Supplements */}
+            <Supplements embedded />
+
             {/* Quick Capture */}
             <section className="space-y-2">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Stream Note</h2>

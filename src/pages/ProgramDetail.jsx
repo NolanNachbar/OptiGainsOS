@@ -558,7 +558,7 @@ export default function ProgramDetail() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 bg-[#1a1a1a] border-[#2a2a2a] text-white [color-scheme:dark]"
+                  className="mt-1 glass glass-interactive text-white [color-scheme:dark]"
                 />
               </div>
 

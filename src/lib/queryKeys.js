@@ -87,6 +87,10 @@ export const queryKeys = {
   // Shared programs
   sharedPrograms: (userId) => ['sharedPrograms', userId],
 
+  // Adaptive engine outputs (training_prescription / engine_params)
+  todayPrescription: (date, userId) => ['todayPrescription', date, userId],
+  engineParams: (date, userId) => ['engineParams', date, userId],
+
   // Misc
   weeklyWorkoutLogs: (weekStart, userId) => ['weeklyWorkoutLogs', weekStart, userId],
   lastWorkoutLog: (workoutId, userId) => ['lastWorkoutLog', workoutId, userId],

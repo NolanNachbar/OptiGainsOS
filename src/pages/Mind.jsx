@@ -172,7 +172,7 @@ function ReadingTab() {
       )}
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader><DialogTitle className="text-white">{editing ? "Edit Book" : "Add Book"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
@@ -303,7 +303,7 @@ function StudyTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <Card className="glass glass-interactive">
         <CardContent className="pt-4 px-5 pb-5">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#555555] mb-4 flex items-center gap-2">
             <Zap className="w-3 h-3" /> Log Study Session
@@ -463,7 +463,7 @@ function SkillsTab() {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
-            <div key={skill.id} className={`p-4 rounded-xl border group ${isStale ? "bg-yellow-500/[3%] border-yellow-500/10" : "bg-[#1a1a1a] border-[#2a2a2a]"}`}>
+            <div key={skill.id} className={`p-4 rounded-xl border group ${isStale ? "bg-yellow-500/[3%] border-yellow-500/10" : "glass glass-interactive"}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-semibold text-white">{skill.name}</p>
@@ -509,7 +509,7 @@ function SkillsTab() {
       )}
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader><DialogTitle className="text-white">Add Skill</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>

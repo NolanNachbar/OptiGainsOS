@@ -132,7 +132,7 @@ function TSBStatusBadge({ tsb }) {
   return <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">Deep fatigue — consider a deload</span>;
 }
 
-export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile }) {
+export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, banister }) {
   const maxHR = getMaxHR(profile);
 
   const weeklyData = useMemo(
@@ -215,15 +215,43 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile }
         </div>
         <div className="pb-2 pt-2">
           {!sufficient ? (
-            <div className="text-center py-8">
-              <Lock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-500 mb-0.5">
-                Unlocks after 28 days of data
-              </p>
-              <p className="text-xs text-slate-600">
-                Log workouts regularly to build your training history
-              </p>
-            </div>
+            banister ? (
+              /* Engine-computed Banister estimate — available before the local
+                 28-day TSS history exists. Different units than the TSS chart,
+                 so shown as a distinct snapshot rather than the line chart. */
+              <div className="text-center py-6">
+                <div className="flex items-center justify-center gap-6">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Fitness</div>
+                    <div className="text-xl font-technical text-sky-400">{Math.round(banister.fitness)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Fatigue</div>
+                    <div className="text-xl font-technical text-rose-400">{Math.round(banister.fatigue)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Form</div>
+                    <div className={`text-xl font-technical ${banister.tsb_banister >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      {banister.tsb_banister >= 0 ? "+" : ""}{Number(banister.tsb_banister).toFixed(1)}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-3 leading-relaxed max-w-xs mx-auto">
+                  Engine estimate{banister.confidence != null ? ` · ${Math.round(banister.confidence * 100)}% confidence` : ""}. The
+                  full 28-day fitness/fatigue trend chart unlocks as you log more training.
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Lock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                <p className="text-sm font-bold text-slate-500 mb-0.5">
+                  Unlocks after 28 days of data
+                </p>
+                <p className="text-xs text-slate-600">
+                  Log workouts regularly to build your training history
+                </p>
+              </div>
+            )
           ) : (
             <>
               <CTLLineChart data={ctlData} />

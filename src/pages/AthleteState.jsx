@@ -4,11 +4,65 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getTodayString } from "@/utils/dateUtils";
+import { useEngineParams, useTodayPrescription } from "@/hooks/useEngineQueries";
 import PSTTracker from "@/components/PSTTracker";
+import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import {
   Dumbbell, Activity, BarChart3, Heart, Waves,
-  TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Utensils,
+  TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Utensils, Cpu,
 } from "lucide-react";
+
+// ── Adaptive engine internals (engine_params + training_prescription) ─────────
+// Surfaces the engine's deepest learned state — VDOT, RLS personalization
+// progress, Banister model confidence, concurrent-training interference — which
+// the app computes daily but never previously displayed.
+function AdaptiveEnginePanel() {
+  const { engineParams } = useEngineParams();
+  const { prescription } = useTodayPrescription();
+  if (!engineParams && !prescription) return null;
+
+  const vdot = engineParams?.vdot_state?.vdot;
+  const vdotHist = engineParams?.vdot_state?.vdot_history || [];
+  const vdotTrend = vdotHist.length >= 2 ? vdot - vdotHist[vdotHist.length - 2] : null;
+  const updates = engineParams?.rls_params?.update_count ?? 0;
+  const personalization = updates >= 4 ? "Personalized" : updates >= 1 ? `Calibrating ${updates}/4` : "Population defaults";
+  const confidence = prescription?.banister_state?.confidence;
+
+  return (
+    <Card className="glass-interactive mb-4">
+      <CardHeader className="pb-2 pt-4 px-5">
+        <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-brand" /> Adaptive Engine
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 pb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">VDOT</div>
+            <div className="text-xl font-technical text-white">{vdot != null ? Number(vdot).toFixed(1) : "—"}</div>
+            {vdotTrend != null && Math.abs(vdotTrend) >= 0.05 && (
+              <div className={`text-[10px] font-semibold ${vdotTrend >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {vdotTrend >= 0 ? "▲" : "▼"} {Math.abs(vdotTrend).toFixed(1)}
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Personalization</div>
+            <div className="text-sm font-semibold text-white mt-1.5">{personalization}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Model Confidence</div>
+            <div className="text-xl font-technical text-white">{confidence != null ? `${Math.round(confidence * 100)}%` : "—"}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Interference</div>
+            <div className="text-sm font-semibold text-white mt-1.5">{prescription?.interference?.interference_level || "—"}</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -382,7 +436,7 @@ export default function AthleteState({ hideHeader = false }) {
   });
 
   return (
-    <div className={`px-3 py-4 md:px-6 md:py-8 bg-[#121212] min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 bg-transparent min-h-0' : ''}`}>
+    <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-4xl mx-auto">
         {!hideHeader && (
           <div className="mb-6">
@@ -403,21 +457,25 @@ export default function AthleteState({ hideHeader = false }) {
         )}
 
         {!isLoading && !state && (
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
+          <Card className="glass-interactive mb-6">
             <CardContent className="py-8 text-center">
               <BarChart3 className="w-8 h-8 text-[#333] mx-auto mb-3" />
-              <p className="text-sm text-white font-semibold">No athlete state for today</p>
+              <p className="text-sm text-white font-semibold">Today's analysis is being computed</p>
               <p className="text-xs text-[#555555] mt-1 max-w-xs mx-auto">
-                Run <code className="bg-[#222] px-1 rounded">compute_athlete_state.py</code> to generate.
-                Cron runs daily at 4am MT.
+                Your athlete state refreshes automatically each morning. Check back shortly,
+                or log a workout, weigh-in, or recovery metrics to give the engine more to work with.
               </p>
             </CardContent>
           </Card>
         )}
 
+        <AdaptiveEnginePanel />
+
+        <VdotZonesCard className="mb-4" />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Strength */}
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Dumbbell} title="Strength Goals" />
             </CardHeader>
@@ -427,7 +485,7 @@ export default function AthleteState({ hideHeader = false }) {
           </Card>
 
           {/* Recovery */}
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Heart} title="Recovery" color="text-red-400" />
             </CardHeader>
@@ -437,7 +495,7 @@ export default function AthleteState({ hideHeader = false }) {
           </Card>
 
           {/* Fatigue */}
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Activity} title="Fatigue / Load" color="text-yellow-400" />
             </CardHeader>
@@ -447,7 +505,7 @@ export default function AthleteState({ hideHeader = false }) {
           </Card>
 
           {/* Muscle Volume */}
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={BarChart3} title="Muscle Volume" color="text-blue-400" />
             </CardHeader>
@@ -459,7 +517,7 @@ export default function AthleteState({ hideHeader = false }) {
 
         {/* Endurance / BUD/S + PST */}
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Waves} title="Endurance / BUD/S Readiness" color="text-blue-400" />
             </CardHeader>
@@ -473,7 +531,7 @@ export default function AthleteState({ hideHeader = false }) {
 
         {/* Nutrition */}
         <div className="mt-4">
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Utensils} title="Nutrition" color="text-orange-400" />
             </CardHeader>

@@ -68,7 +68,7 @@ export default function Layout({ children, currentPageName }) {
     <>
       <div className="min-h-screen flex flex-col w-full bg-[#09090e]">
         {/* Desktop top navbar */}
-        <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] bg-charcoal-surface/80 backdrop-blur-md border-b border-charcoal-border items-center px-5 h-14 gap-1">
+        <header data-desktop-nav className="hidden lg:flex sticky top-0 z-[60] glass-elevated items-center px-5 h-14 gap-1">
           <Link to="/dashboard" className="flex items-center gap-2.5 mr-7">
             <Logo className="w-8 h-8" />
             <span className="text-brand font-bold text-[15px] tracking-tight uppercase">OptiGainsOS</span>
@@ -113,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
         <header
           ref={mobileHeaderRef}
           data-mobile-header
-          className="bg-charcoal-surface/80 backdrop-blur-md border-b border-charcoal-border px-4 py-3 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
+          className="glass-elevated px-4 py-3 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
         >
           <Link to="/dashboard">
             <Logo className="w-10 h-10" />
@@ -137,7 +137,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile bottom tab bar */}
       <nav
-        className="bg-charcoal-surface/90 backdrop-blur-md border-t border-charcoal-border z-[9999] lg:hidden"
+        className="glass-elevated z-[9999] lg:hidden"
         style={{
           position: 'fixed',
           bottom: 0,

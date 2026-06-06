@@ -35,18 +35,21 @@ import {
   ListChecks,
   Activity,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { format, addDays, addWeeks, subWeeks } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateVolume } from "@/utils/exerciseStats";
-import { calculateTrainingCapacity } from "@/utils/recoveryUtils";
+import { calculateTrainingCapacity, calculateReadinessScore, getReadinessCategory } from "@/utils/recoveryUtils";
+import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
 import ReadinessRing from "@/components/dashboard/ReadinessRing";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import NextWorkoutCard from "@/components/dashboard/NextWorkoutCard";
+import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 
 
@@ -505,10 +508,37 @@ export default function Dashboard() {
 
   const { recoveryMetrics } = useRecoveryMetrics(30);
 
-  const capacity = useMemo(() => 
+  const capacity = useMemo(() =>
     calculateTrainingCapacity(recoveryMetrics, profile, todayCheckIn),
     [recoveryMetrics, profile, todayCheckIn]
   );
+
+  // Real readiness (replaces the previously hardcoded "88"). recoveryMetrics is
+  // sorted descending by date, so [0] is the most recent row.
+  const readinessScore = useMemo(
+    () => calculateReadinessScore(recoveryMetrics?.[0], todayCheckIn),
+    [recoveryMetrics, todayCheckIn]
+  );
+  const readinessCat = getReadinessCategory(readinessScore);
+
+  // Engine's daily prescription — surfaces the MPC's own readiness/overreach
+  // guardrail when the recovery pipeline has run.
+  const { prescription } = useTodayPrescription(today);
+
+  // Staleness signal — flags when wearable recovery data has stopped flowing
+  // (the engine's recovery/overreach models go blind without it).
+  const recoveryStaleDays = useMemo(() => {
+    const latest = recoveryMetrics?.[0]?.date;
+    if (!latest) return null;
+    return Math.floor((new Date(today) - new Date(latest)) / 86400000);
+  }, [recoveryMetrics, today]);
+
+  // Days remaining to the goal event (BUD/S). Drives the countdown in the header.
+  const daysToRace = useMemo(() => {
+    const target = profile?.race_date || "2026-08-31";
+    const d = Math.ceil((new Date(target) - new Date(today)) / 86400000);
+    return d > 0 ? d : null;
+  }, [profile, today]);
 
   const { data: workoutLogs = [], isLoading: logsLoading, isError: logsError } = useQuery({
     queryKey: queryKeys.workoutLogs(user?.id),
@@ -599,7 +629,12 @@ export default function Dashboard() {
             <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-charcoal-border" />
             <div>
               <h1 className="text-lg font-bold text-white leading-none">Dashboard</h1>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">OptiGains Engine</p>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">
+                OptiGains Engine
+                {daysToRace != null && (
+                  <span className="text-brand ml-2">· {daysToRace}d to BUD/S</span>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -615,6 +650,19 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Recovery-data staleness banner */}
+        {recoveryStaleDays != null && recoveryStaleDays >= 2 && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl glass px-4 py-2.5 text-xs">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-slate-300">
+              Recovery data is {recoveryStaleDays} days stale — your wearable sync may need attention.
+            </span>
+            <Link to="/profile" className="ml-auto text-brand font-semibold whitespace-nowrap">
+              Check
+            </Link>
+          </div>
+        )}
 
         {/* ── METABOLIC GRID (The Engine Room) ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-charcoal-border rounded-xl overflow-hidden border border-charcoal-border shadow-dark-card mb-4">
@@ -663,15 +711,26 @@ export default function Dashboard() {
                 <Zap className="w-3.5 h-3.5 text-brand" /> Readiness
               </p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-xl font-technical text-white leading-none">88</span>
-                <span className="text-[9px] text-emerald-400 font-medium uppercase">Optimal</span>
+                <span className="text-xl font-technical text-white leading-none">{readinessScore ?? "—"}</span>
+                <span className={`text-[9px] font-medium uppercase ${readinessCat.color}`}>
+                  {readinessScore == null ? "No data" : readinessCat.label}
+                </span>
               </div>
             </div>
             <div className="flex gap-1 items-center h-2">
-              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-              <div className="w-4 h-[3px] bg-emerald-500 rounded-sm shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-              <div className="w-4 h-[3px] bg-slate-800 rounded-sm" />
+              {[0, 1, 2, 3].map((i) => {
+                const filled = readinessScore != null && i < Math.round(readinessScore / 25);
+                return (
+                  <div
+                    key={i}
+                    className={`w-4 h-[3px] rounded-sm ${
+                      filled
+                        ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]"
+                        : "bg-slate-800"
+                    }`}
+                  />
+                );
+              })}
             </div>
           </div>
 
@@ -764,6 +823,9 @@ export default function Dashboard() {
           {/* AI Insights */}
           <DailyBriefCard today={today} hideWhenEmpty={true} />
 
+          {/* Adaptive engine guardrails (ACWR / interference / overreach) */}
+          <EngineStatusCard today={today} />
+
           {/* Actions & Soreness */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
@@ -783,6 +845,7 @@ export default function Dashboard() {
                   cardioSessions={allCardioSessions}
                   workoutLogs={workoutLogs}
                   profile={profile}
+                  banister={prescription?.banister_state}
                 />
               </div>
             </Card>

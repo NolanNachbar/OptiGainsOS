@@ -15,6 +15,7 @@ import { Dumbbell, Pencil, Check } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
+import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
@@ -241,6 +242,7 @@ export default function QuickWorkout() {
       />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[140px] lg:pt-32 pb-40 lg:pb-6">
+        <VdotZonesCard className="mb-6" />
         <div ref={workoutTitleRef} className="mb-6">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-white" />

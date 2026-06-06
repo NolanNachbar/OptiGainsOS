@@ -106,8 +106,8 @@ export default function CycleDayGrid({
                     cellClasses += " border-[#2a2a2a] bg-[#1a1a1a] opacity-60";
                   } else {
                     cellClasses += workout
-                      ? " bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#2a2a2a]"
-                      : " bg-[#1a1a1a] border-[#2a2a2a]";
+                      ? " glass glass-interactive hover:border-[#2a2a2a]"
+                      : " glass glass-interactive";
                   }
                   if (onCellClick) cellClasses += " cursor-pointer ";
 

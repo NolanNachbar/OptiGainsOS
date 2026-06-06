@@ -120,7 +120,7 @@ export default function LogHub() {
         {/* Weight Log */}
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Weight</h2>
-          <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <Card className="glass glass-interactive">
             <CardContent className="p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-brand/10">
@@ -156,7 +156,7 @@ export default function LogHub() {
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">Nutrition</h2>
           <Link to="/food-tracker">
-            <Card className="bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#222] transition-colors">
+            <Card className="glass glass-interactive hover:bg-[#222] transition-colors">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-orange-500/10">
@@ -205,7 +205,7 @@ export default function LogHub() {
                     key={type.id}
                     variant="ghost"
                     className={`h-auto py-3 px-4 justify-start border transition-all ${
-                      taken ? "bg-brand/5 border-brand/20 text-brand" : "bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0]"
+                      taken ? "bg-brand/5 border-brand/20 text-brand" : "glass glass-interactive text-[#a0a0a0]"
                     }`}
                     onClick={() => logSupp.mutate(type)}
                   >

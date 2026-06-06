@@ -75,7 +75,7 @@ export default function NextWorkoutCard({ today }) {
 
   return (
     <>
-      <Card className="bg-[#1a1a1a] border-[#2a2a2a] mb-6">
+      <Card className="glass-interactive mb-6">
         <CardHeader
           className="pb-2 pt-4 px-5 cursor-pointer select-none"
           onClick={() => setExpanded((v) => !v)}
@@ -166,7 +166,7 @@ export default function NextWorkoutCard({ today }) {
       </Card>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] text-white max-w-sm">
+        <DialogContent className="glass-interactive text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base">Apply AI Suggestion?</DialogTitle>
           </DialogHeader>

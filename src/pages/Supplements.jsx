@@ -13,15 +13,26 @@ import {
 } from "lucide-react";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { getTodayString } from "@/utils/dateUtils";
+import { useProfile } from "@/hooks/useUserQueries";
 import { toast } from "sonner";
 
-const WATER_GOAL_ML = 3000;
+const DEFAULT_WATER_GOAL_ML = 3000;
 const WATER_INCREMENTS = [100, 250, 500];
+
+// Personalized hydration target: ~35 ml per kg bodyweight, rounded to 50 ml.
+function waterGoalMl(profile) {
+  const w = profile?.current_weight;
+  if (!w) return DEFAULT_WATER_GOAL_ML;
+  const kg = profile.weight_unit === "kg" ? w : w / 2.205;
+  return Math.round((kg * 35) / 50) * 50;
+}
 
 // ─── Water Card ────────────────────────────────────────────────────────────────
 function WaterCard({ today }) {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
+  const WATER_GOAL_ML = waterGoalMl(profile);
 
   const { data: todayWater = [] } = useQuery({
     queryKey: ["water-logs", today],
@@ -63,7 +74,7 @@ function WaterCard({ today }) {
   });
 
   return (
-    <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+    <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
         <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
           <Droplets className="w-4 h-4 text-blue-400" />
@@ -156,7 +167,7 @@ function SupplementForm({ initial, onSave, onClose }) {
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
-export default function Supplements() {
+export default function Supplements({ embedded = false }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const today = getTodayString();
@@ -260,9 +271,9 @@ export default function Supplements() {
   const takenNames = new Set(todayLogs.map(l => l.supplement_name));
 
   return (
-    <div className="px-4 py-6 md:px-8 bg-[#121212] min-h-screen">
-      <div className="max-w-2xl mx-auto">
-        <header className="mb-8">
+    <div className={embedded ? "" : "px-4 py-6 md:px-8 min-h-screen"}>
+      <div className={embedded ? "" : "max-w-2xl mx-auto"}>
+        <header className={embedded ? "mb-4" : "mb-8"}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-brand/10">
@@ -295,7 +306,7 @@ export default function Supplements() {
                 return (
                   <div
                     key={type.id}
-                    className={`p-4 rounded-xl border ${taken ? "bg-brand/[5%] border-brand/20" : "bg-[#1a1a1a] border-[#2a2a2a]"}`}
+                    className={`p-4 rounded-xl border ${taken ? "bg-brand/[5%] border-brand/20" : "glass glass-interactive"}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -395,7 +406,7 @@ export default function Supplements() {
 
       {/* Add supplement type dialog */}
       <Dialog open={showAddType} onOpenChange={setShowAddType}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-white">Add Supplement</DialogTitle>
           </DialogHeader>
@@ -405,7 +416,7 @@ export default function Supplements() {
 
       {/* Edit supplement type dialog */}
       <Dialog open={!!editingType} onOpenChange={() => setEditingType(null)}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-sm">
+        <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-white">Edit Supplement</DialogTitle>
           </DialogHeader>

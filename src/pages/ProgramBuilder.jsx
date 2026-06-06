@@ -1049,7 +1049,7 @@ function ExerciseEditor({
   const isCardio = workoutType === "cardio" || workoutType === "hiit";
 
   return (
-    <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
+    <Card className="glass glass-interactive">
       <CardContent className="pt-3 pb-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

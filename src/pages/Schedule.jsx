@@ -1716,7 +1716,7 @@ export default function Schedule() {
                               ? "bg-green-50 border-green-300"
                               : item.isCurrent
                               ? "bg-brand/[8%] border-brand/30"
-                              : "bg-[#1a1a1a] border-[#2a2a2a]"
+                              : "glass glass-interactive"
                           }`}
                         >
                           <div className="p-4">
@@ -1832,7 +1832,7 @@ export default function Schedule() {
                             className={`rounded-xl border-2 transition-all ${
                               item.completed
                                 ? "bg-green-50 border-green-300"
-                                : "bg-[#1a1a1a] border-[#2a2a2a] hover:border-brand/30"
+                                : "glass glass-interactive hover:border-brand/30"
                             }`}
                           >
                             <div className="p-4">
