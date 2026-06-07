@@ -296,11 +296,16 @@ def select_action(
     load_history: list,
     acwr:         float,
     overreaching: bool,
+    recovery:     dict = None,
 ) -> tuple:
     """
     Evaluate all candidate actions and return (best_action, best_intensity, scores).
 
     Returns early with REST if overreaching is detected — no simulation needed.
+
+    recovery (optional): today's recovery dict (sleep_score, energy, score). Poor
+    acute recovery caps intensity and blocks a two-a-day, so a bad night actually
+    lowers today's load instead of relying on the LLM brief to comply.
     """
     if overreaching:
         return "REST", 0.7, {}
@@ -326,6 +331,16 @@ def select_action(
     if acwr > 1.5 and best_action not in load_action_map["DECREASE"] + load_action_map["MAINTAIN"]:
         best_action = "LIGHT"
 
+    # Acute-recovery gate: a poor night or low subjective energy blocks a two-a-day.
+    rec      = recovery or {}
+    sleep    = rec.get("sleep_score")
+    energy   = rec.get("energy")
+    rec_score = rec.get("score")
+    if best_action == "TWO_A_DAY" and (
+        (sleep is not None and sleep < 60) or (energy is not None and energy < 5)
+    ):
+        best_action = "MIXED"
+
     # Intensity scalar based on TSB
     current_tsb = float(kalman.x[0, 0] - kalman.x[1, 0])
     if current_tsb > 10:
@@ -336,6 +351,15 @@ def select_action(
         intensity = 0.90   # slightly fatigued → back off
     else:
         intensity = 0.78   # heavily fatigued → significant reduction
+
+    # Recovery multiplier: scale intensity down on low recovery score, and cap it
+    # hard after a bad night or low energy. (score 100→1.0x, ~50→0.8x floor.)
+    rec_mult = 1.0
+    if rec_score is not None:
+        rec_mult = max(0.80, min(1.0, 0.60 + 0.004 * float(rec_score)))
+    if (sleep is not None and sleep < 50) or (energy is not None and energy <= 3):
+        rec_mult = min(rec_mult, 0.85)
+    intensity *= rec_mult
 
     return best_action, round(intensity, 2), {k: v["score"] for k, v in scores.items()}
 
@@ -495,6 +519,7 @@ def main():
     best_action, intensity, action_scores = select_action(
         kalman, guardrail, load_history, acwr,
         overreach["overreaching"],
+        recovery=(athlete_rows[0].get("recovery") or {}) if athlete_rows else {},
     )
 
     if action_scores:
