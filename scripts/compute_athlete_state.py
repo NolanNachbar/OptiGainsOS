@@ -1070,6 +1070,10 @@ def main():
              if r.get("sleep_score") is not None),
             None,
         )
+        _slopes = [float(v.get("progression_rate_lbs_per_week") or 0)
+                   for v in (strength.values() if isinstance(strength, dict) else [])
+                   if isinstance(v, dict) and v.get("progression_rate_lbs_per_week") is not None]
+        strength_min_slope = min(_slopes) if _slopes else None
         nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
             "overreaching":  overreach_out.get("overreaching"),
             "hrv_z":         overreach_out.get("hrv_z_3d"),
@@ -1079,6 +1083,7 @@ def main():
             "bodyweight_lb": latest_weight_lb,
             "weight_trend_lbs_per_week": nutrition.get("weight_trend_lbs_per_week"),
             "phase":         nutrition.get("phase"),
+            "strength_min_slope": strength_min_slope,
         })
         _rec = nutrition["recommended_intake"]
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "

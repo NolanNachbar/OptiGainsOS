@@ -112,8 +112,8 @@ class NutritionModulator:
     TSB_GATE_GAIN             = 0.04   # per unit of deep negative form (fatigue)
     POOR_SLEEP_SCORE          = 60     # below this, multiply headroom by POOR_SLEEP_FACTOR
     POOR_SLEEP_FACTOR         = 0.70
-    PROTEIN_G_PER_LB          = 1.0    # high protein to retain muscle in a deficit
-    MIN_FAT_G_PER_LB          = 0.30   # hormonal floor on fat
+    PROTEIN_G_PER_LB          = 1.3    # 1.2-1.5 g/lb to retain muscle in a deficit (TNF cutting philosophy)
+    MIN_FAT_G_PER_LB          = 0.33   # ~1/3 g/lb hormonal floor on fat (TNF); floored at 50g absolute
 
     @staticmethod
     def _clamp(x, lo, hi):
@@ -173,13 +173,26 @@ class NutritionModulator:
             headroom *= 0.70
             gates.append("loss_too_fast")
 
+        # Strength-vs-peak gate — TNF's #1 muscle-retention signal. Performance,
+        # not the scale, tells you if you're keeping muscle on a cut. If a key
+        # lift is regressing during a cut, ease the deficit before digging deeper.
+        strength_min_slope = signals.get("strength_min_slope")
+        if phase == "cut" and strength_min_slope is not None and float(strength_min_slope) < -1.0:
+            headroom *= 0.70
+            gates.append("strength_dropping")
+
         headroom = self._clamp(headroom, 0.0, 1.0)
         deficit_ratio = round(target * headroom, 3)
         kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
         calorie_target = round(self.maintenance_kcal - kcal_deficit)
 
         protein_g = round(self.PROTEIN_G_PER_LB * bw) if bw > 0 else None
-        fat_floor_g = round(self.MIN_FAT_G_PER_LB * bw) if bw > 0 else None
+        fat_floor_g = max(50, round(self.MIN_FAT_G_PER_LB * bw)) if bw > 0 else 50
+
+        # Carbs: on an aggressive cut, carbs exist only to fuel training — target
+        # pre-workout only (~100 kcal ≈ 25g). Outside a cut, leave to the normal
+        # macro split (None = no special restriction).
+        carb_target_g = 25 if phase == "cut" else None
 
         if not gates:
             rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
@@ -200,6 +213,7 @@ class NutritionModulator:
             "calorie_target":        calorie_target,
             "protein_g":             protein_g,
             "fat_floor_g":           fat_floor_g,
+            "carb_target_g":         carb_target_g,
             "gates":                 gates,
             "rationale":             rationale,
         }
