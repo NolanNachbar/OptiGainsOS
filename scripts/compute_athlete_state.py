@@ -988,8 +988,10 @@ def main():
                     if r.get("hrv")][-7:]
         rhr_hist = [float(r.get("resting_hr") or 0) for r in sorted(recovery_rows, key=lambda r: r.get("date",""))
                     if r.get("resting_hr")][-7:]
+        stress_hist = [float(r.get("stress_score") or 0) for r in sorted(recovery_rows, key=lambda r: r.get("date",""))
+                       if r.get("stress_score")][-7:]
         acwr     = float(fatigue.get("atl") or 0) / (float(fatigue.get("ctl") or 1) + 1e-5)
-        overreach_out = guardrail.check_overreaching(hrv_hist, rhr_hist, acwr)
+        overreach_out = guardrail.check_overreaching(hrv_hist, rhr_hist, acwr, stress_hist)
         if overreach_out["overreaching"]:
             print(f"  ⚠️  OVERREACHING DETECTED: HRV_z={overreach_out['hrv_z_3d']}  "
                   f"RHR_z={overreach_out['rhr_z_3d']}")
@@ -1019,6 +1021,8 @@ def main():
             "tsb_banister":  banister_out.get("tsb_banister"),
             "sleep_score":   latest_sleep,
             "bodyweight_lb": latest_weight_lb,
+            "weight_trend_lbs_per_week": nutrition.get("weight_trend_lbs_per_week"),
+            "phase":         nutrition.get("phase"),
         })
         _rec = nutrition["recommended_intake"]
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "

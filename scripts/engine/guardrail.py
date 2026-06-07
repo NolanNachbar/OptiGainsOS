@@ -24,9 +24,10 @@ ACWR_FORCE_DECREASE   = 1.50   # ACWR floor that forces mandatory reduction
 HYSTERESIS_DAYS       = 3      # days in new state before confirming transition
 
 # Overreaching z-score thresholds
-HRV_Z_OVERREACH  = -1.5
-RHR_Z_OVERREACH  =  1.2
-HRV_Z_STRESSED   = -1.0
+HRV_Z_OVERREACH    = -1.5
+RHR_Z_OVERREACH    =  1.2
+HRV_Z_STRESSED     = -1.0
+STRESS_Z_OVERREACH =  1.2   # Garmin all-day stress elevated vs 7d baseline
 
 
 class SystemGuardrail:
@@ -81,6 +82,7 @@ class SystemGuardrail:
         hrv_history: list,
         rhr_history: list,
         acwr: float,
+        stress_history: list = None,
     ) -> dict:
         """
         Multi-signal overreaching early-warning detection.
@@ -88,10 +90,14 @@ class SystemGuardrail:
         Uses trailing 3-day z-scores against a 7-day baseline.
         The HRV↓ + RHR↑ combination is the most specific signature — either
         alone is noisier (single bad night, caffeine, illness can cause one).
+        Elevated all-day stress (Garmin) is a corroborating autonomic signal:
+        it can substitute for RHR in the overreach signature and independently
+        flags STRESSED when sustained high.
 
-        hrv_history: list of RMSSD values, most-recent last. Needs ≥3 values.
-        rhr_history: list of resting HR values, most-recent last. Needs ≥3 values.
-        acwr:        current acute:chronic workload ratio.
+        hrv_history:    list of RMSSD values, most-recent last. Needs ≥3 values.
+        rhr_history:    list of resting HR values, most-recent last. Needs ≥3 values.
+        acwr:           current acute:chronic workload ratio.
+        stress_history: optional list of Garmin stress scores, most-recent last.
         """
         if len(hrv_history) < 3 or len(rhr_history) < 3:
             return {"fatigue_state": "UNKNOWN", "overreaching": False,
@@ -108,10 +114,14 @@ class SystemGuardrail:
 
         hrv_z = z_score_trailing(hrv_history)
         rhr_z = z_score_trailing(rhr_history)
+        stress_z = z_score_trailing(stress_history) if stress_history and len(stress_history) >= 3 else 0.0
 
-        if hrv_z < HRV_Z_OVERREACH and rhr_z > RHR_Z_OVERREACH:
+        # Elevated all-day stress corroborates the autonomic load that RHR proxies,
+        # so HRV↓ + (RHR↑ OR stress↑) both count as the overreach signature.
+        autonomic_elevated = rhr_z > RHR_Z_OVERREACH or stress_z > STRESS_Z_OVERREACH
+        if hrv_z < HRV_Z_OVERREACH and autonomic_elevated:
             state = "CRITICAL_OVERREACH"
-        elif acwr > ACWR_FORCE_DECREASE or hrv_z < HRV_Z_STRESSED:
+        elif acwr > ACWR_FORCE_DECREASE or hrv_z < HRV_Z_STRESSED or stress_z > STRESS_Z_OVERREACH:
             state = "STRESSED"
         else:
             state = "NORMAL"
@@ -121,6 +131,7 @@ class SystemGuardrail:
             "overreaching":  state == "CRITICAL_OVERREACH",
             "hrv_z_3d":      round(hrv_z, 2),
             "rhr_z_3d":      round(rhr_z, 2),
+            "stress_z_3d":   round(stress_z, 2),
         }
 
     # ── Hysteresis ────────────────────────────────────────────────────────────

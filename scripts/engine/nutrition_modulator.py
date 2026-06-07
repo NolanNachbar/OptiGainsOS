@@ -130,6 +130,8 @@ class NutritionModulator:
           tsb_banister : float   — Banister form (very negative = deep fatigue)
           sleep_score  : float   — last night / recent sleep score 0-100
           bodyweight_lb: float   — for protein/fat floors
+          weight_trend_lbs_per_week : float — realized weight trend (closes the cut loop)
+          phase        : str     — "cut" | "bulk" | "maintain"
         """
         target = target_deficit_ratio if target_deficit_ratio is not None else self.AGGRESSIVE_TARGET_DEFICIT
         target = self._clamp(target, 0.0, MAX_DEFICIT_RATIO)
@@ -161,6 +163,15 @@ class NutritionModulator:
         if sleep is not None and float(sleep) < self.POOR_SLEEP_SCORE:
             headroom *= self.POOR_SLEEP_FACTOR
             gates.append("poor_sleep")
+
+        # Realized-trend feedback — closes the cut loop. If actual loss is faster
+        # than ~1.5 lb/wk during a cut, ease the deficit to protect lean mass
+        # instead of holding a static target the user has to police manually.
+        weight_trend = signals.get("weight_trend_lbs_per_week")
+        phase = signals.get("phase")
+        if phase == "cut" and weight_trend is not None and float(weight_trend) < -1.5:
+            headroom *= 0.70
+            gates.append("loss_too_fast")
 
         headroom = self._clamp(headroom, 0.0, 1.0)
         deficit_ratio = round(target * headroom, 3)
