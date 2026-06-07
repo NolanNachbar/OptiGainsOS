@@ -543,6 +543,38 @@ def main():
             for r in reversed(prescription_rows)
         ]
 
+    # Continuity across the generation boundary. The seed above is logged sessions
+    # only, so regenerating a window that starts mid-week — or a fresh week butting
+    # against last week's Sunday — doesn't see the sessions already PLANNED right
+    # before the window, and the first generated day can double up the same split
+    # (the back-to-back legs/upper bug). Seed off the latest planned-but-unlogged
+    # day before the window so the alternation carries across the seam.
+    window_start = days_to_generate[0]
+    _planned_before = sb_get("program_workouts", {
+        "select": "scheduled_date,title,focus", "created_by": f"eq.{USER_ID}",
+        "scheduled_date": f"lt.{window_start.isoformat()}",
+        "order": "scheduled_date.desc", "limit": "1"})
+    if _planned_before:
+        # Classify the preceding planned day from its title (unambiguous: "Upper —"
+        # / "Lower —"); planned exercises store sets as an int so classify_log_split
+        # (built for logged sets-lists) can't read them.
+        _t = str(_planned_before[0].get("title") or "").lower()
+        _s = ("lower_squat_primary" if "lower" in _t else
+              "upper_volume" if "upper" in _t else None)
+        _last_log = workout_log_rows[0].get("log_date") if workout_log_rows else None
+        if _s and (_last_log is None or str(_planned_before[0].get("scheduled_date")) > str(_last_log)):
+            recent_session_types.append(_s)
+            if len(recent_session_types) > 7:
+                recent_session_types.pop(0)
+
+    # Never reprogram a day already trained. Regenerating today after he's logged a
+    # session would plant a phantom session (e.g. today's plan flips to Upper while
+    # he actually did Lower), and the next day then alternates off the phantom —
+    # producing back-to-back same-split days. Generate only untrained days; the
+    # alternation seeds off his most recent ACTUAL logged session above.
+    _logged_dates = {str(r.get("log_date")) for r in workout_log_rows}
+    days_to_generate = [d for d in days_to_generate if d.isoformat() not in _logged_dates]
+
     # ── Recent cardio TSS (from Garmin runs) ──────────────────────────────────
     cardio_rows = sb_get("garmin_activities", {
         "select": "activity_date,duration_seconds,distance_meters",
