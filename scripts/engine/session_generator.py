@@ -355,23 +355,36 @@ def interference_attenuation(ampk, interference_score):
 
 # ── Cardio ────────────────────────────────────────────────────────────────────
 
-# Polarized weekly run STRUCTURE (80/20). Each run day has a base slot keyed on
-# weekday so quality + long runs are spread across the week instead of every day
-# collapsing to one reactively-chosen zone. Readiness can only DOWNGRADE the slot
-# (concurrent heavy strength → protect recovery), never upgrade it.
+# Polarized weekly run STRUCTURE (80/20): ~2 quality (threshold/interval) + 1 long,
+# the rest easy. The DISTRIBUTION is the prior we keep; PLACEMENT is adaptive — runs
+# are assigned by the caller (pick_run_slot) to fit the actual lifting schedule and
+# recovery, not nailed to the calendar. Readiness can only DOWNGRADE a slot, never
+# upgrade it.
 #   slot order (hardest→easiest): interval > threshold > long > easy > recovery
 _RUN_SLOTS = ["recovery", "easy", "long", "threshold", "interval"]
 
-# weekday() : 0=Mon … 6=Sun → base slot. ~2 quality + 1 long, rest easy.
-_WEEKDAY_SLOT = {
-    0: "easy",       # Mon
-    1: "threshold",  # Tue  — tempo/threshold quality
-    2: "easy",       # Wed
-    3: "interval",   # Thu  — VO2 / race-pace quality
-    4: "easy",       # Fri
-    5: "long",       # Sat  — long aerobic run
-    6: "easy",       # Sun
-}
+
+def pick_run_slot(split: str, action: str, quality_placed: int, long_placed: int,
+                  max_quality: int = 2, max_long: int = 1) -> str:
+    """
+    Adaptive run placement (replaces the old fixed weekday template). Hard runs land
+    on UPPER lift days or pure cardio days — never on a heavy LOWER day, where the
+    legs are already taxed and a quality run interferes and raises injury risk. The
+    caller tracks how many quality/long runs are already placed this week so the
+    polarized target (≈2 quality + 1 long) is hit wherever the eligible days fall.
+    """
+    if action in ("REST",):
+        return None
+    is_lower = "lower" in (split or "")
+    if is_lower:
+        return "easy"                       # leg day → aerobic only
+    if quality_placed == 0:
+        return "threshold"                  # first eligible day gets the tempo work
+    if quality_placed == 1:
+        return "interval"                   # second eligible day gets the VO2 work
+    if long_placed < max_long:
+        return "long"                       # then the long aerobic run
+    return "easy"
 
 _SLOT_SPEC = {
     "interval":  {"zone": "Z4-Z5", "base_dur": 45, "pace_key": "interval_pace",
@@ -389,16 +402,13 @@ _SLOT_SPEC = {
 
 def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss: float,
                   readiness_z: float = 0.0, quad_soreness_avg: float = 0.0,
-                  vdot: float = None) -> list:
+                  vdot: float = None, slot: str = None) -> list:
     """
-    Polarized run prescription: weekly STRUCTURE (weekday slot) + VDOT pacing,
-    autoregulated DOWN by readiness. Fixes the old behavior where, with no HRV
-    stream, the reactive index sat at ~-0.8 and locked every run to Z2.
-
-    Readiness index (lower = more fatigued) downgrades the base slot by 1-2 levels;
-    it never upgrades, so quality days only happen when the athlete can absorb them.
+    Polarized run prescription: the caller assigns the base `slot` (adaptive
+    placement via pick_run_slot), VDOT sets the pace, and readiness can only
+    autoregulate DOWN — never up.
     """
-    base_slot = _WEEKDAY_SLOT.get(sim_date.weekday(), "easy")
+    base_slot = slot if slot in _RUN_SLOTS else "easy"
     idx = _RUN_SLOTS.index(base_slot)
 
     # Protect the PST quality runs through the cut (Nolan's call, 2026-06-07).
@@ -695,6 +705,7 @@ def generate(
     e1rm_registry: dict = None,
     quad_soreness_avg: float = 0.0,
     split_framework: str = "upper_lower",
+    run_slot: str = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -736,7 +747,7 @@ def generate(
 
     if action == "CARDIO":
         return [], _build_cardio(sim_date, intensity, ampk, recent_run_tss,
-                                 readiness_z, quad_soreness_avg, vdot)
+                                 readiness_z, quad_soreness_avg, vdot, slot=run_slot)
 
     # All other actions: build strength session via knapsack.
     # The MPC intensity scalar already encodes the physiological prescription —
@@ -751,7 +762,7 @@ def generate(
         assist_week=sim_date.isocalendar()[1],
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
-                            readiness_z, quad_soreness_avg, vdot)
+                            readiness_z, quad_soreness_avg, vdot, slot=run_slot)
               if action in ("TWO_A_DAY", "MIXED") else [])
 
     return exercises, cardio
@@ -803,6 +814,7 @@ class SessionGenerator:
         recent_session_types: list = None,
         soreness_by_muscle: dict = None,
         phase: str = None,
+        run_slot: str = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -831,6 +843,7 @@ class SessionGenerator:
             vdot=vdot,
             weekly_set_targets=weekly_set_targets,
             readiness_z=readiness_z,
+            run_slot=run_slot,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore

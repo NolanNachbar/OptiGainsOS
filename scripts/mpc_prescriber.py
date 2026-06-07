@@ -597,6 +597,17 @@ def main():
             weekly_set_targets = {m: 12 for m in MUSCLE_GROUPS}
 
     generator    = SessionGenerator()
+    # Today's run slot is decided by the weekly plan (adaptive placement); read it so
+    # the daily prescription's cardio matches the program instead of recomputing it.
+    _today_plan = sb_get("program_workouts", {
+        "select": "cardio_sessions", "created_by": f"eq.{USER_ID}",
+        "scheduled_date": f"eq.{TODAY}", "limit": "1"})
+    _today_run_slot = None
+    if _today_plan:
+        _cs = _today_plan[0].get("cardio_sessions") or []
+        if _cs:
+            _today_run_slot = _cs[0].get("run_type")
+
     prescription = generator.generate(
         banister_state  = banister_state,
         interference    = interference,
@@ -613,6 +624,7 @@ def main():
         recent_session_types = recent_session_types,
         soreness_by_muscle = soreness_by_muscle,
         phase = (today_state.get("nutrition") or {}).get("phase"),
+        run_slot = _today_run_slot,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

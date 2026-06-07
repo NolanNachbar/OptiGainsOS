@@ -40,7 +40,7 @@ except ImportError:
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
-from engine.session_generator  import generate as gen_session, get_split, build_title
+from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.allocator          import plan_week, default_goal_priorities
 from engine.hypertrophy_volume import LANDMARK_PRIORS
@@ -872,11 +872,16 @@ def main():
     print(f"  Split framework: {split_framework}  compliance={compliance_rate:.0%}  soreness={quad_soreness_avg:.2f}")
 
     # ── 7. Per-day generation ─────────────────────────────────────────────────
+    # Polarized run placement is adaptive (no fixed weekday template): track how many
+    # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
+    # on upper/cardio days rather than heavy leg days.
+    quality_placed, long_placed = 0, 0
     for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
 
-        days_since_start = (sim_day - enrollment_start).days
-        day_index        = (days_since_start % cycle_length) + 1
+        # day_index aligned to the calendar week (Mon=1 … Sun=7) so the plan reads
+        # in step with the actual week instead of an enrollment-anchored cycle.
+        day_index = sim_day.weekday() + 1
 
         # Per-day ACWR
         acwr = 1.0
@@ -899,6 +904,16 @@ def main():
                 "interference_score": float(sim_cellular.get("interference_score", 0.1)) * decay,
             }
 
+        # Decide the split first, then place the run adaptively around it (hard runs
+        # off heavy leg days), tracking the weekly polarized budget.
+        split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types,
+                          split_framework=split_framework)
+        run_slot = pick_run_slot(split, action, quality_placed, long_placed)
+        if run_slot in ("threshold", "interval"):
+            quality_placed += 1
+        elif run_slot == "long":
+            long_placed += 1
+
         # Generate session with weekly MILP targets (session gen handles per-session distribution)
         exercises, cardio = gen_session(
             action=action,
@@ -913,10 +928,9 @@ def main():
             e1rm_registry=progression_registry.to_dict(),
             quad_soreness_avg=quad_soreness_avg,
             split_framework=split_framework,
+            run_slot=run_slot,
         )
 
-        split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types,
-                          split_framework=split_framework)
         title = build_title(action, split, intensity)
 
         # Two-a-day split evaluation
