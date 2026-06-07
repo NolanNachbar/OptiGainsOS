@@ -118,13 +118,19 @@ def allocate(budget: float, weights: dict, landmarks: dict) -> dict:
     return sets
 
 
-def frequency_targets(set_targets: dict, days_available: int) -> dict:
+def frequency_targets(set_targets: dict, days_available: int,
+                      learned_freq: dict = None) -> dict:
     """Sessions/week per muscle: spread sets so no session exceeds the per-muscle
-    cap, honoring the high-frequency preference (≥2 exposures once volume allows)."""
+    cap, honoring the high-frequency preference (≥2 exposures once volume allows).
+    A LEARNED (mature) frequency for a muscle overrides the set-based default."""
+    learned_freq = learned_freq or {}
     freq = {}
     for m, s in set_targets.items():
         if s <= 0:
             freq[m] = 0
+            continue
+        if learned_freq.get(m):
+            freq[m] = min(int(learned_freq[m]), max(1, days_available))
             continue
         f = max(1, -(-int(s) // MAX_SETS_PER_MUSCLE_PER_SESSION))  # ceil
         if s >= 6:
@@ -145,13 +151,14 @@ def build_run_plan(days_available: int, vdot_gap: float, pst_mult: float) -> lis
 
 def plan_week(landmarks: dict, tsb: float, phase: str | None,
               goal_priorities: dict, deadline_mult: dict,
-              days_available: int = 6, vdot_gap: float = 0.0) -> dict:
+              days_available: int = 6, vdot_gap: float = 0.0,
+              learned_freq: dict = None) -> dict:
     """Top-level: produce the full weekly plan dict."""
     muscles = list(landmarks.keys())
     B = recovery_budget(landmarks, tsb, phase)
     w = goal_weights(goal_priorities, deadline_mult, muscles)
     set_targets = allocate(B, w, landmarks)
-    freq = frequency_targets(set_targets, days_available)
+    freq = frequency_targets(set_targets, days_available, learned_freq)
     runs = build_run_plan(days_available, vdot_gap, deadline_mult.get("pst", 1.0))
     return {
         "set_targets": set_targets,

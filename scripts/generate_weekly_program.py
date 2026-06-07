@@ -44,6 +44,8 @@ from engine.session_generator  import generate as gen_session, get_split, build_
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.program_synthesis  import ProgramSynthesisEngine
 from engine.allocator          import plan_week, default_goal_priorities
+from engine.hypertrophy_volume import LANDMARK_PRIORS
+from engine.learners           import update_mrv, update_frequency, best_frequency
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -649,14 +651,60 @@ def main():
         "min_strength_days": 4,
     }
 
-    # ── Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────────
-    # Greedy marginal-value allocation under a MAV-anchored recovery budget,
-    # goal-weighted (strength/hypertrophy/PST × deadline). Replaces the old MILP
-    # allocation. Reads the athlete's LEARNED landmarks from volume_engine.
-    landmarks_lc = {
-        m: {"mev": lm.get("MEV", 6), "mav": lm.get("MAV", 12), "mrv": lm.get("MRV", 18)}
-        for m, lm in volume_engine.landmarks.items()
-    }
+    # ── 6a. Bayesian learners (ADAPTIVE_ENGINE_DESIGN.md §4) ──────────────────
+    # Update each muscle's MRV posterior + frequency bandit from last week's
+    # planned volume vs measured response. The allocator then reads the LEARNED
+    # landmarks (athlete_landmarks), so the program personalizes over time.
+    prior_mrv = {m: LANDMARK_PRIORS.get(m, {}).get("mrv", 18) for m in MUSCLE_GROUPS}
+    lm_rows = sb_get("athlete_landmarks", {"select": "*", "created_by": f"eq.{USER_ID}"})
+    landmarks_db = {r["muscle"]: dict(r) for r in (lm_rows or [])}
+    prev_plans = sb_get("weekly_plans", {
+        "select": "set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
+        "order": "week_start.desc", "limit": "1"})
+    prev_targets = (prev_plans[0].get("set_targets") if prev_plans else {}) or {}
+    prev_freq    = (prev_plans[0].get("frequency_targets") if prev_plans else {}) or {}
+    freq_rows = sb_get("athlete_params", {"select": "*", "created_by": f"eq.{USER_ID}",
+                                          "param_key": "like.freq.*"}) or []
+    freq_params = {r["param_key"]: dict(r) for r in freq_rows}
+
+    learned_freq = {}
+    for m in MUSCLE_GROUPS:
+        row = landmarks_db.get(m)
+        if not row:
+            continue
+        sore_vals = soreness_muscle.get(m, [])
+        avg_sore  = (sum(sore_vals) / len(sore_vals)) if sore_vals else 0.0
+        upd = update_mrv(row, prev_targets.get(m), perf_slopes.get(m), avg_sore, prior_mrv[m])
+        row.update(upd)
+        sb_upsert("athlete_landmarks", {
+            "created_by": USER_ID, "muscle": m, "mev": row["mev"],
+            "mav": upd["mav"], "mrv": upd["mrv"], "mrv_mean": upd["mrv_mean"],
+            "mrv_var": upd["mrv_var"], "n_obs": upd["n_obs"], "mature": upd["mature"],
+        }, conflict_cols="created_by,muscle")
+        # Frequency bandit: reward = this muscle's slope at the freq it was run.
+        if perf_slopes.get(m) is not None and prev_freq.get(m):
+            meta = (freq_params.get(f"freq.{m}") or {}).get("meta") or {}
+            meta = update_frequency(meta, int(prev_freq[m]), float(perf_slopes[m]))
+            sb_upsert("athlete_params", {
+                "created_by": USER_ID, "param_key": f"freq.{m}",
+                "mean": best_frequency(meta), "variance": 1.0,
+                "n_obs": sum(a.get("n", 0) for a in meta.values()),
+                "mature": any(a.get("n", 0) >= 3 for a in meta.values()), "meta": meta,
+            }, conflict_cols="created_by,param_key")
+            if any(a.get("n", 0) >= 3 for a in meta.values()):
+                learned_freq[m] = best_frequency(meta)
+
+    matured = sum(1 for r in landmarks_db.values() if r.get("mature"))
+    print(f"  Learners: {matured}/{len(landmarks_db) or len(MUSCLE_GROUPS)} muscles MRV-personalized")
+
+    # ── 6b. Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────
+    # Reads the LEARNED landmarks (fallback to priors), goal-weighted under the
+    # recovery budget. Frequency uses learned-mature values where available.
+    if landmarks_db:
+        landmarks_lc = {m: {"mev": float(r["mev"]), "mav": float(r["mav"]), "mrv": float(r["mrv"])}
+                        for m, r in landmarks_db.items()}
+    else:
+        landmarks_lc = {m: dict(LANDMARK_PRIORS[m]) for m in LANDMARK_PRIORS}
     tsb_now   = float((latest_athlete.get("fatigue") or {}).get("tsb") or 0.0)
     phase_now = (latest_athlete.get("nutrition") or {}).get("phase")
     days_to_deadline = max(0, (DEADLINE - TODAY).days)
@@ -666,7 +714,7 @@ def main():
     vdot_gap  = float(vdot_zones.get("vdot_gap") or 0.0)
 
     plan = plan_week(landmarks_lc, tsb_now, phase_now, goal_prio, deadline_mult,
-                     days_available=6, vdot_gap=vdot_gap)
+                     days_available=6, vdot_gap=vdot_gap, learned_freq=learned_freq)
     weekly_targets = {m: int(v) for m, v in plan["set_targets"].items()}
 
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
@@ -681,7 +729,8 @@ def main():
         "set_targets": weekly_targets,
         "frequency_targets": plan["frequency_targets"],
         "run_plan": plan["run_plan"],
-        "rationale": f"budget {plan['budget']} sets; goal_prio {goal_prio}; pst_mult {pst_mult:.2f}",
+        "rationale": (f"budget {plan['budget']} sets; goal_prio {goal_prio}; "
+                      f"pst_mult {pst_mult:.2f}; {matured}/{len(landmarks_db) or len(MUSCLE_GROUPS)} muscles MRV-personalized"),
     }, conflict_cols="created_by,week_start")
 
     # ── 6b. Determine split framework ─────────────────────────────────────────
