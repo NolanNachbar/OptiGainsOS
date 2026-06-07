@@ -22,12 +22,33 @@ RAMP_MAX     = 6     # [ENG] cap above MAV
 TEST_OBS_VAR = 2.0   # [ENG] designed-test observation noise (< passive OBS_VAR=9)
 
 
+PST_INTERVAL_DAYS = 28   # [COACH] benchmark every 4 weeks (CARDIO_PROGRAM)
+
+
 def get_active(tests: list) -> dict | None:
     """The single active test row, if any."""
     for t in tests or []:
         if t.get("status") == "active":
             return t
     return None
+
+
+def should_schedule_pst(last_pst_date_iso, today, active_pst) -> bool:
+    """Schedule a PST diagnostic if none is pending and it's been >=4 weeks."""
+    if active_pst:
+        return False
+    if not last_pst_date_iso:
+        return True
+    import datetime as _dt
+    last = _dt.date.fromisoformat(str(last_pst_date_iso)[:10])
+    return (today - last).days >= PST_INTERVAL_DAYS
+
+
+def schedule_pst_diagnostic(today_iso: str) -> dict:
+    """A PST diagnostic reminder (the brief surfaces it; completed when a new
+    pst_tests row appears). Orthogonal to volume tests — doesn't block them."""
+    return {"test_type": "pst_diagnostic", "status": "active",
+            "scheduled_date": today_iso, "target_key": "pst"}
 
 
 def pick_volume_test_muscle(landmarks_db: dict) -> str | None:

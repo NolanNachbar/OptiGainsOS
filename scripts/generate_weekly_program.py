@@ -47,7 +47,7 @@ from engine.hypertrophy_volume import LANDMARK_PRIORS
 from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation
 from engine.controlled_tests   import (
     get_active, pick_volume_test_muscle, can_schedule, schedule_volume_test,
-    ramp_target, step_volume_test,
+    ramp_target, step_volume_test, should_schedule_pst, schedule_pst_diagnostic,
 )
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
@@ -734,7 +734,8 @@ def main():
     # feeds a LOW-noise observation to the learner. One test at a time, never on a cut.
     phase_test = (latest_athlete.get("nutrition") or {}).get("phase")
     tests = sb_get("controlled_tests", {"select": "*", "created_by": f"eq.{USER_ID}",
-                   "status": "eq.active", "order": "created_at.desc", "limit": "1"})
+                   "status": "eq.active", "test_type": "eq.volume_tolerance",
+                   "order": "created_at.desc", "limit": "1"})
     active_test = get_active(tests)
     if active_test and active_test.get("test_type") == "volume_tolerance" and not already_ran:
         tm = (active_test.get("baseline") or {}).get("muscle")
@@ -766,6 +767,17 @@ def main():
                 "created_by": USER_ID})
             active_test = {"test_type": "volume_tolerance", "baseline": {"muscle": tm, "week": 1}}
             print(f"  Scheduled volume-tolerance test: {tm}")
+
+    # ── 6a-pst. PST diagnostic scheduler (§6.4) — benchmark every 4 weeks ─────
+    if not already_ran:
+        pst_rows = sb_get("pst_tests", {"select": "test_date", "created_by": f"eq.{USER_ID}",
+                          "order": "test_date.desc", "limit": "1"})
+        last_pst = pst_rows[0].get("test_date") if pst_rows else None
+        active_pst = sb_get("controlled_tests", {"select": "id", "created_by": f"eq.{USER_ID}",
+                            "status": "eq.active", "test_type": "eq.pst_diagnostic", "limit": "1"})
+        if should_schedule_pst(last_pst, TODAY, bool(active_pst)):
+            sb_insert("controlled_tests", {**schedule_pst_diagnostic(TODAY.isoformat()), "created_by": USER_ID})
+            print(f"  Scheduled PST diagnostic (last PST: {last_pst or 'never'})")
 
     # ── 6b. Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────
     # Reads the LEARNED landmarks (fallback to priors), goal-weighted under the
