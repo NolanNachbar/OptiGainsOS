@@ -401,14 +401,20 @@ def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss:
     base_slot = _WEEKDAY_SLOT.get(sim_date.weekday(), "easy")
     idx = _RUN_SLOTS.index(base_slot)
 
-    # Readiness/fatigue downgrade: poor HRV, high AMPK (glycogen-depleted / endurance
-    # residual), or high quad soreness pull intensity down a notch or two.
-    readiness = 1.5 * readiness_z - 4.0 * ampk - 1.5 * quad_soreness_avg
-    if readiness < -1.6:
-        idx -= 2
-    elif readiness < -0.7:
-        idx -= 1
-    slot = _RUN_SLOTS[max(0, idx)]
+    # Protect the PST quality runs through the cut (Nolan's call, 2026-06-07).
+    # Routine elevated RHR from a deficit must NOT delete threshold/interval work —
+    # that's the same over-softness removed from the diet. Only a REAL acute signal
+    # downgrades a run: genuinely beat-up legs, or a SEVERE sustained recovery crash
+    # (not day-to-day noise). Thresholds tunable [ENG].
+    SORE_HI       = 7.0    # quad soreness (0-10) at/above which legs are too beat for quality
+    CRASH_READY_Z = -2.0   # readiness z that low = a real crash, not cut-driven RHR drift
+    downgrade = 0
+    if quad_soreness_avg >= SORE_HI:
+        downgrade += 1
+    if readiness_z <= CRASH_READY_Z:
+        downgrade += 1
+    idx = max(0, idx - downgrade)
+    slot = _RUN_SLOTS[idx]
     spec = _SLOT_SPEC[slot]
 
     paces = VDOTEngine(current_vdot=float(vdot) if vdot else 45.0).pace_zones()
