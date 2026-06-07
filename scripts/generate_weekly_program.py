@@ -43,6 +43,7 @@ from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.program_synthesis  import ProgramSynthesisEngine
+from engine.allocator          import plan_week, default_goal_priorities
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -209,12 +210,15 @@ def save_engine_state(
         guardrail_dict["step_count"] = step_count
     if last_explored is not None:
         guardrail_dict["last_explored"] = list(last_explored)
-    if synthesis_engine is not None:
-        synthesis_dict = synthesis_engine.to_dict()
-        if weekly_targets is not None:
-            synthesis_dict["weekly_targets"] = weekly_targets
-        if extra_synthesis:
-            synthesis_dict.update(extra_synthesis)
+    # synthesis_state holds the weekly_targets the prescriber reads. Write it
+    # whenever we have targets (the allocator now produces them; synthesis_engine
+    # may be None since the MILP was retired).
+    synthesis_dict = synthesis_engine.to_dict() if synthesis_engine is not None else {}
+    if weekly_targets is not None:
+        synthesis_dict["weekly_targets"] = weekly_targets
+    if extra_synthesis:
+        synthesis_dict.update(extra_synthesis)
+    if synthesis_dict:
         guardrail_dict["synthesis_state"] = synthesis_dict
 
     row = {
@@ -645,21 +649,40 @@ def main():
         "min_strength_days": 4,
     }
 
-    synthesis_engine  = ProgramSynthesisEngine(MUSCLE_GROUPS)
-    allocation_matrix = synthesis_engine.synthesize_weekly_block(mrv_dict, user_prefs, acwr_global)
-    allocation_matrix, alloc_metadata = allocate_constrained_resources(
-        reserve_score, allocation_matrix, MUSCLE_GROUPS
-    )
-
-    # Compute weekly totals (sum across all 7 days) — these are the targets
-    weekly_targets = {
-        m: int(allocation_matrix[mi].sum())
-        for mi, m in enumerate(MUSCLE_GROUPS)
+    # ── Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────────
+    # Greedy marginal-value allocation under a MAV-anchored recovery budget,
+    # goal-weighted (strength/hypertrophy/PST × deadline). Replaces the old MILP
+    # allocation. Reads the athlete's LEARNED landmarks from volume_engine.
+    landmarks_lc = {
+        m: {"mev": lm.get("MEV", 6), "mav": lm.get("MAV", 12), "mrv": lm.get("MRV", 18)}
+        for m, lm in volume_engine.landmarks.items()
     }
+    tsb_now   = float((latest_athlete.get("fatigue") or {}).get("tsb") or 0.0)
+    phase_now = (latest_athlete.get("nutrition") or {}).get("phase")
+    days_to_deadline = max(0, (DEADLINE - TODAY).days)
+    pst_mult  = max(1.0, min(1.5, 1.0 + (90 - days_to_deadline) / 180.0))  # [ENG] PST urgency
+    deadline_mult = {"strength": 1.0, "hypertrophy": 1.0, "pst": pst_mult}
+    goal_prio = profile.get("goal_priorities") or default_goal_priorities(profile.get("training_phase"))
+    vdot_gap  = float(vdot_zones.get("vdot_gap") or 0.0)
+
+    plan = plan_week(landmarks_lc, tsb_now, phase_now, goal_prio, deadline_mult,
+                     days_available=6, vdot_gap=vdot_gap)
+    weekly_targets = {m: int(v) for m, v in plan["set_targets"].items()}
 
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
-    print(f"  Alloc metadata: {alloc_metadata}")
+    print(f"  Allocator budget: {plan['budget']} sets  |  goal_prio: {goal_prio}  pst_mult: {pst_mult:.2f}")
     print(f"  Weekly set targets: {weekly_targets}")
+
+    # Persist the weekly plan (what session gen / the brief can surface).
+    week_start = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()  # Monday
+    sb_upsert("weekly_plans", {
+        "created_by": USER_ID,
+        "week_start": week_start,
+        "set_targets": weekly_targets,
+        "frequency_targets": plan["frequency_targets"],
+        "run_plan": plan["run_plan"],
+        "rationale": f"budget {plan['budget']} sets; goal_prio {goal_prio}; pst_mult {pst_mult:.2f}",
+    }, conflict_cols="created_by,week_start")
 
     # ── 6b. Determine split framework ─────────────────────────────────────────
     days_to_deadline = (DEADLINE - TODAY).days
@@ -771,7 +794,7 @@ def main():
     new_step = step_count + 1
     save_engine_state(
         USER_ID, kalman, guardrail, volume_engine,
-        progression_registry, exploration_manager, synthesis_engine,
+        progression_registry, exploration_manager, None,  # MILP synthesis_engine retired (allocator owns targets)
         weekly_targets=weekly_targets, step_count=new_step,
         extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate},
         last_explored=new_last_explored,
