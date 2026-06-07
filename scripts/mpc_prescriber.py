@@ -518,6 +518,13 @@ def main():
     quad_soreness = (quad_soreness + [0, 0, 0, 0])[:4]
     mileage_cap = vdot_eng.mileage_cap(quad_soreness)
 
+    # Latest soreness level per muscle group → per-muscle set trimming in the session.
+    soreness_by_muscle: dict = {}
+    for row in sorted(soreness_rows, key=lambda r: r.get("date", "") or r.get("created_at", "")):
+        mg = (row.get("muscle_group") or "").lower().strip()
+        if mg:
+            soreness_by_muscle[mg] = int(row.get("level") or 0)  # last write wins (most recent)
+
     strength = (today_state.get("strength") or {})
     banister_state = kalman.state_dict()
     interference   = cellular.state_dict()
@@ -602,6 +609,7 @@ def main():
         mpc_intensity   = intensity,
         weekly_set_targets = weekly_set_targets,
         recent_session_types = recent_session_types,
+        soreness_by_muscle = soreness_by_muscle,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

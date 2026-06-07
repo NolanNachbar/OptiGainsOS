@@ -795,6 +795,7 @@ class SessionGenerator:
         mpc_intensity: float,
         weekly_set_targets: dict = None,
         recent_session_types: list = None,
+        soreness_by_muscle: dict = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -824,6 +825,27 @@ class SessionGenerator:
             weekly_set_targets=weekly_set_targets,
             readiness_z=readiness_z,
         )
+
+        # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
+        # this morning (his own input, not engine sandbagging). Sore ≥2/5 drops a
+        # set on exercises whose PRIMARY muscle is that region; ≥4 drops two.
+        if soreness_by_muscle:
+            _ALIAS = {"front_delt": "shoulders", "side_delt": "shoulders",
+                      "rear_delt": "shoulders", "delts": "shoulders", "core": "abs",
+                      "lats": "back", "upper_back": "back", "traps": "back"}
+            _primary = {e["name"]: (e.get("muscles") or [None])[0] for e in EXERCISES}
+            for ex in exercises:
+                pm = _primary.get(ex.get("name"))
+                if not pm:
+                    continue
+                region = _ALIAS.get(pm, pm)
+                lvl = int(soreness_by_muscle.get(region, 0) or 0)
+                if lvl >= 2 and ex.get("sets"):
+                    cut = 2 if lvl >= 4 else 1
+                    ex["sets"] = max(1, int(ex["sets"]) - cut)
+                    if ex.get("rir_target") is not None:
+                        ex["rir_target"] = int(ex["rir_target"]) + 1
+                    ex["soreness_note"] = f"{region} sore ({lvl}/5) — trimmed {cut} set"
 
         # Format complete prescription dict
         strength_block = []
