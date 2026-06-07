@@ -166,7 +166,8 @@ def resolve_user_id():
 
 ACTION_TSS = {
     "REST": 0.0, "LIGHT": 25.0, "CARDIO": 55.0, "CALISTHENICS": 45.0,
-    "STRENGTH": 70.0, "MIXED": 85.0, "TWO_A_DAY": 120.0, "DELOAD": 20.0,
+    "STRENGTH": 70.0, "MIXED": 85.0, "TWO_A_DAY": 120.0,
+    # No DELOAD (programming failure, not a tool) — matches the daily prescriber.
 }
 DEADLINE = datetime.date(2026, 8, 31)
 
@@ -196,16 +197,15 @@ def simulate_and_score(kalman, action, load_history, w_pst, w_str):
     return round(fs + tb - fp - ap, 4)
 
 def select_action(kalman, load_history, acwr, overreaching):
+    # Matches the daily prescriber's athlete preferences: NO intensity downscaling
+    # (always full working weight), NO auto-LIGHT on ACWR, NO deloads. Only a true
+    # HRV-crash overreach rests; ACWR is informational here.
     if overreaching:
-        return "REST", 0.7
+        return "REST", 1.0
     w_pst, w_str = deadline_weights()
     scores      = {a: simulate_and_score(kalman, a, load_history, w_pst, w_str) for a in ACTION_TSS}
     best        = max(scores, key=scores.get)
-    if acwr > 1.5 and best not in ("REST","DELOAD","LIGHT","CALISTHENICS","CARDIO"):
-        best = "LIGHT"
-    tsb = float(kalman.x[0, 0] - kalman.x[1, 0])
-    intensity = 1.10 if tsb > 10 else (1.00 if tsb > 3 else (0.90 if tsb > -5 else 0.78))
-    return best, round(intensity, 2)
+    return best, 1.0
 
 
 # ── State persistence ─────────────────────────────────────────────────────────
