@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Home, Dumbbell, PlusSquare, BarChart3, Cpu, User, UtensilsCrossed, Brain, CalendarDays } from "lucide-react";
+import { Home, Dumbbell, PlusSquare, BarChart3, Cpu, User, UtensilsCrossed, Brain, CalendarDays, Camera } from "lucide-react";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -15,6 +15,7 @@ const navigationItems = [
   { title: "Fuel", url: "/fuel", icon: UtensilsCrossed },
   { title: "Train", url: "/train", icon: Dumbbell },
   { title: "Insights", url: "/insights", icon: BarChart3 },
+  { title: "Physique", url: "/physique", icon: Camera },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -50,6 +51,7 @@ export default function Layout({ children, currentPageName }) {
     Fuel: "Fuel",
     Train: "Train",
     Insights: "Insights",
+    Physique: "Physique",
     Workouts: "Train",
     FoodTracker: "Fuel",
     Schedule: "Schedule",
