@@ -112,7 +112,8 @@ class NutritionModulator:
     TSB_GATE_GAIN             = 0.04   # per unit of deep negative form (fatigue)
     POOR_SLEEP_SCORE          = 60     # below this, multiply headroom by POOR_SLEEP_FACTOR
     POOR_SLEEP_FACTOR         = 0.70
-    PROTEIN_G_PER_LB          = 1.3    # 1.2-1.5 g/lb to retain muscle in a deficit (TNF cutting philosophy)
+    CUT_PROTEIN_G_PER_LB      = 1.3    # 1.2-1.5 g/lb to retain muscle ON A CUT (TNF cutting philosophy)
+    BASE_PROTEIN_G_PER_LB     = 1.0    # ~1 g/lb when not cutting
     MIN_FAT_G_PER_LB          = 0.33   # ~1/3 g/lb hormonal floor on fat (TNF); floored at 50g absolute
 
     @staticmethod
@@ -186,7 +187,8 @@ class NutritionModulator:
         kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
         calorie_target = round(self.maintenance_kcal - kcal_deficit)
 
-        protein_g = round(self.PROTEIN_G_PER_LB * bw) if bw > 0 else None
+        protein_per_lb = self.CUT_PROTEIN_G_PER_LB if phase == "cut" else self.BASE_PROTEIN_G_PER_LB
+        protein_g = round(protein_per_lb * bw) if bw > 0 else None
         fat_floor_g = max(50, round(self.MIN_FAT_G_PER_LB * bw)) if bw > 0 else 50
 
         # Carbs: on an aggressive cut, carbs exist only to fuel training — target
