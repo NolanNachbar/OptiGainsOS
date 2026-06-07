@@ -144,27 +144,36 @@ class NutritionModulator:
         tsb     = float(signals.get("tsb_banister") or 0.0)
         sleep   = signals.get("sleep_score")
         bw      = float(signals.get("bodyweight_lb") or 0.0)
+        phase   = signals.get("phase")
 
-        # Recovery headroom multiplier in [0, 1.1]. 1.0 = run the full target deficit.
+        # Recovery headroom multiplier. 1.0 = run the full deficit.
         headroom = 1.0
         gates = []
-        if overreaching:
-            headroom = min(headroom, self.OVERREACH_HEADROOM)
-            gates.append("overreaching")
-        # Suppressed HRV (hrv_z < 0) trims the deficit; above-baseline HRV earns a little extra.
-        headroom *= self._clamp(1.0 + self.HRV_GATE_GAIN * hrv_z, 0.40, 1.10)
-        if hrv_z <= -1.0:
-            gates.append("hrv_suppressed")
-        # Elevated RHR (rhr_z > 0) trims it.
-        headroom *= self._clamp(1.0 - self.RHR_GATE_GAIN * max(0.0, rhr_z), 0.50, 1.0)
-        if rhr_z >= 1.0:
-            gates.append("rhr_elevated")
-        # Deep negative form (accumulated fatigue) trims it.
-        headroom *= self._clamp(1.0 - self.TSB_GATE_GAIN * max(0.0, -tsb), 0.50, 1.0)
-        # Poor sleep trims it.
-        if sleep is not None and float(sleep) < self.POOR_SLEEP_SCORE:
-            headroom *= self.POOR_SLEEP_FACTOR
-            gates.append("poor_sleep")
+
+        # TNF philosophy (Nolan's call, 2026-06-07): on a CUT the only brakes are
+        # strength regression and the 4-6 week duration cap — NOT day-to-day
+        # recovery signals. Recovery governs TRAINING (volume / keep-weight-heavy),
+        # not how hard you eat; the macro floor already protects muscle. So the
+        # overreach/HRV/RHR/TSB/sleep gates apply only OUTSIDE a cut. On a cut the
+        # deficit runs to the macro floor to get it over with ASAP.
+        if phase != "cut":
+            if overreaching:
+                headroom = min(headroom, self.OVERREACH_HEADROOM)
+                gates.append("overreaching")
+            # Suppressed HRV (hrv_z < 0) trims the deficit; above-baseline earns a little extra.
+            headroom *= self._clamp(1.0 + self.HRV_GATE_GAIN * hrv_z, 0.40, 1.10)
+            if hrv_z <= -1.0:
+                gates.append("hrv_suppressed")
+            # Elevated RHR (rhr_z > 0) trims it.
+            headroom *= self._clamp(1.0 - self.RHR_GATE_GAIN * max(0.0, rhr_z), 0.50, 1.0)
+            if rhr_z >= 1.0:
+                gates.append("rhr_elevated")
+            # Deep negative form (accumulated fatigue) trims it.
+            headroom *= self._clamp(1.0 - self.TSB_GATE_GAIN * max(0.0, -tsb), 0.50, 1.0)
+            # Poor sleep trims it.
+            if sleep is not None and float(sleep) < self.POOR_SLEEP_SCORE:
+                headroom *= self.POOR_SLEEP_FACTOR
+                gates.append("poor_sleep")
 
         # Strength-vs-peak gate — TNF's muscle-retention signal: performance, not
         # the scale, tells you if you're keeping muscle on a cut. If a key lift is
@@ -172,7 +181,6 @@ class NutritionModulator:
         # (The -1.0 lb/wk regression cutoff and the 0.70 ease factor are tunable
         # engineering defaults, not TNF-specified numbers — the learning layer
         # should eventually replace them.)
-        phase = signals.get("phase")
         strength_min_slope = signals.get("strength_min_slope")
         if phase == "cut" and strength_min_slope is not None and float(strength_min_slope) < -1.0:
             headroom *= 0.70

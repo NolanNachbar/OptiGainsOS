@@ -31,8 +31,10 @@ export default function PhaseRecommendationCard() {
 
   const accept = async () => {
     setBusy(true);
+    // Write to diet_phase (cut/maintain/bulk) — NOT training_phase, which holds
+    // the tactical/training focus. The engine reads diet_phase for the diet math.
     const { error } = await supabase.from("user_profiles")
-      .update({ training_phase: rec.phase }).eq("created_by", user.id);
+      .update({ diet_phase: rec.phase }).eq("created_by", user.id);
     setBusy(false);
     if (!error) { setApplied(true); setCurrentPhase(rec.phase); }
   };

@@ -638,9 +638,17 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
         slope, _ = linear_regression(x_vals, y_vals)
         weight_trend = round(slope * 7, 2)  # lbs/week
 
-    # Infer phase from profile
+    # Diet phase drives the nutrition math. Prefer the dedicated diet_phase field
+    # (set by accepting the engine's cut/maintain/bulk recommendation); fall back
+    # to substring-matching training_phase for backward compat. Kept distinct from
+    # training_phase so a cut doesn't wipe the tactical focus (e.g. buds_prep).
+    diet_phase = str(profile.get("diet_phase") or "").lower()
     training_phase = str(profile.get("training_phase") or "maintenance").lower()
-    if "cut" in training_phase:
+    if diet_phase in ("cut", "bulk"):
+        phase = diet_phase
+    elif diet_phase == "maintain":
+        phase = "maintenance"
+    elif "cut" in training_phase:
         phase = "cut"
     elif "bulk" in training_phase or "gain" in training_phase:
         phase = "bulk"
