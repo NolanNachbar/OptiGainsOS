@@ -169,7 +169,7 @@ Wednesday  Calisthenics      Submaximal sets (60-70% max) every hour if possible
 Thursday   Run — Easy        3-5 miles Zone 2, conversational pace.
 Friday     Calisthenics      Push-up/sit-up/pull-up pyramid (same as Monday). Track weekly totals.
 Saturday   Long Run + Ruck   45-90 min run OR 4-mile boot ruck. Alternate weekly.
-Sunday     Active Rec        500m easy swim (sidestroke/breaststroke — PST stroke). Time it. Hip flexors + shoulders.
+Sunday     Active Rec        Easy 30-40 min ruck or walk + mobility (hip flexors, shoulders). Swim 500m PST stroke ONLY with pool access.
 
 Saturday and Sunday are the most important conditioning days. PST benchmark test every 4 weeks.
 `.trim();
@@ -250,6 +250,7 @@ function buildPrompt(data: {
     `Strength (ASAP): Bench 315 | Squat 450 | Deadlift 500 lbs. Current e1RMs are in ATHLETE STATE below — name the actual gap in lbs.`,
     `Tactical / BUD/S PST by Aug 31 2026: 100+ push-ups, 100+ sit-ups, 20+ pull-ups, 1.5mi run <9:00, 4mi run <26:00.`,
     `Training preference: HIGH FREQUENCY (4-6x/muscle/week) + frequent running. NOT body-part splits, NOT PPL, NOT low-frequency powerlifting templates.`,
+    `Equipment available: ${Array.isArray(p.available_equipment) && p.available_equipment.length ? p.available_equipment.join(", ") : "gym + bodyweight, NO pool"}. NEVER prescribe conditioning he can't do — no pool means NO swimming; substitute a run or ruck. Don't prescribe easy/Z1 junk runs; runs should be purposeful (quality or real Z2 volume toward the sub-9:00 1.5mi / sub-26 4mi).`,
     ``,
     `=== TRAINING STRUCTURE ===`,
     `Two sessions daily (additive, not alternatives):`,
