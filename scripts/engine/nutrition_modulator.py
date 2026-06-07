@@ -115,6 +115,8 @@ class NutritionModulator:
     CUT_PROTEIN_G_PER_LB      = 1.3    # 1.2-1.5 g/lb to retain muscle ON A CUT (TNF cutting philosophy)
     BASE_PROTEIN_G_PER_LB     = 1.0    # ~1 g/lb when not cutting
     MIN_FAT_G_PER_LB          = 0.33   # ~1/3 g/lb hormonal floor on fat (TNF); floored at 50g absolute
+    CARB_FLOOR_G_PER_DAY      = 25     # avg cut carbs/day; ×7 = the weekly budget that gets cycled
+    CARB_PREWORKOUT_MIN_G     = 20     # min carbs on any real training day (pre-workout fuel)
 
     @staticmethod
     def _clamp(x, lo, hi):
@@ -186,6 +188,23 @@ class NutritionModulator:
             headroom *= 0.70
             gates.append("strength_dropping")
 
+        # Recovery escape valve on a CUT (Nolan's call, 2026-06-07). Day-to-day
+        # recovery does NOT gate cut calories (see above) — but two coarse, high-bar
+        # exceptions do, because a genuine crash is worth eating through:
+        #   1. Manual: he tapped "ease today" (a bad day he wants to fuel).
+        #   2. Severe auto: a SUSTAINED crash, not daily noise — HRV deeply
+        #      suppressed AND several poor-sleep nights stacked together.
+        # Both ease the deficit ~35% for the day. Thresholds are tunable [ENG].
+        EASE_FACTOR = 0.65
+        if phase == "cut":
+            if signals.get("ease_today"):
+                headroom = min(headroom, EASE_FACTOR)
+                gates.append("manual_ease")
+            poor_sleep_days = int(signals.get("poor_sleep_days") or 0)
+            if hrv_z <= -1.5 and poor_sleep_days >= 3:
+                headroom = min(headroom, EASE_FACTOR)
+                gates.append("recovery_crash")
+
         # Duration cap (TNF: get out at 4-6 weeks). Past 6 weeks in a cut, force
         # the deficit toward maintenance — it's time to end the cut / diet break,
         # not keep grinding.
@@ -200,9 +219,24 @@ class NutritionModulator:
         protein_per_lb = self.CUT_PROTEIN_G_PER_LB if phase == "cut" else self.BASE_PROTEIN_G_PER_LB
         protein_g = round(protein_per_lb * bw) if bw > 0 else None
         fat_floor_g = max(50, round(self.MIN_FAT_G_PER_LB * bw)) if bw > 0 else 50
-        # Carbs: on an aggressive cut, carbs exist only to fuel training — target
-        # pre-workout only (~100 kcal ≈ 25g). Outside a cut, no special restriction.
-        carb_target_g = 25 if phase == "cut" else None
+        # Carbs: deficit-neutral cycling (Nolan's call, 2026-06-07). The week's carb
+        # budget (CARB_FLOOR_G_PER_DAY × 7) is distributed across days by glycogen
+        # demand: hard training days (volume + long cardio) get the carbs, rest days
+        # drop near zero. Weekly carbs — and therefore the weekly deficit — are
+        # unchanged; the carbs just land where they fuel performance. Falls back to
+        # a flat pre-workout target if the week's demand profile isn't available.
+        carb_target_g = None
+        if phase == "cut":
+            glyco_today = float(signals.get("glyco_today") or 0.0)
+            glyco_week  = float(signals.get("glyco_week") or 0.0)
+            weekly_carb_budget = self.CARB_FLOOR_G_PER_DAY * 7
+            if glyco_week > 0:
+                carb_target_g = round(weekly_carb_budget * glyco_today / glyco_week)
+                # Pre-workout minimum on any real training day so there's fuel in the tank.
+                if glyco_today > 0:
+                    carb_target_g = max(carb_target_g, self.CARB_PREWORKOUT_MIN_G)
+            else:
+                carb_target_g = self.CARB_FLOOR_G_PER_DAY
 
         if phase == "cut" and bw > 0:
             # Goal on a cut: lose fat as fast as possible. Drive the deficit as deep
@@ -230,6 +264,12 @@ class NutritionModulator:
         elif "cut_too_long" in gates:
             rationale = (f"6+ weeks deep in the cut — time to end it. Easing toward maintenance "
                          f"({calorie_target} kcal); take a diet break before grinding further.")
+        elif "manual_ease" in gates:
+            rationale = (f"You flagged today as a rough one — easing to {calorie_target} kcal and "
+                         "adding carbs back to recover. Back to the max deficit tomorrow.")
+        elif "recovery_crash" in gates:
+            rationale = (f"Sustained crash (low HRV + several poor-sleep nights) — easing to "
+                         f"{calorie_target} kcal to dig out. This is a real signal, not a daily blip.")
         else:
             rationale = (f"Easing the deficit to {round(deficit_ratio*100)}% ({kcal_deficit} kcal) — "
                          f"{', '.join(gates)} signalling reduced recovery headroom.")

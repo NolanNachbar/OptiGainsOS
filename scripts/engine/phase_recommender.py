@@ -14,6 +14,9 @@ from __future__ import annotations
 
 BF_CUT_ABOVE   = 18.0   # [ENG] bodyfat % at/above which leaning out helps most goals
 BF_BULK_BELOW  = 12.0   # [ENG] bodyfat % at/below which a surplus is warranted
+REVERSE_BF     = 12.0   # [ENG] "lean enough" — end the cut and reverse-diet out (energy-
+                        # availability / RED-S evidence: below ~10% recovery/hormones/strength
+                        # fall off; ~12% captures the relative-strength benefit safely)
 DEADLINE_NEAR  = 100    # [ENG] days; inside this the PST goal dominates phase choice
 GAIN_RATE      = 0.3    # [ENG] lb/wk above which weight is meaningfully climbing
 
@@ -31,10 +34,20 @@ def recommend_phase(*, weight_trend, days_to_deadline, bodyfat,
     near = days_to_deadline is not None and days_to_deadline <= DEADLINE_NEAR
     tactical_priority = near and pst_w >= 0.35
     reasons: list[str] = []
+    reverse = False
 
     if bodyfat is not None:
         bf = float(bodyfat)
-        if bf >= BF_CUT_ABOVE:
+        if bf <= REVERSE_BF and str(current_phase or "").lower() == "cut":
+            # Lean enough — end the cut and reverse-diet calories back up gradually
+            # toward maintenance (or a slow bulk if very lean and no near deadline),
+            # rather than crashing out of a deep deficit.
+            phase = "bulk" if (bf <= BF_BULK_BELOW and not tactical_priority) else "maintain"
+            reverse = True
+            reasons.append(f"you're at ~{bf:.0f}% — lean enough to end the cut. Reverse-diet calories "
+                           f"back up gradually toward {phase}; grinding lower costs recovery and strength "
+                           "faster than it buys performance")
+        elif bf >= BF_CUT_ABOVE:
             phase = "cut"
             reasons.append(f"bodyfat ~{bf:.0f}% is high enough that leaning out improves "
                            "relative strength and running (push-ups, pull-ups, 1.5/4-mile are all bodyweight-relative)")
@@ -76,6 +89,7 @@ def recommend_phase(*, weight_trend, days_to_deadline, bodyfat,
         "rationale": "; ".join(reasons),
         "confidence": confidence,
         "needs_photo": needs_photo,
+        "reverse_diet": reverse,
         "current_phase": current_phase,
         "changed": current_phase is not None and phase != current_phase,
     }

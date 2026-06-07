@@ -764,6 +764,61 @@ def compute_normalized_cardio_trimp(recovery_rows: list) -> float:
     return 0.0
 
 
+def _glycogen_demand(user_id: str):
+    """
+    Per-day glycogen demand for carb cycling, from this week's scheduled
+    program_workouts. demand = working sets + CARDIO_K × cardio minutes (long
+    steady cardio is a big glycogen sink). Returns (today_demand, week_demand);
+    a rest day with no scheduled session contributes 0. Used to split the weekly
+    carb budget toward hard days. Falls back to (0,0) if no plan exists.
+    """
+    CARDIO_K = 0.5  # [ENG] minutes of cardio → set-equivalents of glycogen cost
+    today = datetime.date.today()
+    week_start = today - datetime.timedelta(days=today.weekday())
+    week_end   = week_start + datetime.timedelta(days=6)
+    try:
+        rows = sb_get("program_workouts", {
+            "select": "scheduled_date,exercises,cardio_sessions",
+            "created_by": f"eq.{user_id}",
+            "scheduled_date": f"gte.{week_start.isoformat()}",
+            "order": "scheduled_date.asc",
+        }) or []
+    except Exception:
+        return 0.0, 0.0
+    today_d, week_d = 0.0, 0.0
+    for r in rows:
+        sd = str(r.get("scheduled_date") or "")[:10]
+        if not (week_start.isoformat() <= sd <= week_end.isoformat()):
+            continue
+        sets = sum(int(e.get("sets") or 0) for e in (r.get("exercises") or []))
+        cmin = sum(float(c.get("duration_minutes") or 0) for c in (r.get("cardio_sessions") or []))
+        demand = sets + CARDIO_K * cmin
+        week_d += demand
+        if sd == today.isoformat():
+            today_d = demand
+    return round(today_d, 2), round(week_d, 2)
+
+
+def _consecutive_poor_sleep(recovery_rows: list, threshold: int = 60) -> int:
+    """
+    Count consecutive most-recent nights with sleep_score below threshold. Half of
+    the severe-crash recovery valve (the other half is sustained low HRV). Stops at
+    the first good or missing night so it measures a real run of bad sleep.
+    """
+    rows = sorted([r for r in recovery_rows if r.get("date")],
+                  key=lambda r: str(r.get("date")), reverse=True)
+    n = 0
+    for r in rows:
+        s = r.get("sleep_score")
+        if s is None or float(s) == 0:
+            break
+        if float(s) < threshold:
+            n += 1
+        else:
+            break
+    return n
+
+
 def compute_normalized_strength_vol(workout_logs: list) -> float:
     """
     Normalized strength training volume for today ∈ [0, 1].
@@ -1098,6 +1153,21 @@ def main():
                     weeks_in_cut = (datetime.date.today() - _start).days / 7.0
         except Exception:
             weeks_in_cut = None
+        # Carb-cycling demand: distribute the week's carb budget by each day's
+        # glycogen cost (lifting volume + cardio minutes), read from the scheduled
+        # program_workouts for this week. glyco_today / glyco_week feed the modulator.
+        glyco_today, glyco_week = _glycogen_demand(USER_ID)
+
+        # Sustained poor sleep (consecutive recent nights below threshold) — half of
+        # the severe-crash recovery valve on a cut (the other half is HRV).
+        poor_sleep_days = _consecutive_poor_sleep(recovery_rows)
+
+        # Manual escape valve: did he tap "ease today"?
+        _ease_rows = sb_get("nutrition_overrides", {
+            "select": "action", "created_by": f"eq.{USER_ID}",
+            "date": f"eq.{datetime.date.today().isoformat()}", "limit": "1"})
+        ease_today = bool(_ease_rows and _ease_rows[0].get("action") == "ease")
+
         nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
             "overreaching":  overreach_out.get("overreaching"),
             "hrv_z":         overreach_out.get("hrv_z_3d"),
@@ -1108,6 +1178,10 @@ def main():
             "phase":         nutrition.get("phase"),
             "strength_min_slope": strength_min_slope,
             "weeks_in_cut":  weeks_in_cut,
+            "glyco_today":   glyco_today,
+            "glyco_week":    glyco_week,
+            "poor_sleep_days": poor_sleep_days,
+            "ease_today":    ease_today,
         })
         _rec = nutrition["recommended_intake"]
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "

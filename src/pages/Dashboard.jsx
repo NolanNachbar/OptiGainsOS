@@ -48,6 +48,7 @@ import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 import PhaseRecommendationCard from "@/components/dashboard/PhaseRecommendationCard";
+import EaseTodayButton from "@/components/dashboard/EaseTodayButton";
 
 
 function getWorkoutSplitTitle(exercises) {
@@ -461,6 +462,9 @@ export default function Dashboard() {
 
           {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
           <PhaseRecommendationCard />
+
+          {/* Manual recovery valve — only renders on a cut */}
+          <EaseTodayButton />
 
           {/* AI Insights */}
           <DailyBriefCard today={today} hideWhenEmpty={true} />

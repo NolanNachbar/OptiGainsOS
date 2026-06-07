@@ -58,6 +58,11 @@ export default function PhaseRecommendationCard() {
           <span className="text-xs text-slate-500"> (now: {currentPhase})</span>
         )}
       </div>
+      {rec.reverse_diet && (
+        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400 text-[10px] uppercase tracking-wide">
+          End the cut · reverse diet
+        </div>
+      )}
       <p className="mt-1 text-sm text-slate-300">{rec.rationale}</p>
 
       {rec.needs_photo && (
