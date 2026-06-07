@@ -1,205 +1,385 @@
-# OptiGainsOS — Adaptive Program-Synthesis Engine (Design)
+# OptiGainsOS — Adaptive Program-Synthesis Engine (Implementation Spec)
 
-Status: design / not yet built. This is the methodology for the layer the audit
-found missing: the system has a good **state-estimation** brain (Kalman, ACWR,
-VDOT, fatigue) but the layer that answers *"what workout today / what program
-next week, and how does that change as I respond"* is still static templates.
-This doc specifies how to build it incrementally behind the existing state layer.
+Status: implementation-grade design. The state-estimation layer (Kalman, ACWR,
+VDOT, fatigue, recovery, adaptive TDEE) is built. This spec covers the
+**synthesis + learning + exploration** layers that sit on top, written so a
+software engineer can build them without inventing the missing math.
 
-The north star (your framing): how would Netflix, a fighter pilot, an endurance
-coach, and a powerlifting coach build the SAME decision engine. The answer is a
-**three-layer control system**: estimate state → synthesize program under
-constraints → learn the athlete's parameters from outcomes.
+Format per subsystem follows the requested template: **Scientific support /
+Coaching support / Engineering assumptions / Mathematical formulation /
+Pseudocode / DB inputs / Daily update / Weekly update / Failure modes /
+Confidence scoring.** Every chosen constant is tagged:
+`[SCI]` strong science · `[COACH]` coaching consensus · `[ENG]` engineering
+judgment (tunable, not a principle) · `[SPEC]` speculative.
 
----
-
-## 0. What's wrong today (root cause of the dashboard complaints)
-
-- LIGHT day still emits 7 lifts at high RIR/light weight → session gen scales
-  load on a fixed template instead of cutting volume.
-- Prescribes a 500m swim with no pool, and Z1 runs you've deprioritized →
-  no equipment/access model, no goal-priority weighting.
-- Volume landmarks are fixed Israetel constants (two contradictory tables), the
-  MILP weight Bayes update is dead code, exploration is one slow bandit arm →
-  nothing actually learns YOUR parameters.
-
-All of it is the program-synthesis / session-generation / learning layer.
+Athlete constraints (fixed inputs to every subsystem): high frequency
+(4-6x/muscle/wk) + frequent running; NOT splits/PPL/low-freq powerlifting;
+goals = PST by 2026-08-31 (100 push/100 sit/20 pull, 1.5mi<9:00, 4mi<26:00) and
+strength 315/450/500; data = per-set weight/reps/RIR, Garmin run+recovery, daily
+cals/protein, weekly bodyweight.
 
 ---
 
-## 1. Architecture (three layers)
+## 0. Data model changes (build these first — everything depends on them)
+
+```sql
+-- 0.1 Canonical muscle landmarks + learned posteriors -------------------------
+-- One row per (user, muscle). Replaces the two contradictory hardcoded tables.
+create table athlete_landmarks (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid references auth.users not null,
+  muscle text not null,                 -- canonical taxonomy (see §1)
+  mev numeric not null,                  -- current working landmarks (sets/wk)
+  mav numeric not null,
+  mrv numeric not null,
+  mrv_mean numeric not null,             -- Bayesian posterior for MRV
+  mrv_var  numeric not null,
+  n_obs int default 0,
+  mature boolean default false,          -- credible interval excludes prior
+  updated_at timestamptz default now(),
+  unique (created_by, muscle)
+);
+
+-- 0.2 Generic learned parameters (frequency, exercise response, two-a-day, run ceiling)
+create table athlete_params (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid references auth.users not null,
+  param_key text not null,               -- e.g. 'freq.chest', 'exgrowth.bench_backoff',
+                                          --      'running_ceiling_mi', 'twoaday_benefit'
+  mean numeric not null,
+  variance numeric not null,
+  n_obs int default 0,
+  mature boolean default false,
+  meta jsonb,                            -- bandit arm stats, etc.
+  updated_at timestamptz default now(),
+  unique (created_by, param_key)
+);
+
+-- 0.3 Controlled tests (probes that gather information)
+create table controlled_tests (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid references auth.users not null,
+  test_type text check (test_type in
+    ('recovery_stress','volume_tolerance','running_tolerance','pst_diagnostic')),
+  target_key text,                       -- param it informs (e.g. 'mrv.chest')
+  status text check (status in ('scheduled','active','complete','aborted')) default 'scheduled',
+  scheduled_date date,
+  started_at date,
+  baseline jsonb,                        -- pre-test state to compare against
+  result jsonb,
+  created_at timestamptz default now()
+);
+
+-- 0.4 Weekly plan produced by the allocator (the program)
+create table weekly_plans (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid references auth.users not null,
+  week_start date not null,
+  set_targets jsonb not null,            -- {muscle: sets}
+  frequency_targets jsonb not null,      -- {muscle: sessions/wk}
+  run_plan jsonb not null,               -- [{type, count}]
+  two_a_day_days int[],
+  rationale text,
+  created_at timestamptz default now(),
+  unique (created_by, week_start)
+);
+
+-- 0.5 Equipment + goal priorities on the profile (column adds)
+alter table user_profiles
+  add column if not exists goal_priorities jsonb;   -- {strength:0.4, hypertrophy:0.3, pst:0.3}
+-- available_equipment already exists (text[]); empty = gym+bodyweight, no pool.
+
+-- RLS: all tables `for all using (auth.uid() = created_by)` (match existing single-user pattern).
+```
+
+`engine_params` (existing jsonb blob) stays for Kalman/VDOT state; the new tables
+hold the *learned program parameters* so they're queryable and trend-able.
+
+---
+
+## 1. Volume-landmark taxonomy unification (was gap #4)
+
+**Problem:** `hypertrophy_volume.py` uses {chest, upper_back, lats, quads,
+hamstrings, glutes, shoulders, triceps, biceps, calves, core} (11); `compute`'s
+`MUSCLE_TARGETS` uses {quads, hamstrings, glutes, chest, back, shoulders,
+rear_delts, biceps, triceps, abs, lower_back, traps, calves} (13). They disagree
+on names and numbers.
+
+**Decision [ENG]:** canonical taxonomy = the 13-muscle `compute` set (more
+granular maps cleanly onto exercise `muscles` lists). Single source of truth in
+`engine/muscle_map.py`:
+
+```python
+CANONICAL_MUSCLES = ["chest","back","lats","traps","shoulders","rear_delts",
+                     "biceps","triceps","quads","hamstrings","glutes","calves","abs"]
+
+# Landmark PRIORS (sets/wk). [COACH] Israetel population defaults, per-muscle.
+# These are PRIORS only — the Bayesian learner (§4) overrides per athlete.
+LANDMARK_PRIORS = {
+  "chest":{"mev":8,"mav":14,"mrv":20}, "back":{"mev":10,"mav":16,"mrv":22},
+  "lats":{"mev":8,"mav":14,"mrv":20},  "traps":{"mev":4,"mav":10,"mrv":16},
+  "shoulders":{"mev":6,"mav":12,"mrv":18}, "rear_delts":{"mev":6,"mav":12,"mrv":18},
+  "biceps":{"mev":6,"mav":12,"mrv":18},"triceps":{"mev":6,"mav":12,"mrv":18},
+  "quads":{"mev":8,"mav":14,"mrv":20},"hamstrings":{"mev":6,"mav":12,"mrv":16},
+  "glutes":{"mev":6,"mav":12,"mrv":16},"calves":{"mev":8,"mav":16,"mrv":24},
+  "abs":{"mev":0,"mav":12,"mrv":16},
+}
+# Alias: exercise-catalog muscle -> canonical (front_delt/side_delt->shoulders,
+# rear_delt->rear_delts, core->abs, upper_back->back).
+MUSCLE_ALIAS = {"front_delt":"shoulders","side_delt":"shoulders",
+                "rear_delt":"rear_delts","core":"abs","upper_back":"back"}
+```
+
+`compute` and `hypertrophy_volume` both import `LANDMARK_PRIORS`/`MUSCLE_ALIAS`.
+Seed `athlete_landmarks` from the priors on first run.
+
+- **Failure modes:** an exercise muscle not in the alias/canonical set → log + map to nearest; never crash.
+- **Acceptance:** grep shows zero remaining hardcoded landmark dicts outside `muscle_map.py`; daily hypertrophy display and weekly allocator read identical numbers for every muscle.
+
+---
+
+## 2. Weekly volume allocator (gap #1, the keystone)
+
+**Scientific support:** dose-response of volume on hypertrophy is an inverted-U
+between MEV and MRV [SCI/COACH]; ACWR>1.5 raises injury risk [SCI]; concurrent
+interference is real but attenuated by separation + fueling [SCI].
+**Coaching support:** MEV/MAV/MRV landmarks [COACH, Israetel]; high-frequency
+viability for advanced lifters [COACH, Jewers/Twinem/Sheiko].
+**Engineering assumptions:** greedy marginal-value allocation under a systemic
+budget is sufficient at N=1; MILP only if greedy proves inadequate [ENG].
+
+### Mathematical formulation
+
+Decision variables: `sets[m]` per muscle, `runs[type]` (easy/threshold/interval/long), `two_a_day_days`.
+
+**Systemic recovery budget** (total weekly hard sets the athlete can recover from):
+```
+B = B_prior * r_recovery * r_phase
+B_prior      = days_per_week * MAX_HARD_SETS_PER_DAY      # [ENG] default 6 -> tune via §5 test
+r_recovery   = clamp(1 + 0.04*TSB_banister, 0.6, 1.15)    # [ENG] TSB from Kalman
+r_phase      = 1.0 normal | 0.8 aggressive cut            # [COACH] §6 nutrition
+```
+`B_prior`'s `MAX_HARD_SETS_PER_DAY` is itself a learned param (§4 recovery
+capacity); 6 is the prior.
+
+**Per-muscle goal weight** (priority × deadline urgency):
+```
+w[m] = Σ_goal goal_priority[goal] * muscle_relevance[goal][m] * deadline_mult[goal]
+```
+`goal_priority` from profile (default strength .4 / hypertrophy .3 / pst .3);
+`muscle_relevance` is a fixed map ([COACH], e.g. squat→quads/glutes for the
+strength goal, push muscles for PST); `deadline_mult` rises for PST as Aug 31
+nears (reuse existing `deadline_weights`).
+
+**Marginal value of the next set** for muscle m currently at s sets (the
+inverted-U made concrete) [ENG curve, COACH landmarks]:
+```
+def marginal_value(m, s, w, lm):   # lm = learned landmarks for m
+    if s < lm.mev:           base = 1.00                       # below threshold: top priority
+    elif s < lm.mav:         base = 0.80*(1 - (s-lm.mev)/(lm.mav-lm.mev))
+    elif s < lm.mrv:         base = 0.20*(1 - (s-lm.mav)/(lm.mrv-lm.mav))  # junk-volume zone
+    else:                    base = 0.0                        # hard cap at MRV
+    return w[m] * base
+```
+
+**Greedy allocation:**
+```
+def allocate(B, weights, landmarks, run_need, equipment):
+    sets = {m: 0 for m in CANONICAL_MUSCLES}
+    # 1. fund MEV for every prioritized muscle first (threshold is non-negotiable)
+    for m in sorted(weights, key=weights.get, reverse=True):
+        need = landmarks[m].mev
+        take = min(need, remaining(B))
+        sets[m] += take; B -= take
+    # 2. spend remaining budget on highest marginal value, one set at a time
+    while B > 0:
+        m = argmax(marginal_value(m, sets[m], weights, landmarks[m]) for m in muscles)
+        if marginal_value(m, sets[m], ...) <= MV_FLOOR: break    # [ENG] 0.05, stop wasting budget
+        sets[m] += 1; B -= 1
+    # 3. running: allocate run_need sessions by VDOT gap + deadline; drop modalities
+    #    with goal weight 0 or no equipment (no pool -> no swim)
+    runs = allocate_runs(run_need, equipment, vdot_gap, deadline_mult["pst"])
+    # 4. frequency: spread each muscle's sets across ceil(sets[m]/MAX_SETS_PER_MUSCLE_PER_SESSION)
+    #    days, honoring the 4-6x preference when sets allow                       # [COACH]
+    freq = {m: distribute_frequency(sets[m]) for m in muscles}
+    return WeeklyPlan(sets, freq, runs, two_a_day_days=pick_two_a_days(...))
+```
+
+- **DB inputs:** `athlete_landmarks`, `athlete_state` (TSB, ACWR, VDOT gap), `user_profiles` (goal_priorities, available_equipment, days_per_week), `engine_params`.
+- **Daily update:** none (allocator runs weekly). Session gen (§3) consumes the plan daily.
+- **Weekly update:** run every Sunday → write `weekly_plans` row.
+- **Failure modes:** B too small to fund all MEVs → fund highest-weight muscles' MEV first, log the deficit (don't silently drop); empty equipment → conditioning = runs/ruck only.
+- **Confidence scoring:** plan confidence = mean maturity of the landmarks/params it used (surface "program is N% personalized" in UI).
+- **Acceptance:** with empty `available_equipment`, plan contains zero swims; total sets ≤ B and each muscle ≤ its MRV; every prioritized muscle ≥ MEV unless B-limited (then logged); high-frequency preference honored (each muscle's freq ≥ 3 when sets ≥ 6).
+
+---
+
+## 3. Session generation (consume the weekly plan)
+
+**Math:** `remaining[m] = plan.set_targets[m] − sets_done_this_week[m]`. Today's
+capacity `C_today = round(B/days_remaining_in_week)`. Distribute `C_today` across
+muscles by `remaining[m]` descending, ≤ `MAX_SETS_PER_MUSCLE_PER_SESSION` ([ENG]
+default 4, supports high frequency), filtered by equipment and today's split.
 
 ```
-STATE (exists)            SYNTHESIS (build)              LEARNING (build)
-─────────────────         ───────────────────────        ─────────────────────
-Kalman F/f, TSB           Weekly allocator (constrained   Per-muscle MEV/MAV/MRV
-ACWR (now real)           optimization): sets/runs        Frequency tolerance
-VDOT, fatigue, recovery   across muscles+modalities       Exercise→e1RM response
-per-muscle volume   ───▶  under a recovery budget   ───▶  Two-a-day benefit
-nutrition/TDEE            Session generator: today's      Running load ceiling
-                          session from week-to-date +     (all Bayesian, with
-                          readiness + constraints         confidence intervals)
-                                    │                              │
-                                    └──────── controlled exploration ┘
-                                     (probe to learn, exploit to perform)
+def build_session(plan, week_to_date, readiness, action, soreness, equipment):
+    if action == "REST": return mobility_only()
+    remaining = {m: plan.set_targets[m] - week_to_date[m] for m in muscles}
+    cap = session_capacity(action, readiness)         # LIGHT/DELOAD cut SET COUNT, not just load
+    todays = waterfall(remaining, cap, max_per_muscle=4)
+    todays = apply_soreness_trim(todays, soreness)    # already shipped
+    exercises = select_exercises(todays, equipment, learned_exercise_value)  # §4
+    return attach_rep_rir(exercises, readiness)       # existing strength-progression engine
 ```
 
-Recommended model stack (answers your Part 1 / Part 10):
-- **Weekly synthesis = constrained optimization** (greedy or small MILP), NOT
-  RL/GA. RL needs thousands of episodes; you have one athlete. Constraints
-  encode the science; the optimizer just allocates under them.
-- **Per-athlete parameters = Bayesian + bandits.** Normal-inverse-gamma priors
-  per landmark, Thompson sampling for exploration. Sparse-data friendly,
-  confidence-aware, exactly the N=1 setting.
-- **State = keep the Kalman.** It's the right tool and it's built.
-
-This is the same pattern as adaptive control + recommender systems: a model that
-plans under constraints, wrapped in a learner that updates the constraints from
-observed response. Fighter-pilot MPC + Netflix Thompson sampling + the coaches'
-volume landmarks as the constraint set.
+- **Key fix vs today:** LIGHT/DELOAD reduce `cap` (fewer sets), not the load — addresses the "light day = 7 high-RIR lifts" bug.
+- **Acceptance:** sum of session sets over the week == plan targets (±1 rounding); LIGHT day has strictly fewer sets than a normal day; no exercise needs absent equipment.
 
 ---
 
-## 2. Weekly Program Synthesis
+## 4. Bayesian per-athlete learning (gap #2)
 
-Inputs (all already in `athlete_state` / profile):
-strength readiness, running readiness, fatigue/TSB, ACWR, recovery, injury risk,
-goal priorities, recent e1RM/VDOT trends, nutrition phase, **equipment/access**,
-**training-preference** (high frequency, no splits).
+**Scientific/Coaching:** landmarks and frequency tolerance are individual [COACH];
+N=1 sparse data favors Bayesian shrinkage to population priors [ENG/SCI].
+**Engineering assumptions:** each parameter is `Normal(mean, var)`; update with
+Kalman-style gain; act on a learned value only once its credible interval
+excludes the prior (else keep the prior + explore) [ENG].
 
-Decision variables: weekly set count per muscle, sessions/week per muscle
-(frequency), run sessions (easy/interval/long), two-a-day days.
+### Per-parameter observation models (the missing math)
 
-Objective: maximize weighted goal progress
-`Σ goal_weight_g · expected_progress_g(allocation)`
-subject to:
-- per-muscle weekly sets ∈ [MEV, MRV] (the LEARNED landmarks, §4)
-- total systemic load ≤ recovery budget (from TSB/ACWR; shrinks when fatigued)
-- frequency ≥ preference floor (4-6x/muscle) when recovery allows
-- running volume ramp ≤ 10%/wk and ≤ learned ceiling
-- concurrent-interference penalty when same-day lower lifting + hard running
-- **hard constraints**: only equipment the athlete has; goal-deprioritized
-  modalities get weight 0 (no junk Z1 if deprioritized)
-
-`goal_weight_g` is time-to-deadline aware (PST weight rises as Aug 31 nears —
-this already exists as `deadline_weights`). Phase (cut/bulk) scales the recovery
-budget and the volume ceiling (§5).
-
-Implementation: start **greedy** (sort muscles by goal-weighted marginal value,
-allocate a set at a time until the recovery budget or per-muscle MRV binds).
-Upgrade to MILP only if greedy proves insufficient. Either way the science lives
-in the constraints, not the solver.
-
----
-
-## 3. Session Generation
-
-Given the week's targets and week-to-date completed work, build today:
-1. **Remaining volume** = weekly target − sets already done this week, per muscle.
-2. **Today's capacity** = f(readiness, prescribed action). On LIGHT/DELOAD this
-   **cuts set count**, not just load — the current bug. REST = mobility only.
-3. **Distribute** remaining volume across today honoring frequency (few sets per
-   muscle, many muscles — your high-frequency preference).
-4. **Exercise selection** = priority score that now includes the LEARNED
-   exercise→e1RM response (§4), goal lifts, fatigue, and **equipment filter**.
-5. **Rep/RIR** from the strength-progression engine per lift (§ existing).
-6. **Conditioning** from running readiness + VDOT + equipment: prescribe the
-   Garmin-style session that fits (e.g. 30 min @ VDOT easy pace), never a pool
-   swim if `has_pool=false`; drop Z1 if the athlete has deprioritized it.
-
-Exercise replacement trigger: stall_risk high for N weeks AND no e1RM slope →
-swap to a variant; log the swap as an exploration arm (§6).
-
----
-
-## 4. Learning Athlete-Specific Parameters (N=1)
-
-Every parameter is a posterior with a confidence interval, not a constant.
-
-| Parameter | Prior (mean) | Learning signal | Update | Data to mature |
-|---|---|---|---|---|
-| MEV/MAV/MRV per muscle | Israetel pop. defaults | weekly e1RM slope vs soreness vs sets | Bayesian (Normal-IG) | ~6-10 wk/muscle |
-| Frequency tolerance | 4x (your pref) | slope at freq f vs f-1 | bandit arm per freq | ~8-12 wk |
-| Exercise→growth | equal | e1RM slope while exercise in program | hierarchical Normal | ~8 wk/exercise |
-| Two-a-day benefit | neutral | perf delta split vs combined | paired bandit | ~12-16 wk |
-| Running ceiling | 15 mi/wk | soreness/VDOT response to mileage | Bayesian | ~8 wk |
-
-Update rule shape (per landmark):
+**MRV[m]** — observed from weekly response:
 ```
-posterior_mean ← prior + K · (observed_response − predicted_response)
-K = prior_var / (prior_var + obs_noise)         # Kalman-style gain
-confidence ← 1 / posterior_var                   # surfaced to the user
+# weekly, per muscle, given this week's sets s, e1RM slope g (lbs/wk on the lift
+# that loads m), and mean soreness sor (0-5):
+responding   = g > G_MIN            # [ENG] G_MIN = 0 (any positive slope)
+recoverable  = sor <= SOR_OK        # [ENG] SOR_OK = 2.5
+if responding and recoverable:  obs = s + 1   ; obs_var = OBS_VAR_HI   # MRV is at least s, likely higher
+elif (not responding) and sor >= SOR_HI:  obs = s - 1 ; obs_var = OBS_VAR_HI  # over MRV
+else:  obs = None                                                       # uninformative week
+# Kalman update when obs is not None:
+K = var / (var + obs_var)                       # OBS_VAR_HI=9 (sets^2) early, ->4 later [ENG]
+mean += K*(obs - mean);  var *= (1-K);  n_obs += 1
+mature = abs(mean - prior_mean) > 1.96*sqrt(var)
 ```
-Separate real effect from noise: require the credible interval to exclude the
-prior before acting on a learned value; until then, use the prior and keep
-exploring. This is the discipline the current `rls_learner` lacks (it's pinned
-to defaults by design).
+MAV ← clamp(mean − 2, mev+1, mean); MEV ← prior (rarely individualized).
+
+**Frequency[m]** — bandit over arms {3,4,5,6}x/wk; reward = e1RM slope for m that
+week; Thompson sample arm each block. Prior mean = 4 (athlete preference).
+
+**Exercise→growth[ex]** — hierarchical Normal; reward = e1RM slope while ex is in
+the program; shrinks to the muscle's mean. Drives `select_exercises` value (§3).
+
+**Running ceiling (mi/wk)** — Normal; observation from running-tolerance test (§6)
+or weekly: mileage with stable quad soreness + non-negative VDOT → ceiling ≥ that.
+
+**Two-a-day benefit** — paired comparison: perf delta on split vs combined days;
+sign of posterior mean decides whether the allocator schedules two-a-days.
+
+- **DB inputs/outputs:** reads `workout_logs`, `athlete_state` (e1RM slopes, soreness, VDOT), `garmin_activities`; writes `athlete_landmarks`, `athlete_params`.
+- **Daily update:** none (needs weekly aggregation).
+- **Weekly update:** Sunday — compute weekly aggregates, update every posterior, recompute `mature` flags.
+- **Failure modes:** confounded weeks (sick, traveled) → mark uninformative (obs=None); never let one week swing a posterior more than `K_MAX`=0.34 [ENG].
+- **Confidence scoring:** `confidence = 1/var`, normalized; `mature` gates whether the allocator uses the learned value or the prior. Surface per-muscle "personalized vs population."
+- **Acceptance:** with synthetic responding data, MRV mean rises and `mature` flips after the documented #weeks; with noise-only data, mean stays within 1 set of prior and `mature` stays false.
 
 ---
 
-## 5. Nutrition Integration (cut/bulk → programming)
+## 5. Nutrition → programming coupling (already partially shipped)
 
-- TDEE is now adaptive (intake + bodyweight, under-logging guarded). Phase scales
-  the **recovery budget** and the **volume ceiling**: aggressive cut → MRV ×0.8,
-  protect intensity/strength, trim hypertrophy volume first (it's lost slowest in
-  the short run; strength/skill protected).
-- Metrics that get unreliable in a deficit: bodyweight-noise, and e1RM on high-rep
-  work (CNS + glycogen). Weight strength signals from low-rep top sets more during
-  a cut.
-- Deficit magnitude → expect slower recovery: widen deload frequency, lower the
-  ACWR ceiling. (Your cutting philosophy from the 3 videos feeds these constants —
-  see the vault note this links to.)
+Phase scales `r_phase` (§2) and the volume ceiling: aggressive cut → MRV×0.8,
+protect intensity/strength, trim hypertrophy volume first [COACH, TNF — see
+`[[Nolan's Cutting Philosophy]]`]. Deficit unreliability: down-weight high-rep
+e1RM signals during a cut when feeding §4 (raise `obs_var`). Already live:
+adaptive TDEE, macro floors, strength-gated + duration-capped deficit.
 
 ---
 
-## 6. Controlled Exploration (probe to learn)
+## 6. Controlled-testing framework (gap #3)
 
-Hybrid, not pure conservative or aggressive:
-- **Weeks 0-4:** conservative ramp + establish baselines; one stress test
-  (recovery rebound) to seed τ.
-- **Weeks 4-12:** controlled stress tests — volume-tolerance ramp on one muscle
-  at a time; running-tolerance ramp; periodic AMRAP/PST diagnostics.
-- **Weeks 12-24:** exploit learned params; explore only where confidence is low.
+General mechanic: a test writes a `controlled_tests` row, the allocator/session
+gen honor an `active` test, results update a §4 posterior. Schedule one at a time;
+never overlap a stress test with a cut.
 
-Four tests (schema already supports all):
-1. Recovery stress test → learn fatigue τ (replaces inert RLS).
-2. Volume-tolerance test → learn per-muscle MRV (replaces fixed constants).
-3. Running-tolerance test → learn mileage ceiling.
-4. Scheduled PST diagnostic every 4 wk → validate the conditioning weighting.
+**6.1 Recovery stress test** → learns `MAX_HARD_SETS_PER_DAY` / fatigue τ.
+- Trigger [ENG]: TSB>+5 and no active test and ≥14d since last.
+- Protocol: one deliberately high-load day (≈1.3× normal session sets), then
+  monitor HRV/RHR for 5 days. Fit rebound: days-to-baseline = τ_observed.
+- Writes: `athlete_params['recovery_tau']`, feeds `B_prior`.
+- Guardrail: abort if HRV crash + RHR spike beyond overreach threshold.
 
-Exploration vs exploitation = Thompson sampling: sample each parameter from its
-posterior, act on the sample; high-variance params get probed naturally.
+**6.2 Volume-tolerance test** → learns `MRV[m]`.
+- Trigger: a muscle's MRV `mature=false` and TSB ok.
+- Protocol: ramp that muscle +2 sets/wk above current MAV for ≤3 wks, gated by
+  the §4 responding/recoverable rule; then a planned deload. Highest
+  non-stalling volume → MRV observation (obs_var low because it's a designed test).
+- Guardrail: stop on stall+soreness immediately.
 
----
+**6.3 Running-tolerance test** → learns running ceiling.
+- Protocol: +10%/wk mileage while quad soreness ≤ 2 and VDOT non-decreasing;
+  back off when the existing ortho-load budget trips.
 
-## 7. Build order (incremental, each verifiable against real data)
+**6.4 PST diagnostic** (every 4 wks): insert a real PST as a first-class session;
+write `pst_tests`; recompute readiness % and validate conditioning weighting.
 
-1. **Equipment/access + goal-priority profile** (kills the pool-swim and junk-Z1
-   bugs immediately). Smallest, highest felt-value.
-2. **Real volume reduction on LIGHT/DELOAD** in session gen.
-3. **Unify volume landmarks** into one taxonomy/source of truth.
-4. **Weekly greedy allocator** under the recovery budget + constraints.
-5. **Bayesian landmark learner** + surface confidence.
-6. **Controlled-test scheduler** (the four tests).
-7. **Two-a-day / frequency bandits.**
-
-Each step ships behind the existing state layer, runs through `compute` +
-`prescriber`, and is validated on real data before the next.
+- **Confidence scoring:** test-derived observations carry low `obs_var` (designed > passive). 
+- **Acceptance:** scheduler never runs two tests at once or during a cut; a completed volume-tolerance test moves the target MRV posterior and flips maturity faster than passive weeks.
 
 ---
 
-## 8. Evidence tiers (per your request)
+## 7. Dead-loops decision (gap #5)
 
-- **Strong science:** ACWR injury association, protein for LBM in deficit, Z2
-  aerobic base, progressive overload.
-- **Coaching consensus:** MEV/MAV/MRV landmarks (Israetel), RIR autoregulation,
-  high-frequency viability for advanced lifters (Jewers/Twinem/Sheiko), deload
-  cadence.
-- **Engineering judgment:** Bayesian/bandit for N=1, greedy/MILP allocation,
-  Thompson sampling for explore/exploit, confidence gating.
-- **Speculative (flag in UI):** cellular interference ODE, exact two-a-day
-  benefit per individual until enough data.
+**MILP Bayesian weight update (`program_synthesis.update_weights`):** REMOVE.
+It's never called and is superseded by §2's `w[m]` (goal priority × deadline) and
+§4's learned values. Delete the dead method; the allocator owns weighting.
 
-See also: state-estimation already implemented across `scripts/engine/` and
-`compute_athlete_state.py`; this doc covers the synthesis + learning layers that
-sit on top.
+**Cellular interference closed loop (`cellular_model.close_loop_update`):** keep
+the AMPK/mTORC1 computation as a *signal* feeding the §2 interference penalty and
+the existing session attenuation, but DISABLE the closed-loop parameter learning
+(`[SPEC]`, flagged unsound). Mark it speculative in the UI. Revisit only if a
+designed test can identify the coefficient.
+
+**RLS τ-learner:** already inert by design; replace its role with the §6.1
+recovery stress test feeding `recovery_tau`. Remove the `is_mature()` hot-swap path.
+
+- **Acceptance:** grep shows no caller of the removed MILP method; cellular closed-loop is behind a disabled flag; no engine path depends on RLS τ.
+
+---
+
+## 8. Function contracts (where each piece plugs in)
+
+```
+engine/muscle_map.py          + CANONICAL_MUSCLES, LANDMARK_PRIORS, MUSCLE_ALIAS
+engine/landmarks.py    (new)  load/seed athlete_landmarks; marginal_value()
+engine/allocator.py    (new)  allocate(B, weights, landmarks, run_need, equip) -> WeeklyPlan
+engine/learners.py     (new)  update_mrv(), bandit_frequency(), update_exercise_value(),
+                              update_running_ceiling(), update_two_a_day()
+engine/controlled_tests.py (new) schedule(), active_test(), record_result()
+generate_weekly_program.py    call allocator weekly -> weekly_plans; call learners (Sunday)
+session_generator.py          consume weekly_plans (remaining-volume waterfall, §3)
+compute_athlete_state.py      seed/read athlete_landmarks; emit weekly aggregates for learners
+```
+
+---
+
+## 9. Build order (each increment ships behind the state layer + is verified on real data)
+
+1. **§0 schema + §1 taxonomy unification** (foundation; data-integrity).
+2. **§3 real volume reduction on LIGHT/DELOAD** + equipment filter in session gen.
+3. **§2 greedy weekly allocator** writing `weekly_plans`; session gen consumes it.
+4. **§4 MRV + frequency learners** + surface confidence.
+5. **§6 controlled-test scheduler** (recovery + volume-tolerance first).
+6. **§4 exercise-value + two-a-day learners**, §6.3/6.4 tests.
+7. **§7 cleanup** (remove dead MILP, gate cellular).
+
+Acceptance per increment is defined in its section. Nothing advances until the
+prior increment passes on real data through `compute` + `prescriber`.
+
+---
+
+## 10. Evidence-tier summary
+
+- **[SCI]:** ACWR↔injury, volume inverted-U, Z2 aerobic base, protein for LBM in deficit, progressive overload.
+- **[COACH]:** MEV/MAV/MRV (Israetel), RIR autoregulation, high-frequency viability (Jewers/Twinem/Sheiko), polarized running (Daniels/Magness), deload cadence, cut macros (TNF).
+- **[ENG]:** greedy allocation, Bayesian Normal posteriors + Kalman gain, Thompson-sampling exploration, the specific constants flagged `[ENG]` above (all tunable, none are principles).
+- **[SPEC]:** cellular interference ODE, exact individual two-a-day benefit until matured.
+```
