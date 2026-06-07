@@ -1074,6 +1074,21 @@ def main():
                    for v in (strength.values() if isinstance(strength, dict) else [])
                    if isinstance(v, dict) and v.get("progression_rate_lbs_per_week") is not None]
         strength_min_slope = min(_slopes) if _slopes else None
+        # Weeks elapsed in the current open diet phase (from diet_phases) → the
+        # TNF 4-6 week duration cap. Dormant until a cut phase with a start is logged.
+        weeks_in_cut = None
+        try:
+            _dp = sb_get("diet_phases", {
+                "select": "*", "created_by": f"eq.{USER_ID}",
+                "end_date": "is.null", "order": "created_at.desc", "limit": "1",
+            })
+            if _dp:
+                _sd = _dp[0].get("start_date") or _dp[0].get("created_at")
+                if _sd:
+                    _start = datetime.date.fromisoformat(str(_sd)[:10])
+                    weeks_in_cut = (datetime.date.today() - _start).days / 7.0
+        except Exception:
+            weeks_in_cut = None
         nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
             "overreaching":  overreach_out.get("overreaching"),
             "hrv_z":         overreach_out.get("hrv_z_3d"),
@@ -1083,6 +1098,7 @@ def main():
             "bodyweight_lb": latest_weight_lb,
             "phase":         nutrition.get("phase"),
             "strength_min_slope": strength_min_slope,
+            "weeks_in_cut":  weeks_in_cut,
         })
         _rec = nutrition["recommended_intake"]
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "

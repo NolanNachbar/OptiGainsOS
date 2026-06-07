@@ -317,19 +317,11 @@ def select_action(
     ranked = sorted(scores.items(), key=lambda x: x[1]["score"], reverse=True)
     best_action = ranked[0][0]
 
-    # Apply ACWR gate (guardrail override)
-    load_action_map = {
-        "INCREASE": ["MIXED", "STRENGTH", "TWO_A_DAY"],
-        "MAINTAIN": ["CALISTHENICS", "CARDIO", "LIGHT"],
-        "DECREASE": ["REST", "DELOAD", "LIGHT"],
-    }
-    if acwr > 1.5 and best_action not in load_action_map["DECREASE"] + load_action_map["MAINTAIN"]:
-        best_action = "LIGHT"
-
-    # Per athlete preference: do NOT downscale intensity. Weights are always
-    # prescribed at full working level. Session HARDNESS is still governed by the
-    # action choice (ACWR>1.5 → LIGHT, overreach → REST), but the load on a given
-    # lift is never sandbagged by TSB. The engine informs; the athlete decides.
+    # No auto LIGHT gym days. Per athlete preference, high ACWR/TSB does NOT
+    # force an easy session — he trains through it. ACWR is still computed and
+    # surfaced (engine output + brief) as information, and genuine overreach
+    # (HRV-crash signature) still returns REST at the top of this function. The
+    # athlete decides whether to back off; the engine won't sandbag him.
     intensity = 1.0
 
     return best_action, round(intensity, 2), {k: v["score"] for k, v in scores.items()}

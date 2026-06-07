@@ -133,6 +133,7 @@ class NutritionModulator:
           bodyweight_lb: float   — for protein/fat floors
           phase        : str     — "cut" | "bulk" | "maintain"
           strength_min_slope : float — worst key-lift e1RM slope (lbs/wk); gates the cut deficit
+          weeks_in_cut : float   — weeks elapsed in the current cut; >=6 forces a diet break
         """
         target = target_deficit_ratio if target_deficit_ratio is not None else self.AGGRESSIVE_TARGET_DEFICIT
         target = self._clamp(target, 0.0, MAX_DEFICIT_RATIO)
@@ -177,6 +178,14 @@ class NutritionModulator:
             headroom *= 0.70
             gates.append("strength_dropping")
 
+        # Duration cap (TNF: get out at 4-6 weeks). Past 6 weeks in a cut, force
+        # the deficit toward maintenance — it's time to end the cut / diet break,
+        # not keep grinding.
+        weeks_in_cut = signals.get("weeks_in_cut")
+        if phase == "cut" and weeks_in_cut is not None and float(weeks_in_cut) >= 6:
+            headroom = min(headroom, 0.25)
+            gates.append("cut_too_long")
+
         headroom = self._clamp(headroom, 0.0, 1.0)
 
         # Muscle-preservation macros (computed first — they set the cut floor).
@@ -210,6 +219,9 @@ class NutritionModulator:
         elif "overreaching" in gates:
             rationale = ("Overreaching flagged — deficit collapsed toward maintenance to protect "
                          f"recovery (target {calorie_target} kcal). Leanness can wait a day; recovery can't.")
+        elif "cut_too_long" in gates:
+            rationale = (f"6+ weeks deep in the cut — time to end it. Easing toward maintenance "
+                         f"({calorie_target} kcal); take a diet break before grinding further.")
         else:
             rationale = (f"Easing the deficit to {round(deficit_ratio*100)}% ({kcal_deficit} kcal) — "
                          f"{', '.join(gates)} signalling reduced recovery headroom.")
