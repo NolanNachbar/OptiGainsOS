@@ -45,7 +45,11 @@ from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE
 from engine.program_synthesis  import ProgramSynthesisEngine
 from engine.allocator          import plan_week, default_goal_priorities
 from engine.hypertrophy_volume import LANDMARK_PRIORS
-from engine.learners           import update_mrv, update_frequency, best_frequency
+from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation
+from engine.controlled_tests   import (
+    get_active, pick_volume_test_muscle, can_schedule, schedule_volume_test,
+    ramp_target, step_volume_test,
+)
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -103,6 +107,30 @@ def sb_upsert(table, row, conflict_cols="program_id,scheduled_date"):
         return False
     except Exception as e:
         print(f"  ERROR sb_upsert({table}): {e}")
+        return False
+
+def sb_insert(table, row):
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    req = urllib.request.Request(url, data=json.dumps(row).encode(), method="POST",
+                                 headers=_headers({"Prefer": "return=minimal"}))
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except Exception as e:
+        print(f"  ERROR sb_insert({table}): {e}")
+        return False
+
+def sb_patch(table, filt, row):
+    """PATCH rows matching filt (dict of col->'eq.val' style already formatted)."""
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}" for k, v in filt.items())
+    url = f"{SUPABASE_URL}/rest/v1/{table}?{qs}"
+    req = urllib.request.Request(url, data=json.dumps(row).encode(), method="PATCH",
+                                 headers=_headers({"Prefer": "return=minimal"}))
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except Exception as e:
+        print(f"  ERROR sb_patch({table}): {e}")
         return False
 
 def sb_upsert_engine(row):
@@ -659,16 +687,22 @@ def main():
     lm_rows = sb_get("athlete_landmarks", {"select": "*", "created_by": f"eq.{USER_ID}"})
     landmarks_db = {r["muscle"]: dict(r) for r in (lm_rows or [])}
     prev_plans = sb_get("weekly_plans", {
-        "select": "set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
+        "select": "week_start,set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
         "order": "week_start.desc", "limit": "1"})
     prev_targets = (prev_plans[0].get("set_targets") if prev_plans else {}) or {}
     prev_freq    = (prev_plans[0].get("frequency_targets") if prev_plans else {}) or {}
+    # Idempotency: learn at most once per week. If we already produced a plan for
+    # THIS week, skip the learners/test-step on re-run (just re-allocate below).
+    _this_week = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+    already_ran = bool(prev_plans and str(prev_plans[0].get("week_start")) == _this_week)
+    if already_ran:
+        print("  (already ran this week — skipping learner updates, re-allocating only)")
     freq_rows = sb_get("athlete_params", {"select": "*", "created_by": f"eq.{USER_ID}",
                                           "param_key": "like.freq.*"}) or []
     freq_params = {r["param_key"]: dict(r) for r in freq_rows}
 
     learned_freq = {}
-    for m in MUSCLE_GROUPS:
+    for m in (MUSCLE_GROUPS if not already_ran else []):
         row = landmarks_db.get(m)
         if not row:
             continue
@@ -697,6 +731,44 @@ def main():
     matured = sum(1 for r in landmarks_db.values() if r.get("mature"))
     print(f"  Learners: {matured}/{len(landmarks_db) or len(MUSCLE_GROUPS)} muscles MRV-personalized")
 
+    # ── 6a-test. Controlled exploration: volume-tolerance test (§6) ───────────
+    # Actively probe a muscle's MRV by ramping it above MAV; a completed ramp
+    # feeds a LOW-noise observation to the learner. One test at a time, never on a cut.
+    phase_test = (latest_athlete.get("nutrition") or {}).get("phase")
+    tests = sb_get("controlled_tests", {"select": "*", "created_by": f"eq.{USER_ID}",
+                   "status": "eq.active", "order": "created_at.desc", "limit": "1"})
+    active_test = get_active(tests)
+    if active_test and active_test.get("test_type") == "volume_tolerance" and not already_ran:
+        tm = (active_test.get("baseline") or {}).get("muscle")
+        sv = soreness_muscle.get(tm, [])
+        avg_sore = (sum(sv) / len(sv)) if sv else 0.0
+        updated, obs = step_volume_test(active_test, perf_slopes.get(tm),
+                                        avg_sore, prev_targets.get(tm) or 0)
+        sb_patch("controlled_tests", {"id": f"eq.{active_test['id']}"},
+                 {"status": updated["status"], "baseline": updated["baseline"],
+                  "result": updated.get("result")})
+        if obs and tm in landmarks_db:
+            upd = apply_mrv_observation(landmarks_db[tm], obs["obs"], obs["obs_var"], prior_mrv.get(tm, 18))
+            landmarks_db[tm].update(upd)
+            sb_upsert("athlete_landmarks", {
+                "created_by": USER_ID, "muscle": tm, "mev": landmarks_db[tm]["mev"],
+                "mav": upd["mav"], "mrv": upd["mrv"], "mrv_mean": upd["mrv_mean"],
+                "mrv_var": upd["mrv_var"], "n_obs": upd["n_obs"], "mature": upd["mature"],
+            }, conflict_cols="created_by,muscle")
+            print(f"  Volume-tolerance test COMPLETE: {tm} → MRV obs {obs['obs']} (mature={upd['mature']})")
+            active_test = None
+        else:
+            active_test = updated
+            print(f"  Volume-tolerance test active: {tm} (ramp week {updated['baseline']['week']})")
+    elif can_schedule(active_test, phase_test) and not already_ran:
+        tm = pick_volume_test_muscle(landmarks_db)
+        if tm:
+            sb_insert("controlled_tests", {
+                **schedule_volume_test(tm, float(landmarks_db[tm].get("mrv_mean", 18)), TODAY.isoformat()),
+                "created_by": USER_ID})
+            active_test = {"test_type": "volume_tolerance", "baseline": {"muscle": tm, "week": 1}}
+            print(f"  Scheduled volume-tolerance test: {tm}")
+
     # ── 6b. Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────
     # Reads the LEARNED landmarks (fallback to priors), goal-weighted under the
     # recovery budget. Frequency uses learned-mature values where available.
@@ -705,6 +777,13 @@ def main():
                         for m, r in landmarks_db.items()}
     else:
         landmarks_lc = {m: dict(LANDMARK_PRIORS[m]) for m in LANDMARK_PRIORS}
+
+    # Active volume-tolerance test → raise the probed muscle's MRV ceiling so the
+    # allocator ramps its volume above MAV this week.
+    if active_test and active_test.get("test_type") == "volume_tolerance":
+        for mm, boosted in ramp_target(active_test, landmarks_lc).items():
+            if mm in landmarks_lc:
+                landmarks_lc[mm]["mrv"] = max(landmarks_lc[mm]["mrv"], boosted)
     tsb_now   = float((latest_athlete.get("fatigue") or {}).get("tsb") or 0.0)
     phase_now = (latest_athlete.get("nutrition") or {}).get("phase")
     days_to_deadline = max(0, (DEADLINE - TODAY).days)

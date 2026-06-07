@@ -59,6 +59,24 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
             "mature": bool(mature), "mrv": mrv, "mav": mav}
 
 
+def apply_mrv_observation(row: dict, obs: float, obs_var: float, prior_mrv: float) -> dict:
+    """Apply a DIRECT MRV observation (e.g. from a designed volume-tolerance test,
+    which carries low obs_var so it moves the posterior faster than a passive week)."""
+    mean = float(row.get("mrv_mean", prior_mrv))
+    var  = float(row.get("mrv_var", 9.0))
+    n    = int(row.get("n_obs", 0))
+    mev  = float(row.get("mev", 6))
+    K = min(var / (var + obs_var), 0.5)   # [ENG] designed tests may update a bit harder
+    mean = mean + K * (obs - mean)
+    var  = var * (1 - K)
+    n   += 1
+    mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
+    mrv = round(mean) if mature else round(prior_mrv)
+    mav = max(mev + 1, min(round(mean) - 2, mrv - 1))
+    return {"mrv_mean": round(mean, 2), "mrv_var": round(var, 3), "n_obs": n,
+            "mature": bool(mature), "mrv": mrv, "mav": mav}
+
+
 # ── Frequency bandit (per muscle) ─────────────────────────────────────────────
 FREQ_OBS_VAR = 1.0   # [ENG]
 FREQ_MIN_N   = 3     # [ENG] arms need this many obs before they're trusted

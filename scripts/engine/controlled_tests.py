@@ -1,0 +1,106 @@
+"""
+controlled_tests.py — Controlled exploration / capacity probes
+(ADAPTIVE_ENGINE_DESIGN.md §6).
+
+The system shouldn't only react — it should actively gather information to learn
+the athlete's limits. A test writes a controlled_tests row; while active it
+nudges the allocator (e.g. a volume-tolerance ramp pushes one muscle above MAV);
+on completion it feeds a LOW-noise observation into the §4 learner (a designed
+probe is more informative than a passive week).
+
+Rules: one test at a time, never during a cut. This increment implements the
+volume-tolerance test end-to-end (it most directly accelerates MRV maturity).
+Recovery-stress and running-tolerance scheduling are scaffolded for a follow-on.
+
+Constants tagged [ENG] are tunable.
+"""
+from __future__ import annotations
+
+RAMP_WEEKS   = 3     # [ENG] weeks to ramp a muscle above MAV
+RAMP_STEP    = 2     # [ENG] +sets/wk during the ramp
+RAMP_MAX     = 6     # [ENG] cap above MAV
+TEST_OBS_VAR = 2.0   # [ENG] designed-test observation noise (< passive OBS_VAR=9)
+
+
+def get_active(tests: list) -> dict | None:
+    """The single active test row, if any."""
+    for t in tests or []:
+        if t.get("status") == "active":
+            return t
+    return None
+
+
+def pick_volume_test_muscle(landmarks_db: dict) -> str | None:
+    """Least-personalized muscle (lowest n_obs, not yet mature) to probe next."""
+    candidates = [m for m, r in landmarks_db.items() if not r.get("mature")]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda m: int(landmarks_db[m].get("n_obs", 0)))
+
+
+def can_schedule(active: dict | None, phase: str | None) -> bool:
+    """One test at a time; never during a cut."""
+    return active is None and (phase or "").lower() != "cut"
+
+
+def schedule_volume_test(muscle: str, mrv_mean: float, today_iso: str) -> dict:
+    """A new active volume-tolerance test row."""
+    return {
+        "test_type": "volume_tolerance",
+        "target_key": f"mrv.{muscle}",
+        "status": "active",
+        "started_at": today_iso,
+        "baseline": {"muscle": muscle, "week": 1, "mrv_mean_start": mrv_mean,
+                     "best_tolerated": None},
+    }
+
+
+def ramp_target(active: dict, landmarks_lc: dict) -> dict:
+    """During a volume-tolerance ramp, return {muscle: boosted_mrv} so the
+    allocator allocates more to the probed muscle (MAV + step·week, capped).
+    Uses the current ramp week (1-based)."""
+    if not active or active.get("test_type") != "volume_tolerance":
+        return {}
+    b = active.get("baseline") or {}
+    m = b.get("muscle")
+    if not m or m not in landmarks_lc:
+        return {}
+    week = int(b.get("week", 1))
+    mav = float(landmarks_lc[m]["mav"])
+    return {m: mav + min(RAMP_STEP * week, RAMP_MAX)}
+
+
+def step_volume_test(active: dict, muscle_slope, soreness_avg: float,
+                     week_sets: float) -> tuple:
+    """
+    Evaluate the just-completed ramp week, then advance (or complete).
+
+    Returns (updated_row, observation_or_None). observation, when present, is
+    {"key","obs","obs_var","complete":True} to feed the MRV learner — emitted on
+    a stall+sore (over MRV found) or after RAMP_WEEKS.
+    """
+    b = dict(active.get("baseline") or {})
+    m = b.get("muscle")
+    week = int(b.get("week", 1))
+
+    responding  = muscle_slope is not None and muscle_slope > 0
+    recoverable = soreness_avg < 4.0
+    if responding and recoverable:
+        b["best_tolerated"] = max(b.get("best_tolerated") or 0, week_sets)
+
+    stalled = (muscle_slope is not None and muscle_slope <= 0) and soreness_avg >= 4.0
+    done = stalled or week >= RAMP_WEEKS
+
+    row = dict(active)
+    if not done:
+        b["week"] = week + 1
+        row["baseline"] = b
+        return row, None
+
+    best = b.get("best_tolerated") or week_sets
+    obs = best if not stalled else max(1, week_sets - 1)
+    row["baseline"] = b
+    row["status"] = "complete"
+    row["result"] = {"observed_mrv": obs, "stalled": bool(stalled), "weeks": week}
+    return row, {"key": f"mrv.{m}", "muscle": m, "obs": obs,
+                 "obs_var": TEST_OBS_VAR, "complete": True}
