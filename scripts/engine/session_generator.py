@@ -796,6 +796,7 @@ class SessionGenerator:
         weekly_set_targets: dict = None,
         recent_session_types: list = None,
         soreness_by_muscle: dict = None,
+        phase: str = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -846,6 +847,16 @@ class SessionGenerator:
                     if ex.get("rir_target") is not None:
                         ex["rir_target"] = int(ex["rir_target"]) + 1
                     ex["soreness_note"] = f"{region} sore ({lvl}/5) — trimmed {cut} set"
+
+        # Cut volume management (TNF): on a cut, keep the WEIGHT heavy — trim
+        # back-off/volume sets, never the heavy top sets, and never the load/RIR.
+        # Top sets (is_primary / is_goal, not is_backoff) are untouched.
+        if (phase or "").lower() == "cut":
+            _backoff = {e["name"]: bool(e.get("is_backoff")) for e in EXERCISES}
+            for ex in exercises:
+                if _backoff.get(ex.get("name")) and ex.get("sets"):
+                    ex["sets"] = max(1, round(int(ex["sets"]) * 0.6))  # [ENG] -40% back-off volume
+                    ex["cut_note"] = "cut: back-off volume trimmed, weight kept heavy"
 
         # Format complete prescription dict
         strength_block = []

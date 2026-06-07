@@ -96,7 +96,9 @@ ACTION_TSS = {
     "STRENGTH":     70.0,   # heavy barbell session
     "MIXED":        85.0,   # strength + calisthenics or cardio
     "TWO_A_DAY":   120.0,   # strength AM (70) + conditioning PM (50)
-    "DELOAD":       20.0,   # 55% load across all movements
+    # No DELOAD action by design: deloads are treated as a programming failure,
+    # not a tool. Volume is auto-regulated continuously (cut sets, keep weight)
+    # rather than via forced deload weeks.
 }
 
 # MPC horizon (days to simulate forward)
@@ -120,10 +122,10 @@ FATIGUE_THRESHOLD      = 8.0    # f_t above this incurs penalty
 # toward conditioning instead of just reweighting the same fitness scalar.
 PST_READINESS_VALUE = {
     "CARDIO": 1.0, "TWO_A_DAY": 0.9, "CALISTHENICS": 0.85, "MIXED": 0.7,
-    "LIGHT": 0.4, "STRENGTH": 0.15, "DELOAD": 0.1, "REST": 0.0,
+    "LIGHT": 0.4, "STRENGTH": 0.15, "REST": 0.0,
 }
 STRENGTH_PROGRESS_VALUE = {
-    "STRENGTH": 1.0, "TWO_A_DAY": 0.7, "MIXED": 0.6, "DELOAD": 0.3,
+    "STRENGTH": 1.0, "TWO_A_DAY": 0.7, "MIXED": 0.6,
     "CALISTHENICS": 0.25, "LIGHT": 0.2, "CARDIO": 0.1, "REST": 0.0,
 }
 GOAL_REWARD_SCALE      = 3.0    # magnitude of the goal-readiness reward
@@ -610,6 +612,7 @@ def main():
         weekly_set_targets = weekly_set_targets,
         recent_session_types = recent_session_types,
         soreness_by_muscle = soreness_by_muscle,
+        phase = (today_state.get("nutrition") or {}).get("phase"),
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────
