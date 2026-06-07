@@ -29,6 +29,7 @@ const Career = lazy(() => import('./pages/Career'));
 const BriefHistory = lazy(() => import('./pages/BriefHistory'));
 const WeeklySchedule = lazy(() => import('./pages/WeeklySchedule'));
 const AthleteState = lazy(() => import('./pages/AthleteState'));
+const PhysiqueTracker = lazy(() => import('./pages/PhysiqueTracker'));
 const Fuel = lazy(() => import('./pages/Fuel'));
 const Train = lazy(() => import('./pages/Train'));
 const Insights = lazy(() => import('./pages/Insights'));
@@ -53,6 +54,7 @@ const protectedRoutes = [
   { path: "/career", name: "Career", component: Career },
   { path: "/brief-history", name: "BriefHistory", component: BriefHistory },
   { path: "/athlete-state", name: "AthleteState", component: AthleteState },
+  { path: "/physique", name: "Physique", component: PhysiqueTracker },
 ];
 
 function RootRoute() {
