@@ -629,12 +629,16 @@ def main():
     # ── 6. MILP synthesis ─────────────────────────────────────────────────────
     reserve_score = compute_reserve_score(hrv_z_3d)
 
-    # ACWR
-    acwr_global = 1.0
-    if len(load_history) >= 7:
-        acute      = sum(load_history[-7:]) / 7.0
-        chronic    = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
-        acwr_global = acute / (chronic + 1e-5)
+    # ACWR — prefer the true value from athlete_state (acute 7d / chronic weekly
+    # avg). Fall back to the legacy reconstruction only if absent.
+    acwr_global = (latest_athlete.get("fatigue") or {}).get("acwr")
+    if acwr_global is None:
+        acwr_global = 1.0
+        if len(load_history) >= 7:
+            acute      = sum(load_history[-7:]) / 7.0
+            chronic    = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
+            acwr_global = acute / (chronic + 1e-5)
+    acwr_global = float(acwr_global)
 
     user_prefs = {
         "max_daily_sets":    int(os.environ.get("MAX_DAILY_SETS", 20)),

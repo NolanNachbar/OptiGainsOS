@@ -401,6 +401,26 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
     tsb_fatigue = max(0.0, min(1.0, (-tsb + 10) / 30.0))
     global_fatigue = round(tsb_fatigue * 0.6 + cns_fatigue * 0.4, 2)
 
+    # True ACWR: acute (7d load sum) / chronic (28d weekly average), from daily
+    # training load — NOT the prior degenerate mean-of-EMA / mean-of-EMA form,
+    # which sat near 1.0 by construction and could never flag an acute spike.
+    today_acwr = datetime.date.today()
+    daily_tss: dict[str, float] = {}
+    for log in workout_logs:
+        d = log.get("log_date", "")
+        if not d:
+            continue
+        volume = sum(
+            float(s.get("weight") or 0) * int(s.get("reps") or 0)
+            for ex in (log.get("exercises") or [])
+            for s in (ex.get("sets") or [])
+        )
+        daily_tss[d] = daily_tss.get(d, 0.0) + min(volume / 100.0, 150.0)
+    acute_7d    = sum(daily_tss.get((today_acwr - datetime.timedelta(days=i)).isoformat(), 0.0) for i in range(7))
+    chronic_28d = sum(daily_tss.get((today_acwr - datetime.timedelta(days=i)).isoformat(), 0.0) for i in range(28))
+    chronic_weekly = chronic_28d / 4.0
+    acwr = round(acute_7d / chronic_weekly, 2) if chronic_weekly > 1e-6 else None
+
     return {
         "atl":             atl,
         "ctl":             ctl,
@@ -408,6 +428,9 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
         "cns_fatigue":     cns_fatigue,
         "global_fatigue":  global_fatigue,
         "interpretation":  interpretation,
+        "acwr":            acwr,
+        "acute_load_7d":   round(acute_7d, 1),
+        "chronic_load_wk": round(chronic_weekly, 1),
     }
 
 

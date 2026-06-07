@@ -463,12 +463,19 @@ def main():
     guardrail = SystemGuardrail.from_dict(guardrail_dict)
 
     # ── Current ACWR ─────────────────────────────────────────────────────────
+    # Prefer the true ACWR computed in compute_athlete_state (acute 7d load /
+    # chronic weekly avg). Fall back to the legacy reconstruction only if absent
+    # (e.g. older state rows written before the fix).
     load_history  = build_load_history(athlete_rows)
-    acwr          = 1.0
-    if len(load_history) >= 7:
-        acute   = sum(load_history[-7:])  / 7.0
-        chronic = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
-        acwr    = acute / (chronic + 1e-5)
+    latest_fat    = (athlete_rows[0].get("fatigue") or {}) if athlete_rows else {}
+    acwr          = latest_fat.get("acwr")
+    if acwr is None:
+        acwr = 1.0
+        if len(load_history) >= 7:
+            acute   = sum(load_history[-7:])  / 7.0
+            chronic = sum(load_history[-28:]) / max(len(load_history[-28:]), 1)
+            acwr    = acute / (chronic + 1e-5)
+    acwr = float(acwr)
 
     # ── Overreaching check ────────────────────────────────────────────────────
     recovery_history = [
