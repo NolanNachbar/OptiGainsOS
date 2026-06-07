@@ -326,18 +326,11 @@ def select_action(
     if acwr > 1.5 and best_action not in load_action_map["DECREASE"] + load_action_map["MAINTAIN"]:
         best_action = "LIGHT"
 
-    # Intensity scalar based on TSB. (Per athlete preference, poor sleep / low
-    # subjective energy do NOT reduce load — he trains over them. Only genuine
-    # accumulated fatigue (TSB) and the ACWR/overreach safety gates pull back.)
-    current_tsb = float(kalman.x[0, 0] - kalman.x[1, 0])
-    if current_tsb > 10:
-        intensity = 1.10   # very fresh → push harder
-    elif current_tsb > 3:
-        intensity = 1.00   # fresh → standard
-    elif current_tsb > -5:
-        intensity = 0.90   # slightly fatigued → back off
-    else:
-        intensity = 0.78   # heavily fatigued → significant reduction
+    # Per athlete preference: do NOT downscale intensity. Weights are always
+    # prescribed at full working level. Session HARDNESS is still governed by the
+    # action choice (ACWR>1.5 → LIGHT, overreach → REST), but the load on a given
+    # lift is never sandbagged by TSB. The engine informs; the athlete decides.
+    intensity = 1.0
 
     return best_action, round(intensity, 2), {k: v["score"] for k, v in scores.items()}
 
