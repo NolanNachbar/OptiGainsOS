@@ -1129,18 +1129,11 @@ def main():
             print(f"    RLS update: tau_fit={rls_params['tau_fit']}  "
                   f"tau_fat={rls_params['tau_fat']}  updates={rls_params['updates']}")
 
-            # Cellular closed-loop: use best-tracked lift slope as mTOR proxy
-            best_slope      = 0.0
-            best_sessions   = 0
-            for lift_data in strength.values():
-                slope    = lift_data.get("progression_rate_lbs_per_week", 0) or 0
-                sessions = lift_data.get("sessions", 0) or 0
-                if sessions > best_sessions:
-                    best_slope    = slope
-                    best_sessions = sessions
-            cellular.close_loop_update(best_slope, best_sessions)
-            print(f"    Cellular closed-loop: slope={best_slope:.1f} lbs/wk  "
-                  f"α₂={cellular.alpha2:.4f}  γᵢ={cellular.gamma_i:.3f}")
+            # Cellular closed-loop learning DISABLED (ADAPTIVE_ENGINE_DESIGN §7):
+            # the coefficient is not identifiable from a single net-performance
+            # number, so its parameter updates were unsound. The AMPK/mTORC1
+            # SIGNAL still computes via cellular.step() and feeds the interference
+            # penalty; only the (speculative) learning loop is off.
         else:
             # Non-Sunday: buffer the RLS point only on a real performance
             # observation (see the Sunday branch).

@@ -79,23 +79,9 @@ class ProgramSynthesisEngine:
         # Fallback
         return self._proportional_fallback(mrv_effective, max_daily, min_str)
 
-    def update_weights(self, performance_deltas: dict) -> None:
-        """
-        Bayesian weight update: positive delta increases weight for that muscle.
-
-        performance_delta is typically e1RM slope or subjective progress score.
-        """
-        for muscle, delta in performance_deltas.items():
-            if muscle not in self.weights:
-                continue
-            # Treat delta as Bernoulli reward signal scaled to [0,1]
-            reward = min(1.0, max(0.0, 0.5 + delta * 5.0))
-            self._alpha[muscle] += reward
-            self._beta[muscle]  += (1.0 - reward)
-            # Posterior mean of Beta distribution
-            post_mean = self._alpha[muscle] / (self._alpha[muscle] + self._beta[muscle])
-            # Map [0,1] posterior to weight range [0.5, 2.0]
-            self.weights[muscle] = round(0.5 + 1.5 * post_mean, 4)
+    # update_weights() removed (ADAPTIVE_ENGINE_DESIGN §7): dead code (no callers),
+    # superseded by the allocator's goal weighting (§2) + Bayesian landmark
+    # learner (§4). Muscle prioritization lives there now.
 
     def to_dict(self) -> dict:
         return {

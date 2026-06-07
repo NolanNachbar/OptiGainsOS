@@ -42,7 +42,6 @@ from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
-from engine.program_synthesis  import ProgramSynthesisEngine
 from engine.allocator          import plan_week, default_goal_priorities
 from engine.hypertrophy_volume import LANDMARK_PRIORS
 from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation
@@ -56,7 +55,6 @@ from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
 from engine.exploration_manager  import ControlledExplorationManager
 from engine.resource_allocator   import (
     compute_reserve_score,
-    allocate_constrained_resources,
     evaluate_two_a_day_split,
 )
 
@@ -219,7 +217,7 @@ def save_engine_state(
     volume_engine: HypertrophyVolumeEngine,
     progression_registry: StrengthProgressionRegistry,
     exploration_manager: ControlledExplorationManager,
-    synthesis_engine: ProgramSynthesisEngine = None,
+    synthesis_engine=None,  # retired (MILP); kept as a no-op param for call compatibility
     weekly_targets: dict = None,
     step_count: int = None,
     extra_synthesis: dict = None,
