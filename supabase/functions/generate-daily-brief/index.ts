@@ -142,6 +142,20 @@ function fmtNutrition(n: Record<string, unknown> | null): string {
   ].join("\n");
 }
 
+function fmtTasks(tasks: Array<Record<string, unknown>>): string {
+  if (!tasks || tasks.length === 0) return "No planned to-do items for today.";
+  const lines: string[] = [];
+  for (const t of tasks) {
+    const mark   = t.status === "done" ? "[x]" : t.status === "skipped" ? "[~]" : "[ ]";
+    const target = t.target ? ` (${t.target})` : "";
+    const goal   = (t.template as Record<string, unknown> | null)?.goal
+      ? ` — serves: ${(t.template as Record<string, unknown>).goal}`
+      : "";
+    lines.push(`  ${mark} ${t.title}${target}${goal}`);
+  }
+  return lines.join("\n");
+}
+
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
 const CARDIO_PROGRAM = `
@@ -206,6 +220,7 @@ function buildPrompt(data: {
   checkin:      Record<string, unknown> | null;
   jobs:         Array<Record<string, unknown>>;
   skills:       Array<Record<string, unknown>>;
+  tasks:        Array<Record<string, unknown>>;
   today:        string;
   dayOfWeek:    string;
 }): string {
@@ -255,7 +270,7 @@ function buildPrompt(data: {
     `  "insight":     "1 sentence: one non-obvious pattern across the data that Nolan may have missed.",`,
     `  "today_actions": ["action 1", "action 2", "action 3"]`,
     `}`,
-    `Rules: Be direct. No filler. Reference computed numbers, not vague language. today_actions: 3-5 concrete items; always include one gym + one cardio action.`,
+    `Rules: Be direct. No filler. Reference computed numbers, not vague language. today_actions: fold in EVERY pending [ ] item from "TODAY'S PLANNED TO-DO" below (verbatim or lightly tightened), PLUS one gym and one cardio action. 3-8 items total. Do not invent to-dos that aren't in the data.`,
     ``,
     `=== TODAY ===`,
     `Date: ${data.today} (${data.dayOfWeek})`,
@@ -268,6 +283,10 @@ function buildPrompt(data: {
     const c = data.checkin;
     lines.push(`\nMorning check-in: Energy ${c.energy}/10 | Mood ${c.mood}/10 | Soreness ${c.soreness}/5${c.notes ? ` | Notes: ${c.notes}` : ""}`);
   }
+
+  lines.push(`\n=== TODAY'S PLANNED TO-DO (from your plan + the second brain) ===`);
+  lines.push(fmtTasks(data.tasks));
+  lines.push(`[These are Nolan's committed recurring actions toward his business, career, and training goals. Every pending [ ] item must appear in today_actions. [x]=done, [~]=skipped — do not re-list those.]`);
 
   if (hasState) {
     // ── Primary data source: computed athlete state ───────────────────────
@@ -302,7 +321,10 @@ function buildPrompt(data: {
     lines.push(`\n--- Career Pipeline ---`);
     lines.push(`  ${openJobs.length} open applications`);
     for (const j of openJobs.slice(0, 3)) {
-      lines.push(`  ${j.company} — ${j.role} (${j.status})`);
+      const next = j.next_action
+        ? ` → next: ${j.next_action}${j.next_action_date ? ` by ${j.next_action_date}` : ""}`
+        : "";
+      lines.push(`  ${j.company} — ${j.role} (${j.status})${next}`);
     }
   }
 
@@ -376,6 +398,7 @@ Deno.serve(async (req) => {
     jobsRes,
     skillsRes,
     prescriptionRes,
+    tasksRes,
   ] = await Promise.all([
     supabase.from("athlete_state").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
     sb("user_profiles").limit(1).single(),
@@ -384,6 +407,10 @@ Deno.serve(async (req) => {
     sb("job_applications").order("created_at", { ascending: false }).limit(10),
     sb("skills").order("name"),
     supabase.from("training_prescription").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
+    supabase.from("daily_tasks")
+      .select("title, domain, target, status, sort_order, template:task_templates(goal)")
+      .eq("created_by", USER_ID).eq("date", today)
+      .order("sort_order", { ascending: true }),
   ]);
 
   const state        = athleteStateRes.data as Record<string, unknown> | null;
@@ -406,6 +433,7 @@ Deno.serve(async (req) => {
     checkin:    checkinRes.data as Record<string, unknown> | null,
     jobs:       (jobsRes.data as Array<Record<string, unknown>>) || [],
     skills:     (skillsRes.data as Array<Record<string, unknown>>) || [],
+    tasks:      (tasksRes.data as Array<Record<string, unknown>>) || [],
     today,
     dayOfWeek,
   });
