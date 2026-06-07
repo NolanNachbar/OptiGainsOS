@@ -232,7 +232,7 @@ export default function Profile({ hideHeader }) {
   ];
 
   return (
-    <div className={`p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300 ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
+    <div className={`p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300 ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-6xl mx-auto">
 
         {/* ── Two-column layout (desktop) / single column (mobile) ── */}

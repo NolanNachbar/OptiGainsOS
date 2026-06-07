@@ -10,7 +10,9 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const isBypass = localStorage.getItem('bypass_auth') === 'true' || window.location.search.includes('bypass_auth=true');
+    // Dev-only escape hatch. Never honored in production builds.
+    const isBypass = import.meta.env.DEV &&
+      (localStorage.getItem('bypass_auth') === 'true' || window.location.search.includes('bypass_auth=true'));
     if (isBypass) {
       localStorage.setItem('bypass_auth', 'true');
       setUser({

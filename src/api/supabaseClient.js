@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // --- Auth Bypass Interception & Mock Data ---
-const isBypassActive = () => localStorage.getItem('bypass_auth') === 'true';
+const isBypassActive = () => import.meta.env.DEV && localStorage.getItem('bypass_auth') === 'true';
 
 const getTodayLocalDateStr = () => {
   const d = new Date();

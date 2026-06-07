@@ -479,7 +479,7 @@ function CaptureTab() {
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function Career({ hideHeader }) {
   return (
-    <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0' : ''}`}>
+    <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6">

@@ -77,6 +77,10 @@ input:-webkit-autofill:focus {
   background-color: var(--color-brand);
 }
 
+/* Hide scrollbar utility (used on horizontal sub-tab strips) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Remove native number input spinners */
 input[type=number] {
   -moz-appearance: textfield;
