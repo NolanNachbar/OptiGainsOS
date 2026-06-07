@@ -434,6 +434,31 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
     }
 
 
+# ── Adaptive TDEE ─────────────────────────────────────────────────────────────
+
+def estimate_tdee(bodyweight_lb: float, avg_kcal_7d, weight_trend_lb_wk,
+                  fallback: float = 3200.0) -> float:
+    """
+    Adaptive maintenance estimate from intake + bodyweight (MacroFactor-style),
+    guarded against under-logging.
+
+      - Bodyweight prior: ~15.5 kcal/lb for an active concurrent athlete.
+      - Energy-balance estimate: intake - (weight_change_lb/wk * 3500/7).
+      - Trust energy balance only when it lands within 25% of the bodyweight prior
+        (outside that band almost always means incomplete food logging), then
+        blend 50/50; otherwise fall back to the bodyweight prior.
+    """
+    tdee_prior = bodyweight_lb * 15.5 if bodyweight_lb and bodyweight_lb > 0 else fallback
+    try:
+        if avg_kcal_7d and weight_trend_lb_wk is not None:
+            tdee_eb = float(avg_kcal_7d) - float(weight_trend_lb_wk) * 500.0
+            if 0.75 * tdee_prior <= tdee_eb <= 1.25 * tdee_prior:
+                return round(0.5 * tdee_prior + 0.5 * tdee_eb)
+    except (TypeError, ValueError):
+        pass
+    return round(tdee_prior)
+
+
 # ── Recovery computation ──────────────────────────────────────────────────────
 
 def compute_recovery(recovery_rows: list, checkin: Optional[dict]) -> dict:
@@ -978,7 +1003,15 @@ def main():
               f"interference={cellular_out['interference_level']}")
 
         # 6. Nutrition modulation
-        maintenance_kcal  = float(profile.get("maintenance_kcal") or 3200)
+        maintenance_kcal  = estimate_tdee(
+            float(profile.get("current_weight") or 0),
+            nutrition.get("avg_calories_7d"),
+            nutrition.get("weight_trend_lbs_per_week"),
+            fallback=float(profile.get("maintenance_kcal") or 3200),
+        )
+        print(f"  TDEE (adaptive): {round(maintenance_kcal)} kcal  "
+              f"(bw {profile.get('current_weight')}lb, intake {nutrition.get('avg_calories_7d')}, "
+              f"trend {nutrition.get('weight_trend_lbs_per_week')} lb/wk)")
         nutrition_mod_obj = NutritionModulator(maintenance_kcal=maintenance_kcal)
         avg_kcal          = float(nutrition.get("avg_calories_7d") or maintenance_kcal)
         nutrition_mod_out = nutrition_mod_obj.modulate(
