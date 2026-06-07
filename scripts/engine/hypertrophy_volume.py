@@ -19,11 +19,41 @@ _ISOLATION_MUSCLES = {"triceps", "biceps"}
 # Lower body muscles affected by running interference
 _LOWER_BODY_MUSCLES = {"quads", "hamstrings", "calves", "glutes"}
 
+# ── Canonical per-muscle landmark PRIORS (sets/wk) ────────────────────────────
+# SINGLE SOURCE OF TRUTH for MEV/MAV/MRV. Replaces the old generic {6,12,18} /
+# {4,8,12} constants AND the duplicate per-muscle table that lived in
+# compute_athlete_state.MUSCLE_TARGETS (which now derives from this). [COACH]
+# Israetel-style per-muscle defaults; the Bayesian learner overrides per athlete.
+# Keyed in the LANDMARK vocab (the vocab the volume engine learns on).
+LANDMARK_PRIORS: dict[str, dict] = {
+    "chest":      {"mev": 8,  "mav": 14, "mrv": 20},
+    "upper_back": {"mev": 10, "mav": 16, "mrv": 22},
+    "lats":       {"mev": 10, "mav": 16, "mrv": 22},
+    "quads":      {"mev": 8,  "mav": 14, "mrv": 20},
+    "hamstrings": {"mev": 6,  "mav": 12, "mrv": 16},
+    "glutes":     {"mev": 6,  "mav": 12, "mrv": 16},
+    "shoulders":  {"mev": 6,  "mav": 12, "mrv": 18},
+    "triceps":    {"mev": 8,  "mav": 14, "mrv": 18},
+    "biceps":     {"mev": 8,  "mav": 14, "mrv": 20},
+    "calves":     {"mev": 8,  "mav": 16, "mrv": 24},
+    "core":       {"mev": 0,  "mav": 12, "mrv": 16},
+}
+
+# Exercise-catalog muscle name -> canonical landmark vocab.
+MUSCLE_ALIAS: dict[str, str] = {
+    "front_delt": "shoulders", "side_delt": "shoulders", "rear_delt": "shoulders",
+    "rear_delts": "shoulders", "delts": "shoulders", "abs": "core",
+    "back": "upper_back", "traps": "upper_back", "lower_back": "upper_back",
+}
+
 
 def _default_landmarks(muscle: str) -> dict:
-    if muscle in _ISOLATION_MUSCLES:
-        return {"MEV": 4, "MAV": 8, "MRV": 12}
-    return {"MEV": 6, "MAV": 12, "MRV": 18}
+    """Per-muscle priors (uppercase keys for the engine's internal use)."""
+    p = LANDMARK_PRIORS.get(muscle)
+    if p is None:
+        p = {"mev": 4, "mav": 8, "mrv": 12} if muscle in _ISOLATION_MUSCLES \
+            else {"mev": 6, "mav": 12, "mrv": 18}
+    return {"MEV": p["mev"], "MAV": p["mav"], "MRV": p["mrv"]}
 
 
 class HypertrophyVolumeEngine:

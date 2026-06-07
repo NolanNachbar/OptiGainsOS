@@ -38,6 +38,8 @@ from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
 from engine.muscle_map import EXERCISE_MUSCLE_MAP, get_muscles
+# Canonical per-muscle volume landmarks (single source; no numpy needed).
+from engine.hypertrophy_volume import LANDMARK_PRIORS as _LANDMARK_PRIORS
 
 try:
     import numpy as np
@@ -170,22 +172,21 @@ def linear_regression(x_vals: list, y_vals: list) -> tuple:
 # EXERCISE_MUSCLE_MAP and get_muscles() now live in engine.muscle_map (imported
 # above) so the daily compute and the weekly orchestrator share one definition.
 
-# Volume landmarks (sets/week): MEV=minimum effective, MAV=maximum adaptive, MRV=maximum recoverable
-MUSCLE_TARGETS: dict[str, dict] = {
-    "quads":      {"mev": 8,  "mav": 14, "mrv": 20},
-    "hamstrings": {"mev": 6,  "mav": 12, "mrv": 16},
-    "glutes":     {"mev": 6,  "mav": 12, "mrv": 16},
-    "chest":      {"mev": 8,  "mav": 14, "mrv": 20},
-    "back":       {"mev": 10, "mav": 16, "mrv": 22},
-    "shoulders":  {"mev": 6,  "mav": 12, "mrv": 18},
-    "rear_delts": {"mev": 6,  "mav": 12, "mrv": 18},
-    "biceps":     {"mev": 8,  "mav": 14, "mrv": 20},
-    "triceps":    {"mev": 8,  "mav": 14, "mrv": 18},
-    "abs":        {"mev": 0,  "mav": 12, "mrv": 16},
-    "lower_back": {"mev": 4,  "mav": 8,  "mrv": 12},
-    "traps":      {"mev": 4,  "mav": 10, "mrv": 16},
-    "calves":     {"mev": 8,  "mav": 16, "mrv": 24},
+# Volume landmarks (sets/week) for the daily hypertrophy DISPLAY (analysis vocab).
+# DERIVED from the single canonical source (hypertrophy_volume.LANDMARK_PRIORS,
+# landmark vocab) so the display and the volume engine can never drift again.
+# Each analysis muscle maps to its representative landmark; lower_back has no
+# landmark so it keeps an explicit analysis-only default.
+_ANALYSIS_TO_LANDMARK_DISPLAY = {
+    "quads": "quads", "hamstrings": "hamstrings", "glutes": "glutes",
+    "chest": "chest", "back": "upper_back", "shoulders": "shoulders",
+    "rear_delts": "shoulders", "biceps": "biceps", "triceps": "triceps",
+    "abs": "core", "traps": "upper_back", "calves": "calves",
 }
+MUSCLE_TARGETS: dict[str, dict] = {
+    a: dict(_LANDMARK_PRIORS[lm]) for a, lm in _ANALYSIS_TO_LANDMARK_DISPLAY.items()
+}
+MUSCLE_TARGETS["lower_back"] = {"mev": 4, "mav": 8, "mrv": 12}  # analysis-only
 
 # Goal lifts (the three competition variants) and their targets come from
 # engine.log_ingest — GOAL_TARGETS — so this file, the orchestrator, and the
