@@ -109,11 +109,15 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        {/* Mobile top header */}
+        {/* Mobile top header — pad the top by the safe-area inset so the header
+            sits BELOW the status bar / Dynamic Island instead of under it
+            (status-bar-style is black-translucent, so the web view extends to the
+            screen's top edge). The glass fills the inset area behind the clock. */}
         <header
           ref={mobileHeaderRef}
           data-mobile-header
           className="glass-elevated px-4 py-3 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
+          style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
         >
           <Link to="/dashboard">
             <Logo className="w-10 h-10" />
