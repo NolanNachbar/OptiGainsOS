@@ -4,6 +4,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Camera, Loader2, TrendingDown, AlertTriangle } from "lucide-react";
 
+// Standardized poses so progress is comparable shot-to-shot (same pose vs same
+// pose). Shoot the same set each time, same lighting/distance/time of day.
+export const POSES = [
+  { key: "front-relaxed", label: "Front relaxed",      cue: "Face the camera, arms relaxed at your sides, stand naturally. Don't suck in." },
+  { key: "front-flexed",  label: "Front double biceps", cue: "Face the camera, flex both arms up, spread your lats." },
+  { key: "side-chest",    label: "Side chest",          cue: "Turn to your right side, near arm across chest, brace. Same side every time." },
+  { key: "abs-thighs",    label: "Abs & thighs",        cue: "Face the camera, slight ab crunch, one leg forward to show quads." },
+  { key: "back-relaxed",  label: "Back relaxed",        cue: "Face away, arms relaxed at your sides, stand naturally." },
+  { key: "back-flexed",   label: "Back double biceps",  cue: "Face away, flex both arms up, spread your lats." },
+];
+const POSE_LABEL = Object.fromEntries(POSES.map((p) => [p.key, p.label]));
+
 // Physique tracking: upload a photo, get an AI body-composition estimate, and
 // watch the trend over time. Honest framing: photo bodyfat is approximate —
 // trend and composition cues matter more than the absolute number.
@@ -13,6 +25,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [pose, setPose] = useState(POSES[0].key);
+  const [filterPose, setFilterPose] = useState(null); // null = all
 
   const loadEntries = useCallback(async () => {
     if (!user?.id) return;
@@ -51,7 +65,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
 
       setStatus(isVideo ? "Saving…" : "Analyzing physique…");
       const { data, error: fnErr } = await supabase.functions.invoke("analyze-physique", {
-        body: { path, media_type: isVideo ? "video" : "photo" },
+        body: { path, media_type: isVideo ? "video" : "photo", pose },
       });
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
@@ -78,6 +92,29 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         )}
         <p className="text-xs text-slate-500 mb-4">
           Photo-based bodyfat is approximate — track the trend, not the exact number.
+          Shoot the same poses each time, same lighting and distance.
+        </p>
+
+        {/* Pose picker — tag the shot so progress compares pose vs same pose */}
+        <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Pose for this shot</div>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {POSES.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPose(p.key)}
+              disabled={busy}
+              className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                pose === p.key
+                  ? "bg-brand text-charcoal border-brand font-medium"
+                  : "bg-charcoal-surface text-slate-300 border-charcoal-border hover:border-slate-500"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-400 mb-4">
+          {POSES.find((p) => p.key === pose)?.cue}
         </p>
 
         {/* Upload */}
@@ -87,7 +124,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           <Button asChild variant="volt" className="w-full" disabled={busy}>
             <span className="flex items-center justify-center gap-2 cursor-pointer">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              {busy ? (status || "Working…") : "Upload photo / video"}
+              {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
             </span>
           </Button>
         </label>
@@ -132,19 +169,41 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           </div>
         )}
 
-        {/* History grid */}
+        {/* History grid — filter to one pose to compare like with like */}
         {entries.length > 0 && (
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">History</div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs uppercase tracking-wide text-slate-500">History</div>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              <button
+                onClick={() => setFilterPose(null)}
+                className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                  filterPose === null ? "bg-slate-700 text-white border-slate-600" : "bg-charcoal-surface text-slate-400 border-charcoal-border"
+                }`}
+              >All</button>
+              {POSES.map((p) => (
+                <button
+                  key={p.key}
+                  onClick={() => setFilterPose(p.key)}
+                  className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                    filterPose === p.key ? "bg-slate-700 text-white border-slate-600" : "bg-charcoal-surface text-slate-400 border-charcoal-border"
+                  }`}
+                >{p.label}</button>
+              ))}
+            </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {entries.map((e) => (
+              {entries.filter((e) => !filterPose || e.pose === filterPose).map((e) => (
                 <div key={e.id} className="rounded-lg overflow-hidden bg-charcoal-surface border border-charcoal-border">
                   {e.url && e.media_type === "photo"
                     ? <img src={e.url} alt={e.taken_at} className="w-full h-28 object-cover" />
                     : <div className="w-full h-28 flex items-center justify-center text-slate-600 text-xs">video</div>}
-                  <div className="px-2 py-1 text-[10px] text-slate-400 flex justify-between">
-                    <span>{e.taken_at}</span>
-                    {e.bodyfat_estimate != null && <span className="font-technical">{e.bodyfat_estimate}%</span>}
+                  <div className="px-2 py-1 text-[10px] text-slate-400">
+                    {e.pose && <div className="truncate text-slate-500">{POSE_LABEL[e.pose] || e.pose}</div>}
+                    <div className="flex justify-between">
+                      <span>{e.taken_at}</span>
+                      {e.bodyfat_estimate != null && <span className="font-technical">{e.bodyfat_estimate}%</span>}
+                    </div>
                   </div>
                 </div>
               ))}

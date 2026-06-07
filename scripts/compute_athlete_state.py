@@ -1106,6 +1106,28 @@ def main():
               f"deficit={round(_rec['deficit_ratio']*100)}%  "
               f"gates={_rec['gates'] or ['clear']}")
 
+        # 8b. Diet-phase recommendation (engine acts as the coaching team: should
+        # he cut / maintain / bulk for his goals?). Advisory — he accepts (sets
+        # training_phase) or rejects. Uses latest physique bodyfat when available.
+        from engine.phase_recommender import recommend_phase
+        _bf_rows = sb_get("physique_entries", {
+            "select": "bodyfat_estimate", "created_by": f"eq.{USER_ID}",
+            "bodyfat_estimate": "not.is.null", "order": "taken_at.desc", "limit": "1"})
+        _bodyfat = (_bf_rows[0].get("bodyfat_estimate") if _bf_rows else None)
+        _goal_prio = profile.get("goal_priorities") or (
+            {"strength": 0.35, "hypertrophy": 0.25, "pst": 0.40}
+            if str(profile.get("training_phase") or "").lower() in ("buds_prep", "tactical")
+            else {"strength": 0.40, "hypertrophy": 0.30, "pst": 0.30})
+        nutrition["phase_recommendation"] = recommend_phase(
+            weight_trend=nutrition.get("weight_trend_lbs_per_week"),
+            days_to_deadline=max(0, (datetime.date(2026, 8, 31) - datetime.date.today()).days),
+            bodyfat=float(_bodyfat) if _bodyfat is not None else None,
+            goal_priorities=_goal_prio,
+            current_phase=nutrition.get("phase"),
+        )
+        _pr = nutrition["phase_recommendation"]
+        print(f"  Phase recommendation: {_pr['phase'].upper()} ({_pr['confidence']}) — {_pr['rationale']}")
+
         # 9. Weekly updates (Sunday only)
         if is_sunday():
             print("  Running weekly updates (Sunday)...")

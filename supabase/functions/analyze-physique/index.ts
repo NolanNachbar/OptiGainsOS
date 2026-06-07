@@ -51,13 +51,14 @@ Deno.serve(async (req) => {
 
   const mediaType = (body.media_type as string) || "photo";
   const weightLb  = body.weight_lb ?? null;
+  const pose      = (body.pose as string) || null;
   const takenAt   = (body.taken_at as string) || new Date().toISOString().slice(0, 10);
 
   // Videos aren't auto-analyzed (vision model takes stills) — store the entry only.
   if (mediaType === "video") {
     const { data, error } = await supabase.from("physique_entries").insert({
       created_by: USER_ID, photo_path: path, media_type: "video",
-      taken_at: takenAt, weight_lb: weightLb,
+      taken_at: takenAt, weight_lb: weightLb, pose,
       analysis: { note: "Video stored; auto-analysis runs on photos. Upload a still for an estimate." },
     }).select().single();
     if (error) return json({ error: error.message }, 500);
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
 
   const prompt =
     "You are a physique-assessment assistant. Estimate body composition from this photo. " +
+    (pose ? `The subject is holding the "${pose}" pose, so judge the muscle groups that pose emphasizes. ` : "") +
     "Be honest that photo-based bodyfat is approximate. Return STRICT JSON, no prose, no markdown fences:\n" +
     '{"bodyfat_estimate": <number, percent>, "bodyfat_range": "<e.g. 12-15%>", ' +
     '"confidence": "low|medium|high", "assessment": "<1-2 sentence overall read>", ' +
@@ -115,6 +117,7 @@ Deno.serve(async (req) => {
     media_type: "photo",
     taken_at: takenAt,
     weight_lb: weightLb,
+    pose,
     bodyfat_estimate: bf,
     confidence: (analysis.confidence as string) ?? null,
     analysis,

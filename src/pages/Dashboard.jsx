@@ -47,6 +47,7 @@ import TodayActions from "@/components/dashboard/TodayActions";
 import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
+import PhaseRecommendationCard from "@/components/dashboard/PhaseRecommendationCard";
 
 
 function getWorkoutSplitTitle(exercises) {
@@ -457,6 +458,9 @@ export default function Dashboard() {
         <div className="space-y-4">
           {/* The engine's actual prescribed session for today (was never surfaced) */}
           <PrescribedSessionCard today={today} />
+
+          {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
+          <PhaseRecommendationCard />
 
           {/* AI Insights */}
           <DailyBriefCard today={today} hideWhenEmpty={true} />
