@@ -178,18 +178,31 @@ class NutritionModulator:
             gates.append("strength_dropping")
 
         headroom = self._clamp(headroom, 0.0, 1.0)
-        deficit_ratio = round(target * headroom, 3)
-        kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
-        calorie_target = round(self.maintenance_kcal - kcal_deficit)
 
+        # Muscle-preservation macros (computed first — they set the cut floor).
         protein_per_lb = self.CUT_PROTEIN_G_PER_LB if phase == "cut" else self.BASE_PROTEIN_G_PER_LB
         protein_g = round(protein_per_lb * bw) if bw > 0 else None
         fat_floor_g = max(50, round(self.MIN_FAT_G_PER_LB * bw)) if bw > 0 else 50
-
         # Carbs: on an aggressive cut, carbs exist only to fuel training — target
-        # pre-workout only (~100 kcal ≈ 25g). Outside a cut, leave to the normal
-        # macro split (None = no special restriction).
+        # pre-workout only (~100 kcal ≈ 25g). Outside a cut, no special restriction.
         carb_target_g = 25 if phase == "cut" else None
+
+        if phase == "cut" and bw > 0:
+            # Goal on a cut: lose fat as fast as possible. Drive the deficit as deep
+            # as possible DOWN TO the calorie floor that still hits the muscle-
+            # preservation macros (protein + fat floor + pre-workout carbs). No
+            # loss-rate cap — the only brakes are the recovery/strength gates
+            # (headroom) and the 4-6 week duration cap enforced elsewhere.
+            floor_kcal   = protein_g * 4 + fat_floor_g * 9 + (carb_target_g or 0) * 4
+            max_deficit  = max(0.0, self.maintenance_kcal - floor_kcal)
+            kcal_deficit = round(max_deficit * headroom)
+            calorie_target = round(self.maintenance_kcal - kcal_deficit)
+            deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
+        else:
+            # Non-cut: conventional capped target-deficit model.
+            deficit_ratio = round(target * headroom, 3)
+            kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
+            calorie_target = round(self.maintenance_kcal - kcal_deficit)
 
         if not gates:
             rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
