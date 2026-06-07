@@ -52,6 +52,8 @@ USER_ID = os.environ.get("USER_ID", "")
 
 DEFAULT_PLAN = os.path.expanduser("~/Claude/BBrain/20-Areas/Skill-Development/recurring-plan.yaml")
 PLAN_PATH = os.environ.get("VAULT_PLAN_PATH", DEFAULT_PLAN)
+DEFAULT_GOALS = os.path.expanduser("~/Claude/BBrain/20-Areas/goals.yaml")
+GOALS_PATH = os.environ.get("VAULT_GOALS_PATH", DEFAULT_GOALS)
 
 VALID_DOMAINS = {"mind", "career", "training", "nutrition", "general"}
 VALID_RECUR = {"daily", "weekdays", "weekly", "custom"}
@@ -169,6 +171,42 @@ def main():
         print(f"  Deactivated {len(stale)} removed from the plan: {', '.join(stale)}")
 
     print("Done. The morning materialize will pick these up tomorrow.")
+    sync_goals()
+
+
+def sync_goals():
+    """Sync ~/Claude/BBrain/20-Areas/goals.yaml → athlete_goals (read by the brief)."""
+    if not os.path.exists(GOALS_PATH):
+        print(f"  (no goals file at {GOALS_PATH} — skipping goals sync)")
+        return
+    with open(GOALS_PATH) as f:
+        data = yaml.safe_load(f) or {}
+    goals = data.get("goals", []) or []
+    rows, seen = [], []
+    for g in goals:
+        key = g.get("source_key")
+        goal = g.get("goal")
+        if not key or not goal:
+            print(f"  SKIP goal (missing source_key/goal): {g}")
+            continue
+        rows.append({
+            "created_by": USER_ID, "source_key": key, "domain": g.get("domain"),
+            "goal": goal, "target": g.get("target"), "status": g.get("status", "active"),
+            "priority": int(g.get("priority", 0)), "notes": g.get("notes"), "active": True,
+        })
+        seen.append(key)
+    if rows:
+        _req("POST", "athlete_goals?on_conflict=created_by,source_key", rows,
+             {"Prefer": "resolution=merge-duplicates,return=minimal"})
+        print(f"  Upserted {len(rows)} goal(s): {', '.join(seen)}")
+    existing = _req("GET", f"athlete_goals?created_by=eq.{USER_ID}&active=eq.true&select=source_key")
+    stale = [r["source_key"] for r in existing if r["source_key"] not in seen]
+    for key in stale:
+        _req("PATCH",
+             f"athlete_goals?created_by=eq.{USER_ID}&source_key=eq.{urllib.parse.quote(key)}",
+             {"active": False}, {"Prefer": "return=minimal"})
+    if stale:
+        print(f"  Deactivated {len(stale)} removed goal(s): {', '.join(stale)}")
 
 
 if __name__ == "__main__":

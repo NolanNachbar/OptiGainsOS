@@ -142,6 +142,20 @@ function fmtNutrition(n: Record<string, unknown> | null): string {
   ].join("\n");
 }
 
+function fmtGoals(goals: Array<Record<string, unknown>>): string {
+  if (!goals || goals.length === 0) return "(no goals synced from the second brain yet)";
+  const byDomain: Record<string, string[]> = {};
+  for (const g of goals) {
+    const d = String(g.domain || "other");
+    const tgt = g.target ? ` — ${g.target}` : "";
+    const note = g.notes ? ` (${g.notes})` : "";
+    (byDomain[d] ||= []).push(`${g.goal}${tgt}${note}`);
+  }
+  return Object.entries(byDomain)
+    .map(([d, items]) => `  ${d.toUpperCase()}: ${items.join("; ")}`)
+    .join("\n");
+}
+
 function fmtTasks(tasks: Array<Record<string, unknown>>): string {
   if (!tasks || tasks.length === 0) return "No planned to-do items for today.";
   const lines: string[] = [];
@@ -221,6 +235,7 @@ function buildPrompt(data: {
   jobs:         Array<Record<string, unknown>>;
   skills:       Array<Record<string, unknown>>;
   tasks:        Array<Record<string, unknown>>;
+  goals:        Array<Record<string, unknown>>;
   today:        string;
   dayOfWeek:    string;
 }): string {
@@ -246,9 +261,9 @@ function buildPrompt(data: {
     `Goal: ${p.primary_goal} | Training: ${p.days_per_week}x/week | Phase: ${p.training_phase}`,
     `Calorie goal: ${p.daily_calorie_goal} kcal | Protein: ${p.daily_protein_goal}g`,
     ``,
-    `=== HARD GOALS (tie EVERY recommendation to closing one of these specific gaps) ===`,
-    `Strength (ASAP): Bench 315 | Squat 450 | Deadlift 500 lbs. Current e1RMs are in ATHLETE STATE below — name the actual gap in lbs.`,
-    `Tactical / BUD/S PST by Aug 31 2026: 100+ push-ups, 100+ sit-ups, 20+ pull-ups, 1.5mi run <9:00, 4mi run <26:00.`,
+    `=== HIS GOALS (from the second brain — tie EVERY recommendation to closing one of these) ===`,
+    fmtGoals(data.goals),
+    `For training/tactical goals, name the actual gap (current e1RM/PST numbers are in ATHLETE STATE below). The "career" and "learning" fields MUST advance a CAREER or SKILL goal above — never generic filler.`,
     `Training preference: HIGH FREQUENCY (4-6x/muscle/week) + frequent running. NOT body-part splits, NOT PPL, NOT low-frequency powerlifting templates.`,
     `Equipment available: ${Array.isArray(p.available_equipment) && p.available_equipment.length ? p.available_equipment.join(", ") : "gym + bodyweight, NO pool"}. NEVER prescribe conditioning he can't do — no pool means NO swimming; substitute a run or ruck. Don't prescribe easy/Z1 junk runs; runs should be purposeful (quality or real Z2 volume toward the sub-9:00 1.5mi / sub-26 4mi).`,
     ``,
@@ -404,6 +419,7 @@ Deno.serve(async (req) => {
     skillsRes,
     prescriptionRes,
     tasksRes,
+    goalsRes,
   ] = await Promise.all([
     supabase.from("athlete_state").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
     sb("user_profiles").limit(1).single(),
@@ -416,6 +432,7 @@ Deno.serve(async (req) => {
       .select("title, domain, target, status, sort_order, template:task_templates(goal)")
       .eq("created_by", USER_ID).eq("date", today)
       .order("sort_order", { ascending: true }),
+    sb("athlete_goals").eq("active", true).order("priority", { ascending: false }),
   ]);
 
   const state        = athleteStateRes.data as Record<string, unknown> | null;
@@ -439,6 +456,7 @@ Deno.serve(async (req) => {
     jobs:       (jobsRes.data as Array<Record<string, unknown>>) || [],
     skills:     (skillsRes.data as Array<Record<string, unknown>>) || [],
     tasks:      (tasksRes.data as Array<Record<string, unknown>>) || [],
+    goals:      (goalsRes.data as Array<Record<string, unknown>>) || [],
     today,
     dayOfWeek,
   });
