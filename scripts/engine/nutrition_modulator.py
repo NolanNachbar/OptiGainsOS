@@ -131,8 +131,8 @@ class NutritionModulator:
           tsb_banister : float   — Banister form (very negative = deep fatigue)
           sleep_score  : float   — last night / recent sleep score 0-100
           bodyweight_lb: float   — for protein/fat floors
-          weight_trend_lbs_per_week : float — realized weight trend (closes the cut loop)
           phase        : str     — "cut" | "bulk" | "maintain"
+          strength_min_slope : float — worst key-lift e1RM slope (lbs/wk); gates the cut deficit
         """
         target = target_deficit_ratio if target_deficit_ratio is not None else self.AGGRESSIVE_TARGET_DEFICIT
         target = self._clamp(target, 0.0, MAX_DEFICIT_RATIO)
@@ -165,18 +165,13 @@ class NutritionModulator:
             headroom *= self.POOR_SLEEP_FACTOR
             gates.append("poor_sleep")
 
-        # Realized-trend feedback — closes the cut loop. If actual loss is faster
-        # than ~1.5 lb/wk during a cut, ease the deficit to protect lean mass
-        # instead of holding a static target the user has to police manually.
-        weight_trend = signals.get("weight_trend_lbs_per_week")
+        # Strength-vs-peak gate — TNF's muscle-retention signal: performance, not
+        # the scale, tells you if you're keeping muscle on a cut. If a key lift is
+        # regressing during a cut, ease the deficit before digging deeper.
+        # (The -1.0 lb/wk regression cutoff and the 0.70 ease factor are tunable
+        # engineering defaults, not TNF-specified numbers — the learning layer
+        # should eventually replace them.)
         phase = signals.get("phase")
-        if phase == "cut" and weight_trend is not None and float(weight_trend) < -1.5:
-            headroom *= 0.70
-            gates.append("loss_too_fast")
-
-        # Strength-vs-peak gate — TNF's #1 muscle-retention signal. Performance,
-        # not the scale, tells you if you're keeping muscle on a cut. If a key
-        # lift is regressing during a cut, ease the deficit before digging deeper.
         strength_min_slope = signals.get("strength_min_slope")
         if phase == "cut" and strength_min_slope is not None and float(strength_min_slope) < -1.0:
             headroom *= 0.70

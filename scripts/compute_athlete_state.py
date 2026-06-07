@@ -1081,7 +1081,6 @@ def main():
             "tsb_banister":  banister_out.get("tsb_banister"),
             "sleep_score":   latest_sleep,
             "bodyweight_lb": latest_weight_lb,
-            "weight_trend_lbs_per_week": nutrition.get("weight_trend_lbs_per_week"),
             "phase":         nutrition.get("phase"),
             "strength_min_slope": strength_min_slope,
         })
