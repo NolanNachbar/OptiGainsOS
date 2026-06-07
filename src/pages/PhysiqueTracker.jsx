@@ -82,7 +82,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
 
         {/* Upload */}
         <label className="block">
-          <input type="file" accept="image/*,video/*" capture="environment"
+          <input type="file" accept="image/*,video/*"
                  className="hidden" onChange={handleFile} disabled={busy} />
           <Button asChild variant="volt" className="w-full" disabled={busy}>
             <span className="flex items-center justify-center gap-2 cursor-pointer">
