@@ -29,18 +29,18 @@ const EXPORTS = [
   {
     id: "lifting",
     label: "Lifting Log",
-    description: "All workout logs with sets, reps, weight, and RPE",
+    description: "All workout logs with sets, reps, weight, and RIR",
     fn: async (user) => {
       const [workoutLogs, workouts] = await Promise.all([
         db.entities.WorkoutLog.filter({ created_by: user.id }),
         db.entities.Workout.filter({ created_by: user.id }),
       ]);
       const nameMap = Object.fromEntries(workouts.map((w) => [w.id, w.title]));
-      const rows = [["date", "workout", "exercise", "set", "weight", "reps", "rpe", "completed"]];
+      const rows = [["date", "workout", "exercise", "set", "weight", "reps", "rir", "completed"]];
       for (const log of [...workoutLogs].sort((a, b) => new Date(a.log_date) - new Date(b.log_date))) {
         for (const ex of log.exercises || []) {
           for (const s of ex.sets || []) {
-            rows.push([log.log_date, nameMap[log.workout_id] || "Quick Workout", ex.name, s.set_number, s.weight, s.reps, s.rpe ?? "", s.completed ? "yes" : "no"]);
+            rows.push([log.log_date, nameMap[log.workout_id] || "Quick Workout", ex.name, s.set_number, s.weight, s.reps, (s.rir ?? s.rpe) ?? "", s.completed ? "yes" : "no"]);
           }
         }
       }

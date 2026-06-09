@@ -350,11 +350,11 @@ export default function ExerciseCard({
                 {showRIR && (
                   <th className="text-left py-2 px-1.5 w-16 md:w-24 text-xs">
                     <div className="flex items-center gap-1">
-                      <span>RPE</span>
+                      <span>RIR</span>
                       <div className="group relative">
                         <HelpCircle className="w-3 h-3 cursor-help text-slate-500 hover:text-slate-400" />
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-charcoal text-white text-xs rounded border border-charcoal-border shadow-lg">
-                          Rate of Perceived Exertion (1-10): How hard the set felt. 10 = failure, 9 = 1 rep left, 8 = 2 reps left.
+                          Reps In Reserve (0-10): How many reps you left in the tank. 0 = failure, 1 = 1 rep left, 2 = 2 reps left.
                         </div>
                       </div>
                     </div>
@@ -411,15 +411,15 @@ export default function ExerciseCard({
                     <td className="py-2.5 px-1.5">
                       <Input
                         type="number"
-                        value={(set.rir != null ? 10 - set.rir : set.rpe) ?? ""}
+                        value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
-                          const rpe = val === "" ? null : parseFloat(val);
-                          handleRirChange(setIndex, rpe === null ? null : 10 - rpe);
+                          const rir = val === "" ? null : parseFloat(val);
+                          handleRirChange(setIndex, rir);
                         }}
                         onFocus={(e) => e.target.select()}
                         placeholder="—"
-                        min="1"
+                        min="0"
                         max="10"
                         step="0.5"
                         className="w-14 md:w-24 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand text-brand"

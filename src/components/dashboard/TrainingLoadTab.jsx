@@ -172,7 +172,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
             <WeeklyTSSBars data={weeklyData} />
           ) : (
             <div className="text-center py-8 text-sm text-slate-600 font-medium">
-              Log workouts with RPE or sync a Garmin run to see training load
+              Log workouts with RIR or sync a Garmin run to see training load
             </div>
           )}
         </div>
