@@ -8,9 +8,9 @@ import { calculateMacros, getDailyCalorieTrend, getRecentFoods, UNIT_TO_GRAMS } 
 import { calculateMacroSplit, getBestTDEE, calculatePhaseCalories } from "@/utils/coachingUtils";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
+import { usePlannedDayRebalance } from "@/hooks/usePlannedDayRebalance";
 import { DEFAULT_GOALS } from "@/lib/constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -694,107 +694,20 @@ const handleSaveMealTemplate = () => {
   // Consumed macros count only EATEN entries — planned (not-yet-checked-off) plan
   // items are shown in the list but don't inflate today's intake until checked.
   const eatenEntries = foodEntries.filter((e) => !e.planned);
-  const plannedCount = foodEntries.length - eatenEntries.length;
   const totals = calculateMacros(eatenEntries);
+
+  // Keep this day's planned portions pinned to the day's CURRENT budget. The
+  // engine's target moves daily and off-plan foods get logged, so the un-eaten
+  // plan rows are rescaled until eaten + planned = target — checking everything
+  // off can then never blow the budget.
+  const planFit = usePlannedDayRebalance(selectedDate, foodEntries, targets.calories);
+  const plannedCount = planFit.plannedCount;
 
   const mealGroups = {
     breakfast: foodEntries.filter(e => e.meal_type === "breakfast"),
     lunch: foodEntries.filter(e => e.meal_type === "lunch"),
     dinner: foodEntries.filter(e => e.meal_type === "dinner"),
     snack: foodEntries.filter(e => e.meal_type === "snack"),
-  };
-
-  const MacroCard = ({ label, value, goal, ringColor, unit = "g", compact = false }) => {
-    const percentage = goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
-    const remaining = Math.round(goal - value);
-    const isOver = remaining < 0;
-    const size = compact ? 60 : 80;
-    const strokeWidth = compact ? 5 : 7;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const progressLength = (percentage / 100) * circumference;
-
-    if (compact) {
-      return (
-        <div className="flex flex-col items-center">
-          <div className="text-xs text-ink-muted mb-2">{label}</div>
-          <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-            <svg width={size} height={size}>
-              <circle
-                cx={size / 2} cy={size / 2} r={radius}
-                stroke="var(--color-border)" strokeWidth={strokeWidth} fill="none"
-              />
-              <circle
-                cx={size / 2} cy={size / 2} r={radius}
-                stroke={isOver ? "var(--bad)" : ringColor}
-                strokeWidth={strokeWidth} fill="none"
-                strokeDasharray={`${progressLength} ${circumference - progressLength}`}
-                strokeLinecap="round"
-                style={{
-                  transform: "rotate(-90deg)",
-                  transformOrigin: "center",
-                  transition: "stroke-dasharray 0.5s ease-in-out",
-                }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-ink ">{Math.round(percentage)}%</span>
-            </div>
-          </div>
-          <div className="mt-2 text-center">
-            <div className={`text-lg font-bold ${isOver ? "text-bad" : "text-ink"}`}>
-              {Math.abs(remaining)}{unit}
-            </div>
-            <div className="text-xs text-ink-muted">{isOver ? "over" : "left"}</div>
-            <div className="text-xs text-ink-muted mt-0.5">
-              {Math.round(value)} / {goal}{unit}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <Card className="">
-        <CardContent className="pt-6">
-          <div className="text-sm text-ink-muted mb-3">{label}</div>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-              <svg width={size} height={size}>
-                <circle
-                  cx={size / 2} cy={size / 2} r={radius}
-                  stroke="var(--color-border)" strokeWidth={strokeWidth} fill="none"
-                />
-                <circle
-                  cx={size / 2} cy={size / 2} r={radius}
-                  stroke={isOver ? "var(--bad)" : ringColor}
-                  strokeWidth={strokeWidth} fill="none"
-                  strokeDasharray={`${progressLength} ${circumference - progressLength}`}
-                  strokeLinecap="round"
-                  style={{
-                    transform: "rotate(-90deg)",
-                    transformOrigin: "center",
-                    transition: "stroke-dasharray 0.5s ease-in-out",
-                  }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-ink ">{Math.round(percentage)}%</span>
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${isOver ? "text-bad" : "text-ink"}`}>
-                {Math.abs(remaining)}{unit}
-              </div>
-              <div className="text-xs text-ink-muted">{isOver ? "over" : "remaining"}</div>
-              <div className="text-xs text-ink-muted mt-0.5">
-                {Math.round(value)} / {goal}{unit}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
   };
 
   if (!user) {
@@ -968,12 +881,25 @@ const handleSaveMealTemplate = () => {
             </div>
  
  
-            {/* Planned (meal-plan) items waiting to be checked off */}
+            {/* Planned (meal-plan) items waiting to be checked off — with live
+                budget-fit status. Portions self-adjust to the day's current target,
+                so this normally reads "fits"; warn means the budget is too far gone
+                for portions to shrink into. */}
             {plannedCount > 0 && (
               <div className="mb-3 flex items-center gap-2.5 glass px-4 py-2.5 text-xs">
-                <span className="w-5 h-5 rounded-full border-[1.5px] border-white/[0.18] shrink-0" />
-                <span className="text-ink-secondary">
-                  <span className="text-leaf font-semibold">{plannedCount} planned item{plannedCount !== 1 ? 's' : ''}</span> from your weekly plan — tap the circle to check each off as you eat it.
+                <span className={`w-5 h-5 rounded-full border-[1.5px] shrink-0 ${planFit.fits ? 'border-leaf/50' : 'border-warn/60'}`} />
+                <span className="text-ink-secondary flex-1 min-w-0">
+                  <span className={`font-semibold ${planFit.fits ? 'text-leaf' : 'text-warn'}`}>
+                    {plannedCount} planned · {planFit.plannedCal.toLocaleString()} kcal
+                  </span>{' '}
+                  {planFit.rebalancing
+                    ? 'adjusting portions to today’s target…'
+                    : planFit.fits
+                      ? 'fits your remaining budget — tap the circle to check off as you eat.'
+                      : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal — edit or remove items.`}
+                </span>
+                <span className="font-technical text-[10px] text-ink-faint whitespace-nowrap shrink-0">
+                  {Math.max(0, planFit.remaining).toLocaleString()} kcal left
                 </span>
               </div>
             )}

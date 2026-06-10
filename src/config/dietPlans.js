@@ -1,83 +1,96 @@
-// ─── Diet plans (the "Diet Optimizer" outputs) ──────────────────────────────────
+// ─── Diet Optimizer: cost-min food selection fitted to the engine's targets ────
 //
-// Three cost/macro-optimized whole-day food lists, one per diet aggressiveness.
-// Source: Nolan's spreadsheet. Each item carries its per-100g macros and a
-// `portion` = number of 100g servings (so a logged serving = portion × 100 g).
-// food_entries stores macros ALREADY SCALED to the eaten serving, so scaleItem()
-// pre-multiplies here.
+// The engine (useDailyTargets) decides WHAT the day should be — calories,
+// protein anchor, fat floor. This module decides the CHEAPEST way to get there
+// from Nolan's food list (per-100g macros + Walmart GV purchase pricing from
+// his spreadsheet, 2026-06). Pipeline per day:
 //
-// Meal slots assume an EARLY-MORNING lift, so carbs are timed around the session:
+//   optimizeDay()  — greedy cheapest-first fill: protein $/g → fat $/g → kcal $/cal,
+//                    inside per-food palatability bounds ("not too crazy" knobs)
+//   fitItemsToTargets() — exact polish: 2×2 solve so the day lands ON the
+//                    calorie target and protein anchor
+//   scaleItem()    — rows shaped for food_entries, macros derived from rounded grams
+//
+// Fixed staples ride along every day before optimization: 1 scoop Gold Standard
+// whey (macros from custom_foods) daily, 30 g Nutricost dextrose post-lift on
+// training days.
+//
+// Meal slots assume an EARLY-MORNING lift:
 //   timing "pre"  → fast carbs just before the lift (breakfast)
-//   timing "post" → protein + carbs right after (breakfast/lunch, anabolic window)
+//   timing "post" → protein + carbs right after (anabolic window)
 //   timing "anytime" → spread across the day
-// Carb-cycling: the plans below are the TRAINING-DAY baseline. On rest days,
-// carbCycleItems() trims the workout-timed carbs (you don't need the pre/post fuel).
-
-// role: protein | carb | fat | dairy | fruit | veg   (drives carb-cycling + display)
-export const DIET_PLANS = {
-  aggressive_cut: {
-    key: "aggressive_cut",
-    label: "Aggressive Cut",
-    target: { calories: 1500, protein: 200, carbs: 40, fats: 60 },
-    items: [
-      { food: "Banana",          per100g: { cal: 94,  p: 1.2,  c: 24.0, f: 0.0 },  portion: 0.70, role: "fruit",   meal: "breakfast", timing: "pre" },
-      { food: "Eggs",            per100g: { cal: 144, p: 12.6, c: 0.7,  f: 9.6 },  portion: 3.00, role: "protein", meal: "breakfast", timing: "post" },
-      { food: "Egg Whites",      per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  portion: 1.48, role: "protein", meal: "breakfast", timing: "post" },
-      { food: "Chicken Breast",  per100g: { cal: 100, p: 19.6, c: 0.0,  f: 2.7 },  portion: 5.00, role: "protein", meal: "lunch",     timing: "anytime" },
-      { food: "Cottage Cheese",  per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  portion: 4.01, role: "dairy",   meal: "dinner",    timing: "anytime" },
-      { food: "2% Milk",         per100g: { cal: 64,  p: 3.3,  c: 4.6,  f: 2.8 },  portion: 0.75, role: "dairy",   meal: "snack",     timing: "anytime" },
-    ],
-  },
-
-  moderate_cut: {
-    key: "moderate_cut",
-    label: "Moderate Cut",
-    target: { calories: 2110, protein: 204, carbs: 164, fats: 73 },
-    items: [
-      { food: "Banana",          per100g: { cal: 89,  p: 1.1,  c: 22.8, f: 0.3 },  portion: 0.70, role: "fruit",   meal: "breakfast", timing: "pre" },
-      { food: "Rice Bar",        per100g: { cal: 409, p: 4.5,  c: 77.3, f: 11.4 }, portion: 0.22, role: "carb",    meal: "breakfast", timing: "pre" },
-      { food: "Oats (Dry)",      per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  portion: 1.00, role: "carb",    meal: "breakfast", timing: "post" },
-      { food: "Eggs",            per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, portion: 3.00, role: "protein", meal: "breakfast", timing: "post" },
-      { food: "Peanut Butter",   per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, portion: 0.11, role: "fat",     meal: "breakfast", timing: "anytime" },
-      { food: "Chicken Breast",  per100g: { cal: 143, p: 26.2, c: 0.0,  f: 3.6 },  portion: 3.02, role: "protein", meal: "lunch",     timing: "anytime" },
-      { food: "Potatoes",        per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  portion: 1.00, role: "carb",    meal: "lunch",     timing: "anytime" },
-      { food: "Cottage Cheese",  per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  portion: 4.58, role: "dairy",   meal: "dinner",    timing: "anytime" },
-      { food: "Greek Yogurt",    per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  portion: 1.00, role: "dairy",   meal: "snack",     timing: "anytime" },
-      { food: "Strawberries",    per100g: { cal: 36,  p: 0.4,  c: 9.3,  f: 0.0 },  portion: 1.00, role: "fruit",   meal: "snack",     timing: "anytime" },
-      { food: "2% Milk",         per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  portion: 2.20, role: "dairy",   meal: "snack",     timing: "anytime" },
-    ],
-  },
-
-  aggressive_bulk: {
-    key: "aggressive_bulk",
-    label: "Aggressive Bulk",
-    target: { calories: 3799, protein: 238, carbs: 570, fats: 100 },
-    items: [
-      { food: "Banana",          per100g: { cal: 89,  p: 1.1,  c: 22.8, f: 0.3 },  portion: 0.70, role: "fruit",   meal: "breakfast", timing: "pre" },
-      { food: "Rice Bar",        per100g: { cal: 409, p: 4.5,  c: 77.3, f: 11.4 }, portion: 0.22, role: "carb",    meal: "breakfast", timing: "pre" },
-      { food: "Oats (Dry)",      per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  portion: 5.70, role: "carb",    meal: "breakfast", timing: "post" },
-      { food: "Pasta (Cooked)",  per100g: { cal: 143, p: 5.0,  c: 29.3, f: 0.7 },  portion: 3.00, role: "carb",    meal: "lunch",     timing: "post" },
-      { food: "Chicken Breast",  per100g: { cal: 143, p: 26.2, c: 0.0,  f: 3.6 },  portion: 2.70, role: "protein", meal: "lunch",     timing: "anytime" },
-      { food: "Potatoes",        per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  portion: 1.00, role: "carb",    meal: "dinner",    timing: "anytime" },
-      { food: "Cottage Cheese",  per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  portion: 4.01, role: "dairy",   meal: "dinner",    timing: "anytime" },
-      { food: "Greek Yogurt",    per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  portion: 2.36, role: "dairy",   meal: "snack",     timing: "anytime" },
-      { food: "Strawberries",    per100g: { cal: 36,  p: 0.4,  c: 9.3,  f: 0.0 },  portion: 1.00, role: "fruit",   meal: "snack",     timing: "anytime" },
-      { food: "2% Milk",         per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  portion: 2.20, role: "dairy",   meal: "snack",     timing: "anytime" },
-    ],
-  },
-};
+// Carb-cycling: on rest days the workout-timed carb foods get their ceiling
+// halved (no pre/post fuel needed) and the dextrose is dropped.
 
 const r1 = (n) => Math.round(n * 10) / 10;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// ─── Food catalog ──────────────────────────────────────────────────────────────
+// per100g: macros per 100 g in the LOGGED state (cooked where noted; cooking
+// yield already applied to gramsPerUnit, e.g. ~1 lb raw chicken → ~340 g cooked).
+// min/max: palatability bounds in grams per day — the "not too crazy" dials.
+// Raise a min to force variety; lower a max to cap monotony. Cost-per-100g is
+// derived from the purchase unit so the optimizer and the shopping list can
+// never disagree about price.
+export const FOOD_CATALOG = [
+  // role: protein | carb | fat | dairy | fruit | veg  (drives carb-cycling + fills)
+  { food: "Bananas",               per100g: { cal: 89,  p: 1.1,  c: 22.8, f: 0.3 },  role: "fruit",   meal: "breakfast", timing: "pre",     min: 70, max: 140, purchase: { label: "lb",             gramsPerUnit: 453,  price: 0.50 } },
+  { food: "Rice Bar",              per100g: { cal: 409, p: 4.5,  c: 77.3, f: 11.4 }, role: "carb",    meal: "breakfast", timing: "pre",     min: 0,  max: 44,  purchase: { label: "8-count box",    gramsPerUnit: 176,  price: 2.78 } },
+  { food: "Oats (Dry)",            per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  role: "carb",    meal: "breakfast", timing: "post",    min: 0,  max: 120, purchase: { label: "42 oz",          gramsPerUnit: 1191, price: 4.18 } },
+  { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, purchase: { label: "12-count",       gramsPerUnit: 600,  price: 1.47 } },
+  { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 4.87 } },
+  { food: "Peanut Butter",         per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, role: "fat",     meal: "breakfast", timing: "anytime", min: 0,  max: 60,  purchase: { label: "40 oz jar",      gramsPerUnit: 1134, price: 3.98 } },
+  { food: "Chicken Breast",        per100g: { cal: 143, p: 26.2, c: 0.0,  f: 3.6 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, purchase: { label: "lb",             gramsPerUnit: 340,  price: 2.57 } },
+  { food: "Turkey 90/10",          per100g: { cal: 202, p: 23.4, c: 0.0,  f: 10.7 }, role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 250, purchase: { label: "1 lb roll",      gramsPerUnit: 341,  price: 4.94 } },
+  { food: "Pasta (Cooked)",        per100g: { cal: 143, p: 5.0,  c: 29.3, f: 0.7 },  role: "carb",    meal: "lunch",     timing: "post",    min: 0,  max: 450, purchase: { label: "16 oz box",      gramsPerUnit: 1088, price: 0.98 } },
+  { food: "Beef 85/15",            per100g: { cal: 289, p: 25.0, c: 0.0,  f: 20.2 }, role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, purchase: { label: "3 lb patties",   gramsPerUnit: 1021, price: 15.96 } },
+  { food: "Tilapia",               per100g: { cal: 107, p: 20.2, c: 0.0,  f: 1.8 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, purchase: { label: "1 lb frozen",    gramsPerUnit: 340,  price: 6.28 } },
+  { food: "Salmon",                per100g: { cal: 155, p: 23.4, c: 0.0,  f: 6.0 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, purchase: { label: "2 lb frozen",    gramsPerUnit: 680,  price: 10.87 } },
+  { food: "Potatoes",              per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  role: "carb",    meal: "dinner",    timing: "anytime", min: 0,  max: 400, purchase: { label: "5 lb bag",       gramsPerUnit: 2268, price: 2.94 } },
+  { food: "Cottage Cheese",        per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  role: "dairy",   meal: "dinner",    timing: "anytime", min: 0,  max: 500, purchase: { label: "24 oz tub",      gramsPerUnit: 680,  price: 2.24 } },
+  { food: "Greek Yogurt",          per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 300, purchase: { label: "32 oz tub",      gramsPerUnit: 907,  price: 2.94 }, creami: true },
+  { food: "2% Milk",               per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 500, purchase: { label: "half gallon",    gramsPerUnit: 1890, price: 1.98 }, creami: true },
+  { food: "Strawberries (Frozen)", per100g: { cal: 36,  p: 0.4,  c: 9.3,  f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, purchase: { label: "48 oz bag",      gramsPerUnit: 1361, price: 7.62 }, creami: true },
+  { food: "Blueberries (Frozen)",  per100g: { cal: 57,  p: 0.0,  c: 13.6, f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, purchase: { label: "16 oz bag",      gramsPerUnit: 454,  price: 3.12 }, creami: true },
+  { food: "Cucumber",              per100g: { cal: 15,  p: 0.7,  c: 3.6,  f: 0.1 },  role: "veg",     meal: "snack",     timing: "anytime", min: 0,  max: 300, purchase: { label: "each",           gramsPerUnit: 300,  price: 0.85 } },
+];
+
+// Fixed daily staples — never optimized away. Whey macros from custom_foods
+// (1 scoop = 31 g: 120 kcal / 24p / 3c / 1.5f). Dextrose from the Nutricost
+// label. Tub/bag prices are estimates — adjust if off.
+export const FIXED_ITEMS = [
+  {
+    food: "Gold Standard 100% Whey (Milk Chocolate)",
+    grams: 31, per100g: { cal: 387, p: 77.4, c: 9.7, f: 4.8 },
+    role: "protein", meal: "breakfast", timing: "post", creami: true,
+    purchase: { label: "5 lb tub", gramsPerUnit: 2270, price: 79.98 },
+  },
+  {
+    food: "Nutricost Dextrose",
+    grams: 30, per100g: { cal: 375, p: 0, c: 94, f: 0 },
+    role: "carb", meal: "breakfast", timing: "post", trainingOnly: true,
+    purchase: { label: "10 lb bag", gramsPerUnit: 4540, price: 26.95 },
+  },
+];
+
+const price100 = (f) => (f.purchase.price / f.purchase.gramsPerUnit) * 100;
+
+const PURCHASE_BY_FOOD = Object.fromEntries(
+  [...FOOD_CATALOG, ...FIXED_ITEMS].map((f) => [f.food, f.purchase])
+);
 
 // One plan item → a fully-scaled food_entries-shaped object (macros for the
 // whole serving, grams in serving_size). `planned: true` flags it as a not-yet-
 // eaten plan row so the log can render it as a check-off item.
+// Grams are rounded FIRST and macros derived from the rounded grams, so the
+// stored macros always match the serving the user sees (and day sums stay true).
 export function scaleItem(item, { date, mealOverride } = {}) {
-  const k = item.portion;
+  const grams = Math.max(1, Math.round(item.portion * 100));
+  const k = grams / 100;
   return {
     food_name: item.food,
     meal_type: mealOverride || item.meal,
-    serving_size: Math.round(item.portion * 100),
+    serving_size: grams,
     serving_unit: "g",
     calories: Math.round(item.per100g.cal * k),
     protein_grams: r1(item.per100g.p * k),
@@ -85,114 +98,165 @@ export function scaleItem(item, { date, mealOverride } = {}) {
     fats_grams: r1(item.per100g.f * k),
     role: item.role,
     timing: item.timing,
+    creami: !!item.creami,
     ...(date ? { date } : {}),
     planned: true,
   };
 }
 
-// Carb-cycle a plan's items for a given day. On rest days we trim the
-// workout-timed carbs (pre/post fuel you don't need) by `restCarbFactor`;
-// training days get the full plan. Protein/fat/dairy/fruit are untouched.
-export function carbCycleItems(planKey, { trainingDay = true, restCarbFactor = 0.5 } = {}) {
-  const plan = DIET_PLANS[planKey];
-  if (!plan) return [];
-  return plan.items.map((it) => {
-    const isTimedCarb = it.role === "carb" && (it.timing === "pre" || it.timing === "post");
-    if (trainingDay || !isTimedCarb) return it;
-    return { ...it, portion: r1(it.portion * restCarbFactor) };
+// ─── The optimizer ─────────────────────────────────────────────────────────────
+// Greedy cheapest-first inside bounds, then a bounded repair loop — for this
+// constraint shape (few targets, boxed portions) it tracks the LP optimum
+// closely, stays explainable, and NEVER violates a palatability bound:
+//   1. fixed staples + per-food minimums
+//   2. protein anchor: raise the cheapest $-per-gram-protein foods first
+//   3. fat floor:      raise the cheapest $-per-gram-fat foods first
+//   4. calories:       fill the gap with the cheapest $-per-kcal carb/fruit/veg
+//   5. repair loop:    priority calories > protein > fat — over-budget days
+//                      shed pricey carbs then fat; protein shortfalls are
+//                      re-filled with LEAN sources so a tight cut swaps fatty
+//                      protein for egg whites/cottage instead of giving up
+export function optimizeDay({
+  calorieTarget,
+  proteinTarget = null,
+  fatTarget = null,
+  trainingDay = true,
+  restCarbFactor = 0.5,
+} = {}) {
+  const fixed = FIXED_ITEMS
+    .filter((f) => trainingDay || !f.trainingOnly)
+    .map((f) => ({ ...f, portion: f.grams / 100, fixed: true }));
+
+  const vars = FOOD_CATALOG.map((f) => {
+    const isTimedCarb = f.role === "carb" && f.timing !== "anytime";
+    const maxG = trainingDay || !isTimedCarb ? f.max : f.max * restCarbFactor;
+    return { ...f, portion: (f.min || 0) / 100, minPortion: (f.min || 0) / 100, maxPortion: maxG / 100, cost: price100(f) };
   });
+
+  const total = (key) =>
+    [...fixed, ...vars].reduce((s, it) => s + it.per100g[key] * it.portion, 0);
+
+  // Raise portions of `candidates` (cheapest per unit of `key` first) until the
+  // day's total for `key` reaches `target` or every candidate is at its ceiling.
+  const raise = (key, target, candidates) => {
+    if (!target) return;
+    const ranked = candidates
+      .filter((it) => it.per100g[key] > 0)
+      .sort((x, y) => x.cost / x.per100g[key] - y.cost / y.per100g[key]);
+    for (const it of ranked) {
+      const gap = target - total(key);
+      if (gap <= 0) return;
+      it.portion = Math.min(it.maxPortion, it.portion + gap / it.per100g[key]);
+    }
+  };
+
+  // Shed `key` down to `target`, dropping the most-expensive-per-unit candidates
+  // first (saves the most money), never below a food's minimum.
+  const lower = (key, target, candidates) => {
+    const ranked = candidates
+      .filter((it) => it.per100g[key] > 0)
+      .sort((x, y) => y.cost / y.per100g[key] - x.cost / x.per100g[key]);
+    for (const it of ranked) {
+      const excess = total(key) - target;
+      if (excess <= 0) return;
+      it.portion = Math.max(it.minPortion, it.portion - excess / it.per100g[key]);
+    }
+  };
+
+  const carbs = vars.filter((it) => ["carb", "fruit", "veg"].includes(it.role));
+  const fats = vars.filter((it) => it.role === "fat" || it.per100g.f >= 5);
+  // Lean = most of the food's calories are protein; what a tight cut swaps to.
+  const lean = vars.filter((it) => it.per100g.p >= 8 && it.per100g.p * 4 >= it.per100g.cal * 0.55);
+
+  // 2–4: initial cheapest-first fill
+  raise("p", proteinTarget, vars.filter((it) => it.per100g.p >= 8));
+  raise("f", fatTarget, fats);
+  raise("cal", calorieTarget, carbs);
+
+  // 5: bounded repair — calories are the hard wall, protein second, fat soft.
+  for (let i = 0; i < 4; i++) {
+    if (proteinTarget) raise("p", proteinTarget, lean);
+    // Protein well past the anchor is money down the drain — shed the priciest
+    // $-per-gram protein (meat before dairy) and let cheap carbs refill the kcal.
+    if (proteinTarget && total("p") > proteinTarget + 8) {
+      lower("p", proteinTarget + 4, vars.filter((it) => it.per100g.p >= 8 && it.role !== "carb"));
+    }
+    if (fatTarget && total("cal") < calorieTarget) raise("f", fatTarget, fats);
+    const calGap = calorieTarget - total("cal");
+    if (calGap > 10) raise("cal", calorieTarget, carbs);
+    else if (calGap < -10) {
+      lower("cal", calorieTarget, carbs);
+      // still over → fat floor yields before the calorie target does
+      if (total("cal") - calorieTarget > 10) lower("cal", calorieTarget, fats);
+      // last resort: trim fatty proteins (lean stays — it's holding the anchor)
+      if (total("cal") - calorieTarget > 10) {
+        lower("cal", calorieTarget, vars.filter((it) => it.per100g.p >= 8 && !lean.includes(it)));
+      }
+    }
+  }
+
+  // Crumb portions read as noise on a plate — drop sub-15 g servings (forced
+  // minimums stay) and refill the hole with cheap carbs.
+  for (const it of vars) {
+    if (it.portion > 0 && it.portion < 0.15 && it.minPortion === 0) it.portion = 0;
+  }
+  raise("cal", calorieTarget, carbs);
+
+  // Exact-calorie polish: nudge the carb item with the most slack in either
+  // direction so the day lands on the target to within a few kcal.
+  const residual = calorieTarget - total("cal");
+  const nudge = carbs
+    .filter((it) => it.portion > 0)
+    .sort((x, y) =>
+      residual > 0
+        ? (y.maxPortion - y.portion) - (x.maxPortion - x.portion)
+        : (y.portion - y.minPortion) - (x.portion - x.minPortion)
+    )[0];
+  if (nudge) {
+    nudge.portion = clamp(nudge.portion + residual / nudge.per100g.cal, nudge.minPortion, nudge.maxPortion);
+  }
+
+  return [...fixed, ...vars.filter((it) => it.portion > 0)];
 }
 
-// Carb-cycle the day, then — if a calorie target is given — scale every portion so
-// the DAY hits that target. This is isocaloric carb cycling around the engine's
-// recovery-gated optimal: same daily calories, carbs shifted onto lift days. The
-// target is what makes the plan "the engine's optimal" rather than a fixed template.
-// Factor is clamped to avoid runaway scaling on odd inputs.
-export function scaledItems(planKey, { trainingDay = true, restCarbFactor = 0.5, calorieTarget = null } = {}) {
-  const items = carbCycleItems(planKey, { trainingDay, restCarbFactor });
-  if (!calorieTarget) return items;
-  const dayCal = items.reduce((s, it) => s + it.per100g.cal * it.portion, 0);
-  if (dayCal <= 0) return items;
-  const factor = Math.min(2.0, Math.max(0.5, calorieTarget / dayCal));
-  return items.map((it) => ({ ...it, portion: r1(it.portion * factor) }));
-}
-
-// Full plan → array of food_entries rows for `date`, carb-cycled by training day
-// and (optionally) scaled to the engine's calorie target. This is the "approve the
+// Full day → array of food_entries rows for `date`: the cheapest food mix that
+// hits the engine's targets, fixed staples included. This is the "approve the
 // plan → write the day into the log" payload; rows are flagged planned:true.
-export function planToFoodEntries(planKey, { date, trainingDay = true, restCarbFactor = 0.5, calorieTarget = null } = {}) {
-  return scaledItems(planKey, { trainingDay, restCarbFactor, calorieTarget }).map((it) => scaleItem(it, { date }));
+export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, fatTarget = null } = {}) {
+  return optimizeDay({ calorieTarget, proteinTarget, fatTarget, trainingDay }).map((it) => scaleItem(it, { date }));
 }
 
-// Day macro totals for a plan (training-day baseline unless trainingDay=false).
-export function planTotals(planKey, opts = {}) {
-  return planToFoodEntries(planKey, { date: null, ...opts }).reduce(
-    (t, e) => ({
-      calories: t.calories + e.calories,
-      protein: r1(t.protein + e.protein_grams),
-      carbs: r1(t.carbs + e.carbs_grams),
-      fats: r1(t.fats + e.fats_grams),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fats: 0 }
-  );
+// Estimated grocery cost of generated rows, in dollars.
+export function entriesCost(entryRows) {
+  return entryRows.reduce((s, e) => {
+    const u = PURCHASE_BY_FOOD[e.food_name];
+    if (!u) return s;
+    return s + (e.serving_size / u.gramsPerUnit) * u.price;
+  }, 0);
 }
 
 // ─── Shopping list ───────────────────────────────────────────────────────────
-// How you actually buy each food. `gramsPerUnit` is the EDIBLE grams in the
-// plan's logged state per purchase unit (cooking yield already applied for
-// cooked foods, e.g. ~1 lb raw chicken → ~340 g cooked). Prices are Walmart GV
-// from Nolan's sheet; costs are estimates.
-const PURCHASE_UNITS = {
-  "2% Milk":        { label: "Half Gallon",  gramsPerUnit: 1890, price: 1.98 },
-  "Peanut Butter":  { label: "40 oz Jar",    gramsPerUnit: 1134, price: 3.98 },
-  "Chicken Breast": { label: "lb",           gramsPerUnit: 340,  price: 2.57 },
-  "Eggs":           { label: "12-count",     gramsPerUnit: 600,  price: 1.47 },
-  "Egg Whites":     { label: "32 oz carton", gramsPerUnit: 946,  price: 4.87 },
-  "Oats (Dry)":     { label: "42 oz",        gramsPerUnit: 1191, price: 4.18 },
-  "Pasta (Cooked)": { label: "16 oz box",    gramsPerUnit: 1088, price: 0.98 },
-  "Rice Bar":       { label: "8-count box",  gramsPerUnit: 176,  price: 2.78 },
-  "Cottage Cheese": { label: "24 oz tub",    gramsPerUnit: 680,  price: 2.24 },
-  "Greek Yogurt":   { label: "32 oz tub",    gramsPerUnit: 907,  price: 2.94 },
-  "Potatoes":       { label: "5 lb bag",     gramsPerUnit: 2268, price: 2.94 },
-  "Banana":         { label: "lb",           gramsPerUnit: 453,  price: 0.50 },
-  "Strawberries":   { label: "48 oz bag",    gramsPerUnit: 1361, price: 7.62 },
-  "Blueberries":    { label: "16 oz bag",    gramsPerUnit: 454,  price: 3.12 },
-};
-
-// Roll a week's plan up into a shopping list: total grams of each food across the
-// planned days → number of purchase units to buy (rounded up) + estimated cost.
-// weekPlan: [{ planKey, trainingDay }, ...] — one entry per day you're shopping for.
-export function buildShoppingList(weekPlan) {
+// Roll generated plan rows up into a shopping list: total grams of each food
+// across the planned days → number of purchase units to buy (rounded up) +
+// estimated cost. Takes the SAME entry rows that approval writes to the log,
+// so what you buy is exactly what you'll be checking off.
+export function buildShoppingList(entryRows) {
   const grams = {};
-  for (const day of weekPlan) {
-    for (const e of planToFoodEntries(day.planKey, { date: null, trainingDay: day.trainingDay, calorieTarget: day.calorieTarget })) {
-      grams[e.food_name] = (grams[e.food_name] || 0) + e.serving_size;
-    }
+  for (const e of entryRows) {
+    grams[e.food_name] = (grams[e.food_name] || 0) + e.serving_size;
   }
   const items = Object.entries(grams)
     .map(([food, g]) => {
-      const u = PURCHASE_UNITS[food];
+      const u = PURCHASE_BY_FOOD[food];
       if (!u) return { food, grams: Math.round(g), units: null, unitLabel: "g", cost: null };
       const units = Math.ceil(g / u.gramsPerUnit);
-      return { food, grams: Math.round(g), units, unitLabel: u.label, cost: r1(units * u.price) };
+      // Cost is AMORTIZED to the grams actually eaten this week (g/unit × price),
+      // not the shelf price of the units bought — a 5 lb whey tub lasts ~10 weeks
+      // and would otherwise swamp the weekly number. `units` is still what to
+      // grab at the store when the pantry runs out.
+      return { food, grams: Math.round(g), units, unitLabel: u.label, cost: r1((g / u.gramsPerUnit) * u.price) };
     })
     .sort((a, b) => (b.cost || 0) - (a.cost || 0));
   const totalCost = r1(items.reduce((s, i) => s + (i.cost || 0), 0));
   return { items, totalCost };
-}
-
-// Pick the plan that best matches a diet phase + the day's calorie target.
-// phase_type from diet_phases ("cut"|"bulk"|"maintain"|"reverse"); calorieGoal
-// from the profile. Falls back to nearest-by-calories.
-export function selectPlanForPhase(phaseType, calorieGoal) {
-  if (phaseType === "bulk") return "aggressive_bulk";
-  if (phaseType === "cut") {
-    // Aggressive vs moderate cut by how low the target is.
-    return calorieGoal && calorieGoal <= 1700 ? "aggressive_cut" : "moderate_cut";
-  }
-  // maintain/reverse/unknown → nearest plan by calorie target.
-  const byCal = Object.values(DIET_PLANS)
-    .map((p) => [p.key, Math.abs(p.target.calories - (calorieGoal || 2200))])
-    .sort((a, b) => a[1] - b[1]);
-  return byCal[0][0];
 }
