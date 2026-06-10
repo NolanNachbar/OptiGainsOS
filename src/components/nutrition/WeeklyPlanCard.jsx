@@ -69,12 +69,14 @@ export default function WeeklyPlanCard({ bare = false }) {
   // ONE source of truth for today's targets — the same hook the daily log rings
   // use (engine recovery-gated target → profile goal). Days the engine hasn't
   // scored yet fall back to these numbers.
-  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec } = useDailyTargets(today);
+  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut } = useDailyTargets(today);
 
-  const phaseRaw = (activePhase?.phase || "").toLowerCase();
+  const phaseRaw = (activePhase?.phase_type || "").toLowerCase();
   const isBulk = phaseRaw.includes("bulk") || phaseRaw.includes("surplus");
-  const isCut = phaseRaw.includes("cut") || phaseRaw.includes("deficit");
-  const planLabel = isBulk ? "Cost-Optimized Bulk" : isCut ? "Cost-Optimized Cut" : "Cost-Optimized Maintenance";
+  const planLabel = isBulk ? "Cost-Optimized Bulk"
+    : aggressiveCut ? "Cost-Optimized Aggressive Cut"
+    : isCut ? "Cost-Optimized Cut"
+    : "Cost-Optimized Maintenance";
 
   const dates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => format(addDays(parseISO(today), i), "yyyy-MM-dd")),
@@ -139,11 +141,12 @@ export default function WeeklyPlanCard({ bare = false }) {
             calorieTarget: budget,
             proteinTarget: dayProtein ? Math.max(0, dayProtein - eatenProtein) : null,
             fatTarget: fatTarget ? Math.max(0, fatTarget - eatenFats) : null,
+            aggressiveCut,
           })
         : [];
       return { date: d, trainingDay, target: dayTarget, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
     });
-  }, [dates, dayContext, calTarget, proteinTarget, fatTarget, activeEnrollment, program]);
+  }, [dates, dayContext, calTarget, proteinTarget, fatTarget, aggressiveCut, activeEnrollment, program]);
 
   const allRows = useMemo(() => week.flatMap((d) => d.rows), [week]);
   const shopping = useMemo(() => buildShoppingList(allRows), [allRows]);
