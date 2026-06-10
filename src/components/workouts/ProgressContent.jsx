@@ -209,49 +209,49 @@ export function ProgressContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-ink-muted flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Total Workouts
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">{totalWorkouts}</div>
+                  <div className="text-3xl font-bold text-ink">{totalWorkouts}</div>
                 </CardContent>
               </Card>
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-ink-muted flex items-center gap-2">
                     <Dumbbell className="w-4 h-4" />
                     Total Volume
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-ink">
                     {(totalVolume / 1000).toFixed(1)}k
-                    <span className="text-lg text-slate-500 ml-1">{weightUnit}</span>
+                    <span className="text-lg text-ink-muted ml-1">{weightUnit}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-ink-muted flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     Avg Duration
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-ink">
                     {avgDuration}
-                    <span className="text-lg text-slate-500 ml-1">min</span>
+                    <span className="text-lg text-ink-muted ml-1">min</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-ink-muted flex items-center gap-2">
                     <Scale className="w-4 h-4" />
                     Body Weight
                   </CardTitle>
@@ -259,18 +259,18 @@ export function ProgressContent() {
                 <CardContent>
                   {currentWeight ? (
                     <>
-                      <div className="text-3xl font-bold text-white">
+                      <div className="text-3xl font-bold text-ink">
                         {currentWeight}
-                        <span className="text-lg text-slate-500 ml-1">{weightUnit}</span>
+                        <span className="text-lg text-ink-muted ml-1">{weightUnit}</span>
                       </div>
                       {weightChange !== null && weightChange !== 0 && (
-                        <div className={`text-sm mt-1 ${weightChange > 0 ? 'text-[#fbbf24]' : 'text-[#4ade80]'}`}>
+                        <div className={`text-sm mt-1 ${weightChange > 0 ? 'text-warn' : 'text-leaf'}`}>
                           {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} {weightUnit}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-sm text-slate-500">No data</div>
+                    <div className="text-sm text-ink-muted">No data</div>
                   )}
                 </CardContent>
               </Card>
@@ -309,7 +309,7 @@ export function ProgressContent() {
                     weightUnit={weightUnit}
                   />
                 ) : (
-                  <div className="h-80 flex items-center justify-center text-slate-500">
+                  <div className="h-80 flex items-center justify-center text-ink-muted">
                     {uniqueExercises.length === 0
                       ? "No workout logs yet. Complete some workouts to see your progress!"
                       : "Select an exercise to view progress"}
@@ -325,7 +325,7 @@ export function ProgressContent() {
               </CardHeader>
               <CardContent>
                 {Object.keys(allPRs).length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-ink-muted">
                     No personal records yet. Keep logging workouts!
                   </div>
                 ) : (
@@ -333,10 +333,10 @@ export function ProgressContent() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-charcoal-border">
-                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Exercise</th>
-                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Weight</th>
-                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Reps</th>
-                          <th className="text-left py-3 px-4 font-semibold text-slate-400">Date</th>
+                          <th className="text-left py-3 px-4 font-semibold text-ink-muted">Exercise</th>
+                          <th className="text-left py-3 px-4 font-semibold text-ink-muted">Weight</th>
+                          <th className="text-left py-3 px-4 font-semibold text-ink-muted">Reps</th>
+                          <th className="text-left py-3 px-4 font-semibold text-ink-muted">Date</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -351,7 +351,7 @@ export function ProgressContent() {
                                 </span>
                               </td>
                               <td className="py-3 px-4">{pr.reps}</td>
-                              <td className="py-3 px-4 text-slate-400">
+                              <td className="py-3 px-4 text-ink-muted">
                                 {new Date(pr.date).toLocaleDateString()}
                               </td>
                             </tr>
@@ -370,7 +370,7 @@ export function ProgressContent() {
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-slate-400 mb-2 block">
+                    <label className="text-sm font-medium text-ink-muted mb-2 block">
                       Search Exercise
                     </label>
                     <Input
@@ -380,7 +380,7 @@ export function ProgressContent() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-400 mb-2 block">
+                    <label className="text-sm font-medium text-ink-muted mb-2 block">
                       Workout Type
                     </label>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -403,11 +403,11 @@ export function ProgressContent() {
             {filteredLogs.length === 0 ? (
               <Card className=" text-center py-12">
                 <CardContent>
-                  <Dumbbell className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <Dumbbell className="w-16 h-16 text-ink-muted mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-ink mb-2">
                     {workoutLogs.length === 0 ? "No workout history yet" : "No matching workouts"}
                   </h3>
-                  <p className="text-slate-400">
+                  <p className="text-ink-muted">
                     {workoutLogs.length === 0
                       ? "Complete some workouts to see your history here"
                       : "Try adjusting your filters"}
@@ -429,7 +429,7 @@ export function ProgressContent() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-xl mb-2">{log.workoutTitle}</CardTitle>
-                            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                            <div className="flex flex-wrap gap-4 text-sm text-ink-muted">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
                                 {format(parseISO(log.log_date), "MMM d, yyyy")}
@@ -459,14 +459,14 @@ export function ProgressContent() {
                                 e.stopPropagation();
                                 handleDelete(log.id);
                               }}
-                              className="text-[#f87171] hover:text-[#f87171] hover:bg-[rgba(239,68,68,0.08)]"
+                              className="text-bad hover:text-bad hover:bg-bad/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                             {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-slate-500" />
+                              <ChevronUp className="w-5 h-5 text-ink-muted" />
                             ) : (
-                              <ChevronDown className="w-5 h-5 text-slate-500" />
+                              <ChevronDown className="w-5 h-5 text-ink-muted" />
                             )}
                           </div>
                         </div>
@@ -503,7 +503,7 @@ export function ProgressContent() {
                                   </table>
                                 </div>
                                 {exercise.notes && (
-                                  <div className="mt-3 text-sm text-slate-400 italic border-l-2 border-brand/20 pl-3">
+                                  <div className="mt-3 text-sm text-ink-muted italic border-l-2 border-brand/20 pl-3">
                                     {exercise.notes}
                                   </div>
                                 )}
@@ -511,10 +511,10 @@ export function ProgressContent() {
                             ))}
                             {log.notes && (
                               <div className="bg-brand/[5%] border border-brand/20 rounded-lg p-4">
-                                <div className="font-semibold text-sm text-slate-400 mb-1">
+                                <div className="font-semibold text-sm text-ink-muted mb-1">
                                   Workout Notes
                                 </div>
-                                <div className="text-sm text-slate-400">{log.notes}</div>
+                                <div className="text-sm text-ink-muted">{log.notes}</div>
                               </div>
                             )}
                           </div>
@@ -537,7 +537,7 @@ export function ProgressContent() {
                 <form onSubmit={handleAddWeight} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-slate-400 mb-2 block">
+                      <label className="text-sm font-medium text-ink-muted mb-2 block">
                         Weight ({weightUnit}) *
                       </label>
                       <Input
@@ -550,7 +550,7 @@ export function ProgressContent() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-slate-400 mb-2 block">
+                      <label className="text-sm font-medium text-ink-muted mb-2 block">
                         Date *
                       </label>
                       <Input
@@ -563,7 +563,7 @@ export function ProgressContent() {
                     <div className="flex items-end">
                       <Button
                         type="submit"
-                        className="w-full bg-brand hover:bg-brand text-black font-bold"
+                        className="w-full bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold"
                         disabled={addWeightMutation.isPending}
                       >
                         <Scale className="w-4 h-4 mr-2" />
@@ -572,7 +572,7 @@ export function ProgressContent() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-400 mb-2 block">
+                    <label className="text-sm font-medium text-ink-muted mb-2 block">
                       Notes (optional)
                     </label>
                     <Input
@@ -599,11 +599,11 @@ export function ProgressContent() {
             {weightEntries.length === 0 ? (
               <Card className=" text-center py-12">
                 <CardContent>
-                  <Scale className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <Scale className="w-16 h-16 text-ink-muted mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-ink mb-2">
                     No weight entries yet
                   </h3>
-                  <p className="text-slate-400">
+                  <p className="text-ink-muted">
                     Start logging your weight to track your progress over time
                   </p>
                 </CardContent>
@@ -622,22 +622,22 @@ export function ProgressContent() {
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            <div className="text-2xl font-bold text-white">
+                            <div className="text-2xl font-bold text-ink">
                               {entry.weight} {weightUnit}
                             </div>
-                            <div className="text-sm text-slate-400">
+                            <div className="text-sm text-ink-muted">
                               {format(parseISO(entry.recorded_date), "MMM d, yyyy")}
                             </div>
                           </div>
                           {entry.notes && (
-                            <p className="text-sm text-slate-400 mt-1 italic">{entry.notes}</p>
+                            <p className="text-sm text-ink-muted mt-1 italic">{entry.notes}</p>
                           )}
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteWeight(entry.id)}
-                          className="text-[#f87171] hover:text-[#f87171] hover:bg-[rgba(239,68,68,0.08)]"
+                          className="text-bad hover:text-bad hover:bg-bad/10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

@@ -1,161 +1,358 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   OPTIGAINS OS — "VAPOR × MACRO" DESIGN SYSTEM
+   Frosted glass over a dark ambient field. Manrope everywhere.
+
+   Identity:   #0A0D12 field · frosted-glass rounded cards · hue-coded data
+               (each datum owns one hue) · coral is THE action color ·
+               floating liquid-glass dock · tabular numerals.
+   Materials:  every card is translucent glass (white 5%) with an inset top
+               highlight and a 0.5px hairline edge. The dock/sidebar chrome
+               is heavier liquid glass with backdrop blur.
+   Motion:     one easing (cubic-bezier(.2,.7,.3,1)), 180–320ms, entrances
+               rise 8px; nothing moves without communicating state.
+   ══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --color-bg: #09090e;
-  --color-surface: #12121a;
-  --color-surface-2: #161622;
-  --color-elevated: #1b1b29;
-  --color-border: #1f1f2d;
-  --color-border-soft: #171722;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #475569;
-  /* Brand color — Sunset Orange */
-  --color-brand: #ff6b3b;
-  --color-brand-rgb: 255 107 59;  /* RGB channels for Tailwind opacity modifiers */
-  --color-action-dark: #09090e;
-  --color-cardio: #f97316;
-  --color-positive: #10b981;
-  --color-danger: #f43f5e;
+  /* ── The field ──────────────────────────────────────────────────────── */
+  --color-bg:          #0A0D12;
+  --color-surface:     #11151C;   /* solid stand-in ≈ white 5% over field */
+  --color-surface-2:   #161B23;
+  --color-elevated:    #1C222C;
+  --color-border:      rgba(255, 255, 255, 0.10);
+  --color-border-soft: rgba(255, 255, 255, 0.08);
+
+  /* ── Ink ────────────────────────────────────────────────────────────── */
+  --text-primary:   #F2F4F7;
+  --text-secondary: rgba(242, 244, 247, 0.72);
+  --text-muted:     rgba(242, 244, 247, 0.50);
+  --text-faint:     rgba(242, 244, 247, 0.38);
+
+  /* ── Coral — THE action color ───────────────────────────────────────── */
+  --color-brand:     #EF7368;
+  --color-brand-rgb: 239 115 104;
+  --brand-bright:    #F2937B;   /* gradient top / hover */
+  --brand-deep:      #C25247;   /* pressed / borders */
+  --color-action-dark: #2A1310; /* ink on coral buttons */
+  --brand-tint:      #FFD9C9;   /* active tab ink on coral pill */
+
+  /* ── Hue-coded data (each datum owns one — never decoration) ────────── */
+  --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity */
+  --hue-teal-2: #4ECDC4;                                 /* HRV */
+  --hue-coral:  #EF7368;  --hue-coral-rgb: 239 115 104;  /* action · RHR · protein */
+  --hue-violet: #9B8CFF;  --hue-violet-rgb: 155 140 255; /* sleep · fatigue (ATL) */
+  --hue-green:  #7BC96F;  --hue-green-rgb: 123 201 111;  /* body battery · done states */
+  --hue-blue:   #5BA8F5;  --hue-blue-rgb: 91 168 245;    /* carbs · swim · cardio */
+  --hue-gold:   #F2B36B;  --hue-gold-rgb: 242 179 107;   /* kcal · deadline */
+  --hue-yellow: #F4C95D;  --hue-yellow-rgb: 244 201 93;  /* fat */
+
+  /* ── Physiological spectrum (biometrics ONLY) ───────────────────────── */
+  --ok:   #7BC96F;  --ok-rgb:   123 201 111;
+  --warn: #E2A23C;  --warn-rgb: 226 162 60;
+  --bad:  #EF7368;  --bad-rgb:  239 115 104;
+  --info: #5BA8F5;  --info-rgb: 91 168 245;
+  --color-positive: #5EDCD2;
+  --color-danger:   #EF7368;
+  --color-cardio:   #5BA8F5;
+
+  /* ── Data-viz series ────────────────────────────────────────────────── */
+  --viz-1: #5EDCD2;  /* teal — the protagonist series */
+  --viz-2: #5BA8F5;  /* blue */
+  --viz-3: #7BC96F;  /* green */
+  --viz-4: #9B8CFF;  /* violet */
+  --viz-5: #5B6577;  /* slate — context series */
+
+  /* ── Glass material parameters ──────────────────────────────────────── */
+  --glass-bg:          rgba(255, 255, 255, 0.05);
+  --glass-inset-bg:    rgba(255, 255, 255, 0.04);
+  --glass-edge:        rgba(255, 255, 255, 0.10);
+  --glass-edge-strong: rgba(255, 255, 255, 0.13);
+  --glass-specular:    rgba(255, 255, 255, 0.12);
+  --dock-tint:         rgba(120, 120, 128, 0.18);
+  --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
+
+  --ease: cubic-bezier(.2, .7, .3, 1);
+
+  /* ── Type ───────────────────────────────────────────────────────────── */
+  --font-ui: 'Manrope', system-ui, sans-serif;
 }
 
-/* Force dark mode */
+/* ── Light theme — same hues, paper field (dark mode is the hero) ──────── */
+html.light {
+  --color-bg:          #EEF0F3;
+  --color-surface:     #FFFFFF;
+  --color-surface-2:   #F4F5F8;
+  --color-elevated:    #FFFFFF;
+  --color-border:      rgba(18, 24, 34, 0.10);
+  --color-border-soft: rgba(18, 24, 34, 0.07);
+
+  --text-primary:   #171B22;
+  --text-secondary: rgba(23, 27, 34, 0.74);
+  --text-muted:     rgba(23, 27, 34, 0.55);
+  --text-faint:     rgba(23, 27, 34, 0.40);
+
+  --color-brand:     #E05348;
+  --color-brand-rgb: 224 83 72;
+  --brand-bright:    #EF7368;
+  --brand-deep:      #B03A31;
+  --color-action-dark: #FFF6F2;
+  --brand-tint:      #7A2118;
+
+  --hue-teal:   #14A89D;  --hue-teal-rgb: 20 168 157;
+  --hue-teal-2: #109488;
+  --hue-coral:  #E05348;  --hue-coral-rgb: 224 83 72;
+  --hue-violet: #6F5BE6;  --hue-violet-rgb: 111 91 230;
+  --hue-green:  #4D9A41;  --hue-green-rgb: 77 154 65;
+  --hue-blue:   #2F6FD0;  --hue-blue-rgb: 47 111 208;
+  --hue-gold:   #C07F2A;  --hue-gold-rgb: 192 127 42;
+  --hue-yellow: #B8902B;  --hue-yellow-rgb: 184 144 43;
+
+  --ok:   #4D9A41;  --ok-rgb:   77 154 65;
+  --warn: #C07F2A;  --warn-rgb: 192 127 42;
+  --bad:  #E05348;  --bad-rgb:  224 83 72;
+  --info: #2F6FD0;  --info-rgb: 47 111 208;
+  --color-positive: #14A89D;
+  --color-danger:   #E05348;
+  --color-cardio:   #2F6FD0;
+
+  --viz-1: #14A89D;
+  --viz-2: #2F6FD0;
+  --viz-3: #4D9A41;
+  --viz-4: #6F5BE6;
+  --viz-5: #8A93A1;
+
+  --glass-bg:          rgba(255, 255, 255, 0.72);
+  --glass-inset-bg:    rgba(18, 24, 34, 0.04);
+  --glass-edge:        rgba(18, 24, 34, 0.09);
+  --glass-edge-strong: rgba(18, 24, 34, 0.12);
+  --glass-specular:    rgba(255, 255, 255, 0.85);
+  --dock-tint:         rgba(255, 255, 255, 0.66);
+  --shadow-1: 0 10px 28px rgba(22, 28, 40, 0.10);
+  --shadow-2: 0 8px 24px rgba(22, 28, 40, 0.14);
+}
+
 html {
-  @apply bg-[#09090e] transition-colors duration-100;
-}
-
-html.dark {
-  background-color: #09090e;
-  color: #f8fafc;
+  background-color: var(--color-bg);
 }
 
 body {
-  @apply antialiased font-sans transition-colors duration-100;
-  background-color: #09090e;
-  color: #f8fafc;
+  @apply antialiased font-sans;
+  background-color: var(--color-bg);
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
 }
 
-html.dark body {
-  background-color: #09090e;
-  color: #f8fafc;
+/* Legacy pages hardcode dark-on-dark text utilities; keep paragraphs legible. */
+p { color: var(--text-primary); }
+
+::selection { background: rgba(var(--hue-teal-rgb) / 0.30); }
+
+:focus-visible {
+  outline: 2px solid rgba(var(--hue-teal-rgb) / 0.55);
+  outline-offset: 2px;
 }
 
-p {
-  @apply dark:text-white;
-}
-
-/* Force dark background on browser autofill */
+/* Autofill on dark inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset;
-  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface-2) inset;
+  -webkit-text-fill-color: var(--text-primary);
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.20); }
+html.light ::-webkit-scrollbar-thumb { background: rgba(18, 24, 34, 0.18); }
 
-::-webkit-scrollbar-track {
-  @apply bg-[#1a1a1a] rounded-full;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-[#333333] rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-brand);
-}
-
-/* Hide scrollbar utility (used on horizontal sub-tab strips) */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Remove native number input spinners */
-input[type=number] {
-  -moz-appearance: textfield;
-}
+input[type=number] { -moz-appearance: textfield; }
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* Body Highlighter SVG overrides */
-svg.rbh, .rbh {
-  background-color: transparent !important;
-}
-
-svg.rbh path, svg.rbh polygon, 
+/* Body Highlighter SVG overrides — the little anatomy figure */
+svg.rbh, .rbh { background-color: transparent !important; }
+svg.rbh path, svg.rbh polygon,
 .rbh path, .rbh polygon {
-  stroke: #12121a !important;
+  stroke: var(--color-bg) !important;
   stroke-width: 0.8px !important;
-  transition: fill 0.25s ease, stroke 0.25s ease;
+  transition: fill 0.25s var(--ease), stroke 0.25s var(--ease);
 }
-
-svg.rbh path:hover, svg.rbh polygon:hover, 
+svg.rbh path:hover, svg.rbh polygon:hover,
 .rbh path:hover, .rbh polygon:hover {
-  fill: #27273a !important;
-  stroke: var(--color-brand) !important;
+  stroke: var(--hue-teal) !important;
 }
 
-/* Technical numbers utility (MacroFactor style) */
+/* ══ Typography voices ═══════════════════════════════════════════════════ */
+
+/* Display — Manrope extra-bold, tight. The product's headline voice. */
+.type-display {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+  color: var(--text-primary);
+}
+
+/* Micro section label — the og-cap. */
+.section-label {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Tabular numerals for every stat. */
 .font-technical {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* The one big number that matters on a screen. */
+.hero-metric {
+  font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  line-height: 1;
+  font-weight: 800;
 }
 
-/* ── Liquid Glass design language ──────────────────────────────────────────────
-   Frosted, translucent surfaces with a specular top highlight and real depth.
-   Used for primary cards (.glass), floating chrome — nav, modals, FAB
-   (.glass-elevated), and accent surfaces (.glass-brand). The ambient body glow
-   below gives the glass something to refract so it reads as liquid, not flat. */
+.text-secondary { color: var(--text-secondary); }
+.text-muted-2   { color: var(--text-muted); }
+.text-faint     { color: var(--text-faint); }
+.text-ink       { color: var(--text-primary); }
+
+/* ══ Materials ════════════════════════════════════════════════════════════
+   One material: frosted glass. Cards are translucent white over the ambient
+   field with an inset top highlight; chrome (dock, sidebar, sheets) is
+   heavier liquid glass with backdrop blur.
+   ═══════════════════════════════════════════════════════════════════════ */
 @layer components {
-  .glass {
-    background: linear-gradient(155deg, rgba(32, 32, 48, 0.66), rgba(16, 16, 24, 0.55));
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 8px 30px rgba(0, 0, 0, 0.45);
+  /* Card glass — the og-glass recipe. Every data card. */
+  .surface, .surface-2, .tile, .glass {
+    background: var(--glass-bg);
+    border: 0.5px solid var(--glass-edge);
+    border-radius: 20px;
+    box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
   }
+  .tile { transition: background .2s var(--ease), border-color .2s var(--ease); }
+  .tile-interactive:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-edge-strong);
+  }
+  html.light .tile-interactive:hover { background: rgba(255, 255, 255, 0.9); }
+
+  /* Inset tile — the og-inset. Small metric cells inside a glass card. */
+  .glass-inset {
+    background: var(--glass-inset-bg);
+    border-radius: 13px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  /* Liquid-glass chrome — dock, sidebar, sheets, floating controls. */
   .glass-elevated {
-    background: linear-gradient(155deg, rgba(38, 38, 56, 0.82), rgba(18, 18, 28, 0.74));
-    backdrop-filter: blur(26px) saturate(150%);
-    -webkit-backdrop-filter: blur(26px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 14px 44px rgba(0, 0, 0, 0.55);
+    background: var(--dock-tint);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 0.5px solid var(--glass-edge-strong);
+    box-shadow: inset 1.5px 1.5px 1px var(--glass-specular), var(--shadow-2);
   }
   .glass-brand {
-    background: linear-gradient(155deg, rgba(255, 107, 59, 0.26), rgba(255, 107, 59, 0.12));
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 107, 59, 0.32);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 10px 30px rgba(255, 107, 59, 0.18);
+    background: rgba(var(--color-brand-rgb) / 0.14);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 0.5px solid rgba(var(--color-brand-rgb) / 0.30);
+    box-shadow: inset 0 1px 0 var(--glass-specular), 0 8px 24px rgba(var(--color-brand-rgb) / 0.12);
   }
   .glass-interactive {
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    transition: border-color .25s var(--ease), background .25s var(--ease), transform .25s var(--ease);
   }
   .glass-interactive:hover {
-    border-color: rgba(255, 107, 59, 0.28);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.10), 0 12px 40px rgba(0, 0, 0, 0.5),
-      0 0 24px rgba(255, 107, 59, 0.12);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--glass-edge-strong);
   }
+
+  /* The coral CTA — og-cta. */
+  .cta-coral {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px; border-radius: 16px; white-space: nowrap;
+    font-size: 15px; font-weight: 800; color: var(--color-action-dark);
+    background: linear-gradient(135deg, var(--brand-bright) 0%, var(--color-brand) 100%);
+    box-shadow: 0 8px 22px rgba(var(--color-brand-rgb) / 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: transform .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .cta-coral:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(var(--color-brand-rgb) / 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+  .cta-coral:active { transform: none; }
+
+  /* Ghost action — og-cta-ghost. */
+  .cta-ghost {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 44px; border-radius: 14px; white-space: nowrap;
+    font-size: 13.5px; font-weight: 700; color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    border: 0.5px solid var(--glass-edge);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    transition: background .2s var(--ease);
+  }
+  .cta-ghost:hover { background: rgba(255, 255, 255, 0.09); }
+  html.light .cta-ghost { background: rgba(18, 24, 34, 0.05); }
+  html.light .cta-ghost:hover { background: rgba(18, 24, 34, 0.08); }
+
+  /* Value pill — og-pillv (prescribed loads, key row values). */
+  .pill-value {
+    font-size: 13px; font-weight: 800; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px; padding: 5px 9px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  }
+  html.light .pill-value { background: rgba(18, 24, 34, 0.05); }
+
+  /* Deadline chip — og-chip (gold). */
+  .chip-gold {
+    font-size: 12px; font-weight: 700; color: var(--hue-gold);
+    background: rgba(var(--hue-gold-rgb) / 0.13);
+    border: 0.5px solid rgba(var(--hue-gold-rgb) / 0.20);
+    border-radius: 999px; padding: 6px 12px; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Hairline divider that matches the border token */
+  .hairline { border-color: var(--color-border-soft); }
+
+  /* Data row — og-row. */
+  .data-row { display: flex; align-items: center; gap: 11px; padding: 7px 0; border-top: 0.5px solid var(--color-border-soft); }
+  .data-row:first-of-type { border-top: none; padding-top: 3px; }
+
+  /* Entrances — one motion language. */
+  .rise-in   { animation: riseIn .28s var(--ease) both; }
+  .rise-in-2 { animation: riseIn .28s var(--ease) .06s both; }
+  .rise-in-3 { animation: riseIn .28s var(--ease) .12s both; }
 }
 
-/* Ambient depth — faint, fixed brand/azure glows behind all content so the
-   translucent glass surfaces have light to refract. pointer-events:none keeps
-   it purely decorative. */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes ringFill { from { stroke-dashoffset: var(--ring-circ); } }
+
+/* The ambient field — og-amb. Teal breathes in from the top right, coral
+   rises from below. Decorative only; glass refracts it. */
 body::before {
   content: "";
   position: fixed;
@@ -163,15 +360,17 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(55rem 55rem at 12% -12%, rgba(255, 107, 59, 0.10), transparent 60%),
-    radial-gradient(48rem 48rem at 112% 6%, rgba(56, 120, 255, 0.07), transparent 55%);
+    radial-gradient(440px 320px at 90% -8%, rgba(78, 205, 196, 0.10), transparent 70%),
+    radial-gradient(560px 440px at 50% 118%, rgba(239, 115, 104, 0.08), transparent 70%);
 }
-#root {
-  position: relative;
-  z-index: 1;
+html.light body::before {
+  background:
+    radial-gradient(440px 320px at 90% -8%, rgba(20, 168, 157, 0.07), transparent 70%),
+    radial-gradient(560px 440px at 50% 118%, rgba(224, 83, 72, 0.05), transparent 70%);
 }
+#root { position: relative; z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass-interactive { transition: none; }
+  .glass-interactive, .cta-coral { transition: none; }
+  .rise-in, .rise-in-2, .rise-in-3 { animation: none; }
 }
-

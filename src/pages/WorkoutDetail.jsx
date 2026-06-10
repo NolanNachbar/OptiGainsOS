@@ -663,7 +663,7 @@ export default function WorkoutDetail() {
   }
 
   return (
-    <div className="bg-charcoal min-h-screen relative transition-colors duration-300">
+    <div className="min-h-screen relative">
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
@@ -693,9 +693,8 @@ export default function WorkoutDetail() {
           </Button>
         )}
 
-        <Card ref={workoutCardRef} className={`border-none mb-6 ${isLogging ? 'mt-4' : ''}`}>
-          <div className="h-1 bg-brand rounded-t-xl"></div>
-          <CardHeader className="pb-2">
+        <Card ref={workoutCardRef} className={`mb-6 ${isLogging ? 'mt-4' : ''}`}>
+          <CardHeader className="pt-4 pb-2">
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="capitalize">
@@ -710,15 +709,15 @@ export default function WorkoutDetail() {
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
                 <div className="hidden md:flex items-center gap-2 shrink-0 lg:hidden">
-                  <span className="text-xs text-slate-500 uppercase tracking-wide">Muscles worked</span>
-                  <div className="flex rounded-full overflow-hidden border border-charcoal-border text-xs font-medium">
+                  <span className="section-label">Muscles worked</span>
+                  <div className="flex rounded-full overflow-hidden bg-white/[0.05] border border-white/10 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
                     <button
                       onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
                     >Front</button>
                     <button
                       onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
+                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
                     >Back</button>
                   </div>
                 </div>
@@ -728,23 +727,23 @@ export default function WorkoutDetail() {
           <CardContent className="flex flex-col md:flex-row md:gap-8">
             <div className="flex-1 min-w-0">
               {/* Title + description */}
-              <CardTitle className="text-[22px] font-bold mb-1">{workout.title}</CardTitle>
+              <CardTitle className="type-display text-[22px] mb-1">{workout.title}</CardTitle>
               {workout.description && (
-                <p className="text-slate-400 mb-4">{workout.description}</p>
+                <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
               <div className="flex flex-wrap gap-6 mb-6">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-brand" />
+                    <Clock className="w-5 h-5 text-ink-muted" />
                     <div>
-                      <div className="text-sm text-slate-400">Duration</div>
-                      <div className="font-semibold">{workout.duration_minutes} minutes</div>
+                      <div className="section-label">Duration</div>
+                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-brand" />
+                    <Target className="w-5 h-5 text-ink-muted" />
                     <div>
-                      <div className="text-sm text-slate-400">Exercises</div>
-                      <div className="font-semibold">{workout.exercises?.length || 0} exercises</div>
+                      <div className="section-label">Exercises</div>
+                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.exercises?.length || 0} <span className="text-[11px] font-semibold text-ink-muted">exercises</span></div>
                     </div>
                   </div>
                 </div>
@@ -802,9 +801,9 @@ export default function WorkoutDetail() {
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
             {/* Pre-workout Notes */}
-            <Card className="border-brand/20 bg-brand/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-400">Pre-workout Notes</CardTitle>
+            <Card>
+              <CardHeader className="pt-4 pb-2">
+                <CardTitle className="section-label">Pre-workout Notes</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -818,19 +817,19 @@ export default function WorkoutDetail() {
 
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
-              <Card className="border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.05)]">
-                <CardContent className="py-3">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 text-[#fbbf24] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-[#fbbf24] text-sm">Recovery Advisory</p>
-                      {recoveryWarnings.map((w, i) => (
-                        <p key={i} className="text-sm text-[#fbbf24] mt-1">{w.message}</p>
-                      ))}
-                    </div>
+              <div className="glass px-4 py-3">
+                <div className="flex items-start gap-2.5">
+                  <i className="w-[26px] h-[26px] rounded-[9px] bg-warn/[0.15] text-warn flex items-center justify-center flex-shrink-0 not-italic">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </i>
+                  <div className="pt-0.5">
+                    <p className="text-[12px] font-bold text-warn">Recovery Advisory</p>
+                    {recoveryWarnings.map((w, i) => (
+                      <p key={i} className="text-xs font-semibold text-ink-muted leading-relaxed mt-1">{w.message}</p>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {exerciseLogs.map((exerciseLog, exerciseIndex) => {
@@ -882,17 +881,17 @@ export default function WorkoutDetail() {
               const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
               return allCardio.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-400 uppercase tracking-wide">Conditioning</p>
+                <p className="section-label">Conditioning</p>
                 {allCardio.map((c, i) => (
                   <div
                     key={`cardio-${i}`}
-                    className="flex items-center justify-between p-3 rounded-xl bg-charcoal-elevated border border-charcoal-border"
+                    className="flex items-center justify-between px-3.5 py-3 glass-inset"
                   >
-                    <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="w-4 h-4 text-carb" />
                       <div>
-                        <p className="font-medium text-sm text-white">{c.title}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-[13.5px] font-bold text-ink">{c.title}</p>
+                        <p className="font-technical text-[11px] font-semibold text-ink-muted">
                           {c.duration_minutes} min
                           {c.time_of_day && c.time_of_day !== "anytime"
                             ? ` · ${c.time_of_day.toUpperCase()}`
@@ -901,7 +900,7 @@ export default function WorkoutDetail() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-charcoal-elevated text-slate-400 text-xs border-0">Cardio</Badge>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-carb bg-carb/10 border border-carb/20 rounded-full px-2.5 py-1">Cardio</span>
                   </div>
                 ))}
               </div>
@@ -913,8 +912,8 @@ export default function WorkoutDetail() {
 
             {/* Notes Section */}
             <Card className="">
-              <CardHeader>
-                <CardTitle className="text-lg">Workout Notes (Optional)</CardTitle>
+              <CardHeader className="pt-4 pb-2">
+                <CardTitle className="section-label">Workout Notes (Optional)</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -929,64 +928,62 @@ export default function WorkoutDetail() {
         ) : (
           // View Mode - Show exercises read-only
           <Card className="">
-            <CardHeader>
-              <CardTitle>Exercises</CardTitle>
+            <CardHeader className="pt-4 pb-2">
+              <CardTitle className="text-[17px] font-extrabold text-ink">Exercises</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {workout.exercises?.map((exercise, index) => {
                 const isLogFormat = Array.isArray(exercise.sets);
                 return (
-                  <Card key={index} className="bg-charcoal-elevated">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-black font-bold flex-shrink-0 font-mono text-sm shrink-0">
+                  <div key={index} className="glass-inset px-4 py-3.5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-brand font-technical font-extrabold text-[13px] flex-shrink-0">
                           {index + 1}
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-lg mb-2">{exercise.name}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-[15px] font-extrabold text-ink mb-2">{exercise.name}</h4>
                           {isLogFormat ? (
                             <table className="w-full text-sm mt-2">
                               <thead>
-                                <tr className="border-b border-charcoal-border">
-                                  <th className="text-left py-2 px-2">Set</th>
-                                  <th className="text-left py-2 px-2">Weight</th>
-                                  <th className="text-left py-2 px-2">Reps</th>
+                                <tr className="border-b border-white/[0.08]">
+                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Set</th>
+                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Weight</th>
+                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Reps</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {exercise.sets.map((set, si) => (
-                                  <tr key={si} className="border-b border-charcoal-border">
-                                    <td className="py-2 px-2 font-medium">{set.set_number}</td>
-                                    <td className="py-2 px-2">{set.weight} {weightUnit}</td>
-                                    <td className="py-2 px-2">{set.reps}</td>
+                                  <tr key={si} className="border-b border-white/[0.06]">
+                                    <td className="py-2 px-2 font-technical font-extrabold text-ink-muted">{set.set_number}</td>
+                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-[10px] text-ink-faint">{weightUnit}</span></td>
+                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.reps}</td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
                           ) : (
-                            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                            <div className="flex flex-wrap gap-4 text-[12.5px] font-semibold text-ink-muted">
                               {exercise.sets > 1 && (
                                 <div>
-                                  <span className="font-medium">Sets:</span> {exercise.sets}
+                                  <span className="text-ink-faint">Sets:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.sets}</span>
                                 </div>
                               )}
                               <div>
-                                <span className="font-medium">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> {exercise.reps}
+                                <span className="text-ink-faint">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.reps}</span>
                               </div>
                               {exercise.rest_seconds > 0 && (
                                 <div>
-                                  <span className="font-medium">Rest:</span> {exercise.rest_seconds}s
+                                  <span className="text-ink-faint">Rest:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.rest_seconds}s</span>
                                 </div>
                               )}
                             </div>
                           )}
                           {exercise.notes && (
-                            <p className="text-sm text-slate-400 mt-2 italic">{exercise.notes}</p>
+                            <p className="text-xs font-semibold text-ink-muted mt-2 italic">{exercise.notes}</p>
                           )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                  </div>
                 );
               })}
             </CardContent>
@@ -1002,15 +999,15 @@ export default function WorkoutDetail() {
               className="hidden lg:flex flex-col items-center w-52 shrink-0 sticky"
               style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
             >
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 self-start">Muscles worked</p>
-              <div className="flex rounded-full overflow-hidden border border-charcoal-border text-xs font-medium mb-3">
+              <p className="section-label mb-2 self-start">Muscles worked</p>
+              <div className="flex rounded-full overflow-hidden bg-white/[0.05] border border-white/10 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] mb-3">
                 <button
                   onClick={() => setMuscleView("anterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
                 >Front</button>
                 <button
                   onClick={() => setMuscleView("posterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-brand text-black font-bold" : "bg-charcoal-surface text-slate-500 hover:bg-charcoal-elevated hover:text-white"}`}
+                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
                 >Back</button>
               </div>
               <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />
@@ -1026,7 +1023,7 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-muted">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
@@ -1046,7 +1043,7 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Incomplete Sets</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-muted">
             Some sets haven't been checked off. Would you like to mark them all as complete?
           </p>
           <div className="flex gap-3 pt-2">
@@ -1068,7 +1065,7 @@ export default function WorkoutDetail() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Post-workout Notes</label>
+              <label className="text-sm font-medium text-ink-muted">Post-workout Notes</label>
               <Textarea
                 value={postWorkoutNotes}
                 onChange={(e) => setPostWorkoutNotes(e.target.value)}

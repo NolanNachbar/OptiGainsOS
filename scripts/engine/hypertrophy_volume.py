@@ -11,6 +11,10 @@ Landmarks adapt based on:
 MUSCLES = [
     "chest", "upper_back", "lats", "quads", "hamstrings",
     "glutes", "shoulders", "triceps", "biceps", "calves", "core",
+    # First-class focus muscles (split out of shoulders/upper_back/chest so the
+    # allocator can target them directly): SBD covers the prime movers, so the
+    # regions it leaves behind get their own landmarks and emphasis.
+    "side_delts", "traps", "neck", "upper_chest", "rear_delts",
 ]
 
 # Muscles with lower baseline volume capacity (isolation / small)
@@ -37,13 +41,27 @@ LANDMARK_PRIORS: dict[str, dict] = {
     "biceps":     {"mev": 8,  "mav": 14, "mrv": 20},
     "calves":     {"mev": 8,  "mav": 16, "mrv": 24},
     "core":       {"mev": 0,  "mav": 12, "mrv": 16},
+    # DIRECT sets only (indirect work from presses/rows/deadlifts not counted).
+    # All three recover fast and tolerate high frequency. "shoulders" above now
+    # means front/rear delt + overhead pressing; lateral-raise work counts here.
+    "side_delts": {"mev": 8,  "mav": 16, "mrv": 24},
+    "traps":      {"mev": 4,  "mav": 10, "mrv": 16},
+    "neck":       {"mev": 4,  "mav": 8,  "mrv": 12},
+    # "chest" above is flat-press dominated (the bench work); upper_chest counts
+    # incline pressing/fly work only. rear_delts split from "shoulders" — rows
+    # feed them indirectly but direct work is what moves them.
+    "upper_chest": {"mev": 6, "mav": 12, "mrv": 18},
+    "rear_delts":  {"mev": 6, "mav": 12, "mrv": 18},
 }
 
 # Exercise-catalog muscle name -> canonical landmark vocab.
+# side_delt/rear_delt/traps/upper_chest are no longer lumped into bigger groups —
+# they are first-class landmarks so they can be prioritized and learned
+# independently. "shoulders" now means front delts + overhead pressing.
 MUSCLE_ALIAS: dict[str, str] = {
-    "front_delt": "shoulders", "side_delt": "shoulders", "rear_delt": "shoulders",
-    "rear_delts": "shoulders", "delts": "shoulders", "abs": "core",
-    "back": "upper_back", "traps": "upper_back", "lower_back": "upper_back",
+    "front_delt": "shoulders", "side_delt": "side_delts", "rear_delt": "rear_delts",
+    "delts": "shoulders", "abs": "core",
+    "back": "upper_back", "lower_back": "upper_back",
 }
 
 

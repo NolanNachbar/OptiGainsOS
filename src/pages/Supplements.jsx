@@ -76,10 +76,10 @@ function WaterCard({ today }) {
   return (
     <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
-        <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-blue-400" />
+        <CardTitle className="text-sm font-semibold text-ink flex items-center gap-2">
+          <Droplets className="w-4 h-4 text-info" />
           Water
-          <span className="text-slate-500 font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
+          <span className="text-ink-muted font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4">
@@ -97,7 +97,7 @@ function WaterCard({ today }) {
               size="sm"
               onClick={() => addWater.mutate(ml)}
               disabled={addWater.isPending}
-              className="flex-1 h-9 bg-charcoal-elevated hover:bg-blue-500/10 hover:text-blue-400 border border-charcoal-border text-slate-400 text-xs font-bold"
+              className="flex-1 h-9 bg-charcoal-elevated hover:bg-info/10 hover:text-info border border-charcoal-border text-ink-muted text-xs font-bold"
             >
               +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
             </Button>
@@ -106,11 +106,11 @@ function WaterCard({ today }) {
         {todayWater.length > 0 && (
           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
             {[...todayWater].reverse().map(entry => (
-              <div key={entry.id} className="flex items-center justify-between group text-xs text-slate-500">
+              <div key={entry.id} className="flex items-center justify-between group text-xs text-ink-muted">
                 <span>{format(parseISO(entry.logged_at), "h:mm a")} · {entry.amount_ml}ml</span>
                 <button
                   onClick={() => deleteEntry.mutate(entry.id)}
-                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                  className="opacity-0 group-hover:opacity-100 hover:text-bad transition-all"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -133,21 +133,21 @@ function SupplementForm({ initial, onSave, onClose }) {
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-xs text-slate-400 mb-1.5 block">Name</Label>
+        <Label className="text-xs text-ink-muted mb-1.5 block">Name</Label>
         <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Creatine" className="h-9" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs text-slate-400 mb-1.5 block">Default Dose</Label>
+          <Label className="text-xs text-ink-muted mb-1.5 block">Default Dose</Label>
           <Input type="number" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" className="h-9" />
         </div>
         <div>
-          <Label className="text-xs text-slate-400 mb-1.5 block">Unit</Label>
+          <Label className="text-xs text-ink-muted mb-1.5 block">Unit</Label>
           <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="mg, g, IU, cap" className="h-9" />
         </div>
       </div>
       <div>
-        <Label className="text-xs text-slate-400 mb-1.5 block">Timing note (optional)</Label>
+        <Label className="text-xs text-ink-muted mb-1.5 block">Timing note (optional)</Label>
         <Input value={timing} onChange={e => setTiming(e.target.value)} placeholder="e.g. With breakfast" className="h-9" />
       </div>
       <div className="flex gap-2 pt-2">
@@ -280,8 +280,8 @@ export default function Supplements({ embedded = false }) {
                 <Pill className="w-5 h-5 text-brand" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Supplements & Water</h1>
-                <p className="text-xs text-slate-500 mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
+                <h1 className="text-xl font-bold text-ink">Supplements & Water</h1>
+                <p className="text-xs text-ink-muted mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
               </div>
             </div>
             <Button variant="volt" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5">
@@ -298,7 +298,7 @@ export default function Supplements({ embedded = false }) {
         {/* Today's supplement status */}
         {suppTypes.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Today's Log</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3">Today's Log</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {suppTypes.map(type => {
                 const taken = takenNames.has(type.name);
@@ -312,25 +312,25 @@ export default function Supplements({ embedded = false }) {
                       <div>
                         <div className="flex items-center gap-2">
                           {taken && <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />}
-                          <span className="text-sm font-semibold text-white">{type.name}</span>
+                          <span className="text-sm font-semibold text-ink">{type.name}</span>
                         </div>
                         {type.timing_note && (
                           <div className="flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            <span className="text-[10px] text-slate-500">{type.timing_note}</span>
+                            <Clock className="w-3 h-3 text-ink-muted" />
+                            <span className="text-[10px] text-ink-muted">{type.timing_note}</span>
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setEditingType(type)}
-                          className="p-1 text-slate-500 hover:text-brand transition-colors"
+                          className="p-1 text-ink-muted hover:text-brand transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => deleteType.mutate(type.id)}
-                          className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+                          className="p-1 text-ink-muted hover:text-bad transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -364,24 +364,24 @@ export default function Supplements({ embedded = false }) {
         {/* Today's log entries */}
         {todayLogs.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Taken Today</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-ink-muted mb-3">Taken Today</h2>
             <div className="space-y-2">
               {todayLogs.map(log => (
                 <div key={log.id} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-charcoal-surface border border-charcoal-border group">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />
-                    <span className="text-sm text-white font-medium">{log.supplement_name}</span>
+                    <span className="text-sm text-ink font-medium">{log.supplement_name}</span>
                     {log.dose && (
-                      <Badge variant="outline" className="text-[10px] text-slate-500 border-charcoal-border bg-transparent">
+                      <Badge variant="outline" className="text-[10px] text-ink-muted border-charcoal-border bg-transparent">
                         {log.dose}{log.unit || ""}
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-500">{format(parseISO(log.taken_at), "h:mm a")}</span>
+                    <span className="text-[10px] text-ink-muted">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
                       onClick={() => deleteLog.mutate(log.id)}
-                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-ink-muted hover:text-bad transition-all"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -395,7 +395,7 @@ export default function Supplements({ embedded = false }) {
         {suppTypes.length === 0 && (
           <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
             <Pill className="w-8 h-8 text-slate-800 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">No supplements configured.</p>
+            <p className="text-sm text-ink-muted">No supplements configured.</p>
             <p className="text-xs text-slate-700 mt-1">Add your stack to enable one-tap daily logging.</p>
             <Button variant="volt" size="sm" className="mt-4" onClick={() => setShowAddType(true)}>
               <Plus className="w-3.5 h-3.5 mr-1.5" /> Add First Supplement
@@ -408,7 +408,7 @@ export default function Supplements({ embedded = false }) {
       <Dialog open={showAddType} onOpenChange={setShowAddType}>
         <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">Add Supplement</DialogTitle>
+            <DialogTitle className="text-ink">Add Supplement</DialogTitle>
           </DialogHeader>
           <SupplementForm onSave={(fields) => addType.mutate(fields)} onClose={() => setShowAddType(false)} />
         </DialogContent>
@@ -418,7 +418,7 @@ export default function Supplements({ embedded = false }) {
       <Dialog open={!!editingType} onOpenChange={() => setEditingType(null)}>
         <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Supplement</DialogTitle>
+            <DialogTitle className="text-ink">Edit Supplement</DialogTitle>
           </DialogHeader>
           {editingType && (
             <SupplementForm

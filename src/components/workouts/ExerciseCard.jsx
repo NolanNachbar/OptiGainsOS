@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, ChevronRight } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, ChevronRight, Check } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
@@ -63,6 +62,22 @@ export default function ExerciseCard({
   const dbEntry = lookupExercise(exercise.name);
   const smartRest = getSmartRestDuration(exercise.name);
   const isProgramMode = !!programExercise;
+
+  // Presentation only: the first un-completed set is the "active" set.
+  const activeSetIndex = exercise.sets.findIndex((s) => !s.completed);
+
+  // Set-grid template — SET | PREV | LOAD | REPS | (RIR) | ✓ | ✕
+  const gridCols = showRIR
+    ? "grid grid-cols-[26px_minmax(0,1fr)_62px_52px_46px_34px_26px] sm:grid-cols-[32px_minmax(0,1fr)_88px_72px_56px_38px_30px]"
+    : "grid grid-cols-[26px_minmax(0,1fr)_62px_52px_34px_26px] sm:grid-cols-[32px_minmax(0,1fr)_88px_72px_38px_30px]";
+
+  // Translucent value cell — 36px tall, rounded 10px, inset top highlight.
+  // Cells inside the active (coral-tinted) row read slightly brighter.
+  const setCell = (isActive) =>
+    `h-9 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] text-ink ` +
+    `placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation ` +
+    `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-teal/40 ` +
+    `${isActive ? 'bg-white/[0.09]' : 'bg-white/[0.05]'}`;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -166,11 +181,11 @@ export default function ExerciseCard({
 
   return (
     <>
-    <Card className="bg-charcoal-surface">
+    <Card>
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-black font-bold text-sm flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-brand font-technical font-extrabold text-[13px] flex-shrink-0">
               {exerciseIndex + 1}
             </div>
             {editingName ? (
@@ -185,49 +200,49 @@ export default function ExerciseCard({
             ) : (
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg text-white">{exercise.name}</CardTitle>
+                  <CardTitle className="text-[17px] font-extrabold text-ink">{exercise.name}</CardTitle>
                   {dbEntry && (
-                    <Badge variant="outline" className="text-xs capitalize border-charcoal-border border-charcoal-border text-slate-400 text-slate-400">
+                    <Badge variant="outline" className="text-xs capitalize border-charcoal-border text-ink-muted">
                       {dbEntry.type}
                     </Badge>
                   )}
                 </div>
                 {/* Program targets */}
                 {isProgramMode && progressionTargets && (
-                  <div className="flex items-center gap-2.5 mt-1">
+                  <div className="flex items-center gap-2.5 mt-1 text-[11px] font-semibold text-ink-muted">
                     {progressionTargets.workingWeight && (
-                      <span className="text-xs text-brand font-semibold">
-                        Target: <span className="font-technical">{progressionTargets.workingWeight}</span> {weightUnit}
+                      <span>
+                        Target <span className="font-technical font-extrabold text-ink">{progressionTargets.workingWeight}</span> {weightUnit}
                       </span>
                     )}
                     {progressionTargets.dailyMin && (
-                      <span className="text-xs text-slate-500">
-                        Min: <span className="font-technical text-slate-400">{progressionTargets.dailyMin}</span> {weightUnit}
+                      <span>
+                        Min <span className="font-technical font-extrabold text-ink">{progressionTargets.dailyMin}</span> {weightUnit}
                       </span>
                     )}
                     {programExercise.rir_target && (
-                      <span className="text-xs text-slate-500">
-                        RIR <span className="font-technical text-slate-400">{programExercise.rir_target}</span>
+                      <span>
+                        RIR <span className="font-technical font-extrabold text-ink">{programExercise.rir_target}</span>
                       </span>
                     )}
                   </div>
                 )}
                 {/* Original exercise targets (non-program) */}
                 {!isProgramMode && originalExercise && (
-                  <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wide">
-                    Target: <span className="font-technical">{originalExercise.sets || 3}</span> sets × <span className="font-technical">{originalExercise.reps || 10}</span> reps
+                  <p className="text-[10.5px] text-ink-muted mt-1 uppercase font-bold tracking-[0.06em]">
+                    Target <span className="font-technical text-ink">{originalExercise.sets || 3}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
                   </p>
                 )}
                 {/* Last performance data */}
                 {lastPerformance && (
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <History className="w-3 h-3 text-slate-600" />
-                    <span className="text-xs text-slate-500">
-                      Last: <span className="font-semibold text-brand font-technical">
+                    <History className="w-3 h-3 text-ink-faint" />
+                    <span className="text-[11px] font-semibold text-ink-muted">
+                      Last <span className="font-technical font-extrabold text-ink-secondary">
                         {lastPerformance.lastWeight}
-                      </span><span className="text-[10px] text-slate-600 ml-0.5">{weightUnit}</span> × <span className="font-technical text-brand font-semibold">{lastPerformance.lastReps}</span>
+                      </span><span className="text-[10px] text-ink-faint ml-0.5">{weightUnit}</span> × <span className="font-technical font-extrabold text-ink-secondary">{lastPerformance.lastReps}</span>
                       {lastPerformance.lastDate && (
-                        <span className="text-slate-600 ml-1.5 font-technical text-[10px]">
+                        <span className="text-ink-faint ml-1.5 font-technical text-[10px]">
                           ({format(new Date(lastPerformance.lastDate), 'MMM d')})
                         </span>
                       )}
@@ -248,13 +263,13 @@ export default function ExerciseCard({
               <MoreVertical className="w-5 h-5" />
             </Button>
             {openMenu && (
-              <div className="absolute right-0 top-9 rounded-lg border border-charcoal-border py-1 z-20 min-w-[160px] bg-charcoal-surface text-white ">
+              <div className="absolute right-0 top-9 glass-elevated rounded-xl overflow-hidden py-1 z-20 min-w-[160px] text-ink">
                 <button
                   onClick={() => {
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -265,7 +280,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -276,7 +291,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-400  hover:bg-charcoal-elevated hover:bg-charcoal-elevated flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -287,7 +302,7 @@ export default function ExerciseCard({
                     onRemoveExercise(exerciseIndex);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
@@ -301,18 +316,20 @@ export default function ExerciseCard({
       <CardContent className="pt-0">
         {/* Advisory nudge (program mode) */}
         {nudgeMessage && (
-          <div className={`mb-3 p-2.5 rounded-lg text-sm flex items-start gap-2 ${
-            nudgeMessage.type === 'success' ? 'bg-[rgba(34,197,94,0.08)] text-[#4ade80]' :
-            nudgeMessage.type === 'warning' ? 'bg-[rgba(245,158,11,0.08)] text-[#fbbf24]' :
-            'bg-[rgba(59,130,246,0.08)] text-[#60a5fa]'
-          }`}>
-            {nudgeMessage.type === 'warning' ? (
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            ) : (
-              <TrendingUp className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            )}
-            <span>{nudgeMessage.message}</span>
-            <button onClick={() => setNudgeMessage(null)} className="ml-auto flex-shrink-0">
+          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+            <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
+              nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
+              nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
+              'bg-info/[0.15] text-info'
+            }`}>
+              {nudgeMessage.type === 'warning' ? (
+                <AlertTriangle className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingUp className="w-3.5 h-3.5" />
+              )}
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
+            <button onClick={() => setNudgeMessage(null)} className="ml-auto flex-shrink-0 text-ink-faint hover:text-ink-muted pt-1">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -320,12 +337,14 @@ export default function ExerciseCard({
 
         {/* Between-set coaching chip (Phase 3) */}
         {coachingChip && (
-          <div className="mb-3 p-2.5 rounded-lg bg-brand/5 border border-brand/20 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-brand flex-shrink-0" />
-            <span className="text-sm text-slate-300 flex-1">{coachingChip.message}</span>
+          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-[rgba(239,115,104,0.15)] text-coral flex items-center justify-center flex-shrink-0 not-italic">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
             {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
               <button
-                className="text-xs font-semibold text-brand border border-brand/40 rounded px-2 py-0.5 hover:bg-brand/10"
+                className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
                 onClick={() => {
                   onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
                   setCoachingChip(null);
@@ -334,120 +353,136 @@ export default function ExerciseCard({
                 Apply
               </button>
             )}
-            <button onClick={() => setCoachingChip(null)} className="text-slate-600 hover:text-slate-400 flex-shrink-0">
+            <button onClick={() => setCoachingChip(null)} className="text-ink-faint hover:text-ink-muted flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full min-w-full">
-            <thead>
-              <tr className="text-xs text-slate-500 border-b border-charcoal-border/50 uppercase tracking-wider font-semibold">
-                <th className="text-left py-2 px-1.5 w-8 md:w-12">Set</th>
-                <th className="text-left py-2 px-1.5 text-xs">Weight</th>
-                <th className="text-left py-2 px-1.5 text-xs">Reps</th>
-                {showRIR && (
-                  <th className="text-left py-2 px-1.5 w-16 md:w-24 text-xs">
-                    <div className="flex items-center gap-1">
-                      <span>RIR</span>
-                      <div className="group relative">
-                        <HelpCircle className="w-3 h-3 cursor-help text-slate-500 hover:text-slate-400" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-charcoal text-white text-xs rounded border border-charcoal-border shadow-lg">
-                          Reps In Reserve (0-10): How many reps you left in the tank. 0 = failure, 1 = 1 rep left, 2 = 2 reps left.
-                        </div>
-                      </div>
-                    </div>
-                  </th>
-                )}
-                <th className="text-center py-2 px-1.5 w-10 md:w-12 text-xs">✓</th>
-                <th className="text-center py-2 px-1.5 w-8 md:w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {exercise.sets.map((set, setIndex) => (
-                <tr key={setIndex} className={`transition-colors border-b border-charcoal-border/20 ${
-                  set.completed
-                    ? set.set_type === 'daily_min' 
-                      ? "bg-blue-500/5 border-l-2 border-l-blue-500" 
-                      : "bg-emerald-500/5 border-l-2 border-l-emerald-500"
-                    : "border-l-2 border-l-transparent"
-                }`}>
-                  <td className="py-2.5 px-1.5">
-                    <span className="font-technical text-sm font-semibold text-slate-400">{set.set_number}</span>
-                  </td>
-                  <td className="py-2.5 px-1.5">
-                    <Input
-                      type="number"
-                      value={set.weight || ""}
-                      onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
-                      onFocus={(e) => e.target.select()}
-                      placeholder={
-                        isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
-                          ? String(progressionTargets.dailyMin)
-                          : isProgramMode && progressionTargets?.workingWeight
-                          ? String(progressionTargets.workingWeight)
-                          : lastPerformance?.lastWeight
-                          ? String(lastPerformance.lastWeight)
-                          : "0"
-                      }
-                      min="0"
-                      step="2.5"
-                      className="w-16 md:w-24 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand"
-                    />
-                  </td>
-                  <td className="py-2.5 px-1.5">
-                    <Input
-                      type="number"
-                      value={set.reps || ""}
-                      onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
-                      onFocus={(e) => e.target.select()}
-                      placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
-                      min="0"
-                      className="w-14 md:w-20 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand"
-                    />
-                  </td>
-                  {showRIR && (
-                    <td className="py-2.5 px-1.5">
-                      <Input
-                        type="number"
-                        value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const rir = val === "" ? null : parseFloat(val);
-                          handleRirChange(setIndex, rir);
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        placeholder="—"
-                        min="0"
-                        max="10"
-                        step="0.5"
-                        className="w-14 md:w-24 h-9 text-sm font-technical font-semibold text-center touch-manipulation bg-slate-900 border-charcoal-border focus:border-brand text-brand"
-                      />
-                    </td>
-                  )}
-                  <td className="py-2.5 px-1.5 text-center">
-                    <Checkbox
-                      checked={set.completed}
-                      onCheckedChange={(checked) => handleSetCompleted(setIndex, checked)}
-                      className="h-5 w-5 md:h-5 md:w-5 border-charcoal-border data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                    />
-                  </td>
-                  <td className="py-2.5 px-1.5 text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                      className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-500/10"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Set progress segments — done teal, current coral, upcoming faint */}
+        <div className="flex gap-[5px] mb-3">
+          {exercise.sets.map((s, i) => (
+            <i
+              key={i}
+              className={`flex-1 h-1 rounded-full ${
+                s.completed ? 'bg-teal' : i === activeSetIndex ? 'bg-brand' : 'bg-white/10'
+              }`}
+            />
+          ))}
         </div>
+
+        {/* Column header */}
+        <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
+          <span className="pl-0.5">Set</span>
+          <span>Prev</span>
+          <span className="text-center">{weightUnit}</span>
+          <span className="text-center">Reps</span>
+          {showRIR && (
+            <span className="text-center flex items-center justify-center gap-1">
+              RIR
+              <span className="group relative">
+                <HelpCircle className="w-3 h-3 cursor-help" />
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 glass-elevated rounded-lg text-ink text-[11px] font-semibold normal-case tracking-normal text-left">
+                  Reps In Reserve (0-10): How many reps you left in the tank. 0 = failure, 1 = 1 rep left, 2 = 2 reps left.
+                </span>
+              </span>
+            </span>
+          )}
+          <span></span>
+          <span></span>
+        </div>
+
+        {/* Set rows */}
+        {exercise.sets.map((set, setIndex) => {
+          const isActive = !set.completed && setIndex === activeSetIndex;
+          return (
+            <div
+              key={setIndex}
+              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors ${
+                isActive
+                  ? 'bg-[rgba(239,115,104,0.06)] rounded-xl -mx-2 px-2'
+                  : setIndex === 0 ? '' : 'border-t-[0.5px] border-t-white/[0.08]'
+              }`}
+            >
+              <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
+                set.set_type === 'daily_min' ? 'text-info' : 'text-ink-muted'
+              }`}>
+                {set.set_number}
+              </span>
+              <span className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1">
+                {lastPerformance?.lastWeight
+                  ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
+                  : '—'}
+              </span>
+              <input
+                type="number"
+                value={set.weight || ""}
+                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                placeholder={
+                  isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
+                    ? String(progressionTargets.dailyMin)
+                    : isProgramMode && progressionTargets?.workingWeight
+                    ? String(progressionTargets.workingWeight)
+                    : lastPerformance?.lastWeight
+                    ? String(lastPerformance.lastWeight)
+                    : "0"
+                }
+                min="0"
+                step="2.5"
+                className={setCell(isActive)}
+              />
+              <input
+                type="number"
+                value={set.reps || ""}
+                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
+                min="0"
+                className={setCell(isActive)}
+              />
+              {showRIR && (
+                <input
+                  type="number"
+                  value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const rir = val === "" ? null : parseFloat(val);
+                    handleRirChange(setIndex, rir);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="—"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  className={setCell(isActive)}
+                />
+              )}
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={set.completed}
+                aria-label={`Mark set ${set.set_number} ${set.completed ? 'incomplete' : 'complete'}`}
+                onClick={() => handleSetCompleted(setIndex, !set.completed)}
+                className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center transition-colors ${
+                  set.completed
+                    ? 'bg-[rgba(94,220,210,0.16)] text-teal'
+                    : 'border-[1.5px] border-white/[0.18] text-transparent hover:border-white/30'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemoveSet(exerciseIndex, setIndex)}
+                className="h-7 w-7 bg-transparent border-0 text-ink-faint hover:text-bad hover:bg-bad/10"
+              >
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          );
+        })}
         <Button
           variant="ghost"
           size="sm"
@@ -479,13 +514,13 @@ export default function ExerciseCard({
           </div>
         ) : exercise.notes ? (
           <p
-            className="mt-3 text-sm text-slate-400 italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-charcoal-surface py-1"
+            className="mt-3 text-sm text-ink-muted italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-white/[0.05] rounded-r-lg py-1"
             onClick={() => setEditingNotes(true)}
           >
             {exercise.notes}
           </p>
         ) : originalExercise?.notes ? (
-          <p className="text-sm text-slate-400 mt-3 italic border-l-2 border-charcoal-border pl-3">
+          <p className="text-sm text-ink-muted mt-3 italic border-l-2 border-charcoal-border pl-3">
             {originalExercise.notes}
           </p>
         ) : null}
@@ -537,29 +572,29 @@ export default function ExerciseCard({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-slate-400 group-hover:text-brand">{icon}</span>
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
+                      <span className="text-lg font-bold text-ink-muted group-hover:text-brand">{icon}</span>
+                      <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{label}</span>
                       {alt.pattern && (
-                        <span className="text-xs text-slate-500 border border-charcoal-border rounded px-1.5 py-0.5">{alt.pattern}</span>
+                        <span className="text-xs text-ink-muted border border-charcoal-border rounded px-1.5 py-0.5">{alt.pattern}</span>
                       )}
                     </div>
-                    <p className="font-semibold text-white group-hover:text-brand">{alt.name}</p>
+                    <p className="font-semibold text-ink group-hover:text-brand">{alt.name}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-                      {muscles && <span className="text-xs text-slate-400">{muscles}</span>}
-                      <span className="text-xs text-slate-500">{alt.sets} × {alt.reps} · {alt.rest}s</span>
+                      {muscles && <span className="text-xs text-ink-muted">{muscles}</span>}
+                      <span className="text-xs text-ink-muted">{alt.sets} × {alt.reps} · {alt.rest}s</span>
                     </div>
                     {loadHint && (
-                      <p className="text-xs text-[#fbbf24] mt-1">{loadHint}</p>
+                      <p className="text-xs text-warn mt-1">{loadHint}</p>
                     )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand mt-1 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-ink-muted group-hover:text-brand mt-1 flex-shrink-0" />
                 </div>
               </button>
             );
           })}
         </div>
         <div className="mt-3 border-t border-charcoal-border pt-3">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom exercise</p>
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">Custom exercise</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox
@@ -590,7 +625,7 @@ export default function ExerciseCard({
             </Button>
           </div>
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-slate-500" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
+        <Button variant="ghost" className="w-full mt-2 text-ink-muted" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
           Keep current exercise
         </Button>
       </DialogContent>

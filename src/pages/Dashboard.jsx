@@ -260,27 +260,27 @@ export default function Dashboard() {
     <div className="px-3 py-3 md:px-6 md:py-4 bg-charcoal min-h-screen relative">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between rise-in">
           <div className="flex items-center gap-3">
-            <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-charcoal-border" />
+            <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-white/10" />
             <div>
-              <h1 className="text-lg font-bold text-white leading-none">Dashboard</h1>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">
+              <h1 className="type-display text-lg leading-none">Dashboard</h1>
+              <p className="text-[10px] text-muted-2 uppercase font-bold tracking-[0.08em] mt-1">
                 OptiGains Engine
                 {daysToRace != null && (
-                  <span className="text-brand ml-2">· {daysToRace}d to BUD/S</span>
+                  <span className="font-technical text-gold ml-2">· {daysToRace}d to BUD/S</span>
                 )}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
              <Link to="/weekly-schedule">
-              <Button variant="ghost" size="sm" className="text-slate-400 text-xs gap-1.5 hover:text-brand h-8 border-charcoal-border">
+              <Button variant="dim" size="sm" className="text-xs gap-1.5 h-8">
                 <Calendar className="w-3.5 h-3.5" /> Schedule
               </Button>
             </Link>
              <Link to="/athlete-state">
-              <Button variant="ghost" size="sm" className="text-slate-400 text-xs gap-1.5 hover:text-brand h-8 border-charcoal-border">
+              <Button variant="dim" size="sm" className="text-xs gap-1.5 h-8">
                 <Activity className="w-3.5 h-3.5" /> State
               </Button>
             </Link>
@@ -290,8 +290,8 @@ export default function Dashboard() {
         {/* Recovery-data staleness banner */}
         {recoveryStaleDays != null && recoveryStaleDays >= 2 && (
           <div className="mb-4 flex items-center gap-2 rounded-xl glass px-4 py-2.5 text-xs">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-slate-300">
+            <AlertTriangle className="w-4 h-4 text-warn shrink-0" />
+            <span className="text-ink-secondary">
               Recovery data is {recoveryStaleDays} days stale — your wearable sync may need attention.
             </span>
             <Link to="/profile" className="ml-auto text-brand font-semibold whitespace-nowrap">
@@ -301,39 +301,40 @@ export default function Dashboard() {
         )}
 
         {/* ── METABOLIC GRID (The Engine Room) ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-charcoal-border rounded-xl overflow-hidden border border-charcoal-border shadow-dark-card mb-4">
-          
+        <div className="glass p-2 mb-4 rise-in-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+
           {/* Expenditure Tile */}
-          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
+          <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-orange-400" /> Expenditure
+              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-gold" /> Expenditure
               </p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-xl font-technical text-white leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
-                <span className="text-[9px] text-brand font-medium uppercase">kcal/day</span>
+                <span className="text-xl font-technical font-extrabold text-ink leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
+                <span className="text-[9px] text-gold font-semibold uppercase">kcal/day</span>
               </div>
             </div>
             {tdeeResult?.method === 'adaptive' ? (
-              <span className="text-[8px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 w-fit leading-none font-bold uppercase tracking-wider">Adaptive</span>
+              <span className="text-[8px] text-gold bg-gold/10 px-1.5 py-0.5 rounded border-[0.5px] border-gold/20 w-fit leading-none font-bold uppercase tracking-wider">Adaptive</span>
             ) : (
-              <span className="text-[8px] text-slate-500 leading-none uppercase tracking-wider font-semibold">Estimated</span>
+              <span className="text-[8px] text-muted-2 leading-none uppercase tracking-wider font-semibold">Estimated</span>
             )}
           </div>
 
           {/* Trend Weight Tile */}
-          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
+          <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-sky-400" /> Trend Weight
+              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-violet" /> Trend Weight
               </p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-xl font-technical text-white leading-none">{currentBodyWeight || "—"}</span>
-                <span className="text-[9px] text-slate-400 font-medium uppercase">{weightUnit}</span>
+                <span className="text-xl font-technical font-extrabold text-ink leading-none">{currentBodyWeight || "—"}</span>
+                <span className="text-[9px] text-muted-2 font-semibold uppercase">{weightUnit}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[9px] text-slate-500 leading-none">
-              <span className={`font-technical font-bold ${bodyWeightChange > 0 ? "text-amber-500" : "text-emerald-400"}`}>
+            <div className="flex items-center gap-1.5 text-[9px] text-muted-2 leading-none">
+              <span className={`font-technical font-bold ${bodyWeightChange > 0 ? "text-warn" : "text-ok"}`}>
                 {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange?.toFixed(1) || "0.0"}
               </span>
               <span className="uppercase tracking-wider font-semibold">this wk</span>
@@ -341,15 +342,15 @@ export default function Dashboard() {
           </div>
 
           {/* Readiness Tile → Recovery detail */}
-          <Link to="/recovery" className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px] hover:bg-charcoal-elevated transition-colors group">
+          <Link to="/recovery" className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px] hover:bg-white/[0.07] transition-colors group">
             <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-brand" /> Readiness
-                <ArrowRight className="w-2.5 h-2.5 text-slate-600 group-hover:text-brand ml-auto transition-colors" />
+              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-teal" /> Readiness
+                <ArrowRight className="w-2.5 h-2.5 text-faint group-hover:text-teal ml-auto transition-colors" />
               </p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-xl font-technical text-white leading-none">{readinessScore ?? "—"}</span>
-                <span className={`text-[9px] font-medium uppercase ${readinessCat.color}`}>
+                <span className="text-xl font-technical font-extrabold text-ink leading-none">{readinessScore ?? "—"}</span>
+                <span className={`text-[9px] font-semibold uppercase ${readinessCat.color}`}>
                   {readinessScore == null ? "No data" : readinessCat.label}
                 </span>
               </div>
@@ -361,9 +362,7 @@ export default function Dashboard() {
                   <div
                     key={i}
                     className={`w-4 h-[3px] rounded-sm ${
-                      filled
-                        ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]"
-                        : "bg-slate-800"
+                      filled ? "bg-teal" : "bg-white/[0.08]"
                     }`}
                   />
                 );
@@ -372,34 +371,35 @@ export default function Dashboard() {
           </Link>
 
           {/* Nutrition Snapshot */}
-          <div className="bg-charcoal-surface px-4 py-3 flex flex-col justify-between h-[90px]">
+          <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
-                <Apple className="w-3.5 h-3.5 text-emerald-400" /> Intake
+              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+                <Apple className="w-3.5 h-3.5 text-gold" /> Intake
               </p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-xl font-technical text-white leading-none">{Math.round(todayMacros.calories)}</span>
-                <span className="text-[9px] text-slate-500 leading-none">/ {profile?.daily_calorie_goal} kcal</span>
+                <span className="text-xl font-technical font-extrabold text-ink leading-none">{Math.round(todayMacros.calories)}</span>
+                <span className="text-[9px] text-muted-2 leading-none font-technical">/ {profile?.daily_calorie_goal} kcal</span>
               </div>
             </div>
             <div className="space-y-1.5">
-              <div className="h-1 bg-slate-900 rounded-full overflow-hidden w-full">
-                <div className="h-full bg-brand" style={{ width: `${Math.min(100, (todayMacros.calories / (profile?.daily_calorie_goal || 1)) * 100)}%` }} />
+              <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden w-full">
+                <div className="h-full bg-gold" style={{ width: `${Math.min(100, (todayMacros.calories / (profile?.daily_calorie_goal || 1)) * 100)}%` }} />
               </div>
-              <div className="flex justify-between text-[9px] text-slate-400 font-technical leading-none">
-                <span>P:<span className="text-sky-400">{Math.round(todayMacros.protein)}g</span></span>
-                <span>C:<span className="text-amber-500">{Math.round(todayMacros.carbs)}g</span></span>
-                <span>F:<span className="text-emerald-500">{Math.round(todayMacros.fats)}g</span></span>
+              <div className="flex justify-between text-[9px] text-muted-2 font-technical leading-none">
+                <span>P:<span className="text-coral">{Math.round(todayMacros.protein)}g</span></span>
+                <span>C:<span className="text-carb">{Math.round(todayMacros.carbs)}g</span></span>
+                <span>F:<span className="text-fat">{Math.round(todayMacros.fats)}g</span></span>
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Morning Check-in (if not done) */}
         {!todayCheckIn && (
           <div className="mb-4">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5 flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-brand" /> Daily Readiness Check-in
+            <h2 className="section-label mb-1.5 flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-teal" /> Daily Readiness Check-in
             </h2>
             <MorningCheckin today={today} existingCheckin={todayCheckIn} />
           </div>
@@ -408,49 +408,49 @@ export default function Dashboard() {
         {/* ── MAIN WORKOUT CARD ── */}
         <div className="mb-4">
           {todayLog ? (
-            <div className="rounded-2xl bg-charcoal-surface border border-emerald-500/20 overflow-hidden shadow-dark-card">
+            <div className="glass overflow-hidden">
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                  <div className="p-3 rounded-xl bg-leaf/10">
+                    <CheckCircle2 className="w-6 h-6 text-leaf" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{displayWorkoutTitle || "Session Complete"}</h3>
-                    <p className="text-xs text-emerald-400/70 font-bold uppercase tracking-widest">Training Done</p>
+                    <h3 className="text-lg font-extrabold text-ink">{displayWorkoutTitle || "Session Complete"}</h3>
+                    <p className="text-xs text-leaf/70 font-bold uppercase tracking-[0.08em]">Training Done</p>
                   </div>
                 </div>
                 <Link to={todayWorkoutLink || "#"}>
-                  <Button variant="ghost" size="sm" className="text-xs text-slate-400 border-charcoal-border hover:text-white">View Log</Button>
+                  <Button variant="dim" size="sm" className="text-xs">View Log</Button>
                 </Link>
               </div>
             </div>
           ) : workoutTitle ? (
-            <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 to-pink-500/10 border border-orange-500/20 shadow-energy overflow-hidden backdrop-blur-sm relative group hover:border-orange-500/30 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none" />
+            <div className="glass glass-interactive overflow-hidden relative group">
+              <span className="absolute left-0 top-0 bottom-0 w-1 bg-brand" />
               <div className="p-5 relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-[10px] text-orange-400 font-bold uppercase tracking-widest mb-1">Today's Mission</p>
-                    <h3 className="text-xl font-bold text-white leading-tight">{workoutTitle}</h3>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-[10px] text-brand font-bold uppercase tracking-[0.08em] mb-1">Today's Mission</p>
+                    <h3 className="text-xl font-extrabold text-ink leading-tight">{workoutTitle}</h3>
+                    <p className="font-technical text-xs font-semibold text-muted-2 mt-1">
                       {exerciseCount} lift{exerciseCount !== 1 ? "s" : ""}
                       {todayProgramRuns.length > 0 && ` · ${todayProgramRuns.length} conditioning`}
                       {workoutDuration ? ` · ~${workoutDuration} min` : ""}
                     </p>
                   </div>
-                   <Dumbbell className="w-8 h-8 text-orange-500/30 group-hover:text-orange-500/50 transition-colors" />
+                   <Dumbbell className="w-8 h-8 text-brand/30 group-hover:text-brand/50 transition-colors" />
                 </div>
                 <Link to={todayWorkoutLink}>
-                  <Button variant="energy" className="w-full h-12 text-md font-bold rounded-xl shadow-lg">
+                  <Button variant="energy" className="w-full h-12 text-md font-bold rounded-xl">
                     Start Workout <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
             </div>
           ) : (
-            <Card className="p-6 text-center border-dashed border-charcoal-border">
-              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Rest Day</p>
-              <p className="text-sm text-slate-400 mt-1">Focus on recovery and mobility</p>
+            <Card className="p-6 text-center border-dashed border-white/10">
+              <p className="text-muted-2 font-bold uppercase tracking-[0.08em] text-xs">Rest Day</p>
+              <p className="text-sm font-semibold text-muted-2 mt-1">Focus on recovery and mobility</p>
             </Card>
           )}
         </div>
@@ -480,10 +480,10 @@ export default function Dashboard() {
 
           {/* Heatmap & Training Load */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="md:col-span-2 shadow-dark-card border-charcoal-border">
+            <Card className="md:col-span-2 glass-interactive">
               <CardHeader className="pb-0 pt-4 px-5">
-                <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                  <Activity className="w-3.5 h-3.5" /> Training Load
+                <CardTitle className="section-label flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-teal" /> Training Load
                 </CardTitle>
               </CardHeader>
               <div className="p-5">
@@ -496,10 +496,10 @@ export default function Dashboard() {
               </div>
             </Card>
 
-            <Card className="shadow-dark-card border-charcoal-border overflow-hidden">
+            <Card className="glass-interactive overflow-hidden">
                <CardHeader className="pb-0 pt-4 px-5">
-                <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                  <Target className="w-3.5 h-3.5" /> Muscle Fatigue
+                <CardTitle className="section-label flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5 text-teal" /> Muscle Fatigue
                 </CardTitle>
               </CardHeader>
               <div className="p-4 flex justify-center">

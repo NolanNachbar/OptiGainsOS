@@ -61,7 +61,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           deloadMode === "match_intro"
             ? "Same weight as Week 1 — full recovery"
             : `${deloadReduction} lbs under previous week — active recovery`,
-        chipClass: "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border-amber-200",
+        chipClass: "bg-warn/10 text-warn border-warn/20",
       };
     }
     return {
@@ -69,7 +69,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
       type: "progression",
       label: `Week ${week}`,
       description: `+${weeklyIncrement} lbs from previous week`,
-      chipClass: "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-emerald-200",
+      chipClass: "bg-leaf/10 text-leaf border-leaf/20",
     };
   });
 
@@ -93,10 +93,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
         {/* Header */}
         <DialogHeader className="shrink-0 border-b border-charcoal-border p-6 pb-4">
-          <DialogTitle className="text-xl text-white">
+          <DialogTitle className="text-xl text-ink">
             Program Settings
           </DialogTitle>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             Configure how long and how progressively your program runs
           </p>
         </DialogHeader>
@@ -113,7 +113,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
               <Badge
                 key={i}
                 variant="outline"
-                className="text-xs text-slate-400 text-slate-400 border-charcoal-border border-charcoal-border bg-charcoal-surface bg-charcoal-elevated"
+                className="text-xs text-ink-muted text-ink-muted border-charcoal-border border-charcoal-border bg-charcoal-surface bg-charcoal-elevated"
               >
                 Day {i + 1}: {day}
               </Badge>
@@ -122,7 +122,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
           {/* Duration selector */}
           <div>
-            <Label className="text-base font-semibold block mb-3 text-white">
+            <Label className="text-base font-semibold block mb-3 text-ink">
               Program Duration
             </Label>
 
@@ -140,10 +140,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                         : "border-charcoal-border bg-charcoal-surface hover:border-brand/30",
                     ].join(" ")}
                   >
-                    <div className={`font-bold text-sm ${isActive ? "text-brand text-brand" : "text-white "}`}>
+                    <div className={`font-bold text-sm ${isActive ? "text-brand text-brand" : "text-ink "}`}>
                       {preset.label}
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5 leading-snug">
+                    <div className="text-xs text-ink-muted mt-0.5 leading-snug">
                       {preset.description}
                     </div>
                   </button>
@@ -159,9 +159,9 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 min={3}
                 max={52}
                 onChange={(e) => setCustomWeeks(e.target.value)}
-                className="w-40 glass glass-interactive text-white placeholder:text-slate-400"
+                className="w-40 glass glass-interactive text-ink placeholder:text-ink-muted"
               />
-              <span className="text-sm text-slate-500">weeks (min 3)</span>
+              <span className="text-sm text-ink-muted">weeks (min 3)</span>
             </div>
           </div>
 
@@ -170,10 +170,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
             {/* Weekly increment */}
             <div>
-              <Label className="text-base font-semibold block mb-1 text-white">
+              <Label className="text-base font-semibold block mb-1 text-ink">
                 Weekly Weight Increase
               </Label>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="text-xs text-ink-muted mb-2">
                 Lbs added to compound lifts each progression week
               </p>
               <div className="flex items-center gap-2">
@@ -183,9 +183,9 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   min={0}
                   step={2.5}
                   onChange={(e) => setWeeklyIncrement(e.target.value)}
-                  className="w-28 glass glass-interactive text-white"
+                  className="w-28 glass glass-interactive text-ink"
                 />
-                <span className="text-sm text-slate-500">lbs / week</span>
+                <span className="text-sm text-ink-muted">lbs / week</span>
               </div>
 
               {/* Quick-pick buttons */}
@@ -200,7 +200,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                         "text-xs px-2.5 py-1 rounded-full border-2 font-medium transition-all",
                         isActive
                           ? "border-brand/30 bg-brand/[8%] text-brand text-brand"
-                          : "border-charcoal-border text-slate-400 hover:border-brand/30 bg-charcoal-surface",
+                          : "border-charcoal-border text-ink-muted hover:border-brand/30 bg-charcoal-surface",
                       ].join(" ")}
                     >
                       +{v}
@@ -212,10 +212,10 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
             {/* Deload mode */}
             <div>
-              <Label className="text-base font-semibold block mb-1 text-white">
+              <Label className="text-base font-semibold block mb-1 text-ink">
                 Deload Week Weight
               </Label>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="text-xs text-ink-muted mb-2">
                 How much to reduce weight on the final recovery week
               </p>
 
@@ -226,17 +226,17 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   className={[
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "match_intro"
-                      ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
-                      : "border-charcoal-border bg-charcoal-surface hover:border-[rgba(245,158,11,0.4)]",
+                      ? "border-amber-400 bg-warn/10"
+                      : "border-charcoal-border bg-charcoal-surface hover:border-warn/20",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
-                    <RotateCcw className="w-4 h-4 text-[#fbbf24]" />
-                    <span className="text-sm font-medium text-white ">
+                    <RotateCcw className="w-4 h-4 text-warn" />
+                    <span className="text-sm font-medium text-ink ">
                       Match Intro Week
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 ml-6">
+                  <p className="text-xs text-ink-muted mt-0.5 ml-6">
                     Use the same weight as Week 1
                   </p>
                 </button>
@@ -247,33 +247,33 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   className={[
                     "w-full text-left p-3 rounded-xl border-2 transition-all",
                     deloadMode === "reduce"
-                      ? "border-amber-400 bg-[rgba(245,158,11,0.08)]"
-                      : "border-charcoal-border bg-charcoal-surface hover:border-[rgba(245,158,11,0.4)]",
+                      ? "border-amber-400 bg-warn/10"
+                      : "border-charcoal-border bg-charcoal-surface hover:border-warn/20",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-[#fbbf24] rotate-180" />
-                    <span className="text-sm font-medium text-white ">
+                    <TrendingUp className="w-4 h-4 text-warn rotate-180" />
+                    <span className="text-sm font-medium text-ink ">
                       Reduce from Previous
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 ml-6">
+                  <p className="text-xs text-ink-muted mt-0.5 ml-6">
                     Drop a set amount from the last progression week
                   </p>
                 </button>
 
                 {deloadMode === "reduce" && (
                   <div className="flex items-center gap-2 pl-2">
-                    <span className="text-sm text-slate-400">Drop by</span>
+                    <span className="text-sm text-ink-muted">Drop by</span>
                     <Input
                       type="number"
                       value={deloadReduction}
                       min={0}
                       step={2.5}
                       onChange={(e) => setDeloadReduction(e.target.value)}
-                      className="w-24 glass glass-interactive text-white"
+                      className="w-24 glass glass-interactive text-ink"
                     />
-                    <span className="text-sm text-slate-500">lbs</span>
+                    <span className="text-sm text-ink-muted">lbs</span>
                   </div>
                 )}
               </div>
@@ -282,7 +282,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
           {/* Week-by-week preview */}
           <div>
-            <Label className="text-base font-semibold block mb-3 text-white">
+            <Label className="text-base font-semibold block mb-3 text-ink">
               Program Preview — {activeWeeks} weeks
             </Label>
             <div className="flex gap-1.5 flex-wrap">
@@ -298,17 +298,17 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-4 mt-3 text-xs text-ink-muted">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-brand" />
                 1 intro week
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-[rgba(34,197,94,0.4)]" />
+                <div className="w-3 h-3 rounded bg-leaf/10" />
                 {progressionWeeks} progression week{progressionWeeks !== 1 ? "s" : ""}
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-[rgba(245,158,11,0.4)]" />
+                <div className="w-3 h-3 rounded bg-warn/10" />
                 1 deload week
               </div>
             </div>
@@ -335,7 +335,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
             onClick={handleConfirm}
             disabled={activeWeeks < 3}
             variant="primary"
-            className="flex-1 bg-brand hover:bg-brand text-black font-bold"
+            className="flex-1 bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold"
           >
             <ChevronRight className="w-4 h-4 mr-2" />
             Generate Program

@@ -180,8 +180,9 @@ def linear_regression(x_vals: list, y_vals: list) -> tuple:
 _ANALYSIS_TO_LANDMARK_DISPLAY = {
     "quads": "quads", "hamstrings": "hamstrings", "glutes": "glutes",
     "chest": "chest", "back": "upper_back", "shoulders": "shoulders",
-    "rear_delts": "shoulders", "biceps": "biceps", "triceps": "triceps",
-    "abs": "core", "traps": "upper_back", "calves": "calves",
+    "rear_delts": "rear_delts", "biceps": "biceps", "triceps": "triceps",
+    "abs": "core", "traps": "traps", "calves": "calves",
+    "side_delts": "side_delts", "neck": "neck", "upper_chest": "upper_chest",
 }
 MUSCLE_TARGETS: dict[str, dict] = {
     a: dict(_LANDMARK_PRIORS[lm]) for a, lm in _ANALYSIS_TO_LANDMARK_DISPLAY.items()
@@ -946,6 +947,10 @@ def main():
     food_entries = sb_get("food_entries", {
         "select": "*",
         "date": f"gte.{days_before(14)}",
+        # Weekly-plan rows load as planned=true and only flip false when the
+        # athlete checks them off as eaten. Counting them would inflate
+        # avg_calories_7d / adherence / TDEE with food that was never eaten.
+        "planned": "not.is.true",
         "order": "date.desc",
     })
     print(f"  food_entries: {len(food_entries)} records")
@@ -976,9 +981,12 @@ def main():
     print(f"  daily_readiness: {'found' if checkin else 'none'}")
 
     # Fetch Garmin runs for VDOT derivation (newest first, recent window).
+    # Garmin type keys include treadmill_running / trail_running / track_running
+    # — a strict eq.running filter made those runs invisible to VDOT/run-TSS
+    # while the UI counted them as done.
     garmin_runs = sb_get("garmin_activities", {
         "select": "activity_date,activity_type,distance_meters,duration_seconds,avg_hr,max_hr",
-        "activity_type": "eq.running",
+        "activity_type": "like.*running*",
         "activity_date": f"gte.{days_before(42)}",
         "order": "activity_date.desc",
     })

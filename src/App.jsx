@@ -14,8 +14,8 @@ import { LoadingScreen } from '@/components/ui/loading-spinner';
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Today = lazy(() => import('./pages/Today'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Workouts = lazy(() => import('./pages/Workouts'));
 const FoodTracker = lazy(() => import('./pages/FoodTracker'));
 const CreateWorkout = lazy(() => import('./pages/CreateWorkout'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -37,11 +37,11 @@ const Insights = lazy(() => import('./pages/Insights'));
 const queryClient = new QueryClient();
 
 const protectedRoutes = [
+  { path: "/today", name: "Today", component: Today },
   { path: "/dashboard", name: "Dashboard", component: Dashboard },
   { path: "/fuel", name: "Fuel", component: Fuel },
   { path: "/train", name: "Train", component: Train },
   { path: "/insights", name: "Insights", component: Insights },
-  { path: "/workouts", name: "Workouts", component: Workouts },
   { path: "/weekly-schedule", name: "WeeklySchedule", component: WeeklySchedule },
   { path: "/program-builder", name: "ProgramBuilder", component: ProgramBuilder },
   { path: "/food-tracker", name: "FoodTracker", component: FoodTracker },
@@ -60,7 +60,7 @@ const protectedRoutes = [
 function RootRoute() {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/today" replace />;
   return <Navigate to="/login" replace />;
 }
 
@@ -78,12 +78,14 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/app" element={<Navigate to="/today" replace />} />
                   {/* LogHub + Supplements consolidated into Fuel's Hydration & Wellness tab */}
                   <Route path="/log" element={<Navigate to="/fuel?tab=wellness" replace />} />
                   <Route path="/supplements" element={<Navigate to="/fuel?tab=wellness" replace />} />
                   {/* Legacy Schedule page retired — WeeklySchedule is canonical */}
                   <Route path="/schedule" element={<Navigate to="/weekly-schedule" replace />} />
+                  {/* Standalone Workouts page merged into the Train hub */}
+                  <Route path="/workouts" element={<Navigate to="/train?tab=library" replace />} />
                   <Route
                     path="/program/:id"
                     element={

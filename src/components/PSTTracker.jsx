@@ -30,8 +30,8 @@ function PSTBar({ event, value }) {
   const cfg = PST_TARGETS[event];
   if (!value) return (
     <div className="flex items-center justify-between text-sm mb-3">
-      <span className="text-slate-400 w-28">{cfg.label}</span>
-      <span className="text-slate-500 text-xs">Not logged</span>
+      <span className="text-muted-2 font-semibold w-28">{cfg.label}</span>
+      <span className="text-muted-2 font-semibold text-xs">Not logged</span>
     </div>
   );
 
@@ -50,14 +50,14 @@ function PSTBar({ event, value }) {
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between text-xs mb-1">
-        <span className="text-slate-400">{cfg.label}</span>
-        <span className={`font-bold ${isGood ? "text-brand" : "text-slate-400"}`}>
-          {display} <span className="text-slate-500 font-normal">/ target {targetDisplay}</span>
+        <span className="text-secondary font-bold">{cfg.label}</span>
+        <span className={`font-technical font-bold ${isGood ? "text-teal" : "text-muted-2"}`}>
+          {display} <span className="text-muted-2 font-semibold">/ target {targetDisplay}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
+      <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${isGood ? "bg-brand" : "bg-blue-400"}`}
+          className={`h-full rounded-full transition-all ${isGood ? "bg-teal" : "bg-carb"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -124,26 +124,26 @@ export default function PSTTracker() {
     <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-            <Waves className="w-4 h-4 text-brand" />
+          <CardTitle className="section-label !text-ink flex items-center gap-2 normal-case">
+            <Waves className="w-3.5 h-3.5 text-carb" />
             PST Performance
           </CardTitle>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-brand text-xs" onClick={() => setShowForm(true)}>
+          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowForm(true)}>
             <Plus className="w-3.5 h-3.5" /> Log Test
           </Button>
         </div>
         {latest?.test_date && (
-          <p className="text-[10px] text-slate-500 mt-1">Last tested: {latest.test_date}</p>
+          <p className="font-technical text-[10px] font-semibold text-muted-2 mt-1">Last tested: {latest.test_date}</p>
         )}
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {isLoading ? (
-          <p className="text-xs text-slate-500">Loading…</p>
+          <p className="text-xs font-semibold text-muted-2">Loading…</p>
         ) : !latest ? (
           <div className="text-center py-4">
-            <Trophy className="w-8 h-8 mx-auto text-slate-700 mb-2" />
-            <p className="text-sm text-slate-500">No PST data yet.</p>
-            <p className="text-xs text-slate-600 mt-1">Log your first test to track progress.</p>
+            <Trophy className="w-8 h-8 mx-auto text-faint mb-2" />
+            <p className="text-sm font-semibold text-muted-2">No PST data yet.</p>
+            <p className="text-xs font-semibold text-faint mt-1">Log your first test to track progress.</p>
           </div>
         ) : (
           <>
@@ -155,8 +155,8 @@ export default function PSTTracker() {
 
             {/* Comparison with previous */}
             {prev && (
-              <div className="mt-3 pt-3 border-t border-charcoal-border">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">vs previous ({prev.test_date})</p>
+              <div className="mt-3 pt-3 border-t hairline">
+                <p className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-2">vs previous ({prev.test_date})</p>
                 <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },
@@ -169,13 +169,13 @@ export default function PSTTracker() {
                     const improved = delta != null && (lower ? delta < 0 : delta > 0);
                     return (
                       <div key={label}>
-                        <p className="text-slate-500">{label}</p>
+                        <p className="text-muted-2 font-semibold">{label}</p>
                         {delta != null ? (
-                          <p className={`font-bold ${improved ? "text-brand" : "text-red-400"}`}>
+                          <p className={`font-technical font-bold ${improved ? "text-teal" : "text-bad"}`}>
                             {lower ? (delta < 0 ? "-" : "+") : (delta > 0 ? "+" : "")}{lower ? Math.abs(delta) + "s" : Math.abs(delta)}
                           </p>
                         ) : (
-                          <p className="text-slate-600">—</p>
+                          <p className="text-faint">—</p>
                         )}
                       </div>
                     );
@@ -195,7 +195,7 @@ export default function PSTTracker() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Date</label>
+              <label className="text-xs text-ink-muted mb-1 block">Date</label>
               <Input
                 type="date"
                 value={form.test_date}
@@ -203,7 +203,7 @@ export default function PSTTracker() {
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">500yd Swim (min:sec)</label>
+              <label className="text-xs text-ink-muted mb-1 block">500yd Swim (min:sec)</label>
               <div className="flex gap-2">
                 <Input type="number" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="w-20" />
                 <Input type="number" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="w-20" />
@@ -212,20 +212,20 @@ export default function PSTTracker() {
             <div className="grid grid-cols-3 gap-2">
               {[["pushups","Push-ups"],["situps","Sit-ups"],["pullups","Pull-ups"]].map(([field, label]) => (
                 <div key={field}>
-                  <label className="text-xs text-slate-400 mb-1 block">{label}</label>
+                  <label className="text-xs text-ink-muted mb-1 block">{label}</label>
                   <Input type="number" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">1.5mi Run (min:sec)</label>
+              <label className="text-xs text-ink-muted mb-1 block">1.5mi Run (min:sec)</label>
               <div className="flex gap-2">
                 <Input type="number" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="w-20" />
                 <Input type="number" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="w-20" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Notes</label>
+              <label className="text-xs text-ink-muted mb-1 block">Notes</label>
               <Input placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-1">

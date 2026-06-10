@@ -34,7 +34,18 @@ EXERCISE_MUSCLE_MAP: dict[str, list[str]] = {
     "step up":           ["quads", "glutes"],
     "squat":             ["quads", "glutes"],
     "deadlift":          ["back", "hamstrings", "glutes"],
-    "incline bench":     ["chest", "triceps"],
+    # Full names first: they suppress the shorter "bench press"/"cable fly"
+    # keywords so incline work credits upper_chest exclusively.
+    "incline bench press":    ["upper_chest", "triceps"],
+    "low-to-high cable fly":  ["upper_chest"],
+    "low to high cable fly":  ["upper_chest"],
+    "incline bench":     ["upper_chest", "triceps"],
+    "incline press":     ["upper_chest", "triceps"],
+    "incline dumbbell":  ["upper_chest", "triceps"],
+    "incline db":        ["upper_chest", "triceps"],
+    "incline fly":       ["upper_chest"],
+    "low-to-high":       ["upper_chest"],
+    "low to high":       ["upper_chest"],
     "decline bench":     ["chest", "triceps"],
     "bench press":       ["chest", "triceps"],
     "bench":             ["chest", "triceps"],
@@ -55,13 +66,17 @@ EXERCISE_MUSCLE_MAP: dict[str, list[str]] = {
     "overhead press":    ["shoulders", "triceps"],
     "military press":    ["shoulders", "triceps"],
     "shoulder press":    ["shoulders", "triceps"],
-    "lateral raise":     ["shoulders"],
+    "lateral raise":     ["side_delts"],
     "face pull":         ["rear_delts"],
     "rear delt fly":     ["rear_delts"],
     "reverse fly":       ["rear_delts"],
     "reverse pec":       ["rear_delts"],
-    "upright row":       ["shoulders", "traps"],
+    "upright row":       ["side_delts", "traps"],
     "shrug":             ["traps"],
+    "neck curl":         ["neck"],
+    "neck extension":    ["neck"],
+    "neck flexion":      ["neck"],
+    "neck harness":      ["neck"],
     "barbell row":       ["back", "biceps"],
     "bent over row":     ["back", "biceps"],
     "pendlay row":       ["back", "biceps"],
@@ -95,34 +110,40 @@ _MUSCLE_KEYWORDS = sorted(EXERCISE_MUSCLE_MAP.keys(), key=len, reverse=True)
 
 # Analysis-vocab → landmark-vocab. A muscle absent here is already landmark-vocab.
 # "back" splits to both lat-dominant and upper-back-dominant landmarks since the
-# rows/pulldowns/pulls that map to "back" train both.
+# rows/pulldowns/pulls that map to "back" train both. traps/side_delts/neck/
+# upper_chest/rear_delts pass through untouched — first-class landmarks now.
 _ANALYSIS_TO_LANDMARK: dict[str, list[str]] = {
     "back":       ["upper_back", "lats"],
     "abs":        ["core"],
-    "rear_delts": ["shoulders"],
-    "traps":      ["upper_back"],
     "lower_back": [],  # no dedicated landmark
 }
 
 # Soreness check-in regions (daily_readiness.soreness_snapshot keys) → landmarks.
 SORENESS_REGION_MUSCLES: dict[str, list[str]] = {
-    "Chest":      ["chest"],
+    "Chest":      ["chest", "upper_chest"],
     "Back":       ["upper_back", "lats"],
-    "Shoulders":  ["shoulders"],
+    "Shoulders":  ["shoulders", "side_delts", "rear_delts"],
     "Arms":       ["biceps", "triceps"],
     "Quads":      ["quads"],
     "Hamstrings": ["hamstrings", "glutes"],
     "Calves":     ["calves"],
     "Core":       ["core"],
+    "Neck":       ["neck"],
+    "Traps":      ["traps"],
 }
 
 
 def get_muscles(exercise_name: str) -> list[str]:
-    """Analysis-vocab muscles trained by an exercise (keyword substring match)."""
+    """Analysis-vocab muscles trained by an exercise (keyword substring match).
+    A keyword contained in an already-matched longer keyword is suppressed, so
+    "neck curl" doesn't also credit biceps via "curl", and "romanian deadlift"
+    doesn't credit back via "deadlift" — longest match truly wins."""
     name = (exercise_name or "").lower()
     found: set[str] = set()
+    matched: list[str] = []
     for kw in _MUSCLE_KEYWORDS:
-        if kw in name:
+        if kw in name and not any(kw in prev for prev in matched):
+            matched.append(kw)
             found.update(EXERCISE_MUSCLE_MAP[kw])
     return list(found)
 

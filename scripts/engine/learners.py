@@ -104,3 +104,56 @@ def best_frequency(meta: dict, default: int = 4) -> int:
     if not matured:
         return default
     return max(matured, key=lambda k: matured[k]["mean"])
+
+
+# ── Exercise-value learner (ADAPTIVE_ENGINE_DESIGN.md §4, exercise→growth) ─────
+# A Normal posterior per exercise. The reward blends three N=1 signals:
+#   1. strength response  — e1RM slope while the exercise is in the program
+#   2. revealed preference — Nolan swapping it IN (+) or skipping it (-)
+#   3. written feedback   — notes sentiment (liked / disliked / too-easy / pain)
+# The learned mean is added to the session generator's priority score, so movements
+# he responds to and reaches for get programmed more; ones he drops fade out.
+# Per his call: a single swap is a small nudge (one-off vote), not an instant
+# rewrite — repetition is what moves the posterior decisively.
+EXVAL_OBS_VAR   = 1.0    # [ENG] observation noise
+EXVAL_PRIOR_VAR = 1.0    # [ENG] starting uncertainty
+SWAP_VOTE       = 0.5    # [ENG] value of one "chose this" deviation vote
+DROP_VOTE       = -0.5   # [ENG] value of one "skipped this" deviation vote
+SENTIMENT_GAIN  = 0.6    # [ENG] per net like/dislike mention
+EASY_GAIN       = 0.3    # [ENG] "too easy" reads as productive (earning its slot)
+PAIN_PENALTY    = -1.5   # [ENG] a pain note is a strong "stop programming this"
+
+
+def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
+    """
+    Kalman-gain Normal update of one exercise's value posterior.
+    meta: {canon_name: {"mean","var","n"}}.  Mutates a copy and returns it.
+    """
+    meta = dict(meta or {})
+    a = dict(meta.get(exercise, {"mean": 0.0, "var": EXVAL_PRIOR_VAR, "n": 0}))
+    K = a["var"] / (a["var"] + EXVAL_OBS_VAR)
+    a["mean"] = round(a["mean"] + K * (reward - a["mean"]), 4)
+    a["var"]  = round(a["var"] * (1 - K), 4)
+    a["n"]    = int(a.get("n", 0)) + 1
+    meta[exercise] = a
+    return meta
+
+
+def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
+                    sentiment: float, easy_mentions: int, pain: bool) -> float:
+    """Blend the per-exercise signals for one week into a single reward scalar."""
+    r = 0.0
+    if slope is not None:
+        r += float(slope)                       # strength response (lbs/session)
+    r += SWAP_VOTE * int(chosen_votes or 0)
+    r += DROP_VOTE * int(dropped_votes or 0)
+    r += SENTIMENT_GAIN * float(sentiment or 0.0)
+    r += EASY_GAIN * int(easy_mentions or 0)
+    if pain:
+        r += PAIN_PENALTY
+    return round(r, 4)
+
+
+def exercise_value(meta: dict, exercise: str) -> float:
+    """Learned value for an exercise (0 if never observed)."""
+    return float((meta or {}).get(exercise, {}).get("mean", 0.0))

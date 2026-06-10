@@ -54,7 +54,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-2 block">
+          <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-2 block">
             Target Weight ({weightUnit})
           </Label>
           <Input
@@ -67,7 +67,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-2 block">
+          <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-2 block">
             Bar Weight ({weightUnit})
           </Label>
           <Select value={barWeight} onValueChange={setBarWeight}>
@@ -110,10 +110,10 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                         {plate.count}×
                       </div>
                       <div>
-                        <div className="font-semibold text-white">
+                        <div className="font-semibold text-ink">
                           {plate.weight} {weightUnit}
                         </div>
-                        <div className="text-sm text-slate-400">
+                        <div className="text-sm text-ink-muted">
                           {plate.count} plate{plate.count > 1 ? 's' : ''}
                         </div>
                       </div>
@@ -125,20 +125,20 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                 ))}
 
                 {!result.exact && result.remainder > 0.1 && (
-                  <div className="p-3 bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] rounded-lg text-sm text-[#fbbf24]">
+                  <div className="p-3 bg-warn/10 border border-warn/20 rounded-lg text-sm text-warn">
                     <strong>Note:</strong> Can't load exactly. Missing {result.remainder.toFixed(1)} {weightUnit} per side.
                   </div>
                 )}
 
                 <div className="pt-3 border-t border-charcoal-border">
-                  <div className="text-sm text-slate-400 mb-1">Total loaded:</div>
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-sm text-ink-muted mb-1">Total loaded:</div>
+                  <div className="text-2xl font-bold text-ink">
                     {parseFloat(barWeight) + (result.platesNeeded.reduce((sum, p) => sum + (p.weight * p.count), 0) * 2)} {weightUnit}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6 text-slate-400">
+              <div className="text-center py-6 text-ink-muted">
                 Bar weight is equal to or greater than target. No plates needed!
               </div>
             )}
@@ -147,7 +147,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       )}
 
       {!result && targetWeight && (
-        <div className="text-center py-8 text-slate-500">
+        <div className="text-center py-8 text-ink-muted">
           Enter a target weight greater than the bar weight to calculate plates.
         </div>
       )}
@@ -196,22 +196,22 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-5">
       {/* Known performance */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">What you know</p>
+        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-1.5 block">
+            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">
               Weight ({weightUnit})
             </Label>
             <Input type="number" step="0.5" placeholder={weightUnit === 'lbs' ? "225" : "100"}
               value={knownWeight} onChange={(e) => setKnownWeight(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-1.5 block">Reps done</Label>
+            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Reps done</Label>
             <Input type="number" min="1" max="36" placeholder="5"
               value={knownReps} onChange={(e) => setKnownReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-1.5 block">RIR left</Label>
+            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">RIR left</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={knownRir} onChange={(e) => setKnownRir(e.target.value)} />
           </div>
@@ -220,15 +220,15 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
 
       {/* Target */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">What you want to do</p>
+        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-1.5 block">Target reps</Label>
+            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Target reps</Label>
             <Input type="number" min="1" max="36" placeholder="3"
               value={targetReps} onChange={(e) => setTargetReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-slate-400 text-slate-400 mb-1.5 block">Target RIR</Label>
+            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Target RIR</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={targetRir} onChange={(e) => setTargetRir(e.target.value)} />
           </div>
@@ -239,34 +239,34 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         <Card className="bg-brand/[8%] border-brand/30">
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
-              <div className="text-sm text-slate-500 mb-1">Working Weight</div>
+              <div className="text-sm text-ink-muted mb-1">Working Weight</div>
               <div className="text-5xl font-bold text-brand">
                 {result.rounded} <span className="text-2xl">{weightUnit}</span>
               </div>
-              <div className="text-sm text-slate-500 mt-1">
+              <div className="text-sm text-ink-muted mt-1">
                 rounded to nearest {increment} {weightUnit}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 pt-3 border-t border-brand/30">
               <div className="text-center">
-                <div className="text-xs text-slate-500 mb-0.5">Est. 1RM</div>
-                <div className="font-semibold text-white">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
+                <div className="text-xs text-ink-muted mb-0.5">Est. 1RM</div>
+                <div className="font-semibold text-ink">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
               </div>
               <div className="text-center">
-                <div className="text-xs text-slate-500 mb-0.5">% of 1RM</div>
-                <div className="font-semibold text-white">{result.targetPct.toFixed(1)}%</div>
+                <div className="text-xs text-ink-muted mb-0.5">% of 1RM</div>
+                <div className="font-semibold text-ink">{result.targetPct.toFixed(1)}%</div>
               </div>
               <div className="text-center">
-                <div className="text-xs text-slate-500 mb-0.5">Exact weight</div>
-                <div className="font-semibold text-white">{result.exact.toFixed(1)} {weightUnit}</div>
+                <div className="text-xs text-ink-muted mb-0.5">Exact weight</div>
+                <div className="font-semibold text-ink">{result.exact.toFixed(1)} {weightUnit}</div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <p className="text-xs text-slate-400 text-center">
+      <p className="text-xs text-ink-muted text-center">
         Estimates 1RM from your known set, then calculates target weight. Uses Brzycki formula.
       </p>
     </div>

@@ -1,7 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Cpu, Dumbbell, Activity, Waves, Zap, ChevronRight, AlertTriangle, Check, Circle,
+  Dumbbell, Activity, Waves, Zap, AlertTriangle, Check, Circle, ChevronDown,
 } from "lucide-react";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
@@ -32,9 +32,9 @@ function titleCase(s) {
 
 function intensityBadge(intensity) {
   if (intensity == null) return null;
-  if (intensity >= 1.05) return { label: `Push ${intensity.toFixed(2)}×`, cls: "text-emerald-400 bg-emerald-500/10" };
-  if (intensity < 0.85) return { label: `Back off ${intensity.toFixed(2)}×`, cls: "text-amber-400 bg-amber-500/10" };
-  return { label: `${Number(intensity).toFixed(2)}×`, cls: "text-slate-300 bg-white/5" };
+  if (intensity >= 1.05) return { label: `${intensity.toFixed(2)}× intensity`, color: "var(--hue-teal)" };
+  if (intensity < 0.85) return { label: `${intensity.toFixed(2)}× back off`, color: "var(--warn)" };
+  return { label: `${Number(intensity).toFixed(2)}× intensity`, color: "var(--text-secondary)" };
 }
 
 function ExerciseRow({ ex }) {
@@ -42,13 +42,18 @@ function ExerciseRow({ ex }) {
   const rir = ex.rir ?? ex.rir_target;
   const load = ex.load_lbs;
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-white/[6%] last:border-0">
-      <span className="text-sm text-white truncate">{ex.name}</span>
-      <span className="text-[11px] font-technical text-slate-400 shrink-0 whitespace-nowrap">
-        {ex.sets}×{reps}
-        {rir != null && <span className="text-slate-600"> @{rir} RIR</span>}
-        {load > 0 && <span className="text-brand ml-1.5">{load} lb</span>}
-      </span>
+    <div className="data-row">
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-bold text-ink truncate">{ex.name}</div>
+        <div className="font-technical text-[11px] font-semibold text-muted-2 mt-px whitespace-nowrap">
+          {ex.sets}×{reps}{rir != null && ` · RIR ${rir}`}
+        </div>
+      </div>
+      {load > 0 && (
+        <span className="pill-value text-ink">
+          {load}<small className="text-[9.5px] font-semibold text-muted-2"> lb</small>
+        </span>
+      )}
     </div>
   );
 }
@@ -61,7 +66,7 @@ function CardioDoneToggle({ done, onToggle }) {
       type="button"
       onClick={onToggle}
       className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-        done ? "bg-emerald-500 text-white" : "text-slate-600 hover:text-slate-300"
+        done ? "bg-ok text-ink" : "text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
       aria-label={done ? "Mark conditioning not done" : "Mark conditioning done"}
@@ -73,6 +78,7 @@ function CardioDoneToggle({ done, onToggle }) {
 
 export default function PrescribedSessionCard({ today }) {
   const { prescription } = useTodayPrescription(today);
+  const [liftsOpen, setLiftsOpen] = useState(false);
   const { isDone, toggle } = useCardioCompletions(today);
   const { match: garminMatch } = useTodayGarminCardio(today);
   if (!prescription) return null;
@@ -110,19 +116,19 @@ export default function PrescribedSessionCard({ today }) {
     return (
       <div key={kind} className="flex items-center gap-2 text-sm">
         {g ? (
-          <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center" title="Auto-detected from Garmin">
+          <span className="shrink-0 w-5 h-5 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
             <Check className="w-3 h-3" />
           </span>
         ) : (
           <CardioDoneToggle done={manualDone} onToggle={() => toggle(name)} />
         )}
         {icon}
-        <span className={done ? "text-slate-500 line-through" : "text-white"}>{label}</span>
+        <span className={done ? "text-ink-faint line-through" : "text-ink"}>{label}</span>
         {g && (
-          <span className="ml-auto text-[11px] font-technical text-emerald-400 whitespace-nowrap">
+          <span className="ml-auto text-[11px] font-technical text-ok whitespace-nowrap">
             {mi(g.distance_meters) ? `${mi(g.distance_meters)} mi` : "done"}
             {mmss(g.duration_seconds) ? ` · ${mmss(g.duration_seconds)}` : ""}
-            <span className="text-slate-600"> · Garmin</span>
+            <span className="text-ink-faint"> · Garmin</span>
           </span>
         )}
       </div>
@@ -130,49 +136,56 @@ export default function PrescribedSessionCard({ today }) {
   };
 
   return (
-    <Card className="glass-elevated border-brand/20">
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
-          <Cpu className="w-4 h-4 text-brand" />
-          <span className="text-[10px] uppercase tracking-widest text-brand font-bold">Engine Prescription</span>
+    // Plain glass div (not Card/CardContent) — CardContent's default pt-0
+    // fights custom py-* classes and lets the title touch the card edge.
+    <div className="glass px-4 pt-4 pb-4 sm:px-5">
+        {/* Title row — session name left, intensity multiplier right (teal) */}
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-[15.5px] font-extrabold text-ink truncate">{titleText}</h3>
           {iBadge && (
-            <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full ${iBadge.cls}`}>
+            <span className="font-technical text-[12px] font-bold whitespace-nowrap" style={{ color: iBadge.color }}>
               {iBadge.label}
             </span>
           )}
         </div>
-
-        {/* Title + rationale */}
-        <h3 className="text-lg font-bold text-white leading-tight">{titleText}</h3>
         {prescription.rationale && (
-          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{prescription.rationale}</p>
+          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{prescription.rationale}</p>
         )}
 
         {/* Deadline weighting + anabolic window — the "why today looks like this" line */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px]">
           {wPst != null && wStr != null && (
-            <span className="text-slate-500">
-              Focus split <span className="font-technical text-slate-300">{wPst}% conditioning · {wStr}% strength</span>
+            <span className="text-ink-faint">
+              Focus split <span className="font-technical text-ink-secondary">{wPst}% conditioning · {wStr}% strength</span>
             </span>
           )}
           {interference.anabolic_window && !isRest && (
-            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="text-ok font-semibold flex items-center gap-1">
               <Zap className="w-3 h-3" /> Anabolic window open — lift now
             </span>
           )}
           {interference.interference_level === "HIGH" && (
-            <span className="text-amber-400 font-semibold">High interference — protect the lift</span>
+            <span className="text-warn font-semibold">High interference — protect the lift</span>
           )}
         </div>
 
-        {/* Strength block */}
+        {/* Strength block — collapsed by default on mobile (disclosure),
+            always expanded on desktop */}
         {strength.length > 0 && (
-          <div className="mt-3">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">
+          <div className="mt-2.5">
+            <button
+              type="button"
+              onClick={() => setLiftsOpen((o) => !o)}
+              className="w-full flex items-center gap-1.5 section-label mb-1 lg:pointer-events-none"
+              aria-expanded={liftsOpen}
+            >
               <Dumbbell className="w-3 h-3" /> Lifts
-            </div>
-            <div>
+              <span className="font-technical normal-case tracking-normal text-muted-2">· {strength.length}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 ml-auto lg:hidden transition-transform duration-200 ${liftsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <div className={`${liftsOpen ? "block" : "hidden"} lg:block`}>
               {strength.map((ex, i) => <ExerciseRow key={i} ex={ex} />)}
             </div>
           </div>
@@ -181,13 +194,13 @@ export default function PrescribedSessionCard({ today }) {
         {/* Calisthenics */}
         {calItems.length > 0 && (
           <div className="mt-3">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">
+            <div className="flex items-center gap-1.5 section-label mb-1">
               <Activity className="w-3 h-3" /> Calisthenics
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               {calItems.map(([name, v]) => (
-                <span key={name} className="text-sm text-white">
-                  {titleCase(name)} <span className="text-[11px] font-technical text-slate-400">{v.sets}×{v.reps_each}</span>
+                <span key={name} className="text-[13px] font-bold text-ink">
+                  {titleCase(name)} <span className="font-technical text-[11px] font-semibold text-muted-2">{v.sets}×{v.reps_each}</span>
                 </span>
               ))}
             </div>
@@ -203,19 +216,19 @@ export default function PrescribedSessionCard({ today }) {
               icon: <Activity className="w-3.5 h-3.5 text-brand shrink-0" />,
               label: (
                 <>
-                  {run.zone} run · <span className="font-technical text-slate-300">{run.session_miles} mi</span>
-                  {run.pace && <span className="text-slate-500"> · {run.pace}</span>}
+                  {run.zone} run · <span className="font-technical text-ink-secondary">{run.session_miles} mi</span>
+                  {run.pace && <span className="text-ink-faint"> · {run.pace}</span>}
                 </>
               ),
             })}
             {swim && renderCardio({
               kind: "swim",
               name: `swim ${swim.meters}m`,
-              icon: <Waves className="w-3.5 h-3.5 text-sky-400 shrink-0" />,
+              icon: <Waves className="w-3.5 h-3.5 text-info shrink-0" />,
               label: (
                 <>
-                  <span className="font-technical text-slate-300">{swim.meters} m</span>
-                  {swim.stroke && <span className="text-slate-500"> {swim.stroke}</span>}
+                  <span className="font-technical text-ink-secondary">{swim.meters} m</span>
+                  {swim.stroke && <span className="text-ink-faint"> {swim.stroke}</span>}
                 </>
               ),
             })}
@@ -224,9 +237,9 @@ export default function PrescribedSessionCard({ today }) {
 
         {/* Overreach / interference warnings */}
         {(overreach.overreaching || prescription.interference_warning) && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-500/[8%] px-3 py-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-amber-300/90 leading-relaxed">
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-warn/[8%] px-3 py-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-warn shrink-0 mt-0.5" />
+            <p className="text-[11px] text-warn opacity-90 leading-relaxed">
               {overreach.overreaching
                 ? "Overreaching flagged (HRV down / RHR up). The engine forced recovery — honor it."
                 : prescription.interference_warning}
@@ -252,12 +265,12 @@ export default function PrescribedSessionCard({ today }) {
                 })),
               },
             }}
-            className="mt-3 flex items-center justify-center gap-1.5 w-full h-10 rounded-xl bg-brand/10 text-brand text-sm font-semibold hover:bg-brand/15 transition-colors"
+            className="cta-coral mt-3.5 w-full"
           >
-            Log this session <ChevronRight className="w-4 h-4" />
+            Begin Session
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
           </Link>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

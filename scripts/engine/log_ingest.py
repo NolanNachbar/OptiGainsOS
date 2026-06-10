@@ -17,6 +17,7 @@ AND per big-three GOAL aggregate.
 """
 
 import csv
+import re
 
 from engine.strength_progression import compute_e1rm
 
@@ -120,6 +121,20 @@ def load_sets_csv(path: str) -> list:
     return rows
 
 
+def _parse_reps(raw) -> int:
+    """Reps may arrive as an int, a float, or a prescription range string like
+    "6-8" (rep_target passed through the logger untouched). Take the first
+    integer in the string — the range's lower bound — instead of dropping the
+    set, which silently removed prescribed sessions from e1RM learning."""
+    if raw in (None, ""):
+        return 0
+    try:
+        return int(float(raw))
+    except (ValueError, TypeError):
+        m = re.search(r"\d+", str(raw))
+        return int(m.group()) if m else 0
+
+
 def normalize_workout_logs(logs: list) -> list:
     """
     Supabase workout_logs rows → rows.
@@ -140,7 +155,7 @@ def normalize_workout_logs(logs: list) -> list:
                     continue
                 try:
                     weight = float(s.get("weight") or 0)
-                    reps = int(float(s.get("reps") or 0))
+                    reps = _parse_reps(s.get("reps"))
                 except (ValueError, TypeError):
                     continue
                 if reps <= 0:

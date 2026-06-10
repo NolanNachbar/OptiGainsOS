@@ -53,24 +53,34 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-charcoal flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: '#080B10' }}>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
+            'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
+        }}
+      />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <Logo className="w-16 h-16 mx-auto mb-4" />
-          <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
-          <p className="text-[13px] text-slate-400 mt-2">Set your new password</p>
+          <Logo className="w-14 h-14 mx-auto mb-4" />
+          <h1 className="type-display text-[24px] text-[#F2F4F7]">
+            OPTI<span style={{ color: '#5EDCD2' }}>GAINS</span>
+          </h1>
+          <p className="text-[11.5px] font-semibold mt-1.5 text-[rgba(242,244,247,0.5)]">Set your new password</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-white text-center">Reset Password</CardTitle>
+            <CardTitle className="text-ink text-center">Reset Password</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="password" className="text-white">New Password</Label>
+                <Label htmlFor="password" className="text-ink">New Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                   <Input
                     id="password"
                     type="password"
@@ -85,9 +95,9 @@ export default function ResetPassword() {
               </div>
 
               <div>
-                <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-ink">Confirm Password</Label>
                 <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -118,7 +128,7 @@ export default function ResetPassword() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-slate-400">
+              <p className="text-ink-muted">
                 Remember your password?{' '}
                 <Link to="/login" className="text-brand hover:text-[#d9ff1a] font-medium">
                   Sign in

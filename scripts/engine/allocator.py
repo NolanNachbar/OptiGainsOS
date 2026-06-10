@@ -23,19 +23,32 @@ _RELEVANCE = {
         "quads": 1.0, "glutes": 1.0, "hamstrings": 0.9, "chest": 1.0,
         "triceps": 0.8, "shoulders": 0.7, "upper_back": 0.9, "lats": 0.8,
         "biceps": 0.5, "calves": 0.4, "core": 0.6,
+        "traps": 0.4, "side_delts": 0.2, "neck": 0.1,  # traps support DL lockout
+        "upper_chest": 0.6, "rear_delts": 0.3,  # incline = bench assistance
     },
     "hypertrophy": {m: 1.0 for m in (
         "chest","upper_back","lats","quads","hamstrings","glutes",
-        "shoulders","triceps","biceps","calves","core")},
+        "shoulders","triceps","biceps","calves","core",
+        "side_delts","traps","neck","upper_chest","rear_delts")},
     "pst": {  # push-ups / sit-ups / pull-ups (running handled in run plan)
         "chest": 0.9, "triceps": 0.9, "shoulders": 0.8, "core": 1.0,
         "lats": 1.0, "upper_back": 0.9, "biceps": 0.8,
         "quads": 0.5, "glutes": 0.5, "hamstrings": 0.4, "calves": 0.3,
+        "traps": 0.4, "neck": 0.3, "side_delts": 0.2,  # neck matters tactically
+        "upper_chest": 0.5, "rear_delts": 0.4,
     },
 }
 
+from engine.athlete_profile import (
+    MAX_ACCESSORY_SETS_PER_MUSCLE_PER_SESSION as _MAX_PER_SESSION,
+    HIGH_FREQUENCY_FLOOR as _FREQ_FLOOR,
+)
+
 MV_FLOOR = 0.05          # [ENG] stop spending budget below this marginal value
-MAX_SETS_PER_MUSCLE_PER_SESSION = 5   # [ENG] supports high-frequency distribution
+# Low per-session muscle volume (Nolan's philosophy) → weekly sets are delivered
+# by FREQUENCY, not by piling sets onto one day. Sourced from athlete_profile so
+# the allocator and session generator can't disagree on the cap.
+MAX_SETS_PER_MUSCLE_PER_SESSION = _MAX_PER_SESSION
 
 
 def default_goal_priorities(training_phase: str | None) -> dict:
@@ -59,8 +72,13 @@ def recovery_budget(landmarks: dict, tsb: float, phase: str | None) -> float:
     return mav_sum * r_recovery * r_phase
 
 
-def goal_weights(goal_priorities: dict, deadline_mult: dict, muscles) -> dict:
-    """w[m] = Σ_goal priority[goal] · relevance[goal][m] · deadline_mult[goal]."""
+def goal_weights(goal_priorities: dict, deadline_mult: dict, muscles,
+                 muscle_emphasis: dict = None) -> dict:
+    """w[m] = Σ_goal priority[goal] · relevance[goal][m] · deadline_mult[goal],
+    scaled by the athlete's per-muscle emphasis (1.0 = neutral). Emphasis feeds
+    both MEV funding order and marginal value, so a focused muscle is funded
+    early and keeps receiving sets deeper into the budget."""
+    muscle_emphasis = muscle_emphasis or {}
     w = {}
     for m in muscles:
         w[m] = sum(
@@ -68,7 +86,7 @@ def goal_weights(goal_priorities: dict, deadline_mult: dict, muscles) -> dict:
             * float(_RELEVANCE.get(g, {}).get(m, 0.0))
             * float(deadline_mult.get(g, 1.0))
             for g in _RELEVANCE
-        )
+        ) * float(muscle_emphasis.get(m, 1.0))
     return w
 
 
@@ -133,7 +151,11 @@ def frequency_targets(set_targets: dict, days_available: int,
             freq[m] = min(int(learned_freq[m]), max(1, days_available))
             continue
         f = max(1, -(-int(s) // MAX_SETS_PER_MUSCLE_PER_SESSION))  # ceil
-        if s >= 6:
+        # High-frequency preference: once a muscle has real weekly volume, train it
+        # often (low sets each visit) rather than dumping it in one session.
+        if s >= MAX_SETS_PER_MUSCLE_PER_SESSION:
+            f = max(f, _FREQ_FLOOR)
+        elif s >= 4:
             f = max(f, 2)
         freq[m] = min(f, max(1, days_available))
     return freq
@@ -152,11 +174,11 @@ def build_run_plan(days_available: int, vdot_gap: float, pst_mult: float) -> lis
 def plan_week(landmarks: dict, tsb: float, phase: str | None,
               goal_priorities: dict, deadline_mult: dict,
               days_available: int = 6, vdot_gap: float = 0.0,
-              learned_freq: dict = None) -> dict:
+              learned_freq: dict = None, muscle_emphasis: dict = None) -> dict:
     """Top-level: produce the full weekly plan dict."""
     muscles = list(landmarks.keys())
     B = recovery_budget(landmarks, tsb, phase)
-    w = goal_weights(goal_priorities, deadline_mult, muscles)
+    w = goal_weights(goal_priorities, deadline_mult, muscles, muscle_emphasis)
     set_targets = allocate(B, w, landmarks)
     freq = frequency_targets(set_targets, days_available, learned_freq)
     runs = build_run_plan(days_available, vdot_gap, deadline_mult.get("pst", 1.0))

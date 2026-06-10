@@ -103,7 +103,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
       <DialogContent className="max-w-2xl p-0 flex flex-col">
         <DialogHeader className="flex-shrink-0 border-b p-6 pb-4">
           <DialogTitle>Choose Your {daysPerWeek}-Day Split</DialogTitle>
-          <p className="text-sm text-slate-400  mt-1">
+          <p className="text-sm text-ink-muted  mt-1">
             Select a preset or build your own custom schedule
           </p>
         </DialogHeader>
@@ -112,7 +112,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
           {/* Preset Splits - hidden when in custom mode */}
           {presets.length > 0 && !isCustomMode && (
             <div>
-              <h3 className="font-semibold mb-3 text-white">Preset Splits</h3>
+              <h3 className="font-semibold mb-3 text-ink">Preset Splits</h3>
               <div className="space-y-3">
                 {presets.map((preset) => (
                   <button
@@ -125,7 +125,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-white">{preset.name}</span>
+                      <span className="font-semibold text-ink">{preset.name}</span>
                       {selectedPreset === preset.id && !isCustomMode && (
                         <Check className="w-5 h-5 text-brand" />
                       )}
@@ -146,7 +146,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
           {/* Custom Split Builder */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-white">Custom Split</h3>
+              <h3 className="font-semibold text-ink">Custom Split</h3>
               {!isCustomMode ? (
                 <Button variant="outline" size="sm" onClick={startCustomMode}>
                   Build Custom
@@ -160,13 +160,13 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
 
             {isCustomMode && (
               <div className="p-4 border-2 border-brand/30 rounded-lg bg-brand/[5%]/50">
-                <p className="text-sm text-slate-400  mb-3">
+                <p className="text-sm text-ink-muted  mb-3">
                   Choose the focus for each day of your split
                 </p>
                 <div className="space-y-3">
                   {Array.from({ length: daysPerWeek }).map((_, dayIndex) => (
                     <div key={dayIndex} className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-slate-400  min-w-[60px]">
+                      <span className="text-sm font-medium text-ink-muted  min-w-[60px]">
                         Day {dayIndex + 1}:
                       </span>
                       <Select value={customSplit[dayIndex]} onValueChange={(value) => handleCustomDayChange(dayIndex, value)}>
@@ -196,10 +196,10 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-ink">
                     Exercises per day
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     You have 60+ min — choose how many exercises per session
                   </p>
                 </div>
@@ -212,8 +212,8 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     onClick={() => setExercisesPerDay(n)}
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
                       exercisesPerDay === n
-                        ? "border-brand/50 bg-brand text-black font-bold"
-                        : "border-charcoal-border text-slate-400 hover:border-brand/30  "
+                        ? "border-brand/50 bg-brand text-[var(--color-action-dark)] font-bold"
+                        : "border-charcoal-border text-ink-muted hover:border-brand/30  "
                     }`}
                   >
                     {n}

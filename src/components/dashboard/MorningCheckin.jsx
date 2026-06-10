@@ -11,31 +11,32 @@ import { getTodayString } from "@/utils/dateUtils";
 const MUSCLE_GROUPS = [
   "Chest", "Back", "Shoulders", "Arms",
   "Core", "Quads", "Hamstrings", "Calves",
+  "Neck", "Traps",
 ];
 
 const SORENESS_LABELS = ["None", "Mild", "Moderate", "Severe"];
 const SORENESS_COLORS = [
-  "bg-charcoal-elevated text-slate-500 border-charcoal-border",
-  "bg-[rgba(234,179,8,0.12)] text-yellow-400 border-yellow-500/30",
-  "bg-[rgba(249,115,22,0.12)] text-orange-400 border-orange-500/30",
-  "bg-[rgba(239,68,68,0.12)] text-red-400 border-red-500/30",
+  "bg-white/[0.05] text-muted-2 border-white/10",
+  "bg-fat/[0.12] text-fat border-fat/30",
+  "bg-warn/[0.12] text-warn border-warn/30",
+  "bg-bad/[0.12] text-bad border-bad/30",
 ];
 
 function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-xs text-slate-500 uppercase tracking-wider">{label}</span>
+      <span className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">{label}</span>
       <div className="flex flex-col items-center gap-0.5">
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="p-1 text-slate-500 hover:text-brand transition-colors"
+          className="p-1 text-muted-2 hover:text-brand transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
-        <span className="text-3xl font-bold text-white w-12 text-center leading-none">{value}</span>
+        <span className="font-technical text-3xl font-extrabold text-ink w-12 text-center leading-none">{value}</span>
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="p-1 text-slate-500 hover:text-brand transition-colors"
+          className="p-1 text-muted-2 hover:text-brand transition-colors"
         >
           <ChevronDown className="w-4 h-4" />
         </button>
@@ -45,7 +46,7 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
           <div
             key={i}
             className={`h-0.5 w-2 rounded-full transition-colors ${
-              i < value ? "bg-brand" : "bg-slate-700"
+              i < value ? "bg-teal" : "bg-white/[0.08]"
             }`}
           />
         ))}
@@ -90,15 +91,24 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
         }, { onConflict: "created_by,date" });
       if (readinessError) throw readinessError;
 
-      // Upsert per-muscle soreness_logs
+      // Upsert per-muscle soreness_logs. The daily prescriber matches these
+      // rows (lowercased) against exercise primary muscles — "Arms"/"Core"
+      // would never match, so expand check-in regions to the engine's muscle
+      // vocabulary (same expansion the weekly program applies to the snapshot).
+      const REGION_TO_MUSCLES = {
+        Chest: ["chest"], Back: ["back"], Shoulders: ["shoulders"],
+        Arms: ["biceps", "triceps"], Core: ["abs"],
+        Quads: ["quads"], Hamstrings: ["hamstrings"], Calves: ["calves"],
+        Neck: ["neck"], Traps: ["traps"],
+      };
       const sorenessRows = MUSCLE_GROUPS
         .filter(g => soreness[g] > 0)
-        .map(g => ({
+        .flatMap(g => (REGION_TO_MUSCLES[g] || [g.toLowerCase()]).map(muscle => ({
           created_by: uid,
           date: todayStr,
-          muscle_group: g,
+          muscle_group: muscle,
           level: soreness[g],
-        }));
+        })));
 
       if (sorenessRows.length > 0) {
         const { error: sorenessError } = await supabase
@@ -122,17 +132,17 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
       .sort((a, b) => b[1] - a[1]);
 
     return (
-      <div className="rounded-xl bg-charcoal-surface border-charcoal-border shadow-dark-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-charcoal-border flex items-center justify-between">
+      <div className="glass overflow-hidden">
+        <div className="px-4 py-3 border-b hairline flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-brand" />
-            <span className="text-sm font-semibold text-white">Daily Readiness</span>
+            <CheckCircle2 className="w-4 h-4 text-leaf" />
+            <span className="section-label !text-ink">Daily Readiness</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => queryClient.setQueryData(["dailyReadiness", todayStr, user?.id], null)}
-            className="h-6 text-[10px] text-slate-500 uppercase tracking-wider hover:text-brand"
+            className="h-6 text-[10px] uppercase tracking-wider"
           >
             Update
           </Button>
@@ -140,36 +150,36 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
         <div className="p-4 flex flex-col md:flex-row gap-6">
           <div className="flex gap-8">
             <div className="text-center">
-              <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Energy</div>
-              <div className="text-2xl font-bold text-white leading-none">{existingCheckin.energy}<span className="text-xs text-slate-500">/10</span></div>
+              <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Energy</div>
+              <div className="font-technical text-2xl font-extrabold text-ink leading-none">{existingCheckin.energy}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
             <div className="text-center">
-              <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Mood</div>
-              <div className="text-2xl font-bold text-white leading-none">{existingCheckin.mood}<span className="text-xs text-slate-500">/10</span></div>
+              <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Mood</div>
+              <div className="font-technical text-2xl font-extrabold text-ink leading-none">{existingCheckin.mood}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
           </div>
 
           <div className="flex-1">
-            <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Today's Soreness</div>
+            <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-2">Today's Soreness</div>
             {soreGroups.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {soreGroups.map(([group, level]) => (
                   <div
                     key={group}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${SORENESS_COLORS[level]}`}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${SORENESS_COLORS[level]}`}
                   >
                     {group.toUpperCase()} {SORENESS_LABELS[level].toUpperCase()}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500">All systems fresh. Ready to push.</p>
+              <p className="text-xs font-semibold text-muted-2">All systems fresh. Ready to push.</p>
             )}
           </div>
         </div>
         {existingCheckin.notes && (
           <div className="px-4 pb-4">
-            <p className="text-xs text-slate-400 italic border-l-2 border-charcoal-border pl-3">"{existingCheckin.notes}"</p>
+            <p className="text-xs font-semibold text-muted-2 italic border-l-2 hairline pl-3">"{existingCheckin.notes}"</p>
           </div>
         )}
       </div>
@@ -177,25 +187,25 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
   }
 
   return (
-    <div className="rounded-xl bg-charcoal-surface border-charcoal-border shadow-dark-card p-4">
-      <h3 className="text-sm font-semibold text-white mb-4">Morning Check-in</h3>
+    <div className="glass p-4">
+      <h3 className="text-sm font-extrabold text-ink mb-4">Morning Check-in</h3>
 
       {/* Energy + Mood */}
       <div className="flex justify-around mb-5">
         <NumberPicker label="Energy" value={energy} onChange={setEnergy} />
-        <div className="w-px bg-charcoal-elevated" />
+        <div className="w-px bg-white/[0.08]" />
         <NumberPicker label="Mood" value={mood} onChange={setMood} />
       </div>
 
       {/* Muscle soreness */}
       <div className="mb-4">
-        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Soreness — tap to cycle</p>
+        <p className="section-label mb-2">Soreness — tap to cycle</p>
         <div className="grid grid-cols-4 gap-1.5">
           {MUSCLE_GROUPS.map(group => (
             <button
               key={group}
               onClick={() => cycleSoreness(group)}
-              className={`text-xs font-medium py-1.5 px-1 rounded-lg border transition-all ${SORENESS_COLORS[soreness[group]]}`}
+              className={`text-xs font-bold py-1.5 px-1 rounded-lg border-[0.5px] transition-all ${SORENESS_COLORS[soreness[group]]}`}
             >
               <span className="block truncate">{group}</span>
               <span className="block text-[10px] opacity-70 mt-0.5">{SORENESS_LABELS[soreness[group]]}</span>

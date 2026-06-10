@@ -88,32 +88,32 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? "pt-0 px-0 md:px-0 min-h-0" : ""}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <h1 className="text-xl font-semibold text-white mb-1">Physique</h1>
+          <h1 className="type-display text-[22px] mb-1 rise-in">Physique</h1>
         )}
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-xs font-semibold text-muted-2 mb-4">
           Photo-based bodyfat is approximate — track the trend, not the exact number.
           Shoot the same poses each time, same lighting and distance.
         </p>
 
         {/* Pose picker — tag the shot so progress compares pose vs same pose */}
-        <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Pose for this shot</div>
+        <div className="section-label mb-2">Pose for this shot</div>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {POSES.map((p) => (
             <button
               key={p.key}
               onClick={() => setPose(p.key)}
               disabled={busy}
-              className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-xs font-bold border-[0.5px] transition-colors ${
                 pose === p.key
-                  ? "bg-brand text-charcoal border-brand font-medium"
-                  : "bg-charcoal-surface text-slate-300 border-charcoal-border hover:border-slate-500"
+                  ? "bg-brand/15 text-brand border-brand/30"
+                  : "bg-white/[0.04] text-secondary border-white/10 hover:bg-white/[0.07]"
               }`}
             >
               {p.label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-400 mb-4">
+        <p className="text-xs font-semibold text-muted-2 mb-4">
           {POSES.find((p) => p.key === pose)?.cue}
         </p>
 
@@ -130,40 +130,40 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         </label>
 
         {error && (
-          <div className="mt-3 flex items-start gap-1.5 text-xs text-red-400">
+          <div className="mt-3 flex items-start gap-1.5 text-xs text-bad">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {error}
           </div>
         )}
 
         {/* Latest analysis */}
         {latest?.analysis && (
-          <div className="mt-5 rounded-xl bg-charcoal-surface border border-charcoal-border p-4">
+          <div className="mt-5 glass px-4 pt-4 pb-4 rise-in">
             <div className="flex items-baseline justify-between">
               <div>
-                <div className="text-2xl font-technical text-white">
-                  {latest.bodyfat_estimate}% <span className="text-sm text-slate-400">est. bodyfat</span>
+                <div className="font-technical text-2xl font-extrabold text-ink">
+                  {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. bodyfat</span>
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="font-technical text-xs font-semibold text-muted-2">
                   {latest.analysis.bodyfat_range} · confidence {latest.confidence ?? "—"} · {latest.taken_at}
                 </div>
               </div>
               {delta != null && (
-                <div className={`flex items-center gap-1 text-sm ${delta <= 0 ? "text-[#4ade80]" : "text-yellow-400"}`}>
+                <div className={`flex items-center gap-1 font-technical text-sm font-extrabold ${delta <= 0 ? "text-teal" : "text-warn"}`}>
                   <TrendingDown className="w-4 h-4" /> {delta > 0 ? "+" : ""}{delta.toFixed(1)}%
                 </div>
               )}
             </div>
             {latest.analysis.assessment && (
-              <p className="mt-2 text-sm text-slate-300">{latest.analysis.assessment}</p>
+              <p className="mt-2 text-sm font-semibold text-secondary">{latest.analysis.assessment}</p>
             )}
             {Array.isArray(latest.analysis.focus_areas) && latest.analysis.focus_areas.length > 0 && (
-              <p className="mt-2 text-xs text-slate-400">
-                <span className="text-slate-500">Focus: </span>{latest.analysis.focus_areas.join(", ")}
+              <p className="mt-2 text-xs font-semibold text-muted-2">
+                <span>Focus: </span>{latest.analysis.focus_areas.join(", ")}
               </p>
             )}
             {latest.analysis.vs_lean_goal && (
-              <p className="mt-1 text-xs text-slate-400">
-                <span className="text-slate-500">At a leaner BF: </span>{latest.analysis.vs_lean_goal}
+              <p className="mt-1 text-xs font-semibold text-muted-2">
+                <span>At a leaner BF: </span>{latest.analysis.vs_lean_goal}
               </p>
             )}
           </div>
@@ -173,36 +173,36 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         {entries.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs uppercase tracking-wide text-slate-500">History</div>
+              <div className="section-label">History</div>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               <button
                 onClick={() => setFilterPose(null)}
-                className={`px-2 py-0.5 rounded-full text-[11px] border ${
-                  filterPose === null ? "bg-slate-700 text-white border-slate-600" : "bg-charcoal-surface text-slate-400 border-charcoal-border"
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
+                  filterPose === null ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
                 }`}
               >All</button>
               {POSES.map((p) => (
                 <button
                   key={p.key}
                   onClick={() => setFilterPose(p.key)}
-                  className={`px-2 py-0.5 rounded-full text-[11px] border ${
-                    filterPose === p.key ? "bg-slate-700 text-white border-slate-600" : "bg-charcoal-surface text-slate-400 border-charcoal-border"
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
+                    filterPose === p.key ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
                   }`}
                 >{p.label}</button>
               ))}
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {entries.filter((e) => !filterPose || e.pose === filterPose).map((e) => (
-                <div key={e.id} className="rounded-lg overflow-hidden bg-charcoal-surface border border-charcoal-border">
+                <div key={e.id} className="glass-inset overflow-hidden">
                   {e.url && e.media_type === "photo"
                     ? <img src={e.url} alt={e.taken_at} className="w-full h-28 object-cover" />
-                    : <div className="w-full h-28 flex items-center justify-center text-slate-600 text-xs">video</div>}
-                  <div className="px-2 py-1 text-[10px] text-slate-400">
-                    {e.pose && <div className="truncate text-slate-500">{POSE_LABEL[e.pose] || e.pose}</div>}
-                    <div className="flex justify-between">
+                    : <div className="w-full h-28 flex items-center justify-center text-faint text-xs font-semibold">video</div>}
+                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-2">
+                    {e.pose && <div className="truncate">{POSE_LABEL[e.pose] || e.pose}</div>}
+                    <div className="flex justify-between font-technical">
                       <span>{e.taken_at}</span>
-                      {e.bodyfat_estimate != null && <span className="font-technical">{e.bodyfat_estimate}%</span>}
+                      {e.bodyfat_estimate != null && <span className="font-extrabold text-ink">{e.bodyfat_estimate}%</span>}
                     </div>
                   </div>
                 </div>

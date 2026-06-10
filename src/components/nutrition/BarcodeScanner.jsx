@@ -106,10 +106,10 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
     <div className="fixed inset-0 z-[10001] flex flex-col bg-black">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80">
-        <span className="text-white font-semibold text-sm">Scan Barcode</span>
+        <span className="text-ink font-semibold text-sm">Scan Barcode</span>
         <button
           onClick={onClose}
-          className="text-white/70 hover:text-white transition-colors p-1"
+          className="text-ink/70 hover:text-ink transition-colors p-1"
           aria-label="Close scanner"
         >
           <X className="w-5 h-5" />
@@ -148,17 +148,17 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         {/* Status overlay */}
         <div className="absolute bottom-0 inset-x-0 pb-8 flex flex-col items-center gap-3">
           {scanState === "requesting" && (
-            <div className="flex items-center gap-2 bg-black/70 text-white text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-black/70 text-ink text-sm px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" /> Requesting camera…
             </div>
           )}
           {scanState === "scanning" && (
-            <div className="bg-black/60 text-white/80 text-xs px-4 py-2 rounded-full">
+            <div className="bg-black/60 text-ink/80 text-xs px-4 py-2 rounded-full">
               Point camera at a barcode
             </div>
           )}
           {scanState === "looking_up" && (
-            <div className="flex items-center gap-2 bg-black/70 text-white text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-black/70 text-ink text-sm px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" /> Looking up {foundBarcode}…
             </div>
           )}
@@ -168,10 +168,10 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
       {/* Not found state */}
       {scanState === "not_found" && (
         <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
-          <PackageSearch className="w-10 h-10 text-slate-500" />
+          <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
-            <p className="font-semibold text-white">Product not found</p>
-            <p className="text-sm text-slate-500 mt-1">Barcode: {foundBarcode}</p>
+            <p className="font-semibold text-ink">Product not found</p>
+            <p className="text-sm text-ink-muted mt-1">Barcode: {foundBarcode}</p>
           </div>
           <div className="flex gap-2 w-full">
             <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
@@ -187,10 +187,10 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
       {/* Error state */}
       {scanState === "error" && (
         <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
-          <AlertTriangle className="w-10 h-10 text-[#f87171]" />
+          <AlertTriangle className="w-10 h-10 text-bad" />
           <div>
-            <p className="font-semibold text-white">Camera unavailable</p>
-            <p className="text-sm text-slate-500 mt-1">{errorMessage}</p>
+            <p className="font-semibold text-ink">Camera unavailable</p>
+            <p className="text-sm text-ink-muted mt-1">{errorMessage}</p>
           </div>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Close

@@ -3,6 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { GripVertical, Clock, Target } from "lucide-react";
 
+// Hue-coded top strip — workout type owns one hue (coral stays action-only).
+const FOCUS_HUES = {
+  strength: "var(--hue-teal)",
+  cardio: "var(--hue-blue)",
+  hiit: "var(--hue-violet)",
+};
+
 /**
  * Draggable workout card for the workout library bank.
  * Styled to match the WorkoutCard on the Workouts page.
@@ -36,7 +43,10 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
             : ""
         }`}
       >
-        <div className="h-1.5 bg-brand" />
+        <div
+          className="h-1"
+          style={{ background: FOCUS_HUES[workout.focus] || "rgba(255,255,255,0.10)", opacity: 0.65 }}
+        />
         <div className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
@@ -47,15 +57,15 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm font-bold text-white truncate">
+              <p className="text-sm font-bold text-ink truncate">
                 {workout.title}
               </p>
               {workout.description && (
-                <p className="text-xs text-slate-500  line-clamp-1 mt-0.5">
+                <p className="text-xs text-ink-muted  line-clamp-1 mt-0.5">
                   {workout.description}
                 </p>
               )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 ">
+                <div className="flex items-center gap-3 mt-2 text-xs text-ink-muted ">
                 {workout.duration_minutes && (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -68,7 +78,7 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
                 </span>
               </div>
             </div>
-            <GripVertical className="w-4 h-4 text-slate-400  flex-shrink-0 mt-1" />
+            <GripVertical className="w-4 h-4 text-ink-muted  flex-shrink-0 mt-1" />
           </div>
         </div>
       </Card>

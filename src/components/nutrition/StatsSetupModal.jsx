@@ -138,7 +138,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           <DialogTitle>Set Up TDEE Calculation</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-slate-400 ">
+        <p className="text-sm text-ink-muted ">
           Fill in your stats and we'll automatically calculate your daily calorie and macro targets.
         </p>
 
@@ -190,7 +190,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("in");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "in" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-slate-500"
+                    heightUnit === "in" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-ink-muted"
                   }`}
                 >ft/in</button>
                 <button
@@ -203,7 +203,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     setHeightUnit("cm");
                   }}
                   className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "cm" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-slate-500"
+                    heightUnit === "cm" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-ink-muted"
                   }`}
                 >cm</button>
               </div>
@@ -292,12 +292,12 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 onChange={e => setProteinPerLb(e.target.value)}
                 className="w-24"
               />
-              <span className="text-sm text-slate-500 ">
+              <span className="text-sm text-ink-muted ">
                 g / lb
                 {proteinGrams ? ` = ${proteinGrams}g/day` : ""}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-ink-muted mt-1">
               Typical range: 0.7–1.2 g/lb. Higher end for muscle gain or cutting.
             </p>
           </div>

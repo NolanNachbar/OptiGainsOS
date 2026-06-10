@@ -9,13 +9,22 @@ import {
 import { format, parseISO } from "date-fns";
 
 const COACHES = [
-  { key: "performance",  label: "Performance",  icon: Dumbbell,   color: "text-brand" },
-  { key: "endurance",    label: "Endurance",    icon: Activity,   color: "text-blue-400" },
-  { key: "nutrition",    label: "Nutrition",    icon: Apple,      color: "text-green-400" },
-  { key: "body_comp",    label: "Body Comp",    icon: Scale,      color: "text-yellow-400" },
-  { key: "learning",     label: "Learning",     icon: BookOpen,   color: "text-purple-400" },
-  { key: "career",       label: "Career",       icon: Briefcase,  color: "text-indigo-400" },
+  { key: "performance",  label: "Performance",  icon: Dumbbell },
+  { key: "endurance",    label: "Endurance",    icon: Activity },
+  { key: "nutrition",    label: "Nutrition",    icon: Apple },
+  { key: "body_comp",    label: "Body Comp",    icon: Scale },
+  { key: "learning",     label: "Learning",     icon: BookOpen },
+  { key: "career",       label: "Career",       icon: Briefcase },
 ];
+
+/** Coach-persona tag — tiny uppercase teal chip. */
+function CoachTag({ children }) {
+  return (
+    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-[rgba(94,220,210,0.10)] rounded-[7px] px-[7px] py-[3px] whitespace-nowrap shrink-0">
+      {children}
+    </span>
+  );
+}
 
 function BriefEntry({ brief }) {
   const json = brief.brief_json || {};
@@ -27,48 +36,42 @@ function BriefEntry({ brief }) {
     : null;
 
   return (
-    <div className="rounded-2xl bg-charcoal-surface border border-charcoal-border overflow-hidden mb-4">
-      <div className="px-5 py-3.5 border-b border-charcoal-border flex items-center justify-between">
+    <div className="glass overflow-hidden mb-4 rise-in">
+      <div className="px-5 py-3.5 border-b hairline flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bot className="w-4 h-4 text-brand" />
-          <span className="text-sm font-bold text-white">{date}</span>
+          <Bot className="w-4 h-4 text-teal" />
+          <span className="text-sm font-extrabold text-ink">{date}</span>
         </div>
         {approxCost && (
           <div className="flex items-center gap-1.5">
-            <Coins className="w-3 h-3 text-slate-500" />
-            <span className="text-[10px] text-slate-500">{approxCost}</span>
+            <Coins className="w-3 h-3 text-muted-2" />
+            <span className="font-technical text-[10px] font-semibold text-muted-2">{approxCost}</span>
           </div>
         )}
       </div>
 
       {json.insight && (
-        <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 rounded-lg bg-brand/[5%] border border-brand/10">
-          <Lightbulb className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-200 leading-relaxed italic">{json.insight}</p>
+        <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
+          <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+          <p className="text-[13px] font-semibold text-ink leading-[1.55]">{json.insight}</p>
         </div>
       )}
 
       <div className="px-5 py-4 space-y-4">
-        {COACHES.filter(c => json[c.key]).map(coach => {
-          const Icon = coach.icon;
-          return (
-            <div key={coach.key}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Icon className={`w-3.5 h-3.5 ${coach.color}`} />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{coach.label}</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
-            </div>
-          );
-        })}
+        {COACHES.filter(c => json[c.key]).map(coach => (
+          <div key={coach.key} className="flex items-start gap-2.5">
+            <CoachTag>{coach.label}</CoachTag>
+            <p className="text-[11.5px] font-semibold text-muted-2 leading-[1.45] whitespace-pre-wrap">{json[coach.key]}</p>
+          </div>
+        ))}
 
         {json.today_actions?.length > 0 && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Actions</p>
+            <p className="section-label mb-2">Actions</p>
             <ul className="space-y-1">
               {json.today_actions.map((action, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-700 shrink-0" />
+                <li key={i} className="flex items-start gap-2 text-sm font-semibold text-secondary">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-teal/60 shrink-0" />
                   {action}
                 </li>
               ))}
@@ -102,29 +105,29 @@ export default function BriefHistory() {
   return (
     <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <Link to="/dashboard" className="text-slate-500 hover:text-brand transition-colors">
+        <div className="flex items-center gap-3 mb-8 rise-in">
+          <Link to="/dashboard" className="text-muted-2 hover:text-ink transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              <Bot className="w-5 h-5 text-brand" /> Brief History
+            <h1 className="type-display text-[22px] flex items-center gap-2">
+              <Bot className="w-5 h-5 text-teal" /> Brief History
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">Last 30 AI-generated daily briefs</p>
+            <p className="text-xs font-semibold text-muted-2 mt-0.5">Last 30 AI-generated daily briefs</p>
           </div>
         </div>
 
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 rounded-2xl bg-charcoal-surface animate-pulse" />
+              <div key={i} className="h-32 glass animate-pulse" />
             ))}
           </div>
         ) : briefs.length === 0 ? (
           <div className="py-20 text-center">
-            <Bot className="w-10 h-10 text-slate-800 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">No briefs generated yet.</p>
-            <p className="text-xs text-slate-700 mt-1">Run your Desktop Agent to generate the first one.</p>
+            <Bot className="w-10 h-10 text-faint mx-auto mb-3" />
+            <p className="text-sm font-semibold text-muted-2">No briefs generated yet.</p>
+            <p className="text-xs font-semibold text-faint mt-1">Run your Desktop Agent to generate the first one.</p>
           </div>
         ) : (
           briefs.map(brief => <BriefEntry key={brief.id} brief={brief} />)

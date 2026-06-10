@@ -6,8 +6,8 @@ import { calculateEWMA } from "@/utils/coachingUtils";
 export default function WeightProgressChart({ data, weightUnit = 'lbs', className }) {
   if (!data || data.length === 0) {
     return (
-      <div className={`w-full ${className || 'h-80'} flex items-center justify-center bg-charcoal-surface rounded-xl border border-charcoal-border`}>
-        <p className="text-slate-500 text-[13px]">No weight data available</p>
+      <div className={`w-full ${className || 'h-80'} flex items-center justify-center glass-inset`}>
+        <p className="text-muted-2 font-semibold text-[13px]">No weight data available</p>
       </div>
     );
   }
@@ -29,10 +29,10 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       const rawEntry = payload.find(p => p.dataKey === 'weight');
       const trendEntry = payload.find(p => p.dataKey === 'trendWeight');
       return (
-        <div className="bg-charcoal-elevated p-3 rounded-xl border border-charcoal-border">
-          <p className="font-semibold text-[13px] text-white">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {rawEntry && <p className="text-[12px] text-slate-400 font-mono">{rawEntry.value} {weightUnit}</p>}
-          {trendEntry && <p className="text-[12px] font-mono text-brand">Trend: {trendEntry.value} {weightUnit}</p>}
+        <div className="glass-elevated p-3 rounded-xl">
+          <p className="font-bold text-[13px] text-ink">{format(parseISO(label), 'MMM d, yyyy')}</p>
+          {rawEntry && <p className="text-[12px] text-muted-2 font-technical font-semibold">{rawEntry.value} {weightUnit}</p>}
+          {trendEntry && <p className="text-[12px] font-technical font-bold text-violet">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -41,77 +41,77 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Starting</div>
-          <div className="text-[18px] font-bold font-mono text-white">{startWeight} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
+      <div className="grid grid-cols-4 gap-2 mb-6">
+        <div className="glass-inset p-3">
+          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
+          <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
-        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Current</div>
-          <div className="text-[18px] font-bold font-mono text-white">{currentWeight} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
+        <div className="glass-inset p-3">
+          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
+          <div className="font-technical text-[18px] font-extrabold text-ink">{currentWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
-        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Trend</div>
-          <div className="text-[18px] font-bold font-mono text-brand">{currentTrend} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span></div>
+        <div className="glass-inset p-3">
+          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
+          <div className="font-technical text-[18px] font-extrabold text-violet">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
-        <div className="bg-charcoal-surface border border-charcoal-border rounded-xl p-4">
-          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Change</div>
-          <div className={`text-[18px] font-bold font-mono ${weightChange > 0 ? 'text-[#fbbf24]' : weightChange < 0 ? 'text-[#4ade80]' : 'text-white'}`}>
-            {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-slate-500 font-sans font-normal">{weightUnit}</span>
+        <div className="glass-inset p-3">
+          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
+          <div className={`font-technical text-[18px] font-extrabold ${weightChange > 0 ? 'text-warn' : weightChange < 0 ? 'text-teal' : 'text-ink'}`}>
+            {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
           </div>
-          <div className="text-xs text-slate-500 font-mono mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
       </div>
 
       <div className={`w-full ${className || 'h-80'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trendedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="0" stroke="#2a2a2a" strokeOpacity={1} />
+            <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.05)" strokeOpacity={1} />
             <XAxis
               dataKey="recorded_date"
               tickFormatter={(date) => format(parseISO(date), 'MMM d')}
-              stroke="#333333"
-              tick={{ fontSize: 11, fill: '#555555', fontFamily: 'IBM Plex Mono' }}
+              stroke="rgba(255,255,255,0.05)"
+              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              stroke="#333333"
-              tick={{ fontSize: 11, fill: '#555555', fontFamily: 'IBM Plex Mono' }}
+              stroke="rgba(255,255,255,0.05)"
+              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
               width={36}
               domain={['dataMin - 5', 'dataMax + 5']}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#2a2a2a', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.10)', strokeWidth: 1 }} />
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="#333333"
+              stroke="rgba(242,244,247,0.18)"
               strokeWidth={1}
               dot={false}
-              activeDot={{ r: 3, fill: '#555555', strokeWidth: 0 }}
+              activeDot={{ r: 3, fill: 'rgba(242,244,247,0.4)', strokeWidth: 0 }}
             />
             <Line
               type="monotone"
               dataKey="trendWeight"
-              stroke="var(--color-brand)"
-              strokeWidth={1.5}
+              stroke="var(--hue-violet)"
+              strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: 'var(--color-brand)', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--hue-violet)', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-slate-500 font-mono">
+      <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px bg-slate-700" />
+          <div className="w-3.5 h-[2.5px] rounded-full bg-white/20" />
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px" style={{ borderTop: '1.5px dashed var(--color-brand)' }} />
+          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed var(--hue-violet)' }} />
           Trend (EWMA)
         </span>
       </div>

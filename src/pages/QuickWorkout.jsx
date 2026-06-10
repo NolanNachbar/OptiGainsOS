@@ -47,13 +47,22 @@ export default function QuickWorkout() {
   const prescribed = location.state?.prescribedSession || null;
   const prescribedInitial = useMemo(() => {
     if (!prescribed?.exercises?.length) return [];
+    // Prescribed reps can be a range string ("6-8"). Number inputs render
+    // blank for those and the engine drops non-numeric sets from learning —
+    // seed the set with the range's lower bound instead.
+    const repsNum = (r) => {
+      const n = Number(r);
+      if (Number.isFinite(n)) return n;
+      const m = String(r ?? "").match(/\d+/);
+      return m ? parseInt(m[0], 10) : 0;
+    };
     return prescribed.exercises.map((ex, i) => ({
       name: ex.name,
       exercise_index: i,
       prescribed: { reps: ex.reps, rir: ex.rir, targetWeight: ex.targetWeight },
       sets: Array.from({ length: Math.max(1, Number(ex.sets) || 1) }, (_, s) => ({
         set_number: s + 1,
-        reps: ex.reps || 0,
+        reps: repsNum(ex.reps),
         weight: ex.targetWeight || 0,
         rir: ex.rir ?? null,
         completed: false,
@@ -258,7 +267,7 @@ export default function QuickWorkout() {
   }
 
   return (
-    <div className="bg-charcoal-surface  min-h-screen relative transition-colors duration-300">
+    <div className="min-h-screen relative">
       <WorkoutLoggingHeader
         workoutTitle={workoutTitle}
         showTitleInHeader={showTitleInHeader}
@@ -271,7 +280,7 @@ export default function QuickWorkout() {
         <VdotZonesCard className="mb-6" />
         <div ref={workoutTitleRef} className="mb-6">
           <div className="flex items-center gap-2">
-            <Dumbbell className="w-6 h-6 text-white" />
+            <Dumbbell className="w-6 h-6 text-ink-muted" />
             {editingTitle ? (
               <Input
                 autoFocus
@@ -279,35 +288,37 @@ export default function QuickWorkout() {
                 onChange={(e) => setWorkoutTitle(e.target.value)}
                 onBlur={() => setEditingTitle(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
-                className="text-2xl font-bold h-10 flex-1"
+                className="text-2xl font-extrabold h-10 flex-1"
               />
             ) : (
-              <h1 className="text-2xl font-bold text-white">{workoutTitle}</h1>
+              <h1 className="type-display text-2xl">{workoutTitle}</h1>
             )}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="h-8 w-8 text-slate-400 hover:text-white"
+              className="h-8 w-8 text-ink-muted hover:text-ink"
             >
               {editingTitle ? (
-                <Check className="w-4 h-4 text-[#4ade80]" />
+                <Check className="w-4 h-4 text-teal" />
               ) : (
                 <Pencil className="w-4 h-4" />
               )}
             </Button>
           </div>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[12.5px] font-semibold text-ink-muted mt-1">
             {prescribed ? "Logging the engine's prescribed session — targets pre-filled" : "Add exercises as you go"}
           </p>
         </div>
 
         {/* Engine prescription banner */}
         {prescribed && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl bg-brand/10 border border-brand/20 px-4 py-2.5 text-xs">
-            <Cpu className="w-4 h-4 text-brand shrink-0" />
-            <span className="text-slate-300">
-              Loaded from <span className="text-brand font-semibold">Engine Prescription</span> — confirm or adjust each set, then finish.
+          <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-[rgba(239,115,104,0.15)] text-coral flex items-center justify-center flex-shrink-0 not-italic">
+              <Cpu className="w-3.5 h-3.5" />
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed">
+              Loaded from <span className="text-brand font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
             </span>
           </div>
         )}
@@ -363,14 +374,14 @@ export default function QuickWorkout() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-400 ">
+          <p className="text-sm text-ink-muted ">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button className="flex-1 bg-brand hover:bg-brand" onClick={handleResumeSession}>
+            <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

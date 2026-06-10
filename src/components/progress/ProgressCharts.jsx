@@ -19,8 +19,8 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 flex items-center justify-center bg-charcoal-surface rounded-lg">
-        <p className="text-slate-500">No data available for this exercise</p>
+      <div className="w-full h-80 flex items-center justify-center glass-inset">
+        <p className="text-muted-2 font-semibold">No data available for this exercise</p>
       </div>
     );
   }
@@ -30,10 +30,10 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
       const raw = payload.find(p => p.dataKey === 'maxWeight');
       const trend = payload.find(p => p.dataKey === 'trend');
       return (
-        <div className="bg-charcoal-surface p-3 rounded-lg border border-charcoal-border">
+        <div className="glass-elevated p-3 rounded-xl">
           <p className="font-semibold text-xs">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {raw && <p className="text-xs text-slate-500">{raw.value} {weightUnit}</p>}
-          {trend && <p className="text-xs text-[#5d3cc7]">Trend: {trend.value} {weightUnit}</p>}
+          {raw && <p className="text-xs text-ink-muted">{raw.value} {weightUnit}</p>}
+          {trend && <p className="text-xs text-teal">Trend: {trend.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -44,52 +44,52 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
     <div className="w-full h-80">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="0" stroke="#2a2a2a" strokeOpacity={1} />
+          <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.05)" strokeOpacity={1} />
           <XAxis
             dataKey="date"
             tickFormatter={(date) => format(parseISO(date), 'MMM d')}
-            stroke="#333333"
-            tick={{ fontSize: 11, fill: '#555555' }}
+            stroke="rgba(255,255,255,0.05)"
+            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            stroke="#333333"
-            tick={{ fontSize: 11, fill: '#555555' }}
+            stroke="rgba(255,255,255,0.05)"
+            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
             axisLine={false}
             tickLine={false}
             width={36}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#2a2a2a', strokeWidth: 1 }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.10)', strokeWidth: 1 }} />
           <Line
             type="monotone"
             dataKey="maxWeight"
-            stroke="#333333"
+            stroke="rgba(242,244,247,0.18)"
             strokeWidth={1}
             dot={false}
-            activeDot={{ r: 3, fill: '#555555', strokeWidth: 0 }}
+            activeDot={{ r: 3, fill: 'rgba(242,244,247,0.4)', strokeWidth: 0 }}
           />
           {hasTrend && (
             <Line
               type="monotone"
               dataKey="trend"
-              stroke="#5d3cc7"
+              stroke="var(--hue-teal)"
               strokeWidth={1.5}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: '#5d3cc7', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--hue-teal)', strokeWidth: 0 }}
             />
           )}
         </LineChart>
       </ResponsiveContainer>
       {hasTrend && (
-        <div className="flex items-center gap-5 mt-2 text-xs text-slate-500">
+        <div className="flex items-center gap-5 mt-2 text-xs text-ink-muted">
           <span className="flex items-center gap-1.5">
-            <div className="w-4 h-px bg-slate-700" />
+            <div className="w-4 h-px bg-white/20" />
             Raw
           </span>
           <span className="flex items-center gap-1.5">
-            <div className="w-4 h-px" style={{ borderTop: '1.5px dashed #5d3cc7' }} />
+            <div className="w-4 h-px" style={{ borderTop: '2px dashed var(--hue-teal)' }} />
             Trend
           </span>
         </div>
@@ -101,8 +101,8 @@ export function ExerciseProgressChart({ data, exerciseName, weightUnit = 'lbs' }
 export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 flex items-center justify-center bg-charcoal-surface rounded-lg ">
-        <p className="text-slate-500">No weight data available</p>
+      <div className="w-full h-80 flex items-center justify-center glass-inset ">
+        <p className="text-muted-2 font-semibold">No weight data available</p>
       </div>
     );
   }
@@ -124,10 +124,10 @@ export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
       const rawEntry = payload.find(p => p.dataKey === 'weight');
       const trendEntry = payload.find(p => p.dataKey === 'trendWeight');
       return (
-        <div className="bg-charcoal-surface p-3 rounded-lg border border-charcoal-border">
+        <div className="glass-elevated p-3 rounded-xl">
           <p className="font-semibold text-sm">{format(parseISO(label), 'MMM d, yyyy')}</p>
-          {rawEntry && <p className="text-sm text-slate-500">{rawEntry.value} {weightUnit}</p>}
-          {trendEntry && <p className="text-sm font-medium text-[#5d3cc7]">Trend: {trendEntry.value} {weightUnit}</p>}
+          {rawEntry && <p className="text-sm text-ink-muted">{rawEntry.value} {weightUnit}</p>}
+          {trendEntry && <p className="text-sm font-medium text-violet">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -137,76 +137,76 @@ export function WeightProgressChart({ data, weightUnit = 'lbs' }) {
   return (
     <div className="w-full">
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-charcoal-surface rounded-lg p-4">
-          <div className="text-xs text-slate-500 mb-1">Starting</div>
-          <div className="text-xl font-bold text-white">{startWeight} {weightUnit}</div>
+        <div className="glass-inset p-4">
+          <div className="text-xs text-ink-muted mb-1">Starting</div>
+          <div className="text-xl font-bold text-ink">{startWeight} {weightUnit}</div>
         </div>
-        <div className="bg-charcoal-surface rounded-lg p-4">
-          <div className="text-xs text-slate-500 mb-1">Current</div>
-          <div className="text-xl font-bold text-white">{currentWeight} {weightUnit}</div>
+        <div className="glass-inset p-4">
+          <div className="text-xs text-ink-muted mb-1">Current</div>
+          <div className="text-xl font-bold text-ink">{currentWeight} {weightUnit}</div>
         </div>
-        <div className="bg-charcoal-surface rounded-lg p-4">
-          <div className="text-xs text-slate-500 mb-1">Trend</div>
-          <div className="text-xl font-bold text-[#5d3cc7]">{currentTrend} {weightUnit}</div>
+        <div className="glass-inset p-4">
+          <div className="text-xs text-ink-muted mb-1">Trend</div>
+          <div className="text-xl font-bold text-violet">{currentTrend} {weightUnit}</div>
         </div>
-        <div className="bg-charcoal-surface rounded-lg p-4">
-          <div className="text-xs text-slate-500 mb-1">Change</div>
-          <div className={`text-xl font-bold ${weightChange > 0 ? 'text-[#fbbf24]' : weightChange < 0 ? 'text-[#4ade80]' : 'text-white'}`}>
+        <div className="glass-inset p-4">
+          <div className="text-xs text-ink-muted mb-1">Change</div>
+          <div className={`text-xl font-bold ${weightChange > 0 ? 'text-warn' : weightChange < 0 ? 'text-teal' : 'text-ink'}`}>
             {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} {weightUnit}
           </div>
-          <div className="text-xs text-slate-500 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
+          <div className="text-xs text-ink-muted mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
       </div>
 
       <div className="w-full h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trendedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="0" stroke="#e5e5ea" strokeOpacity={0.5} />
+            <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.05)" strokeOpacity={1} />
             <XAxis
               dataKey="recorded_date"
               tickFormatter={(date) => format(parseISO(date), 'MMM d')}
-              stroke="#94a3b8"
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              stroke="rgba(255,255,255,0.05)"
+              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              stroke="#94a3b8"
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              stroke="rgba(255,255,255,0.05)"
+              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
               width={36}
               domain={['dataMin - 5', 'dataMax + 5']}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e5e5ea', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.10)', strokeWidth: 1 }} />
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="#94a3b8"
+              stroke="rgba(255,255,255,0.05)"
               strokeWidth={1}
               dot={false}
-              activeDot={{ r: 3, fill: '#94a3b8', strokeWidth: 0 }}
+              activeDot={{ r: 3, fill: 'rgba(242,244,247,0.4)', strokeWidth: 0 }}
             />
             <Line
               type="monotone"
               dataKey="trendWeight"
-              stroke="#5d3cc7"
+              stroke="var(--hue-violet)"
               strokeWidth={1.5}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: '#5d3cc7', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--hue-violet)', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-slate-500">
+      <div className="flex items-center justify-center gap-6 mt-3 text-xs text-ink-muted">
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px bg-slate-700" />
+          <div className="w-4 h-px bg-white/20" />
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-4 h-px bg-[#5d3cc7]" style={{ borderTop: '1.5px dashed #5d3cc7' }} />
+          <div className="w-4 h-px bg-violet" style={{ borderTop: '1.5px dashed var(--hue-violet)' }} />
           Trend (EWMA)
         </span>
       </div>

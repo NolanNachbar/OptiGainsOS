@@ -39,15 +39,15 @@ export default function EaseTodayButton() {
 
   if (done) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-[#4ade80] px-1">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-leaf px-1">
         <Check className="w-3.5 h-3.5" /> Easing today's deficit — carbs added back. Recalcs on the next engine run.
       </div>
     );
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={ease} disabled={busy}
-      className="h-8 px-3 text-xs text-slate-400 hover:text-yellow-400">
+    <Button variant="dim" size="sm" onClick={ease} disabled={busy}
+      className="h-8 px-3 text-xs hover:text-warn">
       <BatteryLow className="w-3.5 h-3.5 mr-1.5" /> I'm wrecked — ease today's deficit
     </Button>
   );

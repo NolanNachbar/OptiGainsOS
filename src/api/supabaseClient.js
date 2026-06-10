@@ -88,12 +88,6 @@ const mockFood = [
   { id: 'f3', date: getTodayLocalDateStr(), calories: 400, protein_grams: 30, carbs_grams: 40, fats_grams: 12, food_name: 'Greek Yogurt & Almonds', meal_type: 'snack', serving_size: 1, serving_unit: 'serving', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date().toISOString() }
 ];
 
-const mockWeights = [
-  { id: 'wt1', weight: 185.4, recorded_date: getTodayLocalDateStr(), created_by: '00000000-0000-0000-0000-000000000000' },
-  { id: 'wt2', weight: 184.8, recorded_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], created_by: '00000000-0000-0000-0000-000000000000' },
-  { id: 'wt3', weight: 185.0, recorded_date: new Date(Date.now() - 172800000).toISOString().split('T')[0], created_by: '00000000-0000-0000-0000-000000000000' }
-];
-
 const mockLogs = [
   {
     id: 'l1',
@@ -110,10 +104,6 @@ const mockLogs = [
 
 const mockGarminActivities = [
   { activity_date: getTodayLocalDateStr(), activity_type: 'running', distance_meters: 5000, duration_seconds: 1500, avg_hr: 152, max_hr: 171, calories: 400, created_by: '00000000-0000-0000-0000-000000000000' }
-];
-
-const mockRecovery = [
-  { id: 'r1', date: getTodayLocalDateStr(), hrv: 75, rhr: 54, sleep_score: 82, created_by: '00000000-0000-0000-0000-000000000000' }
 ];
 
 const mockEnrollments = [
@@ -146,18 +136,148 @@ const mockPrograms = [
   }
 ];
 
+// ── Engine + history fixtures so dev-bypass renders a believable athlete ──
+const MOCK_UID = '00000000-0000-0000-0000-000000000000';
+const dayStr = (offset) => {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${dd}`;
+};
+
+const mockPrescriptions = [
+  {
+    id: 'tp1', created_by: MOCK_UID, date: getTodayLocalDateStr(),
+    mpc_action: 'MIXED', mpc_intensity: 1.06, w_pst: 0.55, w_str: 0.45, acwr: 1.12,
+    rationale: 'TSB is positive and HRV is trending up — cleared to push. PST deadline keeps conditioning weighted at 55%.',
+    banister_state: { fitness: 62.4, fatigue: 58.1, tsb_banister: 4.2, confidence: 0.81 },
+    interference: { interference_level: 'LOW', anabolic_window: true },
+    overreach: { overreaching: false, fatigue_state: 'normal', hrv_z_3d: 0.4, rhr_z_3d: -0.2 },
+    prescription: {
+      session_type: 'mixed', split: 'upper_push',
+      strength_block: [
+        { name: 'Weighted Pull-Up', sets: 4, reps: 6, rir: 2, load_lbs: 45 },
+        { name: 'Incline Barbell Press', sets: 4, reps: 8, rir: 2, load_lbs: 165 },
+        { name: 'Overhead Press', sets: 3, reps: 8, rir: 2, load_lbs: 115 },
+        { name: 'Cable Lateral Raise', sets: 3, reps: 15, rir: 1, load_lbs: 25 },
+      ],
+      calisthenics_block: {
+        push_ups: { sets: 3, reps_each: 30 },
+        sit_ups: { sets: 3, reps_each: 35 },
+      },
+      run_block: { zone: 'Z2', session_miles: 4.0, pace: '8:55/mi' },
+      swim_block: { meters: 500, stroke: 'freestyle' },
+    },
+  },
+];
+
+const mockAthleteState = [
+  {
+    id: 'as1', created_by: MOCK_UID, date: getTodayLocalDateStr(),
+    recovery: { score: 78, hrv: 84, sleep_score: 86, resting_hr: 47, hrv_trend: 'rising' },
+    fatigue: { tsb: 4.2, acwr: 1.12, ctl: 62, atl: 58, interpretation: 'productive_training' },
+    nutrition: {
+      avg_calories_7d: 2764, calorie_target: 2800, protein_target: 185,
+      weight_trend_lbs_per_week: -0.6, phase: 'cut',
+    },
+    endurance: { days_to_aug31: 83, weekly_miles: 18.4, last_run_pace: '8:42/mi' },
+    vdot_zones: {
+      current_vdot: 46.8, vdot_gap: 2.2,
+      zones: { easy: '9:05-9:55', marathon: '8:05', threshold: '7:32', interval: '6:55', repetition: '6:25' },
+    },
+    strength: {
+      bench_1rm: 245, squat_1rm: 335, deadlift_1rm: 405, ohp_1rm: 150,
+      weekly_sets: 64, trend: 'rising',
+    },
+    hypertrophy: { weekly_volume_lbs: 148200, hard_sets: 64, frequency: 4 },
+    banister: { fitness: 62.4, fatigue: 58.1, tsb: 4.2 },
+  },
+];
+
+const mockEngineParams = [
+  {
+    id: 'ep1', created_by: MOCK_UID, date: getTodayLocalDateStr(),
+    kalman_state: { level: 185.2, trend: -0.085, variance: 0.42 },
+    rls_params: { theta: [0.62, 0.21, -0.14], update_count: 142 },
+    cellular_state: { glycogen: 0.82, inflammation: 0.18 },
+    vdot_state: { vdot: 46.8, last_race_equiv: '24:10 5K' },
+  },
+];
+
+const mockBriefs = [
+  {
+    id: 'db1', created_by: MOCK_UID, date: getTodayLocalDateStr(),
+    generated_at: new Date().toISOString(),
+    model_used: 'claude-haiku-4-5', input_tokens: 6420, output_tokens: 980, cache_read_tokens: 4100,
+    brief_json: {
+      insight: 'Three straight days of rising HRV with falling intake — the cut is landing without recovery cost. Spend it on the upper-push session today.',
+      performance: 'Pressing volume is up 9% week-over-week at equal RIR. Incline barbell is your fastest-rising lift; keep the 4×8 at 165 and add 5 lb next exposure if bar speed holds.',
+      endurance: 'Z2 base is consolidating — 18.4 mi this week at 8:42 average. Today\'s 4 mi stays conversational; protect tomorrow\'s quality run.',
+      nutrition: 'Averaging 2,764 kcal against a 2,800 target with protein at 1.0 g/lb. Carbs cycle up today (training day) — front-load them pre-session.',
+      body_comp: 'Trend weight is -0.6 lb/wk, right in the target band. Lean mass markers stable; no diet adjustment warranted this week.',
+      learning: 'Two study blocks logged this week. Queue the next anatomy module tonight — rest day tomorrow is a good consolidation window.',
+      career: 'PST window opens in 12 weeks. Application packet review is the one open loop — 30 minutes tonight closes it.',
+    },
+  },
+];
+
+// 30-day histories for charts and trends.
+const mockWeightHistory = Array.from({ length: 30 }, (_, i) => ({
+  id: `wt${i}`, created_by: MOCK_UID, recorded_date: dayStr(i),
+  weight: +(185.2 + i * 0.085 + Math.sin(i * 1.7) * 0.55).toFixed(1),
+  created_at: new Date(Date.now() - i * 86400000).toISOString(),
+}));
+
+const mockRecoveryHistory = Array.from({ length: 30 }, (_, i) => ({
+  id: `r${i}`, created_by: MOCK_UID, date: dayStr(i),
+  hrv: Math.round(84 - i * 0.3 + Math.sin(i * 1.3) * 6),
+  rhr: Math.round(47 + Math.sin(i * 0.9) * 2),
+  sleep_score: Math.round(86 - Math.abs(Math.sin(i * 0.7)) * 14),
+  created_by_garmin: true,
+}));
+
+const liftDay = (i, lift, base, inc) => ({
+  name: lift,
+  sets: [0, 1, 2, 3].map(() => ({ weight: Math.round(base - i * inc), reps: 6 + (i % 3) })),
+});
+const mockLogHistory = Array.from({ length: 12 }, (_, k) => {
+  const i = k * 2 + 1;
+  const upper = k % 2 === 0;
+  return {
+    id: `l${k}`, created_by: MOCK_UID, log_date: dayStr(i),
+    completed_at: new Date(Date.now() - i * 86400000).toISOString(),
+    duration_seconds: 3300 + (k % 3) * 420,
+    exercises: upper
+      ? [liftDay(k, 'Incline Barbell Press', 165, 2.5), liftDay(k, 'Weighted Pull-Up', 45, 1.25), liftDay(k, 'Overhead Press', 115, 1.25)]
+      : [liftDay(k, 'Back Squat', 285, 3.5), liftDay(k, 'Romanian Deadlift', 245, 2.5), liftDay(k, 'Walking Lunge', 50, 1)],
+    created_at: new Date(Date.now() - i * 86400000).toISOString(),
+  };
+});
+
+const mockFoodToday = [
+  { id: 'f1', date: getTodayLocalDateStr(), calories: 612, protein_grams: 42, carbs_grams: 74, fats_grams: 16, food_name: 'Oats, Whey & Blueberries', meal_type: 'breakfast', serving_size: 1, serving_unit: 'serving', created_by: MOCK_UID, created_at: new Date().toISOString() },
+  { id: 'f2', date: getTodayLocalDateStr(), calories: 838, protein_grams: 58, carbs_grams: 92, fats_grams: 24, food_name: 'Chicken, Jasmine Rice & Broccoli', meal_type: 'lunch', serving_size: 1, serving_unit: 'serving', created_by: MOCK_UID, created_at: new Date().toISOString() },
+  { id: 'f3', date: getTodayLocalDateStr(), calories: 322, protein_grams: 31, carbs_grams: 33, fats_grams: 8, food_name: 'Greek Yogurt & Granola', meal_type: 'snack', serving_size: 1, serving_unit: 'serving', created_by: MOCK_UID, created_at: new Date().toISOString() },
+  { id: 'f4', date: getTodayLocalDateStr(), calories: 704, protein_grams: 49, carbs_grams: 61, fats_grams: 27, food_name: 'Salmon, Potatoes & Asparagus', meal_type: 'dinner', serving_size: 1, serving_unit: 'serving', created_by: MOCK_UID, created_at: new Date().toISOString() },
+];
+
 const mockDataMap = {
   user_profiles: mockProfiles,
   daily_readiness: mockDailyReadiness,
   workouts: mockWorkouts,
   workout_schedules: mockSchedules,
-  food_entries: mockFood,
-  body_weight_entries: mockWeights,
-  workout_logs: mockLogs,
+  food_entries: mockFoodToday.concat(mockFood.map(f => ({ ...f, id: `old-${f.id}`, date: dayStr(1) }))),
+  body_weight_entries: mockWeightHistory,
+  workout_logs: mockLogHistory.concat(mockLogs),
   garmin_activities: mockGarminActivities,
-  recovery_metrics: mockRecovery,
+  recovery_metrics: mockRecoveryHistory,
   program_enrollments: mockEnrollments,
-  programs: mockPrograms
+  programs: mockPrograms,
+  training_prescription: mockPrescriptions,
+  athlete_state: mockAthleteState,
+  engine_params: mockEngineParams,
+  daily_briefs: mockBriefs,
 };
 
 const originalFrom = supabase.from;

@@ -50,45 +50,45 @@ export default function RecoveryDetail() {
   const hasSteps = chartData.some((d) => d.displaySteps != null);
   const hasSleep = chartData.some((d) => d.displaySleep > 0);
 
-  if (isLoading) return <div className="p-8 text-white">Loading recovery data...</div>;
+  if (isLoading) return <div className="p-8 text-ink">Loading recovery data...</div>;
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-white">
+    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
       <div className="max-w-6xl mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)} 
-          className="mb-6 -ml-2 text-slate-400 hover:text-white"
+          className="mb-6 -ml-2 text-ink-muted hover:text-ink"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
 
         <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Recovery & Readiness</h1>
-          <p className="text-slate-400">Biological data flow and training load analysis.</p>
+          <h1 className="type-display text-[26px] mb-2">Recovery & Readiness</h1>
+          <p className="text-ink-muted">Biological data flow and training load analysis.</p>
         </header>
 
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="md:col-span-1 glass-interactive">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Today's Readiness</CardTitle>
+              <CardTitle className="section-label">Today's Readiness</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center py-4">
-                <div className="text-6xl font-bold text-white mb-2">{score ?? "—"}</div>
+                <div className="hero-metric text-ink text-6xl mb-2">{score ?? "—"}</div>
                 <Badge className={`${category.bg} ${category.color} text-sm px-4 py-1 rounded-full mb-4`}>
                   {category.label}
                 </Badge>
-                <div className="grid grid-cols-2 gap-4 w-full border-t border-charcoal-border pt-4 mt-2">
+                <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-4 mt-2">
                   <div className="text-center">
-                    <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Body Battery</div>
-                    <div className="text-xl font-semibold">{latest?.body_battery ?? "—"}</div>
+                    <div className="section-label mb-1">Body Battery</div>
+                    <div className="font-technical text-xl text-ink">{latest?.body_battery ?? "—"}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Sleep Score</div>
-                    <div className="text-xl font-semibold">{latest?.sleep_score ?? "—"}</div>
+                    <div className="section-label mb-1">Sleep Score</div>
+                    <div className="font-technical text-xl text-ink">{latest?.sleep_score ?? "—"}</div>
                   </div>
                 </div>
               </div>
@@ -97,34 +97,47 @@ export default function RecoveryDetail() {
 
           <Card className="md:col-span-2 glass-interactive">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Training Load (ACWR)</CardTitle>
+              <CardTitle className="section-label">Training Load (ACWR)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6 py-2">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-white mb-1">{acwr ?? "—"}</div>
-                  <div className="text-[10px] text-slate-500 uppercase font-bold">Current Ratio</div>
-                  <div className="text-[9px] text-slate-600 mt-0.5">{acwrSource}</div>
+                  <div className="hero-metric text-ink text-4xl mb-1">{acwr ?? "—"}</div>
+                  <div className="section-label">Current Ratio</div>
+                  <div className="text-[9px] font-semibold text-faint mt-0.5">{acwrSource}</div>
                 </div>
                 <div className="flex-1">
-                  <div className="h-2 w-full bg-charcoal-elevated rounded-full relative mb-2">
-                    <div 
-                      className={`absolute top-0 h-full rounded-full transition-all duration-1000 ${
-                        acwr >= 0.8 && acwr <= 1.3 ? 'bg-brand' : 'bg-red-500'
-                      }`}
-                      style={{ left: '0%', width: `${Math.min(100, (acwr / 2) * 100)}%` }}
+                  {/* ACWR band gauge — spectrum track, white band outline 0.8–1.3, white pin */}
+                  <div
+                    className="relative h-[10px] rounded-full"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, rgba(91,168,245,0.45) 0%, rgba(94,220,210,0.5) 28%, rgba(94,220,210,0.5) 62%, rgba(226,162,60,0.5) 78%, rgba(239,115,104,0.55) 100%)",
+                    }}
+                  >
+                    <span
+                      className="absolute -top-[3px] -bottom-[3px] rounded-[8px] border-[1.5px] border-white/35"
+                      style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
-                    {/* Optimal Zone marker */}
-                    <div className="absolute top-0 left-[40%] w-[25%] h-full bg-brand/20 border-x border-brand/30" />
+                    {acwr != null && (
+                      <span
+                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-white transition-all duration-700"
+                        style={{
+                          left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 2px)`,
+                          boxShadow: "0 0 0 3px rgba(255,255,255,0.18)",
+                        }}
+                      />
+                    )}
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-500 font-bold">
-                    <span>LOW</span>
-                    <span className="text-brand">OPTIMAL (0.8 - 1.3)</span>
-                    <span>OVERLOAD</span>
+                  <div className="relative h-[12px] mt-2 font-technical text-[9px] font-bold text-faint">
+                    <span className="absolute left-0">0.5</span>
+                    <span className="absolute -translate-x-1/2" style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%` }}>0.8</span>
+                    <span className="absolute -translate-x-1/2" style={{ left: `${((1.3 - 0.5) / 1.1) * 100}%` }}>1.3</span>
+                    <span className="absolute right-0">1.6</span>
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mt-4 leading-relaxed">
+              <p className="text-xs text-ink-muted mt-4 leading-relaxed">
                 Acute:Chronic Workload Ratio compares your last 7 days of activity to your 28-day average. 
                 Staying in the optimal zone minimizes injury risk while maximizing fitness gains.
               </p>
@@ -135,10 +148,10 @@ export default function RecoveryDetail() {
         {(!hasHrv && !hasSteps && !hasSleep) ? (
           <Card className="mb-8 glass">
             <CardContent className="py-6 flex items-center gap-3">
-              <Info className="w-5 h-5 text-slate-500 shrink-0" />
+              <Info className="w-5 h-5 text-ink-muted shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-white">No biometric trends yet</p>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
+                <p className="text-xs text-ink-muted mt-0.5">
                   Connect your wearable to populate HRV, step, and sleep charts.
                 </p>
               </div>
@@ -150,39 +163,39 @@ export default function RecoveryDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-slate-400 uppercase tracking-wider">HRV Trend (ms)</CardTitle>
-              <Activity className="w-4 h-4 text-brand" />
+              <CardTitle className="section-label">HRV Trend (ms)</CardTitle>
+              <Activity className="w-4 h-4 text-teal" />
             </CardHeader>
             <CardContent className={hasHrv ? "h-[250px] pt-4" : "py-5"}>
               {!hasHrv ? (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
                 </div>
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-                  <XAxis 
-                    dataKey="formattedDate" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#555', fontSize: 10 }} 
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="formattedDate"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
-                  <YAxis 
-                    hide 
+                  <YAxis
+                    hide
                     domain={['dataMin - 10', 'dataMax + 10']}
                   />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-                    itemStyle={{ color: '#fff' }}
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
+                    itemStyle={{ color: 'var(--text-primary)' }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="displayHrv" 
-                    stroke="var(--color-brand)" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: 'var(--color-brand)', strokeWidth: 0 }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  <Line
+                    type="monotone"
+                    dataKey="displayHrv"
+                    stroke="var(--hue-teal-2)"
+                    strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: 'var(--hue-teal-2)', strokeWidth: 0 }}
+                    activeDot={{ r: 5.5, strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -192,32 +205,32 @@ export default function RecoveryDetail() {
 
           <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Step Count</CardTitle>
-              <Zap className="w-4 h-4 text-brand" />
+              <CardTitle className="section-label">Step Count</CardTitle>
+              <Zap className="w-4 h-4 text-leaf" />
             </CardHeader>
             <CardContent className={hasSteps ? "h-[250px] pt-4" : "py-5"}>
               {!hasSteps ? (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
                 </div>
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis
                     dataKey="formattedDate"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#555', fontSize: 10 }}
+                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
                   <YAxis hide />
                   <Tooltip
-                    cursor={{ fill: '#222' }}
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                   />
                   <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
                     {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--color-brand)' : '#333'} />
+                      <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(123,201,111,0.25)'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -231,38 +244,38 @@ export default function RecoveryDetail() {
         <div className="grid grid-cols-1 gap-6 mb-8">
           <Card className="glass-interactive">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Sleep Duration (Hours)</CardTitle>
-              <Moon className="w-4 h-4 text-indigo-400" />
+              <CardTitle className="section-label">Sleep Duration (Hours)</CardTitle>
+              <Moon className="w-4 h-4 text-violet" />
             </CardHeader>
             <CardContent className={hasSleep ? "h-[250px] pt-4" : "py-5"}>
               {!hasSleep ? (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
                 </div>
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis
                     dataKey="formattedDate"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#555', fontSize: 10 }}
+                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#555', fontSize: 10 }}
+                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
                     domain={[0, 12]}
                   />
                   <Tooltip
-                    cursor={{ fill: '#222' }}
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                   />
-                  <ReferenceLine y={7.5} stroke="#555" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: '#555', fontSize: 10 }} />
+                  <ReferenceLine y={7.5} stroke="rgba(242,244,247,0.3)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }} />
                   <Bar dataKey="displaySleep" radius={[4, 4, 0, 0]}>
                     {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? '#818cf8' : '#4f46e5'} />
+                      <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? 'var(--hue-violet)' : 'rgba(155,140,255,0.30)'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -279,8 +292,8 @@ export default function RecoveryDetail() {
             row of zeros because garmin-sync never writes these fields. */}
         {['swim', 'cycling', 'run'].some((s) => Number(latest?.[`tss_${s}`]) > 0) && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-brand" />
+            <h2 className="text-xl font-extrabold mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-carb" />
               Endurance Stress (TSS)
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
@@ -289,9 +302,12 @@ export default function RecoveryDetail() {
                 const val = latest?.[field] ?? 0;
                 return (
                   <Card key={sport} className="glass-interactive p-4">
-                    <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">{sport}</div>
-                    <div className="text-2xl font-bold">{val}</div>
-                    <div className="text-[10px] text-slate-500 mt-1">Today's Load</div>
+                    <div className="flex items-center justify-center gap-1.5 text-[9.5px] text-muted-2 uppercase tracking-[0.08em] font-bold mb-1">
+                      <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-carb" />
+                      {sport}
+                    </div>
+                    <div className="font-technical text-2xl font-extrabold text-ink">{val}</div>
+                    <div className="text-[10px] font-semibold text-muted-2 mt-1">Today's Load</div>
                   </Card>
                 );
               })}

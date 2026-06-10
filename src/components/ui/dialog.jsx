@@ -41,14 +41,14 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
   return (
     <div
       ref={ref}
-      className={`relative z-50 glass-elevated text-white rounded-xl w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
+      className={`relative z-50 glass-elevated text-ink rounded-xl w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
       style={{ maxHeight: 'calc(100vh - var(--layout-header-height, 0px) - 56px - env(safe-area-inset-bottom, 0px) - 1rem)' }}
       {...props}
     >
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-md text-slate-500 transition-opacity hover:text-white focus:outline-none"
+          className="absolute right-4 top-4 rounded-md text-ink-muted transition-opacity hover:text-ink focus:outline-none"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -79,7 +79,7 @@ DialogTitle.displayName = "DialogTitle";
 const DialogDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-[13px] text-slate-400 ${className}`}
+    className={`text-[13px] text-ink-muted ${className}`}
     {...props}
   />
 ));

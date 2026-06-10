@@ -85,3 +85,57 @@ export function useEngineParams(date) {
 export function selectBanister(prescription) {
   return prescription?.banister_state || null;
 }
+
+/**
+ * The full computed athlete_state row (strength, hypertrophy, fatigue, recovery,
+ * endurance, nutrition, banister, vdot_zones). Falls back to the most recent row
+ * on/before `date` so Today always has the latest known state.
+ */
+export function useAthleteState(date) {
+  const { user } = useAuth();
+  const day = date || getTodayString();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["athleteState", day, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("athlete_state")
+        .select("*")
+        .eq("created_by", user.id)
+        .lte("date", day)
+        .order("date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: STALE,
+  });
+
+  return { state: data, isLoading, error };
+}
+
+/** Today's AI coaching brief (daily_briefs.brief_json), or null. */
+export function useTodayBrief(date) {
+  const { user } = useAuth();
+  const day = date || getTodayString();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["todayBrief", day, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_briefs")
+        .select("*")
+        .eq("created_by", user.id)
+        .eq("date", day)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: STALE,
+  });
+
+  return { brief: data, isLoading };
+}

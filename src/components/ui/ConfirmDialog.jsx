@@ -22,7 +22,7 @@ export function ConfirmDialog({
   };
 
   const confirmButtonClass = variant === "danger"
-    ? "bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.2)] text-[#f87171] border border-[rgba(239,68,68,0.15)]"
+    ? "bg-bad/10 hover:bg-bad/10 text-bad border border-bad/20"
     : "";
 
   return (
@@ -31,14 +31,14 @@ export function ConfirmDialog({
         <DialogHeader>
           <div className="flex items-center gap-3">
             {variant === "danger" && (
-              <div className="p-2 rounded-full bg-[rgba(239,68,68,0.1)]">
-                <AlertTriangle className="w-5 h-5 text-[#f87171]" />
+              <div className="p-2 rounded-full bg-bad/10">
+                <AlertTriangle className="w-5 h-5 text-bad" />
               </div>
             )}
             <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <p className="text-[13px] text-slate-400 mt-2">
+        <p className="text-[13px] text-ink-muted mt-2">
           {description}
         </p>
         <div className="flex gap-3 mt-6">

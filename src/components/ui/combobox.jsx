@@ -67,9 +67,9 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-white outline-none placeholder:text-slate-500"
+        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-ink outline-none placeholder:text-ink-muted"
       />
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-slate-500">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-ink-muted">
         <ChevronDown className="h-4 w-4" />
       </button>
     </div>
@@ -94,7 +94,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                       <div
                         key={name}
                         onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
-                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-slate-400"}`}
+                        className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
                       >
                         {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
                         {name}
@@ -102,7 +102,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                     );
                   })
                 ) : (
-                  <div className="px-2 py-1.5 text-[13px] text-slate-500">
+                  <div className="px-2 py-1.5 text-[13px] text-ink-muted">
                     {query ? `No results for "${value}". Press Enter to use it.` : "No options available."}
                   </div>
                 )}
@@ -158,7 +158,7 @@ const ComboboxContent = ({ className = "", children }) => {
         style={style}
       >
         {filtered.length > 0 ? filtered : (
-          <div className="px-2 py-1.5 text-[13px] text-slate-500">
+          <div className="px-2 py-1.5 text-[13px] text-ink-muted">
             {query ? `No results for "${inputValue}".` : "No options available."}
           </div>
         )}
@@ -174,7 +174,7 @@ const ComboboxItem = ({ value, children }) => {
   return (
     <div
       onMouseDown={(e) => { e.preventDefault(); handleSelect(value); }}
-      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-white ${selected ? "bg-brand/[8%] text-brand" : "text-slate-400"}`}
+      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
     >
       {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
       {children}

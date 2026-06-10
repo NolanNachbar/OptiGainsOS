@@ -103,7 +103,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-muted">
             <strong>{program?.name}</strong> was created successfully! Want to schedule it on your calendar now?
           </p>
 
@@ -123,7 +123,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
             <div className="border rounded-lg p-4 bg-charcoal-surface">
-              <h3 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-ink-muted mb-3 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-brand" />
                 Cycle 1 Schedule Preview
               </h3>
@@ -138,16 +138,16 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                       <Badge variant="outline" className="bg-brand/[5%] text-brand border-brand/20">
                         Day {workout.dayIndex}
                       </Badge>
-                      <span className="font-medium text-sm text-white">{workout.title}</span>
+                      <span className="font-medium text-sm text-ink">{workout.title}</span>
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-ink-muted">
                       {format(new Date(workout.date), "EEE, MMM d")}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t text-xs text-slate-500 space-y-1">
+              <div className="mt-3 pt-3 border-t text-xs text-ink-muted space-y-1">
                 <p>Rest days automatically distributed between training days.</p>
                 <p>All {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
               </div>

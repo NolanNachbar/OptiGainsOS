@@ -57,7 +57,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
             <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
               <Badge
                 variant="outline"
-                className="text-xs capitalize text-slate-400 border-charcoal-border border-charcoal-border"
+                className="text-xs capitalize text-ink-muted border-charcoal-border border-charcoal-border"
               >
                 {workout.focus}
               </Badge>
@@ -78,7 +78,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   variant="ghost"
                   size="icon"
                   onClick={() => setOpenMenu(!openMenu)}
-                  className="h-7 w-7 text-slate-400 hover:text-slate-400"
+                  className="h-7 w-7 text-ink-muted hover:text-ink-muted"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
@@ -86,25 +86,25 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   <div className="absolute right-0 top-8 bg-charcoal-elevated rounded-xl border border-charcoal-border py-1 z-20 min-w-[140px]">
                     <button
                       onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={() => { onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={() => { handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-white hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
                     <button
                       onClick={() => { onDelete(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-[#f87171] hover:bg-[rgba(239,68,68,0.1)] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-bad hover:bg-bad/10 flex items-center gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />Delete
                     </button>
@@ -114,11 +114,11 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
             )}
           </div>
 
-          <h3 className="text-base font-bold text-white line-clamp-2 mt-1.5 leading-snug">
+          <h3 className="text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug">
             {workout.title}
           </h3>
           {workout.description && (
-            <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+            <p className="text-xs text-ink-muted line-clamp-2 mt-1 leading-relaxed">
               {workout.description}
             </p>
           )}
@@ -129,13 +129,13 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <div className="flex">
             {workout.duration_minutes && (
               <div className="flex-1 flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Duration</span>
-                <span className="text-lg font-bold tabular-nums text-white mt-0.5">{workout.duration_minutes} min</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">Duration</span>
+                <span className="text-lg font-bold tabular-nums text-ink mt-0.5">{workout.duration_minutes} min</span>
               </div>
             )}
             <div className={`flex-1 flex flex-col ${workout.duration_minutes ? 'border-l border-charcoal-border pl-4' : ''}`}>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Exercises</span>
-              <span className="text-lg font-bold tabular-nums text-white mt-0.5">{workout.exercises?.length || 0}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">Exercises</span>
+              <span className="text-lg font-bold tabular-nums text-ink mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
 
@@ -143,7 +143,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
               variant="primary"
-              className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-white border-none"
+              className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-ink border-none"
             >
               View Details
             </Button>

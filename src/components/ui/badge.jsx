@@ -4,15 +4,15 @@ const Badge = React.forwardRef(({ className = "", variant = "default", ...props 
   const variants = {
     /* design system variants */
     volt:    "bg-brand/[8%] text-brand border border-brand/20",
-    green:   "bg-[rgba(34,197,94,0.1)] text-[#4ade80] border border-[rgba(34,197,94,0.2)]",
-    amber:   "bg-[rgba(245,158,11,0.1)] text-[#fbbf24] border border-[rgba(245,158,11,0.2)]",
-    red:     "bg-[rgba(239,68,68,0.1)] text-[#f87171] border border-[rgba(239,68,68,0.15)]",
-    slate:   "bg-charcoal-elevated text-slate-400 border border-charcoal-border",
+    green:   "bg-leaf/10 text-leaf border border-leaf/20",
+    amber:   "bg-warn/10 text-warn border border-warn/20",
+    red:     "bg-bad/10 text-bad border border-bad/[15%]",
+    slate:   "bg-white/[0.06] text-ink-muted border border-white/10",
     /* legacy variants */
-    default:     "bg-charcoal-elevated text-slate-400 border border-charcoal-border",
-    secondary:   "bg-charcoal-elevated text-slate-400 border border-charcoal-border",
-    destructive: "bg-[rgba(239,68,68,0.1)] text-white border-transparent",
-    outline:     "text-white border border-charcoal-border",
+    default:     "bg-white/[0.06] text-ink-muted border border-white/10",
+    secondary:   "bg-white/[0.06] text-ink-muted border border-white/10",
+    destructive: "bg-bad/10 text-ink border-transparent",
+    outline:     "text-ink border border-white/10",
   };
 
   return (

@@ -10,20 +10,28 @@ const Button = React.forwardRef(({
 }, ref) => {
   const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
+  // Coral is THE action color: solid-action variants share the og-cta
+  // gradient; everything secondary is frosted-glass ghost material.
+  const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
+    "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
+    "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]";
+  const glassGhost = "bg-white/[0.06] text-ink border border-white/10 rounded-xl " +
+    "[box-shadow:inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.09]";
+
   const variants = {
-    /* 4-tier design system */
-    volt:        "bg-brand text-black rounded-md hover:bg-brand/90 hover:shadow-neon",
-    energy:      "bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-md hover:opacity-95 shadow-energy",
-    dark:        "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
-    ghost:       "bg-transparent text-brand border border-brand/25 rounded-md hover:bg-brand/[8%]",
-    dim:         "bg-transparent text-slate-400 border border-charcoal-border rounded-md hover:bg-charcoal-surface2 hover:text-white",
+    /* design-system tiers */
+    volt:        coral,
+    energy:      coral,
+    dark:        glassGhost,
+    ghost:       "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15",
+    dim:         "bg-transparent text-ink-muted border border-white/10 rounded-xl hover:bg-white/[0.06] hover:text-ink",
     /* utility / legacy variants */
-    default:     "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
-    primary:     "bg-brand text-black rounded-md hover:bg-brand/90",
-    ai:          "bg-charcoal-surface2 text-white border border-charcoal-border rounded-md hover:bg-charcoal-elevated",
-    destructive: "bg-transparent text-[#f87171] border border-[rgba(239,68,68,0.35)] rounded-md hover:bg-[rgba(239,68,68,0.12)] hover:border-[rgba(239,68,68,0.6)]",
-    outline:     "border border-charcoal-border bg-transparent text-slate-400 rounded-md hover:bg-charcoal-surface2 hover:text-white",
-    secondary:   "bg-charcoal-surface2 text-slate-400 rounded-md hover:bg-charcoal-elevated hover:text-white",
+    default:     glassGhost,
+    primary:     coral,
+    ai:          glassGhost,
+    destructive: "bg-transparent text-bad border border-bad/35 rounded-xl hover:bg-bad/10 hover:border-bad/60",
+    outline:     "border border-white/10 bg-transparent text-ink-muted rounded-xl hover:bg-white/[0.06] hover:text-ink",
+    secondary:   "bg-white/[0.06] text-ink-muted rounded-xl hover:bg-white/[0.09] hover:text-ink",
     link:        "text-brand underline-offset-4 hover:underline",
   };
 

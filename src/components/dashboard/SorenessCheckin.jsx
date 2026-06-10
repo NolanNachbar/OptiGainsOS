@@ -10,14 +10,15 @@ import { CheckCircle2 } from "lucide-react";
 const MUSCLE_GROUPS = [
   "quads", "hamstrings", "glutes", "chest",
   "back", "shoulders", "biceps", "triceps", "calves", "abs",
+  "neck", "traps",
 ];
 
 const LEVEL_LABELS = ["None", "Mild", "Mod", "Severe"];
 const LEVEL_COLORS = [
-  "bg-charcoal-surface2 text-slate-500 border-charcoal-border",
-  "bg-[rgba(234,179,8,0.12)] text-yellow-400 border-yellow-500/30",
-  "bg-[rgba(249,115,22,0.12)] text-orange-400 border-orange-500/30",
-  "bg-[rgba(239,68,68,0.12)] text-red-400 border-red-500/30",
+  "bg-white/[0.05] text-muted-2 border-white/10",
+  "bg-fat/[0.12] text-fat border-fat/30",
+  "bg-warn/[0.12] text-warn border-warn/30",
+  "bg-bad/[0.12] text-bad border-bad/30",
 ];
 
 export default function SorenessCheckin({ today }) {
@@ -78,38 +79,38 @@ export default function SorenessCheckin({ today }) {
   if (alreadyLogged) {
     const sore = existing.filter(r => r.level > 0).sort((a, b) => b.level - a.level);
     return (
-      <div className="rounded-xl bg-charcoal-surface border border-charcoal-border px-4 py-3.5 shadow-dark-card">
+      <div className="glass px-4 pt-3.5 pb-3.5">
         <div className="flex items-center gap-2 mb-2">
-          <CheckCircle2 className="w-4 h-4 text-brand" />
-          <span className="text-sm font-semibold text-white">Soreness Logged</span>
+          <CheckCircle2 className="w-4 h-4 text-leaf" />
+          <span className="section-label !text-ink">Soreness Logged</span>
         </div>
         {sore.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {sore.map(r => (
               <span
                 key={r.muscle_group}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${LEVEL_COLORS[r.level]}`}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${LEVEL_COLORS[r.level]}`}
               >
                 {r.muscle_group.toUpperCase()} · {LEVEL_LABELS[r.level].toUpperCase()}
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500">No soreness reported today.</p>
+          <p className="text-xs font-semibold text-muted-2">No soreness reported today.</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-4 shadow-dark-card">
-      <p className="text-sm font-semibold text-white mb-3">Soreness Check-in — tap to cycle</p>
+    <div className="glass p-4">
+      <p className="text-sm font-extrabold text-ink mb-3">Soreness Check-in — tap to cycle</p>
       <div className="grid grid-cols-5 gap-1.5 mb-4">
         {MUSCLE_GROUPS.map(muscle => (
           <button
             key={muscle}
             onClick={() => cycleMuscle(muscle)}
-            className={`text-xs font-medium py-1.5 px-1 rounded-lg border transition-all ${LEVEL_COLORS[levels[muscle]]}`}
+            className={`text-xs font-bold py-1.5 px-1 rounded-lg border-[0.5px] transition-all ${LEVEL_COLORS[levels[muscle]]}`}
           >
             <span className="block truncate capitalize">{muscle}</span>
             <span className="block text-[10px] opacity-70 mt-0.5">{LEVEL_LABELS[levels[muscle]]}</span>

@@ -42,13 +42,22 @@ function mapFood(food) {
   const carbs    = findByNumber(205)      || findByName('carbohydrate');
   const fats     = findByNumber(204)      || findByName('total lipid') || findByName('fat');
 
+  // USDA serving units arrive as FDC codes ('GRM', 'MLT') or free text ('g',
+  // 'ml', 'GM'…). Normalize to 'g'/'ml' so unit defaults don't misfire.
+  const rawUnit = String(food.servingSizeUnit || 'g').trim().toLowerCase();
+  const servingSizeUnit = ['ml', 'mlt', 'milliliter', 'milliliters'].includes(rawUnit) ? 'ml' : 'g';
+
   return {
     fdcId: food.fdcId,
     description: food.description,
     brandOwner: food.brandOwner || null,
     dataType: food.dataType || 'Branded',
-    servingSize: food.servingSize || 100,
-    servingSizeUnit: food.servingSizeUnit || 'g',
+    // null (not 100) when USDA has no real serving size, so the picker can
+    // tell "1 serving (55 g)" apart from "no serving info — default to 100 g".
+    servingSize: food.servingSize || null,
+    servingSizeUnit,
+    // e.g. "2/3 cup (55g)" on branded foods — shown as the serving hint.
+    householdServing: food.householdServingFullText || null,
     calories,
     protein,
     carbs,

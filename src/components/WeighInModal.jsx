@@ -66,7 +66,7 @@ export default function WeighInModal({ open, onOpenChange }) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-400 mb-2 block">
+            <label className="text-sm font-medium text-ink-muted mb-2 block">
               Weight ({profile?.weight_unit || "lbs"})
             </label>
             <Input

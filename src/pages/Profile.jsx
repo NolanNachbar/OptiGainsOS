@@ -25,9 +25,9 @@ function SectionHeader({ icon: Icon, title }) {
   return (
     <div className="flex items-center gap-3 mb-4">
       <div className="p-2 rounded-lg bg-charcoal-elevated">
-        <Icon className="w-4 h-4 text-slate-400" />
+        <Icon className="w-4 h-4 text-ink-muted" />
       </div>
-      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
     </div>
   );
 }
@@ -255,26 +255,26 @@ export default function Profile({ hideHeader }) {
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
                   </span>
                 </div>
-                <p className="text-white font-semibold mt-3 text-sm leading-tight">
+                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
                   {formData.display_name || user.email}
                 </p>
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
-                      <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                      <p className="text-ink font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
-                      <p className="text-white font-bold text-lg leading-tight">
+                      <p className="text-ink font-bold text-lg leading-tight">
                         {profileStats.totalVolumeLbs >= 1000
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
                 )}
@@ -290,7 +290,7 @@ export default function Profile({ hideHeader }) {
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                       activeSection === id
                         ? 'bg-brand/[8%] text-brand'
-                        : 'text-slate-400 hover:text-white hover:bg-charcoal-elevated'
+                        : 'text-ink-muted hover:text-ink hover:bg-charcoal-elevated'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -306,33 +306,33 @@ export default function Profile({ hideHeader }) {
           <div>
             {/* Mobile: hub view (profile card + nav list) */}
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
-              <h1 className="text-[22px] font-bold text-white leading-tight mb-4">Profile</h1>
+              <h1 className="text-[22px] font-bold text-ink leading-tight mb-4">Profile</h1>
               <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
                   </span>
                 </div>
-                <p className="text-white font-semibold mt-3 text-sm leading-tight">
+                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
                   {formData.display_name || user.email}
                 </p>
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
-                      <p className="text-white font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
+                      <p className="text-ink font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
-                      <p className="text-white font-bold text-lg leading-tight">
+                      <p className="text-ink font-bold text-lg leading-tight">
                         {profileStats.totalVolumeLbs >= 1000
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
-                      <p className="text-slate-500 text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
                 )}
@@ -348,8 +348,8 @@ export default function Profile({ hideHeader }) {
                     <div className="p-1.5 rounded-md bg-charcoal-elevated">
                       <Icon className="w-3.5 h-3.5 text-brand" />
                     </div>
-                    <span className="text-white flex-1">{label}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                    <span className="text-ink flex-1">{label}</span>
+                    <ChevronRight className="w-4 h-4 text-ink-muted" />
                   </button>
                 ))}
               </div>
@@ -366,7 +366,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="text-[22px] font-bold text-white leading-tight">
+                <h1 className="text-[22px] font-bold text-ink leading-tight">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>
@@ -375,10 +375,10 @@ export default function Profile({ hideHeader }) {
             {/* Desktop section heading */}
             {!hideHeader && (
               <div className="hidden md:block mb-6">
-                <h1 className="text-[22px] font-bold text-white leading-tight">
+                <h1 className="text-[22px] font-bold text-ink leading-tight">
                   {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
                 </h1>
-                <p className="text-[13px] text-slate-400 mt-0.5">
+                <p className="text-[13px] text-ink-muted mt-0.5">
                   {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
                   (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
                   (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
@@ -410,7 +410,7 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" value={user.email} disabled className="mt-1" />
-                      <p className="text-sm text-slate-500 mt-1">This is your login email and cannot be changed</p>
+                      <p className="text-sm text-ink-muted mt-1">This is your login email and cannot be changed</p>
                     </div>
                   </div>
 
@@ -477,7 +477,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-slate-500'
+                              formData.height_unit === 'in' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-ink-muted'
                             }`}
                           >ft/in</button>
                           <button
@@ -491,7 +491,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-slate-500'
+                              formData.height_unit === 'cm' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-ink-muted'
                             }`}
                           >cm</button>
                         </div>
@@ -576,18 +576,18 @@ export default function Profile({ hideHeader }) {
                         className="mt-1"
                         placeholder="e.g. 175"
                       />
-                      <p className="text-xs text-slate-500 mt-1">Saving a new weight also adds an entry to your weight log.</p>
+                      <p className="text-xs text-ink-muted mt-1">Saving a new weight also adds an entry to your weight log.</p>
                     </div>
 
                     {tdee.tdee && (
                       <div className="bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="text-sm text-slate-400">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-white">{tdee.tdee} cal/day</div>
+                            <div className="text-sm text-ink-muted">Estimated TDEE</div>
+                            <div className="text-2xl font-bold text-ink">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            tdee.method === 'adaptive' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]' : 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
+                            tdee.method === 'adaptive' ? 'bg-leaf/10 text-leaf' : 'bg-info/10 text-info'
                           }`}>
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
@@ -613,7 +613,7 @@ export default function Profile({ hideHeader }) {
                             onChange={(e) => setProteinPerLb(e.target.value)}
                             className="w-24"
                           />
-                          <span className="text-sm text-slate-500 whitespace-nowrap">
+                          <span className="text-sm text-ink-muted whitespace-nowrap">
                             g protein / lb = {Math.round(proteinPerLb * (formData.weight_unit === 'kg' ? (latestWeight * 2.205) : latestWeight))}g/day
                           </span>
                         </div>
@@ -640,7 +640,7 @@ export default function Profile({ hideHeader }) {
                       </div>
                     )}
                     {!tdee.tdee && (
-                      <p className="text-sm text-slate-500">Fill in your body stats above to enable auto-calculation.</p>
+                      <p className="text-sm text-ink-muted">Fill in your body stats above to enable auto-calculation.</p>
                     )}
                     <MacroGoalsEditor
                       values={formData}
@@ -672,7 +672,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-slate-500 mt-1">Used when logging workout weights</p>
+                      <p className="text-sm text-ink-muted mt-1">Used when logging workout weights</p>
                     </div>
 
                     <div>
@@ -694,7 +694,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-slate-500 mt-1">Nutrition coach suggests adjustments on this day</p>
+                      <p className="text-sm text-ink-muted mt-1">Nutrition coach suggests adjustments on this day</p>
                     </div>
 
                     <div>
@@ -703,13 +703,13 @@ export default function Profile({ hideHeader }) {
                         id="timezone"
                         value={formData.timezone}
                         onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="mt-1 w-full rounded-md border border-charcoal-border bg-charcoal-surface text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                        className="mt-1 w-full rounded-md border border-charcoal-border bg-charcoal-surface text-ink text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
                       >
                         {Intl.supportedValuesOf('timeZone').map(tz => (
                           <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                         ))}
                       </select>
-                      <p className="text-sm text-slate-500 mt-1">Used to determine today's date for your schedule</p>
+                      <p className="text-sm text-ink-muted mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
 
@@ -738,8 +738,8 @@ export default function Profile({ hideHeader }) {
               <SectionHeader icon={HelpCircle} title="Feedback" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">Report a Bug</p>
-                  <p className="text-sm text-slate-400">Found something broken? Let us know.</p>
+                  <p className="font-medium text-ink">Report a Bug</p>
+                  <p className="text-sm text-ink-muted">Found something broken? Let us know.</p>
                 </div>
                 <Button variant="outline" asChild>
                   <a
@@ -756,23 +756,23 @@ export default function Profile({ hideHeader }) {
             </CardContent>
           </Card>
 
-          <Card className="border-[rgba(239,68,68,0.15)]">
+          <Card className="border-bad/20">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="w-4 h-4 text-[#f87171]" />
-                <h3 className="text-sm font-semibold text-[#f87171]">Danger Zone</h3>
+                <AlertTriangle className="w-4 h-4 text-bad" />
+                <h3 className="text-sm font-semibold text-bad">Danger Zone</h3>
               </div>
 
               <SectionDivider />
 
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="font-medium text-white">Sign Out</p>
-                  <p className="text-sm text-slate-400">Sign out of your account</p>
+                  <p className="font-medium text-ink">Sign Out</p>
+                  <p className="text-sm text-ink-muted">Sign out of your account</p>
                 </div>
                 <Button
                   variant="outline"
-                  className="border-[rgba(239,68,68,0.15)] text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171]"
+                  className="border-bad/20 text-bad hover:bg-bad/10 hover:text-bad"
                   onClick={async () => {
                     try { await signOut(); toast.success('Signed out successfully'); }
                     catch { toast.error('Failed to sign out'); }
@@ -788,12 +788,12 @@ export default function Profile({ hideHeader }) {
               {!showDeleteConfirm ? (
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-white">Delete Account</p>
-                    <p className="text-sm text-slate-400">Permanently delete your account and all data</p>
+                    <p className="font-medium text-ink">Delete Account</p>
+                    <p className="text-sm text-ink-muted">Permanently delete your account and all data</p>
                   </div>
                   <Button
                     variant="outline"
-                    className="border-[rgba(239,68,68,0.15)] text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171]"
+                    className="border-bad/20 text-bad hover:bg-bad/10 hover:text-bad"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -801,9 +801,9 @@ export default function Profile({ hideHeader }) {
                   </Button>
                 </div>
               ) : (
-                <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.15)] rounded-lg p-4">
-                  <p className="font-medium text-[#f87171] mb-2">Are you sure?</p>
-                  <p className="text-sm text-[#f87171] mb-4">
+                <div className="bg-bad/10 border border-bad/20 rounded-lg p-4">
+                  <p className="font-medium text-bad mb-2">Are you sure?</p>
+                  <p className="text-sm text-bad mb-4">
                     This will permanently delete your profile, food entries, and workout schedules. This action cannot be undone.
                   </p>
                   <div className="flex gap-3">
@@ -811,7 +811,7 @@ export default function Profile({ hideHeader }) {
                       Cancel
                     </Button>
                     <Button
-                      className="bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.1)] text-white"
+                      className="bg-bad/10 hover:bg-bad/10 text-ink"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -850,7 +850,7 @@ export default function Profile({ hideHeader }) {
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-slate-400">You have unsaved changes</p>
+          <p className="text-sm text-ink-muted">You have unsaved changes</p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel

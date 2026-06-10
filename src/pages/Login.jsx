@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Mail, Lock } from 'lucide-react';
-import Logo from '@/components/Logo';
 import { toast } from 'sonner';
+
+// LOGIN — quiet, ambient, one glass card (the design's front door).
+const AMBIENT = {
+  background:
+    'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
+    'radial-gradient(420px 360px at -15% 45%, rgba(155,140,255,0.10), transparent 70%),' +
+    'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
+};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,7 +20,7 @@ export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const returnTo = location.state?.returnTo || '/dashboard';
+  const returnTo = location.state?.returnTo || '/today';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,80 +38,70 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-charcoal flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Logo className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-[22px] font-bold text-brand tracking-[-0.02em] uppercase">OptiGainsOS</h1>
-          <p className="text-slate-400 mt-2">Sign in to your account</p>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#080B10' }}>
+      <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
+
+      <div className="flex-1 flex flex-col items-center justify-center px-5 relative z-10 w-full">
+        <div className="text-center rise-in">
+          <div className="type-display text-[26px] whitespace-nowrap text-[#F2F4F7]">
+            OPTI<span style={{ color: '#5EDCD2' }}>GAINS</span>
+          </div>
+          <p className="text-[11.5px] font-semibold mt-1.5 tracking-[0.02em] text-[rgba(242,244,247,0.5)]">
+            Performance OS · private build
+          </p>
         </div>
 
-        <Card className="bg-charcoal-surface border-charcoal-border text-white">
-          <CardHeader>
-            <CardTitle className="text-white text-center">Welcome Back</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="email" className="text-white">Email</Label>
-                <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+        <div className="glass w-full max-w-sm mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+          <form onSubmit={handleSubmit}>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="!h-12 !rounded-xl mb-[9px]"
+              autoComplete="email"
+              required
+            />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="!h-12 !rounded-xl mb-[9px]"
+              autoComplete="current-password"
+              required
+            />
 
-              <div>
-                <Label htmlFor="password" className="text-white">Password</Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+            <button type="submit" disabled={loading} className="cta-coral w-full mt-1 disabled:opacity-60">
+              {loading ? (
+                <>
+                  <LoadingSpinner size="small" className="mr-1" />
+                  Signing in…
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
 
-              <div className="flex items-center justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-brand hover:text-brand"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button
-                variant="volt"
-                type="submit"
-                className="w-full"
-                disabled={loading}
+            <div className="flex items-center justify-between mt-3 px-0.5">
+              <Link
+                to="/forgot-password"
+                className="text-[11.5px] font-bold text-[rgba(242,244,247,0.5)] hover:text-[#F2F4F7] transition-colors"
               >
-                {loading ? (
-                  <>
-                    <LoadingSpinner size="small" className="mr-2" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
-            </form>
+                Forgot password
+              </Link>
+              <span className="text-[11.5px] font-bold" style={{ color: '#5EDCD2' }}>
+                Private build
+              </span>
+            </div>
+          </form>
+        </div>
+      </div>
 
-          </CardContent>
-        </Card>
+      <div className="relative z-10 text-center text-[10.5px] font-semibold pb-7 font-technical text-[rgba(242,244,247,0.38)]">
+        OptiGainsOS · adaptive engine recomputes daily
       </div>
     </div>
   );

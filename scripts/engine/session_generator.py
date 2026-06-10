@@ -27,6 +27,42 @@ import random
 from datetime import date
 
 from engine.vdot_engine import VDOTEngine
+from engine.athlete_profile import apply_philosophy
+from engine.log_ingest import canon
+
+# How strongly the learned exercise-value posterior (learners.exercise_value) and
+# note-caution shift exercise selection. Caution stays BELOW the goal-lift bonus
+# (+10 in _priority_score) so a vague note never auto-drops a competition lift —
+# it deprioritizes accessories and surfaces in the brief instead. [ENG]
+EXVAL_SELECT_WEIGHT = 1.5
+CAUTION_PENALTY     = 8.0
+
+# session-vocab muscle → caution/landmark vocab (notes_parser keys on landmarks)
+_CAUTION_ALIAS = {"front_delt": "shoulders", "side_delt": "side_delts",
+                  "rear_delt": "rear_delts", "delts": "shoulders", "core": "core",
+                  "erectors": "lower_back"}
+
+
+def _caution_severity(ex: dict, caution: dict) -> int:
+    """Max severity (0=none,1=ache,2=sharp) among caution keys matching this
+    exercise's name or muscles. 0 when nothing was flagged."""
+    if not caution:
+        return 0
+    sev = 0
+    keys = [canon(ex.get("name", ""))]
+    for m in (ex.get("muscles") or []):
+        keys.append(m)
+        keys.append(_CAUTION_ALIAS.get(m, m))
+    for k in keys:
+        c = caution.get(k)
+        if c:
+            sev = max(sev, int(c.get("severity", 1)))
+    return sev
+
+
+def _is_cautioned(ex: dict, caution: dict) -> bool:
+    """True if this exercise (by name) or one of its muscles was flagged in notes."""
+    return _caution_severity(ex, caution) > 0
 
 
 # ── Exercise pool ─────────────────────────────────────────────────────────────
@@ -67,7 +103,7 @@ EXERCISES = [
      "notes": "Legs up, no leg drive — raw pressing strength off the chest.",
      "is_assistance": True, "assist_for": "bench"},
     {"name": "Incline Bench Press",    "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 3.5, "muscles": ["chest", "front_delt", "triceps"],
+     "fatigue_cost": 3.5, "muscles": ["upper_chest", "front_delt", "triceps"],
      "sets": 3, "rep_target": "6-8", "rir_target": 2, "rest_seconds": 120,
      "notes": "Upper chest + press strength.", "is_assistance": True, "assist_for": "bench"},
     {"name": "Weighted Dip",           "pattern": "dip", "type": "COMPOUND_PERIPHERAL",
@@ -158,7 +194,7 @@ EXERCISES = [
 
     # ── Horizontal pull ────────────────────────────────────────────────────
     {"name": "Chest-Supported Row",   "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
-     "fatigue_cost": 3.5, "muscles": ["upper_back", "rear_delt"],
+     "fatigue_cost": 3.5, "muscles": ["upper_back", "rear_delts"],
      "sets": 4, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 90, "is_primary": True},
     {"name": "Cable Row",             "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
@@ -167,8 +203,19 @@ EXERCISES = [
      "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
      "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 60},
     {"name": "Seal Row",              "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
-     "fatigue_cost": 3.0, "muscles": ["upper_back", "rear_delt"],
+     "fatigue_cost": 3.0, "muscles": ["upper_back", "rear_delts"],
      "sets": 3, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
+
+    # ── Incline push (upper-chest focus; own pattern so it can coexist with
+    #    flat bench in the same session) ──────────────────────────────────────
+    {"name": "Incline DB Press",      "pattern": "incline_push", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 3.0, "muscles": ["upper_chest", "triceps", "front_delt"],
+     "sets": 3, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 90, "is_primary": True,
+     "notes": "30-45° incline. Full stretch at the bottom."},
+    {"name": "Low-to-High Cable Fly", "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["upper_chest"],
+     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
+     "notes": "Low pulley, sweep up and in — upper-chest line of pull."},
 
     # ── Vertical push (accessory) ──────────────────────────────────────────
     {"name": "Overhead Press (BB)",   "pattern": "vertical_push", "type": "COMPOUND_AXIAL",
@@ -186,14 +233,33 @@ EXERCISES = [
      "fatigue_cost": 1.0, "muscles": ["triceps"],
      "sets": 2, "rep_target": "10-15","rir_target": 1, "rest_seconds": 60},
     {"name": "Face Pull",            "pattern": "isolation_upper", "type": "ISOLATION",
-     "fatigue_cost": 1.0, "muscles": ["rear_delt", "rotator_cuff"],
+     "fatigue_cost": 1.0, "muscles": ["rear_delts", "rotator_cuff"],
      "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
     {"name": "Lateral Raise",        "pattern": "isolation_upper", "type": "ISOLATION",
-     "fatigue_cost": 1.0, "muscles": ["shoulders"],
+     "fatigue_cost": 1.0, "muscles": ["side_delts"],
      "sets": 2, "rep_target": "15-20","rir_target": 0, "rest_seconds": 45},
+    {"name": "Cable Lateral Raise",  "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["side_delts"],
+     "sets": 2, "rep_target": "12-20","rir_target": 0, "rest_seconds": 45,
+     "notes": "Constant tension — lean away, full ROM."},
     {"name": "Rear Delt Fly",        "pattern": "isolation_upper", "type": "ISOLATION",
-     "fatigue_cost": 1.0, "muscles": ["rear_delt"],
+     "fatigue_cost": 1.0, "muscles": ["rear_delts"],
      "sets": 2, "rep_target": "15-20","rir_target": 0, "rest_seconds": 45},
+    {"name": "Dumbbell Shrug",       "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["traps"],
+     "sets": 2, "rep_target": "12-15","rir_target": 0, "rest_seconds": 45,
+     "notes": "Pause 1 ct at the top."},
+    {"name": "Barbell Shrug",        "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.5, "muscles": ["traps"],
+     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
+    {"name": "Neck Curl",            "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 0.5, "muscles": ["neck"],
+     "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45,
+     "notes": "Plate or harness. Slow and controlled — never jerk the neck."},
+    {"name": "Neck Extension",       "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 0.5, "muscles": ["neck"],
+     "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45,
+     "notes": "Harness or plate. Slow eccentric, no momentum."},
     {"name": "Bicep Curl",           "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["biceps"],
      "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
@@ -205,6 +271,10 @@ EXERCISES = [
     {"name": "Calf Raise",    "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["calves"],
      "sets": 3, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
+    {"name": "Seated Calf Raise", "pattern": "isolation_lower", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["calves"],
+     "sets": 3, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
+     "notes": "Soleus bias — pause at the stretch."},
 
     # ── Calisthenics (selected by knapsack when AMPK/session-type warrants) ─
     {"name": "Pull-up Pyramid",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 3.0,
@@ -248,27 +318,70 @@ _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 BENCH_ASSISTANCE    = ["Close-Grip Bench Press", "Larsen Press",
                        "Incline Bench Press", "Weighted Dip"]
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
+# Squat has no dedicated assistance pool (its variants are knapsack primaries);
+# these are aimed at a flagged squat sticking point as an ADDED slot.
+SQUAT_ASSISTANCE    = ["Paused Squat", "Box Squat", "Front Squat"]
+
+# Which sticking point each assistance variant fixes: name → (lift, region).
+# Drives weakness-aimed selection: "failed bench lockout" → Close-Grip. [COACH]
+_ASSIST_TARGET = {
+    "Close-Grip Bench Press": ("bench", "lockout"),
+    "Larsen Press":           ("bench", "chest"),
+    "Weighted Dip":           ("bench", "chest"),
+    "Incline Bench Press":    ("bench", "upper"),
+    "Deficit Deadlift":       ("deadlift", "floor"),
+    "Paused Deadlift":        ("deadlift", "floor"),
+    "Deadlift (Speed/Light)": ("deadlift", "speed"),
+    "Paused Squat":           ("squat", "bottom"),
+    "Box Squat":              ("squat", "mid"),
+    "Front Squat":            ("squat", "back"),
+}
+
+# A second, isolated mover for a flagged weak point (1-2 sets to failure under the
+# accessory rule). Only added when the goal lift is in the session. [COACH]
+_WEAKNESS_ACCESSORY = {
+    ("bench", "lockout"):    "Triceps OH Extension",   # top-end = triceps
+    ("squat", "back"):       "Back Extension",          # torso collapse = erectors
+    ("deadlift", "lockout"): "Hip Thrust",              # lockout = glute/hip drive
+}
+
+
+def _pick_assistance(lift: str, pool: list, weakness: dict, assist_week: int) -> str:
+    """Choose the assistance variant: aim at the flagged sticking point if there is
+    one, else fall back to the deterministic weekly rotation."""
+    w = (weakness or {}).get(lift)
+    if w and w.get("region"):
+        region = w["region"]
+        for name in pool:
+            tgt = _ASSIST_TARGET.get(name)
+            if tgt and tgt == (lift, region):
+                return name
+    return pool[assist_week % len(pool)]
 
 
 # ── Muscle groups per session type ───────────────────────────────────────────
 
-UPPER_MUSCLES = ["chest", "upper_back", "lats", "shoulders", "triceps", "biceps"]
+UPPER_MUSCLES = ["chest", "upper_back", "lats", "shoulders", "triceps", "biceps",
+                 "side_delts", "traps", "neck", "upper_chest", "rear_delts"]
 LOWER_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
 
-UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 2}
+UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 2,
+              "side_delts": 4, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3}
 LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
 
-PUSH_MUSCLES = ["chest", "shoulders", "triceps"]
-PULL_MUSCLES = ["upper_back", "lats", "biceps"]
+PUSH_MUSCLES = ["chest", "shoulders", "triceps", "side_delts", "upper_chest"]
+PULL_MUSCLES = ["upper_back", "lats", "biceps", "traps", "neck", "rear_delts"]
 LEGS_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
-FULL_BODY_A  = ["chest", "quads", "lats", "calves", "core"]
-FULL_BODY_B  = ["hamstrings", "shoulders", "upper_back", "triceps", "glutes"]
+FULL_BODY_A  = ["chest", "quads", "lats", "calves", "core", "side_delts", "upper_chest"]
+FULL_BODY_B  = ["hamstrings", "shoulders", "upper_back", "triceps", "glutes", "traps", "neck",
+                "rear_delts"]
 
-PUSH_FREQ = {"chest": 2, "shoulders": 2, "triceps": 3}
-PULL_FREQ = {"upper_back": 2, "lats": 2, "biceps": 3}
+PUSH_FREQ = {"chest": 2, "shoulders": 2, "triceps": 3, "side_delts": 2, "upper_chest": 2}
+PULL_FREQ = {"upper_back": 2, "lats": 2, "biceps": 3, "traps": 2, "neck": 2, "rear_delts": 2}
 LEGS_FREQ = {"quads": 2, "hamstrings": 2, "glutes": 2, "calves": 2, "core": 2}
 FULL_FREQ = {"chest": 3, "quads": 3, "lats": 3, "calves": 3, "core": 3,
-             "hamstrings": 3, "shoulders": 3, "upper_back": 3, "triceps": 3, "glutes": 3}
+             "hamstrings": 3, "shoulders": 3, "upper_back": 3, "triceps": 3, "glutes": 3,
+             "side_delts": 3, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3}
 
 # Kept for internal _session_sets helper compatibility
 _UPPER_FREQ = UPPER_FREQ
@@ -532,6 +645,9 @@ def _build_session(
     readiness_z: float = 0.0,
     weekly_set_targets: dict = None,
     assist_week: int = 0,
+    exercise_values: dict = None,
+    caution: dict = None,
+    weakness: dict = None,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -578,8 +694,18 @@ def _build_session(
         if not pool:
             continue
 
-        # Sort by priority score descending
-        pool.sort(key=_priority_score, reverse=True)
+        # Sort by priority score, biased by the LEARNED exercise value (movements
+        # Nolan responds to / reaches for rank up) and DEMOTED when notes flagged
+        # pain on the movement or its muscle. Goal lifts keep their +10 dominance,
+        # so a note never silently drops a competition lift.
+        def _sel_key(ex):
+            score = _priority_score(ex)
+            if exercise_values:
+                score += EXVAL_SELECT_WEIGHT * float(exercise_values.get(canon(ex.get("name", "")), 0.0))
+            if _is_cautioned(ex, caution):
+                score -= CAUTION_PENALTY
+            return score
+        pool.sort(key=_sel_key, reverse=True)
 
         # Pick highest-priority exercise respecting compound-pattern diversity
         chosen = None
@@ -601,7 +727,9 @@ def _build_session(
         if ex_copy.get("is_goal") and ("Daily Single" in ex_copy.get("name", "") or "Top Set" in ex_copy.get("name", "")):
             ex_copy["sets"] = ex_copy.get("sets", 1)
         else:
-            baseline_weekly = 8 if muscle in ("triceps", "biceps") else 12
+            baseline_weekly = 8 if muscle in ("triceps", "biceps", "side_delts",
+                                              "traps", "neck", "rear_delts",
+                                              "upper_chest") else 12
             volume_scalar = weekly / baseline_weekly
             ex_copy["sets"] = max(1, round(ex_copy.get("sets", 3) * volume_scalar))
             
@@ -639,20 +767,19 @@ def _build_session(
                 bench_bo["sets"] = bench_bo.get("sets", 5)
             exercises.append(_scale(bench_bo, intensity, True, readiness_z))
 
-            # Bench assistance toward the paused-comp 315 (Larsen / close-grip /
-            # incline / weighted dip). Deterministic ISO-week rotation — each
-            # variant gets equal, consistent exposure so its own e1RM history
-            # accrues (instrumentation for a future assistance bandit), rather
-            # than the old date-seeded random pick that sampled unevenly.
-            bench_assist = BENCH_ASSISTANCE[assist_week % len(BENCH_ASSISTANCE)]
+            # Bench assistance toward the paused-comp 315. AIMED at a flagged
+            # sticking point ("failed lockout" → Close-Grip; "off the chest" →
+            # Larsen/dip), else the deterministic ISO-week rotation so every variant
+            # still accrues its own e1RM history.
+            bench_assist = _pick_assistance("bench", BENCH_ASSISTANCE, weakness, assist_week)
             exercises.append(
                 _assistance_slot(bench_assist, wt, intensity, readiness_z))
 
-        # Deadlift top set → build the conventional 500 via SUBMAX assistance
-        # (deficit / speed-light / paused) rather than heavy grinding back-offs.
-        # Same deterministic weekly rotation as bench.
+        # Deadlift top set → build the conventional 500 via SUBMAX assistance,
+        # aimed at the flagged weak point ("off the floor" → Deficit/Paused) else
+        # the weekly rotation.
         if ex_copy.get("name") == "Deadlift (Top Set)":
-            dl_assist = DEADLIFT_ASSISTANCE[assist_week % len(DEADLIFT_ASSISTANCE)]
+            dl_assist = _pick_assistance("deadlift", DEADLIFT_ASSISTANCE, weakness, assist_week)
             exercises.append(
                 _assistance_slot(dl_assist, wt, intensity, readiness_z))
 
@@ -687,7 +814,55 @@ def _build_session(
                     backoff["sets"] = max(1, backoff.get("sets", 3))
                 exercises.append(_scale(backoff, intensity, readiness_z=readiness_z))
 
-    return [_clean(e) for e in exercises]
+        # Squat top set → aim a targeted variant at a flagged squat sticking point
+        # ("out of the hole" → Paused Squat, "back rounds" → Front Squat). Added as
+        # an extra slot only when a weakness is flagged (squat has no standing
+        # assistance pool); deduped so it can't repeat the chosen primary.
+        if ex_copy.get("name") == "Back Squat (Top Set)":
+            sq = (weakness or {}).get("squat")
+            if sq and sq.get("region"):
+                variant = _pick_assistance("squat", SQUAT_ASSISTANCE, weakness, assist_week)
+                if variant and variant not in {e.get("name") for e in exercises}:
+                    exercises.append(_assistance_slot(variant, wt, intensity, readiness_z))
+
+    # Weak-point accessory: a second isolated mover for a flagged sticking point
+    # (e.g. bench-lockout → triceps extension), added only when that goal lift is
+    # actually in today's session, deduped, then capped to 1-2 sets by the
+    # philosophy pass below.
+    _present = {e.get("name") for e in exercises}
+    _goal_in = {("bench" if any("Bench" in n for n in _present) else None),
+                ("squat" if any("Squat" in n for n in _present) else None),
+                ("deadlift" if any("Deadlift" in n for n in _present) else None)}
+    for lift, w in (weakness or {}).items():
+        if lift not in _goal_in:
+            continue
+        acc = _WEAKNESS_ACCESSORY.get((lift, w.get("region")))
+        if acc and acc in _EX_BY_NAME and acc not in _present:
+            exercises.append(_assistance_slot(acc, weekly_set_targets or {}, intensity, readiness_z))
+            _present.add(acc)
+
+    # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
+    # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
+    # back-offs, assistance, primary compounds) keep their multi-set, submaximal
+    # structure. Applied before _clean so the is_* tags are still readable.
+    out = []
+    for e in exercises:
+        pm = (e.get("muscles") or [None])[0]
+        apply_philosophy(e, (weekly_set_targets or {}).get(pm, 0))
+        # Pain back-off: a sharp (severity-2) flag on this movement or its muscle
+        # trims an accessory to a single set; a strength lift is left intact but
+        # annotated so the brief surfaces it (never auto-drop a comp lift on a note).
+        if _caution_severity(e, caution) >= 2:
+            from engine.athlete_profile import is_strength_movement as _is_str
+            if _is_str(e):
+                e["notes"] = ((e.get("notes", "") + " · ") if e.get("notes") else "") \
+                    + "⚠ flagged pain — monitor form / load"
+            elif e.get("sets"):
+                e["sets"] = 1
+                e["notes"] = ((e.get("notes", "") + " · ") if e.get("notes") else "") \
+                    + "backed off — flagged pain"
+        out.append(_clean(e))
+    return out
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -706,6 +881,9 @@ def generate(
     quad_soreness_avg: float = 0.0,
     split_framework: str = "upper_lower",
     run_slot: str = None,
+    exercise_values: dict = None,
+    caution: dict = None,
+    weakness: dict = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -760,6 +938,9 @@ def generate(
         readiness_z=readiness_z,
         weekly_set_targets=weekly_set_targets or {},
         assist_week=sim_date.isocalendar()[1],
+        exercise_values=exercise_values,
+        caution=caution,
+        weakness=weakness,
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)
@@ -815,6 +996,9 @@ class SessionGenerator:
         soreness_by_muscle: dict = None,
         phase: str = None,
         run_slot: str = None,
+        exercise_values: dict = None,
+        caution: dict = None,
+        weakness: dict = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -844,6 +1028,9 @@ class SessionGenerator:
             weekly_set_targets=weekly_set_targets,
             readiness_z=readiness_z,
             run_slot=run_slot,
+            exercise_values=exercise_values,
+            caution=caution,
+            weakness=weakness,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
@@ -851,8 +1038,11 @@ class SessionGenerator:
         # set on exercises whose PRIMARY muscle is that region; ≥4 drops two.
         if soreness_by_muscle:
             _ALIAS = {"front_delt": "shoulders", "side_delt": "shoulders",
-                      "rear_delt": "shoulders", "delts": "shoulders", "core": "abs",
-                      "lats": "back", "upper_back": "back", "traps": "back"}
+                      "side_delts": "shoulders", "rear_delt": "shoulders",
+                      "rear_delts": "shoulders", "delts": "shoulders", "core": "abs",
+                      "lats": "back", "upper_back": "back",
+                      "upper_chest": "chest"}
+            # traps/neck pass through — they're first-class check-in regions now
             _primary = {e["name"]: (e.get("muscles") or [None])[0] for e in EXERCISES}
             for ex in exercises:
                 pm = _primary.get(ex.get("name"))

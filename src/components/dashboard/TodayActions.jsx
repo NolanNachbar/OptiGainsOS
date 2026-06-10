@@ -10,12 +10,12 @@ import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
 const DOMAIN_COLORS = {
-  training:  "text-brand",
-  nutrition: "text-green-400",
-  career:    "text-indigo-400",
-  mind:      "text-purple-400",
-  recovery:  "text-blue-400",
-  admin:     "text-slate-400",
+  training:  "text-coral",
+  nutrition: "text-gold",
+  career:    "text-gold",
+  mind:      "text-violet",
+  recovery:  "text-teal",
+  admin:     "text-muted-2",
 };
 
 export default function TodayActions({ today, briefActions = [] }) {
@@ -121,29 +121,29 @@ export default function TodayActions({ today, briefActions = [] }) {
   if (total === 0 && !adding) return null;
 
   return (
-    <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
+    <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xs font-bold tracking-widest text-slate-400 flex items-center gap-2 uppercase">
-            <ListChecks className="w-4 h-4 text-brand" />
+          <CardTitle className="section-label flex items-center gap-2">
+            <ListChecks className="w-4 h-4 text-leaf" />
             Today's Actions
             {total > 0 && (
-              <span className="font-technical text-[10px] text-slate-500 ml-1.5 font-bold">{completed}/{total}</span>
+              <span className="font-technical text-[10px] text-muted-2 ml-1.5 font-bold">{completed}/{total}</span>
             )}
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setAdding(v => !v)}
-            className="h-6 w-6 p-0 text-slate-600 hover:text-brand"
+            className="h-6 w-6 p-0"
           >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
         {total > 0 && (
-          <div className="h-[2px] bg-slate-900 rounded-full mt-2.5">
+          <div className="h-[2px] bg-white/[0.08] rounded-full mt-2.5">
             <div
-              className="h-full bg-brand rounded-full transition-all duration-500"
+              className="h-full bg-leaf rounded-full transition-all duration-500"
               style={{ width: `${(completed / total) * 100}%` }}
             />
           </div>
@@ -154,26 +154,26 @@ export default function TodayActions({ today, briefActions = [] }) {
           {todos.map(todo => (
             <div
               key={todo.id}
-              className="flex items-center gap-3 group py-1.5 border-b border-charcoal-border/30 last:border-0"
+              className="flex items-center gap-3 group py-1.5 border-b hairline last:border-0"
             >
               <button
                 onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
-                className="shrink-0 text-slate-600 hover:text-brand transition-colors"
+                className="shrink-0 text-faint hover:text-leaf transition-colors"
               >
                 {todo.completed
-                  ? <CheckCircle2 className="w-4 h-4 text-brand" />
+                  ? <CheckCircle2 className="w-4 h-4 text-leaf" />
                   : <Circle className="w-4 h-4" />
                 }
               </button>
-              <span className={`flex-1 text-sm leading-normal ${todo.completed ? "line-through text-slate-500" : "text-slate-200"}`}>
+              <span className={`flex-1 text-sm font-semibold leading-normal ${todo.completed ? "line-through text-muted-2" : "text-secondary"}`}>
                 {todo.text}
               </span>
               {todo.source === "ai_generated" && (
-                <Bot className={`w-3.5 h-3.5 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-slate-600"}`} />
+                <Bot className={`w-3.5 h-3.5 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
               )}
               <button
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all shrink-0 p-0.5"
+                className="opacity-0 group-hover:opacity-100 text-faint hover:text-bad transition-all shrink-0 p-0.5"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -182,7 +182,7 @@ export default function TodayActions({ today, briefActions = [] }) {
         </div>
  
         {adding && (
-          <div className="flex gap-2 mt-4 pt-4 border-t border-charcoal-border">
+          <div className="flex gap-2 mt-4 pt-4 border-t hairline">
             <Input
               autoFocus
               value={newText}
@@ -192,7 +192,7 @@ export default function TodayActions({ today, briefActions = [] }) {
                 if (e.key === "Escape") { setAdding(false); setNewText(""); }
               }}
               placeholder="Add a task..."
-              className="h-9 text-sm flex-1 bg-slate-900/50 border-charcoal-border focus:border-brand"
+              className="h-9 text-sm flex-1"
             />
             <Button
               size="sm"

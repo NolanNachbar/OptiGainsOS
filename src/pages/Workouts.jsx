@@ -319,8 +319,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         {!hideHeader && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
             <div>
-              <h1 className="text-[22px] font-bold text-white leading-tight">Workouts</h1>
-              <p className="text-[13px] text-slate-400 mt-0.5">Library & session history</p>
+              <h1 className="text-[22px] font-bold text-ink leading-tight">Workouts</h1>
+              <p className="text-[13px] text-ink-muted mt-0.5">Library & session history</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link to="/weekly-schedule">
@@ -378,24 +378,24 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           </TabsList>
 
           <TabsContent value="library">
-        <div className="rounded-xl bg-charcoal-surface border border-charcoal-border mb-6 overflow-hidden">
+        <div className="glass mb-6 overflow-hidden">
           <div className="px-6 pt-4 pb-2">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-white shrink-0">Saved Workouts</h2>
+              <h2 className="text-lg font-bold text-ink shrink-0">Saved Workouts</h2>
               <div className="flex items-center gap-2 shrink-0">
                 {/* Filters button */}
                 <button
                   onClick={() => setFilterOpen(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
                     filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-brand text-white border-brand/30'
-                      : 'glass glass-interactive text-slate-400 hover:border-brand/30 hover:text-brand'
+                      ? 'bg-brand text-[var(--color-action-dark)] border-transparent'
+                      : 'bg-white/[0.06] border-white/10 text-ink-muted hover:bg-white/[0.09] hover:text-ink'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                   Filters
                   {(filter !== 'all' || folderFilter !== 'all') && (
-                    <span className="bg-charcoal-surface/30 text-white text-xs font-bold px-1 rounded-full leading-none py-0.5">
+                    <span className="bg-black/20 text-[var(--color-action-dark)] text-xs font-bold px-1 rounded-full leading-none py-0.5">
                       {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
                     </span>
                   )}
@@ -420,9 +420,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="px-6 pb-4 border-t border-charcoal-border pt-3 space-y-3">
+            <div className="px-6 pb-4 border-t hairline pt-3 space-y-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Type</p>
+                <p className="section-label mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { value: 'all', label: 'All' },
@@ -435,8 +435,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       onClick={() => setFilter(f.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         filter === f.value
-                          ? 'bg-brand text-black font-bold'
-                          : 'bg-charcoal-elevated text-slate-400 hover:bg-charcoal-elevated'
+                          ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                          : 'bg-white/[0.06] text-ink-muted hover:bg-white/[0.09]'
                       }`}
                     >
                       {f.label}
@@ -446,7 +446,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               </div>
               {folders.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Folder</p>
+                  <p className="section-label mb-2">Folder</p>
                   <div className="flex flex-wrap gap-1.5">
                     {['all', ...folders, 'unfiled'].map(f => {
                       if (f !== 'all' && f !== 'unfiled' && renamingFolder === f) {
@@ -467,12 +467,12 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 bg-charcoal-surface text-white outline-none w-28"
+                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 bg-white/[0.06] text-ink outline-none w-28"
                             />
-                            <button type="submit" className="p-1 text-[#4ade80] hover:text-[#4ade80]">
+                            <button type="submit" className="p-1 text-leaf hover:text-leaf">
                               <Check className="w-3.5 h-3.5" />
                             </button>
-                            <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-slate-400 hover:text-slate-400">
+                            <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-ink-muted hover:text-ink-muted">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </form>
@@ -484,8 +484,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                               folderFilter === f
-                                ? 'bg-brand text-black font-bold'
-                                : 'bg-charcoal-elevated text-slate-400 hover:bg-charcoal-elevated'
+                                ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                                : 'bg-white/[0.06] text-ink-muted hover:bg-white/[0.09]'
                             }`}
                           >
                             {f === 'all' && <FolderOpen className="w-3 h-3" />}
@@ -494,7 +494,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                           {f !== 'all' && f !== 'unfiled' && (
                             <button
                               onClick={() => { setRenamingFolder(f); setRenameValue(f); }}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-brand transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-ink-muted hover:text-brand transition-opacity"
                               title="Rename folder"
                             >
                               <Pencil className="w-3 h-3" />
@@ -525,11 +525,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <Zap className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-                  <h3 className="text-base font-semibold text-white mb-1">
+                  <Zap className="w-10 h-10 text-ink-muted mx-auto mb-3" />
+                  <h3 className="text-base font-semibold text-ink mb-1">
                     No workouts yet
                   </h3>
-                  <p className="text-sm text-slate-500 mb-4">
+                  <p className="text-sm text-ink-muted mb-4">
                     Generate personalized workouts or create your own
                   </p>
                   {filter === "all" && (
@@ -561,13 +561,13 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
             </CardHeader>
             <CardContent className="space-y-4">
               {workoutPlan.week.map((day) => (
-                <div key={day.dayIndex} className="p-4 rounded-lg border glass glass-interactive">
+                <div key={day.dayIndex} className="glass-inset p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold">
                       Day {day.dayIndex + 1}: {day.focus}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="text-sm text-slate-400">{day.duration}</div>
+                      <div className="text-sm text-ink-muted">{day.duration}</div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -588,7 +588,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                         className="flex justify-between text-sm"
                       >
                         <span className="font-medium">{ex.name}</span>
-                        <span className="text-slate-400">
+                        <span className="text-ink-muted">
                           {ex.sets} × {ex.reps}
                         </span>
                       </div>
@@ -603,7 +603,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
             <CardHeader>
               <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
             </CardHeader>
-            <CardContent className="text-slate-400">
+            <CardContent className="text-ink-muted">
               No plan found yet. Click "Generate Workouts" to create a personalized plan.
             </CardContent>
           </Card>
@@ -668,7 +668,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     </div>
                     {pastEnrollments.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        <h3 className="section-label mb-3">
                           Past Programs
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -726,10 +726,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <DialogHeader>
             <DialogTitle>Delete Workout?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-white">"{workoutToDelete?.title}"</span>?
+              Are you sure you want to delete <span className="font-semibold text-ink">"{workoutToDelete?.title}"</span>?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-charcoal-elevated border border-charcoal-border rounded-lg p-3 text-sm text-slate-400">
+          <div className="glass-inset p-3 text-sm text-ink-muted">
             This will remove it from your library and any scheduled workouts. This action cannot be undone.
           </div>
           <div className="flex gap-3 mt-2">
@@ -745,7 +745,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
             </Button>
             <Button
               onClick={confirmDelete}
-              className="flex-1 bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.1)] text-white"
+              variant="destructive"
+              className="flex-1"
             >
               Delete Workout
             </Button>
@@ -759,11 +760,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <DialogHeader>
             <DialogTitle>Workout Import Format</DialogTitle>
             <DialogDescription>
-              Save a <code className="text-xs bg-charcoal-elevated px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
+              Save a <code className="text-xs bg-white/[0.08] px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
             </DialogDescription>
           </DialogHeader>
-          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto max-h-72 text-white text-slate-400 border text-left">{WORKOUT_TEMPLATE}</pre>
-          <div className="text-xs text-slate-500 space-y-1 mt-1">
+          <pre className="glass-inset font-technical p-3 text-xs overflow-auto max-h-72 text-ink-muted text-left">{WORKOUT_TEMPLATE}</pre>
+          <div className="text-xs text-ink-muted space-y-1 mt-1">
             <p><span className="font-semibold">type</span>: <code>strength</code>, <code>cardio</code>, or <code>hiit</code></p>
             <p><span className="font-semibold">reps</span>: number or range string like <code>"8-10"</code></p>
           </div>
@@ -861,8 +862,8 @@ function groupByDay(entries) {
 function StatBlock({ label, value, bordered }) {
   return (
     <div className={`flex-1 flex flex-col ${bordered ? 'border-l border-charcoal-border pl-6' : ''}`}>
-      <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{label}</span>
-      <span className="text-xl font-bold tabular-nums text-white mt-0.5">{value ?? '—'}</span>
+      <span className="section-label">{label}</span>
+      <span className="font-technical font-bold text-[17px] text-ink mt-1">{value ?? '—'}</span>
     </div>
   );
 }
@@ -872,17 +873,16 @@ function StatBlock({ label, value, bordered }) {
 function StrengthEntryCard({ entry }) {
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-l-4 bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-elevated transition-all p-4"
-      style={{ borderLeftColor: '#4f46e5' }}
+      className="group relative overflow-hidden tile tile-interactive p-4"
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-base font-bold text-white">{entry.title}</h4>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-0.5">
+          <h4 className="text-[15px] font-semibold text-ink">{entry.title}</h4>
+          <p className="section-label mt-1">
             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
-        <button className="text-slate-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
+        <button className="text-ink-muted hover:text-ink opacity-0 group-hover:opacity-100 transition-opacity p-1">
           <Share2 className="w-4 h-4" />
         </button>
       </div>
@@ -920,14 +920,14 @@ function CardioEntryCard({ entry }) {
   const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
   return (
-    <div className="rounded-xl bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-elevated transition-all">
+    <div className="tile tile-interactive">
       <div className="flex items-start p-4 pb-3 gap-3">
-        <div className="w-9 h-9 rounded-full bg-charcoal-elevated flex items-center justify-center shrink-0 text-brand">
+        <div className="w-9 h-9 rounded-full bg-carb/15 flex items-center justify-center shrink-0 text-carb">
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-base font-bold text-white truncate">{entry.title}</h4>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-0.5">
+          <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
+          <p className="section-label mt-1">
             {typeLabel} · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
@@ -939,17 +939,17 @@ function CardioEntryCard({ entry }) {
         {pace && <StatBlock label="Pace" value={pace} bordered />}
         {entry.avgHeartrate && (
           <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l border-charcoal-border pl-6' : ''}`}>
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Avg HR</span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold tabular-nums text-white">{Math.round(entry.avgHeartrate)}</span>
-              <span className="text-xs font-bold uppercase tracking-widest text-[#f87171]">bpm</span>
+            <span className="section-label">Avg HR</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="font-technical font-bold text-[17px] text-ink">{Math.round(entry.avgHeartrate)}</span>
+              <span className="text-[10px] text-ink-faint uppercase">bpm</span>
             </div>
           </div>
         )}
         {entry.aerobicEffect != null && (
           <div className="flex-1 flex flex-col border-l border-charcoal-border pl-6">
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Aerobic Effect</span>
-            <span className="text-xl font-bold tabular-nums text-white">{Number(entry.aerobicEffect).toFixed(1)}</span>
+            <span className="section-label">Aerobic Effect</span>
+            <span className="font-technical font-bold text-[17px] text-ink mt-1">{Number(entry.aerobicEffect).toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -1021,29 +1021,23 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   return (
     <>
       {/* Weekly Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-charcoal-surface border border-charcoal-border mb-6">
-        <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">This Week</span>
-          <span className="text-xl font-bold tabular-nums text-brand">{thisWeek.length} Sessions</span>
+      <div className="grid grid-cols-4 gap-0 p-4 surface mb-6 divide-x divide-[var(--color-border)]">
+        <div className="flex flex-col pr-4">
+          <span className="section-label mb-1.5">This Week</span>
+          <span className="font-technical font-extrabold text-xl text-teal">{thisWeek.length}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
         </div>
-        <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Strength</span>
-          <div className="flex items-center gap-1.5">
-            <Dumbbell className="w-4 h-4 text-indigo-500" />
-            <span className="text-xl font-bold tabular-nums text-[#818cf8]">{weekStrength}</span>
-          </div>
+        <div className="flex flex-col px-4">
+          <span className="section-label mb-1.5">Strength</span>
+          <span className="font-technical font-bold text-xl text-ink">{weekStrength}</span>
         </div>
-        <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Cardio</span>
-          <div className="flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-slate-400" />
-            <span className="text-xl font-bold tabular-nums text-white">{weekCardio}</span>
-          </div>
+        <div className="flex flex-col px-4">
+          <span className="section-label mb-1.5">Cardio</span>
+          <span className="font-technical font-bold text-xl text-ink">{weekCardio}</span>
         </div>
-        <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Distance</span>
-          <span className="text-xl font-bold tabular-nums text-white">
-            {weekMiles > 0 ? `${weekMiles.toFixed(1)} mi` : '—'}
+        <div className="flex flex-col pl-4">
+          <span className="section-label mb-1.5">Distance</span>
+          <span className="font-technical font-bold text-xl text-ink">
+            {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[11px] font-semibold text-ink-faint ml-1">mi</span>
           </span>
         </div>
       </div>
@@ -1055,10 +1049,10 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all',
+              'px-3.5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
               filter === val
-                ? 'bg-brand text-black font-bold'
-                : 'border border-charcoal-border text-slate-500 hover:border-brand/30',
+                ? 'bg-brand text-[var(--color-action-dark)]'
+                : 'bg-white/[0.06] border border-white/10 text-ink-muted hover:bg-white/[0.09] hover:text-ink',
             ].join(' ')}
           >
             {label}
@@ -1068,24 +1062,22 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
 
       {/* Feed */}
       {allEntries.length === 0 ? (
-        <Card className="border-none">
-          <CardContent className="py-6 text-center">
-            <Activity className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-white mb-1">No activity yet</h3>
-            <p className="text-sm text-slate-500 mb-2">
-              {filter === 'cardio'
-                ? 'Cardio sessions sync automatically from Garmin each morning.'
-                : filter === 'strength'
-                ? 'Complete a workout to see it here.'
-                : 'Complete workouts — cardio syncs from Garmin overnight.'}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="glass px-4 py-8 text-center">
+          <Activity className="w-10 h-10 text-ink-muted mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-ink mb-1">No activity yet</h3>
+          <p className="text-sm text-ink-muted mb-2">
+            {filter === 'cardio'
+              ? 'Cardio sessions sync automatically from Garmin each morning.'
+              : filter === 'strength'
+              ? 'Complete a workout to see it here.'
+              : 'Complete workouts — cardio syncs from Garmin overnight.'}
+          </p>
+        </div>
       ) : (
         <div className="space-y-8">
           {grouped.map(({ label, entries }) => (
             <section key={label}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">{label}</h3>
+              <h3 className="section-label mb-3">{label}</h3>
               <div className="space-y-3">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
@@ -1109,13 +1101,11 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
 
 function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
   return (
-    <Card className="border-none">
-      <CardContent className="py-6 text-center">
-        <Icon className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-        <h3 className="text-base font-semibold text-white mb-1">{title}</h3>
-        <p className="text-sm text-slate-500 mb-4">{subtitle}</p>
-        {action}
-      </CardContent>
-    </Card>
+    <div className="glass px-4 py-8 text-center">
+      <Icon className="w-10 h-10 text-ink-muted mx-auto mb-3" />
+      <h3 className="text-base font-semibold text-ink mb-1">{title}</h3>
+      <p className="text-sm text-ink-muted mb-4">{subtitle}</p>
+      {action}
+    </div>
   );
 }

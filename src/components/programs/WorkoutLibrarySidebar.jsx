@@ -58,7 +58,7 @@ export default function WorkoutLibrarySidebar() {
         className="flex items-center justify-between mb-3 cursor-pointer"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-1.5">
+        <h3 className="text-sm font-semibold text-ink-muted flex items-center gap-1.5">
           <Library className="w-4 h-4" />
           Workout Library
           <Badge variant="outline" className="text-xs ml-1">
@@ -75,7 +75,7 @@ export default function WorkoutLibrarySidebar() {
               New Workout
             </Button>
           </Link>
-          <button className="text-slate-500">
+          <button className="text-ink-muted">
             {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
         </div>
@@ -84,7 +84,7 @@ export default function WorkoutLibrarySidebar() {
       {!collapsed && (
         <>
           <div className="relative mb-2 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -111,7 +111,7 @@ export default function WorkoutLibrarySidebar() {
           {/* Folder filters */}
           {folders.length > 0 && (
             <div className="flex flex-wrap items-center gap-1 mb-3">
-              <FolderOpen className="w-3.5 h-3.5 text-slate-500" />
+              <FolderOpen className="w-3.5 h-3.5 text-ink-muted" />
               <Button
                 size="sm"
                 variant={folderFilter === "all" ? "default" : "outline"}
@@ -144,7 +144,7 @@ export default function WorkoutLibrarySidebar() {
 
           {filtered.length === 0 ? (
             <div className="text-center py-4">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-muted">
                 {workouts.length === 0
                   ? "No workouts yet — click a day slot to build exercises inline."
                   : "No workouts match your filters."}

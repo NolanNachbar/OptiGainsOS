@@ -163,8 +163,8 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="font-medium text-white">Export Your Data</p>
-          <p className="text-sm text-slate-400">{EXPORTS.length} datasets available as CSV</p>
+          <p className="font-medium text-ink">Export Your Data</p>
+          <p className="text-sm text-ink-muted">{EXPORTS.length} datasets available as CSV</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={runAll} disabled={!!loading} className="shrink-0">
@@ -182,8 +182,8 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
           {EXPORTS.map((exp) => (
             <div key={exp.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-charcoal border border-charcoal-border">
               <div>
-                <p className="text-sm text-white font-medium">{exp.label}</p>
-                <p className="text-xs text-slate-500">{exp.description}</p>
+                <p className="text-sm text-ink font-medium">{exp.label}</p>
+                <p className="text-xs text-ink-muted">{exp.description}</p>
               </div>
               <Button variant="ghost" size="sm" className="h-7 px-3 text-xs shrink-0" disabled={!!loading} onClick={() => run(exp)}>
                 {loading === exp.id ? "…" : <Download className="w-3.5 h-3.5" />}

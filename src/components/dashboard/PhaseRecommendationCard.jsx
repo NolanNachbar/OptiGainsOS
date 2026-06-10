@@ -40,33 +40,33 @@ export default function PhaseRecommendationCard() {
   };
 
   const samePhase = currentPhase && currentPhase === rec.phase;
-  const confColor = rec.confidence === "high" ? "text-[#4ade80]"
-    : rec.confidence === "low" ? "text-yellow-400" : "text-slate-400";
+  const confColor = rec.confidence === "high" ? "text-teal"
+    : rec.confidence === "low" ? "text-warn" : "text-muted-2";
 
   return (
-    <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-4">
+    <div className="glass p-4">
       <div className="flex items-center gap-2 mb-1">
-        <Brain className="w-4 h-4 text-brand" />
-        <span className="text-xs uppercase tracking-wide text-slate-500">Coach: diet phase</span>
-        <span className={`text-[10px] ml-auto ${confColor}`}>{rec.confidence} confidence</span>
+        <Brain className="w-3.5 h-3.5 text-gold" />
+        <span className="section-label">Coach: diet phase</span>
+        <span className={`font-technical text-[10px] font-bold ml-auto ${confColor}`}>{rec.confidence} confidence</span>
       </div>
 
-      <div className="text-lg font-semibold text-white">
+      <div className="text-lg font-extrabold text-ink">
         {applied || samePhase ? "Phase: " : "Recommended: "}
-        <span className="text-brand uppercase">{rec.phase}</span>
+        <span className="text-gold uppercase">{rec.phase}</span>
         {currentPhase && currentPhase !== rec.phase && !applied && (
-          <span className="text-xs text-slate-500"> (now: {currentPhase})</span>
+          <span className="text-xs font-semibold text-muted-2"> (now: {currentPhase})</span>
         )}
       </div>
       {rec.reverse_diet && (
-        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400 text-[10px] uppercase tracking-wide">
+        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-warn/10 text-warn text-[10px] font-bold uppercase tracking-wide">
           End the cut · reverse diet
         </div>
       )}
-      <p className="mt-1 text-sm text-slate-300">{rec.rationale}</p>
+      <p className="mt-1 text-sm font-semibold text-secondary">{rec.rationale}</p>
 
       {rec.needs_photo && (
-        <Link to="/physique" className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand">
+        <Link to="/physique" className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-brand">
           <Camera className="w-3.5 h-3.5" /> Upload a physique photo to refine this
         </Link>
       )}
@@ -76,18 +76,18 @@ export default function PhaseRecommendationCard() {
           <Button variant="volt" size="sm" className="h-8 px-3 text-xs" onClick={accept} disabled={busy}>
             <Check className="w-3.5 h-3.5 mr-1" /> Accept ({rec.phase})
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 px-3 text-xs text-slate-400" onClick={() => setDismissed(true)}>
+          <Button variant="dim" size="sm" className="h-8 px-3 text-xs" onClick={() => setDismissed(true)}>
             <X className="w-3.5 h-3.5 mr-1" /> Keep {currentPhase || "current"}
           </Button>
         </div>
       )}
       {applied && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-[#4ade80]">
+        <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-leaf">
           <Check className="w-3.5 h-3.5" /> Applied — diet now targets a {rec.phase}
         </div>
       )}
       {samePhase && !applied && (
-        <div className="mt-2 text-xs text-slate-500">Already on this phase.</div>
+        <div className="mt-2 text-xs font-semibold text-muted-2">Already on this phase.</div>
       )}
     </div>
   );

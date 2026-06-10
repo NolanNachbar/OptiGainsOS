@@ -13,36 +13,43 @@ import { getTodayString } from "@/utils/dateUtils";
 import { format, parseISO } from "date-fns";
 
 const COACHES = [
-  { key: "performance",  label: "Performance Coach",  icon: Dumbbell,   color: "text-brand" },
-  { key: "endurance",    label: "Endurance Coach",    icon: Activity,   color: "text-blue-400" },
-  { key: "nutrition",    label: "Nutrition Coach",    icon: Apple,      color: "text-green-400" },
-  { key: "body_comp",    label: "Body Comp Analyst",  icon: Scale,      color: "text-yellow-400" },
-  { key: "learning",     label: "Learning Coach",     icon: BookOpen,   color: "text-purple-400" },
-  { key: "career",       label: "Career Coach",       icon: Briefcase,  color: "text-indigo-400" },
+  { key: "performance",  label: "Performance",  icon: Dumbbell },
+  { key: "endurance",    label: "Endurance",    icon: Activity },
+  { key: "nutrition",    label: "Nutrition",    icon: Apple },
+  { key: "body_comp",    label: "Body Comp",    icon: Scale },
+  { key: "learning",     label: "Learning",     icon: BookOpen },
+  { key: "career",       label: "Career",       icon: Briefcase },
 ];
+
+/** Coach-persona tag — tiny uppercase teal chip (the an-coach <b>). */
+function CoachTag({ children }) {
+  return (
+    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-[rgba(94,220,210,0.10)] rounded-[7px] px-[7px] py-[3px] whitespace-nowrap shrink-0">
+      {children}
+    </span>
+  );
+}
 
 function CoachSection({ coach, content }) {
   const [open, setOpen] = useState(false);
-  const Icon = coach.icon;
   const preview = content?.slice(0, 90) + (content?.length > 90 ? "…" : "");
 
   return (
-    <div className="border-b border-charcoal-border last:border-0">
+    <div className="border-b hairline last:border-0">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-charcoal-surface2 transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors text-left"
       >
         <div className="flex items-center gap-2.5">
-          <Icon className={`w-3.5 h-3.5 shrink-0 ${coach.color}`} />
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{coach.label}</span>
+          <CoachTag>{coach.label}</CoachTag>
         </div>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-600" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-600" />}
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-faint" /> : <ChevronDown className="w-3.5 h-3.5 text-faint" />}
       </button>
       {!open && content && (
-        <p className="px-4 pb-3 text-xs text-slate-500 leading-relaxed">{preview}</p>
+        <p className="px-4 pb-3 text-[11.5px] font-semibold text-muted-2 leading-relaxed">{preview}</p>
       )}
       {open && content && (
-        <p className="px-4 pb-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{content}</p>
+        <p className="px-4 pb-4 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
       )}
     </div>
   );
@@ -82,19 +89,19 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
   if (!brief) {
     if (hideWhenEmpty) return null;
     return (
-      <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
-        <CardContent className="py-5 px-4 flex flex-col items-center text-center gap-3">
-          <div className="p-3 rounded-full bg-brand/10">
-            <Bot className="w-5 h-5 text-brand" />
+      <Card className="glass">
+        <CardContent className="pt-5 pb-5 px-4 flex flex-col items-center text-center gap-3">
+          <div className="p-3 rounded-full bg-teal/10">
+            <Bot className="w-5 h-5 text-teal" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">No AI Brief Yet</p>
-            <p className="text-xs text-slate-500 mt-1 max-w-xs">
+            <p className="text-sm font-bold text-ink">No AI Brief Yet</p>
+            <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs">
               Run the Desktop Agent to generate today's coaching brief. It reads your last 7 days of data and writes the result here.
             </p>
           </div>
           <Link to="/brief-history">
-            <Button variant="ghost" size="sm" className="text-slate-500 text-xs gap-1.5 border-charcoal-border">
+            <Button variant="ghost" size="sm" className="text-muted-2 text-xs gap-1.5">
               <History className="w-3.5 h-3.5" /> View Past Briefs
             </Button>
           </Link>
@@ -112,25 +119,25 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
     : null;
 
   return (
-    <Card className="bg-charcoal-surface border-charcoal-border shadow-dark-card">
+    <Card className="glass glass-interactive">
       <CardHeader className={`pt-4 px-4 ${isCollapsed ? 'pb-4' : 'pb-0'}`}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-            <Bot className="w-4 h-4 text-brand" />
+          <CardTitle className="section-label !text-ink flex items-center gap-2 normal-case">
+            <Bot className="w-4 h-4 text-teal" />
             AI Daily Brief
           </CardTitle>
           <div className="flex items-center gap-3">
             {generatedAt && (
-              <span className="text-[10px] text-slate-500 font-mono">Generated {generatedAt}</span>
+              <span className="font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-500 uppercase tracking-wider hover:text-brand px-2 border-charcoal-border">
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-2">
                 History
               </Button>
             </Link>
             <button
               onClick={toggleCollapse}
-              className="p-1 text-slate-500 hover:text-brand transition-colors rounded"
+              className="p-1 text-muted-2 hover:text-ink transition-colors rounded"
             >
               {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>
@@ -141,22 +148,22 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
       {!isCollapsed && (
         <>
           {json.insight && (
-            <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 rounded-lg bg-brand/[5%] border border-brand/10">
-              <Lightbulb className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-              <p className="text-xs text-slate-300 leading-relaxed italic">{json.insight}</p>
+            <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 glass-inset">
+              <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+              <p className="text-[13px] font-semibold text-ink leading-[1.55]">{json.insight}</p>
             </div>
           )}
 
-          <CardContent className="p-0 mt-2">
+          <div className="mt-2">
             {COACHES.map(coach => (
               <CoachSection key={coach.key} coach={coach} content={json[coach.key]} />
             ))}
-          </CardContent>
+          </div>
 
           {approxCost && (
-            <div className="px-4 py-2 border-t border-charcoal-border flex items-center gap-1.5 font-mono">
-              <Bot className="w-3 h-3 text-slate-600" />
-              <span className="text-[9px] text-slate-600">
+            <div className="px-4 py-2 border-t hairline flex items-center gap-1.5">
+              <Bot className="w-3 h-3 text-faint" />
+              <span className="font-technical text-[9px] font-semibold text-faint">
                 {brief.model_used || "claude-haiku-4-5"} · {totalTokens.toLocaleString()} tokens · {approxCost}
               </span>
             </div>

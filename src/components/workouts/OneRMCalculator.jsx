@@ -83,17 +83,17 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           {oneRM && (
             <div className="space-y-3 pt-2">
               <div className="text-center p-4 bg-brand/[5%] rounded-lg">
-                <div className="text-sm text-slate-400">Estimated 1 Rep Max</div>
+                <div className="text-sm text-ink-muted">Estimated 1 Rep Max</div>
                 <div className="text-3xl font-bold text-brand">{oneRM} {weightUnit}</div>
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm font-medium text-slate-400">Weight for target reps:</div>
+                <div className="text-sm font-medium text-ink-muted">Weight for target reps:</div>
                 <div className="grid grid-cols-3 gap-2">
                   {repRanges.map((targetReps) => (
                     <div key={targetReps} className="text-center p-2 bg-charcoal-surface rounded-lg">
-                      <div className="text-xs text-slate-500">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
-                      <div className="font-semibold text-white">
+                      <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
+                      <div className="font-semibold text-ink">
                         {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
                       </div>
                     </div>
@@ -103,7 +103,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
             </div>
           )}
 
-          <p className="text-xs text-slate-500 text-center">
+          <p className="text-xs text-ink-muted text-center">
             Uses Brzycki formula. Most accurate for 1-10 reps.
           </p>
         </CardContent>

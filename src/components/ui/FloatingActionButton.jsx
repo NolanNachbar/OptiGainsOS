@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
 
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", color: "bg-brand", iconColor: "text-black" },
-  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", color: "bg-[rgba(34,197,94,0.1)]", iconColor: "text-white" },
-  { label: "Weigh In", icon: Scale, action: "weighIn", color: "bg-[rgba(245,158,11,0.1)]", iconColor: "text-white" },
-  { label: "Stream Note", icon: Brain, action: "streamNote", color: "bg-[rgba(168,85,247,0.1)]", iconColor: "text-white" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout", color: "bg-brand", iconColor: "text-black" },
-  { label: "Calculators", icon: Calculator, action: "calculators", color: "bg-slate-700", iconColor: "text-white" },
+  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", primary: true },
+  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true" },
+  { label: "Weigh In", icon: Scale, action: "weighIn" },
+  { label: "Stream Note", icon: Brain, action: "streamNote" },
+  { label: "Create Workout", icon: PenLine, path: "/create-workout" },
+  { label: "Calculators", icon: Calculator, action: "calculators" },
 ];
 
 export default function FloatingActionButton({ onWeighIn, onCalculators, onStreamNote }) {
@@ -68,11 +68,17 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                   onClick={() => handleAction(action)}
                   className="flex items-center gap-3"
                 >
-                  <span className="glass text-slate-200 text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
+                  <span className="glass-elevated text-ink text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
                     {action.label}
                   </span>
-                  <div className={`w-12 h-12 ${action.color} ${action.iconColor} rounded-full flex items-center justify-center`}>
-                    <action.icon className="w-5 h-5" />
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center border ${
+                      action.primary
+                        ? "bg-brand text-[var(--color-action-dark)] border-transparent"
+                        : "glass-elevated text-brand border-charcoal-border"
+                    }`}
+                  >
+                    <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
                   </div>
                 </motion.button>
               </div>
@@ -86,7 +92,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
         onClick={() => {
           setIsOpen(!isOpen);
         }}
-        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 bg-brand text-black font-bold rounded-full shadow-xl flex items-center justify-center hover:bg-brand transition-colors"
+        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] text-[var(--color-action-dark)] rounded-full shadow-energy flex items-center justify-center transition-colors bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"

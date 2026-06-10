@@ -19,12 +19,16 @@ except ImportError:
 MUSCLE_GROUPS = [
     "chest", "upper_back", "lats", "quads", "hamstrings",
     "glutes", "shoulders", "triceps", "biceps", "calves", "core",
+    "side_delts", "traps", "neck", "upper_chest", "rear_delts",
 ]
 
 # Default objective weights (higher = prioritised in allocation)
 _DEFAULT_WEIGHTS = {m: 1.0 for m in MUSCLE_GROUPS}
 _DEFAULT_WEIGHTS.update({"chest": 1.4, "quads": 1.3, "lats": 1.2,
-                          "hamstrings": 1.2, "upper_back": 1.2})
+                          "hamstrings": 1.2, "upper_back": 1.2,
+                          # focus muscles (mirrors athlete_profile.MUSCLE_EMPHASIS)
+                          "side_delts": 1.5, "traps": 1.5, "neck": 1.5,
+                          "upper_chest": 1.5, "calves": 1.5, "rear_delts": 1.25})
 
 
 class ProgramSynthesisEngine:

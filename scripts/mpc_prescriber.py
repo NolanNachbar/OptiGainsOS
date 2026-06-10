@@ -387,9 +387,9 @@ def main():
 
     # ── Recent session history from actual logged workouts ───────────────────
     workout_log_rows = sb_get("workout_logs", {
-        "select": "log_date,exercises",
+        "select": "log_date,exercises,notes",
         "order": "log_date.desc",
-        "limit": "7",
+        "limit": "21",
     })
     
     def determine_split_from_log(log: dict) -> str:
@@ -531,10 +531,25 @@ def main():
     banister_state = kalman.state_dict()
     interference   = cellular.state_dict()
 
-    # Retrieve weekly set targets from engine_params or synthesize on-the-fly
-    weekly_set_targets = guardrail_dict.get("synthesis_state", {}).get("weekly_targets")
+    # Plumbing fix (audit defect #3): the LEARNED weekly plan lives in weekly_plans,
+    # written by the allocator off the personalized athlete_landmarks. Read it FIRST
+    # so today's session is built from the SAME targets as the weekly program —
+    # not the retired MILP / second volume engine, which could disagree.
+    week_start = (datetime.date.today()
+                  - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
+    _wp = sb_get("weekly_plans", {
+        "select": "set_targets,week_start", "order": "week_start.desc", "limit": "1"})
+    weekly_set_targets = None
+    if _wp and str(_wp[0].get("week_start")) == week_start:
+        weekly_set_targets = _wp[0].get("set_targets") or None
+        if weekly_set_targets:
+            print(f"  Using LEARNED weekly plan from weekly_plans ({week_start})")
+
+    # Fallbacks: engine_params synthesis_state, then on-the-fly synthesis.
     if not weekly_set_targets:
-        print("  WARN: weekly_targets not found in engine_params. Synthesizing on-the-fly...")
+        weekly_set_targets = guardrail_dict.get("synthesis_state", {}).get("weekly_targets")
+    if not weekly_set_targets:
+        print("  WARN: weekly_targets not found in weekly_plans/engine_params. Synthesizing on-the-fly...")
         try:
             from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
             from engine.program_synthesis  import ProgramSynthesisEngine
@@ -596,6 +611,23 @@ def main():
             from engine.hypertrophy_volume import MUSCLES as MUSCLE_GROUPS
             weekly_set_targets = {m: 12 for m in MUSCLE_GROUPS}
 
+    # Notes caution + learned exercise values so today's session reflects what
+    # Nolan wrote and what's been learned about each movement (matches the weekly
+    # generator). Notes are re-parsed here (cheap, deterministic); values are read
+    # from the posterior the weekly run maintains.
+    from engine.notes_parser import parse_workout_notes
+    _notes = parse_workout_notes(workout_log_rows, today_iso=TODAY)
+    _caution = _notes["caution"]
+    _weakness = _notes["weakness"]   # sticking points → aim assistance
+    _ev_rows = sb_get("athlete_params", {
+        "select": "meta", "param_key": "eq.exercise_values", "limit": "1"})
+    _exercise_values = {
+        n: float(v.get("mean", 0.0))
+        for n, v in ((_ev_rows[0].get("meta") if _ev_rows else None) or {}).items()
+    }
+    if _notes["flags"]:
+        print(f"  Notes signals today: {_notes['flags'][:5]}")
+
     generator    = SessionGenerator()
     # Today's run slot is decided by the weekly plan (adaptive placement); read it so
     # the daily prescription's cardio matches the program instead of recomputing it.
@@ -625,6 +657,9 @@ def main():
         soreness_by_muscle = soreness_by_muscle,
         phase = (today_state.get("nutrition") or {}).get("phase"),
         run_slot = _today_run_slot,
+        exercise_values = _exercise_values,
+        caution = _caution,
+        weakness = _weakness,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

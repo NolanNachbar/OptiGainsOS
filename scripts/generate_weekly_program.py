@@ -43,6 +43,7 @@ from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
 from engine.allocator          import plan_week, default_goal_priorities
+from engine.athlete_profile    import MUSCLE_EMPHASIS
 from engine.hypertrophy_volume import LANDMARK_PRIORS
 from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation
 from engine.controlled_tests   import (
@@ -50,7 +51,10 @@ from engine.controlled_tests   import (
     ramp_target, step_volume_test, should_schedule_pst, schedule_pst_diagnostic,
 )
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
-from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS
+from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS, canon
+from engine.notes_parser         import parse_workout_notes
+from engine.deviation_tracker    import track_deviations
+from engine.learners             import update_exercise_value, exercise_reward
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
 from engine.exploration_manager  import ControlledExplorationManager
 from engine.resource_allocator   import (
@@ -414,7 +418,7 @@ def main():
     # called log_set. Rebuild it from workout_logs each run via the shared
     # log_ingest module (idempotent, single source of truth with audit_strength).
     workout_log_rows = sb_get("workout_logs", {
-        "select": "log_date,exercises",
+        "select": "log_date,exercises,notes",
         "created_by": f"eq.{USER_ID}",
         "order": "log_date.desc", "limit": "365",
     })
@@ -578,7 +582,8 @@ def main():
     # ── Recent cardio TSS (from Garmin runs) ──────────────────────────────────
     cardio_rows = sb_get("garmin_activities", {
         "select": "activity_date,duration_seconds,distance_meters",
-        "activity_type": "eq.running",
+        # treadmill_running / trail_running etc. count as runs too
+        "activity_type": "like.*running*",
         "created_by": f"eq.{USER_ID}",
         "order": "activity_date.desc", "limit": "7",
     })
@@ -690,6 +695,59 @@ def main():
     # Remember which muscles were probed so next week can score their response.
     new_last_explored = list(exploration_delta.keys())
 
+    # ── 5b. Notes + deviations → exercise-value learning ──────────────────────
+    # Read what Nolan WROTE and what he actually DID, and fold both into the
+    # per-exercise value posterior so next week programs the movements he responds
+    # to / reaches for and backs off the ones he flags. Acts fast (a single note
+    # moves things) but a swap is only a one-off vote — repetition is what sticks.
+    notes_signals = parse_workout_notes(workout_log_rows, today_iso=TODAY.isoformat())
+    prescribed_rows = sb_get("program_workouts", {
+        "select": "scheduled_date,exercises", "created_by": f"eq.{USER_ID}",
+        "scheduled_date": f"gte.{(TODAY - datetime.timedelta(days=21)).isoformat()}",
+        "order": "scheduled_date.desc"})
+    deviations = track_deviations(prescribed_rows, workout_log_rows, today_iso=TODAY.isoformat())
+
+    _ev_rows = sb_get("athlete_params", {
+        "select": "*", "created_by": f"eq.{USER_ID}", "param_key": "eq.exercise_values"})
+    ev_meta = ((_ev_rows[0].get("meta") if _ev_rows else None) or {})
+
+    # One reward per exercise touched by any signal this week, then a posterior
+    # update. Guarded by already_ran so a same-week re-run can't double-count.
+    if not already_ran:
+        _ex_history = progression_registry.to_dict().get("history", {})
+        touched = (set(_ex_history)
+                   | set(deviations["chosen"]) | set(deviations["dropped"])
+                   | set(notes_signals["sentiment"]) | set(notes_signals["too_easy"])
+                   | {k for k in notes_signals["caution"] if " " in k or k in _ex_history})
+        for name in touched:
+            hist = _ex_history.get(name, [])
+            slope = compute_trend_slope(hist) if len(hist) >= 3 else None
+            reward = exercise_reward(
+                slope,
+                deviations["chosen"].get(name, 0),
+                deviations["dropped"].get(name, 0),
+                notes_signals["sentiment"].get(name, 0.0),
+                notes_signals["too_easy"].get(name, 0),
+                pain=(name in notes_signals["caution"]),
+            )
+            if reward != 0.0:
+                ev_meta = update_exercise_value(ev_meta, name, reward)
+        sb_upsert("athlete_params", {
+            "created_by": USER_ID, "param_key": "exercise_values",
+            "mean": 0.0, "variance": 1.0,
+            "n_obs": sum(int(v.get("n", 0)) for v in ev_meta.values()),
+            "mature": False, "meta": ev_meta,
+        }, conflict_cols="created_by,param_key")
+
+    # Maps consumed by the session generator: learned value per movement, and the
+    # note-caution dict (keyed by exercise canon + landmark muscle).
+    exercise_values = {name: float(v.get("mean", 0.0)) for name, v in ev_meta.items()}
+    caution = notes_signals["caution"]
+    weakness = notes_signals["weakness"]   # {lift: {region}} → aim assistance
+    note_flags = notes_signals["flags"] + deviations["events"][:4]
+    if note_flags:
+        print(f"  Notes/deviation signals: {note_flags[:6]}")
+
     # ── 6. MILP synthesis ─────────────────────────────────────────────────────
     reserve_score = compute_reserve_score(hrv_z_3d)
 
@@ -735,7 +793,13 @@ def main():
     for m in (MUSCLE_GROUPS if not already_ran else []):
         row = landmarks_db.get(m)
         if not row:
-            continue
+            # Newly added landmark muscle with no DB row yet: seed it from the
+            # priors so it joins the learning loop and volume-test rotation.
+            p = LANDMARK_PRIORS.get(m, {"mev": 6, "mav": 12, "mrv": 18})
+            row = {"mev": p["mev"], "mav": p["mav"], "mrv": p["mrv"],
+                   "mrv_mean": float(p["mrv"]), "mrv_var": 9.0,
+                   "n_obs": 0, "mature": False}
+            landmarks_db[m] = row
         sore_vals = soreness_muscle.get(m, [])
         avg_sore  = (sum(sore_vals) / len(sore_vals)) if sore_vals else 0.0
         upd = update_mrv(row, prev_targets.get(m), perf_slopes.get(m), avg_sore, prior_mrv[m])
@@ -814,11 +878,11 @@ def main():
     # ── 6b. Weekly volume allocator (ADAPTIVE_ENGINE_DESIGN.md §2) ────────────
     # Reads the LEARNED landmarks (fallback to priors), goal-weighted under the
     # recovery budget. Frequency uses learned-mature values where available.
-    if landmarks_db:
-        landmarks_lc = {m: {"mev": float(r["mev"]), "mav": float(r["mav"]), "mrv": float(r["mrv"])}
-                        for m, r in landmarks_db.items()}
-    else:
-        landmarks_lc = {m: dict(LANDMARK_PRIORS[m]) for m in LANDMARK_PRIORS}
+    # Priors for every muscle, overlaid with LEARNED rows where they exist — so a
+    # newly added landmark muscle (no DB row yet) still enters the allocator.
+    landmarks_lc = {m: dict(LANDMARK_PRIORS[m]) for m in LANDMARK_PRIORS}
+    for m, r in (landmarks_db or {}).items():
+        landmarks_lc[m] = {"mev": float(r["mev"]), "mav": float(r["mav"]), "mrv": float(r["mrv"])}
 
     # Active volume-tolerance test → raise the probed muscle's MRV ceiling so the
     # allocator ramps its volume above MAV this week.
@@ -832,10 +896,12 @@ def main():
     pst_mult  = max(1.0, min(1.5, 1.0 + (90 - days_to_deadline) / 180.0))  # [ENG] PST urgency
     deadline_mult = {"strength": 1.0, "hypertrophy": 1.0, "pst": pst_mult}
     goal_prio = profile.get("goal_priorities") or default_goal_priorities(profile.get("training_phase"))
+    emphasis  = profile.get("muscle_emphasis") or MUSCLE_EMPHASIS
     vdot_gap  = float(vdot_zones.get("vdot_gap") or 0.0)
 
     plan = plan_week(landmarks_lc, tsb_now, phase_now, goal_prio, deadline_mult,
-                     days_available=6, vdot_gap=vdot_gap, learned_freq=learned_freq)
+                     days_available=6, vdot_gap=vdot_gap, learned_freq=learned_freq,
+                     muscle_emphasis=emphasis)
     weekly_targets = {m: int(v) for m, v in plan["set_targets"].items()}
 
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
@@ -850,8 +916,9 @@ def main():
         "set_targets": weekly_targets,
         "frequency_targets": plan["frequency_targets"],
         "run_plan": plan["run_plan"],
-        "rationale": (f"budget {plan['budget']} sets; goal_prio {goal_prio}; "
-                      f"pst_mult {pst_mult:.2f}; {matured}/{len(landmarks_db) or len(MUSCLE_GROUPS)} muscles MRV-personalized"),
+        "rationale": (f"budget {plan['budget']} sets; goal_prio {goal_prio}; emphasis {emphasis}; "
+                      f"pst_mult {pst_mult:.2f}; {matured}/{len(landmarks_db) or len(MUSCLE_GROUPS)} muscles MRV-personalized"
+                      + (f"; signals: {'; '.join(note_flags[:4])}" if note_flags else "")),
     }, conflict_cols="created_by,week_start")
 
     # ── 6b. Determine split framework ─────────────────────────────────────────
@@ -929,6 +996,9 @@ def main():
             quad_soreness_avg=quad_soreness_avg,
             split_framework=split_framework,
             run_slot=run_slot,
+            exercise_values=exercise_values,
+            caution=caution,
+            weakness=weakness,
         )
 
         title = build_title(action, split, intensity)

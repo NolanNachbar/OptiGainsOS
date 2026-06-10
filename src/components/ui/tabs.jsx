@@ -26,7 +26,7 @@ const Tabs = ({ value: controlledValue, onValueChange, defaultValue, children, c
 const TabsList = React.forwardRef(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`flex h-10 items-center border-b border-charcoal-border text-slate-500 overflow-x-auto ${className}`}
+    className={`flex h-10 items-center border-b border-charcoal-border text-ink-muted overflow-x-auto ${className}`}
     {...props}
   />
 ));
@@ -42,8 +42,8 @@ const TabsTrigger = React.forwardRef(({ className = "", value, children, ...prop
       onClick={() => onValueChange(value)}
       className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-3 min-h-[44px] text-[13px] font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
         isActive
-          ? 'text-white border-b-2 border-brand'
-          : 'text-slate-500 hover:text-slate-400'
+          ? 'text-ink border-b-2 border-brand'
+          : 'text-ink-muted hover:text-ink-muted'
       } ${className}`}
       {...props}
     >

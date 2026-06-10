@@ -78,7 +78,10 @@ export function useWorkoutExercises(initialExercises = []) {
     });
   }, []);
 
-  const addExercise = useCallback((exerciseName) => {
+  // defaultWeight: callers already pass the athlete's last-performance /
+  // insight weight; the parameter was silently dropped here, seeding every
+  // first set at 0 lb.
+  const addExercise = useCallback((exerciseName, defaultWeight = 0) => {
     if (!exerciseName?.trim()) {
       toast.error("Please enter an exercise name");
       return false;
@@ -90,7 +93,7 @@ export function useWorkoutExercises(initialExercises = []) {
       sets: [{
         set_number: 1,
         reps: 0,
-        weight: 0,
+        weight: Number(defaultWeight) || 0,
         completed: false,
       }],
     };

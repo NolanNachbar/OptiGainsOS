@@ -31,7 +31,7 @@ export default function ProgramCard({ program, enrollment }) {
     >
       <Link to={`/program/${program.id}`}>
         <div
-          className="group relative overflow-hidden rounded-xl border-l-4 bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-elevated transition-all duration-200 cursor-pointer"
+          className="group relative overflow-hidden glass glass-interactive border-l-2 cursor-pointer"
           style={{ borderLeftColor: 'var(--color-brand)' }}
         >
           <div className="px-5 pt-4 pb-2">
@@ -45,18 +45,18 @@ export default function ProgramCard({ program, enrollment }) {
               )}
             </div>
 
-            <h3 className="text-base font-bold text-white group-hover:text-brand transition-colors mb-1">
+            <h3 className="text-base font-bold text-ink group-hover:text-brand transition-colors mb-1">
               {program.name}
             </h3>
             {program.description && (
-              <p className="text-xs text-slate-500 line-clamp-2 mb-3">{program.description}</p>
+              <p className="text-xs text-ink-muted line-clamp-2 mb-3">{program.description}</p>
             )}
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="h-1 bg-charcoal-elevated rounded-full overflow-hidden mb-3">
+              <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-brand rounded-full"
+                  className="h-full bg-teal rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -68,27 +68,27 @@ export default function ProgramCard({ program, enrollment }) {
             {enrollment ? (
               <>
                 <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Progress</span>
-                  <span className="text-lg font-bold tabular-nums text-white mt-0.5">{progressPercent}%</span>
+                  <span className="section-label">Progress</span>
+                  <span className="font-technical text-lg font-bold text-teal mt-0.5">{progressPercent}%</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{positionLabel ? 'Position' : 'Cycle'}</span>
-                  <span className="text-lg font-bold tabular-nums text-white mt-0.5">{positionLabel || `${frequencyLabel}`}</span>
+                <div className="flex-1 flex flex-col border-l hairline pl-4">
+                  <span className="section-label">{positionLabel ? 'Position' : 'Cycle'}</span>
+                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{positionLabel || `${frequencyLabel}`}</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sessions</span>
-                  <span className="text-lg font-bold tabular-nums text-white mt-0.5">{completedCount} / {totalWorkouts}</span>
+                <div className="flex-1 flex flex-col border-l hairline pl-4">
+                  <span className="section-label">Sessions</span>
+                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{completedCount} / {totalWorkouts}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Cycle</span>
-                  <span className="text-lg font-bold tabular-nums text-white mt-0.5">{durationLabel}</span>
+                  <span className="section-label">Cycle</span>
+                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{durationLabel}</span>
                 </div>
-                <div className="flex-1 flex flex-col border-l border-charcoal-border pl-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Length</span>
-                  <span className="text-lg font-bold tabular-nums text-white mt-0.5">{frequencyLabel}</span>
+                <div className="flex-1 flex flex-col border-l hairline pl-4">
+                  <span className="section-label">Length</span>
+                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{frequencyLabel}</span>
                 </div>
               </>
             )}

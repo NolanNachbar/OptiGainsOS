@@ -7,6 +7,7 @@ import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { calculateMacros, getDailyCalorieTrend, getRecentFoods, UNIT_TO_GRAMS } from "@/utils/nutritionUtils";
 import { calculateMacroSplit, getBestTDEE, calculatePhaseCalories } from "@/utils/coachingUtils";
 import { useDietPhase } from "@/hooks/useDietPhase";
+import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { DEFAULT_GOALS } from "@/lib/constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,8 @@ export default function FoodTracker() {
   // Set when a USDA/barcode food is selected — stores the food's serving size in grams
   // so "serving" unit scales correctly. Null for manual/custom/recent foods.
   const [foodServingSizeGrams, setFoodServingSizeGrams] = useState(null);
+  // Human-readable serving equivalence, e.g. "1 serving = 55 g · 2/3 cup (55g)".
+  const [servingHint, setServingHint] = useState(null);
   // True when the selected food came from USDA/barcode (baseMacros = per 100g).
   // False for manual entry and custom/recent foods (baseMacros = per 1 unit).
   const [isUsdaFood, setIsUsdaFood] = useState(false);
@@ -209,6 +212,9 @@ export default function FoodTracker() {
   const { profile } = useProfile();
   const { weightEntries } = useBodyWeightEntries();
   const { activePhase, phaseHistory } = useDietPhase();
+  // The day's targets — engine recovery-gated when available, else profile
+  // goals. Same source the weekly plan card scales to, so they always agree.
+  const targets = useDailyTargets(selectedDate);
   const [goalForm, setGoalForm] = useState({
     daily_calorie_goal: DEFAULT_GOALS.calories,
     daily_protein_goal: DEFAULT_GOALS.protein,
@@ -608,6 +614,7 @@ const handleSaveMealTemplate = () => {
     };
     setIsUsdaFood(false);
     setFoodServingSizeGrams(null);
+    setServingHint(null);
     setBaseMacros(baseMacroValues);
     setNewFood({
       food_name: entry.food_name,
@@ -637,6 +644,7 @@ const handleSaveMealTemplate = () => {
     });
     setBaseMacros({ calories: 0, protein_grams: 0, carbs_grams: 0, fats_grams: 0 });
     setFoodServingSizeGrams(null);
+    setServingHint(null);
     setIsUsdaFood(false);
     setSearchQuery("");
     setGenericResults([]); setBrandedResults([]);
@@ -651,20 +659,29 @@ const handleSaveMealTemplate = () => {
       carbs_grams: Math.round(food.carbs * 10) / 10,
       fats_grams: Math.round(food.fats * 10) / 10,
     };
-    // Default unit: ml for liquids, otherwise g
-    const unit = food.servingSizeUnit?.toLowerCase() === 'ml' ? 'ml' : 'g';
-    // Default amount = food's actual serving size from the database
+    // MacroFactor-style defaults: when the food has a real serving size,
+    // start at "1 serving" (the hint shows its gram equivalent + household
+    // text like "2/3 cup (55g)"). Without one, fall back to 100 g/ml.
+    const hasRealServing = !!food.servingSize;
     const servingG = food.servingSize || 100;
-    const initialScale = servingG / 100;
+    const fallbackUnit = food.servingSizeUnit === 'ml' ? 'ml' : 'g';
+    const unit = hasRealServing ? 'serving' : fallbackUnit;
+    const amount = hasRealServing ? 1 : 100;
+    const initialScale = (hasRealServing ? servingG : 100) / 100;
 
     setFoodServingSizeGrams(servingG);
+    setServingHint(
+      hasRealServing
+        ? `1 serving = ${Math.round(servingG)} ${food.servingSizeUnit || 'g'}${food.householdServing ? ` · ${food.householdServing}` : ''}`
+        : null
+    );
     setIsUsdaFood(true);
     setBaseMacros(baseMacroValues);
     setNewFood({
       ...newFood,
       food_name: food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
       serving_unit: unit,
-      serving_amount: servingG,
+      serving_amount: amount,
       calories: Math.round(baseMacroValues.calories * initialScale),
       protein_grams: Math.round(baseMacroValues.protein_grams * initialScale * 10) / 10,
       carbs_grams: Math.round(baseMacroValues.carbs_grams * initialScale * 10) / 10,
@@ -700,16 +717,16 @@ const handleSaveMealTemplate = () => {
     if (compact) {
       return (
         <div className="flex flex-col items-center">
-          <div className="text-xs text-slate-400 mb-2">{label}</div>
+          <div className="text-xs text-ink-muted mb-2">{label}</div>
           <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
             <svg width={size} height={size}>
               <circle
                 cx={size / 2} cy={size / 2} r={radius}
-                stroke="#2a2a2a" strokeWidth={strokeWidth} fill="none"
+                stroke="var(--color-border)" strokeWidth={strokeWidth} fill="none"
               />
               <circle
                 cx={size / 2} cy={size / 2} r={radius}
-                stroke={isOver ? "#ef4444" : ringColor}
+                stroke={isOver ? "var(--bad)" : ringColor}
                 strokeWidth={strokeWidth} fill="none"
                 strokeDasharray={`${progressLength} ${circumference - progressLength}`}
                 strokeLinecap="round"
@@ -721,15 +738,15 @@ const handleSaveMealTemplate = () => {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-white ">{Math.round(percentage)}%</span>
+              <span className="text-xs font-bold text-ink ">{Math.round(percentage)}%</span>
             </div>
           </div>
           <div className="mt-2 text-center">
-            <div className={`text-lg font-bold ${isOver ? "text-[#f87171]" : "text-white"}`}>
+            <div className={`text-lg font-bold ${isOver ? "text-bad" : "text-ink"}`}>
               {Math.abs(remaining)}{unit}
             </div>
-            <div className="text-xs text-slate-500">{isOver ? "over" : "left"}</div>
-            <div className="text-xs text-slate-400 mt-0.5">
+            <div className="text-xs text-ink-muted">{isOver ? "over" : "left"}</div>
+            <div className="text-xs text-ink-muted mt-0.5">
               {Math.round(value)} / {goal}{unit}
             </div>
           </div>
@@ -740,17 +757,17 @@ const handleSaveMealTemplate = () => {
     return (
       <Card className="">
         <CardContent className="pt-6">
-          <div className="text-sm text-slate-400 mb-3">{label}</div>
+          <div className="text-sm text-ink-muted mb-3">{label}</div>
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
               <svg width={size} height={size}>
                 <circle
                   cx={size / 2} cy={size / 2} r={radius}
-                  stroke="#2a2a2a" strokeWidth={strokeWidth} fill="none"
+                  stroke="var(--color-border)" strokeWidth={strokeWidth} fill="none"
                 />
                 <circle
                   cx={size / 2} cy={size / 2} r={radius}
-                  stroke={isOver ? "#ef4444" : ringColor}
+                  stroke={isOver ? "var(--bad)" : ringColor}
                   strokeWidth={strokeWidth} fill="none"
                   strokeDasharray={`${progressLength} ${circumference - progressLength}`}
                   strokeLinecap="round"
@@ -762,15 +779,15 @@ const handleSaveMealTemplate = () => {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-white ">{Math.round(percentage)}%</span>
+                <span className="text-xs font-bold text-ink ">{Math.round(percentage)}%</span>
               </div>
             </div>
             <div>
-              <div className={`text-2xl font-bold ${isOver ? "text-[#f87171]" : "text-white"}`}>
+              <div className={`text-2xl font-bold ${isOver ? "text-bad" : "text-ink"}`}>
                 {Math.abs(remaining)}{unit}
               </div>
-              <div className="text-xs text-slate-500">{isOver ? "over" : "remaining"}</div>
-              <div className="text-xs text-slate-400 mt-0.5">
+              <div className="text-xs text-ink-muted">{isOver ? "over" : "remaining"}</div>
+              <div className="text-xs text-ink-muted mt-0.5">
                 {Math.round(value)} / {goal}{unit}
               </div>
             </div>
@@ -796,14 +813,14 @@ const handleSaveMealTemplate = () => {
 
 
   return (
-    <div className="bg-charcoal text-white min-h-screen">
+    <div className="bg-charcoal text-ink min-h-screen">
 
       {/* Date navigation + action bar */}
       <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-charcoal/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => changeDate(-1)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-charcoal-surface transition-colors"
+            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -811,17 +828,17 @@ const handleSaveMealTemplate = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-none text-sm font-semibold text-white focus:outline-none cursor-pointer font-mono"
+            className="bg-transparent border-none text-sm font-semibold text-ink focus:outline-none cursor-pointer font-mono"
           />
           <button
             onClick={() => changeDate(1)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-charcoal-surface transition-colors"
+            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-            className="text-xs text-slate-500 hover:text-brand transition-colors ml-1 hidden sm:block"
+            className="text-xs text-ink-muted hover:text-brand transition-colors ml-1 hidden sm:block"
           >
             Today
           </button>
@@ -855,77 +872,108 @@ const handleSaveMealTemplate = () => {
         <div className="flex-1 min-w-0">
           <div className="max-w-3xl mx-auto px-3 py-3 space-y-3.5">
 
-            {/* Calorie ring + macro progress bars */}
+            {/* Gold kcal ring + hue-coded P/C/F bars */}
             {(() => {
               const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
               const calsConsumed = totals.calories;
-              const calsGoal = profile?.daily_calorie_goal || 2000;
+              const calsGoal = targets.calories;
               const calsRemaining = calsGoal - calsConsumed;
               const calsPct = Math.min(1, calsConsumed / calsGoal);
               const macroRows = [
-                { label: 'Protein', consumed: totals.protein, goal: profile?.daily_protein_goal || 150, unit: 'g', barColor: 'bg-sky-400', textColor: 'text-sky-400' },
-                { label: 'Carbohydrates', consumed: totals.carbs, goal: profile?.daily_carbs_goal || 200, unit: 'g', barColor: 'bg-amber-500', textColor: 'text-amber-500' },
-                { label: 'Dietary Fats', consumed: totals.fats, goal: profile?.daily_fats_goal || 65, unit: 'g', barColor: 'bg-emerald-500', textColor: 'text-emerald-500' },
+                { label: 'P', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
+                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
+                { label: 'F', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
               ];
               return (
-                <div className="flex items-center gap-5 md:gap-8 p-5 rounded-xl border border-charcoal-border bg-charcoal-surface shadow-dark-card" data-tutorial="nutrition-rings">
-                  {/* Calorie ring */}
-                  <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
-                    <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="50" cy="50" r="40" stroke="#161622" strokeWidth="6" fill="transparent" />
-                      <circle
-                        cx="50" cy="50" r="40"
-                        stroke={calsConsumed > calsGoal ? '#f43f5e' : 'var(--color-brand)'}
-                        strokeWidth="6"
-                        fill="transparent"
-                        strokeDasharray={`${calsPct * (2 * Math.PI * 40)} ${2 * Math.PI * 40}`}
-                        strokeLinecap="round"
-                        style={{ transition: 'stroke-dasharray 0.5s ease' }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="font-technical text-2xl font-bold leading-none text-white">
-                        {isToday ? Math.abs(Math.round(calsRemaining)) : Math.round(calsConsumed)}
-                      </span>
-                      <span className="text-[8px] font-bold text-slate-500 uppercase mt-1 tracking-widest leading-none">
-                        {isToday ? (calsRemaining < 0 ? 'over' : 'remaining') : 'consumed'}
-                      </span>
-                    </div>
+                <div className="glass px-4 sm:px-5 py-4 rise-in" data-tutorial="nutrition-rings">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="section-label flex items-center gap-1.5">
+                      Daily log
+                      {targets.engineSet && (
+                        <span className="text-[9px] font-extrabold tracking-wider text-teal bg-teal/10 rounded-[7px] px-1.5 py-0.5 normal-tracking">
+                          ENGINE-SET
+                        </span>
+                      )}
+                    </span>
+                    <span className="chip-gold">
+                      {isToday
+                        ? (calsRemaining < 0 ? `${Math.abs(Math.round(calsRemaining))} kcal over` : `${Math.round(calsRemaining)} kcal left`)
+                        : `${Math.round(calsConsumed)} kcal eaten`}
+                    </span>
                   </div>
-                  {/* Macro bars */}
-                  <div className="flex-1 space-y-3.5 min-w-0">
-                    {macroRows.map(({ label, consumed, goal, unit, barColor, textColor }) => {
-                      const pct = goal > 0 ? Math.min(100, Math.round((consumed / goal) * 100)) : 0;
-                      return (
-                        <div key={label} className="space-y-1">
-                          <div className="flex justify-between items-end gap-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{label}</span>
-                            {isToday ? (
-                              <span className={`font-technical text-xs font-semibold shrink-0 ${textColor}`}>{Math.round(consumed)}<span className="text-[10px] text-slate-500 font-normal">/{goal}{unit}</span></span>
-                            ) : (
-                              <span className={`font-technical text-xs font-semibold shrink-0 ${textColor}`}>{Math.round(consumed)}{unit}</span>
-                            )}
-                          </div>
-                          {isToday && (
-                            <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                              <div className={`${barColor} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                  <div className="flex items-center gap-5 md:gap-8">
+                    {/* Calorie ring — kcal owns gold */}
+                    <div className="relative shrink-0" style={{ width: 92, height: 92 }}>
+                      <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="46" cy="46" r="38" stroke="rgba(255,255,255,0.09)" strokeWidth="7" fill="transparent" />
+                        <circle
+                          cx="46" cy="46" r="38"
+                          stroke={calsConsumed > calsGoal ? 'var(--bad)' : 'var(--hue-gold)'}
+                          strokeWidth="7"
+                          fill="transparent"
+                          strokeDasharray={`${calsPct * (2 * Math.PI * 38)} ${2 * Math.PI * 38}`}
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="font-technical text-[22px] font-extrabold leading-none text-ink">
+                          {Math.round(calsConsumed)}
+                        </span>
+                        <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
+                          of {calsGoal}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Macro bars — each macro owns one hue */}
+                    <div className="flex-1 space-y-[9px] min-w-0">
+                      {macroRows.map(({ label, consumed, goal, hue }) => {
+                        const pct = goal > 0 ? Math.min(100, Math.round((consumed / goal) * 100)) : 0;
+                        return (
+                          <div key={label} className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-muted-2 w-3.5 shrink-0">{label}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: hue }} />
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap shrink-0">
+                              {Math.round(consumed)}<span className="opacity-60">/{goal}g</span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );
             })()}
+
+            {/* Quick actions — Search / Barcode / Recipes / Templates */}
+            <div className="grid grid-cols-4 gap-[7px]">
+              {[
+                { label: 'Search', icon: Search, onClick: () => { resetForm(); setShowAddDialog(true); } },
+                { label: 'Barcode', icon: Camera, onClick: () => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); } },
+                { label: 'Recipes', icon: BookOpen, onClick: () => setShowRecipesPanel(true) },
+                { label: 'Templates', icon: Bookmark, onClick: () => { setSidebarTab('templates'); document.getElementById('fuel-templates-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+              ].map(({ label, icon: Icon, onClick }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  className="h-9 rounded-[12px] bg-white/[0.05] border-[0.5px] border-white/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-ink-muted hover:text-ink hover:bg-white/[0.08] transition-colors whitespace-nowrap"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
  
  
             {/* Planned (meal-plan) items waiting to be checked off */}
             {plannedCount > 0 && (
-              <div className="mb-3 flex items-center gap-2.5 rounded-xl glass px-4 py-2.5 text-xs">
-                <span className="w-5 h-5 rounded-full border-2 border-brand/50 shrink-0" />
-                <span className="text-slate-300">
-                  <span className="text-brand font-semibold">{plannedCount} planned item{plannedCount !== 1 ? 's' : ''}</span> from your weekly plan — tap the circle to check each off as you eat it.
+              <div className="mb-3 flex items-center gap-2.5 glass px-4 py-2.5 text-xs">
+                <span className="w-5 h-5 rounded-full border-[1.5px] border-white/[0.18] shrink-0" />
+                <span className="text-ink-secondary">
+                  <span className="text-leaf font-semibold">{plannedCount} planned item{plannedCount !== 1 ? 's' : ''}</span> from your weekly plan — tap the circle to check each off as you eat it.
                 </span>
               </div>
             )}
@@ -942,25 +990,25 @@ const handleSaveMealTemplate = () => {
                 const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
                 const hasEntries = entries.length > 0;
                 return (
-                  <section key={mealType} className="rounded-xl bg-charcoal-surface border border-charcoal-border overflow-hidden shadow-dark-card transition-all duration-300 hover:border-slate-800">
+                  <section key={mealType} className="glass overflow-hidden">
                     {/* Meal header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-border">
+                    <div className="flex items-center justify-between px-4 py-3 border-b hairline">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-brand' : 'bg-slate-800'}`} />
-                        <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">{label}</h3>
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-leaf' : 'bg-white/[0.12]'}`} />
+                        <h3 className="section-label tracking-[0.12em]">{label}</h3>
                       </div>
                       <div className="flex items-center gap-2.5">
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
-                            className="text-slate-500 hover:text-brand transition-colors"
+                            className="text-ink-muted hover:text-brand transition-colors"
                             title="Save as template"
                           >
                             <Bookmark className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <span className="font-technical text-sm font-bold text-slate-300">
-                          {mealCals} <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-0.5">kcal</span>
+                        <span className="pill-value font-technical text-ink">
+                          {mealCals} <span className="text-[9.5px] font-semibold text-ink-muted">kcal</span>
                         </span>
                       </div>
                     </div>
@@ -971,7 +1019,7 @@ const handleSaveMealTemplate = () => {
                         {entries.map((entry, i) => (
                           <div
                             key={entry.id}
-                            className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b border-charcoal-border/30 hover:bg-charcoal-surface2/60 transition-colors group ${entry.planned ? 'border-l-2 border-l-brand/50 bg-brand/[3%]' : i % 2 === 1 ? 'bg-charcoal-surface2/10' : ''}`}
+                            className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b hairline hover:bg-white/[0.03] transition-colors group ${entry.planned ? 'bg-white/[0.02]' : i % 2 === 1 ? 'bg-white/[0.015]' : ''}`}
                           >
                             <div className="col-span-6 md:col-span-7 flex items-center gap-2.5 min-w-0">
                               {entry.planned && (
@@ -979,20 +1027,20 @@ const handleSaveMealTemplate = () => {
                                   onClick={() => togglePlannedMutation.mutate(entry.id)}
                                   title="Mark as eaten"
                                   aria-label="Mark as eaten"
-                                  className="shrink-0 w-5 h-5 rounded-full border-2 border-brand/50 text-brand flex items-center justify-center hover:bg-brand/20 hover:border-brand transition-colors"
+                                  className="shrink-0 w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-[rgba(123,201,111,0.18)] hover:border-leaf/60 transition-colors"
                                 />
                               )}
                               <div className="flex flex-col min-w-0 justify-center">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className={`text-sm font-semibold tracking-tight truncate ${entry.planned ? 'text-slate-400' : 'text-white'}`}>{entry.food_name}</span>
+                                  <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
                                   {entry.tag && (
-                                    <span className={`shrink-0 text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${entry.tag === 'pre' ? 'text-sky-300 bg-sky-500/15' : 'text-emerald-300 bg-emerald-500/15'}`}>
+                                    <span className={`shrink-0 text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${entry.tag === 'pre' ? 'text-carb bg-carb/15' : 'text-leaf bg-leaf/15'}`}>
                                       {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
                                     </span>
                                   )}
                                 </div>
                                 {entry.serving_size != null && (
-                                  <span className={`text-[10px] font-technical mt-0.5 font-medium ${entry.planned ? 'text-slate-600' : 'text-brand'}`}>
+                                  <span className={`text-[10px] font-technical mt-0.5 font-semibold ${entry.planned ? 'text-ink-faint' : 'text-ink-muted'}`}>
                                     {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}
                                   </span>
                                 )}
@@ -1000,34 +1048,34 @@ const handleSaveMealTemplate = () => {
                             </div>
                             <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>
                               <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-white">{entry.calories}</span>
-                                <span className="text-[8px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-0.5">Cal</span>
+                                <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
+                                <span className="text-[8px] uppercase text-ink-muted font-bold tracking-wider leading-none mt-0.5">Cal</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-sky-400">{entry.protein_grams}</span>
-                                <span className="text-[8px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-0.5">Pro</span>
+                                <span className="font-technical text-xs font-bold text-coral">{entry.protein_grams}</span>
+                                <span className="text-[8px] uppercase text-ink-muted font-bold tracking-wider leading-none mt-0.5">Pro</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-amber-500">{entry.carbs_grams}</span>
-                                <span className="text-[8px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-0.5">Car</span>
+                                <span className="font-technical text-xs font-bold text-carb">{entry.carbs_grams}</span>
+                                <span className="text-[8px] uppercase text-ink-muted font-bold tracking-wider leading-none mt-0.5">Car</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-emerald-500">{entry.fats_grams}</span>
-                                <span className="text-[8px] uppercase text-slate-500 font-bold tracking-wider leading-none mt-0.5">Fat</span>
+                                <span className="font-technical text-xs font-bold text-fat">{entry.fats_grams}</span>
+                                <span className="text-[8px] uppercase text-ink-muted font-bold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEditEntry(entry)} className="p-1 text-slate-500 hover:text-brand transition-colors">
+                              <button onClick={() => startEditEntry(entry)} className="p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-1 text-slate-500 hover:text-rose-500 transition-colors">
+                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-1 text-ink-muted hover:text-bad transition-colors">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
                         ))}
                         <button
-                          className="w-full py-2.5 flex items-center justify-center gap-1.5 text-slate-400 hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
+                          className="w-full py-2.5 flex items-center justify-center gap-1.5 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
                           onClick={() => {
                             setNewFood(prev => ({ ...prev, meal_type: mealType }));
                             setShowAddDialog(true);
@@ -1039,14 +1087,14 @@ const handleSaveMealTemplate = () => {
                       </>
                     ) : (
                       <button
-                        className="w-full py-4 flex items-center justify-center gap-2 text-slate-500 hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
+                        className="w-full py-4 flex items-center justify-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
                         onClick={() => {
                           setNewFood(prev => ({ ...prev, meal_type: mealType }));
                           setShowAddDialog(true);
                         }}
                       >
-                        <Plus className="w-3.5 h-3.5 text-slate-600 group-hover:text-brand" />
-                        <span className="text-xs font-bold tracking-widest uppercase text-slate-500 group-hover:text-brand">Add Item</span>
+                        <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand" />
+                        <span className="text-xs font-bold tracking-widest uppercase text-ink-muted group-hover:text-brand">Add Item</span>
                       </button>
                     )}
                   </section>
@@ -1059,7 +1107,7 @@ const handleSaveMealTemplate = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); }}
-                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 text-slate-500 hover:text-brand hover:border-brand/40 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 text-ink-muted hover:text-brand hover:border-brand/40 transition-all"
                 >
                   <Save className="w-3.5 h-3.5" />
                   Save Day as Template
@@ -1068,25 +1116,25 @@ const handleSaveMealTemplate = () => {
             )}
 
             {/* Mobile: sidebar content shown below meals */}
-            <div className="lg:hidden space-y-4 pt-2">
+            <div id="fuel-templates-panel" className="lg:hidden space-y-4 pt-2">
               {/* Goals card */}
-              <div className="rounded-xl border border-charcoal-border bg-charcoal-surface p-4 shadow-dark-card">
+              <div className="glass p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold tracking-widest text-brand uppercase">NUTRITION GOALS</span>
-                  <button onClick={() => setShowGoalsModal(true)} className="text-slate-400 hover:text-white transition-colors">
+                  <span className="section-label">Nutrition goals</span>
+                  <button onClick={() => setShowGoalsModal(true)} className="text-ink-muted hover:text-ink transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-y-2 gap-x-4">
                   {[
-                    { label: 'Calories', value: profile?.daily_calorie_goal || 2000, unit: 'kcal' },
-                    { label: 'Protein', value: profile?.daily_protein_goal || 150, unit: 'g' },
-                    { label: 'Carbs', value: profile?.daily_carbs_goal || 200, unit: 'g' },
-                    { label: 'Fats', value: profile?.daily_fats_goal || 65, unit: 'g' },
+                    { label: 'Calories', value: targets.calories, unit: 'kcal' },
+                    { label: 'Protein', value: targets.protein, unit: 'g' },
+                    { label: 'Carbs', value: targets.carbs, unit: 'g' },
+                    { label: 'Fats', value: targets.fats, unit: 'g' },
                   ].map(({ label, value, unit }) => (
                     <div key={label} className="flex justify-between items-center">
-                      <span className="text-xs text-slate-400 uppercase font-bold">{label}</span>
-                      <span className="font-technical text-xs font-bold text-white">{value}<span className="opacity-50 font-normal ml-0.5 text-xs">{unit}</span></span>
+                      <span className="text-xs text-ink-muted uppercase font-bold">{label}</span>
+                      <span className="font-technical text-xs font-bold text-ink">{value}<span className="opacity-50 font-normal ml-0.5 text-xs">{unit}</span></span>
                     </div>
                   ))}
                 </div>
@@ -1094,7 +1142,7 @@ const handleSaveMealTemplate = () => {
               <MealTemplates compact />
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">Recipes</span>
+                  <span className="text-xs font-bold tracking-widest text-ink-muted uppercase">Recipes</span>
                   <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-xs font-bold text-brand uppercase tracking-widest">
                     <Plus className="w-3 h-3" />New
                   </button>
@@ -1103,10 +1151,10 @@ const handleSaveMealTemplate = () => {
               </div>
               <MealPlanIdeas
                 allFoodEntries={allFoodEntries}
-                calorieGoal={profile?.daily_calorie_goal}
-                proteinGoal={profile?.daily_protein_goal}
-                carbsGoal={profile?.daily_carbs_goal}
-                fatsGoal={profile?.daily_fats_goal}
+                calorieGoal={targets.calories}
+                proteinGoal={targets.protein}
+                carbsGoal={targets.carbs}
+                fatsGoal={targets.fats}
               />
             </div>
 
@@ -1122,83 +1170,83 @@ const handleSaveMealTemplate = () => {
           <div className="shrink-0 p-4 space-y-3 border-b border-charcoal-border">
 
             {/* 7-day trend — always visible at top */}
-            <div className="rounded-xl border border-charcoal-border bg-charcoal-surface px-3 pt-3 pb-1">
-              <div className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-1">7-Day Trend</div>
+            <div className="glass px-3 pt-3 pb-1">
+              <div className="section-label mb-1">7-Day Trend</div>
               {calorieTrend.some(d => d.calories > 0) ? (
                 <div className="w-full">
                   <ResponsiveContainer width="100%" height={112}>
                     <LineChart data={calorieTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: "rgba(242,244,247,0.45)" }} axisLine={false} tickLine={false} />
                       <YAxis hide domain={['auto', 'auto']} />
                       <Tooltip
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="glass glass-interactive rounded-lg px-2.5 py-1.5 shadow text-xs text-slate-400 space-y-0.5">
+                            <div className="glass glass-interactive rounded-lg px-2.5 py-1.5 shadow text-xs text-ink-muted space-y-0.5">
                               <p className="font-semibold">{d.label}</p>
-                              <p className="text-brand">{d.calories} cal eaten</p>
-                              {d.goal > 0 && <p className="text-slate-400">Goal: {d.goal} cal</p>}
+                              <p className="text-gold font-technical">{d.calories} cal eaten</p>
+                              {d.goal > 0 && <p className="text-ink-muted">Goal: {d.goal} cal</p>}
                             </div>
                           );
                         }}
                       />
                       {/* Per-day goal as a dashed line */}
-                      <Line type="monotone" dataKey="goal" stroke="#4b5563" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
-                      <Line type="monotone" dataKey="calories" stroke="var(--color-brand)" strokeWidth={2} dot={{ fill: "var(--color-brand)", r: 2.5 }} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="goal" stroke="rgba(242,244,247,0.25)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                      <Line type="monotone" dataKey="calories" stroke="var(--hue-gold)" strokeWidth={2} dot={{ fill: "var(--hue-gold)", r: 2.5 }} activeDot={{ r: 4 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="h-16 flex items-center justify-center text-xs text-slate-400">
+                <div className="h-16 flex items-center justify-center text-xs text-ink-muted">
                   Log food for a few days to see your trend
                 </div>
               )}
             </div>
 
             {/* Goals card with phase info */}
-            <div className="rounded-xl border border-charcoal-border bg-charcoal-surface p-4 relative overflow-hidden">
+            <div className="glass p-4 relative overflow-hidden">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold tracking-widest text-brand uppercase">Nutrition Goals</span>
+                  <span className="section-label">Nutrition Goals</span>
                   {activePhase && (
                     <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                      activePhase.phase_type === 'cut'     ? 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
-                      : activePhase.phase_type === 'bulk'  ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]'
-                      : 'bg-charcoal-elevated text-slate-400 bg-charcoal-elevated text-slate-400'
+                      activePhase.phase_type === 'cut'     ? 'bg-info/10 text-info'
+                      : activePhase.phase_type === 'bulk'  ? 'bg-ok/10 text-ok'
+                      : 'bg-charcoal-elevated text-ink-muted'
                     }`}>
                       {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
-                      {' '}·{' '}
-                      {activePhase.phase_type === 'reverse'
-                        ? `+${activePhase.weekly_rate} cal/wk`
-                        : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
+                      {activePhase.weekly_rate != null && (
+                        activePhase.phase_type === 'reverse'
+                          ? ` · +${activePhase.weekly_rate} cal/wk`
+                          : ` · ${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`
+                      )}
                     </span>
                   )}
                 </div>
-                <button onClick={() => setShowGoalsModal(true)} className="text-slate-400 hover:text-white transition-colors">
+                <button onClick={() => setShowGoalsModal(true)} className="text-ink-muted hover:text-ink transition-colors">
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                 {[
-                  { label: 'Calories', value: profile?.daily_calorie_goal || 2000, unit: 'kcal' },
-                  { label: 'Protein',  value: profile?.daily_protein_goal  || 150,  unit: 'g' },
-                  { label: 'Carbs',    value: profile?.daily_carbs_goal    || 200,  unit: 'g' },
-                  { label: 'Fats',     value: profile?.daily_fats_goal     || 65,   unit: 'g' },
+                  { label: 'Calories', value: targets.calories, unit: 'kcal' },
+                  { label: 'Protein',  value: targets.protein,  unit: 'g' },
+                  { label: 'Carbs',    value: targets.carbs,    unit: 'g' },
+                  { label: 'Fats',     value: targets.fats,     unit: 'g' },
                 ].map(({ label, value, unit }) => (
                   <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 uppercase font-semibold">{label}</span>
-                    <span className="font-technical text-xs font-bold text-white">{value}<span className="opacity-40 font-normal ml-0.5 text-xs">{unit}</span></span>
+                    <span className="text-xs text-ink-muted uppercase font-semibold">{label}</span>
+                    <span className="font-technical text-xs font-bold text-ink">{value}<span className="opacity-40 font-normal ml-0.5 text-xs">{unit}</span></span>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => !tdee.tdee ? setShowStatsModal(true) : setShowGoalsModal(true)}
-                className="mt-3 w-full py-1.5 border border-dashed border-charcoal-border rounded-lg text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-brand hover:text-brand hover:border-brand/40 transition-all"
+                className="mt-3 w-full py-1.5 border border-dashed border-charcoal-border rounded-lg text-xs font-bold uppercase tracking-widest text-ink-muted hover:text-brand hover:text-brand hover:border-brand/40 transition-all"
               >
                 {!tdee.tdee ? 'Set up TDEE' : 'Edit Goals'}
               </button>
-              <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-brand/[5%] rounded-full blur-2xl pointer-events-none" />
             </div>
 
           </div>
@@ -1216,7 +1264,7 @@ const handleSaveMealTemplate = () => {
                 className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
                   sidebarTab === tab.id
                     ? 'border-brand/30 text-brand'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-ink-muted hover:text-ink'
                 }`}
               >
                 {tab.label}
@@ -1245,10 +1293,10 @@ const handleSaveMealTemplate = () => {
             {sidebarTab === 'ideas' && (
               <MealPlanIdeas
                 allFoodEntries={allFoodEntries}
-                calorieGoal={profile?.daily_calorie_goal}
-                proteinGoal={profile?.daily_protein_goal}
-                carbsGoal={profile?.daily_carbs_goal}
-                fatsGoal={profile?.daily_fats_goal}
+                calorieGoal={targets.calories}
+                proteinGoal={targets.protein}
+                carbsGoal={targets.carbs}
+                fatsGoal={targets.fats}
               />
             )}
           </div>
@@ -1285,7 +1333,7 @@ const handleSaveMealTemplate = () => {
                   <Label htmlFor="search">Search USDA Database</Label>
                   <div className="flex gap-2 mt-1">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                       <Input
                         id="search"
                         ref={searchRef}
@@ -1295,13 +1343,13 @@ const handleSaveMealTemplate = () => {
                         className="pl-10 pr-3"
                       />
                       {isSearching && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted animate-spin" />
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowBarcodeScanner(true)}
-                      className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-charcoal-border bg-charcoal-surface text-slate-400 hover:text-brand hover:border-brand/40 transition-colors shrink-0"
+                      className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-charcoal-border bg-charcoal-surface text-ink-muted hover:text-brand hover:border-brand/40 transition-colors shrink-0"
                       aria-label="Scan barcode"
                       title="Scan a barcode"
                     >
@@ -1312,20 +1360,20 @@ const handleSaveMealTemplate = () => {
 
                       {/* Search results: My Foods → Generic → Branded */}
                       {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
-                        <p className="mt-1.5 text-xs text-[#fbbf24] px-1">Showing approximate results for "{searchQuery}"</p>
+                        <p className="mt-1.5 text-xs text-warn px-1">Showing approximate results for "{searchQuery}"</p>
                       )}
                       {(matchingCustomFoods.length > 0 || genericResults.length > 0) && (
                         <div className="mt-2 max-h-64 overflow-y-auto border rounded-lg bg-charcoal-surface divide-y divide-charcoal-border">
                           {/* My saved foods */}
                           {matchingCustomFoods.length > 0 && (
                             <>
-                              <div className="px-3 py-1.5 bg-[rgba(245,158,11,0.08)] text-xs font-semibold text-[#fbbf24] flex items-center gap-1 sticky top-0">
+                              <div className="px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center gap-1 sticky top-0">
                                 <Star className="w-3 h-3 fill-amber-500" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
-                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-[rgba(245,158,11,0.08)] transition-colors">
-                                  <div className="font-medium text-white text-sm">{food.food_name}</div>
-                                  <div className="flex gap-3 mt-0.5 text-xs text-slate-500">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
+                                  <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1333,13 +1381,13 @@ const handleSaveMealTemplate = () => {
                           {/* Generic whole foods (Foundation + SR Legacy) */}
                           {genericResults.length > 0 && (
                             <>
-                              <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-slate-500 sticky top-0">
+                              <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted sticky top-0">
                                 Generic Foods
                               </div>
                               {genericResults.map((food) => (
                                 <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
-                                  <div className="font-medium text-white text-sm">{food.description}</div>
-                                  <div className="flex gap-3 mt-0.5 text-xs text-slate-500">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                                  <div className="font-medium text-ink text-sm">{food.description}</div>
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1350,16 +1398,16 @@ const handleSaveMealTemplate = () => {
                               <button
                                 type="button"
                                 onClick={() => setShowBranded(v => !v)}
-                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-slate-500 flex items-center justify-between sticky top-0 hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
                               >
                                 <span>Branded Foods ({brandedResults.length})</span>
                                 {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               </button>
                               {showBranded && brandedResults.map((food) => (
                                 <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
-                                  <div className="font-medium text-white text-sm">{food.description}</div>
-                                  {food.brandOwner && <div className="text-xs text-slate-400">{food.brandOwner}</div>}
-                                  <div className="flex gap-3 mt-0.5 text-xs text-slate-500">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                                  <div className="font-medium text-ink text-sm">{food.description}</div>
+                                  {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1376,15 +1424,15 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setRecentExpanded(!recentExpanded)}
-                              className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-slate-500 flex items-center justify-between hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                              className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
                             >
                               <span>Recent</span>
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {recentExpanded && recentFoods.map((entry, i) => (
                               <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
-                                <div className="font-medium text-white text-sm">{entry.food_name}</div>
-                                <div className="flex gap-3 mt-0.5 text-xs text-slate-500">
+                                <div className="font-medium text-ink text-sm">{entry.food_name}</div>
+                                <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">
                                   {entry.serving_size && <span>{entry.serving_size} · </span>}
                                   {Math.round(entry.calories)} cal · P {Math.round(entry.protein_grams)}g · C {Math.round(entry.carbs_grams)}g · F {Math.round(entry.fats_grams)}g
                                 </div>
@@ -1393,14 +1441,14 @@ const handleSaveMealTemplate = () => {
                           </div>
                         )}
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold text-[#fbbf24] flex items-center gap-1">
+                          <span className="text-xs font-semibold text-warn flex items-center gap-1">
                             <Star className="w-3 h-3 fill-amber-500" /> My Foods
                           </span>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => document.getElementById("import-foods-csv-input").click()}
-                              className="text-xs text-slate-500 hover:text-brand flex items-center gap-1"
+                              className="text-xs text-ink-muted hover:text-brand flex items-center gap-1"
                               title="Import foods from CSV"
                             >
                               <Upload className="w-3 h-3" /> Import CSV
@@ -1408,7 +1456,7 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setShowFoodFormatGuide(true)}
-                              className="text-slate-400 hover:text-brand"
+                              className="text-ink-muted hover:text-brand"
                               title="CSV format guide"
                             >
                               <HelpCircle className="w-3 h-3" />
@@ -1427,7 +1475,7 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setMyFoodsExpanded(!myFoodsExpanded)}
-                              className="w-full px-3 py-1.5 bg-[rgba(245,158,11,0.08)] text-xs font-semibold text-[#fbbf24] flex items-center justify-between hover:bg-[rgba(245,158,11,0.12)] transition-colors"
+                              className="w-full px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center justify-between hover:bg-warn/10 transition-colors"
                             >
                               <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> My Foods ({customFoods.length})</span>
                               {myFoodsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -1435,9 +1483,9 @@ const handleSaveMealTemplate = () => {
                             {myFoodsExpanded && (
                               <div className="max-h-36 overflow-y-auto">
                                 {customFoods.map((food) => (
-                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-[rgba(245,158,11,0.08)] border-b last:border-b-0 transition-colors">
-                                    <div className="font-medium text-white text-sm">{food.food_name}</div>
-                                    <div className="flex gap-3 mt-0.5 text-xs text-slate-500">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 border-b last:border-b-0 transition-colors">
+                                    <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                    <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                   </button>
                                 ))}
                               </div>
@@ -1448,7 +1496,7 @@ const handleSaveMealTemplate = () => {
                     )}
 
                     <div className="border-t pt-4">
-                      <p className="text-xs text-slate-500 mb-3">Or enter manually:</p>
+                      <p className="text-xs text-ink-muted mb-3">Or enter manually:</p>
 
                       <div className="space-y-4">
                         <div>
@@ -1526,6 +1574,9 @@ const handleSaveMealTemplate = () => {
                                 </SelectContent>
                               </Select>
                             </div>
+                            {servingHint && isUsdaFood && (
+                              <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingHint}</p>
+                            )}
                           </div>
                         </div>
 
@@ -1539,13 +1590,13 @@ const handleSaveMealTemplate = () => {
                             ].map(({ label, value, unit }) => (
                               <div key={label} className="bg-brand/[5%] rounded-lg px-2 py-2 text-center">
                                 <div className="text-xs text-brand font-medium">{label}</div>
-                                <div className="font-semibold text-white text-sm">{value}{unit}</div>
+                                <div className="font-semibold text-ink text-sm">{value}{unit}</div>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-ink-muted">
                           {isUsdaFood
                             ? `Total for ${newFood.serving_amount} ${newFood.serving_unit}:`
                             : (({ g: 'Per 100g:', ml: 'Per 100ml:', oz: 'Per 1 oz:', cup: 'Per 1 cup:', tbsp: 'Per 1 tbsp:', tsp: 'Per 1 tsp:', piece: 'Per piece:', serving: 'Per serving:' })[newFood.serving_unit] || 'Per serving:')}
@@ -1656,7 +1707,7 @@ const handleSaveMealTemplate = () => {
                         </div>
 
                         {macroCalcWarning && (
-                          <div className="bg-[rgba(245,158,11,0.08)] border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                          <div className="bg-warn/10 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
                             <div className="flex items-center gap-1.5 font-medium mb-1">
                               <AlertTriangle className="w-3.5 h-3.5" />
                               Macros don't match calories
@@ -1758,14 +1809,14 @@ const handleSaveMealTemplate = () => {
           >
             {/* Sheet header */}
             <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-charcoal-border">
-              <h2 className="text-base font-semibold text-white">Your Recipes</h2>
+              <h2 className="text-base font-semibold text-ink">Your Recipes</h2>
               <div className="flex items-center gap-2">
                 <Button onClick={() => setShowNewRecipe(true)} className="bg-brand h-8 text-xs px-3">
                   <Plus className="w-3.5 h-3.5 mr-1" />New Recipe
                 </Button>
                 <button
                   onClick={() => setShowRecipesPanel(false)}
-                  className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 text-ink-muted hover:text-ink transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1819,7 +1870,7 @@ const handleSaveMealTemplate = () => {
         <div>
           <Label htmlFor="meal-search">Search USDA Database</Label>
           <div className="relative mt-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
             <Input
   id="meal-search"
   ref={searchRef}
@@ -1829,48 +1880,48 @@ const handleSaveMealTemplate = () => {
   className="pl-10"
 />
             {isSearching && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted animate-spin" />
             )}
           </div>
 
           {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
-            <p className="mt-1.5 text-xs text-[#fbbf24] px-1">Showing approximate results for "{searchQuery}"</p>
+            <p className="mt-1.5 text-xs text-warn px-1">Showing approximate results for "{searchQuery}"</p>
           )}
           {(matchingCustomFoods.length > 0 || genericResults.length > 0) && (
             <div className="mt-2 max-h-56 overflow-y-auto border rounded-lg bg-charcoal-surface divide-y divide-charcoal-border">
               {matchingCustomFoods.length > 0 && (
                 <>
-                  <div className="px-3 py-1.5 bg-[rgba(245,158,11,0.08)] text-xs font-semibold text-[#fbbf24] sticky top-0">My Foods</div>
+                  <div className="px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn sticky top-0">My Foods</div>
                   {matchingCustomFoods.map((food) => (
-                    <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-[rgba(245,158,11,0.08)] transition-colors">
-                      <div className="font-medium text-white text-sm">{food.food_name}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                    <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
+                      <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                      <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                     </button>
                   ))}
                 </>
               )}
               {genericResults.length > 0 && (
                 <>
-                  <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-slate-500 sticky top-0">Generic Foods</div>
+                  <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted sticky top-0">Generic Foods</div>
                   {genericResults.map((food) => (
                     <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
-                      <div className="font-medium text-white text-sm">{food.description}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                      <div className="font-medium text-ink text-sm">{food.description}</div>
+                      <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                     </button>
                   ))}
                 </>
               )}
               {brandedResults.length > 0 && (
                 <>
-                  <button type="button" onClick={() => setShowBranded(v => !v)} className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-slate-500 flex items-center justify-between hover:bg-charcoal-elevated transition-colors sticky top-0">
+                  <button type="button" onClick={() => setShowBranded(v => !v)} className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-elevated transition-colors sticky top-0">
                     <span>Branded ({brandedResults.length})</span>
                     {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                   {showBranded && brandedResults.map((food) => (
                     <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
-                      <div className="font-medium text-white text-sm">{food.description}</div>
-                      {food.brandOwner && <div className="text-xs text-slate-400">{food.brandOwner}</div>}
-                      <div className="text-xs text-slate-500 mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                      <div className="font-medium text-ink text-sm">{food.description}</div>
+                      {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
+                      <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                     </button>
                   ))}
                 </>
@@ -1988,12 +2039,12 @@ const handleSaveMealTemplate = () => {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white">Meal Items</h3>
+            <h3 className="font-semibold text-ink">Meal Items</h3>
             <Badge variant="secondary">{mealItems.length} items</Badge>
           </div>
 
           {mealItems.length === 0 ? (
-            <div className="text-sm text-slate-500 border rounded-lg p-4">
+            <div className="text-sm text-ink-muted border rounded-lg p-4">
               No foods added yet.
             </div>
           ) : (
@@ -2005,8 +2056,8 @@ const handleSaveMealTemplate = () => {
                 >
                   <div>
                     <div className="font-medium text-sm">{item.food_name}</div>
-                    <div className="text-xs text-slate-500">{item.serving_size}</div>
-                    <div className="text-xs text-slate-400 mt-1">
+                    <div className="text-xs text-ink-muted">{item.serving_size}</div>
+                    <div className="text-xs text-ink-muted mt-1">
                       {item.calories} cal · P {item.protein_grams}g · C {item.carbs_grams}g · F {item.fats_grams}g
                     </div>
                   </div>
@@ -2014,7 +2065,7 @@ const handleSaveMealTemplate = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => removeMealItem(item.id)}
-                    className="text-[#f87171] hover:text-[#f87171] hover:bg-red-50"
+                    className="text-bad hover:text-bad hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -2079,14 +2130,14 @@ const handleSaveMealTemplate = () => {
           <DialogHeader>
             <DialogTitle>Food CSV Import Format</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-500 mb-3">
+          <p className="text-sm text-ink-muted mb-3">
             Save a <code className="text-xs bg-charcoal-elevated px-1 rounded">.csv</code> file with these columns, then use the Import CSV button to add foods to My Foods.
           </p>
-          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto text-white text-slate-400 border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
+          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto text-ink text-ink-muted border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
 Chicken Breast,165,31,0,3.6,100g
 Greek Yogurt,59,10,3.6,0.4,100g
 Oats,389,17,66,7,100g`}</pre>
-          <div className="text-xs text-slate-500 space-y-1 mt-2">
+          <div className="text-xs text-ink-muted space-y-1 mt-2">
             <p><span className="font-semibold">food_name</span> and <span className="font-semibold">calories</span> are required. All other columns are optional.</p>
             <p><span className="font-semibold">serving_unit</span>: any label like <code>100g</code>, <code>cup</code>, <code>serving</code> (defaults to "serving").</p>
             <p>Macros are per the serving size you specify.</p>
@@ -2129,24 +2180,24 @@ function GoalsFormContent({
           : calculatePhaseCalories(tdee.tdee, activePhase.weekly_rate);
         const goalsOutOfSync = Math.abs((profile?.daily_calorie_goal || 0) - phaseCalories) > 50;
         return (
-          <div className={`rounded-xl border p-4 space-y-3 ${goalsOutOfSync ? 'border-amber-300 bg-[rgba(245,158,11,0.08)]' : 'border-charcoal-border'}`}>
+          <div className={`rounded-xl border p-4 space-y-3 ${goalsOutOfSync ? 'border-warn/40 bg-warn/[8%]' : 'border-charcoal-border'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    activePhase.phase_type === 'cut'  ? 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa]'
-                    : activePhase.phase_type === 'bulk' ? 'bg-[rgba(34,197,94,0.1)] text-[#4ade80]'
-                    : 'bg-charcoal-elevated text-slate-400'
+                    activePhase.phase_type === 'cut'  ? 'bg-info/10 text-info'
+                    : activePhase.phase_type === 'bulk' ? 'bg-ok/10 text-ok'
+                    : 'bg-charcoal-elevated text-ink-muted'
                   }`}>
                     {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
                   </span>
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-ink-muted">
                     {activePhase.phase_type === 'reverse'
                       ? `+${activePhase.weekly_rate} cal/wk`
                       : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
                   </span>
                 </div>
-                <div className="text-sm font-medium text-white mt-1">
+                <div className="text-sm font-medium text-ink mt-1">
                   {phaseCalories.toLocaleString()} cal/day phase target
                 </div>
               </div>
@@ -2157,10 +2208,10 @@ function GoalsFormContent({
             </div>
             {goalsOutOfSync && (
               <div className="flex items-center justify-between gap-3 pt-1 border-t border-amber-200">
-                <p className="text-xs text-[#fbbf24]">
+                <p className="text-xs text-warn">
                   Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
                 </p>
-                <Button type="button" size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white text-xs h-7"
+                <Button type="button" size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-ink text-xs h-7"
                   onClick={() => {
                     const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
                     const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;
@@ -2178,7 +2229,7 @@ function GoalsFormContent({
 
       {!tdee.tdee && (
         <div className="rounded-xl border border-dashed border-charcoal-border p-4 text-center space-y-2">
-          <p className="text-sm text-slate-400">Set up your stats to auto-calculate daily calorie and macro targets.</p>
+          <p className="text-sm text-ink-muted">Set up your stats to auto-calculate daily calorie and macro targets.</p>
           <Button type="button" variant="outline" size="sm" onClick={() => { setShowGoalsModal(false); setShowStatsModal(true); }}>
             <Calculator className="w-4 h-4 mr-2" />Set up TDEE calculation
           </Button>
@@ -2192,7 +2243,7 @@ function GoalsFormContent({
             <div className="flex items-center gap-2 flex-1">
               <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
                 onChange={(e) => setProteinPerLb(e.target.value)} className="w-24" />
-              <span className="text-sm text-slate-500 whitespace-nowrap">
+              <span className="text-sm text-ink-muted whitespace-nowrap">
                 g / lb{latestWeight ? ` = ${Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day` : ''}
               </span>
             </div>

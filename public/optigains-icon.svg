@@ -1,5 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#121212"/>
-  <!-- Lightning bolt -->
-  <path d="M305 58 L158 272 H245 L207 454 L354 240 H267 Z" fill="#ef4444"/>
+  <!-- OptiGainsOS app icon — the Readiness Ring over the ambient field. -->
+  <defs>
+    <linearGradient id="og-ring" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FE9DD"/>
+      <stop offset="1" stop-color="#3DB8AE"/>
+    </linearGradient>
+    <radialGradient id="og-amb-teal" cx="0.88" cy="0.02" r="0.7">
+      <stop offset="0" stop-color="#4ECDC4" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#4ECDC4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="og-amb-coral" cx="0.5" cy="1.1" r="0.75">
+      <stop offset="0" stop-color="#EF7368" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#EF7368" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#0A0D12"/>
+  <rect width="512" height="512" rx="116" fill="url(#og-amb-teal)"/>
+  <rect width="512" height="512" rx="116" fill="url(#og-amb-coral)"/>
+  <!-- track -->
+  <circle cx="256" cy="256" r="172" stroke="rgba(255,255,255,0.10)" stroke-width="44" fill="none"/>
+  <!-- readiness arc — 82%, clockwise from 12 o'clock -->
+  <path d="M 256 84 A 172 172 0 1 1 100.4 182.8"
+        stroke="url(#og-ring)" stroke-width="44" stroke-linecap="round" fill="none"/>
+  <!-- the coral action dot at the live edge -->
+  <circle cx="100.4" cy="182.8" r="35" fill="#EF7368"/>
 </svg>

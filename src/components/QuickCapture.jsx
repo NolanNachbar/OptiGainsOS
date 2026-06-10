@@ -47,10 +47,10 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="min-h-[120px] bg-transparent border-none focus-visible:ring-0 px-0 resize-none text-base text-white placeholder:text-slate-500"
+            className="min-h-[120px] bg-transparent border-none focus-visible:ring-0 px-0 resize-none text-base text-ink placeholder:text-ink-muted"
           />
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-charcoal-border">
-            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+            <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest">
               Domain: {domain}
             </span>
             <Button

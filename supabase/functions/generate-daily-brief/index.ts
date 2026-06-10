@@ -301,7 +301,15 @@ function buildPrompt(data: {
 
   if (data.checkin) {
     const c = data.checkin;
-    lines.push(`\nMorning check-in: Energy ${c.energy}/10 | Mood ${c.mood}/10 | Soreness ${c.soreness}/5${c.notes ? ` | Notes: ${c.notes}` : ""}`);
+    // daily_readiness carries soreness as a per-region snapshot {Region: 0-3},
+    // not a scalar — summarize the sore regions instead of "undefined/5".
+    const snap = (c.soreness_snapshot ?? {}) as Record<string, number>;
+    const sore = Object.entries(snap)
+      .filter(([, lvl]) => Number(lvl) > 0)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .map(([region, lvl]) => `${region} ${lvl}/3`)
+      .join(", ");
+    lines.push(`\nMorning check-in: Energy ${c.energy}/10 | Mood ${c.mood}/10 | Soreness: ${sore || "none reported"}${c.notes ? ` | Notes: ${c.notes}` : ""}`);
   }
 
   lines.push(`\n=== TODAY'S PLANNED TO-DO (from your plan + the second brain) ===`);
@@ -357,6 +365,10 @@ function buildPrompt(data: {
 
 // ── Groq call ─────────────────────────────────────────────────────────────────
 
+// Track token usage from the last call so the handler can persist it —
+// DailyBriefCard computes per-brief cost from these columns.
+let lastUsage = { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0 };
+
 async function callGroq(prompt: string): Promise<string> {
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -373,7 +385,16 @@ async function callGroq(prompt: string): Promise<string> {
   });
 
   if (!resp.ok) throw new Error(`Groq error ${resp.status}: ${await resp.text()}`);
-  const data = await resp.json() as { choices: Array<{ message: { content: string } }> };
+  const data = await resp.json() as {
+    choices: Array<{ message: { content: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number;
+              prompt_tokens_details?: { cached_tokens?: number } };
+  };
+  lastUsage = {
+    input_tokens:      data.usage?.prompt_tokens ?? 0,
+    output_tokens:     data.usage?.completion_tokens ?? 0,
+    cache_read_tokens: data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+  };
   return data.choices[0].message.content.trim();
 }
 
@@ -491,6 +512,10 @@ Deno.serve(async (req) => {
     brief_json:   brief,
     generated_at: new Date().toISOString(),
     model_used:   GROQ_MODEL,
+    // Cost columns the UI already reads (were never written before).
+    input_tokens:      lastUsage.input_tokens,
+    output_tokens:     lastUsage.output_tokens,
+    cache_read_tokens: lastUsage.cache_read_tokens,
   }, { onConflict: "date" });
 
   if (error) {

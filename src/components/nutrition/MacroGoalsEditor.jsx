@@ -51,8 +51,8 @@ export function MacroGoalsEditor({ values, onChange }) {
       label: 'Protein',
       pct: proteinPct,
       g: values.daily_protein_goal,
-      bar: 'bg-[#60a5fa]',
-      text: 'text-[#60a5fa]',
+      bar: 'bg-coral',
+      text: 'text-coral',
       onSlide: handleProteinSlider,
       max: Math.max(proteinPct, 100 - carbsPct),
     },
@@ -60,8 +60,8 @@ export function MacroGoalsEditor({ values, onChange }) {
       label: 'Carbs',
       pct: carbsPct,
       g: values.daily_carbs_goal,
-      bar: 'bg-[#fbbf24]',
-      text: 'text-[#fbbf24]',
+      bar: 'bg-carb',
+      text: 'text-carb',
       onSlide: handleCarbsSlider,
       max: Math.max(carbsPct, 100 - proteinPct),
     },
@@ -69,8 +69,8 @@ export function MacroGoalsEditor({ values, onChange }) {
       label: 'Fat',
       pct: fatPct,
       g: values.daily_fats_goal,
-      bar: 'bg-[#f87171]',
-      text: 'text-[#f87171]',
+      bar: 'bg-fat',
+      text: 'text-fat',
       onSlide: null,
     },
   ];
@@ -91,9 +91,9 @@ export function MacroGoalsEditor({ values, onChange }) {
 
       {/* Stacked colour bar */}
       <div className="h-2.5 w-full rounded-full overflow-hidden flex">
-        <div className="bg-[#60a5fa] h-full transition-all duration-150" style={{ width: `${proteinPct}%` }} />
-        <div className="bg-[#fbbf24] h-full transition-all duration-150" style={{ width: `${carbsPct}%` }} />
-        <div className="bg-[#f87171] h-full transition-all duration-150" style={{ width: `${fatPct}%` }} />
+        <div className="bg-coral h-full transition-all duration-150" style={{ width: `${proteinPct}%` }} />
+        <div className="bg-carb h-full transition-all duration-150" style={{ width: `${carbsPct}%` }} />
+        <div className="bg-fat h-full transition-all duration-150" style={{ width: `${fatPct}%` }} />
       </div>
 
       {/* Sliders */}
@@ -103,9 +103,9 @@ export function MacroGoalsEditor({ values, onChange }) {
             <div className="flex items-center justify-between mb-1.5">
               <span className={`text-sm font-semibold ${text}`}>{label}</span>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-500 text-xs">{pct}%</span>
+                <span className="text-ink-muted text-xs">{pct}%</span>
                 <span className={`font-bold tabular-nums ${text}`}>{g}g</span>
-                {!onSlide && <span className="text-[10px] text-slate-500 uppercase tracking-wider">auto</span>}
+                {!onSlide && <span className="text-[10px] text-ink-muted uppercase tracking-wider">auto</span>}
               </div>
             </div>
             {onSlide ? (

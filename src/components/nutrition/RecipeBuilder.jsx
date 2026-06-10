@@ -113,7 +113,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     return (
       <div className="space-y-2">
         {recipes.length === 0 ? (
-          <div className="text-center py-6 text-slate-500 text-sm">
+          <div className="text-center py-6 text-ink-muted text-sm">
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p>No recipes yet.</p>
             <p className="text-xs mt-1">Use the + button to create your first recipe.</p>
@@ -124,28 +124,28 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
             <div key={recipe.id} className="p-3 rounded-xl border border-charcoal-border/50 bg-charcoal-surface/60 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="text-sm font-semibold text-white truncate block">{recipe.name}</span>
-                  <span className="text-xs text-slate-500 capitalize">
+                  <span className="text-sm font-semibold text-ink truncate block">{recipe.name}</span>
+                  <span className="text-xs text-ink-muted capitalize">
                     {recipe.ingredients?.length || 0} ingredients · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-slate-400 hover:text-slate-400 transition-colors">
+                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-ink-muted hover:text-ink-muted transition-colors">
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => handleLog(recipe)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand hover:bg-brand text-black font-bold text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold text-xs font-bold transition-colors"
                   >
                     <UtensilsCrossed className="w-2.5 h-2.5" />Log
                   </button>
                 </div>
               </div>
               <div className="flex gap-3 text-xs font-mono">
-                <span className="text-white font-bold">{Math.round(perServing.calories)}<span className="text-slate-400 font-normal ml-0.5">cal</span></span>
-                <span className="text-[#60a5fa]">P{perServing.protein_grams}g</span>
-                <span className="text-[#fbbf24]">C{perServing.carbs_grams}g</span>
-                <span className="text-[#f87171]">F{perServing.fats_grams}g</span>
+                <span className="text-ink font-bold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-coral">P{perServing.protein_grams}g</span>
+                <span className="text-carb">C{perServing.carbs_grams}g</span>
+                <span className="text-fat">F{perServing.fats_grams}g</span>
               </div>
             </div>
           );
@@ -184,8 +184,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     <div className="space-y-4">
       {!hideHeader && (
         <div>
-          <h2 className="text-xl font-bold text-left text-white">Your Recipes</h2>
-          <p className="text-sm text-left text-slate-400">
+          <h2 className="text-xl font-bold text-left text-ink">Your Recipes</h2>
+          <p className="text-sm text-left text-ink-muted">
             Create custom recipes and log them to your daily tracker
           </p>
         </div>
@@ -194,9 +194,9 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
 
       {recipes.length === 0 ? (
         <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
-          <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-400 text-slate-400 mb-1">No recipes yet</h3>
-          <p className="text-sm text-slate-500 text-slate-500">Use the "New Recipe" button above to get started</p>
+          <BookOpen className="w-12 h-12 text-ink-muted mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-ink-muted text-ink-muted mb-1">No recipes yet</h3>
+          <p className="text-sm text-ink-muted text-ink-muted">Use the "New Recipe" button above to get started</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -207,35 +207,35 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 {/* Name row */}
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white leading-snug">{recipe.name}</p>
+                    <p className="text-sm font-semibold text-ink leading-snug">{recipe.name}</p>
                     {recipe.description && (
-                      <p className="text-xs text-slate-500 mt-0.5 truncate">{recipe.description}</p>
+                      <p className="text-xs text-ink-muted mt-0.5 truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated bg-charcoal-elevated text-slate-400 text-slate-400 rounded-md px-1.5 py-0.5">
+                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated bg-charcoal-elevated text-ink-muted text-ink-muted rounded-md px-1.5 py-0.5">
                     {recipe.servings}×
                   </span>
                 </div>
                 {/* Macros */}
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-sm font-bold text-white">{Math.round(perServing.calories)}</p>
-                    <p className="text-xs text-slate-400">Cal</p>
+                    <p className="text-sm font-bold text-ink">{Math.round(perServing.calories)}</p>
+                    <p className="text-xs text-ink-muted">Cal</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#60a5fa]">{perServing.protein_grams}g</p>
-                    <p className="text-xs text-slate-400">Pro</p>
+                    <p className="text-sm font-bold text-coral">{perServing.protein_grams}g</p>
+                    <p className="text-xs text-ink-muted">Pro</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#fbbf24]">{perServing.carbs_grams}g</p>
-                    <p className="text-xs text-slate-400">Carb</p>
+                    <p className="text-sm font-bold text-warn">{perServing.carbs_grams}g</p>
+                    <p className="text-xs text-ink-muted">Carb</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#f87171]">{perServing.fats_grams}g</p>
-                    <p className="text-xs text-slate-400">Fat</p>
+                    <p className="text-sm font-bold text-bad">{perServing.fats_grams}g</p>
+                    <p className="text-xs text-ink-muted">Fat</p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 -mt-1">
+                <p className="text-xs text-ink-muted -mt-1">
                   {recipe.ingredients?.length || 0} ingredients · per serving
                 </p>
                 {/* Actions */}
@@ -250,7 +250,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                     <Pencil className="w-3 h-3" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleDelete(recipe)}
-                    className="h-8 w-8 p-0 text-[#f87171] hover:text-[#f87171] hover:bg-[rgba(239,68,68,0.08)]">
+                    className="h-8 w-8 p-0 text-bad hover:text-bad hover:bg-bad/10">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -327,15 +327,15 @@ function StickyMacroBar({ ingredients, servings }) {
           <div className="text-lg font-bold text-orange-600 transition-all duration-300">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-xs font-medium text-orange-500 uppercase tracking-wide">
+          <div className="text-xs font-medium text-brand uppercase tracking-wide">
             Calories
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-[#60a5fa] transition-all duration-300">
+          <div className="text-lg font-bold text-coral transition-all duration-300">
             {Math.round(totals.total_protein * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-[#60a5fa] uppercase tracking-wide">
+          <div className="text-xs font-medium text-coral uppercase tracking-wide">
             Protein
           </div>
         </div>
@@ -343,7 +343,7 @@ function StickyMacroBar({ ingredients, servings }) {
           <div className="text-lg font-bold text-green-600 transition-all duration-300">
             {Math.round(totals.total_carbs * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-green-500 uppercase tracking-wide">
+          <div className="text-xs font-medium text-ok uppercase tracking-wide">
             Carbs
           </div>
         </div>
@@ -357,7 +357,7 @@ function StickyMacroBar({ ingredients, servings }) {
         </div>
       </div>
       {servings > 1 && hasIngredients && (
-        <div className="text-xs text-slate-500 text-center mt-1.5">
+        <div className="text-xs text-ink-muted text-center mt-1.5">
           Per serving: {Math.round(totals.total_calories / servings)} cal{" · "}
           {Math.round((totals.total_protein / servings) * 10) / 10}g P{" · "}
           {Math.round((totals.total_carbs / servings) * 10) / 10}g C{" · "}
@@ -376,22 +376,22 @@ function FoodSearchResult({ food, onClick, icon }) {
     >
       <div className="flex items-start gap-3">
         {icon && (
-          <div className="mt-0.5 text-slate-400 group-hover:text-brand transition-colors">
+          <div className="mt-0.5 text-ink-muted group-hover:text-brand transition-colors">
             {icon}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-white text-sm truncate">
+          <div className="font-medium text-ink text-sm truncate">
             {food.description || food.food_name}
           </div>
           {food.brandOwner && (
-            <div className="text-xs text-slate-500">{food.brandOwner}</div>
+            <div className="text-xs text-ink-muted">{food.brandOwner}</div>
           )}
           <div className="flex gap-3 mt-1 text-xs">
             <span className="text-orange-600 font-medium">
               {Math.round(food.calories ?? food.cal ?? 0)} cal
             </span>
-            <span className="text-[#60a5fa]">
+            <span className="text-coral">
               {Math.round((food.protein ?? food.protein_grams ?? 0) * 10) / 10}g P
             </span>
             <span className="text-green-600">
@@ -402,7 +402,7 @@ function FoodSearchResult({ food, onClick, icon }) {
             </span>
           </div>
         </div>
-        <Plus className="w-4 h-4 text-slate-400 group-hover:text-brand mt-1 transition-colors" />
+        <Plus className="w-4 h-4 text-ink-muted group-hover:text-brand mt-1 transition-colors" />
       </div>
     </button>
   );
@@ -418,13 +418,13 @@ function CollapsibleFoodSection({ label, icon, count, children }) {
         className="flex items-center gap-1.5 w-full text-left group"
       >
         <ChevronRight
-          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+          className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />
         {icon}
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+        <span className="text-xs font-medium text-ink-muted uppercase tracking-wide">
           {label}
         </span>
-        <span className="text-xs text-slate-400 ml-auto">{count}</span>
+        <span className="text-xs text-ink-muted ml-auto">{count}</span>
       </button>
       {open && (
         <div className="max-h-48 overflow-y-auto border rounded-xl bg-charcoal-surface mt-2">
@@ -440,13 +440,13 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
     <div className="p-3 bg-charcoal-surface rounded-xl border border-charcoal-border hover:border-charcoal-border transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-sm text-white truncate">
+          <div className="font-medium text-sm text-ink truncate">
             {ingredient.food_name}
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs">
-            <span className="text-slate-500 font-medium">Per serving:</span>
+            <span className="text-ink-muted font-medium">Per serving:</span>
             <span className="text-orange-600 font-medium">{ingredient.calories} cal</span>
-            <span className="text-[#60a5fa]">{ingredient.protein_grams}g P</span>
+            <span className="text-coral">{ingredient.protein_grams}g P</span>
             <span className="text-green-600">{ingredient.carbs_grams}g C</span>
             <span className="text-yellow-600">{ingredient.fats_grams}g F</span>
           </div>
@@ -455,7 +455,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
           variant="ghost"
           size="icon"
           onClick={() => onRemove(index)}
-          className="text-[#f87171] hover:text-[#f87171] hover:bg-[rgba(239,68,68,0.08)] h-8 w-8 shrink-0"
+          className="text-bad hover:text-bad hover:bg-bad/10 h-8 w-8 shrink-0"
         >
           <X className="w-3.5 h-3.5" />
         </Button>
@@ -589,7 +589,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </button>
 
       <div>
-        <Label className="text-xs font-medium text-slate-500">Food Name *</Label>
+        <Label className="text-xs font-medium text-ink-muted">Food Name *</Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -600,7 +600,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-slate-500">Serving</Label>
+        <Label className="text-xs font-medium text-ink-muted">Serving</Label>
         <div className="flex items-center gap-2 mt-1">
           <Input
             type="number"
@@ -626,7 +626,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-slate-500">
+        <Label className="text-xs font-medium text-ink-muted">
           Nutrition (per serving)
         </Label>
         <div className="grid grid-cols-4 gap-2 mt-1">
@@ -639,7 +639,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               min="0"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-orange-500 font-medium text-center mt-0.5">
+            <div className="text-xs text-brand font-medium text-center mt-0.5">
               Calories
             </div>
           </div>
@@ -653,7 +653,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               step="0.1"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-[#60a5fa] font-medium text-center mt-0.5">
+            <div className="text-xs text-coral font-medium text-center mt-0.5">
               Protein
             </div>
           </div>
@@ -667,7 +667,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               step="0.1"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-green-500 font-medium text-center mt-0.5">
+            <div className="text-xs text-ok font-medium text-center mt-0.5">
               Carbs
             </div>
           </div>
@@ -925,13 +925,13 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
             {currentStep === 2 && (
               <button
                 onClick={() => goToStep(1)}
-                className="text-slate-400 hover:text-slate-400 transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
+                className="text-ink-muted hover:text-ink-muted transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
             <div>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-ink">
                 {isEditing ? "Edit Recipe" : "Create Recipe"}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
@@ -951,7 +951,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     }`}
                   />
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-ink-muted">
                   {currentStep === 1 ? "Details" : "Ingredients"}
                 </span>
               </div>
@@ -959,7 +959,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-slate-400 transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
+            className="text-ink-muted hover:text-ink-muted transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
           >
             <X className="w-5 h-5" />
           </button>
@@ -985,10 +985,10 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       <div className="w-16 h-16 bg-brand/[8%] rounded-xl flex items-center justify-center mx-auto mb-4">
                         <ChefHat className="w-8 h-8 text-brand" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-semibold text-ink">
                         Recipe Details
                       </h3>
-                      <p className="text-sm text-slate-500 mt-1">
+                      <p className="text-sm text-ink-muted mt-1">
                         Give your recipe a name and set the serving size
                       </p>
                     </div>
@@ -1089,7 +1089,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       {!showManualEntry ? (
                         <>
                           <div className="relative">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                             <Input
                               ref={searchRef}
                               value={searchQuery}
@@ -1110,11 +1110,11 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                   key={"custom-" + food.id}
                                   food={food}
                                   onClick={() => addCustomFood(food)}
-                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
-                                <div className="px-4 py-1.5 bg-charcoal-surface text-xs font-medium text-slate-400 uppercase tracking-wide">
+                                <div className="px-4 py-1.5 bg-charcoal-surface text-xs font-medium text-ink-muted uppercase tracking-wide">
                                   USDA Database
                                 </div>
                               )}
@@ -1135,7 +1135,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               {customFoods.length > 0 && (
                                 <CollapsibleFoodSection
                                   label="My Foods"
-                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
                                   count={customFoods.length}
                                 >
                                   {customFoods.map((food) => (
@@ -1143,7 +1143,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                       key={"my-" + food.id}
                                       food={food}
                                       onClick={() => addCustomFood(food)}
-                                      icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />}
+                                      icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
                                     />
                                   ))}
                                 </CollapsibleFoodSection>
@@ -1152,7 +1152,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               {recentFoods.length > 0 && (
                                 <CollapsibleFoodSection
                                   label="Recent Foods"
-                                  icon={<Clock className="w-3.5 h-3.5 text-slate-400" />}
+                                  icon={<Clock className="w-3.5 h-3.5 text-ink-muted" />}
                                   count={recentFoods.length}
                                 >
                                   {recentFoods.map((food, i) => (
@@ -1172,7 +1172,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           <div className="flex justify-center mt-3">
                             <button
                               onClick={() => setShowManualEntry(true)}
-                              className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-brand transition-colors"
+                              className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-brand transition-colors"
                             >
                               <PenLine className="w-3.5 h-3.5" />
                               or add manually from label
@@ -1192,7 +1192,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-semibold text-slate-400">
+                          <span className="text-sm font-semibold text-ink-muted">
                             Ingredients
                           </span>
                           <Badge variant="secondary" className="text-xs">
@@ -1225,8 +1225,8 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
 
                     {ingredients.length === 0 && (
                       <div className="text-center py-8">
-                        <Search className="w-10 h-10 text-white mx-auto mb-3" />
-                        <p className="text-sm text-slate-400">
+                        <Search className="w-10 h-10 text-ink mx-auto mb-3" />
+                        <p className="text-sm text-ink-muted">
                           Search above to start adding ingredients
                         </p>
                       </div>
@@ -1357,10 +1357,10 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
               <div className="text-xs text-orange-600">Calories</div>
             </div>
             <div className="text-center p-3 bg-[rgba(59,130,246,0.08)] rounded-lg">
-              <div className="text-lg font-bold text-[#60a5fa]">
+              <div className="text-lg font-bold text-coral">
                 {scaled.protein_grams}g
               </div>
-              <div className="text-xs text-[#60a5fa]">Protein</div>
+              <div className="text-xs text-coral">Protein</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-lg font-bold text-green-700">

@@ -1,12 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Barbell Bar -->
-  <rect x="80" y="236" width="352" height="40" rx="20" fill="#ef4444"/>
-  
-  <!-- Main Plates (Inner) -->
-  <rect x="120" y="156" width="48" height="200" rx="12" fill="#ef4444"/>
-  <rect x="344" y="156" width="48" height="200" rx="12" fill="#ef4444"/>
-  
-  <!-- Secondary Plates (Outer) -->
-  <rect x="70" y="186" width="30" height="140" rx="8" fill="#ef4444"/>
-  <rect x="412" y="186" width="30" height="140" rx="8" fill="#ef4444"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- OptiGainsOS — the Readiness Ring: the product's signature gauge.
+       Teal gradient arc at 82% with the coral action dot at the live edge. -->
+  <defs>
+    <linearGradient id="og-ring" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FE9DD"/>
+      <stop offset="1" stop-color="#3DB8AE"/>
+    </linearGradient>
+  </defs>
+  <!-- track -->
+  <circle cx="24" cy="24" r="18" stroke="rgba(255,255,255,0.10)" stroke-width="4.5"/>
+  <!-- readiness arc — 82%, clockwise from 12 o'clock -->
+  <path d="M 24 6 A 18 18 0 1 1 7.71 16.34"
+        stroke="url(#og-ring)" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- the coral action dot at the live edge -->
+  <circle cx="7.71" cy="16.34" r="3.6" fill="#EF7368"/>
 </svg>

@@ -77,7 +77,7 @@ export default function ProgramDetail() {
   if (!program) {
     return (
       <div className="p-6 text-center">
-        <p className="text-slate-500">Program not found.</p>
+        <p className="text-ink-muted">Program not found.</p>
         <Link to="/workouts">
           <Button variant="outline" className="mt-4">Back to Workouts</Button>
         </Link>
@@ -204,19 +204,19 @@ export default function ProgramDetail() {
     : null;
 
   return (
-    <div className="p-4 md:p-6 bg-charcoal-surface  min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 min-h-screen transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-400 mb-4 text-sm"
+          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Workouts
         </button>
 
         {/* Header */}
-        <Card className="border border-charcoal-border  mb-6 bg-charcoal-surface  border-l-4 border-l-purple-500 overflow-hidden">
+        <Card className="mb-6 overflow-hidden rise-in">
           <CardContent className="pt-5 pb-5">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
@@ -231,34 +231,34 @@ export default function ProgramDetail() {
                       variant="outline"
                       className={
                         enrollment.status === "active"
-                          ? "bg-brand/10 text-brand border-brand/25"
+                          ? "bg-teal/10 text-teal border-teal/25"
                           : enrollment.status === "completed"
-                          ? "bg-brand/[5%] text-brand border-brand/20"
-                          : "bg-charcoal-surface text-slate-400 border-charcoal-border   "
+                          ? "bg-leaf/10 text-leaf border-leaf/20"
+                          : "bg-white/[0.06] text-ink-muted border-white/10"
                       }
                     >
                       {enrollment.status}
                     </Badge>
                   )}
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-1">
+                <h1 className="type-display text-2xl mb-1">
                   {program.name}
                 </h1>
                 {program.description && (
-                  <p className="text-slate-500 text-sm">{program.description}</p>
+                  <p className="text-ink-muted text-sm">{program.description}</p>
                 )}
 
-                <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-400 ">
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted ">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-slate-500 " />
+                    <Calendar className="w-4 h-4 text-ink-muted " />
                     {durationLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-slate-500 " />
+                    <Repeat className="w-4 h-4 text-ink-muted " />
                     {frequencyLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Dumbbell className="w-4 h-4 text-slate-500 " />
+                    <Dumbbell className="w-4 h-4 text-ink-muted " />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export default function ProgramDetail() {
                       {user ? "Start Program" : "Sign in to Start"}
                     </Button>
                     {!user && (
-                      <p className="text-xs text-center text-slate-500">
+                      <p className="text-xs text-center text-ink-muted">
                         New here?{' '}
                         <Link
                           to="/signup"
@@ -352,9 +352,8 @@ export default function ProgramDetail() {
                       Export JSON
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="destructive"
                       size="sm"
-                      className="text-[#f87171] hover:bg-[rgba(239,68,68,0.08)]"
                       onClick={handleDelete}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -367,19 +366,19 @@ export default function ProgramDetail() {
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="mt-4 pt-4 border-t border-charcoal-border ">
+              <div className="mt-4 pt-4 border-t hairline">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-slate-400 ">
+                  <span className="font-technical text-ink-muted">
                     {positionLabel && (
-                      <span className="font-medium mr-2">{positionLabel}</span>
+                      <span className="font-semibold mr-2">{positionLabel}</span>
                     )}
                     {completedCount} / {totalWorkouts} workouts
                   </span>
-                  <span className="font-semibold text-white">{progressPercent}%</span>
+                  <span className="font-technical font-extrabold text-teal">{progressPercent}%</span>
                 </div>
-                <div className="h-2 bg-charcoal-elevated  rounded-full overflow-hidden">
+                <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-brand rounded-full transition-all duration-500"
+                    className="h-full bg-teal rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -390,11 +389,11 @@ export default function ProgramDetail() {
 
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (
-          <Card className="border border-charcoal-border  mb-4 border-l-4 border-l-warning-400 bg-charcoal-surface ">
+          <Card className="mb-4 border-[0.5px] !border-[rgba(var(--warn-rgb)/0.30)]">
             <CardContent className="py-3">
               {recoveryWarnings.map((w) => (
-                <div key={w.muscle} className="flex items-start gap-2 text-sm text-slate-400">
-                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div key={w.muscle} className="flex items-start gap-2 text-sm text-ink-muted">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-warn" />
                   <span>{w.message}</span>
                 </div>
               ))}
@@ -403,9 +402,9 @@ export default function ProgramDetail() {
         )}
 
         {/* Schedule Grid */}
-        <Card className="border border-charcoal-border  mb-6 bg-charcoal-surface ">
+        <Card className="mb-6 rise-in-2">
           <CardHeader>
-            <CardTitle className="text-lg text-white">Schedule</CardTitle>
+            <CardTitle className="text-lg text-ink">Schedule</CardTitle>
           </CardHeader>
           <CardContent>
             <CycleDayGrid
@@ -422,9 +421,9 @@ export default function ProgramDetail() {
 
         {/* Exercise progression state */}
         {enrollment?.progression_state && Object.keys(enrollment.progression_state).filter(k => !k.startsWith('_')).length > 0 && (
-          <Card className="border border-charcoal-border  bg-charcoal-surface ">
+          <Card className="rise-in-3">
             <CardHeader>
-              <CardTitle className="text-lg text-white">Progression Tracking</CardTitle>
+              <CardTitle className="text-lg text-ink">Progression Tracking</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -433,11 +432,11 @@ export default function ProgramDetail() {
                   .map(([name, state]) => (
                     <div
                       key={name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-charcoal-surface 60"
+                      className="flex items-center justify-between glass-inset p-3"
                     >
                       <div>
-                        <p className="font-medium text-sm text-white">{name}</p>
-                        <p className="text-xs text-slate-500 ">
+                        <p className="font-medium text-sm text-ink">{name}</p>
+                        <p className="font-technical text-xs text-ink-muted">
                           {state.sessions_at_current_weight || 0} sessions at current weight
                           {state.last_session_rpe_avg != null && (
                             <> &middot; Avg RIR {state.last_session_rpe_avg.toFixed(1)}</>
@@ -445,11 +444,11 @@ export default function ProgramDetail() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-white">
-                          {state.working_weight} lbs
+                        <p className="pill-value inline-block text-ink">
+                          {state.working_weight} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.ready_to_progress && (
-                          <Badge className="bg-[rgba(34,197,94,0.1)] text-[#4ade80]/30 text-xs">
+                          <Badge variant="green" className="text-xs mt-1">
                             Ready to progress
                           </Badge>
                         )}
@@ -469,7 +468,7 @@ export default function ProgramDetail() {
             </DialogHeader>
             {showWorkoutDetail && (
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
-                <div className="flex gap-2 text-sm text-slate-500">
+                <div className="flex gap-2 text-sm text-ink-muted">
                   <span>Day {showWorkoutDetail.day_index || showWorkoutDetail.day_number}</span>
                   {showWorkoutDetail.type && (
                     <>
@@ -481,7 +480,7 @@ export default function ProgramDetail() {
                   )}
                 </div>
                 {showWorkoutDetail.notes && (
-                  <p className="text-sm text-slate-400 ">{showWorkoutDetail.notes}</p>
+                  <p className="text-sm text-ink-muted ">{showWorkoutDetail.notes}</p>
                 )}
                 <div className="space-y-2">
                   {(showWorkoutDetail.exercises || []).map((ex, i) => {
@@ -493,19 +492,19 @@ export default function ProgramDetail() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-3 rounded-xl bg-charcoal-surface 60"
+                        className="flex items-center justify-between glass-inset p-3"
                       >
                         <div>
-                          <p className="font-medium text-sm text-white">{ex.name}</p>
-                          <p className="text-xs text-slate-500 ">
+                          <p className="font-medium text-sm text-ink">{ex.name}</p>
+                          <p className="font-technical text-xs text-ink-muted">
                             {ex.sets} sets &times; {ex.rep_target || "?"} reps
                             {ex.rir_target && ` @ RIR ${ex.rir_target}`}
                           </p>
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="font-bold text-sm text-white">{targets.workingWeight} lbs</p>
-                            <p className="text-xs text-slate-500 ">
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small></p>
+                            <p className="font-technical text-xs text-ink-muted mt-0.5">
                               Min: {targets.dailyMin} lbs
                             </p>
                           </div>
@@ -516,20 +515,20 @@ export default function ProgramDetail() {
                   {(showWorkoutDetail.cardio_sessions || []).map((c, i) => (
                     <div
                       key={`cardio-${i}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-charcoal-elevated"
+                      className="flex items-center justify-between glass-inset p-3"
                     >
                       <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-slate-400" />
+                        <Activity className="w-4 h-4 text-carb" />
                         <div>
-                          <p className="font-medium text-sm text-white">{c.title}</p>
-                          <p className="text-xs text-slate-500 ">
+                          <p className="font-medium text-sm text-ink">{c.title}</p>
+                          <p className="font-technical text-xs text-ink-muted">
                             {c.duration_minutes} min{c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-charcoal-elevated text-slate-400 text-xs border-0">
+                      <span className="rounded-full px-2 py-[3px] text-[9.5px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
                         Cardio
-                      </Badge>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -545,7 +544,7 @@ export default function ProgramDetail() {
               <DialogHeader>
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-slate-500  mt-2">
+              <p className="text-sm text-ink-muted  mt-2">
                 Enter your current working weight for each exercise (optional — you can also
                 enter these during your first session).
               </p>
@@ -553,24 +552,24 @@ export default function ProgramDetail() {
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div>
-                <Label className="text-sm text-slate-400 ">Start Date</Label>
+                <Label className="text-sm text-ink-muted ">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 glass glass-interactive text-white [color-scheme:dark]"
+                  className="mt-1 glass glass-interactive text-ink [color-scheme:dark]"
                 />
               </div>
 
               <div className="space-y-3">
               {allExercises.map((ex) => (
                 <div key={ex.name} className="flex items-center gap-3">
-                  <Label className="flex-1 text-sm text-slate-400 ">{ex.name}</Label>
+                  <Label className="flex-1 text-sm text-ink-muted ">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
                       placeholder="lbs"
-                      className="w-24 bg-charcoal-surface  border-charcoal-border  text-white placeholder:text-slate-500 "
+                      className="w-24 bg-charcoal-surface  border-charcoal-border  text-ink placeholder:text-ink-muted "
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({
@@ -579,7 +578,7 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-xs text-slate-500 ">lbs</span>
+                    <span className="text-xs text-ink-muted ">lbs</span>
                   </div>
                 </div>
               ))}
@@ -607,7 +606,7 @@ export default function ProgramDetail() {
             <DialogHeader>
               <DialogTitle>Cancel Enrollment?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-slate-400 ">
+            <p className="text-sm text-ink-muted ">
               Are you sure you want to cancel your enrollment in this program? Future scheduled workouts will be removed, but your completed workout history will be preserved. You can re-enroll later to start fresh.
             </p>
             <div className="flex gap-3 mt-4">
@@ -620,7 +619,8 @@ export default function ProgramDetail() {
               </Button>
               <Button
                 onClick={confirmRestart}
-                className="flex-1 bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.1)] text-white"
+                variant="destructive"
+                className="flex-1"
                 disabled={deleteEnrollmentMutation.isPending}
               >
                 {deleteEnrollmentMutation.isPending ? "Canceling..." : "Cancel Enrollment"}

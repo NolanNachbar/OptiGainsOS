@@ -3,7 +3,7 @@ import * as React from "react";
 const Card = React.forwardRef(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`rounded-xl glass text-white transition-all duration-300 ${className}`}
+    className={`rounded-xl glass text-ink transition-all duration-300 ${className}`}
     {...props}
   />
 ));
@@ -30,7 +30,7 @@ CardTitle.displayName = "CardTitle";
 const CardDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-xs text-slate-400 ${className}`}
+    className={`text-xs text-ink-muted ${className}`}
     {...props}
   />
 ));
