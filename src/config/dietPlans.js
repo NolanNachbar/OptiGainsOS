@@ -253,10 +253,12 @@ export function buildShoppingList(entryRows) {
       // Cost is AMORTIZED to the grams actually eaten this week (g/unit × price),
       // not the shelf price of the units bought — a 5 lb whey tub lasts ~10 weeks
       // and would otherwise swamp the weekly number. `units` is still what to
-      // grab at the store when the pantry runs out.
-      return { food, grams: Math.round(g), units, unitLabel: u.label, cost: r1((g / u.gramsPerUnit) * u.price) };
+      // grab at the store when the pantry runs out. Round to cents, not dimes —
+      // cheap items like pasta otherwise display as $0.00.
+      const cents = (n) => Math.round(n * 100) / 100;
+      return { food, grams: Math.round(g), units, unitLabel: u.label, cost: cents((g / u.gramsPerUnit) * u.price) };
     })
     .sort((a, b) => (b.cost || 0) - (a.cost || 0));
-  const totalCost = r1(items.reduce((s, i) => s + (i.cost || 0), 0));
+  const totalCost = Math.round(items.reduce((s, i) => s + (i.cost || 0), 0) * 100) / 100;
   return { items, totalCost };
 }
