@@ -61,11 +61,22 @@ export function useDailyTargets(date) {
     // Same key WeeklyPlanCard used historically — shares the cache.
     queryKey: ["athlete-state-nutrition", date, user?.id],
     queryFn: async () => {
+      // Future (and engine-gap) dates have no athlete_state row yet — the
+      // engine computes overnight. Fall back to the most recent recommendation
+      // within a week rather than the profile's static goals, so tomorrow's
+      // targets match today's engine rec instead of collapsing to a stale
+      // profile goal that can sit below the cut macro floors (carbs would pin
+      // at 0). Every consumer shares this hook, so the fallback stays in sync.
+      const weekAgo = new Date(date + "T00:00:00");
+      weekAgo.setDate(weekAgo.getDate() - 7);
       const { data, error } = await supabase
         .from("athlete_state")
-        .select("nutrition")
+        .select("nutrition, date")
         .eq("created_by", user.id)
-        .eq("date", date)
+        .lte("date", date)
+        .gte("date", weekAgo.toISOString().slice(0, 10))
+        .order("date", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data;
