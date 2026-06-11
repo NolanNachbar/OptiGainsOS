@@ -21,7 +21,7 @@ Output:
 """
 from __future__ import annotations
 
-from engine.log_ingest import canon
+from engine.log_ingest import canon, canon_tokens
 from engine.muscle_map import get_muscles
 
 
@@ -56,6 +56,15 @@ def _same_slot(a: str, b: str) -> bool:
     """Two exercises plausibly fill the same slot if they share a primary muscle."""
     ma, mb = set(get_muscles(a)), set(get_muscles(b))
     return bool(ma and mb and (ma & mb))
+
+
+def _same_exercise(a: str, b: str) -> bool:
+    """Near-identical normalized token sets ⇒ name variant of the SAME exercise
+    (not a swap)."""
+    ta, tb = canon_tokens(a), canon_tokens(b)
+    if not ta or not tb:
+        return False
+    return len(ta & tb) / len(ta | tb) >= 0.8
 
 
 def track_deviations(program_workouts: list, workout_logs: list,
@@ -93,27 +102,45 @@ def track_deviations(program_workouts: list, workout_logs: list,
         if not pw:
             continue  # unscheduled / quick workout — nothing prescribed to compare
 
-        logged = _logged_names(log)
+        # an exercise he bailed on entirely (0 completed sets) was not chosen
+        logged = {n: c for n, c in _logged_names(log).items() if c > 0}
         prescribed = _prescribed_names(pw)
 
+        # exact + near-identical name matches each consume their prescribed slot
+        matched = {n: n for n in logged if n in prescribed}
+        for name in logged:
+            if name in matched:
+                continue
+            taken = set(matched.values())
+            near = next((p for p in prescribed
+                         if p not in taken and _same_exercise(p, name)), None)
+            if near:
+                matched[name] = near
+
+        swap_sources: set[str] = set()
         for name, n_logged in logged.items():
-            if name in prescribed:
+            if name in matched:
                 # ran the prescribed movement — record set delta only
-                _delta_acc.setdefault(name, []).append(n_logged - prescribed[name])
+                _delta_acc.setdefault(matched[name], []).append(
+                    n_logged - prescribed[matched[name]])
+                continue
+            # he reached for something not on the card → a vote FOR it.
+            out["chosen"][name] = out["chosen"].get(name, 0) + 1
+            consumed = set(matched.values()) | swap_sources
+            swapped_for = next((p for p in prescribed
+                                if p not in logged and p not in consumed
+                                and _same_slot(p, name)), None)
+            if swapped_for:
+                swap_sources.add(swapped_for)
+                out["dropped"][swapped_for] = out["dropped"].get(swapped_for, 0) + 1
+                out["events"].append(f"{d}: swapped {swapped_for} → {name}")
             else:
-                # he reached for something not on the card → a vote FOR it.
-                out["chosen"][name] = out["chosen"].get(name, 0) + 1
-                swapped_for = next((p for p in prescribed
-                                    if p not in logged and _same_slot(p, name)), None)
-                if swapped_for:
-                    out["dropped"][swapped_for] = out["dropped"].get(swapped_for, 0) + 1
-                    out["events"].append(f"{d}: swapped {swapped_for} → {name}")
-                else:
-                    out["events"].append(f"{d}: added {name}")
+                out["events"].append(f"{d}: added {name}")
 
         for name in prescribed:
-            if name not in logged and name not in out["dropped"]:
-                # prescribed but skipped, and not already counted as a swap-source
+            if name not in set(matched.values()) and name not in swap_sources:
+                # prescribed but skipped, and not THIS date's swap-source —
+                # repeated skips across dates compound into the posterior
                 out["dropped"][name] = out["dropped"].get(name, 0) + 1
                 out["events"].append(f"{d}: skipped {name}")
 

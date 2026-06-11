@@ -64,15 +64,12 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
         created_by: user.id,
         status: "active",
         started_at: startDate,
-        start_date: startDate,
         current_day: 1,
         current_day_index: 1,
         current_week: 1,
         current_cycle: 1,
         completed_workouts: [],
         progression_state: {},
-        cycle_length: cycleLength,
-        num_cycles: program.num_cycles || program.duration_weeks || 4,
       });
 
       invalidateSchedule(queryClient);
@@ -104,7 +101,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
           <p className="text-sm text-ink-muted">
-            <strong>{program?.name}</strong> was created successfully! Want to schedule it on your calendar now?
+            <strong>{program?.title || program?.name}</strong> was created successfully! Want to schedule it on your calendar now?
           </p>
 
           <div>

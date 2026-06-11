@@ -7,7 +7,7 @@ import WeeklyPlanCard from "@/components/nutrition/WeeklyPlanCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
-import { getTodayString } from "@/utils/dateUtils";
+import { getTodayString, dayWindowUtc } from "@/utils/dateUtils";
 import { format, parseISO } from "date-fns";
 import { Droplets, History, Utensils, TrendingUp, CalendarRange, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -24,19 +24,20 @@ export default function Fuel() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
+  const dayWindow = dayWindowUtc(today, profile?.timezone);
 
   const { weightEntries } = useBodyWeightEntries();
   const todayWeight = weightEntries.find(e => e.recorded_date === today);
 
   const { data: todayWater = [] } = useQuery({
-    queryKey: ["water-logs", today],
+    queryKey: ["water-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("water_logs")
         .select("*")
         .eq("created_by", user.id)
-        .gte("logged_at", today + "T00:00:00")
-        .lte("logged_at", today + "T23:59:59");
+        .gte("logged_at", dayWindow.start)
+        .lt("logged_at", dayWindow.end);
       if (error) throw error;
       return data || [];
     },
@@ -49,8 +50,8 @@ export default function Fuel() {
         .from("supplement_logs")
         .select("*")
         .eq("created_by", user.id)
-        .gte("taken_at", today + "T00:00:00")
-        .lte("taken_at", today + "T23:59:59");
+        .gte("taken_at", dayWindow.start)
+        .lt("taken_at", dayWindow.end);
       if (error) throw error;
       return data || [];
     },
@@ -139,6 +140,9 @@ export default function Fuel() {
                     <span className="font-semibold">Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
                     <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(todayWeight.recorded_date), "MMM d")}</span>
                   </div>
+                )}
+                {todaySupps.length === 0 && todayWater.length === 0 && !todayWeight && (
+                  <div className="px-4 py-3 surface text-xs text-ink-muted">Nothing logged yet today</div>
                 )}
               </div>
             </section>

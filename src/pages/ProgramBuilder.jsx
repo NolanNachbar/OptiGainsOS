@@ -138,11 +138,11 @@ export default function ProgramBuilder() {
     // Support both v1 and v2 programs when editing
     const isV2 = existingProgram.schema_version === 2;
     setProgram({
-      name: existingProgram.name || "",
+      name: existingProgram.title || existingProgram.name || "",
       description: existingProgram.description || "",
-      cycle_length: isV2 ? (existingProgram.cycle_length || 7) : (existingProgram.days_per_week || 3),
+      cycle_length: isV2 ? (existingProgram.cycle_length || existingProgram.days_per_week || 7) : (existingProgram.days_per_week || 3),
       num_cycles: isV2 ? (existingProgram.num_cycles || 4) : (existingProgram.duration_weeks || 4),
-      goal: existingProgram.goal || "strength",
+      goal: existingProgram.focus || existingProgram.goal || "strength",
       tags: existingProgram.tags || [],
     });
 
@@ -387,32 +387,24 @@ export default function ProgramBuilder() {
     // Only save days that have exercises (empty days = rest days)
     const enrichedWorkouts = workouts
       .filter((w) => w.exercises?.length > 0 || (w.cardio_sessions || []).length > 0)
-      .map((w) => {
-        const out = {
-          day_index: w.day_index,
-          title: w.title,
-          focus: w.focus,
-          exercises: (w.exercises || []).map(enrichExercise),
-          cardio_sessions: w.cardio_sessions || [],
-          notes: w.notes || "",
-          // v1 compat — these columns are NOT NULL
-          week_number: 1,
-          day_number: w.day_index,
-        };
-        if (w.source_workout_id) out.source_workout_id = w.source_workout_id;
-        return out;
-      });
+      .map((w) => ({
+        day_index: w.day_index,
+        title: w.title,
+        focus: w.focus,
+        exercises: (w.exercises || []).map(enrichExercise),
+        cardio_sessions: w.cardio_sessions || [],
+        week_number: 1,
+      }));
 
     const programData = {
-      name: program.name,
+      title: program.name,
       description: program.description,
-      cycle_length: program.cycle_length,
+      focus: program.goal,
       num_cycles: program.num_cycles,
-      goal: program.goal,
       schema_version: 2,
       // Keep v1 fields for backward compat (not used in v2)
       duration_weeks: program.num_cycles,
-      days_per_week: 7, // Placeholder for v1 compat; v2 uses cycle_length
+      days_per_week: program.cycle_length,
     };
 
     if (editId) {
@@ -874,7 +866,7 @@ function InlineDayEditor({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-bold bg-brand/15 text-[#FFD9C9]">
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-bold bg-brand/15 text-brandTint">
               Day {dayIndex}
             </span>
             Editing Exercises
@@ -1178,7 +1170,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
   if (exercises.length === 0) {
     return (
       <Card className="">
-        <CardContent className="py-6 text-center">
+        <CardContent className="pt-6 pb-6 text-center">
           <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
           <p className="text-sm text-ink-muted">
             No exercises found. Go back and add exercises to see projections.

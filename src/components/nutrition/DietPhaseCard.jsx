@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, supabase } from "@/api/supabaseClient";
+import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
@@ -181,10 +181,10 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
         };
       case "reverse":
         return {
-          bg: "bg-[rgba(20,184,166,0.08)]",
-          text: "text-[#2dd4bf]",
-          badge: "bg-[rgba(20,184,166,0.1)] text-[#2dd4bf]",
-          border: "border-[rgba(20,184,166,0.2)]",
+          bg: "bg-teal/10",
+          text: "text-teal",
+          badge: "bg-teal/10 text-teal",
+          border: "border-teal/20",
         };
       default:
         return {

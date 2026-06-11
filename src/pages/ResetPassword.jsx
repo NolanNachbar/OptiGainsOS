@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,14 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasSession, setHasSession] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(!!session);
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,16 +51,20 @@ export default function ResetPassword() {
       if (error) throw error;
 
       toast.success('Password updated successfully!');
-      navigate('/login');
+      navigate('/today', { replace: true });
     } catch (error) {
-      toast.error(error.message || 'Failed to reset password');
+      if (error.message?.includes('Auth session missing')) {
+        toast.error('This reset link is invalid or expired. Please request a new one.');
+      } else {
+        toast.error(error.message || 'Failed to reset password');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: '#080B10' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -65,10 +76,10 @@ export default function ResetPassword() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Logo className="w-14 h-14 mx-auto mb-4" />
-          <h1 className="type-display text-[24px] text-[#F2F4F7]">
-            OPTI<span style={{ color: '#5EDCD2' }}>GAINS</span>
+          <h1 className="type-display text-[24px] text-ink">
+            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
           </h1>
-          <p className="text-[11.5px] font-semibold mt-1.5 text-[rgba(242,244,247,0.5)]">Set your new password</p>
+          <p className="text-[11.5px] font-semibold mt-1.5 text-muted-2">Set your new password</p>
         </div>
 
         <Card>
@@ -76,6 +87,20 @@ export default function ResetPassword() {
             <CardTitle className="text-ink text-center">Reset Password</CardTitle>
           </CardHeader>
           <CardContent>
+            {hasSession === null ? (
+              <div className="flex justify-center py-6">
+                <LoadingSpinner size="small" />
+              </div>
+            ) : !hasSession ? (
+              <div className="text-center space-y-4">
+                <p className="text-ink-muted">
+                  This reset link is invalid or expired.
+                </p>
+                <Button asChild variant="volt" className="w-full font-bold">
+                  <Link to="/forgot-password">Request a new link</Link>
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="password" className="text-ink">New Password</Label>
@@ -126,11 +151,12 @@ export default function ResetPassword() {
                 )}
               </Button>
             </form>
+            )}
 
             <div className="mt-6 text-center">
               <p className="text-ink-muted">
                 Remember your password?{' '}
-                <Link to="/login" className="text-brand hover:text-[#d9ff1a] font-medium">
+                <Link to="/login" className="text-brand hover:opacity-80 transition-opacity font-medium">
                   Sign in
                 </Link>
               </p>

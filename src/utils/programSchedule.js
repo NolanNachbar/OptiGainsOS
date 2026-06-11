@@ -1,4 +1,4 @@
-import { addDays, format, isBefore, isEqual, parseISO, parse } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isBefore, isEqual, parseISO, parse } from "date-fns";
 
 const CARDIO_ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
 
@@ -135,14 +135,58 @@ export function getProgramSchedule(enrollment, workouts) {
   const currentDayIndex = enrollment.current_day_index || enrollment.current_day || 1;
 
   const entries = [];
+  const today = format(new Date(), "yyyy-MM-dd");
 
-  // If there are no base templates (edge case), synthesize day slots from override dates
-  const effectiveTrainingDays = trainingDays.length > 0 ? trainingDays : [];
+  const pushEntry = (date, activeWorkout, cycle, dayIndex) => {
+    // Check if this specific workout (cycle + day_index) is completed
+    const completedKey = `${cycle}-${dayIndex}`;
+    const completedSessions = sessionCompletions.get(completedKey) || new Set();
+    const cardioCount = (activeWorkout.cardio_sessions || []).length;
+    const hasExercises = (activeWorkout.exercises || []).length > 0;
+    // Whole-workout complete if: legacy whole-workout entry exists, OR all individual sessions done
+    const isCompleted = completedWorkouts.has(completedKey)
+      || (!hasExercises && cardioCount > 0 && completedSessions.size >= cardioCount);
+
+    entries.push({
+      date,
+      title: activeWorkout.title,
+      programWorkoutId: activeWorkout.id,
+      enrollmentId: enrollment.id,
+      cycle,
+      dayIndex,
+      exercises: activeWorkout.exercises || [],
+      cardio_sessions: (activeWorkout.cardio_sessions || []).map(normalizeCardioSession),
+      programName,
+      // isCurrent means "this is today's workout" (for highlighting in UI)
+      // It's the workout scheduled for today, whether completed or not
+      isCurrent: date === today,
+      completed: isCompleted,
+      completedSessions,
+    });
+  };
+
+  // MPC-generated rows are first-class entries regardless of the cycle window,
+  // with cycle/dayIndex derived from their actual date so completion keying
+  // stays consistent with useLogProgramWorkout.
+  for (const [date, workout] of dateOverrideMap) {
+    const dayDiff = differenceInCalendarDays(parse(date, "yyyy-MM-dd", new Date()), anchor);
+    const cycle = calDaysPerCycle > 0
+      ? Math.max(1, Math.floor(dayDiff / calDaysPerCycle) + 1)
+      : 1;
+    const dayIndex = workout.day_index
+      || (calDaysPerCycle > 0 ? ((dayDiff % calDaysPerCycle) + calDaysPerCycle) % calDaysPerCycle + 1 : 1);
+    pushEntry(date, workout, cycle, dayIndex);
+  }
+
+  // Engine-generated dates own their range — suppress base-template ghosts inside it
+  const overrideDates = [...dateOverrideMap.keys()].sort();
+  const overrideMin = overrideDates[0];
+  const overrideMax = overrideDates[overrideDates.length - 1];
 
   for (let cycle = 1; cycle <= numCycles; cycle++) {
     const cycleStartOffset = (cycle - 1) * calDaysPerCycle;
 
-    for (const workout of effectiveTrainingDays) {
+    for (const workout of trainingDays) {
       // day_index represents the day within the cycle (1-based)
       // Convert to 0-based offset for calendar calculation
       const dayOffset = workout.day_index - 1;
@@ -151,41 +195,13 @@ export function getProgramSchedule(enrollment, workouts) {
         "yyyy-MM-dd"
       );
 
-      // If an MPC-generated override exists for this exact date, use it
-      const override = dateOverrideMap.get(date);
-      const activeWorkout = override || workout;
+      if (overrideMin && date >= overrideMin && date <= overrideMax) continue;
 
-      // Check if this specific workout (cycle + day_index) is completed
-      const completedKey = `${cycle}-${workout.day_index}`;
-      const completedSessions = sessionCompletions.get(completedKey) || new Set();
-      const cardioCount = (activeWorkout.cardio_sessions || []).length;
-      const hasExercises = (activeWorkout.exercises || []).length > 0;
-      // Whole-workout complete if: legacy whole-workout entry exists, OR all individual sessions done
-      const isCompleted = completedWorkouts.has(completedKey)
-        || (!hasExercises && cardioCount > 0 && completedSessions.size >= cardioCount);
-
-      // Determine if this is today's workout (for highlighting)
-      const today = format(new Date(), "yyyy-MM-dd");
-      const isToday = date === today;
-
-      entries.push({
-        date,
-        title: activeWorkout.title,
-        programWorkoutId: activeWorkout.id,
-        enrollmentId: enrollment.id,
-        cycle,
-        dayIndex: workout.day_index,
-        exercises: activeWorkout.exercises || [],
-        cardio_sessions: (activeWorkout.cardio_sessions || []).map(normalizeCardioSession),
-        programName,
-        // isCurrent means "this is today's workout" (for highlighting in UI)
-        // It's the workout scheduled for today, whether completed or not
-        isCurrent: isToday,
-        completed: isCompleted,
-        completedSessions,
-      });
+      pushEntry(date, workout, cycle, workout.day_index);
     }
   }
+
+  entries.sort((a, b) => a.date.localeCompare(b.date));
 
   return entries;
 }

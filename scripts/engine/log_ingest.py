@@ -31,7 +31,9 @@ EPLEY_REP_CAP         = 12                 # Epley unreliable above this — set
 
 # Canonical exercise names (collapse case/plural/spacing dups).
 ALIASES = {
+    "bench": "Bench Press",
     "bench press": "Bench Press",
+    "dumbbell bench": "Dumbbell Bench Press",
     "barbell squats": "Barbell Squat",
     "zercher squats": "Zercher Squat",
     "chest-supported row": "Chest-Supported Row",
@@ -44,8 +46,19 @@ ALIASES = {
     "weighted pull-ups": "Weighted Pull-Up",
     "pull-up": "Weighted Pull-Up",
     "barbell curls": "Barbell Curl",
-    "db curls": "DB Curl",
+    "db curls": "Dumbbell Curl",
     "lateral raises": "Lateral Raise",
+}
+
+# Abbreviation tokens expanded before alias lookup so "DB Bench" and
+# "Dumbbell Bench Press" collide to one identity instead of reading as a swap.
+ABBREVIATIONS = {
+    "db":  "dumbbell",
+    "bb":  "barbell",
+    "kb":  "kettlebell",
+    "ohp": "overhead press",
+    "rdl": "romanian deadlift",
+    "dl":  "deadlift",
 }
 
 # Big-three GOAL lifts = COMPETITION variants only. Per Nolan (2026-06-05):
@@ -78,9 +91,46 @@ GOAL_TARGETS = {
 }
 
 
+def _singularize(key: str) -> str:
+    words = key.split()
+    if not words:
+        return key
+    last = words[-1]
+    if last.endswith(("sses", "shes", "ches", "xes")):
+        words[-1] = last[:-2]
+    elif len(last) > 3 and last.endswith("s") and not last.endswith("ss"):
+        words[-1] = last[:-1]
+    return " ".join(words)
+
+
+def _canon_case(key: str) -> str:
+    """Stable canonical casing for names with no alias entry."""
+    return re.sub(r"[a-z]+", lambda m: m.group()[0].upper() + m.group()[1:], key)
+
+
 def canon(name: str) -> str:
-    key = (name or "").strip().lower()
-    return ALIASES.get(key, (name or "").strip())
+    """Canonical exercise identity: lowercase + collapse whitespace, expand
+    abbreviation tokens, alias lookup at each stage, then a stable canonical
+    casing for unknown names — so case/abbreviation/plural variants of the
+    same lift collide to one key instead of fragmenting learned state."""
+    key = " ".join((name or "").split()).lower()
+    if not key:
+        return ""
+    if key in ALIASES:
+        return ALIASES[key]
+    key = re.sub(r"[a-z0-9]+", lambda m: ABBREVIATIONS.get(m.group(), m.group()), key)
+    if key in ALIASES:
+        return ALIASES[key]
+    key = _singularize(key)
+    if key in ALIASES:
+        return ALIASES[key]
+    return _canon_case(key)
+
+
+def canon_tokens(name: str) -> frozenset:
+    """Normalized token set of the canonical name (for fuzzy same-exercise
+    comparison in the deviation tracker)."""
+    return frozenset(re.findall(r"[a-z0-9]+", canon(name).lower()))
 
 
 def is_bench_everyday(workout_name: str) -> bool:
@@ -221,9 +271,10 @@ def _goal_best_sets(rows: list, goal_lifts: dict) -> dict:
     _, _, best_set = build_histories(rows)
     out = {}
     for goal, members in goal_lifts.items():
+        members_c = {canon(m) for m in members}
         per_day = {}  # date -> (e1rm, set)
         for ex, series in best_set.items():
-            if ex not in members:
+            if ex not in members_c:
                 continue
             for d, s in series:
                 e = compute_e1rm(s["weight"], s["reps"], s["rir"])

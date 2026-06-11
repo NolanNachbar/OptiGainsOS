@@ -171,7 +171,9 @@ class HypertrophyVolumeEngine:
         """
         Reduce lower-body MRV proportionally to weekly running volume.
 
-        reduction = omega * weekly_km sets, subtracted from MRV.
+        reduction = omega * weekly_km sets, subtracted from the BASELINE MRV
+        (mirrors adjust_for_caloric_deficit) — never from the previously-saved
+        value, so repeated runs at constant mileage don't compound the cut.
         """
         reduction = omega * max(0.0, weekly_km)
         for m in _LOWER_BODY_MUSCLES:
@@ -179,7 +181,7 @@ class HypertrophyVolumeEngine:
                 continue
             lm  = self.landmarks[m]
             mev = lm["MEV"]
-            lm["MRV"] = max(mev + 1, round(lm["MRV"] - reduction))
+            lm["MRV"] = max(mev + 1, round(_default_landmarks(m)["MRV"] - reduction))
 
     # ── Accessors ──────────────────────────────────────────────────────────────
 

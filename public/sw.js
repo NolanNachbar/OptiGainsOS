@@ -1,4 +1,8 @@
-const CACHE_NAME = "optigains-v1";
+// Bump this on every deploy so the worker reinstalls and old caches are evicted.
+const CACHE_NAME = "optigains-v2";
+
+// Cap runtime-cached assets so hashed bundles don't accumulate forever.
+const MAX_RUNTIME_ENTRIES = 60;
 
 // Derive base path from where the SW was registered (e.g. "/OptiGainsOS/" or "/")
 const BASE = new URL(self.registration.scope).pathname;
@@ -31,10 +35,18 @@ self.addEventListener("fetch", (event) => {
   if (url.hostname.includes("supabase.co")) return;
   if (url.origin !== location.origin) return;
 
-  // Network-first for navigation requests (keeps app fresh)
+  // Network-first for navigation requests (keeps app fresh); refresh the
+  // precached shell on success so offline launches get the latest index.html
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(BASE + "index.html", clone));
+          }
+          return response;
+        })
         .catch(() => caches.match(BASE + "index.html"))
     );
     return;
@@ -47,13 +59,25 @@ self.addEventListener("fetch", (event) => {
       return fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) =>
+            cache.put(event.request, clone).then(() => trimCache(cache))
+          );
         }
         return response;
       });
     })
   );
 });
+
+// Evict the oldest runtime-cached assets beyond the cap, keeping the app shell.
+async function trimCache(cache) {
+  const keys = await cache.keys();
+  const disposable = keys.filter((req) => !APP_SHELL.includes(new URL(req.url).pathname));
+  const excess = disposable.length - MAX_RUNTIME_ENTRIES;
+  if (excess > 0) {
+    await Promise.all(disposable.slice(0, excess).map((k) => cache.delete(k)));
+  }
+}
 
 // Push notification received
 self.addEventListener("push", (event) => {

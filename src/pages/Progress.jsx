@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import WeightProgressChart from "@/components/progress/WeightProgressChart";
 import {
   TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
@@ -31,6 +33,7 @@ function WeightTab() {
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState(getTodayString());
   const [notes, setNotes] = useState("");
+  const [confirmId, setConfirmId] = useState(null);
 
   const add = useMutation({
     mutationFn: async () => {
@@ -63,7 +66,7 @@ function WeightTab() {
       <Card className="glass glass-interactive">
         <CardContent className="pt-4 pb-5 px-5">
           <h3 className="section-label mb-4">Log Weight</h3>
-          <div className="flex gap-3 items-end">
+          <div className="flex gap-3 items-end flex-wrap">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm w-36" />
@@ -109,7 +112,7 @@ function WeightTab() {
                     </span>
                   )}
                   {entry.notes && <span className="text-xs font-semibold text-muted-2 italic flex-1 truncate">{entry.notes}</span>}
-                  <button onClick={() => del.mutate(entry.id)} className="ml-auto opacity-0 group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+                  <button onClick={() => setConfirmId(entry.id)} className="ml-auto p-2 -my-2 -mr-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -118,6 +121,16 @@ function WeightTab() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmId}
+        onOpenChange={(o) => { if (!o) setConfirmId(null); }}
+        title="Delete weight entry?"
+        description="This weight entry will be permanently removed."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmId); setConfirmId(null); }}
+      />
     </div>
   );
 }
@@ -151,8 +164,9 @@ function MeasurementsTab() {
   const [date, setDate] = useState(getTodayString());
   const [form, setForm] = useState({});
   const [notes, setNotes] = useState("");
+  const [confirmId, setConfirmId] = useState(null);
 
-  const { data: history = [] } = useQuery({
+  const { data: history = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["measurements", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("measurements").select("*").eq("created_by", user.id).order("date", { ascending: false }).limit(10);
@@ -223,6 +237,20 @@ function MeasurementsTab() {
         </CardContent>
       </Card>
 
+      {isLoading && (
+        <div className="space-y-3">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-40 rounded-xl" />
+        </div>
+      )}
+
+      {isError && (
+        <div className="py-8 text-center glass-inset">
+          <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load measurements.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
+        </div>
+      )}
+
       {/* Latest vs previous */}
       {latest && (
         <div>
@@ -264,7 +292,7 @@ function MeasurementsTab() {
                       <td key={f.key} className="px-3 py-2.5 text-right font-technical font-bold text-ink">{row[f.key] ?? "—"}</td>
                     ))}
                     <td className="px-2 py-2.5">
-                      <button onClick={() => del.mutate(row.id)} className="opacity-0 group-hover:opacity-100 text-muted-2 hover:text-bad transition-all">
+                      <button onClick={() => setConfirmId(row.id)} className="p-2 -my-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </td>
@@ -275,6 +303,16 @@ function MeasurementsTab() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmId}
+        onOpenChange={(o) => { if (!o) setConfirmId(null); }}
+        title="Delete measurement entry?"
+        description="This measurement entry will be permanently removed."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmId); setConfirmId(null); }}
+      />
     </div>
   );
 }
@@ -289,21 +327,18 @@ function PhotosTab() {
   const [photoDate, setPhotoDate] = useState(getTodayString());
   const [compareA, setCompareA] = useState(null);
   const [compareB, setCompareB] = useState(null);
-  const [signedUrls, setSignedUrls] = useState({});
+  const [confirmPhoto, setConfirmPhoto] = useState(null);
 
-  const { data: photos = [] } = useQuery({
+  const { data: photos = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["progress-photos", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("progress_photos").select("*").eq("created_by", user.id).order("date", { ascending: false });
       if (error) throw error;
-      // Fetch signed URLs for all photos
-      const urls = {};
-      await Promise.all((data || []).map(async p => {
+      // Attach signed URLs to the query data so they survive remounts
+      return await Promise.all((data || []).map(async p => {
         const { data: urlData } = await supabase.storage.from("progress-photos").createSignedUrl(p.storage_path, 3600);
-        if (urlData?.signedUrl) urls[p.id] = urlData.signedUrl;
+        return { ...p, signedUrl: urlData?.signedUrl || null };
       }));
-      setSignedUrls(urls);
-      return data || [];
     },
     enabled: !!user,
     staleTime: 30 * 60 * 1000,
@@ -405,8 +440,8 @@ function PhotosTab() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {selected && signedUrls[selected.id] ? (
-                    <img src={signedUrls[selected.id]} alt={selected.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
+                  {selected?.signedUrl ? (
+                    <img src={selected.signedUrl} alt={selected.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
                   ) : (
                     <div className="w-full aspect-[3/4] glass-inset flex items-center justify-center">
                       <Camera className="w-6 h-6 text-faint" />
@@ -420,7 +455,19 @@ function PhotosTab() {
       )}
 
       {/* Photo grid */}
-      {Object.keys(grouped).length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
+          <Camera className="w-8 h-8 text-faint mx-auto mb-2" />
+          <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load progress photos.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
+        </div>
+      ) : Object.keys(grouped).length === 0 ? (
         <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
           <Camera className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No progress photos yet.</p>
@@ -435,8 +482,8 @@ function PhotosTab() {
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {datePhotos.map(photo => (
                 <div key={photo.id} className="relative group">
-                  {signedUrls[photo.id] ? (
-                    <img src={signedUrls[photo.id]} alt={photo.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
+                  {photo.signedUrl ? (
+                    <img src={photo.signedUrl} alt={photo.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
                   ) : (
                     <div className="w-full aspect-[3/4] glass-inset flex items-center justify-center">
                       <Camera className="w-5 h-5 text-faint" />
@@ -446,8 +493,8 @@ function PhotosTab() {
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border-[0.5px] ${ANGLE_COLORS[photo.angle] || ""}`}>{photo.angle}</span>
                   </div>
                   <button
-                    onClick={() => del.mutate({ id: photo.id, storage_path: photo.storage_path })}
-                    className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-ink opacity-0 group-hover:opacity-100 transition-all hover:bg-bad/80"
+                    onClick={() => setConfirmPhoto(photo)}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-bad/80"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -457,6 +504,16 @@ function PhotosTab() {
           </div>
         ))
       )}
+
+      <ConfirmDialog
+        open={!!confirmPhoto}
+        onOpenChange={(o) => { if (!o) setConfirmPhoto(null); }}
+        title="Delete progress photo?"
+        description="This photo will be permanently removed from storage."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate({ id: confirmPhoto.id, storage_path: confirmPhoto.storage_path }); setConfirmPhoto(null); }}
+      />
     </div>
   );
 }
@@ -467,11 +524,14 @@ function MetabolismTab() {
   const { data: state } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("athlete_state").select("*").eq("created_by", user.id).eq("date", today).maybeSingle();
+      const { data, error } = await supabase.from("athlete_state").select("*").eq("created_by", user.id).eq("date", today).maybeSingle();
+      if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
+
+  const weightTrend = state?.nutrition?.weight_trend_lbs_per_week;
 
   return (
     <div className="space-y-6">
@@ -482,7 +542,9 @@ function MetabolismTab() {
                 <Flame className="w-4 h-4 text-gold" />
                 <h3 className="section-label !text-ink">Expenditure Engine</h3>
               </div>
-              <Badge className="bg-teal/10 text-teal border-none">Active</Badge>
+              <Badge className={state?.nutrition ? "bg-teal/10 text-teal border-none" : "bg-white/[0.06] text-muted-2 border-none"}>
+                {state?.nutrition ? "Active" : "No data"}
+              </Badge>
            </div>
            <div className="text-center py-4">
               <p className="hero-metric text-ink text-4xl">{state?.nutrition?.avg_calories_7d || state?.nutrition?.avg_daily_calories_7d || "—"}</p>
@@ -496,7 +558,7 @@ function MetabolismTab() {
             <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" /> Weight Trend
             </p>
-            <p className="font-technical text-lg font-extrabold text-ink">{state?.nutrition?.weight_trend_lbs_per_week || "—"} lbs/wk</p>
+            <p className="font-technical text-lg font-extrabold text-ink">{weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend} lbs/wk` : "—"}</p>
          </Card>
          {(() => {
             // Net energy derived from the measured weight trend rather than a

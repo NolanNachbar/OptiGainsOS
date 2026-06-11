@@ -4,6 +4,12 @@ import { format, parseISO } from 'date-fns';
 import { calculateEWMA } from "@/utils/coachingUtils";
 
 export default function WeightProgressChart({ data, weightUnit = 'lbs', className }) {
+  const sortedData = [...(data || [])].sort((a, b) =>
+    new Date(a.recorded_date) - new Date(b.recorded_date)
+  );
+
+  const trendedData = useMemo(() => calculateEWMA(sortedData, 0.1), [sortedData]);
+
   if (!data || data.length === 0) {
     return (
       <div className={`w-full ${className || 'h-80'} flex items-center justify-center glass-inset`}>
@@ -11,12 +17,6 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       </div>
     );
   }
-
-  const sortedData = [...data].sort((a, b) =>
-    new Date(a.recorded_date) - new Date(b.recorded_date)
-  );
-
-  const trendedData = useMemo(() => calculateEWMA(sortedData, 0.1), [sortedData]);
 
   const startWeight = sortedData[0]?.weight || 0;
   const currentWeight = sortedData[sortedData.length - 1]?.weight || 0;

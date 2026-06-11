@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../api/supabaseClient';
 
 const AuthContext = createContext({});
@@ -8,6 +9,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Dev-only escape hatch. Never honored in production builds.
@@ -75,6 +77,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('bypass_auth');
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) throw error;
+    queryClient.clear();
   };
 
   const resetPassword = async (email) => {

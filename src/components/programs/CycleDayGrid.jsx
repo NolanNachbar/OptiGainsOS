@@ -43,7 +43,8 @@ export default function CycleDayGrid({
 
   const currentCycle = enrollment?.current_cycle || 0;
   const currentDayIndex = enrollment?.current_day_index || 0;
-  const startDate = enrollment?.start_date ? parseISO(enrollment.start_date) : null;
+  const startDateRaw = enrollment?.started_at || enrollment?.start_date;
+  const startDate = startDateRaw ? parseISO(String(startDateRaw).slice(0, 10)) : null;
 
   // View mode: wrap at 7 columns like a calendar
   const colsPerRow = cycleLength > 7 ? 7 : cycleLength;
@@ -72,7 +73,7 @@ export default function CycleDayGrid({
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                     cycle === currentCycle
-                      ? "bg-brand/15 text-[#FFD9C9]"
+                      ? "bg-brand/15 text-brandTint"
                       : "bg-white/[0.06] text-ink-muted border border-white/10"
                   }`}
                 >

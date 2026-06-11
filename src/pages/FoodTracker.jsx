@@ -264,7 +264,7 @@ export default function FoodTracker() {
     },
   });
 
-  const { data: foodEntries = [] } = useQuery({
+  const { data: foodEntries = [], isLoading: entriesLoading, isError: entriesError, refetch: refetchEntries } = useQuery({
     queryKey: queryKeys.foodEntries(selectedDate, user?.id),
     queryFn: () => db.entities.FoodEntry.filter({
       date: selectedDate,
@@ -333,6 +333,29 @@ export default function FoodTracker() {
     },
     onSuccess: () => invalidateCustomFoods(queryClient),
   });
+
+  // Build the custom-food payload from the current form. USDA baseMacros are
+  // per 100g, so non-g/ml units need converting to per-1-unit before saving.
+  const buildCustomFoodPayload = () => {
+    const unit = newFood.serving_unit;
+    let scale = 1;
+    if (isUsdaFood && !['g', 'ml'].includes(unit)) {
+      const isServingLike = unit === 'serving' || unit === 'piece';
+      const gramsPerUnit = isServingLike
+        ? (foodServingSizeGrams ?? 100)
+        : (UNIT_TO_GRAMS[unit] ?? 1);
+      scale = gramsPerUnit / 100;
+    }
+    return {
+      food_name: newFood.food_name,
+      serving_size: ['g', 'ml'].includes(unit) ? 100 : 1,
+      serving_unit: unit,
+      calories: Math.round(baseMacros.calories * scale),
+      protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
+      carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
+      fats_grams: Math.round(baseMacros.fats_grams * scale * 10) / 10,
+    };
+  };
 
   const handleImportFoodsCSV = (e) => {
     const file = e.target.files[0];
@@ -473,15 +496,7 @@ export default function FoodTracker() {
   };
 
   if (newFood.food_name && baseMacros.calories > 0) {
-    saveCustomFoodMutation.mutate({
-      food_name: newFood.food_name,
-      serving_size: ['g', 'ml'].includes(newFood.serving_unit) ? 100 : 1,
-      serving_unit: newFood.serving_unit,
-      calories: Math.round(baseMacros.calories),
-      protein_grams: Math.round(baseMacros.protein_grams * 10) / 10,
-      carbs_grams: Math.round(baseMacros.carbs_grams * 10) / 10,
-      fats_grams: Math.round(baseMacros.fats_grams * 10) / 10,
-    });
+    saveCustomFoodMutation.mutate(buildCustomFoodPayload());
   }
 
   setMealItems((prev) => [...prev, item]);
@@ -905,6 +920,27 @@ const handleSaveMealTemplate = () => {
             )}
 
             {/* Numbered meal sections */}
+            {entriesError ? (
+              <div className="glass px-4 py-6 flex flex-col items-center gap-2.5 text-center">
+                <AlertTriangle className="w-4 h-4 text-warn" />
+                <p className="text-xs text-ink-muted">Couldn't load this day's food log.</p>
+                <Button variant="dim" size="sm" onClick={() => refetchEntries()}>Retry</Button>
+              </div>
+            ) : entriesLoading ? (
+              <div className="space-y-4">
+                {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => (
+                  <div key={mealType} className="glass overflow-hidden">
+                    <div className="px-4 py-3 border-b hairline">
+                      <div className="h-3 w-24 rounded bg-white/[0.06] animate-pulse" />
+                    </div>
+                    <div className="px-4 py-4 space-y-2">
+                      <div className="h-3 w-full rounded bg-white/[0.05] animate-pulse" />
+                      <div className="h-3 w-2/3 rounded bg-white/[0.05] animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="space-y-4">
               {[
                 { mealType: 'breakfast', label: '01. BREAKFAST' },
@@ -953,8 +989,10 @@ const handleSaveMealTemplate = () => {
                                   onClick={() => togglePlannedMutation.mutate(entry.id)}
                                   title="Mark as eaten"
                                   aria-label="Mark as eaten"
-                                  className="shrink-0 w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-[rgba(123,201,111,0.18)] hover:border-leaf/60 transition-colors"
-                                />
+                                  className="shrink-0 p-2 -m-1.5 flex items-center justify-center"
+                                >
+                                  <span className="w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-[rgba(123,201,111,0.18)] hover:border-leaf/60 transition-colors" />
+                                </button>
                               )}
                               <div className="flex flex-col min-w-0 justify-center">
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -990,7 +1028,7 @@ const handleSaveMealTemplate = () => {
                                 <span className="text-[8px] uppercase text-ink-muted font-bold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
-                            <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEditEntry(entry)} className="p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1027,6 +1065,7 @@ const handleSaveMealTemplate = () => {
                 );
               })}
             </div>
+            )}
 
             {/* Save full day as template */}
             {foodEntries.length > 0 && (
@@ -1235,7 +1274,6 @@ const handleSaveMealTemplate = () => {
           setShowAddDialog(open);
           if (!open) {
             resetForm();
-            setSelectedDate(format(new Date(), "yyyy-MM-dd"));
           }
         }}>
           <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
@@ -1294,7 +1332,7 @@ const handleSaveMealTemplate = () => {
                           {matchingCustomFoods.length > 0 && (
                             <>
                               <div className="px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center gap-1 sticky top-0">
-                                <Star className="w-3 h-3 fill-amber-500" /> My Foods
+                                <Star className="w-3 h-3 fill-warn" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
                                 <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
@@ -1368,7 +1406,7 @@ const handleSaveMealTemplate = () => {
                         )}
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-semibold text-warn flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-amber-500" /> My Foods
+                            <Star className="w-3 h-3 fill-warn" /> My Foods
                           </span>
                           <div className="flex items-center gap-2">
                             <button
@@ -1403,7 +1441,7 @@ const handleSaveMealTemplate = () => {
                               onClick={() => setMyFoodsExpanded(!myFoodsExpanded)}
                               className="w-full px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center justify-between hover:bg-warn/10 transition-colors"
                             >
-                              <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> My Foods ({customFoods.length})</span>
+                              <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-warn" /> My Foods ({customFoods.length})</span>
                               {myFoodsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {myFoodsExpanded && (
@@ -1633,7 +1671,7 @@ const handleSaveMealTemplate = () => {
                         </div>
 
                         {macroCalcWarning && (
-                          <div className="bg-warn/10 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                          <div className="bg-warn/10 border border-warn/30 rounded-lg px-3 py-2 text-xs text-warn">
                             <div className="flex items-center gap-1.5 font-medium mb-1">
                               <AlertTriangle className="w-3.5 h-3.5" />
                               Macros don't match calories
@@ -1663,15 +1701,7 @@ const handleSaveMealTemplate = () => {
                     addFoodMutation.mutate(newFood);
                     // Save manually-entered foods to custom_foods (fire-and-forget, per-serving values)
                     if (newFood.food_name && baseMacros.calories > 0) {
-                      saveCustomFoodMutation.mutate({
-                        food_name: newFood.food_name,
-                        serving_size: ['g', 'ml'].includes(newFood.serving_unit) ? 100 : 1,
-                        serving_unit: newFood.serving_unit,
-                        calories: Math.round(baseMacros.calories),
-                        protein_grams: Math.round(baseMacros.protein_grams * 10) / 10,
-                        carbs_grams: Math.round(baseMacros.carbs_grams * 10) / 10,
-                        fats_grams: Math.round(baseMacros.fats_grams * 10) / 10,
-                      });
+                      saveCustomFoodMutation.mutate(buildCustomFoodPayload());
                     }
                   }}
                   disabled={!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending}
@@ -1991,7 +2021,7 @@ const handleSaveMealTemplate = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => removeMealItem(item.id)}
-                    className="text-bad hover:text-bad hover:bg-red-50"
+                    className="text-bad hover:text-bad hover:bg-bad/10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -2133,11 +2163,11 @@ function GoalsFormContent({
               </Button>
             </div>
             {goalsOutOfSync && (
-              <div className="flex items-center justify-between gap-3 pt-1 border-t border-amber-200">
+              <div className="flex items-center justify-between gap-3 pt-1 border-t border-warn/30">
                 <p className="text-xs text-warn">
                   Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
                 </p>
-                <Button type="button" size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-ink text-xs h-7"
+                <Button type="button" size="sm" className="shrink-0 bg-warn/90 hover:bg-warn text-charcoal text-xs h-7"
                   onClick={() => {
                     const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
                     const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;

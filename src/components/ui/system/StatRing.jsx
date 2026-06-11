@@ -28,12 +28,12 @@ export default function StatRing({
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#7FE9DD" />
-            <stop offset="100%" stopColor="#3DB8AE" />
+            <stop offset="0%" stopColor="var(--hue-teal)" />
+            <stop offset="100%" stopColor="var(--hue-teal-2)" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="rgba(255,255,255,0.09)" strokeWidth={sw} />
+          stroke="var(--color-border-soft)" strokeWidth={sw} />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke={arcStroke} strokeWidth={sw} strokeLinecap="round"

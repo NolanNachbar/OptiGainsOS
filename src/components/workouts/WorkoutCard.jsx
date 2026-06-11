@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete }) {
-  const borderColor = '#7c3aed';
+  const borderColor = 'var(--hue-violet)';
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -143,7 +143,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
               variant="primary"
-              className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-ink border-none"
+              className="w-full text-sm"
             >
               View Details
             </Button>

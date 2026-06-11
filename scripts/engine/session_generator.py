@@ -67,7 +67,7 @@ def _is_cautioned(ex: dict, caution: dict) -> bool:
 
 # ── Exercise pool ─────────────────────────────────────────────────────────────
 # pattern: squat | hinge | vertical_pull | horizontal_pull | vertical_push |
-#          horizontal_push | isolation_upper | isolation_lower | calisthenics
+#          horizontal_push | dip | isolation_upper | isolation_lower
 # type: COMPOUND_AXIAL | COMPOUND_PERIPHERAL | ISOLATION
 # fatigue_cost: 1.0–5.0 (neurological cost; higher = heavier CNS demand)
 # muscles: primary muscles (used for per-muscle fatigue tracking)
@@ -277,24 +277,30 @@ EXERCISES = [
      "notes": "Soleus bias — pause at the stretch."},
 
     # ── Calisthenics (selected by knapsack when AMPK/session-type warrants) ─
-    {"name": "Pull-up Pyramid",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 3.0,
+    # Tagged with their TRUE movement family so the compound-pattern uniqueness
+    # check sees pull-ups as vertical_pull, push-ups as horizontal_push, etc.;
+    # is_bodyweight marks them for AMPK prioritisation.
+    {"name": "Pull-up Pyramid",  "pattern": "vertical_pull", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 3.0,
      "muscles": ["lats","biceps"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
-     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: 1 rep rest 2 reps rest... peak at 5 back down. 25 total reps."},
-    {"name": "Push-up Pyramid",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
+     "rir_target": 2, "rest_seconds": 30, "is_bodyweight": True,
+     "notes": "Pyramid: 1 rep rest 2 reps rest... peak at 5 back down. 25 total reps."},
+    {"name": "Push-up Pyramid",  "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
      "muscles": ["chest","triceps"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
-     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: 1 rep rest 2 reps... peak at 5. 25 total. Add rounds to scale."},
-    {"name": "Dip Pyramid",      "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
+     "rir_target": 2, "rest_seconds": 30, "is_bodyweight": True,
+     "notes": "Pyramid: 1 rep rest 2 reps... peak at 5. 25 total. Add rounds to scale."},
+    {"name": "Dip Pyramid",      "pattern": "dip", "type": "COMPOUND_PERIPHERAL", "fatigue_cost": 2.5,
      "muscles": ["triceps","chest"], "sets": 1, "rep_target": "1-2-3-4-5-4-3-2-1",
-     "rir_target": 2, "rest_seconds": 30, "notes": "Pyramid: same structure as pull-up pyramid. 25 total."},
-    {"name": "Push-ups",              "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL",
+     "rir_target": 2, "rest_seconds": 30, "is_bodyweight": True,
+     "notes": "Pyramid: same structure as pull-up pyramid. 25 total."},
+    {"name": "Push-ups",              "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["chest", "triceps"],
-     "sets": 3, "rep_target": "25-30","rir_target": 2, "rest_seconds": 60},
-    {"name": "Bodyweight Pull-ups",   "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL",
+     "sets": 3, "rep_target": "25-30","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
+    {"name": "Bodyweight Pull-ups",   "pattern": "vertical_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "biceps"],
-     "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 75},
-    {"name": "Dips",              "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL",
+     "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 75, "is_bodyweight": True},
+    {"name": "Dips",              "pattern": "dip", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["chest", "triceps"],
-     "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60},
+     "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
     {"name": "Hanging Leg Raise", "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["core", "hip_flexors"],
      "sets": 3, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
@@ -304,9 +310,9 @@ EXERCISES = [
     {"name": "Hip Thrust",        "pattern": "hip_thrust",      "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.5, "muscles": ["glutes", "hamstrings"],
      "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 75, "is_primary": True},
-    {"name": "Diamond Push-ups",  "pattern": "calisthenics", "type": "COMPOUND_PERIPHERAL",
+    {"name": "Diamond Push-ups",  "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["triceps", "chest"],
-     "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60},
+     "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
 ]
 
 # Quick lookup by name
@@ -449,7 +455,8 @@ def _clean(ex: dict) -> dict:
     """Strip internal engine tags before writing to DB."""
     return {k: v for k, v in ex.items()
             if k not in ("pattern", "muscles", "is_primary", "is_backoff", "is_goal",
-                         "type", "fatigue_cost", "is_assistance", "assist_for")}
+                         "type", "fatigue_cost", "is_assistance", "assist_for",
+                         "is_bodyweight")}
 
 
 def interference_attenuation(ampk, interference_score):
@@ -654,7 +661,7 @@ def _build_session(
       1. Compute per-session set target = max(1, round(weekly_target / freq))
       2. Pick highest-priority exercise for that muscle (goal > primary > fatigue_cost)
       3. Enforce pattern diversity — no two exercises of the same compound pattern
-         (isolations and calisthenics patterns can repeat freely)
+         (only isolation patterns can repeat freely)
       4. Sort by fatigue_cost descending (heavy compounds first)
 
     Calisthenics movements are eligible for the knapsack when AMPK is elevated
@@ -678,19 +685,34 @@ def _build_session(
         wt = {m: 12 for m in relevant}
 
     # Patterns that may repeat (not subject to compound-pattern uniqueness constraint)
-    _REPEATABLE_PATTERNS = {"isolation_upper", "isolation_lower", "calisthenics", "hip_thrust"}
+    _REPEATABLE_PATTERNS = {"isolation_upper", "isolation_lower"}
+
+    # Lower-split emphasis rotation: the squat-primary day drops the deadlift top
+    # set (RDL fills hamstrings) and the hinge-primary day drops the squat top set
+    # (Front/Box Squat fills quads), so the alternation actually alternates.
+    excluded_names: set = set()
+    if split == "lower_squat_primary":
+        excluded_names.add("Deadlift (Top Set)")
+    elif split == "lower_hinge_primary":
+        excluded_names.add("Back Squat (Top Set)")
 
     used_patterns: set = set()
+    chosen_names: set = set()
     slots: list = []
 
     for muscle in relevant:
         weekly = wt.get(muscle, 0)
-        # All exercises that hit this muscle as primary, excluding back-off and
-        # assistance variants (both are appended explicitly after the goal lift).
+        # All exercises that hit this muscle, excluding back-off and assistance
+        # variants (both are appended explicitly after the goal lift). Goal lifts
+        # may only fill their PRIMARY-muscle slot — otherwise the +10 goal bonus
+        # lets them leak into other splits via secondary muscles and defeat the
+        # split's recovery partition (e.g. full_body_b picking the heavy squat).
         pool = [e for e in EXERCISES
                 if muscle in (e.get("muscles") or [])
                 and not e.get("is_backoff")
-                and not e.get("is_assistance")]
+                and not e.get("is_assistance")
+                and e.get("name") not in excluded_names
+                and (not e.get("is_goal") or (e.get("muscles") or [""])[0] == muscle)]
         if not pool:
             continue
 
@@ -701,15 +723,19 @@ def _build_session(
         def _sel_key(ex):
             score = _priority_score(ex)
             if exercise_values:
-                score += EXVAL_SELECT_WEIGHT * float(exercise_values.get(canon(ex.get("name", "")), 0.0))
+                value = float(exercise_values.get(canon(ex.get("name", "")), 0.0))
+                score += EXVAL_SELECT_WEIGHT * max(-3.0, min(3.0, value))
             if _is_cautioned(ex, caution):
                 score -= CAUTION_PENALTY
             return score
         pool.sort(key=_sel_key, reverse=True)
 
         # Pick highest-priority exercise respecting compound-pattern diversity
+        # and name dedup — the same exercise never fills two slots in a session.
         chosen = None
         for ex in pool:
+            if ex.get("name") in chosen_names:
+                continue
             pat = ex.get("pattern", "")
             is_repeatable = pat in _REPEATABLE_PATTERNS
             if is_repeatable or pat not in used_patterns:
@@ -720,6 +746,7 @@ def _build_session(
 
         if not chosen:
             continue
+        chosen_names.add(chosen.get("name"))
 
         ex_copy = copy.deepcopy(chosen)
         
@@ -1176,7 +1203,7 @@ class SessionGenerator:
                 run_block = {
                     "zone": c.get("zone", "Z2"),
                     "session_miles": session_miles,
-                    "pace": c.get("notes", "").split(".")[0],
+                    "pace": c.get("pace", ""),
                     "duration_minutes": dur,
                     "notes": c.get("notes", "")
                 }

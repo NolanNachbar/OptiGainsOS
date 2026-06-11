@@ -72,7 +72,7 @@ export function MiniRing({ label, value, frac = 1, hue = "var(--hue-teal)", size
   return (
     <div className="flex flex-col items-center gap-[3px]">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cx} r={r} stroke="rgba(255,255,255,0.09)" strokeWidth={size * 0.107} fill="none" />
+        <circle cx={cx} cy={cx} r={r} stroke="var(--color-border-soft)" strokeWidth={size * 0.107} fill="none" />
         <circle cx={cx} cy={cx} r={r} stroke={hue} strokeWidth={size * 0.107} fill="none" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - clamped)} transform={`rotate(-90 ${cx} ${cx})`} />
         <text x={cx} y={cx + size * 0.095} textAnchor="middle" fill="var(--text-primary)"

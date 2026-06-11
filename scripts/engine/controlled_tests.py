@@ -105,11 +105,11 @@ def step_volume_test(active: dict, muscle_slope, soreness_avg: float,
     week = int(b.get("week", 1))
 
     responding  = muscle_slope is not None and muscle_slope > 0
-    recoverable = soreness_avg < 4.0
+    recoverable = soreness_avg < 7.0   # 1-10 scale (check-in 0-3 mapped 1+3v)
     if responding and recoverable:
         b["best_tolerated"] = max(b.get("best_tolerated") or 0, week_sets)
 
-    stalled = (muscle_slope is not None and muscle_slope <= 0) and soreness_avg >= 4.0
+    stalled = (muscle_slope is not None and muscle_slope <= 0) and soreness_avg >= 7.0
     done = stalled or week >= RAMP_WEEKS
 
     row = dict(active)

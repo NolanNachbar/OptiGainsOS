@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, addWeeks, subWeeks, startOfWeek, isSameDay } from "date-fns";
 import { ChevronLeft, ChevronRight, Dumbbell, Timer, Moon, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
+import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useEnrollments } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 
@@ -17,7 +18,7 @@ const TYPE_PILLS = {
   CARDIO:    { bg: "rgba(var(--hue-blue-rgb) / 0.14)",   fg: "var(--hue-blue)",   label: "CARDIO" },
   MIXED:     { bg: "rgba(var(--hue-violet-rgb) / 0.14)", fg: "var(--hue-violet)", label: "MIXED" },
   TWO_A_DAY: { bg: "rgba(var(--hue-gold-rgb) / 0.14)",   fg: "var(--hue-gold)",   label: "TWO-A-DAY" },
-  REST:      { bg: "rgba(255,255,255,0.07)",             fg: "rgba(242,244,247,0.55)", label: "REST" },
+  REST:      { bg: "rgba(255,255,255,0.07)",             fg: "var(--text-muted)", label: "REST" },
 };
 
 function dayType(entries, log) {
@@ -98,7 +99,7 @@ export default function WeeklySchedule() {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekDateStrs = weekDays.map(d => format(d, "yyyy-MM-dd"));
 
-  const { data: weekLogs = [] } = useQuery({
+  const { data: weekLogs = [], isLoading: logsLoading, isError: logsError, refetch: refetchLogs } = useQuery({
     queryKey: ["weekLogs", user?.id, format(weekStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -115,21 +116,7 @@ export default function WeeklySchedule() {
 
   const activeEnrollment = enrollments.find(e => e.status === "active");
 
-  const cardioKey = useCallback((date, name) =>
-    `cardio_done_${user?.id}_${format(date, "yyyy-MM-dd")}_${name}`, [user?.id]);
-
-  const isCardioDone = (date, name) => {
-    try { return !!localStorage.getItem(cardioKey(date, name)); } catch { return false; }
-  };
-  const toggleCardio = (date, name) => {
-    const key = cardioKey(date, name);
-    try {
-      if (localStorage.getItem(key)) localStorage.removeItem(key);
-      else localStorage.setItem(key, '1');
-    } catch {}
-    // force re-render
-    setSelectedDay(d => new Date(d));
-  };
+  const { isDone: isCardioDone, toggle: toggleCardio } = useCardioCompletions(format(selectedDay, "yyyy-MM-dd"));
 
   const programEntries = useMemo(() => {
     if (!activeEnrollment?.program?.workouts) return [];
@@ -167,24 +154,42 @@ export default function WeeklySchedule() {
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
           onClick={() => setWeekStart(w => subWeeks(w, 1))}
-          className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          className="p-[7px] -m-[7px] rounded-full text-ink-muted hover:text-ink transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10">
+            <ChevronLeft className="w-4 h-4" />
+          </span>
         </button>
         <span className="font-technical text-[13px] font-extrabold text-ink">
           {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          className="p-[7px] -m-[7px] rounded-full text-ink-muted hover:text-ink transition-colors"
         >
-          <ChevronRight className="w-4 h-4" />
+          <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10">
+            <ChevronRight className="w-4 h-4" />
+          </span>
         </button>
       </div>
 
       {/* Week rows — date · type pill · detail · status */}
       <div className="glass px-3.5 py-2.5 mb-4 rise-in">
-        {weekDays.map((day, i) => {
+        {logsLoading ? (
+          weekDays.map((_, i) => (
+            <div key={i} className="data-row">
+              <div className="w-[38px] h-9 rounded-[10px] bg-white/[0.05] animate-pulse shrink-0" />
+              <div className="flex-1 h-4 rounded-full bg-white/[0.05] animate-pulse" />
+            </div>
+          ))
+        ) : logsError ? (
+          <div className="py-4 flex flex-col items-center gap-2">
+            <p className="text-[12px] font-semibold text-muted-2">Couldn't load this week's logs.</p>
+            <button onClick={() => refetchLogs()} className="cta-ghost text-[12px] px-4 py-1.5">
+              Retry
+            </button>
+          </div>
+        ) : weekDays.map((day, i) => {
           const log = getLogForDay(day);
           const entries = getEntriesForDay(day);
           const isSelected = isSameDay(day, selectedDay);
@@ -203,10 +208,10 @@ export default function WeeklySchedule() {
               className={`data-row w-full text-left transition-colors ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
             >
               <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "bg-brand/15 rounded-[10px] py-1" : ""}`}>
-                <span className={`block text-[9.5px] font-bold tracking-[0.1em] ${isCurrentDay ? "text-[#FFD9C9]" : "text-muted-2"}`}>
+                <span className={`block text-[9.5px] font-bold tracking-[0.1em] ${isCurrentDay ? "text-brandTint" : "text-muted-2"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
-                <span className={`block text-[15px] font-extrabold ${isCurrentDay ? "text-[#FFD9C9]" : "text-ink"}`}>
+                <span className={`block text-[15px] font-extrabold ${isCurrentDay ? "text-brandTint" : "text-ink"}`}>
                   {format(day, "d")}
                 </span>
               </div>
@@ -267,7 +272,7 @@ export default function WeeklySchedule() {
                       </h3>
                       {mins && <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">{mins} min</p>}
                     </div>
-                    <div className="w-6 h-6 rounded-full bg-[rgba(123,201,111,0.18)] flex items-center justify-center shrink-0 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-leaf/15 flex items-center justify-center shrink-0 mt-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-leaf" />
                     </div>
                   </div>
@@ -292,7 +297,6 @@ export default function WeeklySchedule() {
             {/* ── Upcoming program workout (no log yet) ── */}
             {!selectedLog && selectedEntries.map((entry, idx) => {
               const lifts = (entry.exercises || []).filter(ex => !isRun(ex));
-              const runs = entry.cardio_sessions || [];
               return (
                 <div key={idx} className="glass overflow-hidden rise-in-2">
                   <div className="px-4 pt-3.5 pb-1">
@@ -319,26 +323,6 @@ export default function WeeklySchedule() {
                       </div>
                     </div>
                   )}
-                  {runs.length > 0 && (
-                    <div className="px-4 py-2.5 border-t hairline">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <Timer className="w-3 h-3 text-carb" />
-                        <span className="section-label !text-carb">Cardio</span>
-                      </div>
-                      {runs.map((ex, j) => {
-                        const title = ex.title || `${ex.zone || "Z2"} ${ex.activity_type || "run"}`;
-                        return (
-                          <div key={j} className="mb-2 last:mb-0">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[13px] font-semibold text-ink">{title}</span>
-                              <span className="font-technical text-[11px] font-bold text-muted-2">{ex.duration_minutes} min</span>
-                            </div>
-                            {ex.notes && <p className="text-[11px] text-muted-2 mt-0.5">{ex.notes}</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                   <div className="px-4 pb-4 pt-2">
                     {isToday ? (
                       <button
@@ -360,7 +344,7 @@ export default function WeeklySchedule() {
               );
             })}
 
-            {/* ── Pending cardio for today when lift is already logged ── */}
+            {/* ── Prescribed cardio with check-off ── */}
             {selectedEntries.map((entry, idx) => {
               const runs = entry.cardio_sessions || [];
               if (!runs.length) return null;
@@ -374,7 +358,7 @@ export default function WeeklySchedule() {
                     <div className="space-y-3">
                       {runs.map((ex, j) => {
                         const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
-                        const done = isCardioDone(selectedDay, name);
+                        const done = isCardioDone(name);
                         return (
                           <div key={j} className="flex items-start justify-between gap-3">
                             <div className={done ? "opacity-50" : ""}>
@@ -385,14 +369,16 @@ export default function WeeklySchedule() {
                               {ex.notes && <p className="text-[11px] text-muted-2 mt-0.5">{ex.notes}</p>}
                             </div>
                             <button
-                              onClick={() => toggleCardio(selectedDay, name)}
-                              className={`shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-                                done
-                                  ? "bg-[rgba(123,201,111,0.18)] text-leaf"
-                                  : "border-[1.5px] border-white/[0.18] hover:border-carb"
-                              }`}
+                              onClick={() => toggleCardio(name)}
+                              className="shrink-0 p-2.5 -m-2.5 mt-[-8px] rounded-full"
                             >
-                              {done && <CheckCircle2 className="w-4 h-4" />}
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                                done
+                                  ? "bg-leaf/15 text-leaf"
+                                  : "border-[1.5px] border-white/[0.18] hover:border-carb"
+                              }`}>
+                                {done && <CheckCircle2 className="w-4 h-4" />}
+                              </span>
                             </button>
                           </div>
                         );

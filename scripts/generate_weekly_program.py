@@ -625,7 +625,7 @@ def main():
     cycle_length = int(enrollment.get("days_per_week") or 7)
 
     raw_start        = enrollment.get("started_at") or enrollment.get("start_date") or ""
-    enrollment_start = datetime.date.fromisoformat(raw_start[:10])
+    enrollment_start = datetime.date.fromisoformat(raw_start[:10]) if raw_start else TODAY
 
     print(f"  Program: {program_id} | Week: {current_week} | Start: {enrollment_start}")
     if cellular_state:
@@ -652,11 +652,35 @@ def main():
     # Per-muscle e1RM response — drives both the landmark loop and the bandit.
     perf_slopes = muscle_perf_slopes(progression_registry)
 
+    # Idempotency: learn at most once per week. If we already produced a plan for
+    # THIS week — or a partially-failed run already armed the learned_week marker —
+    # skip ALL learner updates on re-run (just re-allocate below). The marker is
+    # written BEFORE the first learner update so a crash between the learner
+    # writes and the weekly_plans upsert can't double-count on retry.
+    prev_plans = sb_get("weekly_plans", {
+        "select": "week_start,set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
+        "order": "week_start.desc", "limit": "1"})
+    _this_week = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+    _lw_rows = sb_get("athlete_params", {
+        "select": "meta", "created_by": f"eq.{USER_ID}", "param_key": "eq.learned_week"})
+    _lw_meta = ((_lw_rows[0].get("meta") if _lw_rows else None) or {})
+    already_ran = bool(
+        (prev_plans and str(prev_plans[0].get("week_start")) == _this_week)
+        or str(_lw_meta.get("week_start")) == _this_week)
+    if already_ran:
+        print("  (already ran this week — skipping learner updates, re-allocating only)")
+    else:
+        sb_upsert("athlete_params", {
+            "created_by": USER_ID, "param_key": "learned_week",
+            "mean": 0.0, "variance": 1.0, "n_obs": 0, "mature": False,
+            "meta": {"week_start": _this_week},
+        }, conflict_cols="created_by,param_key")
+
     # 4a. Close last week's exploration loop: reward the muscle(s) we probed by
     #     their actual response, penalised by soreness. Only muscles with a real
     #     slope signal are scored — an un-measurable probe stays "unpulled" so
     #     UCB keeps it eligible instead of pinning its value at a fake zero.
-    for muscle in last_explored:
+    for muscle in (last_explored if not already_ran else []):
         slope = perf_slopes.get(muscle)
         if slope is None:
             continue
@@ -670,10 +694,11 @@ def main():
     # 4b. Learn each muscle's MEV/MAV/MRV from its own response + soreness
     #     (the previously-dormant update_landmarks loop). MRV ratchets down only
     #     when a muscle stalls AND is sore; MAV creeps up while it's responding.
-    learned = volume_engine.learn_from_response(perf_slopes, soreness_muscle)
-    if learned:
-        print(f"  Landmarks learned: "
-              f"{ {m: lm['MRV'] for m, lm in learned.items()} }")
+    if not already_ran:
+        learned = volume_engine.learn_from_response(perf_slopes, soreness_muscle)
+        if learned:
+            print(f"  Landmarks learned: "
+                  f"{ {m: lm['MRV'] for m, lm in learned.items()} }")
 
     # 4c. Environmental scaling on top of the learned landmarks.
     volume_engine.adjust_for_running(weekly_km)
@@ -711,16 +736,6 @@ def main():
         "select": "*", "created_by": f"eq.{USER_ID}", "param_key": "eq.exercise_values"})
     ev_meta = ((_ev_rows[0].get("meta") if _ev_rows else None) or {})
 
-    # Idempotency: learn at most once per week. If we already produced a plan for
-    # THIS week, skip the learners/test-step on re-run (just re-allocate below).
-    prev_plans = sb_get("weekly_plans", {
-        "select": "week_start,set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
-        "order": "week_start.desc", "limit": "1"})
-    _this_week = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
-    already_ran = bool(prev_plans and str(prev_plans[0].get("week_start")) == _this_week)
-    if already_ran:
-        print("  (already ran this week — skipping learner updates, re-allocating only)")
-
     # One reward per exercise touched by any signal this week, then a posterior
     # update. Guarded by already_ran so a same-week re-run can't double-count.
     if not already_ran:
@@ -728,17 +743,32 @@ def main():
         touched = (set(_ex_history)
                    | set(deviations["chosen"]) | set(deviations["dropped"])
                    | set(notes_signals["sentiment"]) | set(notes_signals["too_easy"])
+                   | set(notes_signals["too_hard"])
                    | {k for k in notes_signals["caution"] if " " in k or k in _ex_history})
+        # Session-level pain notes caution by MUSCLE, not exercise — attribute
+        # them to the exercises actually logged in the notes window whose
+        # muscles intersect the caution, so the offending lift's posterior
+        # takes the pain penalty too (not just this week's selection).
+        _notes_cutoff = (TODAY - datetime.timedelta(days=14)).isoformat()
+        _recent_logged = {canon(ex.get("name") or "")
+                          for r in workout_log_rows
+                          if str(r.get("log_date") or "") >= _notes_cutoff
+                          for ex in (r.get("exercises") or [])}
         for name in touched:
             hist = _ex_history.get(name, [])
             slope = compute_trend_slope(hist) if len(hist) >= 3 else None
+            pain = (name in notes_signals["caution"]
+                    or (name in _recent_logged
+                        and any(m in notes_signals["caution"]
+                                for m in hypertrophy_muscles(name))))
             reward = exercise_reward(
                 slope,
                 deviations["chosen"].get(name, 0),
                 deviations["dropped"].get(name, 0),
                 notes_signals["sentiment"].get(name, 0.0),
                 notes_signals["too_easy"].get(name, 0),
-                pain=(name in notes_signals["caution"]),
+                pain=pain,
+                hard_mentions=notes_signals["too_hard"].get(name, 0),
             )
             if reward != 0.0:
                 ev_meta = update_exercise_value(ev_meta, name, reward)
@@ -924,7 +954,7 @@ def main():
 
     # ── 6b. Determine split framework ─────────────────────────────────────────
     days_to_deadline = (DEADLINE - TODAY).days
-    compliance_rate = float((engine.get("guardrail_state") or {}).get("synthesis_state", {}).get("compliance_rate", 0.80))
+    compliance_rate = float(((engine.get("guardrail_state") or {}).get("synthesis_state") or {}).get("compliance_rate", 0.80))
 
     perf_slopes = []
     for ex_name in GOAL_LIFTS:
@@ -940,6 +970,12 @@ def main():
     print(f"  Split framework: {split_framework}  compliance={compliance_rate:.0%}  soreness={quad_soreness_avg:.2f}")
 
     # ── 7. Per-day generation ─────────────────────────────────────────────────
+    # Snapshot the REAL Kalman/guardrail state before the loop: the per-day
+    # generation below advances them with PROJECTED future loads (for scoring
+    # only), and persisting that simulated state would double-count up to 7 days
+    # of phantom load once the daily compute steps it again with actual loads.
+    kalman_pre    = BanisterKalman.from_dict(kalman.to_dict())
+    guardrail_pre = SystemGuardrail.from_dict(guardrail.to_dict())
     # Polarized run placement is adaptive (no fixed weekday template): track how many
     # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
     # on upper/cardio days rather than heavy leg days.
@@ -1009,6 +1045,11 @@ def main():
         planned_km  = sum(c.get("duration_minutes", 0) * 0.15 for c in cardio)
         _split_2a, _split_reason = evaluate_two_a_day_split(total_sets, planned_km, reserve_score)
         # (structure already separated: exercises AM, cardio PM — no structural change needed)
+        if _split_2a:
+            # Stamp the PM half so the UI's TWO_A_DAY classification (which keys
+            # off cardio time_of_day) can see engine-decided two-a-day days.
+            for c in cardio:
+                c["time_of_day"] = "pm"
 
         print(f"\n  [{sim_day}] {day_name} (day_index={day_index})")
         print(f"    MPC: {action}  intensity={intensity}  ACWR={acwr:.2f}  split={split}")
@@ -1048,7 +1089,7 @@ def main():
     # ── 8. Save all engine state ──────────────────────────────────────────────
     new_step = step_count + 1
     save_engine_state(
-        USER_ID, kalman, guardrail, volume_engine,
+        USER_ID, kalman_pre, guardrail_pre, volume_engine,
         progression_registry, exploration_manager, None,  # MILP synthesis_engine retired (allocator owns targets)
         weekly_targets=weekly_targets, step_count=new_step,
         extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate},

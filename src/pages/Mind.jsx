@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Brain, BookOpen, GraduationCap, History, Plus, Trash2, Pencil,
   Star, AlertTriangle, Timer, Layers, X, CheckCircle2, Zap,
@@ -24,13 +26,13 @@ const STATUS_COLORS = {
   reading: "bg-violet/10 text-violet border-violet/20",
   finished: "bg-leaf/10 text-leaf border-leaf/20",
   paused: "bg-warn/10 text-warn border-warn/20",
-  "want-to-read": "bg-white/[0.05] text-muted-2 border-white/10",
+  "want-to-read": "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
 };
 const CAT_COLORS = {
   technical: "bg-carb/10 text-carb border-carb/20",
   business: "bg-gold/10 text-gold border-gold/20",
   philosophy: "bg-violet/10 text-violet border-violet/20",
-  other: "bg-white/[0.05] text-muted-2 border-white/10",
+  other: "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
 };
 const MEDIUM_COLORS = {
   video: "bg-carb/10 text-carb border-carb/20",
@@ -47,7 +49,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold"} ${n <= (value || 0) ? "text-gold" : "text-white/15"}`}
+          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold p-1.5 -m-0.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -57,15 +59,36 @@ function StarRating({ value, onChange, readonly }) {
   );
 }
 
+function TabQueryState({ isLoading, isError, onRetry }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 rounded-2xl" />)}
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+        <AlertTriangle className="w-7 h-7 text-warn mx-auto mb-2" />
+        <p className="text-sm font-semibold text-muted-2 mb-3">Couldn't load data.</p>
+        <Button variant="ghost" size="sm" onClick={onRetry}>Retry</Button>
+      </div>
+    );
+  }
+  return null;
+}
+
 // ─── Reading Tab ───────────────────────────────────────────────────────────────
 function ReadingTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [form, setForm] = useState({ title: "", author: "", category: "technical", status: "want-to-read", rating: 0, notes: "" });
 
-  const { data: books = [] } = useQuery({
+  const { data: books = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["reading-log", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("reading_log").select("*").eq("created_by", user.id).order("created_at", { ascending: false });
@@ -82,7 +105,7 @@ function ReadingTab() {
       const payload = {
         ...form,
         created_by: user.id,
-        started_at: form.status === "reading" || form.status === "finished" ? (form.started_at || format(new Date(), "yyyy-MM-dd")) : null,
+        started_at: form.status === "reading" || form.status === "finished" ? (form.started_at || format(new Date(), "yyyy-MM-dd")) : (form.started_at || null),
         finished_at: form.status === "finished" ? (form.finished_at || format(new Date(), "yyyy-MM-dd")) : null,
       };
       if (editing) {
@@ -104,11 +127,11 @@ function ReadingTab() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }) => {
+    mutationFn: async ({ book, status }) => {
       const updates = { status };
-      if (status === "reading") updates.started_at = format(new Date(), "yyyy-MM-dd");
-      if (status === "finished") updates.finished_at = format(new Date(), "yyyy-MM-dd");
-      const { error } = await supabase.from("reading_log").update(updates).eq("id", id).eq("created_by", user.id);
+      if (status === "reading" && book.status !== "reading" && !book.started_at) updates.started_at = format(new Date(), "yyyy-MM-dd");
+      if (status === "finished" && book.status !== "finished" && !book.finished_at) updates.finished_at = format(new Date(), "yyyy-MM-dd");
+      const { error } = await supabase.from("reading_log").update(updates).eq("id", book.id).eq("created_by", user.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-log"] }),
@@ -124,7 +147,7 @@ function ReadingTab() {
   });
 
   const openEdit = (book) => {
-    setForm({ title: book.title, author: book.author || "", category: book.category || "other", status: book.status, rating: book.rating || 0, notes: book.notes || "" });
+    setForm({ title: book.title, author: book.author || "", category: book.category || "other", status: book.status, rating: book.rating || 0, notes: book.notes || "", started_at: book.started_at || "", finished_at: book.finished_at || "" });
     setEditing(book);
     setShowAdd(true);
   };
@@ -144,11 +167,13 @@ function ReadingTab() {
         </Button>
       </div>
 
+      <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
       {currentlyReading.length > 0 && (
         <div>
           <h3 className="section-label !text-violet mb-3">Currently Reading</h3>
           <div className="space-y-3">
-            {currentlyReading.map(book => <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={del.mutate} onStatusChange={updateStatus.mutate} />)}
+            {currentlyReading.map(book => <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />)}
           </div>
         </div>
       )}
@@ -158,18 +183,28 @@ function ReadingTab() {
           <h3 className="section-label mb-3">All Books</h3>
           <div className="space-y-3">
             {[...rest].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status)).map(book => (
-              <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={del.mutate} onStatusChange={updateStatus.mutate} />
+              <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
             ))}
           </div>
         </div>
       )}
 
-      {books.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
+      {!isLoading && !isError && books.length === 0 && (
+        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <BookOpen className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No books yet.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}
+        title="Delete book?"
+        description="This permanently removes the book and its notes."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmDelete); setConfirmDelete(null); }}
+      />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
         <DialogContent className="glass glass-interactive max-w-sm">
@@ -232,17 +267,17 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
           {book.author && <p className="text-xs font-semibold text-muted-2">{book.author}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => onEdit(book)} className="p-1 text-muted-2 hover:text-ink opacity-0 group-hover:opacity-100 transition-all">
+          <button onClick={() => onEdit(book)} className="p-2.5 text-muted-2 hover:text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(book.id)} className="p-1 text-muted-2 hover:text-bad opacity-0 group-hover:opacity-100 transition-all">
+          <button onClick={() => onDelete(book.id)} className="p-2.5 text-muted-2 hover:text-bad opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <button
-          onClick={() => onStatusChange({ id: book.id, status: STATUS_NEXT[book.status] })}
+          onClick={() => onStatusChange({ book, status: STATUS_NEXT[book.status] })}
           className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] transition-colors ${STATUS_COLORS[book.status]}`}
         >
           {STATUS_LABELS[book.status]}
@@ -264,13 +299,24 @@ function StudyTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [form, setForm] = useState({ topic: "", duration_min: "", medium: "video", notes: "" });
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const { data: logs = [] } = useQuery({
+  const { data: logs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["study-log", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("study_log").select("*").eq("created_by", user.id).order("logged_at", { ascending: false }).limit(50);
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: totalSessions } = useQuery({
+    queryKey: ["study-log", "count", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase.from("study_log").select("*", { count: "exact", head: true }).eq("created_by", user.id);
+      if (error) throw error;
+      return count ?? 0;
     },
     enabled: !!user,
   });
@@ -340,7 +386,7 @@ function StudyTab() {
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
         <div className="glass-inset p-4 text-center">
-          <p className="font-technical text-2xl font-extrabold text-ink">{logs.length}</p>
+          <p className="font-technical text-2xl font-extrabold text-ink">{totalSessions ?? logs.length}</p>
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
@@ -350,8 +396,9 @@ function StudyTab() {
           <History className="w-3 h-3" /> Recent Sessions
         </h3>
         <div className="space-y-2">
-          {logs.length === 0 && (
-            <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-2xl">
+          <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+          {!isLoading && !isError && logs.length === 0 && (
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
               <p className="text-sm font-semibold text-muted-2">No study sessions yet.</p>
             </div>
@@ -370,13 +417,23 @@ function StudyTab() {
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
-              <button onClick={() => del.mutate(log.id)} className="opacity-0 group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+              <button onClick={() => setConfirmDelete(log.id)} className="p-2.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}
+        title="Delete study session?"
+        description="This permanently removes the session from your log."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmDelete); setConfirmDelete(null); }}
+      />
     </div>
   );
 }
@@ -386,9 +443,10 @@ function SkillsTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [form, setForm] = useState({ name: "", category: "", level: 3 });
 
-  const { data: skills = [] } = useQuery({
+  const { data: skills = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["skills", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("skills").select("*").eq("created_by", user.id).order("name");
@@ -469,7 +527,7 @@ function SkillsTab() {
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
                   {skill.category && <p className="text-[10px] font-semibold text-muted-2">{skill.category}</p>}
                 </div>
-                <button onClick={() => del.mutate(skill.id)} className="opacity-0 group-hover:opacity-100 text-muted-2 hover:text-bad transition-all p-0.5">
+                <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all p-2.5">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -478,8 +536,10 @@ function SkillsTab() {
                   <button
                     key={n}
                     onClick={() => updateLevel.mutate({ id: skill.id, level: n })}
-                    className={`w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-white/[0.08]"}`}
-                  />
+                    className="p-2 -m-1 rounded-full"
+                  >
+                    <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
+                  </button>
                 ))}
                 <span className="font-technical text-[10px] font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
               </div>
@@ -501,12 +561,24 @@ function SkillsTab() {
         })}
       </div>
 
-      {skills.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
+      <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
+      {!isLoading && !isError && skills.length === 0 && (
+        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Layers className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No skills tracked yet.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}
+        title="Delete skill?"
+        description="This permanently removes the skill and its practice history."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmDelete); setConfirmDelete(null); }}
+      />
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="glass glass-interactive max-w-sm">
@@ -527,7 +599,7 @@ function SkillsTab() {
                   <button
                     key={n}
                     onClick={() => setForm(p => ({ ...p, level: n }))}
-                    className={`w-8 h-8 rounded-full text-xs font-bold border-[0.5px] transition-colors ${n === form.level ? "bg-brand text-[var(--color-action-dark)] border-brand" : "bg-white/[0.05] text-muted-2 border-white/10"}`}
+                    className={`w-8 h-8 rounded-full text-xs font-bold border-[0.5px] transition-colors ${n === form.level ? "bg-brand text-[var(--color-action-dark)] border-brand" : "bg-charcoal-surface2 text-muted-2 border-charcoal-border"}`}
                   >{n}</button>
                 ))}
               </div>
@@ -546,8 +618,8 @@ function SkillsTab() {
 // ─── Capture Tab ───────────────────────────────────────────────────────────────
 function CaptureTab() {
   const { user } = useAuth();
-  const { data: recentLogs = [] } = useQuery({
-    queryKey: ["capture-inbox", "mind"],
+  const { data: recentLogs = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["capture-inbox", "mind", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("capture_inbox").select("*").eq("created_by", user.id).eq("domain", "mind").order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
@@ -570,6 +642,7 @@ function CaptureTab() {
           <History className="w-3 h-3" /> Recent Streams
         </h2>
         <div className="space-y-3">
+          <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
@@ -580,12 +653,12 @@ function CaptureTab() {
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
-          )) : (
-            <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-2xl">
+          )) : (!isLoading && !isError && (
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <GraduationCap className="w-8 h-8 text-faint mx-auto mb-2" />
               <p className="text-sm font-semibold text-muted-2">No recent learning logs.</p>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>
@@ -595,7 +668,7 @@ function CaptureTab() {
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function Mind({ hideHeader }) {
   return (
-    <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
+    <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6 rise-in">

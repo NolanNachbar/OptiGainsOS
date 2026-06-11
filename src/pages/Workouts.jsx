@@ -3,9 +3,7 @@ import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LoadingScreen, LoadingSpinner } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateReactions, invalidateWorkouts, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
@@ -14,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
-import { Calendar, Zap, Plus, Save, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, Share2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat } from "lucide-react";
+import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
+import { parseISO } from "date-fns";
 
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
@@ -27,7 +26,6 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const importProgramRef = useRef(null);
   const [filter, setFilter] = useState("all");
   const [folderFilter, setFolderFilter] = useState("all");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [workoutToDelete, setWorkoutToDelete] = useState(null);
   const [showFormatGuide, setShowFormatGuide] = useState(false);
@@ -36,11 +34,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const [renameValue, setRenameValue] = useState("");
   const queryClient = useQueryClient();
 
-  const [workoutPlan, setWorkoutPlan] = useState(() => {
-    return queryClient.getQueryData(['workoutPlan']) || null;
-  });
-
-  const { data: workouts = [] } = useQuery({
+  const { data: workouts = [], isLoading: workoutsLoading, error: workoutsError } = useQuery({
     queryKey: queryKeys.workouts(),
     queryFn: () => db.entities.Workout.filter({ created_by: user.id }),
     enabled: !!user,
@@ -48,7 +42,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
   const { profile } = useProfile();
 
-  const { data: cardioSessions = [] } = useQuery({
+  const { data: cardioSessions = [], isLoading: cardioLoading, error: cardioError } = useQuery({
     queryKey: ['garminActivities', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,7 +56,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     enabled: !!user,
   });
 
-  const { data: workoutLogs = [] } = useQuery({
+  const { data: workoutLogs = [], isLoading: logsLoading, error: logsError } = useQuery({
     queryKey: queryKeys.workoutLogs(),
     queryFn: async () => {
       const logs = await db.entities.WorkoutLog.filter({ created_by: user.id });
@@ -71,46 +65,19 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     enabled: !!user,
   });
 
+  const activityLogLoading = workoutsLoading || cardioLoading || logsLoading;
+  const activityLogError = workoutsError || cardioError || logsError;
+  const retryActivityLog = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.workouts() });
+    queryClient.invalidateQueries({ queryKey: ['garminActivities', user?.id] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.workoutLogs() });
+  };
+
   // Programs data
   const { programs, isLoading: programsLoading } = useMyPrograms();
   const { enrollments, isLoading: enrollmentsLoading } = useEnrollments();
   const activeEnrollments = enrollments.filter((e) => e.status === "active");
   const pastEnrollments = enrollments.filter((e) => e.status !== "active");
-
-  const saveGeneratedWorkoutMutation = useMutation({
-    mutationFn: async (dayWorkout) => {
-      // Parse duration to get minutes (e.g., "30 min" -> 30)
-      const durationMinutes = parseInt(dayWorkout.duration) || 30;
-
-      // Create workout object from generated plan
-      const workoutData = {
-        created_by: user.id,
-        title: `${dayWorkout.focus} - Day ${dayWorkout.dayIndex + 1}`,
-        description: `Generated workout focusing on ${dayWorkout.focus.toLowerCase()}`,
-        type: dayWorkout.focus.toLowerCase().includes('cardio') ? 'cardio' :
-              dayWorkout.focus.toLowerCase().includes('strength') ? 'strength' :
-              dayWorkout.focus.toLowerCase().includes('hiit') ? 'hiit' : 'strength',
-        duration_minutes: durationMinutes,
-        exercises: dayWorkout.exercises.map(ex => ({
-          name: ex.name,
-          sets: ex.sets || 3,
-          reps: ex.reps || '10',
-          rest_seconds: ex.rest || 90, // Use exercise rest or default to 90 seconds
-          notes: ''
-        })),
-      };
-
-      return await db.entities.Workout.create(workoutData);
-    },
-    onSuccess: () => {
-      invalidateWorkouts(queryClient);
-      toast.success('Workout added to your library!');
-    },
-    onError: (error) => {
-      toast.error('Failed to save workout');
-      console.error('Error saving workout:', error);
-    }
-  });
 
   const cloneWorkoutMutation = useMutation({
     mutationFn: async (workoutId) => {
@@ -253,26 +220,6 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     }
   };
 
-  const generateWorkouts = () => {
-    if (!profile) {
-      toast.error("Please complete your profile before generating workouts.");
-      return;
-    }
-  
-    setIsGenerating(true);
-
-    try {
-      toast.error("Workout generation removed — use Program Builder to create programs.");
-      setIsGenerating(false);
-      return;
-    } catch (error) {
-      console.error("Error generating workout plan:", error);
-      toast.error("Failed to generate workout plan. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleImportProgram = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -335,23 +282,6 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   Create Custom
                 </Button>
               </Link>
-              <Button
-                variant="dark"
-                onClick={generateWorkouts}
-                disabled={isGenerating || !profile}
-              >
-                {isGenerating ? (
-                  <>
-                    <LoadingSpinner size="small" className="mr-2" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    Generate Workouts
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         )}
@@ -530,84 +460,29 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     No workouts yet
                   </h3>
                   <p className="text-sm text-ink-muted mb-4">
-                    Generate personalized workouts or create your own
+                    Create your own workouts or build a full program
                   </p>
                   {filter === "all" && (
-                    <Button
-                      variant="primary"
-                      onClick={generateWorkouts}
-                      disabled={isGenerating || !profile}
-                    >
-                      <Zap className="w-4 h-4 mr-2" />
-                      Generate Your First Workouts
-                    </Button>
+                    <div className="flex justify-center gap-2">
+                      <Link to="/create-workout">
+                        <Button variant="primary">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Custom
+                        </Button>
+                      </Link>
+                      <Link to="/program-builder">
+                        <Button variant="outline">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Program Builder
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Generated Workout Plan Display */}
-        {workoutPlan?.week?.length ? (
-          <Card className="">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
-                <Badge>
-                  {workoutPlan.daysPerWeek} days/week • {workoutPlan.duration || "—"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {workoutPlan.week.map((day) => (
-                <div key={day.dayIndex} className="glass-inset p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold">
-                      Day {day.dayIndex + 1}: {day.focus}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm text-ink-muted">{day.duration}</div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => saveGeneratedWorkoutMutation.mutate(day)}
-                        disabled={saveGeneratedWorkoutMutation.isPending}
-                        className="gap-1"
-                      >
-                        <Save className="w-3 h-3" />
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {day.exercises.map((ex, idx) => (
-                      <div
-                        key={`${day.dayIndex}-${idx}`}
-                        className="flex justify-between text-sm"
-                      >
-                        <span className="font-medium">{ex.name}</span>
-                        <span className="text-ink-muted">
-                          {ex.sets} × {ex.reps}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="">
-            <CardHeader>
-              <h2 className="text-xl font-bold">Your Generated Weekly Plan</h2>
-            </CardHeader>
-            <CardContent className="text-ink-muted">
-              No plan found yet. Click "Generate Workouts" to create a personalized plan.
-            </CardContent>
-          </Card>
-        )}
           </TabsContent>
 
           <TabsContent value="programs">
@@ -661,7 +536,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       {activeEnrollments.map((enrollment) => (
                         <ProgramCard
                           key={enrollment.id}
-                          program={enrollment.program || { id: enrollment.program_id, name: "Program" }}
+                          program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
                           enrollment={enrollment}
                         />
                       ))}
@@ -675,7 +550,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                           {pastEnrollments.map((enrollment) => (
                             <ProgramCard
                               key={enrollment.id}
-                              program={enrollment.program || { id: enrollment.program_id, name: "Program" }}
+                              program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
                               enrollment={enrollment}
                             />
                           ))}
@@ -714,6 +589,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               cardioSessions={cardioSessions}
               workouts={workouts}
               profile={profile}
+              isLoading={activityLogLoading}
+              error={activityLogError}
+              onRetry={retryActivityLog}
             />
           </TabsContent>
 
@@ -882,9 +760,6 @@ function StrengthEntryCard({ entry }) {
             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
           </p>
         </div>
-        <button className="text-ink-muted hover:text-ink opacity-0 group-hover:opacity-100 transition-opacity p-1">
-          <Share2 className="w-4 h-4" />
-        </button>
       </div>
       <div className="flex">
         <StatBlock label="Exercises" value={entry.exerciseCount} />
@@ -959,8 +834,27 @@ function CardioEntryCard({ entry }) {
 
 // ─── Activity Log Tab ────────────────────────────────────────────────────────
 
-function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
+function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="glass px-4 py-8 text-center">
+        <AlertTriangle className="w-10 h-10 text-warn mx-auto mb-3" />
+        <h3 className="text-base font-semibold text-ink mb-1">Couldn't load your activity</h3>
+        <p className="text-sm text-ink-muted mb-4">Something went wrong fetching your workout history.</p>
+        <Button variant="outline" onClick={onRetry}>Retry</Button>
+      </div>
+    );
+  }
 
   const strengthEntries = workoutLogs.map(log => {
     const workout = workouts.find(w => w.id === log.workout_id);
@@ -976,12 +870,12 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
     return {
       type: 'strength',
       id: log.id,
-      date: new Date(log.log_date || log.created_at),
+      date: log.log_date ? parseISO(log.log_date) : new Date(log.created_at),
       title: workout?.title || 'Workout',
       exerciseCount: logExercises.length,
       exercises: logExercises,
       sets: totalSets,
-      duration: log.duration_minutes,
+      duration: log.duration_seconds ? Math.round(log.duration_seconds / 60) : null,
       volume: totalVolume > 0 ? totalVolume : null,
     };
   });
@@ -989,7 +883,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile }) {
   const cardioEntries = cardioSessions.map(session => ({
     type: 'cardio',
     id: session.id,
-    date: new Date(session.activity_date),
+    date: parseISO(session.activity_date),
     title: session.name || session.activity_type,
     activityType: session.activity_type,
     distance: session.distance_meters,

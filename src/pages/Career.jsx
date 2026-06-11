@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Briefcase, Building2, UserPlus, History, Plus, Trash2, Pencil,
   AlertTriangle, X, ArrowRight, Calendar, ChevronRight,
@@ -27,6 +29,26 @@ const STATUS_COLORS = {
   offer:      "bg-leaf/10 text-leaf border-leaf/20",
   rejected:   "bg-bad/10 text-bad border-bad/20",
 };
+
+function TabQueryState({ isLoading, isError, onRetry }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 rounded-2xl" />)}
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+        <AlertTriangle className="w-7 h-7 text-warn mx-auto mb-2" />
+        <p className="text-sm font-semibold text-muted-2 mb-3">Couldn't load data.</p>
+        <Button variant="ghost" size="sm" onClick={onRetry}>Retry</Button>
+      </div>
+    );
+  }
+  return null;
+}
 
 // ─── Application Form ──────────────────────────────────────────────────────────
 function AppForm({ initial, onSave, onClose }) {
@@ -95,8 +117,9 @@ function PipelineTab() {
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const { data: apps = [] } = useQuery({
+  const { data: apps = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["job-applications", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("job_applications").select("*").eq("created_by", user.id).order("created_at", { ascending: false });
@@ -140,6 +163,7 @@ function PipelineTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-applications"] }),
+    onError: () => toast.error("Failed to delete"),
   });
 
   const active = apps.filter(a => ACTIVE_STATUSES.includes(a.status));
@@ -161,7 +185,10 @@ function PipelineTab() {
         </Button>
       </div>
 
+      <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
       {/* Kanban columns */}
+      {!isLoading && !isError && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {ACTIVE_STATUSES.map(status => {
           const col = apps.filter(a => a.status === status);
@@ -180,11 +207,11 @@ function PipelineTab() {
                       <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
                       <p className="text-[10px] font-semibold text-muted-2 truncate">{app.role}</p>
                     </div>
-                    <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="text-muted-2 hover:text-ink">
+                    <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
+                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-2 -m-0.5 text-muted-2 hover:text-ink">
                         <Pencil className="w-3 h-3" />
                       </button>
-                      <button onClick={() => del.mutate(app.id)} className="text-muted-2 hover:text-bad">
+                      <button onClick={() => setConfirmDelete(app.id)} className="p-2 -m-0.5 text-muted-2 hover:text-bad">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
@@ -196,14 +223,14 @@ function PipelineTab() {
                     {STATUS_NEXT[status] && (
                       <button
                         onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                        className="text-[10px] font-bold flex items-center gap-0.5 text-muted-2 hover:text-gold transition-colors"
+                        className="text-[10px] font-bold flex items-center gap-0.5 py-1.5 text-muted-2 hover:text-gold transition-colors"
                       >
                         <ArrowRight className="w-3 h-3" /> Move
                       </button>
                     )}
                     <button
                       onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
-                      className="text-[10px] text-muted-2 hover:text-bad transition-colors ml-auto"
+                      className="text-[10px] px-1.5 py-1.5 text-muted-2 hover:text-bad transition-colors ml-auto"
                     >
                       ✕
                     </button>
@@ -217,6 +244,7 @@ function PipelineTab() {
           );
         })}
       </div>
+      )}
 
       {rejected.length > 0 && (
         <div>
@@ -226,7 +254,7 @@ function PipelineTab() {
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-[10px] font-semibold text-muted-2">{app.role}</span>
-                <button onClick={() => del.mutate(app.id)} className="ml-auto opacity-0 group-hover:opacity-100 text-muted-2 hover:text-bad">
+                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2 -m-1.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -235,12 +263,22 @@ function PipelineTab() {
         </div>
       )}
 
-      {apps.length === 0 && (
+      {!isLoading && !isError && apps.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
           <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}
+        title="Delete application?"
+        description="This permanently removes the application and its notes."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmDelete); setConfirmDelete(null); }}
+      />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
         <DialogContent className="glass glass-interactive max-w-sm">
@@ -307,8 +345,9 @@ function NetworkingTab() {
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const { data: contacts = [] } = useQuery({
+  const { data: contacts = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["networking-log", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("networking_log").select("*").eq("created_by", user.id).order("follow_up_date", { ascending: true, nullsLast: true });
@@ -343,6 +382,7 @@ function NetworkingTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["networking-log"] }),
+    onError: () => toast.error("Failed to delete"),
   });
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -363,7 +403,8 @@ function NetworkingTab() {
       </div>
 
       <div className="space-y-3">
-        {contacts.length === 0 && (
+        <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+        {!isLoading && !isError && contacts.length === 0 && (
           <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
@@ -383,11 +424,11 @@ function NetworkingTab() {
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-1 text-muted-2 hover:text-ink">
+                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
+                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-2.5 -m-1 text-muted-2 hover:text-ink">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => del.mutate(contact.id)} className="p-1 text-muted-2 hover:text-bad">
+                  <button onClick={() => setConfirmDelete(contact.id)} className="p-2.5 -m-1 text-muted-2 hover:text-bad">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -413,6 +454,16 @@ function NetworkingTab() {
         })}
       </div>
 
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}
+        title="Delete contact?"
+        description="This permanently removes the contact and its notes."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={() => { del.mutate(confirmDelete); setConfirmDelete(null); }}
+      />
+
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
         <DialogContent className="glass glass-interactive max-w-sm">
           <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle></DialogHeader>
@@ -430,8 +481,8 @@ function NetworkingTab() {
 // ─── Capture Tab ───────────────────────────────────────────────────────────────
 function CaptureTab() {
   const { user } = useAuth();
-  const { data: recentLogs = [] } = useQuery({
-    queryKey: ["capture-inbox", "career"],
+  const { data: recentLogs = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["capture-inbox", "career", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("capture_inbox").select("*").eq("created_by", user.id).eq("domain", "career").order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
@@ -454,6 +505,7 @@ function CaptureTab() {
           <History className="w-3 h-3" /> Recent Events
         </h2>
         <div className="space-y-3">
+          <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
@@ -464,12 +516,12 @@ function CaptureTab() {
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
-          )) : (
+          )) : (!isLoading && !isError && (
             <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-2xl">
               <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
               <p className="text-sm font-semibold text-muted-2">No recent career events.</p>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>

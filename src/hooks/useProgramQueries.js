@@ -206,7 +206,7 @@ export function useEnrollInProgram() {
         status: 'active',
         current_cycle: 1,
         current_day_index: startDayIndex,
-        start_date: startDate || new Date().toISOString().split('T')[0],
+        started_at: startDate || new Date().toISOString().split('T')[0],
         current_week: 1,
         current_day: startDayIndex,
         completed_workouts: [],

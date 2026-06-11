@@ -24,13 +24,14 @@ Output shape (all keyed by canonical exercise name and/or landmark muscle):
 from __future__ import annotations
 import re
 
-from engine.log_ingest import canon
+from engine.log_ingest import canon, ALIASES
 from engine.muscle_map import get_muscles, hypertrophy_muscles
 
 # ── Keyword lexicons ([ENG], extend freely) ───────────────────────────────────
 _PAIN_WORDS   = ("pain", "hurt", "hurts", "tweak", "tweaked", "strain", "strained",
                  "pull", "pulled", "ache", "achy", "cranky", "pinch", "pinched",
-                 "impinge", "sharp", "injur", "inflam", "tendon", "stiff")
+                 "impinge", "sharp", "injur", "inflam", "tendon", "stiff",
+                 "tight", "sore")
 _JOINT_WORDS  = ("shoulder", "elbow", "wrist", "knee", "hip", "lower back", "low back",
                  "back", "neck", "ankle", "bicep tendon", "lat")
 _EASY_WORDS   = ("too easy", "too light", "felt easy", "felt light", "easy", "light",
@@ -89,13 +90,20 @@ def _has(text: str, words) -> list[str]:
     hits = []
     for w in words:
         idx = text.find(w)
-        if idx < 0:
-            continue
-        prefix = text[max(0, idx - 8):idx]
-        if any(neg in prefix for neg in _NEGATORS):
-            continue
-        hits.append(w)
+        while idx >= 0:
+            prefix = text[max(0, idx - 8):idx]
+            if not any(neg in prefix for neg in _NEGATORS):
+                hits.append(w)
+                break
+            idx = text.find(w, idx + 1)
     return hits
+
+
+def _clauses(text: str) -> list[str]:
+    """Split a note into clauses so signals attach to the right mention
+    ('bench felt easy but my knee ached on squats' must not caution chest)."""
+    parts = re.split(r"[,;.\n]|\bbut\b", text)
+    return [p.strip() for p in parts if p.strip()]
 
 
 def _strip_markers(note: str) -> str:
@@ -103,23 +111,58 @@ def _strip_markers(note: str) -> str:
     return re.sub(r"\b(pre|post)\s*:", " ", (note or "").lower())
 
 
+# Phrases where "back" is an exercise/set word, not a body part.
+_REGION_EXCLUDE = ("back squat", "back-off", "back off")
+
+# Free-text exercise mentions ("shoulder hurt on bench") → canonical name, so
+# session-level notes attribute to the lift like exercise-level notes do.
+_TEXT_EX_KW = {
+    "bench": "Bench Press",
+    "squat": "Barbell Squat",
+    "deadlift": "Deadlift",
+    "dead lift": "Deadlift",
+    "ohp": "Overhead Press",
+    "overhead press": "Overhead Press",
+}
+
+
+def _exercises_from_text(text: str) -> list[str]:
+    """Canonical exercises named in free text (longest keyword wins)."""
+    out: set[str] = set()
+    matched: list[str] = []
+    for kw in sorted(list(ALIASES) + list(_TEXT_EX_KW), key=len, reverse=True):
+        if kw in text and not any(kw in prev for prev in matched):
+            matched.append(kw)
+            out.add(ALIASES[kw] if kw in ALIASES else _TEXT_EX_KW[kw])
+    return list(out)
+
+
 def _muscle_from_text(text: str) -> list[str]:
     """Landmark muscles implied by a free-text body part / exercise mention."""
     out: set[str] = set()
     for lm in hypertrophy_muscles(text):
         out.add(lm)
-    # Direct joint/region words → nearest landmark(s).
+    # Direct joint/region words → nearest landmark(s). Longest keyword wins and
+    # consumes its span, so "lower back" doesn't also fire the bare "back" entry.
     region_map = {
-        "shoulder": ["shoulders"], "press": ["shoulders", "chest"],
+        "shoulder": ["shoulders"],
         "elbow": ["triceps", "biceps"], "wrist": ["biceps", "triceps"],
         "knee": ["quads"], "hip": ["glutes", "hamstrings"],
         "low back": ["lower_back"], "lower back": ["lower_back"], "back": ["upper_back", "lats"],
         "lat": ["lats"], "quad": ["quads"], "hamstring": ["hamstrings"], "calf": ["calves"],
         "neck": ["neck"], "trap": ["traps"],
     }
-    for kw, lms in region_map.items():
-        if kw in text:
-            out.update(lms)
+    consumed: list[tuple[int, int]] = []
+    for phrase in _REGION_EXCLUDE:
+        for m in re.finditer(re.escape(phrase), text):
+            consumed.append(m.span())
+    for kw in sorted(region_map, key=len, reverse=True):
+        for m in re.finditer(re.escape(kw), text):
+            start, end = m.span()
+            if any(s < end and start < e for s, e in consumed):
+                continue
+            consumed.append((start, end))
+            out.update(region_map[kw])
     return list(out)
 
 
@@ -165,17 +208,29 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
 
     _scan_weakness(t, exercise, out)
 
-    pain = _has(t, _PAIN_WORDS)
+    clauses = _clauses(t)
+
+    # Attribute pain to the exercise (if exercise-level note) and to the muscles/
+    # exercises named in the clause that contains the pain word — not the whole
+    # note, so the lift that "felt easy" isn't cautioned for the one that hurt.
+    pain = []
+    targets = set()
+    sev = 1
+    for cl in clauses:
+        cl_pain = _has(cl, _PAIN_WORDS)
+        if not cl_pain:
+            continue
+        pain.extend(cl_pain)
+        targets.update(_muscle_from_text(cl))
+        if not exercise:
+            targets.update(_exercises_from_text(cl))
+        if any(w in cl for w in ("sharp", "injur", "strain", "pull", "pinch")):
+            sev = 2
     if pain:
-        # Attribute to the exercise (if exercise-level note) and to muscles/joints named.
-        targets = set()
         if exercise:
             targets.add(canon(exercise))
-        for lm in _muscle_from_text(t):
-            targets.add(lm)
         if not targets:
             targets.add("_global")
-        sev = 2 if any(w in t for w in ("sharp", "injur", "strain", "pull", "pinch")) else 1
         for tgt in targets:
             c = out["caution"].setdefault(tgt, {"reason": "", "severity": 0, "mentions": 0, "confidence": "low"})
             c["mentions"] += 1
@@ -198,7 +253,24 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
         if _has(t, _DISLIKE_WORDS):
             out["sentiment"][ex] = out["sentiment"].get(ex, 0.0) - 1.0
     else:
-        # Session-level easy/hard with no exercise → mild global signal in flags only.
+        # Session-level note: attribute easy/hard/sentiment to exercises named
+        # in the same clause, plus the mild global signal in flags.
+        for cl in clauses:
+            exs = _exercises_from_text(cl)
+            if not exs:
+                continue
+            if _has(cl, _HARD_WORDS):
+                for ex in exs:
+                    out["too_hard"][ex] = out["too_hard"].get(ex, 0) + 1
+            elif _has(cl, _EASY_WORDS):
+                for ex in exs:
+                    out["too_easy"][ex] = out["too_easy"].get(ex, 0) + 1
+            if _has(cl, _LIKE_WORDS):
+                for ex in exs:
+                    out["sentiment"][ex] = out["sentiment"].get(ex, 0.0) + 1.0
+            if _has(cl, _DISLIKE_WORDS):
+                for ex in exs:
+                    out["sentiment"][ex] = out["sentiment"].get(ex, 0.0) - 1.0
         if _has(t, _HARD_WORDS):
             out["flags"].append("session noted as hard")
         elif _has(t, _EASY_WORDS):

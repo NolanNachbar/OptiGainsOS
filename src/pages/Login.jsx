@@ -38,15 +38,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#080B10' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 relative z-10 w-full">
         <div className="text-center rise-in">
-          <div className="type-display text-[26px] whitespace-nowrap text-[#F2F4F7]">
-            OPTI<span style={{ color: '#5EDCD2' }}>GAINS</span>
+          <div className="type-display text-[26px] whitespace-nowrap text-ink">
+            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
           </div>
-          <p className="text-[11.5px] font-semibold mt-1.5 tracking-[0.02em] text-[rgba(242,244,247,0.5)]">
+          <p className="text-[11.5px] font-semibold mt-1.5 tracking-[0.02em] text-muted-2">
             Performance OS · private build
           </p>
         </div>
@@ -88,11 +88,11 @@ export default function Login() {
             <div className="flex items-center justify-between mt-3 px-0.5">
               <Link
                 to="/forgot-password"
-                className="text-[11.5px] font-bold text-[rgba(242,244,247,0.5)] hover:text-[#F2F4F7] transition-colors"
+                className="text-[11.5px] font-bold text-muted-2 hover:text-ink transition-colors inline-flex items-center py-3 px-2 -my-3 -mx-2"
               >
                 Forgot password
               </Link>
-              <span className="text-[11.5px] font-bold" style={{ color: '#5EDCD2' }}>
+              <span className="text-[11.5px] font-bold" style={{ color: 'var(--hue-teal)' }}>
                 Private build
               </span>
             </div>
@@ -100,7 +100,10 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="relative z-10 text-center text-[10.5px] font-semibold pb-7 font-technical text-[rgba(242,244,247,0.38)]">
+      <div
+        className="relative z-10 text-center text-[10.5px] font-semibold font-technical text-[rgba(242,244,247,0.38)]"
+        style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom))' }}
+      >
         OptiGainsOS · adaptive engine recomputes daily
       </div>
     </div>

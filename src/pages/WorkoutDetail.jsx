@@ -28,6 +28,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 
+const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
+
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
   const ms = Date.now() - new Date(startTimeStr).getTime();
@@ -45,6 +47,7 @@ export default function WorkoutDetail() {
   const queryClient = useQueryClient();
   const { showLocalNotification } = usePushNotifications(user?.id);
   const [workout, setWorkout] = useState(null);
+  const [workoutNotFound, setWorkoutNotFound] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [preWorkoutNotes, setPreWorkoutNotes] = useState("");
   const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
@@ -77,14 +80,14 @@ export default function WorkoutDetail() {
   // Exercise reactions (like/dislike per exercise)
 
   // Fetch enrollment data (program mode only)
-  const { data: enrollment } = useQuery({
+  const { data: enrollment, isError: enrollmentError } = useQuery({
     queryKey: ['enrollment', enrollmentId],
     queryFn: () => db.entities.ProgramEnrollment.get(enrollmentId),
     enabled: isProgramSource && !!enrollmentId,
   });
 
   // Fetch program workout data (program mode only)
-  const { data: programWorkout } = useQuery({
+  const { data: programWorkout, isError: programWorkoutError } = useQuery({
     queryKey: ['programWorkout', programWorkoutId],
     queryFn: () => db.entities.ProgramWorkout.get(programWorkoutId),
     enabled: isProgramSource && !!programWorkoutId,
@@ -136,7 +139,7 @@ export default function WorkoutDetail() {
         created_by: user.id
       });
     },
-    enabled: !!user && isLogging,
+    enabled: !!user,
   });
 
   // All unique exercise names from history for AddExerciseForm autocomplete
@@ -201,8 +204,6 @@ export default function WorkoutDetail() {
       } else if (isProgramSource && programWorkout) {
         // Program mode: build a synthetic workout object from program workout data.
         // Filter out run/cardio exercises — those are rendered separately as conditioning.
-        const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
-        const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
         const liftExercises = (programWorkout.exercises || []).filter(ex => !isRunEx(ex));
         setWorkout({
           id: programWorkout.id,
@@ -220,14 +221,22 @@ export default function WorkoutDetail() {
           created_by: user.id,
           _isProgramWorkout: true,
         });
-      } else if (workoutId) {
-        const workouts = await db.entities.Workout.filter({
-          id: workoutId,
-          created_by: user.id
-        });
-        if (workouts.length > 0) {
-          setWorkout(workouts[0]);
+      } else if (!isProgramSource && workoutId) {
+        try {
+          const workouts = await db.entities.Workout.filter({
+            id: workoutId,
+            created_by: user.id
+          });
+          if (workouts.length > 0) {
+            setWorkout(workouts[0]);
+          } else {
+            setWorkoutNotFound(true);
+          }
+        } catch {
+          setWorkoutNotFound(true);
         }
+      } else if (!isProgramSource) {
+        setWorkoutNotFound(true);
       }
     };
     loadWorkout();
@@ -264,7 +273,7 @@ export default function WorkoutDetail() {
 
       if (isProgramSource && programWorkout?.exercises && enrollment) {
         // Program mode: initialize with set types and target weights
-        initialLogs = programWorkout.exercises.map((ex, index) => {
+        initialLogs = programWorkout.exercises.filter(ex => !isRunEx(ex)).map((ex, index) => {
           const targets = progressionTargetsMap[ex.name];
           const numSets = ex.sets || 3;
 
@@ -658,6 +667,28 @@ export default function WorkoutDetail() {
     setTimeout(() => setShowPostWorkoutDialog(true), 50);
   };
 
+  const loadFailed = workoutNotFound
+    || (isProgramSource && (enrollmentError || programWorkoutError || !enrollmentId || !programWorkoutId));
+
+  if (loadFailed) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <h2 className="text-[17px] font-extrabold text-ink mb-2">Workout not found</h2>
+            <p className="text-[13px] font-semibold text-ink-muted mb-6">
+              This workout may have been deleted, or the link is no longer valid.
+            </p>
+            <Button variant="outline" onClick={() => navigate("/workouts")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Workouts
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!workout || !user || (isProgramSource && (!enrollment || !programWorkout))) {
     return <LoadingScreen />;
   }
@@ -732,13 +763,15 @@ export default function WorkoutDetail() {
                 <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
               <div className="flex flex-wrap gap-6 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-ink-muted" />
-                    <div>
-                      <div className="section-label">Duration</div>
-                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                  {workout.duration_minutes != null && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-ink-muted" />
+                      <div>
+                        <div className="section-label">Duration</div>
+                        <div className="font-technical font-extrabold text-[15px] text-ink">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Target className="w-5 h-5 text-ink-muted" />
                     <div>
@@ -834,7 +867,7 @@ export default function WorkoutDetail() {
 
             {exerciseLogs.map((exerciseLog, exerciseIndex) => {
               const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
-              const programEx = isProgramSource ? programWorkout?.exercises?.[exerciseIndex] : null;
+              const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
               const targets = programEx ? progressionTargetsMap[programEx.name] : null;
               return (
                 <div key={exerciseIndex} data-tutorial={exerciseIndex === 0 ? "exercise-card" : undefined}>
@@ -870,8 +903,6 @@ export default function WorkoutDetail() {
 
             {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
             {isProgramSource && (() => {
-              const RUN_KEYWORDS = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
-              const isRunEx = (ex) => RUN_KEYWORDS.some(k => ex.name?.toLowerCase().includes(k));
               const runExercises = (programWorkout?.exercises || []).filter(isRunEx).map(ex => ({
                 title: ex.name,
                 duration_minutes: ex.duration_minutes || null,
@@ -892,11 +923,11 @@ export default function WorkoutDetail() {
                       <div>
                         <p className="text-[13.5px] font-bold text-ink">{c.title}</p>
                         <p className="font-technical text-[11px] font-semibold text-ink-muted">
-                          {c.duration_minutes} min
-                          {c.time_of_day && c.time_of_day !== "anytime"
-                            ? ` · ${c.time_of_day.toUpperCase()}`
-                            : ""}
-                          {c.zone ? ` · ${c.zone}` : ""}
+                          {[
+                            c.duration_minutes ? `${c.duration_minutes} min` : null,
+                            c.time_of_day && c.time_of_day !== "anytime" ? c.time_of_day.toUpperCase() : null,
+                            c.zone || null,
+                          ].filter(Boolean).join(" · ")}
                         </p>
                       </div>
                     </div>

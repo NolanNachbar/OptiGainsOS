@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { DashboardSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/queryKeys";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries, useRecoveryMetrics } from "@/hooks/useUserQueries";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
@@ -36,8 +36,9 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { getTodayString, getWeekStart, getWeekEnd } from "@/utils/dateUtils";
+import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { calculateReadinessScore, getReadinessCategory } from "@/utils/recoveryUtils";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import TrainingLoadTab from "@/components/dashboard/TrainingLoadTab";
@@ -50,6 +51,8 @@ import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 import PhaseRecommendationCard from "@/components/dashboard/PhaseRecommendationCard";
 import EaseTodayButton from "@/components/dashboard/EaseTodayButton";
 
+
+const EMPTY = [];
 
 function getWorkoutSplitTitle(exercises) {
   if (!exercises?.length) return null;
@@ -83,28 +86,25 @@ export default function Dashboard() {
     window.scrollTo(0, 0);
   }, []);
 
-  const { data: todaySchedule } = useQuery({
+  const { data: todaySchedule = EMPTY, isLoading: scheduleLoading, isError: scheduleError, refetch: refetchSchedule } = useQuery({
     queryKey: queryKeys.todaySchedule(today, user?.id),
     queryFn: () => db.entities.WorkoutSchedule.filter({
       scheduled_date: today,
       created_by: user.id,
     }),
     enabled: !!user,
-    initialData: [],
   });
 
-  const { data: todayFood } = useQuery({
+  const { data: todayFood = EMPTY, isLoading: foodLoading, isError: foodError, refetch: refetchFood } = useQuery({
     queryKey: queryKeys.todayFood(today, user?.id),
     queryFn: () => db.entities.FoodEntry.filter({ date: today, created_by: user.id }),
     enabled: !!user,
-    initialData: [],
   });
 
-  const { data: workouts } = useQuery({
+  const { data: workouts = EMPTY, isLoading: workoutsLoading, isError: workoutsError, refetch: refetchWorkouts } = useQuery({
     queryKey: queryKeys.workouts(user?.id),
     queryFn: () => db.entities.Workout.filter({ created_by: user.id }),
     enabled: !!user,
-    initialData: [],
   });
 
   const weekStart = format(getWeekStart(profile?.timezone, 0), "yyyy-MM-dd");
@@ -203,7 +203,10 @@ export default function Dashboard() {
     return d > 0 ? d : null;
   }, [profile, today]);
 
-  const { data: workoutLogs = [] } = useQuery({
+  // Single source of truth for today's calorie target (engine-gated → profile).
+  const { calories: calorieTarget } = useDailyTargets(today);
+
+  const { data: workoutLogs = EMPTY, isLoading: logsLoading, isError: logsError, refetch: refetchLogs } = useQuery({
     queryKey: queryKeys.workoutLogs(user?.id),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -224,7 +227,8 @@ export default function Dashboard() {
   const sortedWeightEntries = [...weightEntries].sort((a, b) => new Date(b.recorded_date) - new Date(a.recorded_date));
   const currentBodyWeight = sortedWeightEntries[0]?.weight;
   const tdeeResult = getBestTDEE(profile, currentBodyWeight, weightEntries, allFoodEntries || [], recoveryMetrics);
-  const startBodyWeight = sortedWeightEntries[sortedWeightEntries.length - 1]?.weight;
+  const weekAgoStr = format(subDays(new Date(`${today}T00:00:00`), 7), "yyyy-MM-dd");
+  const startBodyWeight = sortedWeightEntries.find((e) => e.recorded_date <= weekAgoStr)?.weight;
   const bodyWeightChange = currentBodyWeight && startBodyWeight ? currentBodyWeight - startBodyWeight : null;
 
   // Derive the link URL for today's workout
@@ -251,6 +255,15 @@ export default function Dashboard() {
     ...(todayProgramWorkout?.cardio_sessions || []),
   ];
   const exerciseCount = todayProgramLifts.length || todayWorkoutDetails?.exercises?.length || 0;
+
+  const workoutCardLoading = scheduleLoading || workoutsLoading || logsLoading;
+  const dashError = scheduleError || foodError || workoutsError || logsError;
+  const retryDashQueries = () => {
+    if (scheduleError) refetchSchedule();
+    if (foodError) refetchFood();
+    if (workoutsError) refetchWorkouts();
+    if (logsError) refetchLogs();
+  };
 
   if (!user) {
     return <DashboardSkeleton />;
@@ -300,8 +313,28 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Query failure banner — without it the page silently shows Rest Day / 0 kcal */}
+        {dashError && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl glass px-4 py-2.5 text-xs">
+            <AlertTriangle className="w-4 h-4 text-bad shrink-0" />
+            <span className="text-ink-secondary">
+              Some of today's data failed to load — what's shown may be incomplete.
+            </span>
+            <button type="button" onClick={retryDashQueries} className="ml-auto text-brand font-semibold whitespace-nowrap">
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* ── METABOLIC GRID (The Engine Room) ── */}
         <div className="glass p-2 mb-4 rise-in-2">
+        {foodLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-[90px] rounded-xl" />
+          ))}
+        </div>
+        ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
 
           {/* Expenditure Tile */}
@@ -326,7 +359,7 @@ export default function Dashboard() {
           <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
               <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-violet" /> Trend Weight
+                <Scale className="w-3.5 h-3.5 text-violet" /> Weight
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{currentBodyWeight || "—"}</span>
@@ -378,12 +411,12 @@ export default function Dashboard() {
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{Math.round(todayMacros.calories)}</span>
-                <span className="text-[9px] text-muted-2 leading-none font-technical">/ {profile?.daily_calorie_goal} kcal</span>
+                <span className="text-[9px] text-muted-2 leading-none font-technical">/ {calorieTarget ?? "—"} kcal</span>
               </div>
             </div>
             <div className="space-y-1.5">
               <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden w-full">
-                <div className="h-full bg-gold" style={{ width: `${Math.min(100, (todayMacros.calories / (profile?.daily_calorie_goal || 1)) * 100)}%` }} />
+                <div className="h-full bg-gold" style={{ width: `${Math.min(100, (todayMacros.calories / (calorieTarget || 1)) * 100)}%` }} />
               </div>
               <div className="flex justify-between text-[9px] text-muted-2 font-technical leading-none">
                 <span>P:<span className="text-coral">{Math.round(todayMacros.protein)}g</span></span>
@@ -393,6 +426,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
         </div>
 
         {/* Morning Check-in (if not done) */}
@@ -407,7 +441,9 @@ export default function Dashboard() {
 
         {/* ── MAIN WORKOUT CARD ── */}
         <div className="mb-4">
-          {todayLog ? (
+          {workoutCardLoading ? (
+            <Skeleton className="h-[104px] rounded-xl" />
+          ) : todayLog ? (
             <div className="glass overflow-hidden">
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -419,7 +455,7 @@ export default function Dashboard() {
                     <p className="text-xs text-leaf/70 font-bold uppercase tracking-[0.08em]">Training Done</p>
                   </div>
                 </div>
-                <Link to={todayWorkoutLink || "#"}>
+                <Link to={todayWorkoutLink || "/workouts"}>
                   <Button variant="dim" size="sm" className="text-xs">View Log</Button>
                 </Link>
               </div>

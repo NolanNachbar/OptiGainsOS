@@ -1,5 +1,9 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/api/supabaseClient";
+import { getTodayString } from "@/utils/dateUtils";
 import { useRecoveryMetrics } from "@/hooks/useUserQueries";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { calculateReadinessScore, getReadinessCategory, calculateACWR } from "@/utils/recoveryUtils";
@@ -18,7 +22,9 @@ import { format, parseISO } from "date-fns";
 
 export default function RecoveryDetail() {
   const navigate = useNavigate();
-  const { recoveryMetrics, isLoading } = useRecoveryMetrics(60); // Get 60 days for chronic load
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { recoveryMetrics, isLoading, error } = useRecoveryMetrics(60); // Get 60 days for chronic load
 
   const chartData = useMemo(() => {
     return [...recoveryMetrics].reverse().map(m => ({
@@ -41,7 +47,30 @@ export default function RecoveryDetail() {
   }, [prescription, recoveryMetrics]);
   const acwrSource = prescription?.acwr != null ? "engine load model" : "step proxy";
 
-  const score = useMemo(() => calculateReadinessScore(latest, null), [latest]);
+  // Prefer the engine's readiness score (athlete_state.recovery.score) so this
+  // page matches AthleteState; fall back to the local formula only when the
+  // engine hasn't computed today's state yet.
+  const today = getTodayString();
+  const { data: athleteState } = useQuery({
+    queryKey: ["athlete-state", today, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("athlete_state")
+        .select("*")
+        .eq("created_by", user.id)
+        .eq("date", today)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const score = useMemo(() => {
+    const engineScore = athleteState?.recovery?.score;
+    return engineScore != null ? engineScore : calculateReadinessScore(latest, null);
+  }, [athleteState, latest]);
   const category = getReadinessCategory(score);
 
   // Which series actually have data — used to collapse empty chart shells
@@ -112,7 +141,7 @@ export default function RecoveryDetail() {
                     className="relative h-[10px] rounded-full"
                     style={{
                       background:
-                        "linear-gradient(90deg, rgba(91,168,245,0.45) 0%, rgba(94,220,210,0.5) 28%, rgba(94,220,210,0.5) 62%, rgba(226,162,60,0.5) 78%, rgba(239,115,104,0.55) 100%)",
+                        "linear-gradient(90deg, rgba(var(--hue-blue-rgb) / 0.45) 0%, rgba(var(--hue-teal-rgb) / 0.5) 28%, rgba(var(--hue-teal-rgb) / 0.5) 62%, rgba(var(--warn-rgb) / 0.5) 78%, rgba(var(--bad-rgb) / 0.55) 100%)",
                     }}
                   >
                     <span
@@ -121,10 +150,10 @@ export default function RecoveryDetail() {
                     />
                     {acwr != null && (
                       <span
-                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-white transition-all duration-700"
+                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-ink transition-all duration-700"
                         style={{
                           left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 2px)`,
-                          boxShadow: "0 0 0 3px rgba(255,255,255,0.18)",
+                          boxShadow: "0 0 0 3px var(--color-border)",
                         }}
                       />
                     )}
@@ -145,9 +174,30 @@ export default function RecoveryDetail() {
           </Card>
         </div>
 
-        {(!hasHrv && !hasSteps && !hasSleep) ? (
+        {error ? (
           <Card className="mb-8 glass">
-            <CardContent className="py-6 flex items-center gap-3">
+            <CardContent className="pt-6 pb-6 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Info className="w-5 h-5 text-warn shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">Couldn't load recovery data</p>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    Check your connection and try again.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="shrink-0 text-ink-muted hover:text-ink"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["recoveryMetrics"] })}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (!hasHrv && !hasSteps && !hasSleep) ? (
+          <Card className="mb-8 glass">
+            <CardContent className="pt-6 pb-6 flex items-center gap-3">
               <Info className="w-5 h-5 text-ink-muted shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
@@ -166,7 +216,7 @@ export default function RecoveryDetail() {
               <CardTitle className="section-label">HRV Trend (ms)</CardTitle>
               <Activity className="w-4 h-4 text-teal" />
             </CardHeader>
-            <CardContent className={hasHrv ? "h-[250px] pt-4" : "py-5"}>
+            <CardContent className={hasHrv ? "h-[250px] pt-4" : "pt-5 pb-5"}>
               {!hasHrv ? (
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
@@ -174,12 +224,12 @@ export default function RecoveryDetail() {
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
                   <XAxis
                     dataKey="formattedDate"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
                   <YAxis
                     hide
@@ -208,7 +258,7 @@ export default function RecoveryDetail() {
               <CardTitle className="section-label">Step Count</CardTitle>
               <Zap className="w-4 h-4 text-leaf" />
             </CardHeader>
-            <CardContent className={hasSteps ? "h-[250px] pt-4" : "py-5"}>
+            <CardContent className={hasSteps ? "h-[250px] pt-4" : "pt-5 pb-5"}>
               {!hasSteps ? (
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
@@ -216,21 +266,21 @@ export default function RecoveryDetail() {
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
                   <XAxis
                     dataKey="formattedDate"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
                   <YAxis hide />
                   <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    cursor={{ fill: 'var(--color-border-soft)' }}
                     contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                   />
                   <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
                     {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(123,201,111,0.25)'} />
+                      <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(var(--hue-green-rgb) / 0.25)'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -247,7 +297,7 @@ export default function RecoveryDetail() {
               <CardTitle className="section-label">Sleep Duration (Hours)</CardTitle>
               <Moon className="w-4 h-4 text-violet" />
             </CardHeader>
-            <CardContent className={hasSleep ? "h-[250px] pt-4" : "py-5"}>
+            <CardContent className={hasSleep ? "h-[250px] pt-4" : "pt-5 pb-5"}>
               {!hasSleep ? (
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
                   <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
@@ -255,27 +305,27 @@ export default function RecoveryDetail() {
               ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
                   <XAxis
                     dataKey="formattedDate"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }}
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
                     domain={[0, 12]}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    cursor={{ fill: 'var(--color-border-soft)' }}
                     contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                   />
-                  <ReferenceLine y={7.5} stroke="rgba(242,244,247,0.3)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'rgba(242,244,247,0.4)', fontSize: 10, fontFamily: 'Manrope' }} />
+                  <ReferenceLine y={7.5} stroke="var(--text-faint)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }} />
                   <Bar dataKey="displaySleep" radius={[4, 4, 0, 0]}>
                     {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? 'var(--hue-violet)' : 'rgba(155,140,255,0.30)'} />
+                      <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? 'var(--hue-violet)' : 'rgba(var(--hue-violet-rgb) / 0.30)'} />
                     ))}
                   </Bar>
                 </BarChart>

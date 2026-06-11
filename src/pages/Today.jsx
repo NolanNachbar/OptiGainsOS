@@ -11,8 +11,9 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTodayString } from "@/utils/dateUtils";
+import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { useProfile } from "@/hooks/useUserQueries";
+import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -106,8 +107,7 @@ export default function Today() {
   ];
 
   const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
-  const calTarget = nutrition?.calorie_target;
-  const proteinTarget = nutrition?.protein_target;
+  const { calories: calTarget, protein: proteinTarget } = useDailyTargets(today);
 
   return (
     <div className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 pb-6 max-w-[1240px] mx-auto">
@@ -115,7 +115,7 @@ export default function Today() {
       <div className="hidden lg:flex items-baseline justify-between mb-5 rise-in">
         <div className="flex items-baseline gap-3.5">
           <h1 className="type-display text-[26px]">Today</h1>
-          <span className="text-[13px] font-semibold text-muted-2">{format(new Date(), "EEEE, MMMM d")}</span>
+          <span className="text-[13px] font-semibold text-muted-2">{format(nowInTz(profile?.timezone), "EEEE, MMMM d")}</span>
         </div>
       </div>
 

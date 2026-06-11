@@ -197,6 +197,7 @@ export default function CreateWorkout() {
         focus: workout.focus,
         duration_minutes: workout.duration_minutes,
         exercises: workout.exercises,
+        folder: workout.folder?.trim() || null,
       };
       const allWorkouts = await db.entities.Workout.filter({ created_by: user.id });
       const duplicateName = allWorkouts.find(w =>
@@ -419,7 +420,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               <Input
                 type="number"
                 value={exercise.sets}
-                onChange={(e) => onChange("sets", parseInt(e.target.value))}
+                onChange={(e) => onChange("sets", Math.max(1, parseInt(e.target.value) || 1))}
                 min="1"
                 className="mt-1"
               />
@@ -438,7 +439,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               <Input
                 type="number"
                 value={exercise.rest_seconds}
-                onChange={(e) => onChange("rest_seconds", parseInt(e.target.value))}
+                onChange={(e) => onChange("rest_seconds", parseInt(e.target.value) || 0)}
                 min="0"
                 className="mt-1"
               />
@@ -572,7 +573,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                 <Input
                   type="number"
                   value={step.duration_value}
-                  onChange={(e) => onChange("duration_value", parseFloat(e.target.value))}
+                  onChange={(e) => onChange("duration_value", parseFloat(e.target.value) || 0)}
                   min="0"
                   step={step.duration_type === "distance" ? "0.1" : "1"}
                   placeholder={step.duration_type === "time" ? "min" : "km"}

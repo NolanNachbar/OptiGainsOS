@@ -37,8 +37,8 @@ export default function ProgramCard({ program, enrollment }) {
           <div className="px-5 pt-4 pb-2">
             {/* Badges */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {program.goal && (
-                <Badge variant="outline">{GOAL_LABELS[program.goal] || program.goal}</Badge>
+              {(program.focus || program.goal) && (
+                <Badge variant="outline">{GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}</Badge>
               )}
               {enrollment?.status === 'active' && (
                 <Badge variant="green" className="ml-auto">Active</Badge>
@@ -46,7 +46,7 @@ export default function ProgramCard({ program, enrollment }) {
             </div>
 
             <h3 className="text-base font-bold text-ink group-hover:text-brand transition-colors mb-1">
-              {program.name}
+              {program.title || program.name}
             </h3>
             {program.description && (
               <p className="text-xs text-ink-muted line-clamp-2 mb-3">{program.description}</p>

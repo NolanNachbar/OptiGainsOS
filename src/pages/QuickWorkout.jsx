@@ -146,7 +146,7 @@ export default function QuickWorkout() {
     const suggestion = insightSuggestions[exerciseName.toLowerCase()];
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, exerciseName);
     const defaultWeight = suggestion || lastPerf?.lastWeight || 0;
-    addExerciseRaw(exerciseName, defaultWeight);
+    return addExerciseRaw(exerciseName, defaultWeight);
   };
 
   // Observe when workout title scrolls out of view
@@ -271,7 +271,10 @@ export default function QuickWorkout() {
       <WorkoutLoggingHeader
         workoutTitle={workoutTitle}
         showTitleInHeader={showTitleInHeader}
-        onCancel={() => navigate("/dashboard")}
+        onCancel={() => {
+          cancelSession();
+          navigate("/dashboard");
+        }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending}
       />
@@ -314,7 +317,7 @@ export default function QuickWorkout() {
         {/* Engine prescription banner */}
         {prescribed && (
           <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-[rgba(239,115,104,0.15)] text-coral flex items-center justify-center flex-shrink-0 not-italic">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
               <Cpu className="w-3.5 h-3.5" />
             </i>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">

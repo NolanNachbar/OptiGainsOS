@@ -11,6 +11,7 @@ export default {
         // Coral — THE action color, driven by CSS vars so the light theme
         // re-tunes it for contrast automatically.
         brand: 'rgb(var(--color-brand-rgb) / <alpha-value>)',
+        brandTint: 'var(--brand-tint)',
         // Semantic ink — use these instead of text-white/slate-* in new code.
         ink: {
           DEFAULT: 'var(--text-primary)',

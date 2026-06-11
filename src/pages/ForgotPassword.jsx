@@ -32,7 +32,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: '#080B10' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -44,10 +44,10 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Logo className="w-14 h-14 mx-auto mb-4" />
-          <h1 className="type-display text-[24px] text-[#F2F4F7]">
-            OPTI<span style={{ color: '#5EDCD2' }}>GAINS</span>
+          <h1 className="type-display text-[24px] text-ink">
+            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
           </h1>
-          <p className="text-[11.5px] font-semibold mt-1.5 text-[rgba(242,244,247,0.5)]">Reset your password</p>
+          <p className="text-[11.5px] font-semibold mt-1.5 text-muted-2">Reset your password</p>
         </div>
 
         <Card>

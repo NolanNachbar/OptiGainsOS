@@ -93,13 +93,13 @@ export default function WorkoutLoggingHeader({
                     <div className="flex gap-1.5 items-center">
                       <button
                         onClick={() => onAddRestTime?.(30)}
-                        className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold font-technical text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
+                        className="h-10 md:h-8 px-3.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold font-technical text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
                       >
                         +30s
                       </button>
                       <button
                         onClick={() => onSkipRest?.()}
-                        className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
+                        className="h-10 md:h-8 px-3.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
                       >
                         Skip
                       </button>
@@ -110,12 +110,12 @@ export default function WorkoutLoggingHeader({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-3 md:gap-2 flex-shrink-0">
               <Button
                 variant="destructive"
                 onClick={() => setShowConfirm(true)}
                 size="sm"
-                className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3 transition-all hover:scale-105"
+                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3 transition-all hover:scale-105"
               >
                 <X className="w-3 h-3 md:w-3.5 md:h-3.5 md:mr-1.5" />
                 <span className="hidden md:inline">Cancel</span>
@@ -125,7 +125,7 @@ export default function WorkoutLoggingHeader({
                 disabled={isSaving}
                 size="sm"
                 variant="volt"
-                className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3 transition-all hover:scale-105"
+                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3 transition-all hover:scale-105"
                 data-tutorial="finish-workout-btn"
               >
                 {isSaving ? (

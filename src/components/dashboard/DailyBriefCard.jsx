@@ -24,7 +24,7 @@ const COACHES = [
 /** Coach-persona tag — tiny uppercase teal chip (the an-coach <b>). */
 function CoachTag({ children }) {
   return (
-    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-[rgba(94,220,210,0.10)] rounded-[7px] px-[7px] py-[3px] whitespace-nowrap shrink-0">
+    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-teal/10 rounded-sm px-[7px] py-[3px] whitespace-nowrap shrink-0">
       {children}
     </span>
   );

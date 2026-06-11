@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Pill, Droplets, Trash2, CheckCircle2, Clock, X, Pencil,
 } from "lucide-react";
-import { format, parseISO, startOfDay, endOfDay } from "date-fns";
-import { getTodayString } from "@/utils/dateUtils";
+import { format, parseISO } from "date-fns";
+import { getTodayString, dayWindowUtc } from "@/utils/dateUtils";
 import { useProfile } from "@/hooks/useUserQueries";
 import { toast } from "sonner";
 
@@ -34,15 +36,17 @@ function WaterCard({ today }) {
   const queryClient = useQueryClient();
   const WATER_GOAL_ML = waterGoalMl(profile);
 
+  const dayWindow = dayWindowUtc(today, profile?.timezone);
+
   const { data: todayWater = [] } = useQuery({
-    queryKey: ["water-logs", today],
+    queryKey: ["water-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("water_logs")
         .select("*")
         .eq("created_by", user.id)
-        .gte("logged_at", today + "T00:00:00")
-        .lte("logged_at", today + "T23:59:59")
+        .gte("logged_at", dayWindow.start)
+        .lt("logged_at", dayWindow.end)
         .order("logged_at", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -85,7 +89,7 @@ function WaterCard({ today }) {
       <CardContent className="px-5 pb-4">
         <div className="h-2 bg-charcoal-elevated rounded-full mb-4 overflow-hidden">
           <div
-            className="h-full bg-blue-400 rounded-full transition-all duration-500"
+            className="h-full bg-info rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -110,9 +114,9 @@ function WaterCard({ today }) {
                 <span>{format(parseISO(entry.logged_at), "h:mm a")} · {entry.amount_ml}ml</span>
                 <button
                   onClick={() => deleteEntry.mutate(entry.id)}
-                  className="opacity-0 group-hover:opacity-100 hover:text-bad transition-all"
+                  className="p-2 -m-1 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:text-bad transition-all"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
@@ -169,14 +173,17 @@ function SupplementForm({ initial, onSave, onClose }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Supplements({ embedded = false }) {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
-  const today = getTodayString();
+  const today = getTodayString(profile?.timezone);
+  const dayWindow = dayWindowUtc(today, profile?.timezone);
 
   const [showAddType, setShowAddType] = useState(false);
   const [editingType, setEditingType] = useState(null);
+  const [deletingType, setDeletingType] = useState(null);
   const [logDoses, setLogDoses] = useState({});
 
-  const { data: suppTypes = [] } = useQuery({
+  const { data: suppTypes = [], isLoading: typesLoading, isError: typesError, refetch: refetchTypes } = useQuery({
     queryKey: ["supplement-types", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -197,8 +204,8 @@ export default function Supplements({ embedded = false }) {
         .from("supplement_logs")
         .select("*")
         .eq("created_by", user.id)
-        .gte("taken_at", today + "T00:00:00")
-        .lte("taken_at", today + "T23:59:59")
+        .gte("taken_at", dayWindow.start)
+        .lt("taken_at", dayWindow.end)
         .order("taken_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -255,7 +262,7 @@ export default function Supplements({ embedded = false }) {
     onSuccess: (_, { type }) => {
       queryClient.invalidateQueries({ queryKey: ["supplement-logs", today] });
       setLogDoses(prev => ({ ...prev, [type.id]: "" }));
-      toast.success(`${_.supplement_name || "Supplement"} logged`);
+      toast.success(`${type.name} logged`);
     },
     onError: () => toast.error("Failed to log"),
   });
@@ -324,15 +331,15 @@ export default function Supplements({ embedded = false }) {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setEditingType(type)}
-                          className="p-1 text-ink-muted hover:text-brand transition-colors"
+                          className="p-2.5 text-ink-muted hover:text-brand transition-colors"
                         >
-                          <Pencil className="w-3 h-3" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteType.mutate(type.id)}
-                          className="p-1 text-ink-muted hover:text-bad transition-colors"
+                          onClick={() => setDeletingType(type)}
+                          className="p-2.5 text-ink-muted hover:text-bad transition-colors"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -381,7 +388,7 @@ export default function Supplements({ embedded = false }) {
                     <span className="text-[10px] text-ink-muted">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
                       onClick={() => deleteLog.mutate(log.id)}
-                      className="opacity-0 group-hover:opacity-100 text-ink-muted hover:text-bad transition-all"
+                      className="p-2 -m-1 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 text-ink-muted hover:text-bad transition-all"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -392,11 +399,27 @@ export default function Supplements({ embedded = false }) {
           </div>
         )}
 
-        {suppTypes.length === 0 && (
+        {typesLoading && (
+          <div className="space-y-3">
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+          </div>
+        )}
+
+        {typesError && (
+          <div className="py-8 text-center border border-charcoal-border rounded-2xl">
+            <p className="text-sm text-ink-muted">Couldn't load supplements.</p>
+            <Button variant="ghost" size="sm" className="mt-3" onClick={() => refetchTypes()}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {!typesLoading && !typesError && suppTypes.length === 0 && (
           <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-            <Pill className="w-8 h-8 text-slate-800 mx-auto mb-3" />
+            <Pill className="w-8 h-8 text-ink-faint mx-auto mb-3" />
             <p className="text-sm text-ink-muted">No supplements configured.</p>
-            <p className="text-xs text-slate-700 mt-1">Add your stack to enable one-tap daily logging.</p>
+            <p className="text-xs text-ink-muted mt-1">Add your stack to enable one-tap daily logging.</p>
             <Button variant="volt" size="sm" className="mt-4" onClick={() => setShowAddType(true)}>
               <Plus className="w-3.5 h-3.5 mr-1.5" /> Add First Supplement
             </Button>
@@ -413,6 +436,18 @@ export default function Supplements({ embedded = false }) {
           <SupplementForm onSave={(fields) => addType.mutate(fields)} onClose={() => setShowAddType(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Delete supplement type confirmation */}
+      <ConfirmDialog
+        open={!!deletingType}
+        onOpenChange={(open) => { if (!open) setDeletingType(null); }}
+        title="Delete supplement?"
+        description={`"${deletingType?.name}" will be removed from your stack.`}
+        confirmText="Delete"
+        variant="danger"
+        loading={deleteType.isPending}
+        onConfirm={() => deleteType.mutate(deletingType.id, { onSettled: () => setDeletingType(null) })}
+      />
 
       {/* Edit supplement type dialog */}
       <Dialog open={!!editingType} onOpenChange={() => setEditingType(null)}>

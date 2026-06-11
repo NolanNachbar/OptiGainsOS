@@ -3,8 +3,10 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getTodayString } from "@/utils/dateUtils";
 import { useEngineParams, useTodayPrescription } from "@/hooks/useEngineQueries";
+import { useDailyTargets } from "@/hooks/useDailyTargets";
 import PSTTracker from "@/components/PSTTracker";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -12,7 +14,7 @@ import { Link } from "react-router-dom";
 import {
   Dumbbell, Activity, BarChart3, Heart, Waves,
   TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Utensils, Cpu,
-  Camera, ChevronRight,
+  Camera, ChevronRight, CalendarDays, FlaskConical,
 } from "lucide-react";
 
 // ── Adaptive engine internals (engine_params + training_prescription) ─────────
@@ -106,6 +108,89 @@ function AdaptiveEnginePanel() {
               </p>
             )}
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Weekly plan + controlled tests ────────────────────────────────────────────
+// The engine writes weekly_plans (set targets + human-readable rationale) and
+// controlled_tests (volume-tolerance ramps, PST diagnostics) that previously
+// had no readers in the UI — surface them read-only here.
+function WeeklyPlanPanel() {
+  const { user } = useAuth();
+
+  const { data: plan } = useQuery({
+    queryKey: ["weekly-plan", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("weekly_plans")
+        .select("week_start,set_targets,frequency_targets,rationale")
+        .eq("created_by", user.id)
+        .order("week_start", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: tests = [] } = useQuery({
+    queryKey: ["controlled-tests-active", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("controlled_tests")
+        .select("*")
+        .eq("created_by", user.id)
+        .eq("status", "active");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (!plan && tests.length === 0) return null;
+
+  const setTargets = plan?.set_targets || {};
+
+  return (
+    <Card className="glass glass-interactive mb-4 rise-in">
+      <CardHeader className="pb-2 pt-4 px-5">
+        <CardTitle className="section-label flex items-center gap-2 normal-case">
+          <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
+          {plan?.week_start && <span className="font-technical text-[10px] font-bold text-faint normal-case">wk of {plan.week_start}</span>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 pb-4 space-y-3">
+        {tests.map(t => {
+          const b = t.baseline || {};
+          const label = t.test_type === "pst_diagnostic"
+            ? "PST diagnostic scheduled — run a benchmark PST and log it so the engine can recalibrate your targets."
+            : t.test_type === "volume_tolerance"
+              ? `Volume-tolerance test: ramping ${String(b.muscle || "").replace(/_/g, " ")} (week ${b.week ?? 1}) to probe your MRV.`
+              : `${String(t.test_type).replace(/_/g, " ")} test active.`;
+          return (
+            <div key={t.id} className="flex items-start gap-1.5 rounded-lg bg-gold/10 border border-gold/20 px-2.5 py-1.5">
+              <FlaskConical className="w-3 h-3 text-gold shrink-0 mt-0.5" />
+              <span className="text-[11px] font-semibold text-gold/90 leading-snug">{label}</span>
+            </div>
+          );
+        })}
+        {Object.keys(setTargets).length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(setTargets).map(([muscle, sets]) => (
+              <span key={muscle} className="glass-inset px-2 py-1 text-[10px] font-bold text-secondary capitalize">
+                {muscle.replace(/_/g, " ")} <span className="font-technical font-extrabold text-ink">{sets}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        {plan?.rationale && (
+          <p className="text-xs font-semibold text-muted-2 leading-relaxed">{plan.rationale}</p>
         )}
       </CardContent>
     </Card>
@@ -430,20 +515,23 @@ function EnduranceSection({ data }) {
 
 // ── Nutrition section ─────────────────────────────────────────────────────────
 
-function NutritionSection({ data }) {
+function NutritionSection({ data, targets }) {
   if (!data) return <p className="text-xs font-semibold text-muted-2">No nutrition data computed yet.</p>;
 
   const {
     phase,
     avg_calories_7d,
     avg_daily_calories_7d,
-    calorie_target,
     avg_protein_7d,
-    protein_target,
     calorie_adherence,
     weight_trend_lbs_per_week,
     on_track,
   } = data;
+
+  // Targets come from useDailyTargets — the single source of truth — so this
+  // card can never disagree with the Fuel/Today rings for the same day.
+  const calorie_target = targets?.calories ?? data.calorie_target ?? null;
+  const protein_target = targets?.protein ?? data.protein_target ?? null;
 
   // compute_athlete_state.py uses avg_daily_calories_7d; edge fn uses avg_calories_7d
   const avgCal = avg_calories_7d ?? avg_daily_calories_7d ?? 0;
@@ -540,8 +628,9 @@ export default function AthleteState({ hideHeader = false }) {
   // The engine's learned volume landmarks live in engine_params, not athlete_state,
   // so pull them here to overlay onto the (otherwise template) volume bars.
   const { engineParams } = useEngineParams();
+  const dailyTargets = useDailyTargets(today);
 
-  const { data: state, isLoading } = useQuery({
+  const { data: state, isLoading, isError, refetch } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -578,9 +667,22 @@ export default function AthleteState({ hideHeader = false }) {
           <p className="text-sm font-semibold text-muted-2">Loading athlete state…</p>
         )}
 
-        {!isLoading && !state && (
+        {!isLoading && isError && (
           <Card className="glass glass-interactive mb-6">
-            <CardContent className="py-8 text-center">
+            <CardContent className="pt-8 pb-8 text-center">
+              <AlertTriangle className="w-8 h-8 text-warn mx-auto mb-3" />
+              <p className="text-sm text-ink font-bold">Couldn&apos;t load athlete state</p>
+              <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
+                Something went wrong fetching today&apos;s analysis.
+              </p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>Retry</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !isError && !state && (
+          <Card className="glass glass-interactive mb-6">
+            <CardContent className="pt-8 pb-8 text-center">
               <BarChart3 className="w-8 h-8 text-faint mx-auto mb-3" />
               <p className="text-sm text-ink font-bold">Today's analysis is being computed</p>
               <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
@@ -592,6 +694,8 @@ export default function AthleteState({ hideHeader = false }) {
         )}
 
         <AdaptiveEnginePanel />
+
+        <WeeklyPlanPanel />
 
         <VdotZonesCard className="mb-4" />
 
@@ -661,7 +765,7 @@ export default function AthleteState({ hideHeader = false }) {
               <SectionHeader icon={Utensils} title="Nutrition" color="text-gold" />
             </CardHeader>
             <CardContent className="px-5 pb-4">
-              <NutritionSection data={state?.nutrition} />
+              <NutritionSection data={state?.nutrition} targets={dailyTargets} />
             </CardContent>
           </Card>
         </div>

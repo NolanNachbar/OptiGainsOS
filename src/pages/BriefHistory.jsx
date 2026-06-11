@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
   Dumbbell, Activity, Apple, Scale, BookOpen, Briefcase,
@@ -20,7 +21,7 @@ const COACHES = [
 /** Coach-persona tag — tiny uppercase teal chip. */
 function CoachTag({ children }) {
   return (
-    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-[rgba(94,220,210,0.10)] rounded-[7px] px-[7px] py-[3px] whitespace-nowrap shrink-0">
+    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-teal/10 rounded-[7px] px-[7px] py-[3px] whitespace-nowrap shrink-0">
       {children}
     </span>
   );
@@ -32,7 +33,7 @@ function BriefEntry({ brief }) {
   const totalTokens = (brief.input_tokens || 0) + (brief.output_tokens || 0);
   const cachedTokens = brief.cache_read_tokens || 0;
   const approxCost = totalTokens > 0
-    ? `~$${((totalTokens * 0.00000025) + (cachedTokens * 0.000000025)).toFixed(4)}`
+    ? `~$${(((totalTokens - cachedTokens) * 0.00000025) + (cachedTokens * 0.000000025)).toFixed(4)}`
     : null;
 
   return (
@@ -86,7 +87,7 @@ function BriefEntry({ brief }) {
 export default function BriefHistory() {
   const { user } = useAuth();
 
-  const { data: briefs = [], isLoading } = useQuery({
+  const { data: briefs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["daily-briefs-history", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -122,6 +123,11 @@ export default function BriefHistory() {
             {[1, 2, 3].map(i => (
               <div key={i} className="h-32 glass animate-pulse" />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="py-8 text-center glass-inset">
+            <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load briefs.</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
           </div>
         ) : briefs.length === 0 ? (
           <div className="py-20 text-center">

@@ -13,8 +13,8 @@ import math
 
 # MRV learner constants
 K_MAX    = 0.34   # [ENG] cap a single week's influence (no one week swings a posterior)
-SOR_OK   = 2.5    # [ENG] mean soreness (0-5) at/below which a muscle is "recoverable"
-SOR_HI   = 4.0    # [ENG] soreness at/above which a stall signals over-MRV
+SOR_OK   = 4.0    # [ENG] mean soreness (1-10; check-in 0-3 mapped 1+3v) at/below which a muscle is "recoverable"
+SOR_HI   = 7.0    # [ENG] soreness (1-10) at/above which a stall signals over-MRV
 OBS_VAR  = 9.0    # [ENG] observation noise (sets^2); designed tests can pass lower
 
 
@@ -26,7 +26,7 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
     row: current athlete_landmarks row (mrv_mean, mrv_var, n_obs, mev, mav, mrv).
     weekly_sets: sets the muscle actually got (use last week's planned target).
     e1rm_slope: per-muscle e1RM slope (None if no strength signal -> uninformative).
-    soreness_avg: mean soreness 0-5.
+    soreness_avg: mean soreness 1-10 (check-in 0-3 mapped 1+3v).
     prior_mrv: population prior MRV (maturity is measured against this).
 
     Returns the fields to upsert (mrv_mean, mrv_var, n_obs, mature, mrv, mav).
@@ -41,8 +41,10 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
     if weekly_sets and weekly_sets > 0 and e1rm_slope is not None:
         responding  = e1rm_slope > 0
         recoverable = soreness_avg <= SOR_OK
-        if responding and recoverable:
-            obs = weekly_sets + 1          # MRV is at least this, probably higher
+        if responding and recoverable and weekly_sets + 1 > mean:
+            # Censored "MRV is at least this" — only informative ABOVE the mean,
+            # otherwise positive response below the posterior drags MRV down.
+            obs = weekly_sets + 1
         elif (not responding) and soreness_avg >= SOR_HI:
             obs = weekly_sets - 1          # over MRV — stalling and sore
 
@@ -53,7 +55,7 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
         n   += 1
 
     mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
-    mrv = round(mean) if mature else round(prior_mrv)
+    mrv = max(round(mean) if mature else round(prior_mrv), round(mev) + 2)
     mav = max(mev + 1, min(round(mean) - 2, mrv - 1))  # keep MAV below MRV
     return {"mrv_mean": round(mean, 2), "mrv_var": round(var, 3), "n_obs": n,
             "mature": bool(mature), "mrv": mrv, "mav": mav}
@@ -71,7 +73,7 @@ def apply_mrv_observation(row: dict, obs: float, obs_var: float, prior_mrv: floa
     var  = var * (1 - K)
     n   += 1
     mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
-    mrv = round(mean) if mature else round(prior_mrv)
+    mrv = max(round(mean) if mature else round(prior_mrv), round(mev) + 2)
     mav = max(mev + 1, min(round(mean) - 2, mrv - 1))
     return {"mrv_mean": round(mean, 2), "mrv_var": round(var, 3), "n_obs": n,
             "mature": bool(mature), "mrv": mrv, "mav": mav}
@@ -121,7 +123,9 @@ SWAP_VOTE       = 0.5    # [ENG] value of one "chose this" deviation vote
 DROP_VOTE       = -0.5   # [ENG] value of one "skipped this" deviation vote
 SENTIMENT_GAIN  = 0.6    # [ENG] per net like/dislike mention
 EASY_GAIN       = 0.3    # [ENG] "too easy" reads as productive (earning its slot)
+HARD_LOSS       = -0.3   # [ENG] "too hard / grinding" reads as hold / back off
 PAIN_PENALTY    = -1.5   # [ENG] a pain note is a strong "stop programming this"
+SLOPE_SCALE     = 2.5    # [ENG] lbs/session that saturates the strength-response term
 
 
 def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
@@ -140,17 +144,22 @@ def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
 
 
 def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
-                    sentiment: float, easy_mentions: int, pain: bool) -> float:
+                    sentiment: float, easy_mentions: int, pain: bool,
+                    hard_mentions: int = 0) -> float:
     """Blend the per-exercise signals for one week into a single reward scalar."""
     r = 0.0
     if slope is not None:
-        r += float(slope)                       # strength response (lbs/session)
+        # Strength response, normalized to the ±1 scale of the vote/note terms
+        # so a normally progressing lift can't drown them (raw slope is lbs/session).
+        r += max(-1.0, min(1.0, float(slope) / SLOPE_SCALE))
     r += SWAP_VOTE * int(chosen_votes or 0)
     r += DROP_VOTE * int(dropped_votes or 0)
     r += SENTIMENT_GAIN * float(sentiment or 0.0)
     r += EASY_GAIN * int(easy_mentions or 0)
+    r += HARD_LOSS * int(hard_mentions or 0)
     if pain:
-        r += PAIN_PENALTY
+        # Hard veto: no amount of progress masks a flagged injury signal.
+        return round(min(r + PAIN_PENALTY, PAIN_PENALTY), 4)
     return round(r, 4)
 
 

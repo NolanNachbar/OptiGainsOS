@@ -221,9 +221,9 @@ export default function ProgramDetail() {
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {program.goal && (
+                  {(program.focus || program.goal) && (
                     <Badge variant="outline">
-                      {GOAL_LABELS[program.goal] || program.goal}
+                      {GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}
                     </Badge>
                   )}
                   {enrollment?.status && (
@@ -242,7 +242,7 @@ export default function ProgramDetail() {
                   )}
                 </div>
                 <h1 className="type-display text-2xl mb-1">
-                  {program.name}
+                  {program.title || program.name}
                 </h1>
                 {program.description && (
                   <p className="text-ink-muted text-sm">{program.description}</p>
@@ -390,7 +390,7 @@ export default function ProgramDetail() {
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (
           <Card className="mb-4 border-[0.5px] !border-[rgba(var(--warn-rgb)/0.30)]">
-            <CardContent className="py-3">
+            <CardContent className="pt-3 pb-3">
               {recoveryWarnings.map((w) => (
                 <div key={w.muscle} className="flex items-start gap-2 text-sm text-ink-muted">
                   <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-warn" />
@@ -438,8 +438,8 @@ export default function ProgramDetail() {
                         <p className="font-medium text-sm text-ink">{name}</p>
                         <p className="font-technical text-xs text-ink-muted">
                           {state.sessions_at_current_weight || 0} sessions at current weight
-                          {state.last_session_rpe_avg != null && (
-                            <> &middot; Avg RIR {state.last_session_rpe_avg.toFixed(1)}</>
+                          {(state.last_session_rir_avg ?? state.last_session_rpe_avg) != null && (
+                            <> &middot; Avg RIR {(state.last_session_rir_avg ?? state.last_session_rpe_avg).toFixed(1)}</>
                           )}
                         </p>
                       </div>
@@ -498,7 +498,7 @@ export default function ProgramDetail() {
                           <p className="font-medium text-sm text-ink">{ex.name}</p>
                           <p className="font-technical text-xs text-ink-muted">
                             {ex.sets} sets &times; {ex.rep_target || "?"} reps
-                            {ex.rir_target && ` @ RIR ${ex.rir_target}`}
+                            {ex.rir_target != null && ` @ RIR ${ex.rir_target}`}
                           </p>
                         </div>
                         {targets?.workingWeight && (

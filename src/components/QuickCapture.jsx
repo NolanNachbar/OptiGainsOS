@@ -33,7 +33,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
   });
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && content.trim()) {
       captureMutation.mutate();
     }
   };

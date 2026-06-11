@@ -69,14 +69,17 @@ export default function Profile({ hideHeader }) {
       }
       let streak = 0;
       const uniqueDays = [...new Set(data.map(l => l.log_date))].sort().reverse();
-      const today = new Date().toISOString().split('T')[0];
-      let expected = today;
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const yesterdayDt = new Date();
+      yesterdayDt.setDate(yesterdayDt.getDate() - 1);
+      const yesterday = format(yesterdayDt, 'yyyy-MM-dd');
+      let expected = uniqueDays[0] === yesterday ? yesterday : today;
       for (const d of uniqueDays) {
         if (d === expected) {
           streak++;
-          const dt = new Date(expected);
+          const dt = new Date(`${expected}T12:00:00`);
           dt.setDate(dt.getDate() - 1);
-          expected = dt.toISOString().split('T')[0];
+          expected = format(dt, 'yyyy-MM-dd');
         } else {
           break;
         }
@@ -158,7 +161,6 @@ export default function Profile({ hideHeader }) {
         await db.entities.UserProfile.update(profile.id, profileData);
       } else {
         await db.entities.UserProfile.create({ ...profileData, created_by: user.id });
-        invalidateProfile(queryClient);
       }
       if (weightToLog) {
         await db.entities.BodyWeightEntry.create({
@@ -169,8 +171,9 @@ export default function Profile({ hideHeader }) {
         });
       }
     },
-    onSuccess: (_, { profileData, weightToLog }) => {
-      savedFormDataRef.current = { ...profileData };
+    onSuccess: (_, { formSnapshot, weightToLog }) => {
+      savedFormDataRef.current = { ...formSnapshot };
+      invalidateProfile(queryClient);
       if (weightToLog) invalidateBodyWeight(queryClient);
       toast.success("Profile saved!");
     },
@@ -196,10 +199,10 @@ export default function Profile({ hideHeader }) {
 
   const doSubmit = (cleaned) => {
     const previousWeight = savedFormDataRef.current?.current_weight;
-    const weightToLog = cleaned.current_weight && cleaned.current_weight !== previousWeight
+    const weightToLog = cleaned.current_weight && parseFloat(cleaned.current_weight) !== parseFloat(previousWeight)
       ? cleaned.current_weight
       : null;
-    updateProfileMutation.mutate({ profileData: cleaned, weightToLog });
+    updateProfileMutation.mutate({ profileData: cleaned, weightToLog, formSnapshot: { ...formData } });
   };
 
   const handleSubmit = (e) => {
@@ -270,7 +273,7 @@ export default function Profile({ hideHeader }) {
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
@@ -328,7 +331,7 @@ export default function Profile({ hideHeader }) {
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
                       </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol (lbs)</p>
+                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
                       <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
@@ -580,7 +583,7 @@ export default function Profile({ hideHeader }) {
                     </div>
 
                     {tdee.tdee && (
-                      <div className="bg-[rgba(249,115,22,0.08)] border border-[rgba(249,115,22,0.2)] rounded-xl p-4">
+                      <div className="bg-brand/10 border border-brand/20 rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
@@ -845,8 +848,8 @@ export default function Profile({ hideHeader }) {
 
       {/* Sticky Save Bar */}
       <div
-        className={`fixed bottom-[56px] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
-          isDirty ? 'translate-y-0' : 'translate-y-[200%]'
+        className={`fixed bottom-[calc(70px+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
+          isDirty ? 'translate-y-0' : 'translate-y-[calc(100%+70px+env(safe-area-inset-bottom))]'
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
