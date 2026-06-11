@@ -3,6 +3,7 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys, invalidatePrograms } from "@/lib/queryKeys";
 import { updateProgressionState } from "@/utils/programProgression";
+import { normalizeCardioSession } from "@/utils/programSchedule";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -33,7 +34,11 @@ export function useProgram(id) {
         return a.day_number - b.day_number;
       });
 
-      return { ...program, workouts: sorted };
+      const normalized = sorted.map(w => ({
+        ...w,
+        cardio_sessions: (w.cardio_sessions || []).map(normalizeCardioSession),
+      }));
+      return { ...program, workouts: normalized };
     },
     enabled: !!id,
   });

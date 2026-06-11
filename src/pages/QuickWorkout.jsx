@@ -79,6 +79,7 @@ export default function QuickWorkout() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
+  const [sessionNotes, setSessionNotes] = useState("");
   const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
 
@@ -224,7 +225,7 @@ export default function QuickWorkout() {
         log_date: today,
         exercises: exercises,
         duration_seconds: durationSeconds,
-        notes: null,
+        notes: sessionNotes.trim() || null,
       });
     },
     onSuccess: () => {
@@ -367,6 +368,20 @@ export default function QuickWorkout() {
             showCloseButton={exercises.length > 0}
             exerciseNames={allHistoryExerciseNames}
           />
+
+          {/* Session notes — feed back to notes_parser for programming adjustments */}
+          {exercises.length > 0 && (
+            <div className="glass px-4 py-3 rounded-xl space-y-1.5">
+              <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em]">Session notes</p>
+              <textarea
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                placeholder="PRE: how you felt going in. POST: anything hard, easy, or painful."
+                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:text-faint resize-none outline-none min-h-[64px]"
+                rows={3}
+              />
+            </div>
+          )}
 
         </div>
       </div>

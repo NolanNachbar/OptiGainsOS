@@ -244,7 +244,13 @@ class NutritionModulator:
             # preservation macros (protein + fat floor + pre-workout carbs). No
             # loss-rate cap — the only brakes are the recovery/strength gates
             # (headroom) and the 4-6 week duration cap enforced elsewhere.
-            floor_kcal   = protein_g * 4 + fat_floor_g * 9 + (carb_target_g or 0) * 4
+            # Pure macro arithmetic underestimates the true calorie floor because real
+            # protein sources carry fat calories (~10% overhead) and fixed staples are
+            # always prepended by the optimizer (whey ~120 kcal always; dextrose ~112 kcal
+            # on training days). Add a ~10% overhead + whey base so calorie_target never
+            # lands below what the optimizer can actually achieve.
+            staple_kcal  = 120 + (112 if carb_target_g and carb_target_g > 0 else 0)
+            floor_kcal   = (protein_g * 4 + fat_floor_g * 9 + (carb_target_g or 0) * 4) * 1.10 + staple_kcal
             max_deficit  = max(0.0, self.maintenance_kcal - floor_kcal)
             kcal_deficit = round(max_deficit * headroom)
             calorie_target = round(self.maintenance_kcal - kcal_deficit)

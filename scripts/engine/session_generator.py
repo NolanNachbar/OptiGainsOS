@@ -1199,7 +1199,14 @@ class SessionGenerator:
         for c in cardio:
             if c.get("activity_type") == "run":
                 dur = c.get("duration_minutes", 30)
-                session_miles = round(dur * 0.12, 1)
+                pace_str = c.get("pace", "")
+                try:
+                    # pace_str format: "M:SS/mi" or "MM:SS/mi"
+                    pace_parts = pace_str.split("/")[0].split(":")
+                    pace_min = int(pace_parts[0]) + int(pace_parts[1]) / 60.0
+                    session_miles = round(dur / pace_min, 1) if pace_min > 0 else round(dur * 0.12, 1)
+                except Exception:
+                    session_miles = round(dur * 0.12, 1)
                 run_block = {
                     "zone": c.get("zone", "Z2"),
                     "session_miles": session_miles,

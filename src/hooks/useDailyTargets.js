@@ -99,6 +99,7 @@ export function useDailyTargets(date) {
   const profProtein = profile?.daily_protein_goal || null;
   const profCarbs = profile?.daily_carbs_goal || null;
   const profFats = profile?.daily_fats_goal || null;
+  const engineFat = recommended?.fat_floor_g ?? null;
 
   const calories = Math.round(engineCal || profCal || DEFAULTS.calories);
   let protein = Math.round(engineProtein || profProtein || DEFAULTS.protein);
@@ -106,7 +107,7 @@ export function useDailyTargets(date) {
   let carbs, fats;
   if (engineCal) {
     // Protein anchored, fat floor, carbs = remainder (never negative).
-    fats = Math.round(profFats || (calories * 0.25) / 9);
+    fats = Math.round(engineFat || profFats || (calories * 0.25) / 9);
     carbs = Math.max(0, Math.round((calories - protein * 4 - fats * 9) / 4));
   } else {
     carbs = profCarbs || DEFAULTS.carbs;

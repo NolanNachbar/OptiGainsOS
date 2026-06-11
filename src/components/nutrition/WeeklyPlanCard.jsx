@@ -100,7 +100,7 @@ export default function WeeklyPlanCard({ bare = false }) {
       const targets = {};
       for (const s of statesRes.data || []) {
         const cal = s.nutrition?.recommended_intake?.calorie_target;
-        const pro = s.nutrition?.protein_target ?? s.nutrition?.recommended_intake?.protein_target;
+        const pro = s.nutrition?.recommended_intake?.protein_g ?? s.nutrition?.protein_target;
         if (cal) targets[s.date] = { calories: Math.round(cal), protein: pro ? Math.round(pro) : null };
       }
       const eaten = {};

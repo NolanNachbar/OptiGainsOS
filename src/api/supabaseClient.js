@@ -200,7 +200,7 @@ const mockEngineParams = [
     id: 'ep1', created_by: MOCK_UID, date: getTodayLocalDateStr(),
     kalman_state: { level: 185.2, trend: -0.085, variance: 0.42 },
     rls_params: { theta: [0.62, 0.21, -0.14], update_count: 142 },
-    cellular_state: { glycogen: 0.82, inflammation: 0.18 },
+    cellular_state: { ampk: 0.35, mtorc1: 0.62, interference_level: "LOW", anabolic_window: true },
     vdot_state: { vdot: 46.8, last_race_equiv: '24:10 5K' },
   },
 ];

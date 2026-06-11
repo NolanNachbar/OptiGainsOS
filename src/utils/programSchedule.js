@@ -2,7 +2,7 @@ import { addDays, differenceInCalendarDays, format, isBefore, isEqual, parseISO,
 
 const CARDIO_ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
 
-function normalizeCardioSession(s) {
+export function normalizeCardioSession(s) {
   if (s.title) return s;
   const activity = CARDIO_ACTIVITY_LABELS[s.activity_type] || "Cardio";
   const zone = s.zone || "Z2";

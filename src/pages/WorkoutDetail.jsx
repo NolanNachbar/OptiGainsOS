@@ -287,6 +287,7 @@ export default function WorkoutDetail() {
             weight: targets?.workingWeight || lastPerf?.lastWeight || 0,
             completed: false,
             rpe: null,
+            rir: ex.rir_target ?? null,
             set_type: 'working',
           }));
 

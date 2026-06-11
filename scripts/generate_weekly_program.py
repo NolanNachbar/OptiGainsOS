@@ -1033,10 +1033,14 @@ def main():
         split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types,
                           split_framework=split_framework)
         run_slot = pick_run_slot(split, action, quality_placed, long_placed)
-        if run_slot in ("threshold", "interval"):
-            quality_placed += 1
-        elif run_slot == "long":
-            long_placed += 1
+        # Only consume the polarized budget when a CARDIO-producing action actually runs.
+        # STRENGTH/LIGHT/CALISTHENICS call pick_run_slot but gen_session returns cardio=[],
+        # so counting them here phantom-exhaust the quality/long slots before real CARDIO days.
+        if action in ("CARDIO", "TWO_A_DAY", "MIXED"):
+            if run_slot in ("threshold", "interval"):
+                quality_placed += 1
+            elif run_slot == "long":
+                long_placed += 1
 
         # Generate session with weekly MILP targets (session gen handles per-session distribution)
         exercises, cardio = gen_session(

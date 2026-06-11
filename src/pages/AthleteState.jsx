@@ -126,7 +126,7 @@ function WeeklyPlanPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("weekly_plans")
-        .select("week_start,set_targets,frequency_targets,rationale")
+        .select("week_start,set_targets,frequency_targets,rationale,run_plan")
         .eq("created_by", user.id)
         .order("week_start", { ascending: false })
         .limit(1)
@@ -189,6 +189,11 @@ function WeeklyPlanPanel() {
             ))}
           </div>
         )}
+        {plan?.run_plan && Array.isArray(plan.run_plan) && plan.run_plan.length > 0 && (
+          <p className="text-[10px] font-semibold text-muted-2">
+            Runs: {plan.run_plan.map(r => `${r.count} ${r.type}`).join(" · ")}
+          </p>
+        )}
         {plan?.rationale && (
           <p className="text-xs font-semibold text-muted-2 leading-relaxed">{plan.rationale}</p>
         )}
@@ -239,7 +244,12 @@ function StrengthSection({ data }) {
     return <p className="text-xs font-semibold text-muted-2">No strength data yet. Log workouts with key lifts to see estimates.</p>;
   }
 
-  const LIFT_ORDER = ["squat", "bench", "deadlift", "rdl", "ohp"];
+  const LIFT_ORDER = ["Bench (paused comp)", "Squat (comp)", "Deadlift (conventional comp)"];
+  const LIFT_LABEL = {
+    "Bench (paused comp)": "bench",
+    "Squat (comp)": "squat",
+    "Deadlift (conventional comp)": "deadlift",
+  };
   const sorted = LIFT_ORDER.filter(k => data[k]).concat(Object.keys(data).filter(k => !LIFT_ORDER.includes(k)));
 
   return (
@@ -251,7 +261,7 @@ function StrengthSection({ data }) {
           <div key={lift} className="py-2 border-t hairline first:border-t-0 first:pt-0.5">
             <div className="flex items-baseline justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[12.5px] font-extrabold text-ink capitalize whitespace-nowrap">{lift}</span>
+                <span className="text-[12.5px] font-extrabold text-ink capitalize whitespace-nowrap">{LIFT_LABEL[lift] ?? lift}</span>
                 <StallBadge risk={d.stall_risk} />
               </div>
               <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap">
@@ -273,6 +283,19 @@ function StrengthSection({ data }) {
               )}
               {d.eta_days === 0 && <span className="text-teal">Target reached!</span>}
               <span>{d.sessions} sessions</span>
+              {d.progression_command && d.progression_command !== "HOLD" && (
+                <span className={
+                  d.progression_command === "INCREASE_LOAD" ? "text-teal" :
+                  d.progression_command === "DELOAD" ? "text-warn" :
+                  d.progression_command === "SWAP_EXERCISE" ? "text-bad" : "text-muted-2"
+                }>
+                  {{
+                    INCREASE_LOAD: "Add load",
+                    DELOAD: "Deload",
+                    SWAP_EXERCISE: "Swap exercise",
+                  }[d.progression_command] ?? d.progression_command}
+                </span>
+              )}
             </div>
             {d.swap_suggestion && (
               <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-warn/10 border border-warn/20 px-2.5 py-1.5">
@@ -450,12 +473,13 @@ function FatigueSection({ data }) {
         </Badge>
       </div>
 
-      {/* ATL / CTL */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* ATL / CTL / ACWR */}
+      <div className="grid grid-cols-4 gap-2">
         {[
           { label: "ATL", value: data.atl?.toFixed(1), desc: "7d acute load", hue: "var(--hue-violet)", warn: data.atl > 80 },
           { label: "CTL", value: data.ctl?.toFixed(1), desc: "42d chronic load", hue: "var(--hue-teal)" },
           { label: "CNS", value: `${((data.cns_fatigue || 0) * 100).toFixed(0)}%`, desc: "CNS fatigue", hue: "var(--hue-violet)", warn: data.cns_fatigue > 0.7 },
+          { label: "ACWR", value: data.acwr?.toFixed(2) ?? "—", desc: "acute:chronic", hue: "var(--hue-teal)", warn: data.acwr > 1.5 },
         ].map(({ label, value, desc, hue, warn }) => (
           <div key={label} className="glass-inset px-3 py-2 text-center">
             <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">
