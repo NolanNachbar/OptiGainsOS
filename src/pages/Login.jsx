@@ -101,7 +101,7 @@ export default function Login() {
       </div>
 
       <div
-        className="relative z-10 text-center text-[10.5px] font-semibold font-technical text-[rgba(242,244,247,0.38)]"
+        className="relative z-10 text-center text-[10.5px] font-semibold font-technical text-faint"
         style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom))' }}
       >
         OptiGainsOS · adaptive engine recomputes daily

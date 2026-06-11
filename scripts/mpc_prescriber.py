@@ -547,7 +547,7 @@ def main():
 
     # Fallbacks: engine_params synthesis_state, then on-the-fly synthesis.
     if not weekly_set_targets:
-        weekly_set_targets = guardrail_dict.get("synthesis_state", {}).get("weekly_targets")
+        weekly_set_targets = ((guardrail_dict or {}).get("synthesis_state") or {}).get("weekly_targets")
     if not weekly_set_targets:
         print("  WARN: weekly_targets not found in weekly_plans/engine_params. Synthesizing on-the-fly...")
         try:

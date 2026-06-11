@@ -735,6 +735,26 @@ def main():
     _ev_rows = sb_get("athlete_params", {
         "select": "*", "created_by": f"eq.{USER_ID}", "param_key": "eq.exercise_values"})
     ev_meta = ((_ev_rows[0].get("meta") if _ev_rows else None) or {})
+    # Key hygiene: canon() has tightened over time (case folding, abbreviation
+    # expansion, singularization), so posteriors stored under stale keys would
+    # orphan. Re-canon every stored key and merge duplicates (n-weighted mean,
+    # tightest var) — a no-op once all keys are already canonical.
+    _merged_ev = {}
+    for _k, _v in ev_meta.items():
+        _ck = canon(_k)
+        if _ck in _merged_ev:
+            _a, _b = _merged_ev[_ck], dict(_v or {})
+            _na, _nb = int(_a.get("n", 0)), int(_b.get("n", 0))
+            _n = _na + _nb
+            _merged_ev[_ck] = {
+                "mean": round(((float(_a.get("mean", 0.0)) * _na)
+                               + (float(_b.get("mean", 0.0)) * _nb)) / _n, 4) if _n else 0.0,
+                "var":  min(float(_a.get("var", 1.0)), float(_b.get("var", 1.0))),
+                "n":    _n,
+            }
+        else:
+            _merged_ev[_ck] = dict(_v or {})
+    ev_meta = _merged_ev
 
     # One reward per exercise touched by any signal this week, then a posterior
     # update. Guarded by already_ran so a same-week re-run can't double-count.

@@ -17,7 +17,7 @@ import {
   Brain, BookOpen, GraduationCap, History, Plus, Trash2, Pencil,
   Star, AlertTriangle, Timer, Layers, X, CheckCircle2, Zap,
 } from "lucide-react";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { format, parseISO, differenceInDays, subDays } from "date-fns";
 import { toast } from "sonner";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold p-1.5 -m-0.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
+          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold p-3 -m-1.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -267,10 +267,10 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
           {book.author && <p className="text-xs font-semibold text-muted-2">{book.author}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => onEdit(book)} className="p-2.5 text-muted-2 hover:text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
+          <button onClick={() => onEdit(book)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center text-muted-2 hover:text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(book.id)} className="p-2.5 text-muted-2 hover:text-bad opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
+          <button onClick={() => onDelete(book.id)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center text-muted-2 hover:text-bad opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -321,10 +321,21 @@ function StudyTab() {
     enabled: !!user,
   });
 
-  const weeklyHours = logs.filter(l => {
+  const { data: weekMinutes } = useQuery({
+    queryKey: ["study-log", "week-minutes", user?.id],
+    queryFn: async () => {
+      const since = subDays(new Date(), 7).toISOString();
+      const { data, error } = await supabase.from("study_log").select("duration_min").eq("created_by", user.id).gte("logged_at", since);
+      if (error) throw error;
+      return (data || []).reduce((s, l) => s + (l.duration_min || 0), 0);
+    },
+    enabled: !!user,
+  });
+
+  const weeklyHours = (weekMinutes ?? logs.filter(l => {
     const days = differenceInDays(new Date(), parseISO(l.logged_at));
     return days <= 7;
-  }).reduce((s, l) => s + (l.duration_min || 0), 0) / 60;
+  }).reduce((s, l) => s + (l.duration_min || 0), 0)) / 60;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -417,7 +428,7 @@ function StudyTab() {
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
-              <button onClick={() => setConfirmDelete(log.id)} className="p-2.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+              <button onClick={() => setConfirmDelete(log.id)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -527,7 +538,7 @@ function SkillsTab() {
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
                   {skill.category && <p className="text-[10px] font-semibold text-muted-2">{skill.category}</p>}
                 </div>
-                <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all p-2.5">
+                <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all min-w-10 min-h-10 -m-1 inline-flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -536,7 +547,7 @@ function SkillsTab() {
                   <button
                     key={n}
                     onClick={() => updateLevel.mutate({ id: skill.id, level: n })}
-                    className="p-2 -m-1 rounded-full"
+                    className="min-w-10 min-h-10 -m-2.5 inline-flex items-center justify-center rounded-full"
                   >
                     <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
                   </button>

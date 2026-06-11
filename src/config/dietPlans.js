@@ -311,14 +311,54 @@ export function optimizeDay({
     nudge.portion = clamp(nudge.portion + residual / nudge.per100g.cal, nudge.minPortion, nudge.maxPortion);
   }
 
-  return [...fixed, ...vars.filter((it) => it.portion > 0)];
+  // ── Protein hard pass ──────────────────────────────────────────────────────
+  // Protein is a near-hard constraint: a returned plan must not land more than
+  // ~5 g under the anchor (the cut rule is a FLOOR, not a suggestion). Lean
+  // sources expand — to their max bounds if that's what it takes — and only
+  // low-protein fillers/fats shed the calorie overshoot, so calories can never
+  // trade protein back out. If the pool genuinely can't reach the anchor inside
+  // its palatability maxes, the plan ships with an explicit `proteinShortfall`
+  // (grams) the UI can surface — and when holding protein leaves the day over
+  // its calories, an explicit `calorieOverage` (kcal) ships the same way.
+  let proteinShortfall = 0;
+  if (proteinTarget) {
+    for (let i = 0; i < 3 && proteinTarget - total("p") > 2; i++) {
+      raise("p", proteinTarget, lean);
+      if (total("cal") - calorieTarget > 10) {
+        lower("cal", calorieTarget, fillers.filter((it) => it.per100g.p < 8));
+      }
+      if (total("cal") - calorieTarget > 10) {
+        lowerFatsToFloor(fats.filter((it) => it.per100g.p < 8));
+      }
+    }
+    // Anything the hard pass pulled in still gets a real, cookable serving.
+    for (const it of vars) {
+      const minServe = Math.min((it.minServe ?? 15) / 100, it.maxPortion);
+      if (it.portion > 0 && it.portion < minServe) it.portion = minServe;
+    }
+    proteinShortfall = Math.max(0, Math.round(proteinTarget - total("p")));
+  }
+
+  const plan = [...fixed, ...vars.filter((it) => it.portion > 0)];
+  if (proteinShortfall > 5) plan.proteinShortfall = proteinShortfall;
+  // The protein hard pass can leave a protein-dense low-calorie day OVER its
+  // calories (protein outranks the calorie wall, never silently). Ship the
+  // overage so the UI can surface it the same way it surfaces a shortfall.
+  const calorieOverage = Math.max(0, Math.round(total("cal") - calorieTarget));
+  if (calorieOverage > 50) plan.calorieOverage = calorieOverage;
+  return plan;
 }
 
 // Full day → array of food_entries rows for `date`: the cheapest food mix that
 // hits the engine's targets, fixed staples included. This is the "approve the
 // plan → write the day into the log" payload; rows are flagged planned:true.
 export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, fatTarget = null, aggressiveCut = false } = {}) {
-  return optimizeDay({ calorieTarget, proteinTarget, fatTarget, trainingDay, aggressiveCut }).map((it) => scaleItem(it, { date }));
+  const plan = optimizeDay({ calorieTarget, proteinTarget, fatTarget, trainingDay, aggressiveCut });
+  const rows = plan.map((it) => scaleItem(it, { date }));
+  // Carry the optimizer's warning flags through so the UI can surface them.
+  if (plan.proteinShortfall) rows.proteinShortfall = plan.proteinShortfall;
+  if (plan.calorieOverage) rows.calorieOverage = plan.calorieOverage;
+  return rows;
 }
 
 // Estimated grocery cost of generated rows, in dollars.

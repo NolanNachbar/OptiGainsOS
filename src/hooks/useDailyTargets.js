@@ -11,7 +11,8 @@
  * absorb the remainder so P/C/F always sum to the calorie target.
  *
  * CUT RULES (Nolan's, enforced whenever a cut phase is active and weight is known):
- *  - Protein 1.2–1.5 g/lb — floor AND cap. Protein is the last thing cut.
+ *  - Protein 1.3–1.5 g/lb — floor AND cap (matches the engine's
+ *    CUT_PROTEIN_G_PER_LB = 1.3). Protein is the last thing cut.
  *  - Fat floor: max(50 g, ⅓ g/lb), err high — sustained low fat wrecks
  *    hormones and sleep.
  *  - Carbs absorb whatever calories remain (and in an AGGRESSIVE cut the
@@ -25,6 +26,25 @@ import { useDietPhase } from "@/hooks/useDietPhase";
 
 const DEFAULTS = { calories: 2000, protein: 150, carbs: 200, fats: 65 };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// ── Shared cut-rule constants/helpers ──────────────────────────────────────────
+// Exported so every meal-plan generation path (WeeklyPlanCard's per-day engine
+// targets, the diet optimizer) enforces the SAME protein rule as the daily
+// rings — no duplicated constants. Mirrors scripts/engine/nutrition_modulator.py
+// (CUT_PROTEIN_G_PER_LB = 1.3).
+export const CUT_PROTEIN_MIN_PER_LB = 1.3;
+export const CUT_PROTEIN_MAX_PER_LB = 1.5;
+
+export const profileWeightLb = (profile) =>
+  profile?.current_weight
+    ? (profile.weight_unit === "kg" ? profile.current_weight * 2.205 : profile.current_weight)
+    : null;
+
+// Clamp a cut-day protein target to 1.3–1.5 g/lb. No-op without a known weight.
+export const clampCutProtein = (protein, weightLb) =>
+  weightLb
+    ? Math.round(clamp(protein || 0, CUT_PROTEIN_MIN_PER_LB * weightLb, CUT_PROTEIN_MAX_PER_LB * weightLb))
+    : protein;
 
 export function useDailyTargets(date) {
   const { user } = useAuth();
@@ -75,11 +95,9 @@ export function useDailyTargets(date) {
   // ── Cut rules ──────────────────────────────────────────────────────────────
   const phaseType = (activePhase?.phase_type || "").toLowerCase();
   const isCut = phaseType.includes("cut") || phaseType.includes("deficit");
-  const weightLb = profile?.current_weight
-    ? (profile.weight_unit === "kg" ? profile.current_weight * 2.205 : profile.current_weight)
-    : null;
+  const weightLb = profileWeightLb(profile);
   if (isCut && weightLb) {
-    protein = Math.round(clamp(protein, 1.2 * weightLb, 1.5 * weightLb));
+    protein = clampCutProtein(protein, weightLb);
     fats = Math.round(Math.max(fats, 50, weightLb / 3));
     carbs = Math.max(0, Math.round((calories - protein * 4 - fats * 9) / 4));
   }
@@ -96,6 +114,9 @@ export function useDailyTargets(date) {
     fats,
     isCut,
     aggressiveCut,
+    // Hard cut floor (1.3 g/lb). Consumers that rescale already-written rows
+    // (usePlannedDayRebalance) must never push the day's protein below it.
+    proteinFloor: isCut && weightLb ? Math.round(CUT_PROTEIN_MIN_PER_LB * weightLb) : null,
     // True only for the recovery-gated recommendation; the engine's top-level
     // calorie_target is just the profile goal echoed back, which doesn't earn
     // the "engine-set" badge.

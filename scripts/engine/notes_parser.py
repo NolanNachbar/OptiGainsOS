@@ -4,7 +4,7 @@ notes_parser.py — Turn free-text workout notes into structured programming sig
 Nolan writes notes on sessions ("POST: left shoulder cranky on press") and on
 individual exercises ("felt light, add weight"). The weekly generator reads these
 so next week's program actually responds to what he wrote — pain steers exercise
-selection away, "too easy" bumps load, sentiment feeds the exercise-value learner.
+selection away; "too easy"/"too hard" and sentiment feed the exercise-value learner.
 
 Deterministic keyword matching (no LLM) so it runs in the offline daily/weekly
 cron with the rest of compute. Per his call (2026-06-09) it ACTS FAST: a single
@@ -14,8 +14,8 @@ override. Confidence rises when a signal repeats across sessions.
 Output shape (all keyed by canonical exercise name and/or landmark muscle):
   {
     "caution":   {exercise_or_muscle: {"reason","severity","mentions","confidence"}},
-    "too_easy":  {exercise: mentions},          # → bump load / it's earning volume
-    "too_hard":  {exercise: mentions},          # → hold / back off
+    "too_easy":  {exercise: mentions},          # → raises learned exercise value
+    "too_hard":  {exercise: mentions},          # → lowers learned exercise value
     "sentiment": {exercise: signed_score},      # + liked, - disliked (exercise-value prior)
     "weakness":  {lift: {"region","mentions","confidence"}},  # sticking point → aim assistance
     "flags":     [human-readable strings for the brief],

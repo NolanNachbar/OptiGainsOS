@@ -217,7 +217,11 @@ export default function PrescribedSessionCard({ today }) {
               label: (
                 <>
                   {run.zone} run · <span className="font-technical text-ink-secondary">{run.session_miles} mi</span>
-                  {run.pace && <span className="text-ink-faint"> · {run.pace}</span>}
+                  {run.pace && (
+                    <span className="text-ink-faint">
+                      {" · "}{run.pace}{/^\d+:\d{2}$/.test(String(run.pace)) ? "/mi" : ""}
+                    </span>
+                  )}
                 </>
               ),
             })}

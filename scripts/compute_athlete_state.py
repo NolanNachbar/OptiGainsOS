@@ -628,14 +628,18 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
 
     calorie_adherence = round(min(avg_cal / calorie_target, 1.0), 2) if calorie_target else None
 
-    # Weight trend (linear regression on up to 14 entries)
+    # Weight trend (linear regression on up to 14 entries). Exclude null/zero
+    # weights up front — mapping a bad row to y=0 swings the slope to hundreds
+    # of lbs/week, which poisons on_track and the phase recommendation.
     weight_trend: Optional[float] = None
-    if len(weight_entries) >= 3:
-        sorted_w = sorted(weight_entries, key=lambda r: r.get("recorded_date", ""))
+    valid_w = [r for r in weight_entries
+               if (r.get("weight") or 0) > 0 and r.get("recorded_date")]
+    if len(valid_w) >= 3:
+        sorted_w = sorted(valid_w, key=lambda r: r.get("recorded_date", ""))
         recent_14 = sorted_w[-14:]
         base = datetime.date.fromisoformat(recent_14[0]["recorded_date"])
         x_vals = [(datetime.date.fromisoformat(r["recorded_date"]) - base).days for r in recent_14]
-        y_vals = [float(r.get("weight") or 0) for r in recent_14]
+        y_vals = [float(r["weight"]) for r in recent_14]
         slope, _ = linear_regression(x_vals, y_vals)
         weight_trend = round(slope * 7, 2)  # lbs/week
 
@@ -706,6 +710,40 @@ def compute_training_load_tss(workout_logs: list, recovery_rows: list) -> float:
     return round(today_tss, 1)
 
 
+def compute_manual_cardio_tss(completions: list, prescribed_cardio: list) -> float:
+    """
+    TSS credit for manually checked-off prescribed cardio (cardio_completions)
+    on a day Garmin captured no run. The UI writes one row per session name
+    (e.g. "Z2 run" from PrescribedSessionCard, or the normalized "Z2 Run"
+    title from WeeklySchedule); match those against the day's prescribed
+    cardio_sessions and credit duration_minutes ≈ 1 TSS/min, capped at 150.
+    Garmin remains the source of truth whenever a real activity exists.
+    """
+    if not completions or not prescribed_cardio:
+        return 0.0
+    done = {str(c.get("name") or "").strip().lower() for c in completions}
+    done.discard("")
+    if not done:
+        return 0.0
+    total = 0.0
+    for s in prescribed_cardio:
+        zone = str(s.get("zone") or "Z2").strip()
+        act  = str(s.get("activity_type") or "run").strip()
+        candidates = {
+            str(s.get("title") or "").strip().lower(),
+            f"{zone} {act}".lower(),
+        }
+        candidates.discard("")
+        matched = bool(candidates & done)
+        # Single prescribed session + a check-off that didn't match by name
+        # (UI naming drift) — still unambiguous, credit it.
+        if not matched and len(prescribed_cardio) == 1:
+            matched = True
+        if matched:
+            total += float(s.get("duration_minutes") or 0)
+    return round(min(total, 150.0), 1)
+
+
 def compute_hrv_zscore(recovery_rows: list) -> float:
     """
     Compute 7-day rolling HRV z-score for today's reading.
@@ -739,7 +777,14 @@ def compute_soreness_composite(checkin: Optional[dict]) -> float:
         return 5.0
     snapshot = checkin.get("soreness_snapshot")
     if isinstance(snapshot, dict) and snapshot:
-        valid = [float(v) for v in snapshot.values() if v is not None]
+        # App-written jsonb is untrusted — skip non-numeric values instead of
+        # crashing the daily compute (matches muscle_map.soreness_by_muscle).
+        valid = []
+        for v in snapshot.values():
+            try:
+                valid.append(float(v))
+            except (TypeError, ValueError):
+                continue
         if valid:
             # Snapshot regions are a 0-3 severity scale → map to 1-10.
             avg_03 = sum(valid) / len(valid)
@@ -992,6 +1037,25 @@ def main():
     })
     print(f"  garmin_activities (runs, 42d): {len(garmin_runs)} records")
 
+    # Manual "prescribed cardio done" check-offs (cardio_completions) — the UI's
+    # fallback for sessions Garmin missed. Only credited as load when Garmin has
+    # no run today (no double count when the real activity synced).
+    manual_cardio_tss = 0.0
+    cardio_completions = sb_get("cardio_completions", {
+        "select": "name", "cardio_date": f"eq.{TODAY}",
+    })
+    if cardio_completions and not any(
+            str(r.get("activity_date") or "")[:10] == TODAY for r in garmin_runs):
+        _plan_rows = sb_get("program_workouts", {
+            "select": "cardio_sessions",
+            "scheduled_date": f"eq.{TODAY}", "limit": "1",
+        })
+        _prescribed_cardio = (_plan_rows[0].get("cardio_sessions") or []) if _plan_rows else []
+        manual_cardio_tss = compute_manual_cardio_tss(cardio_completions, _prescribed_cardio)
+        if manual_cardio_tss > 0:
+            print(f"  cardio_completions: crediting {manual_cardio_tss} TSS "
+                  f"(manual check-off, no Garmin run today)")
+
     print("\nComputing metrics...")
 
     strength    = compute_strength(workout_logs)
@@ -1041,6 +1105,10 @@ def main():
 
         # 3. Compute today's inputs
         u_t       = compute_training_load_tss(workout_logs, recovery_rows)
+        if manual_cardio_tss > 0:
+            # Checked-off prescribed cardio Garmin missed — count it as load so
+            # the engine and the UI agree the session happened.
+            u_t = round(u_t + manual_cardio_tss, 1)
         hrv_z     = compute_hrv_zscore(recovery_rows)
         soreness  = compute_soreness_composite(checkin)
 

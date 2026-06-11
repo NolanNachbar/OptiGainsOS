@@ -715,7 +715,7 @@ const handleSaveMealTemplate = () => {
   // engine's target moves daily and off-plan foods get logged, so the un-eaten
   // plan rows are rescaled until eaten + planned = target — checking everything
   // off can then never blow the budget.
-  const planFit = usePlannedDayRebalance(selectedDate, foodEntries, targets.calories);
+  const planFit = usePlannedDayRebalance(selectedDate, foodEntries, targets.calories, targets.proteinFloor);
   const plannedCount = planFit.plannedCount;
 
   const mealGroups = {
@@ -909,9 +909,11 @@ const handleSaveMealTemplate = () => {
                   </span>{' '}
                   {planFit.rebalancing
                     ? 'adjusting portions to today’s target…'
-                    : planFit.fits
-                      ? 'fits your remaining budget — tap the circle to check off as you eat.'
-                      : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal — edit or remove items.`}
+                    : planFit.proteinHeld
+                      ? `runs ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal over — portions held at the cut protein floor instead of shrinking.`
+                      : planFit.fits
+                        ? 'fits your remaining budget — tap the circle to check off as you eat.'
+                        : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal — edit or remove items.`}
                 </span>
                 <span className="font-technical text-[10px] text-ink-faint whitespace-nowrap shrink-0">
                   {Math.max(0, planFit.remaining).toLocaleString()} kcal left

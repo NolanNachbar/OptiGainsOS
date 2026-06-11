@@ -11,7 +11,8 @@
  *
  * Checking an item off doesn't retrigger a rescale (eaten goes up exactly as
  * planned goes down), and a written rescale converges in one pass — the next
- * render falls inside the tolerance band.
+ * render falls inside the tolerance band (or, when the cut protein floor
+ * clamps the shrink, lands exactly on the floor and stops).
  */
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,27 +36,45 @@ const tolerance = (target) => Math.max(25, target * 0.02);
 const FACTOR_MIN = 0.5;
 const FACTOR_MAX = 1.75;
 
-export function usePlannedDayRebalance(date, entries, calorieTarget) {
+export function usePlannedDayRebalance(date, entries, calorieTarget, proteinFloor = null) {
   const qc = useQueryClient();
   const attempted = useRef(null);
 
   const planned = (entries || []).filter((e) => e.planned);
-  const eatenCal = (entries || [])
-    .filter((e) => !e.planned)
-    .reduce((s, e) => s + (e.calories || 0), 0);
+  const eaten = (entries || []).filter((e) => !e.planned);
+  const eatenCal = eaten.reduce((s, e) => s + (e.calories || 0), 0);
+  const eatenProtein = eaten.reduce((s, e) => s + (e.protein_grams || 0), 0);
   const plannedCal = planned.reduce((s, e) => s + (e.calories || 0), 0);
+  const plannedProtein = planned.reduce((s, e) => s + (e.protein_grams || 0), 0);
   const remaining = (calorieTarget || 0) - eatenCal;
 
   const flexible = planned.filter((p) => !STAPLE_NAMES.has(p.food_name));
   const flexibleCal = flexible.reduce((s, e) => s + (e.calories || 0), 0);
+  const flexibleProtein = flexible.reduce((s, e) => s + (e.protein_grams || 0), 0);
   const stapleCal = plannedCal - flexibleCal;
+  const stapleProtein = plannedProtein - flexibleProtein;
 
   const drift = plannedCal - remaining;
   const needsRescale =
     flexible.length > 0 && calorieTarget > 0 && flexibleCal > 0 &&
     Math.abs(drift) > tolerance(calorieTarget);
-  const factor = needsRescale ? (remaining - stapleCal) / flexibleCal : 1;
-  const canRescale = needsRescale && remaining >= 100 && factor >= FACTOR_MIN && factor <= FACTOR_MAX;
+  const rawFactor = needsRescale ? (remaining - stapleCal) / flexibleCal : 1;
+  // Cut-floor guard: shrinking scales protein down with calories, and the cut
+  // rule (1.3 g/lb) is a hard FLOOR — never rewrite the day's rows below it.
+  // The factor bottoms out where eaten + staples + flexible×factor lands ON
+  // the floor; calories then run over budget and `proteinHeld` says why.
+  const floorFactor =
+    proteinFloor && flexibleProtein > 0
+      ? Math.min(1, (proteinFloor - eatenProtein - stapleProtein) / flexibleProtein)
+      : -Infinity;
+  const factor = rawFactor < 1 ? Math.max(rawFactor, floorFactor) : rawFactor;
+  const proteinHeld = needsRescale && rawFactor < floorFactor;
+  const canRescale =
+    needsRescale && remaining >= 100 &&
+    factor >= FACTOR_MIN && factor <= FACTOR_MAX &&
+    // A floor-clamped factor of ~1 means "leave the rows alone" — writing
+    // identical values back would churn forever without converging.
+    Math.abs(factor - 1) > 0.002;
 
   useEffect(() => {
     if (!canRescale) return;
@@ -91,6 +110,9 @@ export function usePlannedDayRebalance(date, entries, calorieTarget) {
     remaining: Math.round(remaining),
     // true when checking everything off would land within budget
     fits: plannedCal <= remaining + tolerance(calorieTarget || 0),
+    // true when the cut protein floor stopped (or limited) a shrink — the day
+    // will run over its calories, deliberately, to hold protein
+    proteinHeld,
     // true when a corrective write is in flight this render
     rebalancing: canRescale,
   };

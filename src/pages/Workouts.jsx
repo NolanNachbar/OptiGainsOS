@@ -60,7 +60,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     queryKey: queryKeys.workoutLogs(),
     queryFn: async () => {
       const logs = await db.entities.WorkoutLog.filter({ created_by: user.id });
-      return logs.sort((a, b) => new Date(b.log_date || b.created_at) - new Date(a.log_date || a.created_at));
+      return logs.sort((a, b) => parseISO(b.log_date || b.created_at) - parseISO(a.log_date || a.created_at));
     },
     enabled: !!user,
   });

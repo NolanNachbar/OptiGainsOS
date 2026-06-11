@@ -208,10 +208,10 @@ function PipelineTab() {
                       <p className="text-[10px] font-semibold text-muted-2 truncate">{app.role}</p>
                     </div>
                     <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-2 -m-0.5 text-muted-2 hover:text-ink">
+                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-2.5 -m-1 text-muted-2 hover:text-ink">
                         <Pencil className="w-3 h-3" />
                       </button>
-                      <button onClick={() => setConfirmDelete(app.id)} className="p-2 -m-0.5 text-muted-2 hover:text-bad">
+                      <button onClick={() => setConfirmDelete(app.id)} className="p-2.5 -m-1 text-muted-2 hover:text-bad">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
@@ -223,14 +223,14 @@ function PipelineTab() {
                     {STATUS_NEXT[status] && (
                       <button
                         onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                        className="text-[10px] font-bold flex items-center gap-0.5 py-1.5 text-muted-2 hover:text-gold transition-colors"
+                        className="text-[10px] font-bold flex items-center gap-0.5 px-1.5 -mx-1.5 py-2.5 -my-1 text-muted-2 hover:text-gold transition-colors"
                       >
                         <ArrowRight className="w-3 h-3" /> Move
                       </button>
                     )}
                     <button
                       onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
-                      className="text-[10px] px-1.5 py-1.5 text-muted-2 hover:text-bad transition-colors ml-auto"
+                      className="text-[10px] px-2.5 -mr-1 py-2.5 -my-1 text-muted-2 hover:text-bad transition-colors ml-auto"
                     >
                       ✕
                     </button>
@@ -254,7 +254,7 @@ function PipelineTab() {
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-[10px] font-semibold text-muted-2">{app.role}</span>
-                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2 -m-1.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
+                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>

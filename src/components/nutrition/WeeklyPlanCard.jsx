@@ -4,7 +4,7 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
-import { useDailyTargets } from "@/hooks/useDailyTargets";
+import { useDailyTargets, clampCutProtein, profileWeightLb } from "@/hooks/useDailyTargets";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { getTodayString } from "@/utils/dateUtils";
@@ -129,7 +129,10 @@ export default function WeeklyPlanCard({ bare = false }) {
       // Without a program we can't know rest days; default to training (full fuel).
       const trainingDay = haveSched ? trainSet.has(d) : true;
       const dayTarget = dayContext?.targets?.[d]?.calories || calTarget;
-      const dayProtein = dayContext?.targets?.[d]?.protein || proteinTarget;
+      // Per-day engine protein is raw athlete_state — clamp it through the same
+      // cut rule (1.3–1.5 g/lb) as useDailyTargets so no path bypasses the floor.
+      let dayProtein = dayContext?.targets?.[d]?.protein || proteinTarget;
+      if (isCut && dayProtein) dayProtein = clampCutProtein(dayProtein, profileWeightLb(profile));
       const eatenCal = dayContext?.eaten?.[d]?.calories || 0;
       const eatenProtein = dayContext?.eaten?.[d]?.protein || 0;
       const eatenFats = dayContext?.eaten?.[d]?.fats || 0;
@@ -146,7 +149,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         : [];
       return { date: d, trainingDay, target: dayTarget, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
     });
-  }, [dates, dayContext, calTarget, proteinTarget, fatTarget, aggressiveCut, activeEnrollment, program]);
+  }, [dates, dayContext, calTarget, proteinTarget, fatTarget, isCut, profile, aggressiveCut, activeEnrollment, program]);
 
   const allRows = useMemo(() => week.flatMap((d) => d.rows), [week]);
   const shopping = useMemo(() => buildShoppingList(allRows), [allRows]);
@@ -336,6 +339,18 @@ export default function WeeklyPlanCard({ bare = false }) {
                   </span>
                 </div>
                 <MacroBar p={openDayData.totals.protein} c={openDayData.totals.carbs} f={openDayData.totals.fats} />
+                {openDayData.rows.proteinShortfall > 0 && (
+                  <p className="mt-2 text-[10px] text-warn">
+                    Protein lands {openDayData.rows.proteinShortfall} g under target — the food list's lean
+                    sources are maxed out. Add a lean protein to the catalog or cover it manually.
+                  </p>
+                )}
+                {openDayData.rows.calorieOverage > 0 && (
+                  <p className="mt-2 text-[10px] text-warn">
+                    Hitting protein runs this day {openDayData.rows.calorieOverage} kcal over target — the
+                    leanest sources are maxed, so the calorie wall bends before the protein floor does.
+                  </p>
+                )}
                 {creamiFoods.length > 0 && (
                   <p className="flex items-center gap-1.5 mt-2 text-[10px] text-ink-muted">
                     <Snowflake className="w-3 h-3 text-carb shrink-0" />

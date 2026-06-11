@@ -18,7 +18,7 @@ const TYPE_PILLS = {
   CARDIO:    { bg: "rgba(var(--hue-blue-rgb) / 0.14)",   fg: "var(--hue-blue)",   label: "CARDIO" },
   MIXED:     { bg: "rgba(var(--hue-violet-rgb) / 0.14)", fg: "var(--hue-violet)", label: "MIXED" },
   TWO_A_DAY: { bg: "rgba(var(--hue-gold-rgb) / 0.14)",   fg: "var(--hue-gold)",   label: "TWO-A-DAY" },
-  REST:      { bg: "rgba(255,255,255,0.07)",             fg: "var(--text-muted)", label: "REST" },
+  REST:      { bg: "var(--color-border-soft)",           fg: "var(--text-muted)", label: "REST" },
 };
 
 function dayType(entries, log) {

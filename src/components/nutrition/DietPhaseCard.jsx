@@ -188,10 +188,10 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
         };
       default:
         return {
-          bg: "bg-[rgba(59,130,246,0.08)]",
+          bg: "bg-info/10",
           text: "text-info",
           badge: "bg-info/10 text-info",
-          border: "border-[rgba(59,130,246,0.2)]",
+          border: "border-info/20",
         };
     }
   };
@@ -302,7 +302,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                         </div>
                         <div className="w-full bg-charcoal-elevated  rounded-full h-1.5">
                           <div
-                            className="bg-teal-500 h-1.5 rounded-full transition-all"
+                            className="bg-teal h-1.5 rounded-full transition-all"
                             style={{
                               width: `${Math.min(100, Math.max(0,
                                 ((phaseCalories - activePhase.starting_calories) /

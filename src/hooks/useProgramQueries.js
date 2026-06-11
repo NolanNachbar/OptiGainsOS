@@ -121,6 +121,7 @@ export function useCreateProgram() {
         await db.entities.ProgramWorkout.create({
           ...workout,
           program_id: created.id,
+          created_by: user.id,
         });
       }
 
@@ -133,6 +134,7 @@ export function useCreateProgram() {
 }
 
 export function useUpdateProgram() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -148,6 +150,7 @@ export function useUpdateProgram() {
           await db.entities.ProgramWorkout.create({
             ...workout,
             program_id: id,
+            created_by: user.id,
           });
         }
       }
