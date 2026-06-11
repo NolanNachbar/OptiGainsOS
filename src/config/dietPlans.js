@@ -122,6 +122,7 @@ export function scaleItem(item, { date, mealOverride } = {}) {
 export function optimizeDay({
   calorieTarget,
   proteinTarget = null,
+  proteinFloor = null,
   fatTarget = null,
   trainingDay = true,
   restCarbFactor = 0.5,
@@ -336,14 +337,56 @@ export function optimizeDay({
       const minServe = Math.min((it.minServe ?? 15) / 100, it.maxPortion);
       if (it.portion > 0 && it.portion < minServe) it.portion = minServe;
     }
-    proteinShortfall = Math.max(0, Math.round(proteinTarget - total("p")));
+  }
+
+  // ── Calorie-wall ease ──────────────────────────────────────────────────────
+  // The calorie wall outranks the upper protein band: if holding the full
+  // anchor runs the day meaningfully over its calories, protein eases down in
+  // small steps — last macro to drop, never below proteinFloor (1.2 g/lb) —
+  // shedding the priciest protein sources first. Calories freed this way go
+  // back to policy fillers, which is where the day's carbs come back from.
+  let proteinEased = 0;
+  if (proteinTarget && proteinFloor && proteinFloor < proteinTarget) {
+    for (
+      let guard = 0;
+      guard < 30 && total("cal") - calorieTarget > 50 && total("p") - proteinFloor > 1;
+      guard++
+    ) {
+      lower(
+        "p",
+        Math.max(proteinFloor, total("p") - 4),
+        vars.filter((it) => it.per100g.p >= 8 && it.role !== "carb")
+      );
+      // Each protein step frees room — re-shed low-protein fillers and surplus
+      // fat. Unlike the hard pass, fat sources shed here even when protein-y
+      // (peanut butter): the fat floor still holds, and any protein lost is
+      // re-raised from lean sources below.
+      if (total("cal") - calorieTarget > 10) {
+        lower("cal", calorieTarget, fillers.filter((it) => it.per100g.p < 8));
+        lowerFatsToFloor(fats);
+      }
+    }
+    if (proteinFloor && proteinFloor - total("p") > 1) raise("p", proteinFloor, lean);
+    if (calorieTarget - total("cal") > 10) raise("cal", calorieTarget, fillers);
+    proteinEased = Math.max(0, Math.round(proteinTarget - total("p")));
+  }
+
+  if (proteinTarget) {
+    // A shortfall is measured against the binding floor: the hard 1.2 g/lb
+    // floor when one was given, otherwise the anchor itself.
+    const bindingFloor =
+      proteinFloor && proteinFloor < proteinTarget ? proteinFloor : proteinTarget;
+    proteinShortfall = Math.max(0, Math.round(bindingFloor - total("p")));
   }
 
   const plan = [...fixed, ...vars.filter((it) => it.portion > 0)];
   if (proteinShortfall > 5) plan.proteinShortfall = proteinShortfall;
-  // The protein hard pass can leave a protein-dense low-calorie day OVER its
-  // calories (protein outranks the calorie wall, never silently). Ship the
-  // overage so the UI can surface it the same way it surfaces a shortfall.
+  // Protein deliberately eased below the anchor (but at/above the hard floor)
+  // to hold the calorie wall — informational, not a failure.
+  if (proteinEased > 2 && proteinShortfall <= 5) plan.proteinEased = proteinEased;
+  // The protein floor can still leave a protein-dense low-calorie day OVER its
+  // calories (the hard floor outranks the calorie wall, never silently). Ship
+  // the overage so the UI can surface it the same way it surfaces a shortfall.
   const calorieOverage = Math.max(0, Math.round(total("cal") - calorieTarget));
   if (calorieOverage > 50) plan.calorieOverage = calorieOverage;
   return plan;
@@ -352,11 +395,12 @@ export function optimizeDay({
 // Full day → array of food_entries rows for `date`: the cheapest food mix that
 // hits the engine's targets, fixed staples included. This is the "approve the
 // plan → write the day into the log" payload; rows are flagged planned:true.
-export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, fatTarget = null, aggressiveCut = false } = {}) {
-  const plan = optimizeDay({ calorieTarget, proteinTarget, fatTarget, trainingDay, aggressiveCut });
+export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, proteinFloor = null, fatTarget = null, aggressiveCut = false } = {}) {
+  const plan = optimizeDay({ calorieTarget, proteinTarget, proteinFloor, fatTarget, trainingDay, aggressiveCut });
   const rows = plan.map((it) => scaleItem(it, { date }));
   // Carry the optimizer's warning flags through so the UI can surface them.
   if (plan.proteinShortfall) rows.proteinShortfall = plan.proteinShortfall;
+  if (plan.proteinEased) rows.proteinEased = plan.proteinEased;
   if (plan.calorieOverage) rows.calorieOverage = plan.calorieOverage;
   return rows;
 }

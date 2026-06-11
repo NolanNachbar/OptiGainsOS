@@ -4,7 +4,7 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
-import { useDailyTargets, clampCutProtein, profileWeightLb } from "@/hooks/useDailyTargets";
+import { useDailyTargets, clampCutProtein, profileWeightLb, CUT_PROTEIN_HARD_FLOOR_PER_LB } from "@/hooks/useDailyTargets";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { getTodayString } from "@/utils/dateUtils";
@@ -132,7 +132,10 @@ export default function WeeklyPlanCard({ bare = false }) {
       // Per-day engine protein is raw athlete_state — clamp it through the same
       // cut rule (1.3–1.5 g/lb) as useDailyTargets so no path bypasses the floor.
       let dayProtein = dayContext?.targets?.[d]?.protein || proteinTarget;
-      if (isCut && dayProtein) dayProtein = clampCutProtein(dayProtein, profileWeightLb(profile));
+      const weightLb = profileWeightLb(profile);
+      if (isCut && dayProtein) dayProtein = clampCutProtein(dayProtein, weightLb);
+      // Hard floor the optimizer may ease down to when the calorie wall binds.
+      const dayProteinFloor = isCut && weightLb ? Math.round(CUT_PROTEIN_HARD_FLOOR_PER_LB * weightLb) : null;
       const eatenCal = dayContext?.eaten?.[d]?.calories || 0;
       const eatenProtein = dayContext?.eaten?.[d]?.protein || 0;
       const eatenFats = dayContext?.eaten?.[d]?.fats || 0;
@@ -143,6 +146,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             trainingDay,
             calorieTarget: budget,
             proteinTarget: dayProtein ? Math.max(0, dayProtein - eatenProtein) : null,
+            proteinFloor: dayProteinFloor ? Math.max(0, dayProteinFloor - eatenProtein) : null,
             fatTarget: fatTarget ? Math.max(0, fatTarget - eatenFats) : null,
             aggressiveCut,
           })
@@ -345,10 +349,16 @@ export default function WeeklyPlanCard({ bare = false }) {
                     sources are maxed out. Add a lean protein to the catalog or cover it manually.
                   </p>
                 )}
+                {openDayData.rows.proteinEased > 0 && (
+                  <p className="mt-2 text-[10px] text-ink-muted">
+                    Protein eased {openDayData.rows.proteinEased} g below the 1.3 g/lb anchor (still ≥ the
+                    1.2 g/lb floor) to hold this day's calorie wall — protein drops last, calories don't bend.
+                  </p>
+                )}
                 {openDayData.rows.calorieOverage > 0 && (
                   <p className="mt-2 text-[10px] text-warn">
-                    Hitting protein runs this day {openDayData.rows.calorieOverage} kcal over target — the
-                    leanest sources are maxed, so the calorie wall bends before the protein floor does.
+                    Even at the 1.2 g/lb protein floor this day runs {openDayData.rows.calorieOverage} kcal
+                    over target — the calorie wall bends before the hard protein floor does.
                   </p>
                 )}
                 {creamiFoods.length > 0 && (

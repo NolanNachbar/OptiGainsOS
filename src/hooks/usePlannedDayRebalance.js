@@ -59,8 +59,8 @@ export function usePlannedDayRebalance(date, entries, calorieTarget, proteinFloo
     flexible.length > 0 && calorieTarget > 0 && flexibleCal > 0 &&
     Math.abs(drift) > tolerance(calorieTarget);
   const rawFactor = needsRescale ? (remaining - stapleCal) / flexibleCal : 1;
-  // Cut-floor guard: shrinking scales protein down with calories, and the cut
-  // rule (1.3 g/lb) is a hard FLOOR — never rewrite the day's rows below it.
+  // Cut-floor guard: shrinking scales protein down with calories, and the hard
+  // cut floor (1.2 g/lb) can never be crossed — never rewrite rows below it.
   // The factor bottoms out where eaten + staples + flexible×factor lands ON
   // the floor; calories then run over budget and `proteinHeld` says why.
   const floorFactor =
