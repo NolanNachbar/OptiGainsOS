@@ -711,6 +711,16 @@ def main():
         "select": "*", "created_by": f"eq.{USER_ID}", "param_key": "eq.exercise_values"})
     ev_meta = ((_ev_rows[0].get("meta") if _ev_rows else None) or {})
 
+    # Idempotency: learn at most once per week. If we already produced a plan for
+    # THIS week, skip the learners/test-step on re-run (just re-allocate below).
+    prev_plans = sb_get("weekly_plans", {
+        "select": "week_start,set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
+        "order": "week_start.desc", "limit": "1"})
+    _this_week = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+    already_ran = bool(prev_plans and str(prev_plans[0].get("week_start")) == _this_week)
+    if already_ran:
+        print("  (already ran this week — skipping learner updates, re-allocating only)")
+
     # One reward per exercise touched by any signal this week, then a posterior
     # update. Guarded by already_ran so a same-week re-run can't double-count.
     if not already_ran:
@@ -774,17 +784,8 @@ def main():
     prior_mrv = {m: LANDMARK_PRIORS.get(m, {}).get("mrv", 18) for m in MUSCLE_GROUPS}
     lm_rows = sb_get("athlete_landmarks", {"select": "*", "created_by": f"eq.{USER_ID}"})
     landmarks_db = {r["muscle"]: dict(r) for r in (lm_rows or [])}
-    prev_plans = sb_get("weekly_plans", {
-        "select": "week_start,set_targets,frequency_targets", "created_by": f"eq.{USER_ID}",
-        "order": "week_start.desc", "limit": "1"})
     prev_targets = (prev_plans[0].get("set_targets") if prev_plans else {}) or {}
     prev_freq    = (prev_plans[0].get("frequency_targets") if prev_plans else {}) or {}
-    # Idempotency: learn at most once per week. If we already produced a plan for
-    # THIS week, skip the learners/test-step on re-run (just re-allocate below).
-    _this_week = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
-    already_ran = bool(prev_plans and str(prev_plans[0].get("week_start")) == _this_week)
-    if already_ran:
-        print("  (already ran this week — skipping learner updates, re-allocating only)")
     freq_rows = sb_get("athlete_params", {"select": "*", "created_by": f"eq.{USER_ID}",
                                           "param_key": "like.freq.*"}) or []
     freq_params = {r["param_key"]: dict(r) for r in freq_rows}
