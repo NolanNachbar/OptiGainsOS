@@ -21,7 +21,7 @@ import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard"
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import { StatRing, MetricTile, SectionLabel, MiniRing } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, ChevronRight } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
@@ -35,17 +35,17 @@ export default function Today() {
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
 
-  const { prescription } = useTodayPrescription(today);
-  const { state } = useAthleteState(today);
+  const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
+  const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
 
   // Recent logs → muscle fatigue heatmap (same source the old dashboard used).
-  const { data: recentLogs = [] } = useQuery({
-    queryKey: ["todayHeatmapLogs", user?.id],
+  const { data: recentLogs = [], isError: heatmapError } = useQuery({
+    queryKey: ["todayHeatmapLogs_v2", user?.id],
     queryFn: async () => {
       const since = new Date(); since.setDate(since.getDate() - 10);
       const { data, error } = await supabase
         .from("workout_logs")
-        .select("log_date, completed_at, exercises")
+        .select("log_date, exercises")
         .eq("created_by", user.id)
         .gte("log_date", since.toISOString().slice(0, 10))
         .order("log_date", { ascending: false });
@@ -67,6 +67,24 @@ export default function Today() {
   const band = bandFor(score);
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
+
+  // Any in-progress workout session — surfaced as a banner so it can't be lost
+  const { data: activeSession } = useQuery({
+    queryKey: ["activeWorkoutSession", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workout_sessions")
+        .select("id, workout_id, program_workout_id, enrollment_id")
+        .eq("created_by", user.id)
+        .eq("status", "in_progress")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data || null;
+    },
+    enabled: !!user,
+    staleTime: 30 * 1000,
+  });
 
   // The directive — one headline, one supporting sentence.
   const { headline, detail } = useMemo(() => {
@@ -119,14 +137,52 @@ export default function Today() {
         </div>
       </div>
 
+      {activeSession && (
+        <Link
+          to={activeSession.program_workout_id
+            ? `/workouts/detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
+            : `/workouts/detail?id=${activeSession.workout_id}`}
+          className="flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-lg bg-brand/10 border border-brand/20 text-brand text-sm font-semibold rise-in"
+        >
+          <span className="flex items-center gap-2">
+            <Activity className="w-4 h-4 shrink-0" />
+            Workout in progress — tap to continue
+          </span>
+          <ChevronRight className="w-4 h-4 shrink-0" />
+        </Link>
+      )}
+
       {/* Mobile order: hero → fuel → state → session → brief → muscle.
           Desktop: hero/session/brief in the left column, rail on the right —
           DOM order stays mobile-first; lg placement is explicit. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
+          {(prescriptionError || stateError) && (
+            <div className="flex items-center gap-2 px-4 py-3 mb-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              Could not load today&apos;s data
+            </div>
+          )}
           {/* The readiness hero — verdict in 3 seconds */}
           <div className="glass px-4 sm:px-5 py-4 rise-in relative overflow-hidden">
-            <div className="flex items-center gap-4 sm:gap-6">
+            {(prescriptionLoading || stateLoading) ? (
+              <div className="animate-pulse space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="w-[104px] h-[104px] rounded-full bg-white/10 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 bg-white/10 rounded w-2/3" />
+                    <div className="h-3 bg-white/10 rounded w-full" />
+                    <div className="h-3 bg-white/10 rounded w-4/5" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-[7px]">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-12 bg-white/10 rounded" />
+                  ))}
+                </div>
+              </div>
+            ) : (
+            <><div className="flex items-center gap-4 sm:gap-6">
               <StatRing value={score} size={104} label="Readiness" />
               <div className="flex-1 min-w-0">
                 <h2 className="text-[17px] sm:text-xl font-extrabold" style={{ color: band.color }}>
@@ -151,6 +207,7 @@ export default function Today() {
                 </div>
               ))}
             </div>
+            </>)}
           </div>
         </div>
 
@@ -220,7 +277,12 @@ export default function Today() {
           <DailyBriefCard today={today} />
         </div>
 
-        {fatigueData.length > 0 && (
+        {heatmapError ? (
+          <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
+            <SectionLabel icon={Activity} className="mb-2">Muscle load · 10 days</SectionLabel>
+            <p className="text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
+          </div>
+        ) : fatigueData.length > 0 && (
           <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
             <SectionLabel icon={Activity} className="mb-2">Muscle load · 10 days</SectionLabel>
             <div className="flex justify-center">

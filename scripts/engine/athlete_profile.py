@@ -48,20 +48,23 @@ MUSCLE_EMPHASIS: dict[str, float] = {
     "upper_chest": 1.5,
     "calves":      1.5,
     "rear_delts":  1.25,
+    "biceps":      1.25,   # compounds under-stimulate biceps; add dedicated isolation
+    "hamstrings":  1.15,   # hinge-dominant training can under-serve hamstring isolation
 }
 
 
 def is_strength_movement(ex: dict) -> bool:
     """
-    True for the movements that keep their multi-set, submaximal structure:
-    the goal lifts, their back-offs and assistance, and primary compounds.
-    Everything else is an "accessory" and gets the 1-2-sets-to-failure treatment.
+    True for movements that keep their multi-set, submaximal structure:
+    the goal lifts and their back-offs/assistance only.
+    Primary compounds (is_primary=True but not is_goal) follow the same
+    1-2-sets-to-failure rule as accessories — the user trains high-intensity
+    but LOW volume per session, hitting muscles more often instead.
     """
     return bool(
         ex.get("is_goal")
         or ex.get("is_backoff")
         or ex.get("is_assistance")
-        or ex.get("is_primary")
     )
 
 

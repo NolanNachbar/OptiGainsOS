@@ -491,11 +491,15 @@ def main():
         s_type = (r.get("session_type") or r.get("mpc_action") or "").lower()
         if "upper" in s_type or "lower" in s_type:
             return s_type
+        if "full_body" in s_type or "full body" in s_type:
+            return s_type
+        if s_type in ("push", "pull", "legs"):
+            return s_type
         exercises = pres.get("exercises") or []
         upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip"]))
         lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust"]))
         if upper_count > lower_count:
-            return "upper_volume"
+            return "upper_a"
         elif lower_count > upper_count:
             return "lower_squat_primary"
         return s_type
@@ -522,7 +526,7 @@ def main():
                 up += 1
         if up == 0 and lo == 0:
             return None
-        return "upper_volume" if up > lo else "lower_squat_primary"
+        return "upper_a" if up > lo else "lower_squat_primary"
 
     # Prefer real logs (deduped to one per date, most-recent-first), classify each,
     # then put oldest→newest so _decide_split's reversed() lookback sees the true
@@ -563,8 +567,13 @@ def main():
         # / "Lower —"); planned exercises store sets as an int so classify_log_split
         # (built for logged sets-lists) can't read them.
         _t = str(_planned_before[0].get("title") or "").lower()
-        _s = ("lower_squat_primary" if "lower" in _t else
-              "upper_volume" if "upper" in _t else None)
+        _focus = str(_planned_before[0].get("focus") or "").lower()
+        _s = (_focus if _focus in ("upper_a", "upper_b", "lower_squat_primary",
+                                   "lower_hinge_primary", "push", "pull", "legs",
+                                   "full_body_a", "full_body_b") else
+              "lower_squat_primary" if "lower" in _t or "legs" in _t else
+              "upper_a" if "upper" in _t or "push" in _t or "pull" in _t else
+              "full_body_a" if "full_body" in _t or "full body" in _t else None)
         _last_log = workout_log_rows[0].get("log_date") if workout_log_rows else None
         if _s and (_last_log is None or str(_planned_before[0].get("scheduled_date")) > str(_last_log)):
             recent_session_types.append(_s)
@@ -976,13 +985,13 @@ def main():
     days_to_deadline = (DEADLINE - TODAY).days
     compliance_rate = float(((engine.get("guardrail_state") or {}).get("synthesis_state") or {}).get("compliance_rate", 0.80))
 
-    perf_slopes = []
+    goal_perf_slopes = []
     for ex_name in GOAL_LIFTS:
         hist = progression_registry.get_history(ex_name)
         if len(hist) >= 3:
             x = np.arange(len(hist))
-            perf_slopes.append(float(np.polyfit(x, hist, 1)[0]))
-    perf_trend = sum(perf_slopes) / len(perf_slopes) if perf_slopes else 0.0
+            goal_perf_slopes.append(float(np.polyfit(x, hist, 1)[0]))
+    perf_trend = sum(goal_perf_slopes) / len(goal_perf_slopes) if goal_perf_slopes else 0.0
 
     split_framework = determine_optimal_split_framework(
         compliance_rate, quad_soreness_avg, perf_trend, days_to_deadline

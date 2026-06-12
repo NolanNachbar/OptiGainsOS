@@ -30,6 +30,20 @@ import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
 
+// Epley e1RM scaling: project last performance to a different rep target.
+// Only used when the engine hasn't provided an explicit workingWeight.
+const scaleWeightToReps = (lastWeight, lastReps, targetReps) => {
+  if (!lastWeight || !lastReps || lastReps <= 0 || targetReps <= 0) return lastWeight || 0;
+  const e1rm = lastWeight * (1 + 0.0333 * lastReps);
+  return Math.round(e1rm / (1 + 0.0333 * targetReps));
+};
+
+const parseRepTarget = (repTarget) => {
+  const s = String(repTarget || '10').trim();
+  const m = s.match(/^(\d+)\s*[-–]\s*(\d+)/);
+  return m ? Math.round((parseInt(m[1], 10) + parseInt(m[2], 10)) / 2) : (parseInt(s, 10) || 10);
+};
+
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
   const ms = Date.now() - new Date(startTimeStr).getTime();
@@ -280,11 +294,16 @@ export default function WorkoutDetail() {
           // Get last performance for autofill
           const lastPerf = getLastExercisePerformance(allWorkoutLogs, ex.name);
 
+          const targetReps = parseRepTarget(ex.rep_target);
+          const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
+            ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
+            : lastPerf?.lastWeight || 0;
+
           // All sets default to working type at working weight
           const sets = Array.from({ length: numSets }, (_, setIndex) => ({
             set_number: setIndex + 1,
-            reps: parseInt(ex.rep_target) || 10,
-            weight: targets?.workingWeight || lastPerf?.lastWeight || 0,
+            reps: targetReps,
+            weight: targets?.workingWeight || scaledWeight,
             completed: false,
             rpe: null,
             rir: ex.rir_target ?? null,
@@ -298,17 +317,21 @@ export default function WorkoutDetail() {
           };
         });
       } else {
-        // Standard mode: autofill with last used weights
+        // Standard mode: autofill with last used weight, scaled to target reps via Epley
         initialLogs = workout.exercises?.map((exercise, index) => {
           const lastPerf = getLastExercisePerformance(allWorkoutLogs, exercise.name);
+          const targetReps = parseRepTarget(exercise.reps);
+          const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
+            ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
+            : lastPerf?.lastWeight || 0;
 
           return {
             name: exercise.name,
             exercise_index: index,
             sets: Array.from({ length: exercise.sets || 3 }, (_, setIndex) => ({
               set_number: setIndex + 1,
-              reps: parseInt(exercise.reps) || 10,
-              weight: lastPerf?.lastWeight || 0,
+              reps: targetReps,
+              weight: scaledWeight,
               completed: false,
               rpe: null,
               set_type: 'working',
@@ -445,7 +468,6 @@ export default function WorkoutDetail() {
           // Update existing schedule
           await db.entities.WorkoutSchedule.update(existing[0].id, {
             completed: true,
-            completed_at: new Date().toISOString()
           });
           scheduleId = existing[0].id;
         } else {
@@ -454,7 +476,6 @@ export default function WorkoutDetail() {
             workout_id: realWorkoutId,
             scheduled_date: today,
             completed: true,
-            completed_at: new Date().toISOString(),
             time_of_day: "anytime",
             created_by: user.id
           });
@@ -562,6 +583,7 @@ export default function WorkoutDetail() {
       return {
         ...ex,
         name: newExercise.name,
+        notes: null,
         rest_seconds: newExercise.rest || newExercise.rest_seconds || ex.rest_seconds,
         sets: ex.sets.map((s, i) => ({
           ...s,

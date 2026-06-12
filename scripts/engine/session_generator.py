@@ -23,7 +23,6 @@ automatically. No special-cased action branches beyond REST and pure CARDIO.
 """
 
 import copy
-import random
 from datetime import date
 
 from engine.vdot_engine import VDOTEngine
@@ -367,11 +366,18 @@ def _pick_assistance(lift: str, pool: list, weakness: dict, assist_week: int) ->
 
 # ── Muscle groups per session type ───────────────────────────────────────────
 
+# Upper A: push-biased (bench + shoulder press + triceps + incline + some pulls)
+# Upper B: pull-biased (bench + rows + pull-ups + biceps + rear delt)
+# Both include chest so the bench goal lift always fires on upper days.
+UPPER_A_MUSCLES = ["chest", "upper_chest", "shoulders", "triceps", "side_delts", "lats", "upper_back"]
+UPPER_B_MUSCLES = ["chest", "lats", "upper_back", "biceps", "rear_delts", "traps", "shoulders", "triceps"]
+
+# Legacy names kept for fallback / PPL compat
 UPPER_MUSCLES = ["chest", "upper_back", "lats", "shoulders", "triceps", "biceps",
                  "side_delts", "traps", "neck", "upper_chest", "rear_delts"]
 LOWER_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
 
-UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 2,
+UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 3,
               "side_delts": 4, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3}
 LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
 
@@ -585,41 +591,45 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float,
             return "push"
         return ppl_order[(ppl_order.index(last_ppl) + 1) % 3]
 
-    # upper_lower: existing logic unchanged below
+    # upper_lower (A/B): Upper A (push-biased) ↔ Upper B (pull-biased)
+    #                     Lower A (squat) ↔ Lower B (hinge)
     # 1. Find the last strength session split to prevent consecutive identical splits
     last_strength = next((t for t in reversed(recent_types) if "upper" in t or "lower" in t), "")
 
+    def _next_upper(recent: list) -> str:
+        """Alternate upper_a / upper_b from the most-recent upper session."""
+        last_upper = next((t for t in reversed(recent) if "upper" in t), "")
+        return "upper_b" if "upper_a" in last_upper else "upper_a"
+
     # 2. Apply cellular overrides only if they don't violate the consecutive split guardrail
     if ampk > 0.55:
-        # If the last strength session was upper, we can safely do lower
         if "upper" in last_strength:
             return "lower_hinge_primary"
-        # Otherwise, if the last was lower, we must do upper to allow legs to recover
         else:
-            recent_upper = sum(1 for t in recent_types[-4:] if "upper" in t)
-            return "upper_volume" if recent_upper % 2 == 0 else "upper_intensity"
+            return _next_upper(recent_types)
 
     # If mTORC1 is extremely low, prioritize upper body volume to kickstart translation,
     # but only if the last strength session wasn't already upper body
     if mtorc1 < 0.25 and "lower" in last_strength:
-        return "upper_volume"
+        return _next_upper(recent_types)
 
     # 3. Default alternating split logic based on the last strength session
     if "upper" in last_strength:
         last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
         return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
     elif "lower" in last_strength:
-        last_upper = next((t for t in reversed(recent_types) if "upper" in t), "")
-        return "upper_intensity" if "volume" in last_upper else "upper_volume"
+        return _next_upper(recent_types)
 
-    return "upper_volume"
+    return "upper_a"
 
 
 SESSION_TITLE = {
-    "upper_volume":        "Upper — Volume",
-    "upper_intensity":     "Upper — Intensity",
-    "lower_squat_primary": "Lower — Squat",
-    "lower_hinge_primary": "Lower — Hinge",
+    "upper_a":             "Upper A — Push",
+    "upper_b":             "Upper B — Pull",
+    "upper_volume":        "Upper — Volume",   # legacy fallback
+    "upper_intensity":     "Upper — Intensity", # legacy fallback
+    "lower_squat_primary": "Lower A — Squat",
+    "lower_hinge_primary": "Lower B — Hinge",
     "push":                "Push Session",
     "pull":                "Pull Session",
     "legs":                "Legs Session",
@@ -648,7 +658,6 @@ def _build_session(
     split: str,
     intensity: float,
     ampk: float,
-    rng: random.Random,
     readiness_z: float = 0.0,
     weekly_set_targets: dict = None,
     assist_week: int = 0,
@@ -670,15 +679,17 @@ def _build_session(
     """
     wt = weekly_set_targets or {}
     split_map = {
-        "upper_volume":        (UPPER_MUSCLES, UPPER_FREQ),
-        "upper_intensity":     (UPPER_MUSCLES, UPPER_FREQ),
-        "lower_squat_primary": (LOWER_MUSCLES, LOWER_FREQ),
-        "lower_hinge_primary": (LOWER_MUSCLES, LOWER_FREQ),
-        "push":                (PUSH_MUSCLES,  PUSH_FREQ),
-        "pull":                (PULL_MUSCLES,  PULL_FREQ),
-        "legs":                (LEGS_MUSCLES,  LEGS_FREQ),
-        "full_body_a":         (FULL_BODY_A,   FULL_FREQ),
-        "full_body_b":         (FULL_BODY_B,   FULL_FREQ),
+        "upper_a":             (UPPER_A_MUSCLES, UPPER_FREQ),
+        "upper_b":             (UPPER_B_MUSCLES, UPPER_FREQ),
+        "upper_volume":        (UPPER_MUSCLES,   UPPER_FREQ),  # legacy
+        "upper_intensity":     (UPPER_MUSCLES,   UPPER_FREQ),  # legacy
+        "lower_squat_primary": (LOWER_MUSCLES,   LOWER_FREQ),
+        "lower_hinge_primary": (LOWER_MUSCLES,   LOWER_FREQ),
+        "push":                (PUSH_MUSCLES,    PUSH_FREQ),
+        "pull":                (PULL_MUSCLES,    PULL_FREQ),
+        "legs":                (LEGS_MUSCLES,    LEGS_FREQ),
+        "full_body_a":         (FULL_BODY_A,     FULL_FREQ),
+        "full_body_b":         (FULL_BODY_B,     FULL_FREQ),
     }
     relevant, freq_map = split_map.get(split, (UPPER_MUSCLES, UPPER_FREQ))
     if not wt:
@@ -761,6 +772,28 @@ def _build_session(
             ex_copy["sets"] = max(1, round(ex_copy.get("sets", 3) * volume_scalar))
             
         slots.append((ex_copy, muscle))
+
+    # Isolation supplements: add targeted isolation work for muscles that only
+    # received a compound exercise in the knapsack. Compounds alone under-stimulate
+    # biceps and quads/hamstrings isolation patterns — these are added as guaranteed
+    # accessory slots and still go through apply_philosophy (1-2 sets to failure).
+    _ISOLATION_SUPPLEMENTS = {
+        "upper_a":             [("biceps", "Bicep Curl")],
+        "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+        "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+        "upper_volume":        [("biceps", "Bicep Curl")],   # legacy
+        "upper_intensity":     [("biceps", "Bicep Curl")],   # legacy
+    }
+    for iso_muscle, iso_name in _ISOLATION_SUPPLEMENTS.get(split, []):
+        if iso_name in chosen_names or iso_name not in _EX_BY_NAME:
+            continue
+        iso_ex = copy.deepcopy(_EX_BY_NAME[iso_name])
+        iso_weekly = wt.get(iso_muscle, 0)
+        iso_baseline = 8
+        iso_scalar = max(0.5, iso_weekly / iso_baseline if iso_weekly > 0 else 0.5)
+        iso_ex["sets"] = max(1, round(iso_ex.get("sets", 2) * iso_scalar))
+        chosen_names.add(iso_name)
+        slots.append((iso_ex, iso_muscle))
 
     # Sort by fatigue_cost descending (compounds first)
     slots.sort(key=lambda t: t[0].get("fatigue_cost", 2.0), reverse=True)
@@ -868,6 +901,10 @@ def _build_session(
             exercises.append(_assistance_slot(acc, weekly_set_targets or {}, intensity, readiness_z))
             _present.add(acc)
 
+    # Sync chosen_names with all assistance/back-off slots appended above so
+    # any future dedup checks (EN-05) see the full picture.
+    chosen_names.update(e.get("name") for e in exercises if e.get("name"))
+
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
     # back-offs, assistance, primary compounds) keep their multi-set, submaximal
@@ -940,7 +977,6 @@ def generate(
                   days), so _scale() gives fewer sets and higher RIR automatically.
                   TWO_A_DAY and MIXED additionally append a cardio block.
     """
-    rng = random.Random(int(sim_date.strftime("%Y%m%d")))
     cellular_state = cellular_state or {}
     recent_session_types = recent_session_types or []
 
@@ -961,7 +997,7 @@ def generate(
     # No special branches needed.
     split = _decide_split(recent_session_types, ampk, mtorc1, split_framework)
     exercises = _build_session(
-        split, intensity, ampk, rng,
+        split, intensity, ampk,
         readiness_z=readiness_z,
         weekly_set_targets=weekly_set_targets or {},
         assist_week=sim_date.isocalendar()[1],
