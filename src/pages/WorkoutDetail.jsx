@@ -30,18 +30,24 @@ import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
 
-// Epley e1RM scaling: project last performance to a different rep target.
-// Only used when the engine hasn't provided an explicit workingWeight.
+// Epley e1RM scaling with progressive overload projection.
+// If last session hit target reps (or exceeded them), nudge the suggested weight
+// up by 2.5 lbs — the smallest standard plate increment.
+// Rounds to nearest 2.5 so suggested weights are always rackable.
 const scaleWeightToReps = (lastWeight, lastReps, targetReps) => {
   if (!lastWeight || !lastReps || lastReps <= 0 || targetReps <= 0) return lastWeight || 0;
   const e1rm = lastWeight * (1 + 0.0333 * lastReps);
-  return Math.round(e1rm / (1 + 0.0333 * targetReps));
+  const scaled = e1rm / (1 + 0.0333 * targetReps);
+  const overload = lastReps >= targetReps ? 2.5 : 0;
+  return Math.round((scaled + overload) / 2.5) * 2.5;
 };
 
+// Use the LOWER end of rep ranges (e.g. "8-12" → 8) so the autofill defaults
+// to the heavier end of the rep range. Default is 8, not 10.
 const parseRepTarget = (repTarget) => {
-  const s = String(repTarget || '10').trim();
+  const s = String(repTarget || '8').trim();
   const m = s.match(/^(\d+)\s*[-–]\s*(\d+)/);
-  return m ? Math.round((parseInt(m[1], 10) + parseInt(m[2], 10)) / 2) : (parseInt(s, 10) || 10);
+  return m ? parseInt(m[1], 10) : (parseInt(s, 10) || 8);
 };
 
 const formatTimeAgo = (startTimeStr) => {

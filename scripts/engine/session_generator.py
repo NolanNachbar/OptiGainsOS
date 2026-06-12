@@ -92,10 +92,11 @@ EXERCISES = [
 
     # ── Bench assistance (paused-comp 315 build: raw press, lockout, upper chest) ─
     # Appended after the bench back-off — not knapsack-selected (is_assistance).
-    {"name": "Close-Grip Bench Press", "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 3.5, "muscles": ["triceps", "chest"],
-     "sets": 3, "rep_target": "5",   "rir_target": 2, "rest_seconds": 150,
-     "notes": "Triceps/lockout for the paused bench.", "is_assistance": True, "assist_for": "bench"},
+    {"name": "Reverse Grip Incline Smith Machine Press", "pattern": "incline_push", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.0, "muscles": ["triceps", "upper_chest"],
+     "sets": 3, "rep_target": "8-10",  "rir_target": 2, "rest_seconds": 120,
+     "notes": "Reverse grip on smith machine incline — triceps + upper chest without elbow stress.",
+     "is_assistance": True, "assist_for": "bench"},
     {"name": "Larsen Press",           "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["chest", "triceps"],
      "sets": 3, "rep_target": "4-6", "rir_target": 2, "rest_seconds": 150,
@@ -130,13 +131,13 @@ EXERCISES = [
      "sets": 3, "rep_target": "3-5",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
     {"name": "Leg Press",              "pattern": "squat", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["quads", "glutes"],
-     "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 90},
+     "sets": 2, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 90},
     {"name": "Bulgarian Split Squat",  "pattern": "squat", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["quads", "glutes"],
-     "sets": 3, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 90},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 90},
     {"name": "Leg Extension",          "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["quads"],
-     "sets": 2, "rep_target": "12-15","rir_target": 2, "rest_seconds": 60},
+     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
 
     # ── Hinge ──────────────────────────────────────────────────────────────
     {"name": "Deadlift (Top Set)",    "pattern": "hinge", "type": "COMPOUND_AXIAL",
@@ -154,13 +155,13 @@ EXERCISES = [
      "sets": 3, "rep_target": "3-5",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
     {"name": "Hamstring Curl",        "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["hamstrings"],
-     "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 60},
     {"name": "Nordic Curl",           "pattern": "hinge", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["hamstrings"],
-     "sets": 3, "rep_target": "5-8",  "rir_target": 3, "rest_seconds": 90},
+     "sets": 2, "rep_target": "5-8",  "rir_target": 3, "rest_seconds": 90},
     {"name": "Back Extension",        "pattern": "hinge", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["hamstrings", "glutes", "erectors"],
-     "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 60},
 
     # ── Deadlift assistance (submax build toward 500 CONVENTIONAL, not grind) ─
     # Appended after the deadlift top set — not knapsack-selected (is_assistance).
@@ -183,88 +184,88 @@ EXERCISES = [
     # ── Vertical pull ──────────────────────────────────────────────────────
     {"name": "Weighted Pull-up",  "pattern": "vertical_pull", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 4.0, "muscles": ["lats", "biceps"],
-     "sets": 4, "rep_target": "5",    "rir_target": 2, "rest_seconds": 120, "is_primary": True},
+     "sets": 2, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 120, "is_primary": True},
     {"name": "Lat Pulldown",      "pattern": "vertical_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "biceps"],
-     "sets": 3, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 75},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
     {"name": "Pull-ups",          "pattern": "vertical_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.5, "muscles": ["lats", "biceps"],
-     "sets": 3, "rep_target": "10-15","rir_target": 2, "rest_seconds": 75},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
 
     # ── Horizontal pull ────────────────────────────────────────────────────
     {"name": "Chest-Supported Row",   "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.5, "muscles": ["upper_back", "rear_delts"],
-     "sets": 4, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 90, "is_primary": True},
+     "sets": 2, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 90, "is_primary": True},
     {"name": "Cable Row",             "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
-     "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 75},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
     {"name": "Dumbbell Row",          "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
-     "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 60},
     {"name": "Seal Row",              "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["upper_back", "rear_delts"],
-     "sets": 3, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
+     "sets": 2, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 75},
 
     # ── Incline push (upper-chest focus; own pattern so it can coexist with
     #    flat bench in the same session) ──────────────────────────────────────
     {"name": "Incline DB Press",      "pattern": "incline_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["upper_chest", "triceps", "front_delt"],
-     "sets": 3, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 90, "is_primary": True,
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 90, "is_primary": True,
      "notes": "30-45° incline. Full stretch at the bottom."},
     {"name": "Low-to-High Cable Fly", "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["upper_chest"],
-     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
+     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 45,
      "notes": "Low pulley, sweep up and in — upper-chest line of pull."},
 
     # ── Vertical push (accessory) ──────────────────────────────────────────
     {"name": "Overhead Press (BB)",   "pattern": "vertical_push", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 4.0, "muscles": ["shoulders", "triceps"],
-     "sets": 3, "rep_target": "5",    "rir_target": 2, "rest_seconds": 120},
+     "sets": 2, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 120},
     {"name": "Overhead Press (DB)",   "pattern": "vertical_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["shoulders", "triceps"],
-     "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 75},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75},
 
     # ── Upper isolation ────────────────────────────────────────────────────
     {"name": "Triceps Pushdown",     "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["triceps"],
-     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-12", "rir_target": 1, "rest_seconds": 60},
     {"name": "Triceps OH Extension", "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["triceps"],
-     "sets": 2, "rep_target": "10-15","rir_target": 1, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-12", "rir_target": 1, "rest_seconds": 60},
     {"name": "Face Pull",            "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["rear_delts", "rotator_cuff"],
-     "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
+     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45},
     {"name": "Lateral Raise",        "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["side_delts"],
-     "sets": 2, "rep_target": "15-20","rir_target": 0, "rest_seconds": 45},
+     "sets": 2, "rep_target": "12-15","rir_target": 0, "rest_seconds": 45},
     {"name": "Cable Lateral Raise",  "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["side_delts"],
-     "sets": 2, "rep_target": "12-20","rir_target": 0, "rest_seconds": 45,
+     "sets": 2, "rep_target": "12-15","rir_target": 0, "rest_seconds": 45,
      "notes": "Constant tension — lean away, full ROM."},
     {"name": "Rear Delt Fly",        "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["rear_delts"],
-     "sets": 2, "rep_target": "15-20","rir_target": 0, "rest_seconds": 45},
+     "sets": 2, "rep_target": "12-15","rir_target": 0, "rest_seconds": 45},
     {"name": "Dumbbell Shrug",       "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["traps"],
-     "sets": 2, "rep_target": "12-15","rir_target": 0, "rest_seconds": 45,
+     "sets": 2, "rep_target": "10-12","rir_target": 0, "rest_seconds": 45,
      "notes": "Pause 1 ct at the top."},
     {"name": "Barbell Shrug",        "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.5, "muscles": ["traps"],
-     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 60},
     {"name": "Neck Curl",            "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 0.5, "muscles": ["neck"],
-     "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45,
+     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
      "notes": "Plate or harness. Slow and controlled — never jerk the neck."},
     {"name": "Neck Extension",       "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 0.5, "muscles": ["neck"],
-     "sets": 2, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45,
+     "sets": 2, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
      "notes": "Harness or plate. Slow eccentric, no momentum."},
     {"name": "Bicep Curl",           "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["biceps"],
-     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 60},
     {"name": "Hammer Curl",          "pattern": "isolation_upper", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["biceps", "brachialis"],
-     "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 60},
+     "sets": 2, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 60},
 
     # ── Lower isolation ────────────────────────────────────────────────────
     {"name": "Calf Raise",    "pattern": "isolation_lower", "type": "ISOLATION",
@@ -308,7 +309,7 @@ EXERCISES = [
      "sets": 3, "rep_target": "60s", "rir_target": 1, "rest_seconds": 45},
     {"name": "Hip Thrust",        "pattern": "hip_thrust",      "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.5, "muscles": ["glutes", "hamstrings"],
-     "sets": 3, "rep_target": "10-12","rir_target": 2, "rest_seconds": 75, "is_primary": True},
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75, "is_primary": True},
     {"name": "Diamond Push-ups",  "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["triceps", "chest"],
      "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
@@ -320,7 +321,7 @@ _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 # Assistance pools appended after the main goal lift (rotated by date, not
 # knapsack-selected). Bench → paused-comp 315; deadlift → 500 conventional via
 # submaximal work rather than heavy grinding.
-BENCH_ASSISTANCE    = ["Close-Grip Bench Press", "Larsen Press",
+BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press",
                        "Incline Bench Press", "Weighted Dip"]
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
 # Squat has no dedicated assistance pool (its variants are knapsack primaries);
@@ -330,7 +331,7 @@ SQUAT_ASSISTANCE    = ["Paused Squat", "Box Squat", "Front Squat"]
 # Which sticking point each assistance variant fixes: name → (lift, region).
 # Drives weakness-aimed selection: "failed bench lockout" → Close-Grip. [COACH]
 _ASSIST_TARGET = {
-    "Close-Grip Bench Press": ("bench", "lockout"),
+    "Reverse Grip Incline Smith Machine Press": ("bench", "lockout"),
     "Larsen Press":           ("bench", "chest"),
     "Weighted Dip":           ("bench", "chest"),
     "Incline Bench Press":    ("bench", "upper"),
@@ -366,11 +367,15 @@ def _pick_assistance(lift: str, pool: list, weakness: dict, assist_week: int) ->
 
 # ── Muscle groups per session type ───────────────────────────────────────────
 
-# Upper A: push-biased (bench + shoulder press + triceps + incline + some pulls)
-# Upper B: pull-biased (bench + rows + pull-ups + biceps + rear delt)
-# Both include chest so the bench goal lift always fires on upper days.
-UPPER_A_MUSCLES = ["chest", "upper_chest", "shoulders", "triceps", "side_delts", "lats", "upper_back"]
-UPPER_B_MUSCLES = ["chest", "lats", "upper_back", "biceps", "rear_delts", "traps", "shoulders", "triceps"]
+# Upper A and B hit the SAME muscles every session — full upper every time.
+# The difference is ORDER: A is push-first (bench before pull-ups), B is pull-first.
+# The stable fatigue_cost sort in _build_session preserves insertion order for ties
+# (bench and pull-up both at 4.0), so the muscle list order drives exercise order.
+UPPER_A_MUSCLES = ["chest", "upper_chest", "shoulders", "triceps", "side_delts",
+                   "lats", "upper_back", "biceps", "rear_delts", "traps", "neck"]
+UPPER_B_MUSCLES = ["lats", "upper_back", "biceps", "rear_delts",
+                   "chest", "upper_chest", "shoulders", "triceps", "side_delts",
+                   "traps", "neck"]
 
 # Legacy names kept for fallback / PPL compat
 UPPER_MUSCLES = ["chest", "upper_back", "lats", "shoulders", "triceps", "biceps",
@@ -777,12 +782,17 @@ def _build_session(
     # received a compound exercise in the knapsack. Compounds alone under-stimulate
     # biceps and quads/hamstrings isolation patterns — these are added as guaranteed
     # accessory slots and still go through apply_philosophy (1-2 sets to failure).
+    # Guaranteed isolation slots — added when the knapsack didn't already select
+    # the specific isolation exercise. Biceps / triceps are covered by the full
+    # UPPER_A/B muscle lists, but the knapsack may pick a compound (Dips, OHP) for
+    # those slots; these supplements ensure a true isolation always appears too.
     _ISOLATION_SUPPLEMENTS = {
-        "upper_a":             [("biceps", "Bicep Curl")],
+        "upper_a":             [("triceps", "Triceps Pushdown")],
+        "upper_b":             [("triceps", "Triceps OH Extension")],
         "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
-        "upper_volume":        [("biceps", "Bicep Curl")],   # legacy
-        "upper_intensity":     [("biceps", "Bicep Curl")],   # legacy
+        "upper_volume":        [("triceps", "Triceps Pushdown")],   # legacy
+        "upper_intensity":     [("triceps", "Triceps OH Extension")],  # legacy
     }
     for iso_muscle, iso_name in _ISOLATION_SUPPLEMENTS.get(split, []):
         if iso_name in chosen_names or iso_name not in _EX_BY_NAME:
@@ -828,7 +838,7 @@ def _build_session(
             exercises.append(_scale(bench_bo, intensity, True, readiness_z))
 
             # Bench assistance toward the paused-comp 315. AIMED at a flagged
-            # sticking point ("failed lockout" → Close-Grip; "off the chest" →
+            # sticking point ("failed lockout" → Reverse Grip Incline Smith; "off the chest" →
             # Larsen/dip), else the deterministic ISO-week rotation so every variant
             # still accrues its own e1RM history.
             bench_assist = _pick_assistance("bench", BENCH_ASSISTANCE, weakness, assist_week)
