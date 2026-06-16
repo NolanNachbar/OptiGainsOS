@@ -454,6 +454,16 @@ def main():
     profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
     profile      = profile_rows[0] if profile_rows else {}
     kcal_maintenance = float(profile.get("maintenance_kcal") or 3200.0)
+
+    # Athlete exercise preferences (user_profiles.exercise_preferences): canon-keyed
+    # block/prefer lists the session generator honors. Blocked lifts are never
+    # programmed; preferred lifts win their selection slot. Shared with the daily
+    # prescriber so both engines surface the same movements.
+    ex_prefs     = profile.get("exercise_preferences") or {}
+    blocked_ex   = {canon(n) for n in (ex_prefs.get("blocked") or [])}
+    preferred_ex = {canon(n) for n in (ex_prefs.get("preferred") or [])}
+    if blocked_ex or preferred_ex:
+        print(f"  Exercise prefs — blocked: {sorted(blocked_ex)}  preferred: {sorted(preferred_ex)}")
     
     nutrition = latest_athlete.get("nutrition") or {}
     avg_cal   = float(nutrition.get("avg_calories_7d") or nutrition.get("avg_daily_calories_7d") or kcal_maintenance)
@@ -1069,6 +1079,8 @@ def main():
             exercise_values=exercise_values,
             caution=caution,
             weakness=weakness,
+            blocked_exercises=blocked_ex,
+            preferred_exercises=preferred_ex,
         )
 
         title = build_title(action, split, intensity)

@@ -47,3 +47,31 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/mpc_prescriber.py
+
+  program:
+    name: Re-anchor Weekly Program
+    needs: prescribe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install python-dotenv numpy "scipy>=1.11"
+
+      # Regenerate program_workouts daily so the Weekly Schedule re-anchors to
+      # what was actually logged (matching the daily prescription), instead of
+      # drifting until the Monday cron. SKIP_STATE_REFRESH=1 because the compute
+      # + prescribe jobs above already refreshed engine state this run; the
+      # generator's already_ran guard makes a same-week re-run re-allocate only
+      # (no double-counted learners).
+      - name: Re-anchor weekly program to logs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SKIP_STATE_REFRESH: "1"
+        run: python scripts/generate_weekly_program.py

@@ -35,6 +35,12 @@ from engine.log_ingest import canon
 # it deprioritizes accessories and surfaces in the brief instead. [ENG]
 EXVAL_SELECT_WEIGHT = 1.5
 CAUTION_PENALTY     = 8.0
+# Explicit athlete preference (user_profiles.exercise_preferences). A `preferred`
+# movement gets a fixed selection bonus large enough to clear the +2 is_primary tie
+# between equivalent variants (so RDL/Paused Squat win their slot) but BELOW the
+# +10 goal-lift bonus so it never displaces a competition lift. A `blocked` movement
+# is filtered out entirely — knapsack pool AND assistance pools — never programmed.
+PREFER_SELECT_WEIGHT = 4.0
 
 # session-vocab muscle → caution/landmark vocab (notes_parser keys on landmarks)
 _CAUTION_ALIAS = {"front_delt": "shoulders", "side_delt": "side_delts",
@@ -129,6 +135,9 @@ EXERCISES = [
     {"name": "Paused Squat",           "pattern": "squat", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["quads", "core"],
      "sets": 3, "rep_target": "3-5",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
+    {"name": "Zercher Squat",          "pattern": "squat", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 3.5, "muscles": ["quads", "core", "upper_back"],
+     "sets": 3, "rep_target": "4-6",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
     {"name": "Leg Press",              "pattern": "squat", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["quads", "glutes"],
      "sets": 2, "rep_target": "8-12", "rir_target": 2, "rest_seconds": 90},
@@ -326,7 +335,7 @@ BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
 # Squat has no dedicated assistance pool (its variants are knapsack primaries);
 # these are aimed at a flagged squat sticking point as an ADDED slot.
-SQUAT_ASSISTANCE    = ["Paused Squat", "Box Squat", "Front Squat"]
+SQUAT_ASSISTANCE    = ["Paused Squat", "Zercher Squat", "Box Squat", "Front Squat"]
 
 # Which sticking point each assistance variant fixes: name → (lift, region).
 # Drives weakness-aimed selection: "failed bench lockout" → Close-Grip. [COACH]
@@ -339,6 +348,7 @@ _ASSIST_TARGET = {
     "Paused Deadlift":        ("deadlift", "floor"),
     "Deadlift (Speed/Light)": ("deadlift", "speed"),
     "Paused Squat":           ("squat", "bottom"),
+    "Zercher Squat":          ("squat", "upper"),
     "Box Squat":              ("squat", "mid"),
     "Front Squat":            ("squat", "back"),
 }
@@ -669,6 +679,8 @@ def _build_session(
     exercise_values: dict = None,
     caution: dict = None,
     weakness: dict = None,
+    blocked: set = None,
+    preferred: set = None,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -683,6 +695,13 @@ def _build_session(
     scoring and pattern logic surface them naturally without a hardcoded branch.
     """
     wt = weekly_set_targets or {}
+    # Athlete exercise preferences (canon-keyed). `blocked` lifts are never
+    # programmed; `preferred` lifts get a selection bonus. _allowed() filters a
+    # name list (used for the assistance pools) down to the permitted variants.
+    blocked   = blocked or set()
+    preferred = preferred or set()
+    def _allowed(names):
+        return [n for n in names if canon(n) not in blocked]
     split_map = {
         "upper_a":             (UPPER_A_MUSCLES, UPPER_FREQ),
         "upper_b":             (UPPER_B_MUSCLES, UPPER_FREQ),
@@ -728,6 +747,7 @@ def _build_session(
                 and not e.get("is_backoff")
                 and not e.get("is_assistance")
                 and e.get("name") not in excluded_names
+                and canon(e.get("name", "")) not in blocked
                 and (not e.get("is_goal") or (e.get("muscles") or [""])[0] == muscle)]
         if not pool:
             continue
@@ -741,6 +761,8 @@ def _build_session(
             if exercise_values:
                 value = float(exercise_values.get(canon(ex.get("name", "")), 0.0))
                 score += EXVAL_SELECT_WEIGHT * max(-3.0, min(3.0, value))
+            if preferred and canon(ex.get("name", "")) in preferred:
+                score += PREFER_SELECT_WEIGHT
             if _is_cautioned(ex, caution):
                 score -= CAUTION_PENALTY
             return score
@@ -797,6 +819,8 @@ def _build_session(
     for iso_muscle, iso_name in _ISOLATION_SUPPLEMENTS.get(split, []):
         if iso_name in chosen_names or iso_name not in _EX_BY_NAME:
             continue
+        if canon(iso_name) in blocked:
+            continue
         iso_ex = copy.deepcopy(_EX_BY_NAME[iso_name])
         iso_weekly = wt.get(iso_muscle, 0)
         iso_baseline = 8
@@ -841,17 +865,21 @@ def _build_session(
             # sticking point ("failed lockout" → Reverse Grip Incline Smith; "off the chest" →
             # Larsen/dip), else the deterministic ISO-week rotation so every variant
             # still accrues its own e1RM history.
-            bench_assist = _pick_assistance("bench", BENCH_ASSISTANCE, weakness, assist_week)
-            exercises.append(
-                _assistance_slot(bench_assist, wt, intensity, readiness_z))
+            _bench_pool = _allowed(BENCH_ASSISTANCE)
+            if _bench_pool:
+                bench_assist = _pick_assistance("bench", _bench_pool, weakness, assist_week)
+                exercises.append(
+                    _assistance_slot(bench_assist, wt, intensity, readiness_z))
 
         # Deadlift top set → build the conventional 500 via SUBMAX assistance,
         # aimed at the flagged weak point ("off the floor" → Deficit/Paused) else
         # the weekly rotation.
         if ex_copy.get("name") == "Deadlift (Top Set)":
-            dl_assist = _pick_assistance("deadlift", DEADLIFT_ASSISTANCE, weakness, assist_week)
-            exercises.append(
-                _assistance_slot(dl_assist, wt, intensity, readiness_z))
+            _dl_pool = _allowed(DEADLIFT_ASSISTANCE)
+            if _dl_pool:
+                dl_assist = _pick_assistance("deadlift", _dl_pool, weakness, assist_week)
+                exercises.append(
+                    _assistance_slot(dl_assist, wt, intensity, readiness_z))
 
         # Back Squat top set → add back-off when intensity allows
         if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:
@@ -890,8 +918,9 @@ def _build_session(
         # assistance pool); deduped so it can't repeat the chosen primary.
         if ex_copy.get("name") == "Back Squat (Top Set)":
             sq = (weakness or {}).get("squat")
-            if sq and sq.get("region"):
-                variant = _pick_assistance("squat", SQUAT_ASSISTANCE, weakness, assist_week)
+            _sq_pool = _allowed(SQUAT_ASSISTANCE)
+            if sq and sq.get("region") and _sq_pool:
+                variant = _pick_assistance("squat", _sq_pool, weakness, assist_week)
                 if variant and variant not in {e.get("name") for e in exercises}:
                     exercises.append(_assistance_slot(variant, wt, intensity, readiness_z))
 
@@ -907,7 +936,7 @@ def _build_session(
         if lift not in _goal_in:
             continue
         acc = _WEAKNESS_ACCESSORY.get((lift, w.get("region")))
-        if acc and acc in _EX_BY_NAME and acc not in _present:
+        if acc and acc in _EX_BY_NAME and acc not in _present and canon(acc) not in blocked:
             exercises.append(_assistance_slot(acc, weekly_set_targets or {}, intensity, readiness_z))
             _present.add(acc)
 
@@ -958,6 +987,8 @@ def generate(
     exercise_values: dict = None,
     caution: dict = None,
     weakness: dict = None,
+    blocked_exercises: set = None,
+    preferred_exercises: set = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -1014,6 +1045,8 @@ def generate(
         exercise_values=exercise_values,
         caution=caution,
         weakness=weakness,
+        blocked=blocked_exercises,
+        preferred=preferred_exercises,
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)
@@ -1072,6 +1105,8 @@ class SessionGenerator:
         exercise_values: dict = None,
         caution: dict = None,
         weakness: dict = None,
+        blocked_exercises: set = None,
+        preferred_exercises: set = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1104,6 +1139,8 @@ class SessionGenerator:
             exercise_values=exercise_values,
             caution=caution,
             weakness=weakness,
+            blocked_exercises=blocked_exercises,
+            preferred_exercises=preferred_exercises,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore

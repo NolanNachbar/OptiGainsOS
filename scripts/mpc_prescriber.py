@@ -630,6 +630,14 @@ def main():
     if _notes["flags"]:
         print(f"  Notes signals today: {_notes['flags'][:5]}")
 
+    # Athlete exercise preferences (user_profiles.exercise_preferences): same
+    # block/prefer lists the weekly generator honors, so the daily card and the
+    # weekly schedule surface the same movements (no Box Squat / Trap Bar, etc.).
+    from engine.log_ingest import canon
+    _ex_prefs     = profile.get("exercise_preferences") or {}
+    _blocked_ex   = {canon(n) for n in (_ex_prefs.get("blocked") or [])}
+    _preferred_ex = {canon(n) for n in (_ex_prefs.get("preferred") or [])}
+
     generator    = SessionGenerator()
     # Today's run slot is decided by the weekly plan (adaptive placement); read it so
     # the daily prescription's cardio matches the program instead of recomputing it.
@@ -662,6 +670,8 @@ def main():
         exercise_values = _exercise_values,
         caution = _caution,
         weakness = _weakness,
+        blocked_exercises = _blocked_ex,
+        preferred_exercises = _preferred_ex,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────
