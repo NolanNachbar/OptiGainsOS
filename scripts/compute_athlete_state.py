@@ -1008,6 +1008,8 @@ def main():
     print(f"  body_weight_entries: {len(weight_entries)} records")
 
     profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
+    if not profile_rows:
+        print('WARN: No user_profiles row — using defaults', flush=True)
     profile      = profile_rows[0] if profile_rows else {}
 
     pst_tests = sb_get("pst_tests", {
@@ -1219,7 +1221,7 @@ def main():
         weeks_in_cut = None
         try:
             _dp = sb_get("diet_phases", {
-                "select": "*", "created_by": f"eq.{USER_ID}",
+                "select": "*",
                 "end_date": "is.null", "order": "created_at.desc", "limit": "1",
             })
             if _dp:

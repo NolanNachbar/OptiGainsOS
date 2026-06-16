@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -22,8 +22,8 @@ const STEP_TYPES = [
   { value: 'warmup',   label: 'Warmup',   border: 'border-l-carb/60',   text: 'text-carb' },
   { value: 'active',   label: 'Active',   border: 'border-l-teal/70',   text: 'text-teal' },
   { value: 'recovery', label: 'Recovery', border: 'border-l-leaf/60',   text: 'text-leaf' },
-  { value: 'rest',     label: 'Rest',     border: 'border-l-white/20',  text: 'text-ink-muted' },
-  { value: 'cooldown', label: 'Cooldown', border: 'border-l-white/25',  text: 'text-ink-muted' },
+  { value: 'rest',     label: 'Rest',     border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
+  { value: 'cooldown', label: 'Cooldown', border: 'border-l-charcoal-borderSoft', text: 'text-ink-muted' },
 ];
 
 const TARGET_TYPES = [
@@ -101,30 +101,41 @@ export default function CreateWorkout() {
       .map(name => name.trim())
   )].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
   useEffect(() => {
     const fetchWorkout = async () => {
       if (!editId || !user) return;
       try {
         const workouts = await db.entities.Workout.filter({ id: editId, created_by: user.id });
+        if (!isMounted.current) return;
         if (workouts.length > 0) {
           const existingWorkout = workouts[0];
-          setWorkout({
-            title: existingWorkout.title || "",
-            description: existingWorkout.description || "",
-            focus: existingWorkout.focus || "strength",
-            duration_minutes: existingWorkout.duration_minutes || 30,
-            exercises: existingWorkout.exercises || [defaultStrengthExercise()],
-            folder: existingWorkout.folder || "",
-          });
+          if (isMounted.current) {
+            setWorkout({
+              title: existingWorkout.title || "",
+              description: existingWorkout.description || "",
+              focus: existingWorkout.focus || "strength",
+              duration_minutes: existingWorkout.duration_minutes || 30,
+              exercises: existingWorkout.exercises || [defaultStrengthExercise()],
+              folder: existingWorkout.folder || "",
+            });
+          }
         } else {
-          toast.error("Workout not found");
-          navigate("/workouts");
+          if (isMounted.current) {
+            toast.error("Workout not found");
+            navigate("/workouts");
+          }
         }
       } catch (error) {
         console.error("Error fetching workout:", error);
-        toast.error("Failed to load workout");
+        if (isMounted.current) toast.error("Failed to load workout");
       } finally {
-        setIsLoading(false);
+        if (isMounted.current) setIsLoading(false);
       }
     };
     fetchWorkout();
@@ -199,7 +210,6 @@ export default function CreateWorkout() {
         exercises: workout.exercises,
         folder: workout.folder?.trim() || null,
       };
-      const allWorkouts = await db.entities.Workout.filter({ created_by: user.id });
       const duplicateName = allWorkouts.find(w =>
         w.title.toLowerCase() === workoutData.title.toLowerCase() && w.id !== editId
       );
@@ -213,6 +223,7 @@ export default function CreateWorkout() {
         toast.success("Workout updated successfully");
       } else {
         await db.entities.Workout.create({ ...workoutData, created_by: user.id });
+        invalidateWorkouts(queryClient);
         toast.success("Workout created successfully");
       }
       navigate("/workouts");
@@ -358,7 +369,7 @@ export default function CreateWorkout() {
                   <button
                     type="button"
                     onClick={addRepeatBlock}
-                    className="flex-1 h-9 px-4 text-[13.5px] inline-flex items-center justify-center gap-1.5 font-semibold rounded-xl border border-violet/25 text-violet hover:bg-violet/10 transition-colors"
+                    className="flex-1 h-11 px-4 text-[13.5px] inline-flex items-center justify-center gap-1.5 font-semibold rounded-xl border border-violet/25 text-violet hover:bg-violet/10 transition-colors"
                   >
                     <Repeat2 className="w-4 h-4 mr-2" />
                     Add Repeat

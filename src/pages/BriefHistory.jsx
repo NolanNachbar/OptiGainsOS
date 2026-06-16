@@ -107,7 +107,7 @@ export default function BriefHistory() {
     <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-8 rise-in">
-          <Link to="/dashboard" className="text-muted-2 hover:text-ink transition-colors">
+          <Link to="/dashboard" className="inline-flex p-3 -ml-3 text-muted-2 hover:text-ink transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>

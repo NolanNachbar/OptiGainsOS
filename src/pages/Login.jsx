@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 
@@ -17,6 +19,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,9 +31,11 @@ export default function Login() {
 
     try {
       await signIn(email, password);
+      setErrorMsg('');
       toast.success('Welcome back!');
       navigate(returnTo, { replace: true });
     } catch (error) {
+      setErrorMsg(error.message || 'Invalid email or password');
       toast.error(error.message || 'Failed to sign in');
     } finally {
       setLoading(false);
@@ -53,28 +58,35 @@ export default function Login() {
 
         <div className="glass w-full max-w-sm mt-9 px-4 pt-[18px] pb-4 rise-in-2">
           <form onSubmit={handleSubmit}>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="!h-12 !rounded-xl mb-[9px]"
-              autoComplete="email"
-              required
-            />
-            <Input
-              id="password"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="!h-12 !rounded-xl mb-[9px]"
-              autoComplete="current-password"
-              required
-            />
+            <div className="mb-[9px]">
+              <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
+                className="!h-12 !rounded-xl"
+                autoComplete="email"
+                required
+              />
+            </div>
+            <div className="mb-[9px]">
+              <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
+                className="!h-12 !rounded-xl"
+                autoComplete="current-password"
+                required
+              />
+              {errorMsg && <p className="text-bad text-sm mt-2">{errorMsg}</p>}
+            </div>
 
-            <button type="submit" disabled={loading} className="cta-coral w-full mt-1 disabled:opacity-60">
+            <Button type="submit" variant="volt" className="w-full mt-1" disabled={loading}>
               {loading ? (
                 <>
                   <LoadingSpinner size="small" className="mr-1" />
@@ -83,7 +95,7 @@ export default function Login() {
               ) : (
                 'Sign in'
               )}
-            </button>
+            </Button>
 
             <div className="flex items-center justify-between mt-3 px-0.5">
               <Link

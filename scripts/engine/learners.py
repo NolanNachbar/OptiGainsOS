@@ -133,6 +133,11 @@ def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
     Kalman-gain Normal update of one exercise's value posterior.
     meta: {canon_name: {"mean","var","n"}}.  Mutates a copy and returns it.
     """
+    try:
+        from engine.log_ingest import canon
+        exercise = canon(exercise)
+    except ImportError:
+        pass
     meta = dict(meta or {})
     a = dict(meta.get(exercise, {"mean": 0.0, "var": EXVAL_PRIOR_VAR, "n": 0}))
     K = a["var"] / (a["var"] + EXVAL_OBS_VAR)
@@ -165,4 +170,9 @@ def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
 
 def exercise_value(meta: dict, exercise: str) -> float:
     """Learned value for an exercise (0 if never observed)."""
+    try:
+        from engine.log_ingest import canon
+        exercise = canon(exercise)
+    except ImportError:
+        pass
     return float((meta or {}).get(exercise, {}).get("mean", 0.0))

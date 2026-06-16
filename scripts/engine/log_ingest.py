@@ -70,18 +70,30 @@ ABBREVIATIONS = {
 # lifts (assistance/proxies) but do NOT drive the goal command.
 GOAL_LIFTS = {
     "Bench (paused comp)": {
+        # CSV-era names
         "Competition Bench Press - Paused",
         "Competition Bench Press - Paused (Top Set)",
         "Competition Bench Press - Paused (Back-off)",
+        # App session-generator names
+        "Bench Press (Daily Single)",
+        "Bench Press (Back-off Vol)",
+        "Bench Press (Back-off Int)",
     },
     "Squat (comp)": {
+        # CSV-era names
         "Competition Squat (Top Set)",
         "Competition Squat (Back-off)",
         "Paused Squat (3-count)",
+        # App session-generator names
+        "Back Squat (Top Set)",
+        "Back Squat (Back-off)",
     },
     "Deadlift (conventional comp)": {
+        # CSV-era names
         "Competition Deadlift (Top Set)",
         "Competition Deadlift (Back-off)",
+        # App session-generator name
+        "Deadlift (Top Set)",
     },
 }
 GOAL_TARGETS = {

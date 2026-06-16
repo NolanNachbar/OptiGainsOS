@@ -110,7 +110,7 @@ export default function Dashboard() {
   const weekStart = format(getWeekStart(profile?.timezone, 0), "yyyy-MM-dd");
   const weekEnd = format(getWeekEnd(profile?.timezone, 0), "yyyy-MM-dd");
 
-  const { data: allCardioSessions = [] } = useQuery({
+  const { data: allCardioSessions = [], isError: cardioError } = useQuery({
     queryKey: ['allCardioSessions', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -125,7 +125,7 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: weeklyLogsWithExercises = [] } = useQuery({
+  const { data: weeklyLogsWithExercises = [], isError: weeklyLogsError } = useQuery({
     queryKey: ["weeklyLogsExercises", weekStart, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -158,7 +158,7 @@ export default function Dashboard() {
   // Exercises for today's workout (program or regular)
   const todayExercises = todayProgramWorkout?.exercises || todayWorkoutDetails?.exercises || [];
 
-  const { data: todayBrief } = useQuery({
+  const { data: todayBrief, isError: briefError } = useQuery({
     queryKey: ["daily-brief", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -257,7 +257,7 @@ export default function Dashboard() {
   const exerciseCount = todayProgramLifts.length || todayWorkoutDetails?.exercises?.length || 0;
 
   const workoutCardLoading = scheduleLoading || workoutsLoading || logsLoading;
-  const dashError = scheduleError || foodError || workoutsError || logsError;
+  const dashError = scheduleError || foodError || workoutsError || logsError || cardioError || weeklyLogsError;
   const retryDashQueries = () => {
     if (scheduleError) refetchSchedule();
     if (foodError) refetchFood();
@@ -367,8 +367,8 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-[9px] text-muted-2 leading-none">
-              <span className={`font-technical font-bold ${bodyWeightChange > 0 ? "text-warn" : "text-ok"}`}>
-                {bodyWeightChange > 0 ? "+" : ""}{bodyWeightChange?.toFixed(1) || "0.0"}
+              <span className={`font-technical font-bold ${bodyWeightChange != null ? (bodyWeightChange > 0 ? "text-warn" : "text-ok") : "text-ink-muted"}`}>
+                {bodyWeightChange != null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)}` : "—"}
               </span>
               <span className="uppercase tracking-wider font-semibold">this wk</span>
             </div>
@@ -510,7 +510,7 @@ export default function Dashboard() {
 
           {/* Actions & Soreness */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} />
+            <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
             <SorenessCheckin today={today} />
           </div>
 

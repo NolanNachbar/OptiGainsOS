@@ -368,6 +368,8 @@ def main():
         "limit":   "30",
     })
     today_state = athlete_rows[0] if athlete_rows else {}
+    if not athlete_rows:
+        print('WARN: No athlete_state row — MPC running on stale/default state', flush=True)
 
     pst_rows = sb_get("pst_tests", {
         "select": "*",

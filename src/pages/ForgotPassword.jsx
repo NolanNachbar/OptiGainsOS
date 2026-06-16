@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                 <Button
                   onClick={() => setEmailSent(false)}
                   variant="outline"
-                  className="w-full bg-charcoal-elevated border-charcoal-border text-ink hover:bg-charcoal-elevated"
+                  className="w-full bg-charcoal-elevated border-charcoal-border text-ink hover:bg-charcoal-surface"
                 >
                   Try another email
                 </Button>

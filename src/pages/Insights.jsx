@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
 import { getTodayString } from "@/utils/dateUtils";
@@ -19,7 +20,7 @@ export default function Insights() {
   if (tab === "state") return <Navigate to="/athlete-state" replace />;
   if (tab === "career") return <Navigate to="/career" replace />;
 
-  const today = getTodayString(profile?.timezone);
+  const today = useMemo(() => getTodayString(profile?.timezone), [profile?.timezone]);
 
   return (
     <div className="bg-charcoal min-h-screen text-ink">

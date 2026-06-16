@@ -18,7 +18,7 @@ const DOMAIN_COLORS = {
   admin:     "text-muted-2",
 };
 
-export default function TodayActions({ today, briefActions = [] }) {
+export default function TodayActions({ today, briefActions = [], isError = false }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const todayStr = today || getTodayString();
@@ -117,6 +117,12 @@ export default function TodayActions({ today, briefActions = [] }) {
 
   const completed = todos.filter(t => t.completed).length;
   const total = todos.length;
+
+  if (isError) return (
+    <Card className="glass glass-interactive">
+      <CardContent className="px-5 py-4 text-sm text-bad">Could not load today's actions</CardContent>
+    </Card>
+  );
 
   if (total === 0 && !adding) return null;
 

@@ -94,7 +94,7 @@ export default function WeeklySchedule() {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [selectedDay, setSelectedDay] = useState(new Date());
-  const { enrollments } = useEnrollments();
+  const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekDateStrs = weekDays.map(d => format(d, "yyyy-MM-dd"));
@@ -154,37 +154,33 @@ export default function WeeklySchedule() {
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
           onClick={() => setWeekStart(w => subWeeks(w, 1))}
-          className="p-[7px] -m-[7px] rounded-full text-ink-muted hover:text-ink transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
         >
-          <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10">
-            <ChevronLeft className="w-4 h-4" />
-          </span>
+          <ChevronLeft className="w-4 h-4" />
         </button>
         <span className="font-technical text-[13px] font-extrabold text-ink">
           {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          className="p-[7px] -m-[7px] rounded-full text-ink-muted hover:text-ink transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
         >
-          <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10">
-            <ChevronRight className="w-4 h-4" />
-          </span>
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Week rows — date · type pill · detail · status */}
       <div className="glass px-3.5 py-2.5 mb-4 rise-in">
-        {logsLoading ? (
+        {logsLoading || enrollmentsLoading ? (
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
               <div className="w-[38px] h-9 rounded-[10px] bg-white/[0.05] animate-pulse shrink-0" />
               <div className="flex-1 h-4 rounded-full bg-white/[0.05] animate-pulse" />
             </div>
           ))
-        ) : logsError ? (
+        ) : logsError || enrollmentsError ? (
           <div className="py-4 flex flex-col items-center gap-2">
-            <p className="text-[12px] font-semibold text-muted-2">Couldn't load this week's logs.</p>
+            <p className="text-[12px] font-semibold text-muted-2">Could not load your schedule.</p>
             <button onClick={() => refetchLogs()} className="cta-ghost text-[12px] px-4 py-1.5">
               Retry
             </button>

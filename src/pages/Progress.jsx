@@ -112,7 +112,7 @@ function WeightTab() {
                     </span>
                   )}
                   {entry.notes && <span className="text-xs font-semibold text-muted-2 italic flex-1 truncate">{entry.notes}</span>}
-                  <button onClick={() => setConfirmId(entry.id)} className="ml-auto p-2 -my-2 -mr-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+                  <button onClick={() => setConfirmId(entry.id)} className="ml-auto p-3 -my-3 -mr-3 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -591,11 +591,10 @@ function MetabolismTab() {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-// `embedded` renders just the tabbed body — no page chrome — so this lives inside
-// Fuel → Hydration & Wellness (the standalone /progress route was retired).
-export default function Progress({ embedded = false }) {
-  const inner = (
-    <Tabs defaultValue={embedded ? "weight" : "metabolism"}>
+// Rendered embedded inside Fuel → Body & Progress (the standalone /progress route was retired).
+export default function Progress() {
+  return (
+    <Tabs defaultValue="weight">
       <TabsList className="mb-6">
         <TabsTrigger value="metabolism">Metabolism</TabsTrigger>
         <TabsTrigger value="weight">Weight</TabsTrigger>
@@ -607,24 +606,5 @@ export default function Progress({ embedded = false }) {
       <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
       <TabsContent value="photos"><PhotosTab /></TabsContent>
     </Tabs>
-  );
-
-  if (embedded) return inner;
-
-  return (
-    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
-      <div className="max-w-3xl mx-auto">
-        <header className="mb-6 rise-in">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-teal/[0.13]">
-              <TrendingUp className="w-[15px] h-[15px] text-teal" />
-            </div>
-            <h1 className="type-display text-2xl">Progress</h1>
-          </div>
-          <p className="text-muted-2 font-semibold text-sm pl-11">Body weight, measurements, and progress photos.</p>
-        </header>
-        {inner}
-      </div>
-    </div>
   );
 }

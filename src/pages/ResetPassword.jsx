@@ -19,9 +19,11 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(!!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || session) setHasSession(true);
+      else if (event !== 'INITIAL_SESSION') setHasSession(false);
     });
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -131,6 +133,7 @@ export default function ResetPassword() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10"
                     required
+                    minLength={8}
                   />
                 </div>
               </div>

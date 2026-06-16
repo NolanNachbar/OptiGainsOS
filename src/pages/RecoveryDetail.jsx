@@ -51,7 +51,7 @@ export default function RecoveryDetail() {
   // page matches AthleteState; fall back to the local formula only when the
   // engine hasn't computed today's state yet.
   const today = getTodayString();
-  const { data: athleteState } = useQuery({
+  const { data: athleteState, isError: athleteStateError } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -79,7 +79,13 @@ export default function RecoveryDetail() {
   const hasSteps = chartData.some((d) => d.displaySteps != null);
   const hasSleep = chartData.some((d) => d.displaySleep > 0);
 
-  if (isLoading) return <div className="p-8 text-ink">Loading recovery data...</div>;
+  if (isLoading) return (
+    <div className="p-4 space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="h-20 rounded-xl animate-pulse bg-charcoal-elevated" />
+      ))}
+    </div>
+  );
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
@@ -110,6 +116,9 @@ export default function RecoveryDetail() {
                 <Badge className={`${category.bg} ${category.color} text-sm px-4 py-1 rounded-full mb-4`}>
                   {category.label}
                 </Badge>
+                {athleteStateError && (
+                  <p className="text-xs text-warn mb-2">Recovery scores estimated (engine unavailable)</p>
+                )}
                 <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-4 mt-2">
                   <div className="text-center">
                     <div className="section-label mb-1">Body Battery</div>
@@ -167,43 +176,52 @@ export default function RecoveryDetail() {
                 </div>
               </div>
               <p className="text-xs text-ink-muted mt-4 leading-relaxed">
-                Acute:Chronic Workload Ratio compares your last 7 days of activity to your 28-day average. 
+                Acute:Chronic Workload Ratio compares your last 7 days of activity to your 28-day average.
                 Staying in the optimal zone minimizes injury risk while maximizing fitness gains.
               </p>
+              {acwr != null && acwr > 1.6 && (
+                <div className="mt-2 px-3 py-2 bg-bad/10 border border-bad/20 rounded-lg text-xs text-bad">
+                  High ACWR ({acwr.toFixed(2)}) — overtraining risk. Reduce volume.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {error ? (
           <Card className="mb-8 glass">
-            <CardContent className="pt-6 pb-6 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Info className="w-5 h-5 text-warn shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-ink">Couldn't load recovery data</p>
-                  <p className="text-xs text-ink-muted mt-0.5">
-                    Check your connection and try again.
-                  </p>
+            <CardContent className="pb-6">
+              <div className="pt-6 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Info className="w-5 h-5 text-warn shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Couldn't load recovery data</p>
+                    <p className="text-xs text-ink-muted mt-0.5">
+                      Check your connection and try again.
+                    </p>
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  className="shrink-0 text-ink-muted hover:text-ink"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ["recoveryMetrics"] })}
+                >
+                  Retry
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                className="shrink-0 text-ink-muted hover:text-ink"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ["recoveryMetrics"] })}
-              >
-                Retry
-              </Button>
             </CardContent>
           </Card>
         ) : (!hasHrv && !hasSteps && !hasSleep) ? (
           <Card className="mb-8 glass">
-            <CardContent className="pt-6 pb-6 flex items-center gap-3">
-              <Info className="w-5 h-5 text-ink-muted shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
-                <p className="text-xs text-ink-muted mt-0.5">
-                  Connect your wearable to populate HRV, step, and sleep charts.
-                </p>
+            <CardContent className="pb-6">
+              <div className="pt-6 flex items-center gap-3">
+                <Info className="w-5 h-5 text-ink-muted shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    Connect your wearable to populate HRV, step, and sleep charts.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -144,6 +144,7 @@ function ReadingTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-log"] }),
+    onError: () => toast.error("Failed to delete"),
   });
 
   const openEdit = (book) => {
@@ -311,7 +312,7 @@ function StudyTab() {
     enabled: !!user,
   });
 
-  const { data: totalSessions } = useQuery({
+  const { data: totalSessions, isError: totalSessionsError } = useQuery({
     queryKey: ["study-log", "count", user?.id],
     queryFn: async () => {
       const { count, error } = await supabase.from("study_log").select("*", { count: "exact", head: true }).eq("created_by", user.id);
@@ -321,7 +322,7 @@ function StudyTab() {
     enabled: !!user,
   });
 
-  const { data: weekMinutes } = useQuery({
+  const { data: weekMinutes, isError: weekMinutesError } = useQuery({
     queryKey: ["study-log", "week-minutes", user?.id],
     queryFn: async () => {
       const since = subDays(new Date(), 7).toISOString();
@@ -356,12 +357,13 @@ function StudyTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["study-log"] }),
+    onError: () => toast.error("Failed to delete"),
   });
 
   return (
     <div className="space-y-6">
       <Card className="glass glass-interactive">
-        <CardContent className="pt-4 px-5 pb-5">
+        <CardContent className="px-5 pb-5">
           <h3 className="section-label mb-4 flex items-center gap-2">
             <Zap className="w-3 h-3 text-violet" /> Log Study Session
           </h3>
@@ -393,11 +395,11 @@ function StudyTab() {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-inset p-4 text-center">
-          <p className="font-technical text-2xl font-extrabold text-ink">{weeklyHours.toFixed(1)}</p>
+          <p className="font-technical text-2xl font-extrabold text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
         <div className="glass-inset p-4 text-center">
-          <p className="font-technical text-2xl font-extrabold text-ink">{totalSessions ?? logs.length}</p>
+          <p className="font-technical text-2xl font-extrabold text-ink">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
@@ -504,6 +506,7 @@ function SkillsTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["skills"] }),
+    onError: () => toast.error("Failed to delete"),
   });
 
   const stale = skills.filter(s => {
@@ -526,6 +529,8 @@ function SkillsTab() {
           </Button>
         </div>
       </div>
+
+      <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {skills.map(skill => {
@@ -571,8 +576,6 @@ function SkillsTab() {
           );
         })}
       </div>
-
-      <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
       {!isLoading && !isError && skills.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">

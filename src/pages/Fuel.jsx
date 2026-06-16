@@ -29,7 +29,7 @@ export default function Fuel() {
   const { weightEntries } = useBodyWeightEntries();
   const todayWeight = weightEntries.find(e => e.recorded_date === today);
 
-  const { data: todayWater = [] } = useQuery({
+  const { data: todayWater = [], isError: waterError } = useQuery({
     queryKey: ["water-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,7 +43,7 @@ export default function Fuel() {
     },
     enabled: !!user,
   });
-  const { data: todaySupps = [] } = useQuery({
+  const { data: todaySupps = [], isError: suppsError } = useQuery({
     queryKey: ["supplement-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -123,26 +123,32 @@ export default function Fuel() {
                 <History className="w-3.5 h-3.5 text-ink-muted" /> Recent Activity
               </h2>
               <div className="space-y-1">
-                {todaySupps.slice(0, 3).map(s => (
-                  <div key={s.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                    <span className="font-semibold">Took {s.supplement_name}</span>
-                    <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(s.taken_at), "h:mm a")}</span>
-                  </div>
-                ))}
-                {todayWater.slice(-3).reverse().map(w => (
-                  <div key={w.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                    <span className="font-semibold">Drank {w.amount_ml}ml water</span>
-                    <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(w.logged_at), "h:mm a")}</span>
-                  </div>
-                ))}
-                {todayWeight && (
-                  <div className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                    <span className="font-semibold">Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
-                    <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(todayWeight.recorded_date), "MMM d")}</span>
-                  </div>
-                )}
-                {todaySupps.length === 0 && todayWater.length === 0 && !todayWeight && (
-                  <div className="px-4 py-3 surface text-xs text-ink-muted">Nothing logged yet today</div>
+                {(waterError || suppsError) ? (
+                  <div className="px-4 py-3 surface text-xs text-ink-muted">Could not load today's activity—try again</div>
+                ) : (
+                  <>
+                    {todaySupps.slice(0, 3).map(s => (
+                      <div key={s.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
+                        <span className="font-semibold">Took {s.supplement_name}</span>
+                        <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(s.taken_at), "h:mm a")}</span>
+                      </div>
+                    ))}
+                    {todayWater.slice(-3).reverse().map(w => (
+                      <div key={w.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
+                        <span className="font-semibold">Drank {w.amount_ml}ml water</span>
+                        <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(w.logged_at), "h:mm a")}</span>
+                      </div>
+                    ))}
+                    {todayWeight && (
+                      <div className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
+                        <span className="font-semibold">Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
+                        <span className="font-technical text-[10px] text-ink-faint">{format(new Date(todayWeight.recorded_date + 'T00:00:00'), 'MMM d')}</span>
+                      </div>
+                    )}
+                    {todaySupps.length === 0 && todayWater.length === 0 && !todayWeight && (
+                      <div className="px-4 py-3 surface text-xs text-ink-muted">Nothing logged yet today</div>
+                    )}
+                  </>
                 )}
               </div>
             </section>

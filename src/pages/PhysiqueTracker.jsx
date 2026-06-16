@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format, parseISO } from "date-fns";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle, ArrowLeftRight, Camera, Check,
+  Loader2, Pencil, TrendingDown, TrendingUp, X,
+} from "lucide-react";
 
-// Standardized poses so progress is comparable shot-to-shot (same pose vs same
-// pose). Shoot the same set each time, same lighting/distance/time of day.
 export const POSES = [
   { key: "front-relaxed", label: "Front relaxed",      cue: "Face the camera, arms relaxed at your sides, stand naturally. Don't suck in." },
   { key: "front-flexed",  label: "Front double biceps", cue: "Face the camera, flex both arms up, spread your lats." },
@@ -16,38 +19,74 @@ export const POSES = [
 ];
 const POSE_LABEL = Object.fromEntries(POSES.map((p) => [p.key, p.label]));
 
-// Physique tracking: upload a photo, get an AI body-composition estimate, and
-// watch the trend over time. Honest framing: photo bodyfat is approximate —
-// trend and composition cues matter more than the absolute number.
 export default function PhysiqueTracker({ hideHeader = false }) {
   const { user } = useAuth();
-  const [entries, setEntries] = useState([]);
-  const [loadingEntries, setLoadingEntries] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: entries = [], isLoading: loadingEntries, isError: entriesError } = useQuery({
+    queryKey: ['physique-entries', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("physique_entries")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("taken_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      const withUrls = await Promise.all((data ?? []).map(async (e) => {
+        const { data: s } = await supabase.storage.from("physique").createSignedUrl(e.photo_path, 3600);
+        return { ...e, url: s?.signedUrl };
+      }));
+      return withUrls;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const updatePoseMutation = useMutation({
+    mutationFn: async ({ id, pose }) => {
+      const { error } = await supabase
+        .from("physique_entries")
+        .update({ pose })
+        .eq("id", id)
+        .eq("created_by", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['physique-entries', user?.id] });
+      setEditingPose(null);
+    },
+  });
+
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [pose, setPose] = useState(POSES[0].key);
-  const [filterPose, setFilterPose] = useState(null); // null = all
+  const [filterPose, setFilterPose] = useState(null);
 
-  const loadEntries = useCallback(async () => {
-    if (!user?.id) return;
-    const { data, error } = await supabase
-      .from("physique_entries")
-      .select("*")
-      .eq("created_by", user.id)
-      .order("taken_at", { ascending: false })
-      .limit(30);
-    if (error) { setError(error.message); setLoadingEntries(false); return; }
-    // Sign thumbnails for the private bucket.
-    const withUrls = await Promise.all((data ?? []).map(async (e) => {
-      const { data: s } = await supabase.storage.from("physique").createSignedUrl(e.photo_path, 3600);
-      return { ...e, url: s?.signedUrl };
-    }));
-    setEntries(withUrls);
-    setLoadingEntries(false);
-  }, [user]);
+  // Compare
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState([]);
+  const [showCompare, setShowCompare] = useState(false);
 
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  // Pose edit
+  const [editingPose, setEditingPose] = useState(null);
+
+  const toggleCompareId = (id) => {
+    setCompareIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev.slice(-1), id];
+      if (next.length === 2) setShowCompare(true);
+      return next;
+    });
+  };
+
+  const exitCompare = () => {
+    setCompareMode(false);
+    setCompareIds([]);
+    setShowCompare(false);
+  };
+
+  const compareEntries = compareIds.map(id => entries.find(e => e.id === id)).filter(Boolean);
 
   const handleFile = async (ev) => {
     const file = ev.target.files?.[0];
@@ -73,7 +112,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       if (data?.error) throw new Error(data.error);
 
       setStatus("");
-      await loadEntries();
+      await queryClient.invalidateQueries({ queryKey: ['physique-entries', user?.id] });
     } catch (e) {
       setError(e.message || String(e));
       setStatus("");
@@ -86,6 +125,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const prev   = entries.filter((e) => e.bodyfat_estimate != null && e.pose === latest?.pose)[1];
   const delta  = latest && prev ? (latest.bodyfat_estimate - prev.bodyfat_estimate) : null;
 
+  const filteredEntries = entries.filter((e) => !filterPose || e.pose === filterPose);
+
   return (
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? "pt-0 px-0 md:px-0 min-h-0" : ""}`}>
       <div className="max-w-3xl mx-auto">
@@ -97,7 +138,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           Shoot the same poses each time, same lighting and distance.
         </p>
 
-        {/* Pose picker — tag the shot so progress compares pose vs same pose */}
+        {/* Pose picker */}
         <div className="section-label mb-2">Pose for this shot</div>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {POSES.map((p) => (
@@ -105,7 +146,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               key={p.key}
               onClick={() => setPose(p.key)}
               disabled={busy}
-              className={`px-2.5 py-1 rounded-full text-xs font-bold border-[0.5px] transition-colors ${
+              className={`px-2.5 py-1 min-h-[44px] rounded-full text-xs font-bold border-[0.5px] transition-colors ${
                 pose === p.key
                   ? "bg-brand/15 text-brand border-brand/30"
                   : "bg-white/[0.04] text-secondary border-white/10 hover:bg-white/[0.07]"
@@ -146,7 +187,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. bodyfat</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">
-                  {latest.analysis.bodyfat_range} · confidence {latest.confidence ?? "—"} · {latest.taken_at}
+                  {latest.analysis.bodyfat_range} · confidence {latest.confidence ?? "—"} · {format(parseISO(latest.taken_at), 'MMM d, yyyy')}
                 </div>
               </div>
               {delta != null && (
@@ -171,7 +212,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           </div>
         )}
 
-        {/* History grid — filter to one pose to compare like with like */}
+        {/* History */}
         {loadingEntries ? (
           <div className="mt-6">
             <div className="section-label mb-2">History</div>
@@ -180,6 +221,11 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 <div key={i} className="glass-inset h-28 animate-pulse" />
               ))}
             </div>
+          </div>
+        ) : entriesError ? (
+          <div className="mt-6 py-8 text-center glass-inset">
+            <p className="text-sm font-semibold text-bad">Could not load history.</p>
+            <p className="text-xs font-semibold text-faint mt-1">Check your connection and try again.</p>
           </div>
         ) : entries.length === 0 ? (
           <div className="mt-6 py-8 text-center glass-inset">
@@ -190,11 +236,38 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
               <div className="section-label">History</div>
+              <div className="hidden sm:flex items-center gap-2">
+                {compareMode ? (
+                  <>
+                    <span className="text-[11px] font-semibold text-muted-2">
+                      {compareIds.length === 0 ? "Pick 2 photos" : compareIds.length === 1 ? "Pick 1 more" : ""}
+                    </span>
+                    {compareIds.length === 2 && (
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowCompare(true)}>
+                        Compare
+                      </Button>
+                    )}
+                    <button onClick={exitCompare} className="text-muted-2 hover:text-ink p-1">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setCompareMode(true)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-2 py-1 rounded-md hover:bg-white/[0.05]"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                    Compare
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Pose filter */}
             <div className="flex flex-wrap gap-1.5 mb-3">
               <button
                 onClick={() => setFilterPose(null)}
-                className={`px-3 py-1.5 min-h-[32px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
+                className={`px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
                   filterPose === null ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
                 }`}
               >All</button>
@@ -202,31 +275,156 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 <button
                   key={p.key}
                   onClick={() => setFilterPose(p.key)}
-                  className={`px-3 py-1.5 min-h-[32px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
+                  className={`px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors ${
                     filterPose === p.key ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
                   }`}
                 >{p.label}</button>
               ))}
             </div>
+
+            {/* Grid */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {entries.filter((e) => !filterPose || e.pose === filterPose).map((e) => (
-                <div key={e.id} className="glass-inset overflow-hidden">
-                  {e.url && e.media_type === "photo"
-                    ? <img src={e.url} alt={e.taken_at} className="w-full h-28 object-cover" />
-                    : <div className="w-full h-28 flex items-center justify-center text-faint text-xs font-semibold">video</div>}
-                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-2">
-                    {e.pose && <div className="truncate">{POSE_LABEL[e.pose] || e.pose}</div>}
-                    <div className="flex justify-between font-technical">
-                      <span>{e.taken_at}</span>
-                      {e.bodyfat_estimate != null && <span className="font-extrabold text-ink">{e.bodyfat_estimate}%</span>}
+              {filteredEntries.map((e) => {
+                const isSelected = compareIds.includes(e.id);
+                const isEditingThis = editingPose === e.id;
+                return (
+                  <div
+                    key={e.id}
+                    className="group relative glass-inset overflow-hidden"
+                  >
+                    {/* Image */}
+                    {e.url && e.media_type === "photo"
+                      ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-28 object-cover" />
+                      : <div className="w-full h-28 flex items-center justify-center text-faint text-xs font-semibold">video</div>
+                    }
+
+                    {/* Compare mode tap overlay */}
+                    {compareMode && !isEditingThis && (
+                      <button
+                        onClick={() => toggleCompareId(e.id)}
+                        className="absolute inset-0 z-10"
+                        aria-label={isSelected ? "Deselect" : "Select for comparison"}
+                      >
+                        <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-brand/30" : "hover:bg-white/[0.06]"}`} />
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Pose edit overlay */}
+                    {isEditingThis && (
+                      <div className="absolute inset-0 z-20 bg-charcoal/95 flex flex-col p-1.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] font-bold text-muted-2 uppercase tracking-wider">Fix pose</span>
+                          <button onClick={() => setEditingPose(null)} className="text-muted-2 hover:text-ink">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-px overflow-y-auto">
+                          {POSES.map(p => (
+                            <button
+                              key={p.key}
+                              disabled={updatePoseMutation.isPending}
+                              onClick={() => updatePoseMutation.mutate({ id: e.id, pose: p.key })}
+                              className={`text-left px-1.5 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1.5 ${
+                                e.pose === p.key
+                                  ? "bg-brand/20 text-brand"
+                                  : "text-muted-2 hover:bg-white/[0.08] hover:text-ink"
+                              }`}
+                            >
+                              {e.pose === p.key && <Check className="w-2.5 h-2.5 shrink-0" />}
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Edit pencil — shown on hover, hidden in compare mode */}
+                    {!compareMode && !isEditingThis && (
+                      <button
+                        onClick={() => setEditingPose(e.id)}
+                        className="absolute top-1.5 right-1.5 z-10 p-1 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Fix pose"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    {/* Card footer */}
+                    <div className="px-2 py-1 text-[10px] font-semibold text-muted-2">
+                      {e.pose && <div className="truncate">{POSE_LABEL[e.pose] || e.pose}</div>}
+                      <div className="flex justify-between font-technical">
+                        <span>{format(parseISO(e.taken_at), 'MMM d, yyyy')}</span>
+                        {e.bodyfat_estimate != null && <span className="font-extrabold text-ink">{e.bodyfat_estimate}%</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
+
+      {/* Side-by-side comparison modal */}
+      {showCompare && compareEntries.length === 2 && (
+        <div
+          className="fixed inset-0 z-[10001] bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setShowCompare(false)}
+        >
+          <div
+            className="glass-elevated rounded-xl w-full max-w-3xl p-5 overflow-auto"
+            style={{ maxHeight: "calc(100vh - 2rem)" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-extrabold text-ink uppercase tracking-wider">Side by side</h2>
+              <button onClick={() => setShowCompare(false)} className="text-muted-2 hover:text-ink transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {compareEntries.map(e => (
+                <div key={e.id}>
+                  {e.url && e.media_type === "photo"
+                    ? <img src={e.url} alt="" className="w-full rounded-lg object-cover" style={{ maxHeight: "60vh" }} />
+                    : <div className="w-full h-64 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold">video</div>
+                  }
+                  <div className="mt-2.5 space-y-0.5">
+                    <div className="text-[11px] font-bold text-muted-2">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
+                    <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMMM d, yyyy')}</div>
+                    {e.bodyfat_estimate != null && (
+                      <div className="font-technical text-xl font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
+                    )}
+                    {e.analysis?.assessment && (
+                      <p className="text-[11px] font-semibold text-secondary pt-1">{e.analysis.assessment}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {compareEntries[0]?.bodyfat_estimate != null && compareEntries[1]?.bodyfat_estimate != null && (
+              <div className="mt-4 pt-4 border-t border-white/[0.07] text-center">
+                {(() => {
+                  const diff = compareEntries[1].bodyfat_estimate - compareEntries[0].bodyfat_estimate;
+                  const newer = parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
+                  const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
+                  const change = newer.bodyfat_estimate - older.bodyfat_estimate;
+                  return (
+                    <span className={`font-technical text-sm font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
+                      {change > 0 ? "+" : ""}{change.toFixed(1)}% since {format(parseISO(older.taken_at), 'MMM d')}
+                    </span>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

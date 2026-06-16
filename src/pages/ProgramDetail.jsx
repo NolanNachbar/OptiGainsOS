@@ -76,7 +76,7 @@ export default function ProgramDetail() {
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
-      <div className="p-6 text-center">
+      <div className="min-h-screen bg-charcoal p-6 text-center">
         <p className="text-ink-muted">Program not found.</p>
         <Link to="/workouts">
           <Button variant="outline" className="mt-4">Back to Workouts</Button>
@@ -204,7 +204,7 @@ export default function ProgramDetail() {
     : null;
 
   return (
-    <div className="p-4 md:p-6 min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <button
@@ -429,7 +429,9 @@ export default function ProgramDetail() {
               <div className="space-y-2">
                 {Object.entries(enrollment.progression_state)
                   .filter(([key]) => !key.startsWith('_'))
-                  .map(([name, state]) => (
+                  .map(([name, state]) => {
+                    const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
+                    return (
                     <div
                       key={name}
                       className="flex items-center justify-between glass-inset p-3"
@@ -438,14 +440,14 @@ export default function ProgramDetail() {
                         <p className="font-medium text-sm text-ink">{name}</p>
                         <p className="font-technical text-xs text-ink-muted">
                           {state.sessions_at_current_weight || 0} sessions at current weight
-                          {(state.last_session_rir_avg ?? state.last_session_rpe_avg) != null && (
-                            <> &middot; Avg RIR {(state.last_session_rir_avg ?? state.last_session_rpe_avg).toFixed(1)}</>
+                          {effortVal != null && (
+                            <> &middot; Avg RIR {effortVal.toFixed(1)}</>
                           )}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '—'} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.ready_to_progress && (
                           <Badge variant="green" className="text-xs mt-1">
@@ -454,7 +456,8 @@ export default function ProgramDetail() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
               </div>
             </CardContent>
           </Card>
@@ -569,7 +572,7 @@ export default function ProgramDetail() {
                     <Input
                       type="number"
                       placeholder="lbs"
-                      className="w-24 bg-charcoal-surface  border-charcoal-border  text-ink placeholder:text-ink-muted "
+                      className="w-24 bg-charcoal-surface placeholder:text-ink-muted"
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({

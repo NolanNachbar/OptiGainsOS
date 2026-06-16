@@ -22,8 +22,28 @@ import {
 // progress, Banister model confidence, concurrent-training interference — which
 // the app computes daily but never previously displayed.
 function AdaptiveEnginePanel() {
-  const { engineParams } = useEngineParams();
-  const { prescription } = useTodayPrescription();
+  const { engineParams, isLoading: engineLoading } = useEngineParams();
+  const { prescription, isLoading: prescriptionLoading } = useTodayPrescription();
+  const isLoading = engineLoading || prescriptionLoading;
+
+  if (isLoading) {
+    return (
+      <Card className="glass glass-interactive mb-4">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="section-label flex items-center gap-2 normal-case">
+            <Cpu className="w-3.5 h-3.5 text-teal" /> Adaptive Engine
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-4 space-y-2">
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-3/4" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-1/2" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-2/3" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-5/12" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!engineParams && !prescription) return null;
 
   const vdot = engineParams?.vdot_state?.vdot;
@@ -121,7 +141,7 @@ function AdaptiveEnginePanel() {
 function WeeklyPlanPanel() {
   const { user } = useAuth();
 
-  const { data: plan } = useQuery({
+  const { data: plan, isLoading: planLoading, isError: planError, refetch: refetchPlan } = useQuery({
     queryKey: ["weekly-plan", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -138,7 +158,7 @@ function WeeklyPlanPanel() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: tests = [] } = useQuery({
+  const { data: tests = [], isLoading: testsLoading, isError: testsError, refetch: refetchTests } = useQuery({
     queryKey: ["controlled-tests-active", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -152,6 +172,46 @@ function WeeklyPlanPanel() {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  const isLoading = planLoading || testsLoading;
+  const isError = planError || testsError;
+
+  if (isError) {
+    return (
+      <Card className="glass glass-interactive mb-4">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="section-label flex items-center gap-2 normal-case">
+            <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-4 text-center">
+          <div className="pt-8">
+            <AlertTriangle className="w-6 h-6 text-warn mx-auto mb-2" />
+            <p className="text-xs font-semibold text-muted-2">Couldn&apos;t load weekly plan.</p>
+            <Button variant="outline" className="mt-4 h-11" onClick={() => { refetchPlan(); refetchTests(); }}>Retry</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="glass glass-interactive mb-4">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="section-label flex items-center gap-2 normal-case">
+            <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-4 space-y-2">
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-3/4" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-1/2" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-2/3" />
+          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-5/12" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!plan && tests.length === 0) return null;
 
@@ -455,15 +515,16 @@ function RecoverySection({ data }) {
 function FatigueSection({ data }) {
   if (!data) return null;
 
-  const tsbColor = data.tsb > 5 ? "text-teal" : data.tsb > -5 ? "text-muted-2" : "text-bad";
-  const tsbIcon  = data.tsb > 5 ? TrendingUp : data.tsb > -5 ? CheckCircle2 : TrendingDown;
+  let tsbColor = data.tsb > 5 ? "text-teal" : data.tsb > -5 ? "text-muted-2" : "text-bad";
+  let tsbIcon  = data.tsb > 5 ? TrendingUp : data.tsb > -5 ? CheckCircle2 : TrendingDown;
+  if (data.tsb == null) { tsbColor = "text-ink-muted"; tsbIcon = null; }
   const TSBIcon  = tsbIcon;
 
   return (
     <div className="space-y-4">
       {/* TSB visual */}
       <div className="flex items-center gap-4">
-        <TSBIcon className={`w-6 h-6 ${tsbColor}`} />
+        {TSBIcon && <TSBIcon className={`w-6 h-6 ${tsbColor}`} />}
         <div>
           <div className={`font-technical text-2xl font-extrabold ${tsbColor}`}>{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
           <div className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em]">Training Stress Balance</div>
@@ -693,26 +754,30 @@ export default function AthleteState({ hideHeader = false }) {
 
         {!isLoading && isError && (
           <Card className="glass glass-interactive mb-6">
-            <CardContent className="pt-8 pb-8 text-center">
-              <AlertTriangle className="w-8 h-8 text-warn mx-auto mb-3" />
-              <p className="text-sm text-ink font-bold">Couldn&apos;t load athlete state</p>
-              <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
-                Something went wrong fetching today&apos;s analysis.
-              </p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>Retry</Button>
+            <CardContent className="pb-8 text-center">
+              <div className="pt-8">
+                <AlertTriangle className="w-8 h-8 text-warn mx-auto mb-3" />
+                <p className="text-sm text-ink font-bold">Couldn&apos;t load athlete state</p>
+                <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
+                  Something went wrong fetching today&apos;s analysis.
+                </p>
+                <Button variant="outline" className="mt-4 h-11" onClick={() => refetch()}>Retry</Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
         {!isLoading && !isError && !state && (
           <Card className="glass glass-interactive mb-6">
-            <CardContent className="pt-8 pb-8 text-center">
-              <BarChart3 className="w-8 h-8 text-faint mx-auto mb-3" />
-              <p className="text-sm text-ink font-bold">Today's analysis is being computed</p>
-              <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
-                Your athlete state refreshes automatically each morning. Check back shortly,
-                or log a workout, weigh-in, or recovery metrics to give the engine more to work with.
-              </p>
+            <CardContent className="pb-8 text-center">
+              <div className="pt-8">
+                <BarChart3 className="w-8 h-8 text-faint mx-auto mb-3" />
+                <p className="text-sm text-ink font-bold">Today's analysis is being computed</p>
+                <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
+                  Your athlete state refreshes automatically each morning. Check back shortly,
+                  or log a workout, weigh-in, or recovery metrics to give the engine more to work with.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}

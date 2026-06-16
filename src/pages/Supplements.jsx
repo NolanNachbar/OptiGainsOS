@@ -38,7 +38,7 @@ function WaterCard({ today }) {
 
   const dayWindow = dayWindowUtc(today, profile?.timezone);
 
-  const { data: todayWater = [] } = useQuery({
+  const { data: todayWater = [], isLoading: waterLoading, isError: waterError } = useQuery({
     queryKey: ["water-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -83,7 +83,10 @@ function WaterCard({ today }) {
         <CardTitle className="text-sm font-semibold text-ink flex items-center gap-2">
           <Droplets className="w-4 h-4 text-info" />
           Water
-          <span className="text-ink-muted font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
+          {waterLoading
+            ? <Skeleton className="h-3.5 w-20 rounded ml-auto" />
+            : <span className="text-ink-muted font-normal text-xs ml-auto">{totalMl} / {WATER_GOAL_ML} ml</span>
+          }
         </CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4">
@@ -107,7 +110,16 @@ function WaterCard({ today }) {
             </Button>
           ))}
         </div>
-        {todayWater.length > 0 && (
+        {waterLoading && (
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-3/4 rounded" />
+          </div>
+        )}
+        {!waterLoading && waterError && (
+          <p className="text-xs text-warn text-center py-2">Could not load water data</p>
+        )}
+        {!waterLoading && !waterError && todayWater.length > 0 && (
           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
             {[...todayWater].reverse().map(entry => (
               <div key={entry.id} className="flex items-center justify-between group text-xs text-ink-muted">

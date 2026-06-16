@@ -33,6 +33,7 @@ import MealTemplates, { SaveAsTemplateDialog } from "@/components/nutrition/Meal
 import StatsSetupModal from "@/components/nutrition/StatsSetupModal";
 import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
+import { LoadingScreen } from "@/components/ui/loading-spinner";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -725,13 +726,7 @@ const handleSaveMealTemplate = () => {
     snack: foodEntries.filter(e => e.meal_type === "snack"),
   };
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand/30"></div>
-      </div>
-    );
-  }
+  if (!user) return <LoadingScreen />;
 
   const changeDate = (delta) => {
     const d = new Date(selectedDate + 'T00:00:00');
@@ -809,7 +804,7 @@ const handleSaveMealTemplate = () => {
               const calsPct = Math.min(1, calsConsumed / calsGoal);
               const macroRows = [
                 { label: 'P', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
-                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
+                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--color-carb)' },
                 { label: 'F', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
               ];
               return (
@@ -991,7 +986,7 @@ const handleSaveMealTemplate = () => {
                                   onClick={() => togglePlannedMutation.mutate(entry.id)}
                                   title="Mark as eaten"
                                   aria-label="Mark as eaten"
-                                  className="shrink-0 p-2 -m-1.5 flex items-center justify-center"
+                                  className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px]"
                                 >
                                   <span className="w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-[rgba(123,201,111,0.18)] hover:border-leaf/60 transition-colors" />
                                 </button>
@@ -1031,10 +1026,10 @@ const handleSaveMealTemplate = () => {
                               </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEditEntry(entry)} className="p-1 text-ink-muted hover:text-brand transition-colors">
+                              <button onClick={() => startEditEntry(entry)} className="p-2 sm:p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-1 text-ink-muted hover:text-bad transition-colors">
+                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} className="p-2 sm:p-1 text-ink-muted hover:text-bad transition-colors">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -1130,7 +1125,7 @@ const handleSaveMealTemplate = () => {
 
         {/* ── Desktop sidebar ── */}
         <aside
-          className="hidden lg:flex flex-col w-[500px] shrink-0 border-l border-charcoal-border bg-charcoal-surface bg-charcoal-surface/20 sticky z-10"
+          className="hidden lg:flex flex-col w-[500px] shrink-0 border-l border-charcoal-border bg-charcoal-surface/20 sticky z-10"
           style={{ top: 'var(--layout-header-height, 0px)', height: 'calc(100vh - var(--layout-header-height, 0px))' }}
         >
           {/* ── Pinned top: Trend + Goals + check-in ── */}
@@ -1219,7 +1214,7 @@ const handleSaveMealTemplate = () => {
           </div>
 
           {/* ── Tab bar: Templates | Recipes | Ideas ── */}
-          <div className="shrink-0 flex border-b border-charcoal-border bg-charcoal-surface bg-charcoal-surface/20">
+          <div className="shrink-0 flex border-b border-charcoal-border bg-charcoal-surface/20">
             {[
               { id: 'templates', label: 'Templates' },
               { id: 'recipes',   label: 'Recipes' },
@@ -1279,7 +1274,7 @@ const handleSaveMealTemplate = () => {
           }
         }}>
           <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
               <DialogTitle>{editingEntry ? "Edit Food Entry" : "Add Food Entry"}</DialogTitle>
             </DialogHeader>
 
@@ -1333,8 +1328,8 @@ const handleSaveMealTemplate = () => {
                           {/* My saved foods */}
                           {matchingCustomFoods.length > 0 && (
                             <>
-                              <div className="px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center gap-1 sticky top-0">
-                                <Star className="w-3 h-3 fill-warn" /> My Foods
+                              <div className="px-3 py-1.5 bg-gold/10 text-xs font-semibold text-gold flex items-center gap-1 sticky top-0">
+                                <Star className="w-3 h-3 fill-gold" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
                                 <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
@@ -1407,8 +1402,8 @@ const handleSaveMealTemplate = () => {
                           </div>
                         )}
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold text-warn flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-warn" /> My Foods
+                          <span className="text-xs font-semibold text-gold flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-gold" /> My Foods
                           </span>
                           <div className="flex items-center gap-2">
                             <button
@@ -1441,9 +1436,9 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setMyFoodsExpanded(!myFoodsExpanded)}
-                              className="w-full px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn flex items-center justify-between hover:bg-warn/10 transition-colors"
+                              className="w-full px-3 py-1.5 bg-gold/10 text-xs font-semibold text-gold flex items-center justify-between hover:bg-gold/10 transition-colors"
                             >
-                              <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-warn" /> My Foods ({customFoods.length})</span>
+                              <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-gold" /> My Foods ({customFoods.length})</span>
                               {myFoodsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {myFoodsExpanded && (
@@ -1707,7 +1702,8 @@ const handleSaveMealTemplate = () => {
                     }
                   }}
                   disabled={!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending}
-                  className="w-full bg-brand"
+                  variant="volt"
+                  className="w-full"
                   data-tutorial="add-food-submit"
                 >
                   {(addFoodMutation.isPending || updateFoodMutation.isPending) ? (
@@ -1849,7 +1845,7 @@ const handleSaveMealTemplate = () => {
             <div className="mt-2 max-h-56 overflow-y-auto border rounded-lg bg-charcoal-surface divide-y divide-charcoal-border">
               {matchingCustomFoods.length > 0 && (
                 <>
-                  <div className="px-3 py-1.5 bg-warn/10 text-xs font-semibold text-warn sticky top-0">My Foods</div>
+                  <div className="px-3 py-1.5 bg-gold/10 text-xs font-semibold text-gold sticky top-0">My Foods</div>
                   {matchingCustomFoods.map((food) => (
                     <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
                       <div className="font-medium text-ink text-sm">{food.food_name}</div>
@@ -1917,7 +1913,21 @@ const handleSaveMealTemplate = () => {
                 />
                 <Select
                   value={newFood.serving_unit}
-                  onValueChange={(value) => setNewFood({ ...newFood, serving_unit: value })}
+                  onValueChange={(value) => {
+                    if (isUsdaFood) {
+                      const isServingLike = (u) => u === 'serving' || u === 'piece';
+                      const fromG = isServingLike(newFood.serving_unit)
+                        ? newFood.serving_amount * (foodServingSizeGrams ?? 100)
+                        : newFood.serving_amount * (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
+                      const toPerUnit = isServingLike(value)
+                        ? (foodServingSizeGrams ?? 100)
+                        : (UNIT_TO_GRAMS[value] ?? 1);
+                      const newAmount = Math.round((fromG / toPerUnit) * 100) / 100;
+                      setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
+                    } else {
+                      setNewFood(prev => ({ ...prev, serving_unit: value }));
+                    }
+                  }}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -1988,7 +1998,7 @@ const handleSaveMealTemplate = () => {
             type="button"
             onClick={addCurrentFoodToMeal}
             disabled={!newFood.food_name}
-            className="w-full bg-brand"
+            variant="volt" className="w-full"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Food to Meal
@@ -2033,7 +2043,7 @@ const handleSaveMealTemplate = () => {
           )}
 
           {mealItems.length > 0 && (
-            <div className="rounded-lg bg-brand/[5%] p-3 text-sm text-brand text-brand">
+            <div className="rounded-lg bg-brand/[5%] p-3 text-sm text-brand">
               <div className="font-medium">
                 Total: {Math.round(mealTotals.calories)} cal
               </div>
@@ -2051,7 +2061,7 @@ const handleSaveMealTemplate = () => {
         <Button
           onClick={handleSaveMealTemplate}
           disabled={mealItems.length === 0}
-          className="w-full bg-brand"
+          variant="volt" className="w-full"
         >
           Save Meal Template
         </Button>
@@ -2091,7 +2101,7 @@ const handleSaveMealTemplate = () => {
           <p className="text-sm text-ink-muted mb-3">
             Save a <code className="text-xs bg-charcoal-elevated px-1 rounded">.csv</code> file with these columns, then use the Import CSV button to add foods to My Foods.
           </p>
-          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto text-ink text-ink-muted border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
+          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto text-ink-muted border border-charcoal-border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
 Chicken Breast,165,31,0,3.6,100g
 Greek Yogurt,59,10,3.6,0.4,100g
 Oats,389,17,66,7,100g`}</pre>
@@ -2224,7 +2234,7 @@ function GoalsFormContent({
       )}
 
       <MacroGoalsEditor values={goalForm} onChange={setGoalForm} />
-      <Button className="w-full bg-brand" disabled={updateGoalsMutation.isPending}
+      <Button variant="volt" className="w-full" disabled={updateGoalsMutation.isPending}
         onClick={() => updateGoalsMutation.mutate({
           daily_calorie_goal: parseInt(goalForm.daily_calorie_goal) || 0,
           daily_protein_goal: parseInt(goalForm.daily_protein_goal) || 0,

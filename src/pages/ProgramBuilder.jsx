@@ -43,6 +43,7 @@ import {
   Repeat,
   X,
   Activity,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -89,7 +90,7 @@ export default function ProgramBuilder() {
   const editId = searchParams.get("edit");
   const { user } = useAuth();
 
-  const { program: existingProgram, isLoading: loadingExisting } = useProgram(editId);
+  const { program: existingProgram, isLoading: loadingExisting, error: errorExisting } = useProgram(editId);
   const createMutation = useCreateProgram();
   const updateMutation = useUpdateProgram();
 
@@ -190,6 +191,7 @@ export default function ProgramBuilder() {
   }, [program.cycle_length]);
 
   if (editId && loadingExisting) return <LoadingScreen />;
+  if (editId && errorExisting) return <div className="min-h-screen bg-charcoal flex items-center justify-center"><p className="text-bad">Failed to load program</p></div>;
 
   // ── Step navigation ──
   const canProceed = () => {
@@ -401,6 +403,7 @@ export default function ProgramBuilder() {
       description: program.description,
       focus: program.goal,
       num_cycles: program.num_cycles,
+      cycle_length: program.cycle_length,
       schema_version: 2,
       // Keep v1 fields for backward compat (not used in v2)
       duration_weeks: program.num_cycles,
@@ -478,7 +481,7 @@ export default function ProgramBuilder() {
             )}
             <button
               onClick={() => navigate("/workouts")}
-              className="text-ink-muted hover:text-ink text-sm flex items-center gap-1 transition-colors"
+              className="text-ink-muted hover:text-ink text-sm flex items-center gap-1 transition-colors py-3 px-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Cancel
@@ -494,7 +497,7 @@ export default function ProgramBuilder() {
               className={`h-1.5 flex-1 rounded-full transition-colors ${
                 i <= step
                   ? "bg-brand"
-                  : "bg-white/[0.08]"
+                  : "bg-charcoal-elevated"
               }`}
             />
           ))}
@@ -715,7 +718,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
 
         {/* rest day tip */}
         <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-muted">
-          <span>💡</span>
+          <Info className="w-4 h-4 flex-shrink-0" />
           <span>
             <strong className="text-ink-secondary">Tip:</strong> Include rest days in your cycle length. For example, a 7-day cycle
             might have 4 training days and 3 rest days.
@@ -1170,11 +1173,13 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
   if (exercises.length === 0) {
     return (
       <Card className="">
-        <CardContent className="pt-6 pb-6 text-center">
-          <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
-          <p className="text-sm text-ink-muted">
-            No exercises found. Go back and add exercises to see projections.
-          </p>
+        <CardContent className="pb-6 text-center">
+          <div className="pt-6 pb-6">
+            <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
+            <p className="text-sm text-ink-muted">
+              No exercises found. Go back and add exercises to see projections.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );

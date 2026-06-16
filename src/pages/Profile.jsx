@@ -174,6 +174,7 @@ export default function Profile({ hideHeader }) {
     onSuccess: (_, { formSnapshot, weightToLog }) => {
       savedFormDataRef.current = { ...formSnapshot };
       invalidateProfile(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['athlete-state-nutrition'] });
       if (weightToLog) invalidateBodyWeight(queryClient);
       toast.success("Profile saved!");
     },
@@ -814,7 +815,7 @@ export default function Profile({ hideHeader }) {
                       Cancel
                     </Button>
                     <Button
-                      className="bg-bad/10 hover:bg-bad/10 text-ink"
+                      className="bg-bad hover:bg-bad/80 text-white"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -848,8 +849,8 @@ export default function Profile({ hideHeader }) {
 
       {/* Sticky Save Bar */}
       <div
-        className={`fixed bottom-[calc(70px+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
-          isDirty ? 'translate-y-0' : 'translate-y-[calc(100%+70px+env(safe-area-inset-bottom))]'
+        className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
+          isDirty ? 'translate-y-0' : 'translate-y-[calc(100%+env(safe-area-inset-bottom,0px)+64px)]'
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">

@@ -208,10 +208,10 @@ function PipelineTab() {
                       <p className="text-[10px] font-semibold text-muted-2 truncate">{app.role}</p>
                     </div>
                     <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-2.5 -m-1 text-muted-2 hover:text-ink">
+                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
                         <Pencil className="w-3 h-3" />
                       </button>
-                      <button onClick={() => setConfirmDelete(app.id)} className="p-2.5 -m-1 text-muted-2 hover:text-bad">
+                      <button onClick={() => setConfirmDelete(app.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
@@ -264,7 +264,7 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
+        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
         </div>
@@ -405,7 +405,7 @@ function NetworkingTab() {
       <div className="space-y-3">
         <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
         {!isLoading && !isError && contacts.length === 0 && (
-          <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
+          <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
           </div>
@@ -419,16 +419,16 @@ function NetworkingTab() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-extrabold text-ink">{contact.person_name}</span>
                     {contact.interaction_type && (
-                      <Badge variant="outline" className="text-[10px] border-white/10 text-muted-2 bg-transparent">{contact.interaction_type}</Badge>
+                      <Badge variant="outline" className="text-[10px] border-charcoal-border text-muted-2 bg-transparent">{contact.interaction_type}</Badge>
                     )}
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
                 </div>
                 <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-2.5 -m-1 text-muted-2 hover:text-ink">
+                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setConfirmDelete(contact.id)} className="p-2.5 -m-1 text-muted-2 hover:text-bad">
+                  <button onClick={() => setConfirmDelete(contact.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -517,7 +517,7 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-2xl">
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
               <p className="text-sm font-semibold text-muted-2">No recent career events.</p>
             </div>

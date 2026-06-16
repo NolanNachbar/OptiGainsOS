@@ -227,7 +227,10 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
         if any(w in cl for w in ("sharp", "injur", "strain", "pull", "pinch")):
             sev = 2
     if pain:
-        if exercise:
+        if exercise and not targets:
+            # Only fall back to the full exercise muscle-map when no specific
+            # joint/muscle was identified from the clause text (EN-02: avoids
+            # over-restricting chest/triceps when only shoulder was named).
             targets.add(canon(exercise))
         if not targets:
             targets.add("_global")
@@ -255,6 +258,7 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
     else:
         # Session-level note: attribute easy/hard/sentiment to exercises named
         # in the same clause, plus the mild global signal in flags.
+        any_clause_too_easy = False
         for cl in clauses:
             exs = _exercises_from_text(cl)
             if not exs:
@@ -265,6 +269,7 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
             elif _has(cl, _EASY_WORDS):
                 for ex in exs:
                     out["too_easy"][ex] = out["too_easy"].get(ex, 0) + 1
+                any_clause_too_easy = True
             if _has(cl, _LIKE_WORDS):
                 for ex in exs:
                     out["sentiment"][ex] = out["sentiment"].get(ex, 0.0) + 1.0
@@ -273,7 +278,7 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
                     out["sentiment"][ex] = out["sentiment"].get(ex, 0.0) - 1.0
         if _has(t, _HARD_WORDS):
             out["flags"].append("session noted as hard")
-        elif _has(t, _EASY_WORDS):
+        elif _has(t, _EASY_WORDS) and not any_clause_too_easy:
             out["flags"].append("session noted as easy")
 
 

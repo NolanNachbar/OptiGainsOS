@@ -52,10 +52,21 @@ def _prescribed_names(pw: dict) -> dict:
     return out
 
 
+MOVEMENT_PATTERNS = ['press', 'curl', 'row', 'squat', 'deadlift', 'fly', 'raise', 'pull', 'push']
+
+
 def _same_slot(a: str, b: str) -> bool:
     """Two exercises plausibly fill the same slot if they share a primary muscle."""
     ma, mb = set(get_muscles(a)), set(get_muscles(b))
-    return bool(ma and mb and (ma & mb))
+    if ma and mb:
+        return bool(ma & mb)
+    # Fallback: if muscle map is missing an entry, treat exercises sharing a
+    # common movement-pattern keyword as the same slot to avoid misclassifying
+    # legitimate swaps as additions.
+    for pat in MOVEMENT_PATTERNS:
+        if pat in a.lower() and pat in b.lower():
+            return True
+    return False
 
 
 def _same_exercise(a: str, b: str) -> bool:
@@ -144,5 +155,6 @@ def track_deviations(program_workouts: list, workout_logs: list,
                 out["dropped"][name] = out["dropped"].get(name, 0) + 1
                 out["events"].append(f"{d}: skipped {name}")
 
+    # informational only — not consumed by exercise_reward
     out["set_delta"] = {n: round(sum(v) / len(v), 2) for n, v in _delta_acc.items() if v}
     return out

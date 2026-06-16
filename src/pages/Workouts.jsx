@@ -257,7 +257,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   });
 
   if (!user) {
-    return <LoadingScreen />;
+    navigate('/login');
+    return null;
   }
 
   return (
@@ -439,8 +440,14 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
             </div>
           )}
           <div className="px-6 pb-6">
-            <div className="max-h-[600px] overflow-y-auto pr-2">
-              {filteredWorkouts.length > 0 ? (
+            <div className="pr-2">
+              {workoutsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-28 rounded-xl animate-pulse bg-charcoal-elevated" />
+                  ))}
+                </div>
+              ) : filteredWorkouts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredWorkouts.map((workout) => (
                     <WorkoutCard
