@@ -401,7 +401,7 @@ def main():
         upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in upper_keywords))
         lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in lower_keywords))
         if upper_count > lower_count:
-            return "upper_volume"
+            return "upper_a"   # unified vocab with the weekly generator / _decide_split (F8)
         elif lower_count > upper_count:
             return "lower_squat_primary"
         return ""
@@ -618,9 +618,13 @@ def main():
     # generator). Notes are re-parsed here (cheap, deterministic); values are read
     # from the posterior the weekly run maintains.
     from engine.notes_parser import parse_workout_notes
+    from engine.failure_reasons import parse_set_failures
     _notes = parse_workout_notes(workout_log_rows, today_iso=TODAY)
     _caution = _notes["caution"]
-    _weakness = _notes["weakness"]   # sticking points → aim assistance
+    _weakness = dict(_notes["weakness"])   # sticking points → aim assistance
+    # Structured set-level failure tags (higher confidence than parsed text) override.
+    for _lift, _w in parse_set_failures(workout_log_rows, today_iso=str(TODAY))["weakness"].items():
+        _weakness[_lift] = _w
     _ev_rows = sb_get("athlete_params", {
         "select": "meta", "param_key": "eq.exercise_values", "limit": "1"})
     _exercise_values = {
@@ -639,16 +643,24 @@ def main():
     _preferred_ex = {canon(n) for n in (_ex_prefs.get("preferred") or [])}
 
     generator    = SessionGenerator()
-    # Today's run slot is decided by the weekly plan (adaptive placement); read it so
-    # the daily prescription's cardio matches the program instead of recomputing it.
+    # Today's run slot AND split are decided by the weekly plan (adaptive placement +
+    # learned allocation); read them so the daily prescription inherits the program
+    # instead of recomputing. F8: passing the planned split as authoritative keeps the
+    # daily card from contradicting the weekly plan on a deviation day (the two used
+    # to classify the split independently, from different log views, and could fight).
+    from engine.session_generator import split_from_title
     _today_plan = sb_get("program_workouts", {
-        "select": "cardio_sessions", "created_by": f"eq.{USER_ID}",
+        "select": "cardio_sessions,title", "created_by": f"eq.{USER_ID}",
         "scheduled_date": f"eq.{TODAY}", "limit": "1"})
     _today_run_slot = None
+    _today_split = None
     if _today_plan:
         _cs = _today_plan[0].get("cardio_sessions") or []
         if _cs:
             _today_run_slot = _cs[0].get("run_type")
+        _today_split = split_from_title(_today_plan[0].get("title"))
+        if _today_split:
+            print(f"  Inheriting planned split for today: {_today_split}")
 
     prescription = generator.generate(
         banister_state  = banister_state,
@@ -672,6 +684,7 @@ def main():
         weakness = _weakness,
         blocked_exercises = _blocked_ex,
         preferred_exercises = _preferred_ex,
+        split_override = _today_split,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

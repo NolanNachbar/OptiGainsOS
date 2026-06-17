@@ -40,12 +40,15 @@ except ImportError:
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
-from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot
-from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS
+from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title
+from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS, apply_running_interference
 from engine.allocator          import plan_week, default_goal_priorities
 from engine.athlete_profile    import MUSCLE_EMPHASIS
 from engine.hypertrophy_volume import LANDMARK_PRIORS
-from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation
+from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation, OBS_VAR
+# F2: the top-set-quality fallback slope is lower-confidence than e1RM — move the
+# posterior slowly (higher observation noise) rather than not at all.
+FALLBACK_OBS_VAR = 18.0   # [ENG] ~2× passive e1RM OBS_VAR
 from engine.controlled_tests   import (
     get_active, pick_volume_test_muscle, can_schedule, schedule_volume_test,
     ramp_target, step_volume_test, should_schedule_pst, schedule_pst_diagnostic,
@@ -53,6 +56,7 @@ from engine.controlled_tests   import (
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS, canon
 from engine.notes_parser         import parse_workout_notes
+from engine.failure_reasons       import parse_set_failures
 from engine.deviation_tracker    import track_deviations
 from engine.learners             import update_exercise_value, exercise_reward
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -347,6 +351,50 @@ def muscle_perf_slopes(registry: StrengthProgressionRegistry) -> dict:
     return {m: sum(v) / len(v) for m, v in acc.items() if v}
 
 
+def muscle_quality_slopes(log_rows: list) -> dict:
+    """
+    FALLBACK per-muscle response signal (CONVERGENCE_AUDIT F2).
+
+    `muscle_perf_slopes` only sees loaded, low-rep (e1RM-tracked) lifts, so the
+    high-rep / bodyweight / machine-maxed isolation work that trains the focus
+    muscles (neck, traps, calves, side delts, rear delts, upper chest) produces NO
+    signal and those muscles run open-loop on population priors forever. This fills
+    the gap with the trend of each exercise's per-day TOP-SET QUALITY — the best
+    single set's weight×reps (or reps if bodyweight). It's a SINGLE top set, so it
+    measures "got stronger on this movement", not "added a set" (no summed-volume
+    conflation). Attributed to muscles via the shared map and averaged. Lower
+    confidence than e1RM → the caller feeds it with a higher obs_var so it nudges
+    the posterior slowly rather than not at all.
+    """
+    by_ex: dict[str, dict] = {}
+    for s in log_rows:
+        ex = s.get("exercise")
+        reps = float(s.get("reps") or 0)
+        if not ex or reps <= 0:
+            continue
+        w = float(s.get("weight") or 0)
+        quality = (w * reps) if w > 0 else reps
+        per_day = by_ex.setdefault(ex, {})
+        d = s.get("date")
+        if quality > per_day.get(d, 0.0):
+            per_day[d] = quality
+    acc: dict[str, list] = {}
+    for ex, per_day in by_ex.items():
+        series = [per_day[d] for d in sorted(per_day)]
+        if len(series) < 3:
+            continue
+        # Normalise to a unit-free FRACTIONAL growth rate (slope / mean level) so the
+        # fallback is comparable across muscles AND to e1RM slopes (~lbs/session). The
+        # raw weight×reps slope is huge (a 50-lb lift trends ~5–60), which would swamp
+        # the cross-muscle MAGNITUDE consumers it also feeds — the exploration UCB
+        # reward and the frequency bandit — making them rank by load, not response.
+        mean_level = sum(series) / len(series)
+        slope = compute_trend_slope(series) / max(1e-6, mean_level)
+        for muscle in hypertrophy_muscles(ex):
+            acc.setdefault(muscle, []).append(slope)
+    return {m: sum(v) / len(v) for m, v in acc.items() if v}
+
+
 # ── Daily-state refresh ────────────────────────────────────────────────────────
 
 def refresh_athlete_state():
@@ -453,7 +501,6 @@ def main():
     # Load profile to obtain maintenance_kcal
     profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
     profile      = profile_rows[0] if profile_rows else {}
-    kcal_maintenance = float(profile.get("maintenance_kcal") or 3200.0)
 
     # Athlete exercise preferences (user_profiles.exercise_preferences): canon-keyed
     # block/prefer lists the session generator honors. Blocked lifts are never
@@ -466,13 +513,9 @@ def main():
         print(f"  Exercise prefs — blocked: {sorted(blocked_ex)}  preferred: {sorted(preferred_ex)}")
     
     nutrition = latest_athlete.get("nutrition") or {}
-    avg_cal   = float(nutrition.get("avg_calories_7d") or nutrition.get("avg_daily_calories_7d") or kcal_maintenance)
-    kcal_deficit = max(0.0, kcal_maintenance - avg_cal)
-    
-    caloric_balance = {
-        "deficit_kcal": kcal_deficit,
-        "maintenance_kcal": kcal_maintenance
-    }
+    # (The per-muscle cut MRV reduction this used to feed was removed with the dead
+    # volume_engine block — F6: the cut is handled by the systemic recovery_budget
+    # r_phase scalar, not a second per-muscle scaler that would double-count.)
 
     # ── Garmin recovery data (HRV / resting HR / sleep) ───────────────────────
     # Source of truth is recovery_metrics (written by the garmin-sync edge fn);
@@ -573,17 +616,10 @@ def main():
         "scheduled_date": f"lt.{window_start.isoformat()}",
         "order": "scheduled_date.desc", "limit": "1"})
     if _planned_before:
-        # Classify the preceding planned day from its title (unambiguous: "Upper —"
-        # / "Lower —"); planned exercises store sets as an int so classify_log_split
-        # (built for logged sets-lists) can't read them.
-        _t = str(_planned_before[0].get("title") or "").lower()
-        _focus = str(_planned_before[0].get("focus") or "").lower()
-        _s = (_focus if _focus in ("upper_a", "upper_b", "lower_squat_primary",
-                                   "lower_hinge_primary", "push", "pull", "legs",
-                                   "full_body_a", "full_body_b") else
-              "lower_squat_primary" if "lower" in _t or "legs" in _t else
-              "upper_a" if "upper" in _t or "push" in _t or "pull" in _t else
-              "full_body_a" if "full_body" in _t or "full body" in _t else None)
+        # Classify the preceding planned day from its title via the shared
+        # title→split classifier (planned exercises store sets as an int so
+        # classify_log_split, built for logged sets-lists, can't read them).
+        _s = split_from_title(_planned_before[0].get("title"))
         _last_log = workout_log_rows[0].get("log_date") if workout_log_rows else None
         if _s and (_last_log is None or str(_planned_before[0].get("scheduled_date")) > str(_last_log)):
             recent_session_types.append(_s)
@@ -670,6 +706,17 @@ def main():
     # ── 4. Update volume landmarks ────────────────────────────────────────────
     # Per-muscle e1RM response — drives both the landmark loop and the bandit.
     perf_slopes = muscle_perf_slopes(progression_registry)
+    # F2: fill the gaps with a lower-confidence top-set-quality slope so the focus
+    # muscles that have no e1RM history (high-rep / bodyweight isolation) still get
+    # a response signal instead of running open-loop on the prior forever. e1RM
+    # always wins where present; fallback-only muscles are flagged so the learner
+    # uses a higher obs_var for them.
+    quality_slopes = muscle_quality_slopes(log_rows)
+    fallback_muscles = set()
+    for m, sl in quality_slopes.items():
+        if m not in perf_slopes:
+            perf_slopes[m] = sl
+            fallback_muscles.add(m)
 
     # Idempotency: learn at most once per week. If we already produced a plan for
     # THIS week — or a partially-failed run already armed the learned_week marker —
@@ -710,30 +757,19 @@ def main():
         print(f"  Bandit reward: {muscle} ← {reward:+.3f} "
               f"(slope {slope:+.3f}, soreness {avg_sore:.1f})")
 
-    # 4b. Learn each muscle's MEV/MAV/MRV from its own response + soreness
-    #     (the previously-dormant update_landmarks loop). MRV ratchets down only
-    #     when a muscle stalls AND is sore; MAV creeps up while it's responding.
-    if not already_ran:
-        learned = volume_engine.learn_from_response(perf_slopes, soreness_muscle)
-        if learned:
-            print(f"  Landmarks learned: "
-                  f"{ {m: lm['MRV'] for m, lm in learned.items()} }")
+    # 4b. (REMOVED — CONVERGENCE_AUDIT F7) The deterministic ±1 `learn_from_response`
+    #     MRV learner ran here on the same signals as the authoritative Bayesian
+    #     `update_mrv` (§6a below), but wrote only to the in-memory volume_engine that
+    #     never reached the plan — wasted compute and a drift hazard. update_mrv (which
+    #     upserts athlete_landmarks, the dict the allocator reads) is the single MRV
+    #     learner now. Per-muscle running interference (F6) is wired into landmarks_lc
+    #     at the allocator below; the cut is left to the systemic r_phase scalar.
 
-    # 4c. Environmental scaling on top of the learned landmarks.
-    volume_engine.adjust_for_running(weekly_km)
-
-    kcal_deficit      = float(caloric_balance.get("deficit_kcal")      or 0)
-    kcal_maintenance  = float(caloric_balance.get("maintenance_kcal")   or 0)
-    if kcal_deficit > 0 and kcal_maintenance > 0:
-        volume_engine.adjust_for_caloric_deficit(kcal_deficit, kcal_maintenance)
-
-    mrv_dict = volume_engine.get_mrv_dict()
-
-    # ── 5. Apply exploration ──────────────────────────────────────────────────
-    exploration_delta = exploration_manager.get_exploration_delta(step_count)
-    for muscle, extra in exploration_delta.items():
-        base_mrv = volume_engine.landmarks.get(muscle, {}).get("MRV", mrv_dict.get(muscle, 18))
-        mrv_dict[muscle] = min(mrv_dict.get(muscle, base_mrv) + extra, base_mrv + 2)
+    # ── 5. Exploration probe ──────────────────────────────────────────────────
+    # Which muscle (if any) to probe with +1 set this week. The delta is applied to
+    # the LIVE allocator landmarks (landmarks_lc) at §6b — NOT to a discarded
+    # in-memory mrv_dict as before (F3/F6), so a fired probe actually changes the plan.
+    exploration_delta = exploration_manager.get_exploration_delta(step_count) if not already_ran else {}
     if exploration_delta:
         print(f"  Exploration delta: {exploration_delta}")
     # Remember which muscles were probed so next week can score their response.
@@ -796,10 +832,17 @@ def main():
         for name in touched:
             hist = _ex_history.get(name, [])
             slope = compute_trend_slope(hist) if len(hist) >= 3 else None
-            pain = (name in notes_signals["caution"]
-                    or (name in _recent_logged
-                        and any(m in notes_signals["caution"]
-                                for m in hypertrophy_muscles(name))))
+            # Collect every caution entry that touches this exercise — its own name
+            # or any muscle it trains — and take the strongest signal (F13). A single
+            # low-severity mention de-prioritises; the hard veto needs corroboration.
+            _cau = notes_signals["caution"]
+            _hits = [_cau[k] for k in (
+                       [name] + ([m for m in hypertrophy_muscles(name)]
+                                 if name in _recent_logged else []))
+                     if k in _cau]
+            pain = bool(_hits)
+            pain_severity = max((int(h.get("severity", 0)) for h in _hits), default=0)
+            pain_mentions = max((int(h.get("mentions", 0)) for h in _hits), default=0)
             reward = exercise_reward(
                 slope,
                 deviations["chosen"].get(name, 0),
@@ -808,6 +851,8 @@ def main():
                 notes_signals["too_easy"].get(name, 0),
                 pain=pain,
                 hard_mentions=notes_signals["too_hard"].get(name, 0),
+                pain_severity=pain_severity,
+                pain_mentions=pain_mentions,
             )
             if reward != 0.0:
                 ev_meta = update_exercise_value(ev_meta, name, reward)
@@ -822,7 +867,12 @@ def main():
     # note-caution dict (keyed by exercise canon + landmark muscle).
     exercise_values = {name: float(v.get("mean", 0.0)) for name, v in ev_meta.items()}
     caution = notes_signals["caution"]
-    weakness = notes_signals["weakness"]   # {lift: {region}} → aim assistance
+    weakness = dict(notes_signals["weakness"])   # {lift: {region}} → aim assistance
+    # Structured set-level failure tags are higher-confidence than parsed free text —
+    # merge them in (overriding the note-derived region) so a tagged bench lockout
+    # reliably drives triceps-biased assistance (_pick_assistance / _WEAKNESS_ACCESSORY).
+    for _lift, _w in parse_set_failures(workout_log_rows, today_iso=TODAY.isoformat())["weakness"].items():
+        weakness[_lift] = _w
     note_flags = notes_signals["flags"] + deviations["events"][:4]
     if note_flags:
         print(f"  Notes/deviation signals: {note_flags[:6]}")
@@ -851,6 +901,7 @@ def main():
     # planned volume vs measured response. The allocator then reads the LEARNED
     # landmarks (athlete_landmarks), so the program personalizes over time.
     prior_mrv = {m: LANDMARK_PRIORS.get(m, {}).get("mrv", 18) for m in MUSCLE_GROUPS}
+    cur_phase = (latest_athlete.get("nutrition") or {}).get("phase")  # F9: suppress MRV-down on a cut
     lm_rows = sb_get("athlete_landmarks", {"select": "*", "created_by": f"eq.{USER_ID}"})
     landmarks_db = {r["muscle"]: dict(r) for r in (lm_rows or [])}
     prev_targets = (prev_plans[0].get("set_targets") if prev_plans else {}) or {}
@@ -872,7 +923,9 @@ def main():
             landmarks_db[m] = row
         sore_vals = soreness_muscle.get(m, [])
         avg_sore  = (sum(sore_vals) / len(sore_vals)) if sore_vals else 0.0
-        upd = update_mrv(row, prev_targets.get(m), perf_slopes.get(m), avg_sore, prior_mrv[m])
+        _obs_var = FALLBACK_OBS_VAR if m in fallback_muscles else OBS_VAR
+        upd = update_mrv(row, prev_targets.get(m), perf_slopes.get(m), avg_sore,
+                         prior_mrv[m], phase=cur_phase, obs_var=_obs_var)
         row.update(upd)
         sb_upsert("athlete_landmarks", {
             "created_by": USER_ID, "muscle": m, "mev": row["mev"],
@@ -926,7 +979,7 @@ def main():
             active_test = updated
             print(f"  Volume-tolerance test active: {tm} (ramp week {updated['baseline']['week']})")
     elif can_schedule(active_test, phase_test) and not already_ran:
-        tm = pick_volume_test_muscle(landmarks_db)
+        tm = pick_volume_test_muscle(landmarks_db, profile.get("muscle_emphasis") or MUSCLE_EMPHASIS)
         if tm:
             sb_insert("controlled_tests", {
                 **schedule_volume_test(tm, float(landmarks_db[tm].get("mrv_mean", 18)), TODAY.isoformat()),
@@ -953,6 +1006,18 @@ def main():
     landmarks_lc = {m: dict(LANDMARK_PRIORS[m]) for m in LANDMARK_PRIORS}
     for m, r in (landmarks_db or {}).items():
         landmarks_lc[m] = {"mev": float(r["mev"]), "mav": float(r["mav"]), "mrv": float(r["mrv"])}
+
+    # Per-muscle running interference on the LIVE landmarks (F6) — the cut is left
+    # to the systemic r_phase scalar in recovery_budget to avoid double-counting.
+    apply_running_interference(landmarks_lc, weekly_km)
+
+    # Exploration probe (F3): raise the probed muscle's MRV ceiling by the delta so
+    # the allocator actually funds the extra set this week (capped at prior+2). This
+    # is the wiring that was missing — the delta used to land in a discarded dict.
+    for mm, extra in exploration_delta.items():
+        if mm in landmarks_lc:
+            cap = float(LANDMARK_PRIORS.get(mm, {}).get("mrv", landmarks_lc[mm]["mrv"])) + 2
+            landmarks_lc[mm]["mrv"] = min(landmarks_lc[mm]["mrv"] + extra, cap)
 
     # Active volume-tolerance test → raise the probed muscle's MRV ceiling so the
     # allocator ramps its volume above MAV this week.

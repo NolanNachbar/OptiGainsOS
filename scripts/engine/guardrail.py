@@ -47,11 +47,13 @@ class SystemGuardrail:
 
     def filter_value(self, key: str, raw_value: float) -> float:
         """
-        Smooth a named prescription variable.
-        First call initializes; subsequent calls apply exponential smoothing.
+        Smooth a named prescription variable (exponential low-pass).
 
-        Typical usage:
-            weekly_sets = guardrail.filter_value("weekly_sets", raw_sets)
+        ⚠ DORMANT — no caller, and intentionally so (CONVERGENCE_AUDIT F12). Do NOT
+        wire this onto any LEARNER output (weekly_set_targets, MRV, frequency): a
+        low-pass (α=0.15) would smear a legitimately-learned step-change across ~7
+        days and BLOCK convergence. Safe only for genuinely noisy daily telemetry,
+        never for posteriors. Kept for that potential use; left unwired by design.
         """
         if key not in self._filtered:
             self._filtered[key] = float(raw_value)
@@ -65,6 +67,11 @@ class SystemGuardrail:
     def gate_load_action(self, proposed_action: str, acwr: float) -> str:
         """
         Override proposed training action if ACWR is out of safe range.
+
+        ⚠ DORMANT — no caller, intentionally (CONVERGENCE_AUDIT F12). Wiring this
+        re-imposes a HARD ACWR gate the design explicitly rejects (the MPC uses a
+        soft quadratic ACWR penalty instead — "he trains through it"). Do not call
+        it without revisiting that decision. The soft penalty lives in mpc_prescriber.
 
         proposed_action: "INCREASE" | "MAINTAIN" | "DECREASE" | "REST"
         Returns gated action string.

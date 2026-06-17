@@ -29,7 +29,35 @@ MIN_ACCESSORY_SETS_PER_EXERCISE   = 1    # [ENG] never drop an included accessor
 ACCESSORY_RIR_TARGET              = 0    # [ENG] high intensity: accessories to failure
 MAX_ACCESSORY_SETS_PER_MUSCLE_PER_SESSION = 3   # [ENG] keep per-session muscle volume low → forces frequency up
 HIGH_FREQUENCY_FLOOR              = 3    # [ENG] a muscle with real weekly volume is hit ≥3x/wk
+
+# Fast-recovering, high-frequency-tolerant muscles. Their priors carry high MRV
+# (e.g. calves/side_delts MRV 24) that the standard per-session cap × days-available
+# can't deliver (~18), so a learned high MRV is silently clipped before it reaches
+# the schedule (CONVERGENCE_AUDIT F5). These muscles recover fast and Nolan trains
+# them often, so they get a higher per-session ceiling — the "explore when tolerated"
+# widening, applied only to the muscles that have empirically earned it. [ENG]
+FAST_RECOVERY_MUSCLES = {"calves", "side_delts", "neck", "traps", "rear_delts", "forearms"}
+MAX_SETS_PER_MUSCLE_PER_SESSION_FAST = 4   # [ENG]
+
+
+def per_session_muscle_cap(muscle: str) -> int:
+    """Per-session set ceiling for a muscle — higher for fast-recovery muscles so
+    their learned high MRV stays deliverable across the training week (F5)."""
+    return (MAX_SETS_PER_MUSCLE_PER_SESSION_FAST if muscle in FAST_RECOVERY_MUSCLES
+            else MAX_ACCESSORY_SETS_PER_MUSCLE_PER_SESSION)
 STRENGTH_RIR_FLOOR                = 1    # [ENG] strength work stays submaximal (don't grind singles)
+
+# ── Rep-range philosophy ──────────────────────────────────────────────────────
+# Nolan trains EVERYTHING — including isolation (traps, side delts, neck, calves)
+# — in a heavy, sub-10-rep band; he only goes higher when a machine is literally
+# maxed out. So we clamp the UPPER bound of every LOADED movement's rep target to
+# this ceiling (low-rep strength targets like 3-5 are below it and pass through
+# untouched). Bodyweight capacity work (push-up/pull-up pyramids, dips) is exempt.
+# Side benefit: keeping loaded isolation ≤ the Epley rep cap (12) means it stays
+# e1RM-trackable, so these focus muscles actually generate a strength signal
+# instead of falling to rep-tracking (CONVERGENCE_AUDIT F2). [COACH]
+PREFERRED_REP_CEILING             = 10   # [COACH] hard upper bound for loaded work
+PREFERRED_REP_SPREAD              = 2    # [ENG] width of the clamped band (e.g. 8-10)
 
 # Soreness still trims sets (his own morning input), but the FLOOR is 1 — a sore
 # accessory becomes a single hard set, it isn't deleted.
@@ -81,16 +109,47 @@ def accessory_set_cap(weekly_target: int) -> int:
     return MIN_ACCESSORY_SETS_PER_EXERCISE
 
 
+def clamp_rep_range(rep_target, ceiling: int = PREFERRED_REP_CEILING,
+                    spread: int = PREFERRED_REP_SPREAD) -> str:
+    """
+    Clamp the UPPER bound of a rep target to `ceiling` (Nolan's sub-10 preference).
+
+    "12-15" → "8-10", "10-12" → "8-10", single "12" → "8-10", but low-rep strength
+    targets ("3-5", "5") pass through unchanged (already below the ceiling). Complex
+    pyramid strings ("1-2-3-4-5-...") and non-numeric targets are returned as-is.
+    """
+    s = str(rep_target or "").strip()
+    if not s:
+        return s
+    parts = s.split("-")
+    # Only simple "n" or "a-b" forms; leave pyramids / odd formats alone.
+    if len(parts) > 2 or not all(p.strip().isdigit() for p in parts):
+        return s
+    nums = [int(p) for p in parts]
+    lo, hi = (nums[0], nums[-1])
+    if hi <= ceiling:
+        return s
+    hi = ceiling
+    lo = max(1, min(lo, ceiling - spread))
+    return f"{lo}-{hi}" if lo != hi else str(hi)
+
+
 def apply_philosophy(ex: dict, weekly_target: int = 0) -> dict:
     """
     Enforce the low-volume / high-intensity rule on a fully-built exercise dict
     (called AFTER intensity/readiness scaling so it has the final say).
 
+    - Rep range: every LOADED movement is clamped to the sub-10 ceiling (his pref).
     - Accessories: clamp sets to 1-2 and drive RIR to 0 (true failure).
     - Strength movements: untouched except a hard RIR floor so a fresh-day
       adjustment can't push a heavy lift past RIR 1.
     Mutates and returns `ex`.
     """
+    # Rep-range clamp applies to loaded work only — bodyweight capacity movements
+    # (pyramids, push-ups, dips) legitimately live above the ceiling.
+    if not ex.get("is_bodyweight") and ex.get("rep_target") is not None:
+        ex["rep_target"] = clamp_rep_range(ex["rep_target"])
+
     if is_strength_movement(ex):
         rir = ex.get("rir_target")
         if rir is not None:

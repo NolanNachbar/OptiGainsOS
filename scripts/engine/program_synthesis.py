@@ -22,13 +22,18 @@ MUSCLE_GROUPS = [
     "side_delts", "traps", "neck", "upper_chest", "rear_delts",
 ]
 
-# Default objective weights (higher = prioritised in allocation)
+# Default objective weights (higher = prioritised in allocation).
+# CONVERGENCE_AUDIT F11: this used to be a SECOND frozen copy of the emphasis table
+# that drifted from athlete_profile.MUSCLE_EMPHASIS (the canonical source the live
+# allocator reads). Derive the focus-muscle emphasis from there so a change in one
+# place can't silently diverge; the compound-lift bias below is synthesis-specific.
+from engine.athlete_profile import MUSCLE_EMPHASIS as _EMPHASIS
+
 _DEFAULT_WEIGHTS = {m: 1.0 for m in MUSCLE_GROUPS}
+_DEFAULT_WEIGHTS.update({m: w for m, w in _EMPHASIS.items() if m in _DEFAULT_WEIGHTS})
+# Synthesis-only compound-lift bias (the big movers for the goal lifts).
 _DEFAULT_WEIGHTS.update({"chest": 1.4, "quads": 1.3, "lats": 1.2,
-                          "hamstrings": 1.2, "upper_back": 1.2,
-                          # focus muscles (mirrors athlete_profile.MUSCLE_EMPHASIS)
-                          "side_delts": 1.5, "traps": 1.5, "neck": 1.5,
-                          "upper_chest": 1.5, "calves": 1.5, "rear_delts": 1.25})
+                          "upper_back": 1.2})
 
 
 class ProgramSynthesisEngine:

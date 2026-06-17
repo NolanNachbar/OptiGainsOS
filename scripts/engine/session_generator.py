@@ -42,6 +42,21 @@ CAUTION_PENALTY     = 8.0
 # is filtered out entirely — knapsack pool AND assistance pools — never programmed.
 PREFER_SELECT_WEIGHT = 4.0
 
+# Per-session set scaling: a muscle's per-session sets = catalog default × (weekly
+# target / baseline weekly). The baseline is the weekly volume at which the catalog
+# default sets are "right"; small/isolation muscles carry less. Named so the
+# conversion denominator is a documented knob, not a buried literal (F11). [ENG]
+BASELINE_WEEKLY_SMALL   = 8
+BASELINE_WEEKLY_DEFAULT = 12
+_SMALL_BASELINE_MUSCLES = {"triceps", "biceps", "side_delts", "traps", "neck",
+                           "rear_delts", "upper_chest"}
+
+
+def _baseline_weekly(muscle: str) -> int:
+    """Baseline weekly sets for the per-session volume scalar (F11)."""
+    return (BASELINE_WEEKLY_SMALL if muscle in _SMALL_BASELINE_MUSCLES
+            else BASELINE_WEEKLY_DEFAULT)
+
 # session-vocab muscle → caution/landmark vocab (notes_parser keys on landmarks)
 _CAUTION_ALIAS = {"front_delt": "shoulders", "side_delt": "side_delts",
                   "rear_delt": "rear_delts", "delts": "shoulders", "core": "core",
@@ -638,6 +653,28 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float,
     return "upper_a"
 
 
+def split_from_title(title: str) -> str | None:
+    """Recover the canonical split key from a planned program_workouts title
+    ("Upper A — Push ↑ Push" → "upper_a"). Single shared title→split classifier so
+    the weekly generator and the daily prescriber agree on the split (F8) instead
+    of each re-deriving it from its own log view on different vocabularies.
+    Distinguishes A/B and squat/hinge via exact base-title prefix; falls back to a
+    coarse upper/lower/full-body match for legacy or hand-edited titles."""
+    if not title:
+        return None
+    t = str(title).strip().lower()
+    for split, base in SESSION_TITLE.items():
+        if t.startswith(base.lower()):
+            return split
+    if "lower" in t or "legs" in t:
+        return "lower_squat_primary"
+    if "upper" in t or "push" in t or "pull" in t:
+        return "upper_a"
+    if "full body" in t or "full_body" in t:
+        return "full_body_a"
+    return None
+
+
 SESSION_TITLE = {
     "upper_a":             "Upper A — Push",
     "upper_b":             "Upper B — Pull",
@@ -652,6 +689,9 @@ SESSION_TITLE = {
     "full_body_b":         "Full Body B",
 }
 
+# Recognised split keys — an override outside this set falls back to _decide_split.
+_SPLIT_KEYS = set(SESSION_TITLE.keys())
+
 
 # ── Assistance ────────────────────────────────────────────────────────────────
 
@@ -662,7 +702,7 @@ def _assistance_slot(name: str, wt: dict, intensity: float, readiness_z: float) 
     pm = (ex.get("muscles") or ["chest"])[0]
     weekly = wt.get(pm, 0)
     if weekly > 0:
-        baseline = 8 if pm in ("triceps", "biceps") else 12
+        baseline = BASELINE_WEEKLY_SMALL if pm in ("triceps", "biceps") else BASELINE_WEEKLY_DEFAULT
         ex["sets"] = max(1, round(ex.get("sets", 3) * weekly / baseline))
     return _scale(ex, intensity, False, readiness_z)
 
@@ -742,12 +782,22 @@ def _build_session(
         # may only fill their PRIMARY-muscle slot — otherwise the +10 goal bonus
         # lets them leak into other splits via secondary muscles and defeat the
         # split's recovery partition (e.g. full_body_b picking the heavy squat).
+        #
+        # An exercise's PRIMARY muscle must belong to this split's domain
+        # (`relevant`) — otherwise a lower-body lift fills an upper slot through a
+        # shared secondary muscle. Zercher Squat lists `upper_back` as a secondary
+        # and, being `preferred` (+4.0) and a non-goal lift, won the upper_back
+        # slot on upper/pull days — a squat on an upper day. Partitioning on the
+        # primary muscle keeps cross-domain leaks out without the over-strict
+        # "primary == this slot" rule (compounds still cover secondary slots
+        # *within* their own domain).
         pool = [e for e in EXERCISES
                 if muscle in (e.get("muscles") or [])
                 and not e.get("is_backoff")
                 and not e.get("is_assistance")
                 and e.get("name") not in excluded_names
                 and canon(e.get("name", "")) not in blocked
+                and (e.get("muscles") or [""])[0] in relevant
                 and (not e.get("is_goal") or (e.get("muscles") or [""])[0] == muscle)]
         if not pool:
             continue
@@ -792,9 +842,7 @@ def _build_session(
         if ex_copy.get("is_goal") and ("Daily Single" in ex_copy.get("name", "") or "Top Set" in ex_copy.get("name", "")):
             ex_copy["sets"] = ex_copy.get("sets", 1)
         else:
-            baseline_weekly = 8 if muscle in ("triceps", "biceps", "side_delts",
-                                              "traps", "neck", "rear_delts",
-                                              "upper_chest") else 12
+            baseline_weekly = _baseline_weekly(muscle)
             volume_scalar = weekly / baseline_weekly
             ex_copy["sets"] = max(1, round(ex_copy.get("sets", 3) * volume_scalar))
             
@@ -823,7 +871,7 @@ def _build_session(
             continue
         iso_ex = copy.deepcopy(_EX_BY_NAME[iso_name])
         iso_weekly = wt.get(iso_muscle, 0)
-        iso_baseline = 8
+        iso_baseline = BASELINE_WEEKLY_SMALL
         iso_scalar = max(0.5, iso_weekly / iso_baseline if iso_weekly > 0 else 0.5)
         iso_ex["sets"] = max(1, round(iso_ex.get("sets", 2) * iso_scalar))
         chosen_names.add(iso_name)
@@ -854,7 +902,7 @@ def _build_session(
             bench_bo = copy.deepcopy(_EX_BY_NAME[bo_name])
             chest_weekly = wt.get("chest", 0)
             if chest_weekly > 0:
-                baseline_weekly = 12
+                baseline_weekly = BASELINE_WEEKLY_DEFAULT
                 volume_scalar = chest_weekly / baseline_weekly
                 bench_bo["sets"] = max(1, round(bench_bo.get("sets", 5) * volume_scalar))
             else:
@@ -886,7 +934,7 @@ def _build_session(
             backoff = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
             quads_weekly = wt.get("quads", 0)
             if quads_weekly > 0:
-                baseline_weekly = 12
+                baseline_weekly = BASELINE_WEEKLY_DEFAULT
                 volume_scalar = quads_weekly / baseline_weekly
                 backoff["sets"] = max(1, round(backoff.get("sets", 3) * volume_scalar))
             else:
@@ -905,7 +953,7 @@ def _build_session(
                 pm = ex_copy.get("muscles", [""])[0]
                 weekly_tgt = wt.get(pm, 0)
                 if weekly_tgt > 0:
-                    baseline_weekly = 8 if pm in ("triceps", "biceps") else 12
+                    baseline_weekly = _baseline_weekly(pm)
                     volume_scalar = weekly_tgt / baseline_weekly
                     backoff["sets"] = max(1, round(backoff.get("sets", 3) * volume_scalar))
                 else:
@@ -989,6 +1037,7 @@ def generate(
     weakness: dict = None,
     blocked_exercises: set = None,
     preferred_exercises: set = None,
+    split_override: str = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -1036,7 +1085,12 @@ def generate(
     # LIGHT/DELOAD → intensity ~0.78 → _scale reduces sets and adds RIR.
     # CALISTHENICS → high-AMPK state prioritises bodyweight movements naturally.
     # No special branches needed.
-    split = _decide_split(recent_session_types, ampk, mtorc1, split_framework)
+    # F8: when the weekly plan already decided TODAY's split, honor it (the daily
+    # card is subordinate to the learned weekly allocation) instead of re-deriving
+    # from the daily log classifier and risking a contradictory split on a deviation
+    # day. Re-derive only when no plan exists or its split is unrecognised.
+    split = split_override if split_override in _SPLIT_KEYS else \
+        _decide_split(recent_session_types, ampk, mtorc1, split_framework)
     exercises = _build_session(
         split, intensity, ampk,
         readiness_z=readiness_z,
@@ -1107,6 +1161,7 @@ class SessionGenerator:
         weakness: dict = None,
         blocked_exercises: set = None,
         preferred_exercises: set = None,
+        split_override: str = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1141,6 +1196,7 @@ class SessionGenerator:
             weakness=weakness,
             blocked_exercises=blocked_exercises,
             preferred_exercises=preferred_exercises,
+            split_override=split_override,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore

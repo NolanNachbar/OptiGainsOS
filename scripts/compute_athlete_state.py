@@ -1101,9 +1101,20 @@ def main():
         vdot_eng  = VDOTEngine.from_dict(prev.get("vdot_state")          or {})
         guardrail = SystemGuardrail.from_dict(prev.get("guardrail_state") or {})
 
-        # 2. Apply RLS parameters to Kalman if learner is mature
-        if rls.is_mature():
-            kalman.update_params(**rls.params_dict())
+        # 2. RLS τ-personalisation is DISABLED as a Kalman consumer (CONVERGENCE_AUDIT F4).
+        #    The RLS estimator is under-identified (scale-mismatch + c_fit/c_fat
+        #    unobservable from a single daily performance number), so a "mature"
+        #    learner drives θ to its clamp BOUNDS rather than to true values and then
+        #    silently corrupts the fitness/fatigue A/B matrices every MPC decision
+        #    rests on. The MIN_PHI_VAR windup guard does not save it (the regressor's
+        #    heterogeneous-scale variance is ~700× the threshold, so it never fires).
+        #    Population defaults are demonstrably better than clamp-pinned values.
+        #    We keep learning/persisting RLS (harmless, cheap) but DO NOT consume it
+        #    until a structural estimator exists (joint state-parameter EKF / offline
+        #    Banister fit) — matching the already-disabled cellular closed loop.
+        #    To re-enable, gate on `not _at_bounds(theta) and confidence > THRESH`.
+        # if rls.is_mature():
+        #     kalman.update_params(**rls.params_dict())
 
         # 3. Compute today's inputs
         u_t       = compute_training_load_tss(workout_logs, recovery_rows)
@@ -1212,10 +1223,21 @@ def main():
              if r.get("sleep_score") is not None),
             None,
         )
+        # Failure-reason gate: a lift whose recent miss was TECHNICAL (lockout, off
+        # the chest, form, grip) is a skill/leverage issue, not a fuelling signal, so
+        # its negative slope must NOT ease the cut deficit. Exclude such lifts from
+        # strength_min_slope unless they ALSO had a systemic ("out of gas") miss
+        # (genuine strength dip wins). Only the systemic signal eases calories.
+        from engine.failure_reasons import parse_set_failures, infer_lift
+        _fail = parse_set_failures(workout_logs, today_iso=str(TODAY))
+        _exclude_lifts = _fail["technical_miss_lifts"] - _fail["systemic_miss_lifts"]
         _slopes = [float(v.get("progression_rate_lbs_per_week") or 0)
-                   for v in (strength.values() if isinstance(strength, dict) else [])
-                   if isinstance(v, dict) and v.get("progression_rate_lbs_per_week") is not None]
+                   for k, v in (strength.items() if isinstance(strength, dict) else [])
+                   if isinstance(v, dict) and v.get("progression_rate_lbs_per_week") is not None
+                   and infer_lift(k) not in _exclude_lifts]
         strength_min_slope = min(_slopes) if _slopes else None
+        if _exclude_lifts:
+            print(f"  Cut gate: excluding technical-miss lifts from strength signal: {sorted(_exclude_lifts)}")
         # Weeks elapsed in the current open diet phase (from diet_phases) → the
         # TNF 4-6 week duration cap. Dormant until a cut phase with a start is logged.
         weeks_in_cut = None

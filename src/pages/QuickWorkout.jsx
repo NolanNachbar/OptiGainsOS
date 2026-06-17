@@ -139,6 +139,7 @@ export default function QuickWorkout() {
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,
+    replaceExercise,
     addExercise: addExerciseRaw,
   } = useWorkoutExercises(prescribedInitial);
 
@@ -352,6 +353,7 @@ export default function QuickWorkout() {
                 onRemoveExercise={removeExercise}
                 onUpdateNotes={updateExerciseNotes}
                 onUpdateName={updateExerciseName}
+                onReplaceExercise={replaceExercise}
                 lastPerformance={lastPerformance}
                 allExerciseNames={allHistoryExerciseNames}
                 workoutLogs={allWorkoutLogs}

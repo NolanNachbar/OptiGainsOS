@@ -51,12 +51,18 @@ def schedule_pst_diagnostic(today_iso: str) -> dict:
             "scheduled_date": today_iso, "target_key": "pst"}
 
 
-def pick_volume_test_muscle(landmarks_db: dict) -> str | None:
-    """Least-personalized muscle (lowest n_obs, not yet mature) to probe next."""
+def pick_volume_test_muscle(landmarks_db: dict, emphasis: dict | None = None) -> str | None:
+    """Next muscle to probe: among the not-yet-mature muscles, prefer the athlete's
+    higher-EMPHASIS focus muscles (CONVERGENCE_AUDIT F2 pairing — those are the ones
+    starved of a passive signal and most worth a designed test), breaking ties by
+    least-personalized (lowest n_obs)."""
+    emphasis = emphasis or {}
     candidates = [m for m, r in landmarks_db.items() if not r.get("mature")]
     if not candidates:
         return None
-    return min(candidates, key=lambda m: int(landmarks_db[m].get("n_obs", 0)))
+    # Higher emphasis first, then fewest observations.
+    return min(candidates,
+               key=lambda m: (-float(emphasis.get(m, 1.0)), int(landmarks_db[m].get("n_obs", 0))))
 
 
 def can_schedule(active: dict | None, phase: str | None) -> bool:

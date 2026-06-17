@@ -78,6 +78,36 @@ export function useWorkoutExercises(initialExercises = []) {
     });
   }, []);
 
+  // Swap an exercise for a chosen alternative (DB entry or free-text custom),
+  // keeping the set count but resetting load/reps so the new movement starts
+  // fresh. Mirrors WorkoutDetail.handleReplaceExercise so swap behaves the same
+  // in the quick-workout flow (previously the Replace menu item was a dead button
+  // here — no handler was wired, so it silently did nothing).
+  const replaceExercise = useCallback((oldName, newExercise) => {
+    if (!newExercise?.name?.trim()) {
+      toast.error("Please pick or enter a replacement exercise");
+      return;
+    }
+    setExercises(prev => prev.map(ex => {
+      if (ex.name !== oldName) return ex;
+      const repsRaw = String(newExercise.reps ?? newExercise.rep_target ?? ex.sets?.[0]?.reps ?? 10).trim();
+      const m = repsRaw.match(/^(\d+)\s*-\s*(\d+)/);
+      const newReps = m
+        ? Math.round((parseInt(m[1], 10) + parseInt(m[2], 10)) / 2)
+        : (parseInt(repsRaw, 10) || ex.sets?.[0]?.reps || 10);
+      return {
+        ...ex,
+        name: newExercise.name.trim(),
+        notes: null,
+        rest_seconds: newExercise.rest || newExercise.rest_seconds || ex.rest_seconds,
+        sets: (ex.sets || []).map((s, i) => ({
+          ...s, set_number: i + 1, reps: newReps,
+          weight: 0, completed: false, rpe: null, set_type: 'working',
+        })),
+      };
+    }));
+  }, []);
+
   // defaultWeight: callers already pass the athlete's last-performance /
   // insight weight; the parameter was silently dropped here, seeding every
   // first set at 0 lb.
@@ -111,6 +141,7 @@ export function useWorkoutExercises(initialExercises = []) {
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,
+    replaceExercise,
     addExercise,
   };
 }

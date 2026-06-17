@@ -10,6 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
+import { FAILURE_REASONS, reasonsForExercise, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -274,6 +275,7 @@ export default function ExerciseCard({
                   <FileText className="w-4 h-4" />
                   Add notes
                 </button>
+                {onReplaceExercise && (
                 <button
                   onClick={() => {
                     setReplaceAlternatives(null);
@@ -285,6 +287,7 @@ export default function ExerciseCard({
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
                 </button>
+                )}
                 {isProgramMode && (
                   <button
                     onClick={() => {
@@ -395,9 +398,11 @@ export default function ExerciseCard({
         {/* Set rows */}
         {exercise.sets.map((set, setIndex) => {
           const isActive = !set.completed && setIndex === activeSetIndex;
+          const missed = isMissedSet(set, lastPerformance);
+          const reasonKeys = (missed || set.failure_reason) ? reasonsForExercise(exercise.name) : [];
           return (
+          <div key={setIndex}>
             <div
-              key={setIndex}
               className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors ${
                 isActive
                   ? 'bg-[rgba(239,115,104,0.06)] rounded-xl -mx-2 px-2'
@@ -481,6 +486,35 @@ export default function ExerciseCard({
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
+
+            {/* Missed-set reason capture: tag WHY a set fell short of the prior best.
+                A technical reason (lockout/form/grip) is excluded from the cut-calorie
+                signal and routed to programming; "out of gas" eases the cut. */}
+            {reasonKeys.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pb-2 pl-0.5 -mt-0.5">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-warn">
+                  <AlertTriangle className="w-3 h-3" /> Missed — why?
+                </span>
+                {reasonKeys.map((rk) => {
+                  const sel = set.failure_reason === rk;
+                  return (
+                    <button
+                      key={rk}
+                      type="button"
+                      onClick={() => onUpdateSet(exerciseIndex, setIndex, 'failure_reason', sel ? null : rk)}
+                      className={`text-[11px] font-semibold rounded-full px-2.5 py-1 border transition-colors ${
+                        sel
+                          ? 'bg-brand/[0.16] border-brand/40 text-brand'
+                          : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
+                      }`}
+                    >
+                      {FAILURE_REASONS[rk]?.label || rk}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           );
         })}
         <Button

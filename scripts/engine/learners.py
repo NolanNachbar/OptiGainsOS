@@ -12,22 +12,42 @@ from __future__ import annotations
 import math
 
 # MRV learner constants
-K_MAX    = 0.34   # [ENG] cap a single week's influence (no one week swings a posterior)
+K_MAX    = 0.45   # [ENG] cap a single week's influence. Raised from 0.34 (F1) so a
+                  #       string of strong weeks can separate the posterior off the
+                  #       prior without a designed test — still <0.5 so no single
+                  #       week swings it. Pairs with the distance-above-MAV obs below.
 SOR_OK   = 4.0    # [ENG] mean soreness (1-10; check-in 0-3 mapped 1+3v) at/below which a muscle is "recoverable"
 SOR_HI   = 7.0    # [ENG] soreness (1-10) at/above which a stall signals over-MRV
 OBS_VAR  = 9.0    # [ENG] observation noise (sets^2); designed tests can pass lower
+IMMATURE_HEADROOM = 4  # [ENG] F1 keystone: while a muscle is still immature, let the
+                       #       allocator MRV ceiling drift up to prior+this toward a
+                       #       climbing posterior. Without it the ceiling is pinned at
+                       #       round(prior), so funded volume (and thus the censored
+                       #       "MRV ≥ tolerated" observation) can never exceed the prior
+                       #       and maturity is unreachable on passive data. Bounded so a
+                       #       perpetually-"responding" muscle can't ratchet up forever
+                       #       before maturity — beyond +headroom needs a designed test.
+CUT_OBS_VAR_MULT = 2.0  # [ENG] F9: during a cut, down-weight the (energy-deficit-masked)
+                        #       e1RM signal rather than trusting it at face value
 
 
 def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
-               prior_mrv: float) -> dict:
+               prior_mrv: float, phase: str | None = None,
+               obs_var: float = OBS_VAR) -> dict:
     """
     Update one muscle's MRV posterior from last week's response.
 
     row: current athlete_landmarks row (mrv_mean, mrv_var, n_obs, mev, mav, mrv).
     weekly_sets: sets the muscle actually got (use last week's planned target).
     e1rm_slope: per-muscle e1RM slope (None if no strength signal -> uninformative).
+                A FALLBACK top-set-quality slope may be passed for slope-less
+                muscles (F2) — pass a higher obs_var so it nudges, not lurches.
     soreness_avg: mean soreness 1-10 (check-in 0-3 mapped 1+3v).
     prior_mrv: population prior MRV (maturity is measured against this).
+    phase: current diet phase; on "cut" the MRV-DOWN ratchet is suppressed (F9) —
+           a flat/negative slope under a deficit is masking, not over-MRV.
+    obs_var: observation noise for THIS update (default OBS_VAR; higher for the
+             F2 fallback signal).
 
     Returns the fields to upsert (mrv_mean, mrv_var, n_obs, mature, mrv, mav).
     Leaves the posterior unchanged on an uninformative week.
@@ -36,26 +56,40 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
     var  = float(row.get("mrv_var", 9.0))
     n    = int(row.get("n_obs", 0))
     mev  = float(row.get("mev", 6))
+    mav  = float(row.get("mav", mean))
+    on_cut = (phase or "").lower() == "cut"
 
     obs = None
+    obs_var_eff = obs_var
     if weekly_sets and weekly_sets > 0 and e1rm_slope is not None:
         responding  = e1rm_slope > 0
         recoverable = soreness_avg <= SOR_OK
         if responding and recoverable and weekly_sets + 1 > mean:
             # Censored "MRV is at least this" — only informative ABOVE the mean,
-            # otherwise positive response below the posterior drags MRV down.
+            # otherwise positive response below the posterior drags MRV down. The
+            # ceiling below lets weekly_sets (and thus this obs) climb past the prior
+            # on a responding muscle, which is what makes maturity reachable (F1).
             obs = weekly_sets + 1
-        elif (not responding) and soreness_avg >= SOR_HI:
+            if on_cut:
+                obs_var_eff = obs_var * CUT_OBS_VAR_MULT
+        elif (not responding) and soreness_avg >= SOR_HI and not on_cut:
+            # F9: never ratchet MRV DOWN on a cut — you can't separate over-MRV
+            # from deficit masking without a deload (and there is none by design).
             obs = weekly_sets - 1          # over MRV — stalling and sore
 
     if obs is not None:
-        K = min(var / (var + OBS_VAR), K_MAX)
+        K = min(var / (var + obs_var_eff), K_MAX)
         mean = mean + K * (obs - mean)
         var  = var * (1 - K)
         n   += 1
 
     mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
-    mrv = max(round(mean) if mature else round(prior_mrv), round(mev) + 2)
+    # F1 keystone: while immature, let the allocator MRV ceiling drift toward a
+    # climbing posterior (bounded by IMMATURE_HEADROOM) instead of pinning it at the
+    # prior — otherwise funded volume, the censored observation, and MAV are all
+    # capped at the prior and the posterior can never separate on passive data.
+    mrv_ceiling = round(mean) if mature else round(min(mean, prior_mrv + IMMATURE_HEADROOM))
+    mrv = max(mrv_ceiling, round(mev) + 2)
     mav = max(mev + 1, min(round(mean) - 2, mrv - 1))  # keep MAV below MRV
     return {"mrv_mean": round(mean, 2), "mrv_var": round(var, 3), "n_obs": n,
             "mature": bool(mature), "mrv": mrv, "mav": mav}
@@ -73,7 +107,8 @@ def apply_mrv_observation(row: dict, obs: float, obs_var: float, prior_mrv: floa
     var  = var * (1 - K)
     n   += 1
     mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
-    mrv = max(round(mean) if mature else round(prior_mrv), round(mev) + 2)
+    mrv_ceiling = round(mean) if mature else round(min(mean, prior_mrv + IMMATURE_HEADROOM))
+    mrv = max(mrv_ceiling, round(mev) + 2)
     mav = max(mev + 1, min(round(mean) - 2, mrv - 1))
     return {"mrv_mean": round(mean, 2), "mrv_var": round(var, 3), "n_obs": n,
             "mature": bool(mature), "mrv": mrv, "mav": mav}
@@ -124,7 +159,8 @@ DROP_VOTE       = -0.5   # [ENG] value of one "skipped this" deviation vote
 SENTIMENT_GAIN  = 0.6    # [ENG] per net like/dislike mention
 EASY_GAIN       = 0.3    # [ENG] "too easy" reads as productive (earning its slot)
 HARD_LOSS       = -0.3   # [ENG] "too hard / grinding" reads as hold / back off
-PAIN_PENALTY    = -1.5   # [ENG] a pain note is a strong "stop programming this"
+PAIN_PENALTY    = -1.5   # [ENG] a CORROBORATED pain note is a strong "stop programming this"
+PAIN_SOFT_PENALTY = -0.5 # [ENG] F13: a single low-severity mention de-prioritises, not vetoes
 SLOPE_SCALE     = 2.5    # [ENG] lbs/session that saturates the strength-response term
 
 
@@ -150,8 +186,16 @@ def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
 
 def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
                     sentiment: float, easy_mentions: int, pain: bool,
-                    hard_mentions: int = 0) -> float:
-    """Blend the per-exercise signals for one week into a single reward scalar."""
+                    hard_mentions: int = 0, pain_severity: int = 0,
+                    pain_mentions: int = 0) -> float:
+    """Blend the per-exercise signals for one week into a single reward scalar.
+
+    Pain handling (CONVERGENCE_AUDIT F13): a single low-severity mention should
+    DE-PRIORITISE a movement, not wipe it. One ambiguous "shoulder cranky" note gets
+    attributed to every pressing exercise sharing the cautioned muscle, so a hard
+    veto on any single mention reshapes the whole next program off one datum. The
+    hard veto now requires corroboration — a sharp/strain flag (severity ≥ 2) or a
+    repeat (≥ 2 mentions); otherwise a softer penalty applies."""
     r = 0.0
     if slope is not None:
         # Strength response, normalized to the ±1 scale of the vote/note terms
@@ -163,8 +207,12 @@ def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
     r += EASY_GAIN * int(easy_mentions or 0)
     r += HARD_LOSS * int(hard_mentions or 0)
     if pain:
-        # Hard veto: no amount of progress masks a flagged injury signal.
-        return round(min(r + PAIN_PENALTY, PAIN_PENALTY), 4)
+        corroborated = int(pain_severity or 0) >= 2 or int(pain_mentions or 0) >= 2
+        if corroborated:
+            # Hard veto: no amount of progress masks a flagged injury signal.
+            return round(min(r + PAIN_PENALTY, PAIN_PENALTY), 4)
+        # First low-severity mention: back off, don't ban.
+        r += PAIN_SOFT_PENALTY
     return round(r, 4)
 
 

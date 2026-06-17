@@ -22,6 +22,31 @@ _ISOLATION_MUSCLES = {"triceps", "biceps"}
 
 # Lower body muscles affected by running interference
 _LOWER_BODY_MUSCLES = {"quads", "hamstrings", "calves", "glutes"}
+RUNNING_OMEGA = 0.05   # [ENG] lower-body MRV sets shed per weekly km
+
+
+def apply_running_interference(landmarks_lc: dict, weekly_km: float,
+                               omega: float = RUNNING_OMEGA) -> dict:
+    """
+    Subtract per-muscle running interference from a LIVE allocator landmarks dict
+    (lowercase mev/mav/mrv), in place, flooring MRV at mev+1 and keeping MAV<MRV.
+
+    CONVERGENCE_AUDIT F6: the engine computed this per-muscle lower-body interference
+    but only on the discarded in-memory volume engine, so it never reached the plan.
+    This applies it to the same `landmarks_lc` the allocator actually reads. The CUT
+    is deliberately NOT applied here — the systemic recovery_budget r_phase=0.8 scalar
+    already trims cut volume, and stacking a per-muscle cut on top would double-count.
+    """
+    reduction = omega * max(0.0, float(weekly_km or 0))
+    if reduction <= 0:
+        return landmarks_lc
+    for m in _LOWER_BODY_MUSCLES:
+        lm = landmarks_lc.get(m)
+        if not lm:
+            continue
+        lm["mrv"] = max(float(lm["mev"]) + 1, round(float(lm["mrv"]) - reduction))
+        lm["mav"] = min(float(lm["mav"]), lm["mrv"] - 1)
+    return landmarks_lc
 
 # ── Canonical per-muscle landmark PRIORS (sets/wk) ────────────────────────────
 # SINGLE SOURCE OF TRUTH for MEV/MAV/MRV. Replaces the old generic {6,12,18} /

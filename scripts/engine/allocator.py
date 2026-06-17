@@ -42,9 +42,22 @@ _RELEVANCE = {
 from engine.athlete_profile import (
     MAX_ACCESSORY_SETS_PER_MUSCLE_PER_SESSION as _MAX_PER_SESSION,
     HIGH_FREQUENCY_FLOOR as _FREQ_FLOOR,
+    per_session_muscle_cap as _per_session_cap,
 )
 
 MV_FLOOR = 0.05          # [ENG] stop spending budget below this marginal value
+# Inverted-U marginal-value coefficients (doc §2) — these DEFINE the curve shape:
+# how aggressively junk volume above MAV is discounted. Named so the shape is a
+# documented knob, not a buried literal (CONVERGENCE_AUDIT F11). The MAV→MRV slope
+# is the "junk zone" discount and is the most defensible to make learnable later.
+MV_BELOW_MEV  = 1.00     # [ENG] full marginal value below MEV (threshold work)
+MV_MEV_TO_MAV = 0.80     # [ENG] productive zone, tapering MEV→MAV
+MV_MAV_TO_MRV = 0.20     # [ENG] junk zone, steep taper MAV→MRV
+# recovery_budget auto-regulation band (REPLACES deloads — gentle, continuous).
+R_RECOVERY_MIN  = 0.80   # [ENG] deep fatigue trims volume modestly, never sandbags
+R_RECOVERY_MAX  = 1.15   # [ENG] freshness flexes the budget toward MRV territory
+R_RECOVERY_GAIN = 0.02   # [ENG] sets of budget scale per unit TSB
+R_PHASE_CUT     = 0.8    # [ENG] systemic cut volume scalar (the per-muscle cut lives nowhere else)
 # Low per-session muscle volume (Nolan's philosophy) → weekly sets are delivered
 # by FREQUENCY, not by piling sets onto one day. Sourced from athlete_profile so
 # the allocator and session generator can't disagree on the cap.
@@ -65,10 +78,15 @@ def recovery_budget(landmarks: dict, tsb: float, phase: str | None) -> float:
     down. [ENG] coefficients.
     """
     mav_sum = sum(float(lm.get("mav", 0)) for lm in landmarks.values())
-    # Gentle, continuous volume auto-regulation (this REPLACES deloads). Floor at
-    # 0.8 so deep fatigue trims volume modestly, never sandbags. [ENG] — tunable.
-    r_recovery = max(0.80, min(1.15, 1.0 + 0.02 * float(tsb or 0.0)))
-    r_phase = 0.8 if (phase or "").lower() == "cut" else 1.0
+    # Gentle, continuous volume auto-regulation (this REPLACES deloads — there is no
+    # programmed deload by design). Floored so deep fatigue trims modestly, never
+    # sandbags. NOTE (F10): the budget base is Σ MAV, a population PRIOR that is not
+    # itself learned (the §6.1 recovery-stress test that would learn it is unbuilt
+    # and out of scope — Nolan's philosophy is to autoregulate via this band, not to
+    # learn a separate recovery-capacity budget). So total weekly volume tracks the
+    # prior ΣMAV scaled only by TSB and cut phase. [ENG]
+    r_recovery = max(R_RECOVERY_MIN, min(R_RECOVERY_MAX, 1.0 + R_RECOVERY_GAIN * float(tsb or 0.0)))
+    r_phase = R_PHASE_CUT if (phase or "").lower() == "cut" else 1.0
     return mav_sum * r_recovery * r_phase
 
 
@@ -94,11 +112,11 @@ def marginal_value(s: float, w: float, lm: dict) -> float:
     """Inverted-U marginal value of the next set (doc §2). 0 at/above MRV."""
     mev, mav, mrv = float(lm["mev"]), float(lm["mav"]), float(lm["mrv"])
     if s < mev:
-        base = 1.00
+        base = MV_BELOW_MEV
     elif s < mav:
-        base = 0.80 * (1 - (s - mev) / max(1e-6, mav - mev))
+        base = MV_MEV_TO_MAV * (1 - (s - mev) / max(1e-6, mav - mev))
     elif s < mrv:
-        base = 0.20 * (1 - (s - mav) / max(1e-6, mrv - mav))
+        base = MV_MAV_TO_MRV * (1 - (s - mav) / max(1e-6, mrv - mav))
     else:
         base = 0.0
     return w * base
@@ -150,10 +168,13 @@ def frequency_targets(set_targets: dict, days_available: int,
         if learned_freq.get(m):
             freq[m] = min(int(learned_freq[m]), max(1, days_available))
             continue
-        f = max(1, -(-int(s) // MAX_SETS_PER_MUSCLE_PER_SESSION))  # ceil
+        # Per-muscle session cap — higher for fast-recovery muscles so a learned high
+        # MRV (e.g. calves/side_delts 24) stays deliverable within days_available (F5).
+        cap = _per_session_cap(m)
+        f = max(1, -(-int(s) // cap))  # ceil
         # High-frequency preference: once a muscle has real weekly volume, train it
         # often (low sets each visit) rather than dumping it in one session.
-        if s >= MAX_SETS_PER_MUSCLE_PER_SESSION:
+        if s >= cap:
             f = max(f, _FREQ_FLOOR)
         elif s >= 4:
             f = max(f, 2)
