@@ -56,7 +56,7 @@ from engine.controlled_tests   import (
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS, canon
 from engine.notes_parser         import parse_workout_notes
-from engine.failure_reasons       import parse_set_failures
+from engine.failure_reasons       import parse_set_failures, format_sticking_summary
 from engine.deviation_tracker    import track_deviations
 from engine.learners             import update_exercise_value, exercise_reward
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -871,8 +871,11 @@ def main():
     # Structured set-level failure tags are higher-confidence than parsed free text —
     # merge them in (overriding the note-derived region) so a tagged bench lockout
     # reliably drives triceps-biased assistance (_pick_assistance / _WEAKNESS_ACCESSORY).
-    for _lift, _w in parse_set_failures(workout_log_rows, today_iso=TODAY.isoformat())["weakness"].items():
+    _fail_weakness = parse_set_failures(workout_log_rows, today_iso=TODAY.isoformat())["weakness"]
+    for _lift, _w in _fail_weakness.items():
         weakness[_lift] = _w
+    if (_sp := format_sticking_summary(_fail_weakness)):
+        print(_sp)
     note_flags = notes_signals["flags"] + deviations["events"][:4]
     if note_flags:
         print(f"  Notes/deviation signals: {note_flags[:6]}")

@@ -618,13 +618,16 @@ def main():
     # generator). Notes are re-parsed here (cheap, deterministic); values are read
     # from the posterior the weekly run maintains.
     from engine.notes_parser import parse_workout_notes
-    from engine.failure_reasons import parse_set_failures
+    from engine.failure_reasons import parse_set_failures, format_sticking_summary
     _notes = parse_workout_notes(workout_log_rows, today_iso=TODAY)
     _caution = _notes["caution"]
     _weakness = dict(_notes["weakness"])   # sticking points → aim assistance
     # Structured set-level failure tags (higher confidence than parsed text) override.
-    for _lift, _w in parse_set_failures(workout_log_rows, today_iso=str(TODAY))["weakness"].items():
+    _fail_weakness = parse_set_failures(workout_log_rows, today_iso=str(TODAY))["weakness"]
+    for _lift, _w in _fail_weakness.items():
         _weakness[_lift] = _w
+    if (_sp := format_sticking_summary(_fail_weakness)):
+        print(_sp)
     _ev_rows = sb_get("athlete_params", {
         "select": "meta", "param_key": "eq.exercise_values", "limit": "1"})
     _exercise_values = {

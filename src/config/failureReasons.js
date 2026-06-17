@@ -6,6 +6,12 @@
 //   • TECHNICAL (lockout / off-chest / form / grip) — a skill/leverage issue: it is
 //     EXCLUDED from the cut-calorie signal and instead routed to programming
 //     (e.g. bench lockout → triceps-biased assistance).
+//
+// A second field, set.sticking_point, is tagged on a MADE but near-failure set
+// (RIR ≤ 1). It reuses the same lift-specific keys but is PROGRAMMING ONLY — it
+// steers assistance (same weakness path) yet never touches the cut-calorie signal,
+// because a completed set is not a strength regression. Big-3 only (the only lifts
+// with region tags). See stickingPointReasons() below.
 // Keep the string keys IN SYNC with failure_reasons.FAILURE_REASONS in Python.
 
 export const FAILURE_REASONS = {
@@ -37,6 +43,16 @@ export function reasonsForExercise(name) {
     .filter(([, m]) => m.universal)
     .map(([k]) => k);
   return [...specific, ...universal];
+}
+
+// Sticking-point keys for a MADE near-failure set: only the lift-specific regions
+// (lockout / off-chest / ...). "Out of gas" and "form" carry no region, so they'd
+// be no-ops for programming and are intentionally omitted. Empty for non-big-3.
+export function stickingPointReasons(name) {
+  const lift = inferLift(name);
+  return Object.entries(FAILURE_REASONS)
+    .filter(([, m]) => lift && (m.lifts || []).includes(lift))
+    .map(([k]) => k);
 }
 
 const e1rm = (w, r) => (Number(w) || 0) * (1 + (Number(r) || 0) / 30);

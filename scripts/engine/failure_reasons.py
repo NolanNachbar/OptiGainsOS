@@ -1,6 +1,16 @@
 """
 failure_reasons.py — structured "why did this set miss?" taxonomy.
 
+Two distinct signals share one taxonomy:
+
+  • failure_reason — tagged when a set MISSES the prior best. Splits two ways (below).
+  • sticking_point — tagged on a MADE but near-failure set (RIR ≤ 1). PROGRAMMING ONLY:
+    it feeds the same `weakness` dict so a grindy-but-completed bench lockout still
+    biases triceps assistance, but it NEVER touches the nutrition signal (a set you
+    actually completed is not a strength regression and must not ease the cut). If a
+    set carries both fields it became a miss, so `failure_reason` wins and the stale
+    `sticking_point` is ignored, so one physical set is counted once.
+
 When a logged set misses the prior best for its rep range, the athlete tags WHY.
 That tag splits two ways:
 
@@ -66,12 +76,18 @@ def reason_to_region(reason: str, lift: str | None) -> str | None:
 def parse_set_failures(workout_logs: list, lookback_days: int = 14,
                        today_iso: str | None = None) -> dict:
     """
-    Scan recent logs for set-level `failure_reason` tags.
+    Scan recent logs for set-level `failure_reason` and `sticking_point` tags.
 
     Returns:
       technical_miss_lifts {lift}              — exclude these from strength_min_slope
       systemic_miss_lifts  {lift}              — genuine strength dips (keep for nutrition)
-      weakness {lift: {region, mentions, confidence}} — merge into the programming weakness
+      weakness {lift: {region, mentions, sticking_mentions, confidence}}
+                                               — merge into the programming weakness
+
+    `sticking_point` (made-set tag) only ever adds to `weakness`; it never touches the
+    miss sets, so a completed grinder steers programming but cannot ease the cut.
+    `sticking_mentions` records how many of a lift's mentions came from made grinders
+    (vs real misses) — see format_sticking_summary for the per-run instrumentation.
     """
     import datetime as _dt
     cutoff = None
@@ -86,6 +102,19 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
     systemic: set[str] = set()
     region_hits: dict[str, dict] = {}
 
+    def _add_region(lift: str | None, region: str | None,
+                    from_sticking: bool = False) -> None:
+        if not lift or not region:
+            return
+        h = region_hits.setdefault(lift, {"region": region, "mentions": 0,
+                                          "sticking_mentions": 0, "confidence": "high"})
+        # most-recent region wins; count corroborating mentions
+        h["region"] = region
+        h["mentions"] += 1
+        # how many of those came from MADE grinders vs real misses (instrumentation)
+        if from_sticking:
+            h["sticking_mentions"] += 1
+
     for log in workout_logs or []:
         d = str(log.get("log_date") or log.get("date") or "")
         if cutoff and d and d < cutoff:
@@ -94,21 +123,41 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
             lift = infer_lift(ex.get("name"))
             for s in (ex.get("sets") or []):
                 reason = s.get("failure_reason")
-                if not reason or reason not in FAILURE_REASONS:
-                    continue
-                if reason == SYSTEMIC:
+                if reason and reason in FAILURE_REASONS:
+                    if reason == SYSTEMIC:
+                        if lift:
+                            systemic.add(lift)
+                        continue
+                    # technical miss → nutrition exclusion + programming weakness
                     if lift:
-                        systemic.add(lift)
-                    continue
-                # technical
-                if lift:
-                    technical.add(lift)
-                region = reason_to_region(reason, lift)
-                if lift and region:
-                    h = region_hits.setdefault(lift, {"region": region, "mentions": 0,
-                                                       "confidence": "high"})
-                    # most-recent region wins; count corroborating mentions
-                    h["region"] = region
-                    h["mentions"] += 1
+                        technical.add(lift)
+                    _add_region(lift, reason_to_region(reason, lift))
+                    continue  # failure_reason wins; ignore any stale sticking_point
+                # made-set sticking point → programming weakness only, never nutrition
+                sticking = s.get("sticking_point")
+                if sticking and sticking in FAILURE_REASONS:
+                    _add_region(lift, reason_to_region(sticking, lift), from_sticking=True)
     return {"technical_miss_lifts": technical, "systemic_miss_lifts": systemic,
             "weakness": region_hits}
+
+
+def format_sticking_summary(weakness: dict) -> str | None:
+    """
+    One-line instrumentation: which lifts are being steered by MADE-set grinders
+    (RIR ≤ 1) vs real misses. Returns None if no sticking-point mentions exist, so
+    callers can `if (s := format_sticking_summary(w)): print(s)`.
+
+    Watch for the made-set count dominating a lift — that's the over-steer risk for a
+    high-intensity athlete (most working sets are near-failure), the cue to tighten
+    the trigger (RIR=0) or down-weight sticking mentions.
+    """
+    parts = []
+    for lift, w in sorted((weakness or {}).items()):
+        sm = int(w.get("sticking_mentions", 0))
+        if sm <= 0:
+            continue
+        parts.append(f"{lift}/{w.get('region')} {sm} of {int(w.get('mentions', 0))} "
+                     f"from made grinders")
+    if not parts:
+        return None
+    return "  Sticking points (made sets steering assistance): " + "; ".join(parts)

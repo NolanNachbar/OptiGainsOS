@@ -169,6 +169,26 @@ check("FR bench lockout aims assistance at the lockout variant",
 check("FR bench lockout adds a triceps accessory (more triceps volume)",
       _WEAKNESS_ACCESSORY.get(("bench", "lockout")) == "Triceps OH Extension")
 
+# Sticking point on a MADE (non-missed) set: feeds programming weakness, but must
+# NEVER enter the miss sets (a completed grinder cannot ease the cut).
+_sp_logs = [{"log_date": "2026-06-16", "exercises": [
+    {"name": "Bench (paused comp)", "sets": [{"weight": 305, "reps": 3, "sticking_point": "lockout"}]},
+]}]
+_sp = parse_set_failures(_sp_logs, today_iso="2026-06-17")
+check("SP made-set sticking point still steers programming (weakness has bench/lockout)",
+      _sp["weakness"].get("bench", {}).get("region") == "lockout")
+check("SP made-set sticking point never enters the cut signal (no miss-set membership)",
+      "bench" not in _sp["technical_miss_lifts"] and "bench" not in _sp["systemic_miss_lifts"])
+# Precedence: a set that carries both fields became a miss → counted once, as a miss.
+_both_logs = [{"log_date": "2026-06-16", "exercises": [
+    {"name": "Bench (paused comp)", "sets": [{"weight": 290, "reps": 2,
+                                              "failure_reason": "lockout", "sticking_point": "lockout"}]},
+]}]
+_both = parse_set_failures(_both_logs, today_iso="2026-06-17")
+check("SP both fields → failure_reason wins, stale sticking_point not double-counted",
+      "bench" in _both["technical_miss_lifts"]
+      and _both["weakness"].get("bench", {}).get("mentions") == 1)
+
 
 print()
 if all(_results):

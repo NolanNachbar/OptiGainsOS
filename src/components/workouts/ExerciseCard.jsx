@@ -10,7 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
-import { FAILURE_REASONS, reasonsForExercise, isMissedSet } from "@/config/failureReasons";
+import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -399,7 +399,15 @@ export default function ExerciseCard({
         {exercise.sets.map((set, setIndex) => {
           const isActive = !set.completed && setIndex === activeSetIndex;
           const missed = isMissedSet(set, lastPerformance);
-          const reasonKeys = (missed || set.failure_reason) ? reasonsForExercise(exercise.name) : [];
+          // Two tag modes, miss wins: a missed set tags WHY (failure_reason → nutrition +
+          // programming); a MADE near-failure set (RIR ≤ 1) tags WHERE it stalled
+          // (sticking_point → programming only). Big-3 only for sticking points.
+          const rir = set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null);
+          const hardMake = !!set.completed && !missed && rir != null && rir <= 1;
+          const tagField = (missed || set.failure_reason) ? 'failure_reason'
+            : (hardMake || set.sticking_point) ? 'sticking_point' : null;
+          const reasonKeys = tagField === 'failure_reason' ? reasonsForExercise(exercise.name)
+            : tagField === 'sticking_point' ? stickingPointReasons(exercise.name) : [];
           return (
           <div key={setIndex}>
             <div
@@ -487,21 +495,24 @@ export default function ExerciseCard({
               </Button>
             </div>
 
-            {/* Missed-set reason capture: tag WHY a set fell short of the prior best.
-                A technical reason (lockout/form/grip) is excluded from the cut-calorie
-                signal and routed to programming; "out of gas" eases the cut. */}
-            {reasonKeys.length > 0 && (
+            {/* Tag capture. failure_reason (miss): WHY it fell short — technical reasons
+                route to programming, "out of gas" eases the cut. sticking_point (made,
+                RIR ≤ 1): WHERE it stalled — programming only, never the cut signal. */}
+            {reasonKeys.length > 0 && tagField && (
               <div className="flex flex-wrap items-center gap-1.5 pb-2 pl-0.5 -mt-0.5">
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-warn">
-                  <AlertTriangle className="w-3 h-3" /> Missed — why?
+                <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] ${
+                  tagField === 'failure_reason' ? 'text-warn' : 'text-info'
+                }`}>
+                  <AlertTriangle className="w-3 h-3" />
+                  {tagField === 'failure_reason' ? 'Missed — why?' : 'Where did it stall?'}
                 </span>
                 {reasonKeys.map((rk) => {
-                  const sel = set.failure_reason === rk;
+                  const sel = set[tagField] === rk;
                   return (
                     <button
                       key={rk}
                       type="button"
-                      onClick={() => onUpdateSet(exerciseIndex, setIndex, 'failure_reason', sel ? null : rk)}
+                      onClick={() => onUpdateSet(exerciseIndex, setIndex, tagField, sel ? null : rk)}
                       className={`text-[11px] font-semibold rounded-full px-2.5 py-1 border transition-colors ${
                         sel
                           ? 'bg-brand/[0.16] border-brand/40 text-brand'
