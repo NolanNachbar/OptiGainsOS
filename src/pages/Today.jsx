@@ -69,6 +69,15 @@ export default function Today() {
 
   const fatigueData = useMemo(() => getRecoveryHeatmapData(recentLogs), [recentLogs]);
 
+  // Did the athlete already log a strength session today? Drives the
+  // PrescribedSessionCard done-state instead of nagging "Begin Session".
+  const loggedToday = useMemo(
+    () => recentLogs.some(
+      (l) => l.log_date === today && Array.isArray(l.exercises) && l.exercises.length > 0
+    ),
+    [recentLogs, today]
+  );
+
   const recovery = state?.recovery || {};
   const fatigue = state?.fatigue || {};
   const nutrition = state?.nutrition || {};
@@ -259,7 +268,7 @@ export default function Today() {
 
         {/* The day's CTA — above fuel/state on mobile so the next action is never buried */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-          <PrescribedSessionCard today={today} />
+          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
         </div>
 
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-2 space-y-3 rise-in-3">

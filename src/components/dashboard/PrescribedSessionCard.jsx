@@ -76,9 +76,13 @@ function CardioDoneToggle({ done, onToggle }) {
   );
 }
 
-export default function PrescribedSessionCard({ today }) {
+export default function PrescribedSessionCard({ today, loggedToday = false }) {
   const { prescription } = useTodayPrescription(today);
   const [liftsOpen, setLiftsOpen] = useState(false);
+  // Pre-train check-in: free-text the athlete enters before lifting. Carried
+  // into the logger as a "PRE:" session note, which notes_parser.py reads to
+  // steer future programming.
+  const [preNote, setPreNote] = useState("");
   const { isDone, toggle } = useCardioCompletions(today);
   const { match: garminMatch } = useTodayGarminCardio(today);
   if (!prescription) return null;
@@ -105,6 +109,15 @@ export default function PrescribedSessionCard({ today }) {
 
   const calItems = Object.entries(cal).filter(([, v]) => v && (v.sets || v.reps_each));
   const isRest = action === "REST";
+
+  // Carry the engine's prescribed lifts (load/reps/RIR) into the logger.
+  const prescribedExercises = strength.map((ex) => ({
+    name: ex.name,
+    sets: ex.sets,
+    reps: ex.reps ?? ex.rep_target,
+    rir: ex.rir ?? ex.rir_target,
+    targetWeight: ex.load_lbs,
+  }));
 
   // A prescribed conditioning line. Completion is driven by the real Garmin
   // activity (what you actually did); the manual toggle is only a fallback for
@@ -251,29 +264,53 @@ export default function PrescribedSessionCard({ today }) {
           </div>
         )}
 
-        {/* Act on it — carry the engine's prescribed lifts (load/reps/RIR) into
-            the logger so the athlete trains against training_prescription, not a
-            blank slate. */}
-        {!isRest && (
-          <Link
-            to="/quick-workout"
-            state={{
-              prescribedSession: {
-                title: titleText,
-                exercises: strength.map((ex) => ({
-                  name: ex.name,
-                  sets: ex.sets,
-                  reps: ex.reps ?? ex.rep_target,
-                  rir: ex.rir ?? ex.rir_target,
-                  targetWeight: ex.load_lbs,
-                })),
-              },
-            }}
-            className="cta-coral mt-3.5 w-full"
-          >
-            Begin Session
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
-          </Link>
+        {/* Already trained today — reflect it instead of nagging "Begin Session". */}
+        {!isRest && loggedToday && (
+          <div className="mt-3.5">
+            <div className="flex items-center gap-2 rounded-lg bg-ok/[0.12] px-3 py-2.5 text-sm font-semibold text-ok">
+              <Check className="w-4 h-4 shrink-0" /> Logged today — nice work.
+            </div>
+            <Link
+              to="/quick-workout"
+              state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
+              className="cta-ghost mt-2 w-full"
+            >
+              Log another session
+            </Link>
+          </div>
+        )}
+
+        {/* Pre-train check-in + Begin Session — carry the prescribed lifts AND
+            the pre-train note into the logger (saved as a PRE: session note). */}
+        {!isRest && !loggedToday && (
+          <>
+            {strength.length > 0 && (
+              <div className="mt-3.5">
+                <label htmlFor="pre-train-note" className="section-label flex items-center gap-1.5 mb-1.5">
+                  <Check className="w-3 h-3" /> Pre-train check-in
+                </label>
+                <textarea
+                  id="pre-train-note"
+                  value={preNote}
+                  onChange={(e) => setPreNote(e.target.value)}
+                  rows={2}
+                  placeholder="Anything to flag before you train? sleep, soreness, energy…"
+                  className="w-full glass-inset px-3 py-2 text-[13px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                />
+              </div>
+            )}
+            <Link
+              to="/quick-workout"
+              state={{
+                prescribedSession: { title: titleText, exercises: prescribedExercises },
+                preNote: preNote.trim() || undefined,
+              }}
+              className={`cta-coral w-full ${strength.length > 0 ? "mt-2.5" : "mt-3.5"}`}
+            >
+              Begin Session
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
+            </Link>
+          </>
         )}
     </div>
   );

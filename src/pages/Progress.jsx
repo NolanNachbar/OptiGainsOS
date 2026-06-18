@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -335,203 +336,26 @@ function MeasurementsTab() {
 }
 
 // ─── Photos Tab ────────────────────────────────────────────────────────────────
-function PhotosTab() {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const fileRef = useRef();
-  const [uploading, setUploading] = useState(false);
-  const [angle, setAngle] = useState("front");
-  const [photoDate, setPhotoDate] = useState(getTodayString());
-  const [compareA, setCompareA] = useState(null);
-  const [compareB, setCompareB] = useState(null);
-  const [confirmPhoto, setConfirmPhoto] = useState(null);
-
-  const { data: photos = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["progress-photos", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("progress_photos").select("*").eq("created_by", user.id).order("date", { ascending: false });
-      if (error) throw error;
-      // Attach signed URLs to the query data so they survive remounts
-      return await Promise.all((data || []).map(async p => {
-        const { data: urlData } = await supabase.storage.from("progress-photos").createSignedUrl(p.storage_path, 3600);
-        return { ...p, signedUrl: urlData?.signedUrl || null };
-      }));
-    },
-    enabled: !!user,
-    staleTime: 30 * 60 * 1000,
-  });
-
-  const upload = async (file) => {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${photoDate}/${angle}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("progress-photos").upload(path, file);
-      if (upErr) throw upErr;
-      const { error: dbErr } = await supabase.from("progress_photos").insert({
-        created_by: user.id, date: photoDate, storage_path: path, angle,
-      });
-      if (dbErr) throw dbErr;
-      qc.invalidateQueries({ queryKey: ["progress-photos"] });
-      toast.success("Photo saved");
-    } catch {
-      toast.error("Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const del = useMutation({
-    mutationFn: async ({ id, storage_path }) => {
-      await supabase.storage.from("progress-photos").remove([storage_path]);
-      const { error } = await supabase.from("progress_photos").delete().eq("id", id).eq("created_by", user.id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["progress-photos"] }),
-    onError: () => toast.error("Failed to delete"),
-  });
-
-  const ANGLE_COLORS = { front: "text-teal border-teal/20 bg-teal/10", side: "text-carb border-carb/20 bg-carb/10", back: "text-violet border-violet/20 bg-violet/10" };
-
-  // Group photos by date
-  const grouped = photos.reduce((acc, p) => {
-    const d = p.date;
-    if (!acc[d]) acc[d] = [];
-    acc[d].push(p);
-    return acc;
-  }, {});
-
+// Progress photos live in the canonical Physique tracker (/physique). The old
+// duplicate uploader here wrote to a separate `progress_photos` table that the
+// Physique flow never populates, so it always read empty. Link out instead.
+function PhotosLink() {
   return (
-    <div className="space-y-6">
-      {/* Upload */}
-      <Card className="glass glass-interactive">
-        <CardContent className="pt-4 pb-5 px-5">
-          <h3 className="section-label mb-4">Add Photo</h3>
-          <div className="flex gap-3 items-end flex-wrap">
-            <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-              <Input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} className="h-9 text-sm w-36" />
-            </div>
-            <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Angle</Label>
-              <Select value={angle} onValueChange={setAngle}>
-                <SelectTrigger className="h-9 text-sm w-28"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="front">Front</SelectItem>
-                  <SelectItem value="side">Side</SelectItem>
-                  <SelectItem value="back">Back</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => upload(e.target.files[0])} />
-            <Button variant="volt" size="sm" className="h-9 gap-1.5" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              <Upload className="w-3.5 h-3.5" />{uploading ? "Uploading…" : "Choose Photo"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Side-by-side comparison */}
-      {photos.length >= 2 && (
-        <Card className="glass glass-interactive">
-          <CardContent className="pt-4 pb-5 px-5">
-            <h3 className="section-label mb-4">Compare</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[compareA, compareB].map((selected, idx) => (
-                <div key={idx}>
-                  <Select
-                    value={selected?.id || ""}
-                    onValueChange={v => {
-                      const p = photos.find(x => x.id === v);
-                      if (idx === 0) setCompareA(p);
-                      else setCompareB(p);
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs mb-2"><SelectValue placeholder={`Pick photo ${idx + 1}`} /></SelectTrigger>
-                    <SelectContent>
-                      {photos.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {format(parseISO(p.date), "MMM d, yyyy")} · {p.angle}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selected?.signedUrl ? (
-                    <img src={selected.signedUrl} alt={selected.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
-                  ) : (
-                    <div className="w-full aspect-[3/4] glass-inset flex items-center justify-center">
-                      <Camera className="w-6 h-6 text-faint" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Photo grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
-          ))}
-        </div>
-      ) : isError ? (
-        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
-          <Camera className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load progress photos.</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
-        </div>
-      ) : Object.keys(grouped).length === 0 ? (
-        <div className="py-16 text-center border-2 border-dashed border-white/10 rounded-2xl">
-          <Camera className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No progress photos yet.</p>
-          <p className="text-xs font-semibold text-faint mt-1">Photos are stored privately in Supabase — only you can see them.</p>
-        </div>
-      ) : (
-        Object.entries(grouped).map(([date, datePhotos]) => (
-          <div key={date}>
-            <h3 className="section-label mb-3">
-              {format(parseISO(date), "EEEE, MMMM d, yyyy")}
-            </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {datePhotos.map(photo => (
-                <div key={photo.id} className="relative group">
-                  {photo.signedUrl ? (
-                    <img src={photo.signedUrl} alt={photo.angle} className="w-full rounded-xl object-cover aspect-[3/4] bg-charcoal" />
-                  ) : (
-                    <div className="w-full aspect-[3/4] glass-inset flex items-center justify-center">
-                      <Camera className="w-5 h-5 text-faint" />
-                    </div>
-                  )}
-                  <div className="absolute bottom-2 left-2">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border-[0.5px] ${ANGLE_COLORS[photo.angle] || ""}`}>{photo.angle}</span>
-                  </div>
-                  <button
-                    onClick={() => setConfirmPhoto(photo)}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-bad/80"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))
-      )}
-
-      <ConfirmDialog
-        open={!!confirmPhoto}
-        onOpenChange={(o) => { if (!o) setConfirmPhoto(null); }}
-        title="Delete progress photo?"
-        description="This photo will be permanently removed from storage."
-        confirmText="Delete"
-        variant="danger"
-        onConfirm={() => { del.mutate({ id: confirmPhoto.id, storage_path: confirmPhoto.storage_path }); setConfirmPhoto(null); }}
-      />
-    </div>
+    <Link
+      to="/physique"
+      className="glass glass-interactive flex items-center gap-3 px-4 py-4"
+    >
+      <div className="p-2 rounded-full bg-teal/10 shrink-0">
+        <Camera className="w-4 h-4 text-teal" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-ink">Progress photos</p>
+        <p className="text-[11.5px] font-semibold text-muted-2">
+          Open the Physique tracker — pose tracking, side-by-side compare, and body-fat trend.
+        </p>
+      </div>
+      <ArrowUpRight className="w-4 h-4 text-faint shrink-0" />
+    </Link>
   );
 }
 
@@ -621,7 +445,7 @@ export default function Progress() {
       <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
       <TabsContent value="weight"><WeightTab /></TabsContent>
       <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
-      <TabsContent value="photos"><PhotosTab /></TabsContent>
+      <TabsContent value="photos"><PhotosLink /></TabsContent>
     </Tabs>
   );
 }

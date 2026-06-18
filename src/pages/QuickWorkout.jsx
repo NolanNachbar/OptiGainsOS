@@ -84,7 +84,11 @@ export default function QuickWorkout() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
-  const [sessionNotes, setSessionNotes] = useState("");
+  // Seed session notes with the pre-train check-in entered on Today (if any),
+  // tagged PRE: so notes_parser.py attributes it to this session.
+  const [sessionNotes, setSessionNotes] = useState(
+    () => (location.state?.preNote ? `PRE: ${location.state.preNote}` : "")
+  );
   const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
 
