@@ -63,7 +63,14 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   visible to the allocator. Effort-cost should be a learnable coefficient (his real
   recoverability from failure work), not a fixed constant.
 
-### E3 [high]: Replace the hard MRV ceiling with diminishing-returns + recovery-cost
+### [DONE] E3 [high]: Replace the hard MRV ceiling with diminishing-returns + recovery-cost
+- *Done:* Greedy `allocator` now uses NET marginal value = `marginal_benefit` (small-but-
+  positive past MRV, no cliff) − convex `recovery_cost` (≈0 below MAV, rising past it,
+  scaled by `recovery_cost_mult`). Hard `>= mrv: continue` replaced by a numeric backstop
+  at `mrv·SOFT_MRV_OVERSHOOT` (1.30). MILP `_milp_solve` hard `sum<=MRV` replaced by a
+  two-tier piecewise-concave overshoot (overshoot var `o[i]`, discounted at OVERSHOOT_VALUE).
+  `plan_week`/`allocate` thread `recovery_cost_mult` (default 1.0; E9 wires the deficit/
+  fatigue value). learners.py MRV-down ratchet relabeled recovery-limited (not inverted-U).
 - *Current:* HARD cap. `allocator.allocate` stops funding a muscle at MRV
   (allocator.py:145-146); `marginal_value` returns 0 at/above MRV (allocator.py:111-122);
   the fallback MILP enforces `sum(sets) <= MRV` (program_synthesis.py:158-165). The

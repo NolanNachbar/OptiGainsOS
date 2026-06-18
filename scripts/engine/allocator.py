@@ -16,6 +16,8 @@ the learner overrides.
 """
 from __future__ import annotations
 
+import math
+
 # ── Goal → muscle relevance (landmark vocab) ──────────────────────────────────
 # [COACH] prime movers for the 315/450/500 goal lifts and the PST events.
 _RELEVANCE = {
@@ -53,6 +55,18 @@ MV_FLOOR = 0.05          # [ENG] stop spending budget below this marginal value
 MV_BELOW_MEV  = 1.00     # [ENG] full marginal value below MEV (threshold work)
 MV_MEV_TO_MAV = 0.80     # [ENG] productive zone, tapering MEV→MAV
 MV_MAV_TO_MRV = 0.20     # [ENG] junk zone, steep taper MAV→MRV
+# E3: the old MRV was a HARD ceiling — marginal value cliffed to 0 at MRV and the
+# greedy refused to fund past it. The evidence refutes that inverted-U: hypertrophy
+# keeps climbing (no reversal) to ~25 sets, so MRV is a SOFT recovery-limited
+# boundary, not a wall. Marginal benefit stays small-but-positive past MRV; a convex
+# RECOVERY COST (rising past MAV, amplified by a state multiplier) is what stops the
+# allocator — when recovery cost outweighs the shrinking benefit, not at a fixed line.
+MV_AT_MRV            = 0.06   # [ENG] small positive marginal benefit AT the soft MRV
+RECOVERY_COST_SCALE  = 0.06   # [ENG] convex recovery-cost at MRV under NEUTRAL state
+                              # (= MV_AT_MRV → neutral net≈0 at MRV: focus muscles still
+                              # fund to ~MRV, low-priority stop earlier, as before)
+SOFT_MRV_OVERSHOOT   = 1.30   # [ENG] numeric backstop ceiling; the recovery-cost term
+                              # halts funding before this, but it guards against runaway
 # recovery_budget auto-regulation band (REPLACES deloads — gentle, continuous).
 R_RECOVERY_MIN  = 0.80   # [ENG] deep fatigue trims volume modestly, never sandbags
 R_RECOVERY_MAX  = 1.15   # [ENG] freshness flexes the budget toward MRV territory
@@ -114,23 +128,50 @@ def goal_weights(goal_priorities: dict, deadline_mult: dict, muscles,
     return w
 
 
-def marginal_value(s: float, w: float, lm: dict) -> float:
-    """Inverted-U marginal value of the next set (doc §2). 0 at/above MRV."""
+def marginal_benefit(s: float, lm: dict) -> float:
+    """Diminishing-returns marginal HYPERTROPHY benefit of the next set (Core Volume
+    Model). Unlike the old inverted-U it never cliffs to 0 at MRV: past MRV it decays
+    toward 0 but stays positive (no reversal of gains within the trained range)."""
     mev, mav, mrv = float(lm["mev"]), float(lm["mav"]), float(lm["mrv"])
     if s < mev:
-        base = MV_BELOW_MEV
-    elif s < mav:
-        base = MV_MEV_TO_MAV * (1 - (s - mev) / max(1e-6, mav - mev))
-    elif s < mrv:
-        base = MV_MAV_TO_MRV * (1 - (s - mav) / max(1e-6, mrv - mav))
-    else:
-        base = 0.0
-    return w * base
+        return MV_BELOW_MEV
+    if s < mav:
+        return MV_MEV_TO_MAV * (1 - (s - mev) / max(1e-6, mav - mev))
+    if s < mrv:
+        # productive→junk taper, now landing on a small positive value at MRV
+        frac = (s - mav) / max(1e-6, mrv - mav)
+        return MV_MAV_TO_MRV + (MV_AT_MRV - MV_MAV_TO_MRV) * frac
+    # Past the soft boundary: shrinking-but-positive tail (one MAV→MRV span ≈ 1/e).
+    span = max(1e-6, mrv - mav)
+    return MV_AT_MRV * math.exp(-(s - mrv) / span)
 
 
-def allocate(budget: float, weights: dict, landmarks: dict) -> dict:
-    """Greedy: fund MEV for prioritized muscles first, then spend remaining
-    budget one set at a time on the highest marginal value, capped at MRV."""
+def recovery_cost(s: float, lm: dict, rc_mult: float = 1.0) -> float:
+    """Convex recovery cost of the next set: ~0 below MAV, rising past it, anchored so
+    that under NEUTRAL state (rc_mult=1) it equals the marginal benefit at MRV. A
+    higher rc_mult (caloric deficit / accumulated fatigue — E9) raises the cost and
+    compresses recoverable volume; a lower one (freshness) lets it climb past MRV."""
+    mav, mrv = float(lm["mav"]), float(lm["mrv"])
+    over = max(0.0, (s - mav) / max(1e-6, mrv - mav))
+    return RECOVERY_COST_SCALE * max(0.0, rc_mult) * over * over
+
+
+def marginal_value(s: float, w: float, lm: dict, rc_mult: float = 1.0) -> float:
+    """Net marginal value of the next set: priority-weighted (benefit − recovery cost).
+    Replaces the hard-MRV inverted-U (E3). The greedy stops a muscle when this drops
+    below MV_FLOOR — i.e. when recovery cost outweighs the shrinking benefit, not at a
+    fixed ceiling."""
+    return w * (marginal_benefit(s, lm) - recovery_cost(s, lm, rc_mult))
+
+
+def allocate(budget: float, weights: dict, landmarks: dict,
+             recovery_cost_mult: float = 1.0) -> dict:
+    """Greedy: fund MEV for prioritized muscles first, then spend remaining budget one
+    set at a time on the highest NET marginal value (benefit − recovery cost). E3: no
+    hard MRV cap — a muscle stops accruing volume when its net marginal value falls
+    below MV_FLOOR (recovery cost outweighs benefit), which under neutral state lands
+    near MRV and under a deficit (recovery_cost_mult>1) compresses below it. A numeric
+    backstop at MRV·SOFT_MRV_OVERSHOOT guards against runaway only."""
     muscles = [m for m in landmarks if weights.get(m, 0) > 0]
     sets = {m: 0 for m in muscles}
     B = float(budget)
@@ -142,15 +183,15 @@ def allocate(budget: float, weights: dict, landmarks: dict) -> dict:
         sets[m] += take
         B -= take
 
-    # 2. Spend the rest on marginal value.
+    # 2. Spend the rest on net marginal value (no hard ceiling; soft backstop only).
     guard = 0
     while B > 0 and guard < 5000:
         guard += 1
         best_m, best_v = None, MV_FLOOR
         for m in muscles:
-            if sets[m] >= landmarks[m]["mrv"]:
-                continue
-            v = marginal_value(sets[m], weights[m], landmarks[m])
+            if sets[m] >= landmarks[m]["mrv"] * SOFT_MRV_OVERSHOOT:
+                continue  # numeric runaway backstop, not the inverted-U wall
+            v = marginal_value(sets[m], weights[m], landmarks[m], recovery_cost_mult)
             if v > best_v:
                 best_m, best_v = m, v
         if best_m is None:
@@ -201,12 +242,16 @@ def build_run_plan(days_available: int, vdot_gap: float, pst_mult: float) -> lis
 def plan_week(landmarks: dict, tsb: float, phase: str | None,
               goal_priorities: dict, deadline_mult: dict,
               days_available: int = 6, vdot_gap: float = 0.0,
-              learned_freq: dict = None, muscle_emphasis: dict = None) -> dict:
-    """Top-level: produce the full weekly plan dict."""
+              learned_freq: dict = None, muscle_emphasis: dict = None,
+              recovery_cost_mult: float = 1.0) -> dict:
+    """Top-level: produce the full weekly plan dict. `recovery_cost_mult` (default 1.0,
+    neutral) scales the E3 recovery-cost term: >1 compresses recoverable volume under a
+    deficit / accumulated fatigue (wired by the nutrition modulator, E9), <1 lets it
+    climb when fresh."""
     muscles = list(landmarks.keys())
     B = recovery_budget(landmarks, tsb, phase)
     w = goal_weights(goal_priorities, deadline_mult, muscles, muscle_emphasis)
-    set_targets = allocate(B, w, landmarks)
+    set_targets = allocate(B, w, landmarks, recovery_cost_mult)
     freq = frequency_targets(set_targets, days_available, learned_freq)
     runs = build_run_plan(days_available, vdot_gap, deadline_mult.get("pst", 1.0))
     return {

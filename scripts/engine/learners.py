@@ -73,9 +73,13 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
             if on_cut:
                 obs_var_eff = obs_var * CUT_OBS_VAR_MULT
         elif (not responding) and soreness_avg >= SOR_HI and not on_cut:
-            # F9: never ratchet MRV DOWN on a cut — you can't separate over-MRV
+            # E3 reframe: this ratchet does NOT mean "more volume reverses gains" (the
+            # inverted-U is refuted). It is a RECOVERY-LIMITED signal — at this volume
+            # the recovery COST is too high to clear (stalling + sustained soreness), so
+            # the soft MRV boundary for THIS athlete sits a bit lower than the prior.
+            # F9: never ratchet MRV DOWN on a cut — you can't separate recovery-limited
             # from deficit masking without a deload (and there is none by design).
-            obs = weekly_sets - 1          # over MRV — stalling and sore
+            obs = weekly_sets - 1          # recovery cost too high here → soft MRV lower
 
     if obs is not None:
         K = min(var / (var + obs_var_eff), K_MAX)

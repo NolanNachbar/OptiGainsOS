@@ -74,6 +74,47 @@ check("E2 skips uncompleted sets",
       proximity_fatigue_factor([{"weight": 100, "reps": 5, "rir": 0, "completed": False}]) == 1.0)
 
 
+# ── E3: soft MRV boundary (no inverted-U cliff) + recovery-cost compression ────
+from engine.allocator import (allocate as _alloc, marginal_benefit, recovery_cost,
+                              marginal_value as _mv, SOFT_MRV_OVERSHOOT)
+_lm = {"mev": 8, "mav": 16, "mrv": 20}
+# Marginal benefit no longer cliffs to 0 at/just past MRV (no inverted-U).
+check("E3 marginal benefit stays positive just past MRV (no cliff to 0)",
+      marginal_benefit(20, _lm) > 0 and marginal_benefit(22, _lm) > 0,
+      f"@mrv {marginal_benefit(20,_lm):.3f}, @mrv+2 {marginal_benefit(22,_lm):.3f}")
+check("E3 marginal benefit still diminishes (mrv+4 < mrv)",
+      marginal_benefit(24, _lm) < marginal_benefit(20, _lm))
+# Recovery cost is ~0 below MAV and rises (convex) past it.
+check("E3 recovery cost ~0 below MAV, rises past it",
+      recovery_cost(15, _lm) == 0.0 and recovery_cost(20, _lm) > recovery_cost(18, _lm) > 0)
+check("E3 recovery cost is convex (accelerates)",
+      (recovery_cost(22, _lm) - recovery_cost(20, _lm)) >
+      (recovery_cost(20, _lm) - recovery_cost(18, _lm)))
+# A muscle in the high-volume regime stops NEAR MRV at neutral (soft, not a hard wall).
+_neutral = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=1.0)
+check("E3 neutral state funds a high-priority muscle to ~MRV (soft boundary)",
+      18 <= _neutral["quads"] <= 22, f"quads {_neutral['quads']} (mrv 20)")
+# Higher recovery-cost multiplier (deficit / fatigue — the E9 lever) compresses volume.
+_deficit = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=2.5)
+check("E3 a high recovery-cost mult compresses volume below the neutral target",
+      _deficit["quads"] < _neutral["quads"], f"neutral {_neutral['quads']} → deficit {_deficit['quads']}")
+# Numeric backstop: never funds past MRV·SOFT_MRV_OVERSHOOT even with huge budget/weight.
+_runaway = _alloc(budget=500, weights={"quads": 50.0}, landmarks={"quads": _lm}, recovery_cost_mult=0.01)
+check("E3 soft backstop ceiling is never exceeded",
+      _runaway["quads"] <= _lm["mrv"] * SOFT_MRV_OVERSHOOT,
+      f"quads {_runaway['quads']} <= {_lm['mrv']*SOFT_MRV_OVERSHOOT}")
+# MILP: hard MRV wall replaced by a soft, bounded overshoot tier.
+from engine.program_synthesis import ProgramSynthesisEngine as _PSE, SOFT_MRV_OVERSHOOT as _MILP_OVER
+_pse = _PSE(["quads", "chest"])
+_mmat = _pse.synthesize_weekly_block({"quads": 18, "chest": 18},
+                                     {"max_daily_sets": 12, "min_strength_days": 4}, 1.0)
+_weekly = _mmat.sum(axis=1)
+check("E3 MILP can fund past MRV (soft penalty, not a hard wall)", bool((_weekly > 18).any()),
+      f"weekly {list(map(int,_weekly))}")
+check("E3 MILP respects the soft overshoot ceiling",
+      bool((_weekly <= 18 * _MILP_OVER + 0.01).all()))
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]
