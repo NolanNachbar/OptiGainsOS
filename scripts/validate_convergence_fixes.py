@@ -150,6 +150,32 @@ check("E9 the deep-deficit mult compresses high-volume allocation (volume lever 
       f"neutral {_e9_neutral['quads']} → deficit {_e9_deficit['quads']}")
 
 
+# ── E4: separate strength vs hypertrophy curves (strength saturates early) ─────
+from engine.allocator import (effective_weight, strength_weights, STR_SAT_SETS,
+                              marginal_value as _mv4)
+# Below saturation the FULL blended weight applies (SBD sets credited to both goals).
+check("E4 below strength saturation the full weight applies (SBD funds both)",
+      effective_weight(STR_SAT_SETS - 1, 1.0, 0.6) == 1.0)
+# Past saturation the strength share decays; the hypertrophy/PST remainder persists.
+check("E4 strength share decays past saturation",
+      effective_weight(STR_SAT_SETS + 3, 1.0, 0.6) < 1.0 and
+      effective_weight(STR_SAT_SETS + 3, 1.0, 0.6) >= 1.0 - 0.6 - 1e-9)
+check("E4 a pure-hypertrophy muscle is unaffected (w_strength=0)",
+      effective_weight(20, 1.0, 0.0) == 1.0)
+# Two muscles, EQUAL blended weight: past saturation the strength-heavy one yields less.
+_lm4 = {"mev": 8, "mav": 16, "mrv": 20}
+_strengthy = _mv4(10, 1.0, _lm4, 1.0, 0.6)
+_hyp_pure  = _mv4(10, 1.0, _lm4, 1.0, 0.0)
+check("E4 past saturation a strength-heavy muscle yields LESS marginal value",
+      _strengthy < _hyp_pure, f"strengthy {_strengthy:.3f} < pure-hyp {_hyp_pure:.3f}")
+# strength_weights pulls only the strength relevance (quads high, biceps lower).
+_sw = strength_weights({"strength": 0.30, "hypertrophy": 0.40, "pst": 0.30},
+                       {"strength": 1.0, "hypertrophy": 1.0, "pst": 1.0},
+                       ["quads", "side_delts"])
+check("E4 strength_weights reflects strength relevance (quads >> side_delts)",
+      _sw["quads"] > _sw["side_delts"] > 0, f"quads {_sw['quads']:.3f}, side_delts {_sw['side_delts']:.3f}")
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]

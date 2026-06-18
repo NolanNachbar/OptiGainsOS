@@ -85,7 +85,14 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   is defensible but should be documented as a **recovery-limited** signal ("cost too
   high here"), NOT as "more volume reverses gains." Keep it; relabel the rationale.
 
-### E4 [med]: Separate the strength and hypertrophy volume curves
+### [DONE] E4 [med]: Separate the strength and hypertrophy volume curves
+- *Done:* The blended `w[m]` no longer drives volume all the way up. New
+  `strength_weights` exposes the strength share; `effective_weight`/`marginal_value`
+  saturate that share past `STR_SAT_SETS≈5` (exp decay), so the fast-saturating strength
+  demand is funded from the early SBD sets (credited to both goals below saturation) and
+  hypertrophy/PST carry the high-volume tail. Verified: a strength-heavy muscle yields
+  less marginal value than a pure-hypertrophy muscle of equal blended weight past
+  saturation. Strength prescription stays RIR-insensitive (volume-curve change only).
 - *Current:* a SINGLE combined weekly set target per muscle. `allocator.goal_weights`
   (allocator.py:93-108) folds strength/hypertrophy/pst into one `w[m]`; one scalar
   target per muscle (audit dim 3). SBD compounds already get FULL multi-muscle set

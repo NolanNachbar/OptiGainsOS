@@ -67,6 +67,14 @@ RECOVERY_COST_SCALE  = 0.06   # [ENG] convex recovery-cost at MRV under NEUTRAL 
                               # fund to ~MRV, low-priority stop earlier, as before)
 SOFT_MRV_OVERSHOOT   = 1.30   # [ENG] numeric backstop ceiling; the recovery-cost term
                               # halts funding before this, but it guards against runaway
+# E4: strength and hypertrophy have DIFFERENT volume curves. Strength saturates fast
+# (most of it by ~4-6 hard sets on the SBD prime movers); hypertrophy keeps climbing.
+# The SBD work supplies the cheap strength stimulus first; past saturation the strength
+# goal stops demanding more volume and only hypertrophy/PST drive sets higher. So the
+# STRENGTH share of a muscle's weight decays past STR_SAT_SETS while the rest persists —
+# strength is "funded from the SBD work, hypertrophy climbs on top," not a blended scalar.
+STR_SAT_SETS  = 5.0   # [COACH] weekly hard sets at which strength is ~saturated (learnable)
+STR_SAT_SCALE = 2.0   # [ENG] how fast the strength weight share decays past saturation
 # recovery_budget auto-regulation band (REPLACES deloads — gentle, continuous).
 R_RECOVERY_MIN  = 0.80   # [ENG] deep fatigue trims volume modestly, never sandbags
 R_RECOVERY_MAX  = 1.15   # [ENG] freshness flexes the budget toward MRV territory
@@ -130,6 +138,18 @@ def goal_weights(goal_priorities: dict, deadline_mult: dict, muscles,
     return w
 
 
+def strength_weights(goal_priorities: dict, deadline_mult: dict, muscles,
+                     muscle_emphasis: dict = None) -> dict:
+    """The STRENGTH-only share of each muscle's blended weight (same formula as
+    goal_weights but the strength goal only). E4 uses this to let the strength demand
+    saturate (~STR_SAT_SETS) while the hypertrophy/PST share keeps driving volume —
+    the SBD sets are credited toward both, strength just stops asking for MORE first."""
+    muscle_emphasis = muscle_emphasis or {}
+    rel = _RELEVANCE.get("strength", {})
+    p   = float(goal_priorities.get("strength", 0.0)) * float(deadline_mult.get("strength", 1.0))
+    return {m: p * float(rel.get(m, 0.0)) * float(muscle_emphasis.get(m, 1.0)) for m in muscles}
+
+
 def marginal_benefit(s: float, lm: dict) -> float:
     """Diminishing-returns marginal HYPERTROPHY benefit of the next set (Core Volume
     Model). Unlike the old inverted-U it never cliffs to 0 at MRV: past MRV it decays
@@ -158,22 +178,40 @@ def recovery_cost(s: float, lm: dict, rc_mult: float = 1.0) -> float:
     return RECOVERY_COST_SCALE * max(0.0, rc_mult) * over * over
 
 
-def marginal_value(s: float, w: float, lm: dict, rc_mult: float = 1.0) -> float:
+def effective_weight(s: float, w: float, w_strength: float = 0.0) -> float:
+    """E4: the strength share of the weight saturates ~STR_SAT_SETS (strength is cheap
+    and SBD-supplied); past that only the hypertrophy/PST share drives more volume. The
+    strength share decays exponentially past saturation; the remainder is unchanged.
+    Below saturation the full blended weight applies (strength + hypertrophy both want
+    the early sets — the SBD sets are credited to both)."""
+    if w_strength <= 0.0 or s < STR_SAT_SETS:
+        return w
+    decay = math.exp(-(s - STR_SAT_SETS) / STR_SAT_SCALE)
+    return max(0.0, w - w_strength * (1.0 - decay))
+
+
+def marginal_value(s: float, w: float, lm: dict, rc_mult: float = 1.0,
+                   w_strength: float = 0.0) -> float:
     """Net marginal value of the next set: priority-weighted (benefit − recovery cost).
     Replaces the hard-MRV inverted-U (E3). The greedy stops a muscle when this drops
     below MV_FLOOR — i.e. when recovery cost outweighs the shrinking benefit, not at a
-    fixed ceiling."""
-    return w * (marginal_benefit(s, lm) - recovery_cost(s, lm, rc_mult))
+    fixed ceiling. E4: the strength share of the weight saturates early (effective_weight)
+    so hypertrophy, not a blended strength scalar, carries the high-volume tail."""
+    w_eff = effective_weight(s, w, w_strength)
+    return w_eff * (marginal_benefit(s, lm) - recovery_cost(s, lm, rc_mult))
 
 
 def allocate(budget: float, weights: dict, landmarks: dict,
-             recovery_cost_mult: float = 1.0) -> dict:
+             recovery_cost_mult: float = 1.0, str_weights: dict = None) -> dict:
     """Greedy: fund MEV for prioritized muscles first, then spend remaining budget one
     set at a time on the highest NET marginal value (benefit − recovery cost). E3: no
     hard MRV cap — a muscle stops accruing volume when its net marginal value falls
     below MV_FLOOR (recovery cost outweighs benefit), which under neutral state lands
     near MRV and under a deficit (recovery_cost_mult>1) compresses below it. A numeric
-    backstop at MRV·SOFT_MRV_OVERSHOOT guards against runaway only."""
+    backstop at MRV·SOFT_MRV_OVERSHOOT guards against runaway only. E4: str_weights (the
+    per-muscle strength share) lets the strength demand saturate early so hypertrophy
+    carries the high-volume tail."""
+    str_weights = str_weights or {}
     muscles = [m for m in landmarks if weights.get(m, 0) > 0]
     sets = {m: 0 for m in muscles}
     B = float(budget)
@@ -193,7 +231,8 @@ def allocate(budget: float, weights: dict, landmarks: dict,
         for m in muscles:
             if sets[m] >= landmarks[m]["mrv"] * SOFT_MRV_OVERSHOOT:
                 continue  # numeric runaway backstop, not the inverted-U wall
-            v = marginal_value(sets[m], weights[m], landmarks[m], recovery_cost_mult)
+            v = marginal_value(sets[m], weights[m], landmarks[m], recovery_cost_mult,
+                               str_weights.get(m, 0.0))
             if v > best_v:
                 best_m, best_v = m, v
         if best_m is None:
@@ -253,7 +292,9 @@ def plan_week(landmarks: dict, tsb: float, phase: str | None,
     muscles = list(landmarks.keys())
     B = recovery_budget(landmarks, tsb, phase)
     w = goal_weights(goal_priorities, deadline_mult, muscles, muscle_emphasis)
-    set_targets = allocate(B, w, landmarks, recovery_cost_mult)
+    # E4: strength share saturates early; hypertrophy carries the high-volume tail.
+    w_str = strength_weights(goal_priorities, deadline_mult, muscles, muscle_emphasis)
+    set_targets = allocate(B, w, landmarks, recovery_cost_mult, w_str)
     freq = frequency_targets(set_targets, days_available, learned_freq)
     runs = build_run_plan(days_available, vdot_gap, deadline_mult.get("pst", 1.0))
     return {
