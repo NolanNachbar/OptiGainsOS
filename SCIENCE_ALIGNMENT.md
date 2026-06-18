@@ -105,7 +105,16 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   blended number. Strength prescription must stay RIR-insensitive (research: RIR has a
   null relationship with strength); only hypertrophy benefits from proximity to failure.
 
-### E5 [med]: Gate volume/MRV convergence to mesocycle timescales; fix Banister personalization
+### [DONE] E5 [med]: Gate volume/MRV convergence to mesocycle timescales; fix Banister personalization
+- *Done:* Added `MESOCYCLE_MIN_OBS=8` floor to BOTH MRV maturity sites (`update_mrv`,
+  `apply_mrv_observation`): a volume parameter now requires CI-separation AND ≥8 weekly
+  observations to be declared mature, so a low-`obs_var` designed test (which tightens the
+  CI in ~2 weeks) can no longer mature a slow hypertrophy signal prematurely. F1 maturity
+  still reached (~week 9). Frequency learner already gated on `FREQ_MIN_N`.
+- *Banister personalization:* already DISABLED as a Kalman consumer (CONVERGENCE_AUDIT F4,
+  documented at compute_athlete_state.py:1104-1117 — under-identified, kept persisted but
+  NOT consumed). Per E5's "or stop presenting its output as learned," that disable already
+  resolves it; re-enabling needs a structural joint state-parameter estimator (out of scope).
 - *Current:* MRV/frequency learners are Kalman-style Normal posteriors with a maturity
   gate (95% CI excludes prior; learners.py:86, K_MAX=0.45). RLS personalization of the
   Banister constants (rls_learner.py) is guarded to stay near population defaults and is

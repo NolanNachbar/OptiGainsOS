@@ -29,6 +29,13 @@ IMMATURE_HEADROOM = 4  # [ENG] F1 keystone: while a muscle is still immature, le
                        #       before maturity — beyond +headroom needs a designed test.
 CUT_OBS_VAR_MULT = 2.0  # [ENG] F9: during a cut, down-weight the (energy-deficit-masked)
                         #       e1RM signal rather than trusting it at face value
+MESOCYCLE_MIN_OBS = 8   # [ENG] C8/E5: a hypertrophy-VOLUME parameter (MRV) may not be
+                        #       declared MATURE on fewer than a mesocycle of weekly
+                        #       observations, no matter how fast its credible interval
+                        #       shrinks. The hypertrophy signal is slow and noisy, so a
+                        #       handful of strong weeks (or one low-noise designed-test
+                        #       observation) tightening the CI is premature — maturity must
+                        #       also clear ~8-12 weeks of accumulated evidence. 8 is the floor.
 
 
 def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
@@ -87,7 +94,8 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
         var  = var * (1 - K)
         n   += 1
 
-    mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
+    # E5/C8: the CI must separate from the prior AND clear a mesocycle of observations.
+    mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9)) and n >= MESOCYCLE_MIN_OBS
     # F1 keystone: while immature, let the allocator MRV ceiling drift toward a
     # climbing posterior (bounded by IMMATURE_HEADROOM) instead of pinning it at the
     # prior — otherwise funded volume, the censored observation, and MAV are all
@@ -110,7 +118,9 @@ def apply_mrv_observation(row: dict, obs: float, obs_var: float, prior_mrv: floa
     mean = mean + K * (obs - mean)
     var  = var * (1 - K)
     n   += 1
-    mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9))
+    # E5/C8: even a low-noise designed-test observation cannot mature a volume parameter
+    # before a mesocycle of evidence has accumulated.
+    mature = abs(mean - prior_mrv) > 1.96 * math.sqrt(max(var, 1e-9)) and n >= MESOCYCLE_MIN_OBS
     mrv_ceiling = round(mean) if mature else round(min(mean, prior_mrv + IMMATURE_HEADROOM))
     mrv = max(mrv_ceiling, round(mev) + 2)
     mav = max(mev + 1, min(round(mean) - 2, mrv - 1))

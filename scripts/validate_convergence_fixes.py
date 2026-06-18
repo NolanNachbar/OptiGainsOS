@@ -227,6 +227,26 @@ check("E13 lift-first ordering holds even on a combined (non-split) day",
       evaluate_two_a_day_split(4, 1.0, 0.7)[2] == LIFT_BEFORE_ENDURANCE)
 
 
+# ── E5: volume/MRV maturity gated to mesocycle timescales (C8) ────────────────
+from engine.learners import apply_mrv_observation, MESOCYCLE_MIN_OBS
+import math as _math5
+_e5_prior = 20.0
+_e5_row = {"mev": 8, "mav": 16, "mrv": 20, "mrv_mean": 20.0, "mrv_var": 9.0, "n_obs": 0}
+_matured_at = None
+_sep_at = None
+for _wk in range(1, 16):
+    _u = apply_mrv_observation(_e5_row, obs=26.0, obs_var=1.0, prior_mrv=_e5_prior)  # strong, low-noise
+    _e5_row.update(_u)
+    if _sep_at is None and abs(_u["mrv_mean"] - _e5_prior) > 1.96 * _math5.sqrt(max(_u["mrv_var"], 1e-9)):
+        _sep_at = _u["n_obs"]                       # week the CI first separated from the prior
+    if _u["mature"] and _matured_at is None:
+        _matured_at = _u["n_obs"]
+check("E5 a low-noise designed test separates the CI well before a mesocycle",
+      _sep_at is not None and _sep_at < MESOCYCLE_MIN_OBS, f"CI separated at n_obs={_sep_at}")
+check("E5 but MRV cannot MATURE before a mesocycle of observations (C8 floor)",
+      _matured_at is not None and _matured_at >= MESOCYCLE_MIN_OBS, f"matured at n_obs={_matured_at}")
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]
