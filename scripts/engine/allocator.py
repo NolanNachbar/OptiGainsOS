@@ -65,10 +65,16 @@ MAX_SETS_PER_MUSCLE_PER_SESSION = _MAX_PER_SESSION
 
 
 def default_goal_priorities(training_phase: str | None) -> dict:
-    """[ENG] BUD/S prep weights conditioning; otherwise balanced toward strength."""
+    """[ENG] BUD/S prep weights conditioning; otherwise hypertrophy-primary.
+
+    Hypertrophy is the primary objective (pursued through SBD); strength and PST
+    are real concurrent secondaries held at MAINTENANCE, not crushed. One blended
+    weight set, no rotating phase profiles — both adaptations advance together at
+    these volumes (E1; concurrent-training research 2026-06-18). The BUD/S-prep
+    branch still weights conditioning for that explicit context."""
     if (training_phase or "").lower() in ("buds_prep", "tactical"):
         return {"strength": 0.35, "hypertrophy": 0.25, "pst": 0.40}
-    return {"strength": 0.40, "hypertrophy": 0.30, "pst": 0.30}
+    return {"hypertrophy": 0.40, "strength": 0.30, "pst": 0.30}
 
 
 def recovery_budget(landmarks: dict, tsb: float, phase: str | None) -> float:

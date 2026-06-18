@@ -10,7 +10,7 @@ asserts the post-fix behavior. No DB / network — runs offline from scripts/.
 from engine.exploration_manager import ControlledExplorationManager
 from engine.learners import update_mrv, exercise_reward, OBS_VAR
 from engine.athlete_profile import clamp_rep_range, per_session_muscle_cap
-from engine.allocator import frequency_targets
+from engine.allocator import frequency_targets, default_goal_priorities
 from engine.session_generator import split_from_title, build_title
 
 PASS, FAIL = "✓ PASS", "✗ FAIL"
@@ -20,6 +20,20 @@ _results = []
 def check(name, ok, detail=""):
     _results.append(ok)
     print(f"  {PASS if ok else FAIL}  {name}" + (f"  — {detail}" if detail else ""))
+
+
+# ── E1: default goal priorities are hypertrophy-primary, PST/strength held ────
+_dgp = default_goal_priorities(None)
+check("E1 hypertrophy carries the top default weight",
+      _dgp["hypertrophy"] > _dgp["strength"] and _dgp["hypertrophy"] > _dgp["pst"],
+      f"{_dgp}")
+check("E1 PST/strength held at maintenance, not crushed (each ≥ 0.30)",
+      _dgp["pst"] >= 0.30 and _dgp["strength"] >= 0.30)
+check("E1 weights still sum to 1.0", abs(sum(_dgp.values()) - 1.0) < 1e-9)
+# BUD/S-prep branch is unchanged (conditioning-weighted for that explicit context).
+_buds = default_goal_priorities("buds_prep")
+check("E1 BUD/S-prep branch still weights conditioning (pst top)",
+      _buds["pst"] > _buds["strength"] and _buds["pst"] > _buds["hypertrophy"])
 
 
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────

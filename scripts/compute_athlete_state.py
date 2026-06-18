@@ -1300,10 +1300,10 @@ def main():
             "select": "bodyfat_estimate", "created_by": f"eq.{USER_ID}",
             "bodyfat_estimate": "not.is.null", "order": "taken_at.desc", "limit": "1"})
         _bodyfat = (_bf_rows[0].get("bodyfat_estimate") if _bf_rows else None)
-        _goal_prio = profile.get("goal_priorities") or (
-            {"strength": 0.35, "hypertrophy": 0.25, "pst": 0.40}
-            if str(profile.get("training_phase") or "").lower() in ("buds_prep", "tactical")
-            else {"strength": 0.40, "hypertrophy": 0.30, "pst": 0.30})
+        from engine.allocator import default_goal_priorities
+        # Single source of truth for the default split (E1: hypertrophy-primary).
+        _goal_prio = profile.get("goal_priorities") or default_goal_priorities(
+            profile.get("training_phase"))
         nutrition["phase_recommendation"] = recommend_phase(
             weight_trend=nutrition.get("weight_trend_lbs_per_week"),
             days_to_deadline=max(0, (datetime.date(2026, 8, 31) - datetime.date.today()).days),
