@@ -33,7 +33,8 @@ sys.path.insert(0, _SCRIPT_DIR)
 # Single source of truth for logged-sets → e1RM (canonical names, RIR-aware
 # Epley, ≤12-rep cap, competition-variant goal rollup). Imported outside the
 # numpy guard because compute_strength always runs and this needs no numpy.
-from engine.log_ingest import normalize_workout_logs, goal_histories, GOAL_TARGETS
+from engine.log_ingest import (normalize_workout_logs, goal_histories, GOAL_TARGETS,
+                               proximity_fatigue_factor, EFFORT_COST_PRIOR)
 from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
@@ -680,12 +681,18 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
 
 # ── Engine helpers ────────────────────────────────────────────────────────────
 
-def compute_training_load_tss(workout_logs: list, recovery_rows: list) -> float:
+def compute_training_load_tss(workout_logs: list, recovery_rows: list,
+                              effort_coeff: float = EFFORT_COST_PRIOR) -> float:
     """
     Compute today's training stress score (TSS) for the Kalman filter u_t input.
 
-    Priority: use Garmin's EPOC/training-load-acute delta if available.
-    Fallback: compute from workout volume normalized to 0–150 TSS scale.
+    Priority: use Garmin's EPOC/training-load-acute delta if available (a measured
+    physiological load that already reflects effort).
+    Fallback: compute from workout volume normalized to 0–150 TSS scale, then scale
+    each session by its proximity-to-failure fatigue cost (E2) so a 0-RIR session
+    accrues more Banister fatigue than the same volume left 3 in reserve. Failure is
+    preserved; its extra cost just becomes visible to the allocator. `effort_coeff`
+    is a learnable per-person prior threaded from engine params.
     """
     today_str = TODAY
 
@@ -700,12 +707,15 @@ def compute_training_load_tss(workout_logs: list, recovery_rows: list) -> float:
     for log in workout_logs:
         if log.get("log_date", "") != today_str:
             continue
+        sets = [s for ex in (log.get("exercises") or [])
+                for s in (ex.get("sets") or [])]
         session_vol = sum(
-            float(s.get("weight") or 0) * int(s.get("reps") or 0)
-            for ex in (log.get("exercises") or [])
-            for s in (ex.get("sets") or [])
+            float(s.get("weight") or 0) * int(s.get("reps") or 0) for s in sets
         )
-        today_tss += min(session_vol / 100.0, 150.0)
+        base_tss = min(session_vol / 100.0, 150.0)
+        # E2: proximity-to-failure scales fatigue AFTER the volume cap, so two
+        # equally-high-volume sessions still differ by how close to failure they ran.
+        today_tss += base_tss * proximity_fatigue_factor(sets, effort_coeff)
 
     return round(today_tss, 1)
 
@@ -1117,7 +1127,11 @@ def main():
         #     kalman.update_params(**rls.params_dict())
 
         # 3. Compute today's inputs
-        u_t       = compute_training_load_tss(workout_logs, recovery_rows)
+        # E2: effort-cost is a learnable per-athlete prior; use a stored override if
+        # one has been persisted, else the wide population prior.
+        _effort_coeff = prev.get("effort_cost_coeff")
+        _effort_coeff = float(_effort_coeff) if _effort_coeff is not None else EFFORT_COST_PRIOR
+        u_t       = compute_training_load_tss(workout_logs, recovery_rows, _effort_coeff)
         if manual_cardio_tss > 0:
             # Checked-off prescribed cardio Garmin missed — count it as load so
             # the engine and the UI agree the session happened.

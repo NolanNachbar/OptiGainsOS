@@ -11,6 +11,7 @@ from engine.exploration_manager import ControlledExplorationManager
 from engine.learners import update_mrv, exercise_reward, OBS_VAR
 from engine.athlete_profile import clamp_rep_range, per_session_muscle_cap
 from engine.allocator import frequency_targets, default_goal_priorities
+from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
 from engine.session_generator import split_from_title, build_title
 
 PASS, FAIL = "✓ PASS", "✗ FAIL"
@@ -34,6 +35,43 @@ check("E1 weights still sum to 1.0", abs(sum(_dgp.values()) - 1.0) < 1e-9)
 _buds = default_goal_priorities("buds_prep")
 check("E1 BUD/S-prep branch still weights conditioning (pst top)",
       _buds["pst"] > _buds["strength"] and _buds["pst"] > _buds["hypertrophy"])
+
+
+# ── E2: proximity-to-failure generates extra fatigue (audit: 0 vs 3 RIR equal) ─
+_fail_sets = [{"weight": 100, "reps": 5, "rir": 0}, {"weight": 100, "reps": 5, "rir": 0}]
+_easy_sets = [{"weight": 100, "reps": 5, "rir": 3}, {"weight": 100, "reps": 5, "rir": 3}]
+_f_fail = proximity_fatigue_factor(_fail_sets)
+_f_easy = proximity_fatigue_factor(_easy_sets)
+check("E2 a 0-RIR session costs more fatigue than the same volume at 3 RIR",
+      _f_fail > _f_easy, f"failure {_f_fail:.3f} > easy {_f_easy:.3f}")
+check("E2 0-RIR factor matches 1 + coeff·5", abs(_f_fail - (1 + EFFORT_COST_PRIOR * 5)) < 1e-9)
+check("E2 sets left >=5 RIR add no extra fatigue (factor 1.0)",
+      abs(proximity_fatigue_factor([{"weight": 100, "reps": 5, "rir": 5},
+                                    {"weight": 100, "reps": 5, "rir": 7}]) - 1.0) < 1e-9)
+check("E2 factor is always >= 1.0 (never discounts bar load)", _f_easy >= 1.0)
+# Missing RIR defaults to failure (matches the rest of the ingest).
+check("E2 missing RIR is treated as failure",
+      abs(proximity_fatigue_factor([{"weight": 100, "reps": 5}]) - _f_fail) < 1e-9)
+# Volume-weighted: a heavy failure set dominates a tiny easy set.
+_mixed = proximity_fatigue_factor([{"weight": 200, "reps": 5, "rir": 0},
+                                   {"weight": 10, "reps": 1, "rir": 5}])
+check("E2 factor is volume-weighted (heavy failure set dominates)", _mixed > 1.25)
+# Empty / zero-volume session is neutral.
+check("E2 empty session is neutral (factor 1.0)",
+      proximity_fatigue_factor([]) == 1.0 and
+      proximity_fatigue_factor([{"weight": 0, "reps": 0, "rir": 0}]) == 1.0)
+# Real-world data: reps arrive as range strings ("8-12") and RIR may be malformed;
+# must not crash (regression — these reach the function from the app).
+try:
+    _str = proximity_fatigue_factor([{"weight": 135, "reps": "8-12", "rir": "0"},
+                                     {"weight": 135, "reps": "10", "rir": None},
+                                     {"weight": 135, "reps": "5.0", "rir": "n/a"}])
+    check("E2 tolerates string-range reps / malformed RIR without crashing", _str > 1.0)
+except Exception as _e:
+    check("E2 tolerates string-range reps / malformed RIR without crashing", False, str(_e))
+# Uncompleted sets are skipped (don't add phantom failure fatigue).
+check("E2 skips uncompleted sets",
+      proximity_fatigue_factor([{"weight": 100, "reps": 5, "rir": 0, "completed": False}]) == 1.0)
 
 
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────

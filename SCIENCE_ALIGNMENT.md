@@ -41,7 +41,15 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   not blocks. Keep ONE blended weight set (no rotating phase profiles); both adaptations
   advance together at these volumes. See E13 for the concurrent-structure engine changes.
 
-### E2 [high]: Model the fatigue cost of training to failure
+### [DONE] E2 [high]: Model the fatigue cost of training to failure
+- *Done:* `log_ingest.proximity_fatigue_factor` scales the volume-fallback session
+  TSS (Banister fatigue channel) by proximity to failure (RIR<5 → >1.0×, 0 RIR →
+  1.30×), so a 0-RIR and a 3-RIR session no longer cost the same. Multiplier is
+  always ≥1.0 (never discounts load / raises RIR). Coeff `EFFORT_COST_PRIOR=0.06` is
+  a wide prior, override-able per athlete via the `effort_cost_coeff` engine param
+  (online learning of it deferred, consistent with RLS/cellular being persisted-but-
+  inert). Garmin EPOC path untouched (already a measured load). Tolerant of string
+  reps / malformed RIR.
 - *Current:* Fatigue accrues only from a fixed per-session TSS constant
   (`mpc_prescriber.ACTION_TSS`, STRENGTH=70, mpc_prescriber.py:91-102) fed into the
   2-state Banister model. RIR is used ONLY to back-calculate e1RM and scale load
