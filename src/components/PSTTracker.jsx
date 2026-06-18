@@ -128,7 +128,7 @@ export default function PSTTracker() {
             <Waves className="w-3.5 h-3.5 text-carb" />
             PST Performance
           </CardTitle>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowForm(true)}>
+          <Button variant="ghost" size="sm" className="min-h-[44px] gap-1 text-xs px-4" onClick={() => setShowForm(true)}>
             <Plus className="w-3.5 h-3.5" /> Log Test
           </Button>
         </div>

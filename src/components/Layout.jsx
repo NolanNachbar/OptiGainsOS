@@ -294,7 +294,7 @@ export default function Layout({ children, currentPageName }) {
         weightUnit={profile?.weight_unit || "lbs"}
       />
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md bg-charcoal-surface border-charcoal-border text-ink">
+        <DialogContent className="max-w-md glass-elevated text-ink">
           <DialogHeader>
             <DialogTitle className="text-ink">Stream Note to Second Brain</DialogTitle>
           </DialogHeader>

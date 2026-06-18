@@ -30,10 +30,7 @@ export default function ProgramCard({ program, enrollment }) {
       animate={{ opacity: 1, y: 0 }}
     >
       <Link to={`/program/${program.id}`}>
-        <div
-          className="group relative overflow-hidden glass glass-interactive border-l-2 cursor-pointer"
-          style={{ borderLeftColor: 'var(--color-brand)' }}
-        >
+        <div className="group relative overflow-hidden glass glass-interactive cursor-pointer">
           <div className="px-5 pt-4 pb-2">
             {/* Badges */}
             <div className="flex flex-wrap gap-1.5 mb-3">

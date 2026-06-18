@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getTodayString } from "@/utils/dateUtils";
+import { estimateBriefCost } from "@/utils/briefCost";
 import { format, parseISO } from "date-fns";
 
 const COACHES = [
@@ -113,10 +114,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
   const json = brief.brief_json || {};
   const generatedAt = brief.generated_at ? format(parseISO(brief.generated_at), "h:mm a") : null;
   const totalTokens = (brief.input_tokens || 0) + (brief.output_tokens || 0);
-  const cachedTokens = brief.cache_read_tokens || 0;
-  const approxCost = totalTokens > 0
-    ? `~$${((totalTokens * 0.00000025) + (cachedTokens * 0.000000025)).toFixed(4)}`
-    : null;
+  const approxCost = estimateBriefCost(brief);
 
   return (
     <Card className="glass glass-interactive">
@@ -131,13 +129,14 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
               <span className="font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-2">
+              <Button variant="ghost" size="sm" className="min-h-[40px] text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-3">
                 History
               </Button>
             </Link>
             <button
               onClick={toggleCollapse}
-              className="p-1 text-muted-2 hover:text-ink transition-colors rounded"
+              aria-label={isCollapsed ? "Expand brief" : "Collapse brief"}
+              className="p-2.5 -mr-1 text-muted-2 hover:text-ink transition-colors rounded"
             >
               {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>

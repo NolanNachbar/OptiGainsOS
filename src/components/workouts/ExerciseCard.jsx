@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, ChevronRight, Check } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
@@ -35,15 +35,7 @@ export default function ExerciseCard({
   onNudge = null, // callback when a nudge is generated
   onStartRestTimer = null, // callback to start the centralized rest timer
   showRIR = true, // whether to show RIR column
-  // Reaction props
-  currentReaction = undefined,
-  onReactionChange = null,
   onReplaceExercise = null,
-  dayFocus = "Full Body",
-  goal = "General Fitness",
-  fitnessLevel = "intermediate",
-  equipment = [],
-  currentWeekExerciseNames = [],
   allExerciseNames = [],
   workoutLogs = [],          // all historical logs for between-set coaching (Phase 3)
   coachingPhase = 1,         // from getCoachingPhase()
@@ -55,7 +47,6 @@ export default function ExerciseCard({
   const [nudgeMessage, setNudgeMessage] = useState(null);
   const [coachingChip, setCoachingChip] = useState(null); // { message, suggestedWeight, type, targetSetIndex }
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
-  const [replaceAlternatives, setReplaceAlternatives] = useState(null);
   const [customExerciseName, setCustomExerciseName] = useState("");
   const menuRef = useRef(null);
   const nudgeTimerRef = useRef(null);
@@ -278,7 +269,6 @@ export default function ExerciseCard({
                 {onReplaceExercise && (
                 <button
                   onClick={() => {
-                    setReplaceAlternatives(null);
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
@@ -377,7 +367,7 @@ export default function ExerciseCard({
         {/* Column header */}
         <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
           <span className="pl-0.5">Set</span>
-          <span>Prev</span>
+          <span>Last</span>
           <span className="text-center">{weightUnit}</span>
           <span className="text-center">Reps</span>
           {showRIR && (
@@ -398,7 +388,14 @@ export default function ExerciseCard({
         {/* Set rows */}
         {exercise.sets.map((set, setIndex) => {
           const isActive = !set.completed && setIndex === activeSetIndex;
-          const missed = isMissedSet(set, lastPerformance);
+          // Compare against what was PRESCRIBED for this set (working/daily-min
+          // weight × the exercise's rep target), not a heavier all-time best — so
+          // programmed-lighter sets that hit their target aren't flagged as misses.
+          const prescribedWeight = set.set_type === 'daily_min'
+            ? progressionTargets?.dailyMin
+            : progressionTargets?.workingWeight;
+          const prescribedReps = parseInt(programExercise?.rep_target) || 0;
+          const missed = isMissedSet(set, { weight: prescribedWeight, reps: prescribedReps });
           // Two tag modes, miss wins: a missed set tags WHY (failure_reason → nutrition +
           // programming); a MADE near-failure set (RIR ≤ 1) tags WHERE it stalled
           // (sticking_point → programming only). Big-3 only for sticking points.
@@ -429,6 +426,7 @@ export default function ExerciseCard({
               </span>
               <input
                 type="number"
+                aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
                 value={set.weight || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
                 onFocus={(e) => e.target.select()}
@@ -447,6 +445,7 @@ export default function ExerciseCard({
               />
               <input
                 type="number"
+                aria-label={`Set ${set.set_number} reps`}
                 value={set.reps || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
                 onFocus={(e) => e.target.select()}
@@ -457,6 +456,7 @@ export default function ExerciseCard({
               {showRIR && (
                 <input
                   type="number"
+                  aria-label={`Set ${set.set_number} reps in reserve`}
                   value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -581,65 +581,8 @@ export default function ExerciseCard({
             Pick an alternative for <span className="font-semibold">{exercise.name}</span>
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 mt-2">
-          {replaceAlternatives && [
-            { key: "easier", label: "Easier", icon: "↓" },
-            { key: "same",   label: "Same Level", icon: "→" },
-            { key: "harder", label: "Harder", icon: "↑" },
-          ].map(({ key, label, icon }) => {
-            const alt = replaceAlternatives[key];
-            if (!alt) return null;
-
-            const origEquip = (dbEntry?.equipment || []).map(e => String(e).toLowerCase());
-            const altEquip  = (alt.equipment || []).map(e => String(e).toLowerCase());
-            const origIsBarbell  = origEquip.some(e => e.includes('barbell'));
-            const altIsDumbbell  = altEquip.some(e => e.includes('dumbbell'));
-            const origIsDumbbell = origEquip.some(e => e.includes('dumbbell'));
-            const altIsBarbell   = altEquip.some(e => e.includes('barbell'));
-            const altIsBodyweight = altEquip.some(e => e.includes('bodyweight') || e === 'none');
-
-            let loadHint = null;
-            if (origIsBarbell && altIsDumbbell)       loadHint = 'Use ~45% of barbell load per dumbbell';
-            else if (origIsDumbbell && altIsBarbell)  loadHint = 'Combine both dumbbell loads';
-            else if (altIsBodyweight)                 loadHint = 'Bodyweight — adjust volume as needed';
-
-            const muscles = (alt.primaryMuscle || []).slice(0, 3).join(', ');
-
-            return (
-              <button
-                key={key}
-                onClick={() => {
-                  if (onReplaceExercise) onReplaceExercise(exercise.name, alt);
-                  setShowReplaceDialog(false);
-                }}
-                className="w-full text-left p-4 rounded-xl border border-charcoal-border hover:border-brand/30 hover:bg-brand/[8%] transition-all group"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-ink-muted group-hover:text-brand">{icon}</span>
-                      <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{label}</span>
-                      {alt.pattern && (
-                        <span className="text-xs text-ink-muted border border-charcoal-border rounded px-1.5 py-0.5">{alt.pattern}</span>
-                      )}
-                    </div>
-                    <p className="font-semibold text-ink group-hover:text-brand">{alt.name}</p>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-                      {muscles && <span className="text-xs text-ink-muted">{muscles}</span>}
-                      <span className="text-xs text-ink-muted">{alt.sets} × {alt.reps} · {alt.rest}s</span>
-                    </div>
-                    {loadHint && (
-                      <p className="text-xs text-warn mt-1">{loadHint}</p>
-                    )}
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-ink-muted group-hover:text-brand mt-1 flex-shrink-0" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-3 border-t border-charcoal-border pt-3">
-          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">Custom exercise</p>
+        <div className="mt-2">
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">Swap to another exercise</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox

@@ -22,6 +22,10 @@ export const FAILURE_REASONS = {
   out_of_hole: { label: "Out of the hole",   systemic: false, lifts: ["squat"] },
   off_floor:   { label: "Off the floor",     systemic: false, lifts: ["deadlift"] },
   grip:        { label: "Grip failed",       systemic: false, lifts: ["deadlift"] },
+  // Catch-all for a miss that doesn't fit the buckets above. Neither systemic
+  // (won't ease the cut — we can't claim it's a fuelling issue) nor a sticking
+  // point (no region → steers no assistance). Always offered, last.
+  other:       { label: "Other",             systemic: false, universal: true },
 };
 
 export function inferLift(name = "") {
@@ -57,12 +61,17 @@ export function stickingPointReasons(name) {
 
 const e1rm = (w, r) => (Number(w) || 0) * (1 + (Number(r) || 0) / 30);
 
-// A completed set "missed" if its estimated 1RM falls short of the prior best for
-// this movement (same rep-range proxy via Epley). Small margin avoids flagging ties.
-export function isMissedSet(set, lastPerformance) {
+// A completed set "missed" only if it fell short of what was PRESCRIBED for it —
+// not merely below a heavier prior best. Programmed-lighter work (speed/back-off/
+// rep-range days, deloads, submaximal builds) hits its target and must never be
+// flagged: comparing to the all-time best falsely nags "why did you miss?" on a
+// day you did exactly what was written. `target` is { weight, reps } for this set
+// (working weight or daily-min weight × the exercise's rep target). With no
+// prescription (free workout) a miss isn't defined, so we don't flag one.
+export function isMissedSet(set, target) {
   if (!set?.completed || !(Number(set.weight) > 0) || !(Number(set.reps) > 0)) return false;
-  const prevW = Number(lastPerformance?.lastWeight) || 0;
-  const prevR = Number(lastPerformance?.lastReps) || 0;
-  if (prevW <= 0 || prevR <= 0) return false;
-  return e1rm(set.weight, set.reps) < e1rm(prevW, prevR) * 0.99;
+  const tW = Number(target?.weight) || 0;
+  const tR = Number(target?.reps) || 0;
+  if (tW <= 0 || tR <= 0) return false;
+  return e1rm(set.weight, set.reps) < e1rm(tW, tR) * 0.99;
 }

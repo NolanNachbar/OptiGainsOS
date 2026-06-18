@@ -281,7 +281,6 @@ export default function QuickWorkout() {
       />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(140px+env(safe-area-inset-top,0px))] lg:pt-32 pb-40 lg:pb-6">
-        <VdotZonesCard className="mb-6" />
         <div ref={workoutTitleRef} className="mb-6">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -310,10 +309,14 @@ export default function QuickWorkout() {
               )}
             </Button>
           </div>
-          <p className="text-[12.5px] font-semibold text-ink-muted mt-1">
-            {prescribed ? "Logging the engine's prescribed session — targets pre-filled" : "Add exercises as you go"}
-          </p>
+          {prescribed && (
+            <p className="text-[12.5px] font-semibold text-ink-muted mt-1">
+              Logging the engine's prescribed session — targets pre-filled
+            </p>
+          )}
         </div>
+
+        <VdotZonesCard className="mb-6" />
 
         {/* Engine prescription banner */}
         {prescribed && (

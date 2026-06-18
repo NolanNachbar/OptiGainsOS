@@ -93,7 +93,7 @@ export default function RecoveryDetail() {
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)} 
-          className="mb-6 -ml-2 text-ink-muted hover:text-ink"
+          className="mb-6 -ml-2 min-h-[44px] text-ink-muted hover:text-ink"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
@@ -142,7 +142,7 @@ export default function RecoveryDetail() {
                 <div className="text-center">
                   <div className="hero-metric text-ink text-4xl mb-1">{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
-                  <div className="text-[9px] font-semibold text-faint mt-0.5">{acwrSource}</div>
+                  <div className="text-xs font-semibold text-faint mt-0.5">{acwrSource}</div>
                 </div>
                 <div className="flex-1">
                   {/* ACWR band gauge — spectrum track, white band outline 0.8–1.3, white pin */}
@@ -167,7 +167,7 @@ export default function RecoveryDetail() {
                       />
                     )}
                   </div>
-                  <div className="relative h-[12px] mt-2 font-technical text-[9px] font-bold text-faint">
+                  <div className="relative h-[12px] mt-2 font-technical text-xs font-bold text-faint">
                     <span className="absolute left-0">0.5</span>
                     <span className="absolute -translate-x-1/2" style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%` }}>0.8</span>
                     <span className="absolute -translate-x-1/2" style={{ left: `${((1.3 - 0.5) / 1.1) * 100}%` }}>1.3</span>

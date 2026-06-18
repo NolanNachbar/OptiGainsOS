@@ -158,7 +158,7 @@ export default function Today() {
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
           {(prescriptionError || stateError) && (
-            <div className="flex items-center gap-2 px-4 py-3 mb-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-semibold">
+            <div className="flex items-center gap-2 px-4 py-3 mb-3 rounded-lg bg-warn/15 border border-warn/20 text-warn text-sm font-semibold">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               Could not load today&apos;s data
             </div>

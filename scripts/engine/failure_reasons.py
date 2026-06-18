@@ -46,6 +46,10 @@ FAILURE_REASONS: dict[str, dict] = {
                     "region": {"deadlift": "floor"}},
     "grip":        {"label": "Grip failed",        "technical": True, "region": {}},
     "form":        {"label": "Form broke down",    "technical": True, "region": {}},
+    # Catch-all: a miss that fits no bucket. Neither systemic (must NOT ease the cut
+    # — we can't claim under-fuelling) nor technical (must NOT exclude the lift from
+    # the strength signal — an unexplained miss leaves the slope to speak for itself).
+    "other":       {"label": "Other",              "technical": False, "region": {}},
 }
 
 
@@ -128,10 +132,13 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
                         if lift:
                             systemic.add(lift)
                         continue
-                    # technical miss → nutrition exclusion + programming weakness
-                    if lift:
-                        technical.add(lift)
-                    _add_region(lift, reason_to_region(reason, lift))
+                    if is_technical(reason):
+                        # technical miss → nutrition exclusion + programming weakness
+                        if lift:
+                            technical.add(lift)
+                        _add_region(lift, reason_to_region(reason, lift))
+                    # else: neither systemic nor technical (e.g. "other") — make no
+                    # inference: don't exclude the lift, don't steer assistance.
                     continue  # failure_reason wins; ignore any stale sticking_point
                 # made-set sticking point → programming weakness only, never nutrition
                 sticking = s.get("sticking_point")

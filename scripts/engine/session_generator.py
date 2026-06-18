@@ -204,6 +204,12 @@ EXERCISES = [
      "sets": 3, "rep_target": "3",    "rir_target": 2, "rest_seconds": 150,
      "notes": "1-2 ct pause below the knee. Positional strength off the floor.",
      "is_assistance": True, "assist_for": "deadlift"},
+    {"name": "Barbell Hold",          "pattern": "carry", "type": "ISOLATION",
+     "fatigue_cost": 1.5, "muscles": ["forearms"],
+     "sets": 3, "rep_target": "1",    "rir_target": 1, "rest_seconds": 90,
+     "notes": "Double-overhand static hold at lockout, ~10-20s, straps OFF. Builds the "
+              "raw grip that's the real limiter on the conventional pull.",
+     "is_assistance": True, "assist_for": "deadlift"},
 
     # ── Vertical pull ──────────────────────────────────────────────────────
     {"name": "Weighted Pull-up",  "pattern": "vertical_pull", "type": "COMPOUND_AXIAL",
@@ -928,6 +934,13 @@ def _build_session(
                 dl_assist = _pick_assistance("deadlift", _dl_pool, weakness, assist_week)
                 exercises.append(
                     _assistance_slot(dl_assist, wt, intensity, readiness_z))
+            # Proactive grip work — raw double-overhand grip is the limiter on the
+            # conventional pull (straps mask it). Add a grip hold on every deadlift
+            # day, on top of the strength assistance. [COACH]
+            _grip = "Barbell Hold"
+            if (_grip in _EX_BY_NAME and canon(_grip) not in blocked
+                    and not any(e.get("name") == _grip for e in exercises)):
+                exercises.append(_assistance_slot(_grip, wt, intensity, readiness_z))
 
         # Back Squat top set → add back-off when intensity allows
         if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:

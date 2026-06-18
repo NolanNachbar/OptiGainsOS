@@ -277,7 +277,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-white/10" />
             <div>
-              <h1 className="type-display text-lg leading-none">Dashboard</h1>
+              <h1 className="type-display text-lg leading-none">Today</h1>
               <p className="text-[10px] text-muted-2 uppercase font-bold tracking-[0.08em] mt-1">
                 OptiGains Engine
                 {daysToRace != null && (
@@ -340,7 +340,7 @@ export default function Dashboard() {
           {/* Expenditure Tile */}
           <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+              <p className="section-label flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-gold" /> Expenditure
               </p>
               <div className="flex items-baseline gap-1 mt-1">
@@ -358,7 +358,7 @@ export default function Dashboard() {
           {/* Trend Weight Tile */}
           <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+              <p className="section-label flex items-center gap-1.5">
                 <Scale className="w-3.5 h-3.5 text-violet" /> Weight
               </p>
               <div className="flex items-baseline gap-1 mt-1">
@@ -367,7 +367,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-[9px] text-muted-2 leading-none">
-              <span className={`font-technical font-bold ${bodyWeightChange != null ? (bodyWeightChange > 0 ? "text-warn" : "text-ok") : "text-ink-muted"}`}>
+              <span className={`text-xs font-technical font-bold ${bodyWeightChange != null ? (bodyWeightChange > 0 ? "text-warn" : "text-ok") : "text-ink-muted"}`}>
                 {bodyWeightChange != null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)}` : "—"}
               </span>
               <span className="uppercase tracking-wider font-semibold">this wk</span>
@@ -377,7 +377,7 @@ export default function Dashboard() {
           {/* Readiness Tile → Recovery detail */}
           <Link to="/recovery" className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px] hover:bg-white/[0.07] transition-colors group">
             <div>
-              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+              <p className="section-label flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-teal" /> Readiness
                 <ArrowRight className="w-2.5 h-2.5 text-faint group-hover:text-teal ml-auto transition-colors" />
               </p>
@@ -406,19 +406,19 @@ export default function Dashboard() {
           {/* Nutrition Snapshot */}
           <div className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px]">
             <div>
-              <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] flex items-center gap-1.5">
+              <p className="section-label flex items-center gap-1.5">
                 <Apple className="w-3.5 h-3.5 text-gold" /> Intake
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{Math.round(todayMacros.calories)}</span>
-                <span className="text-[9px] text-muted-2 leading-none font-technical">/ {calorieTarget ?? "—"} kcal</span>
+                <span className="text-xs text-muted-2 leading-none font-technical">/ {calorieTarget ?? "—"} kcal</span>
               </div>
             </div>
             <div className="space-y-1.5">
               <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden w-full">
                 <div className="h-full bg-gold" style={{ width: `${Math.min(100, (todayMacros.calories / (calorieTarget || 1)) * 100)}%` }} />
               </div>
-              <div className="flex justify-between text-[9px] text-muted-2 font-technical leading-none">
+              <div className="flex justify-between text-xs text-muted-2 font-technical leading-none">
                 <span>P:<span className="text-coral">{Math.round(todayMacros.protein)}g</span></span>
                 <span>C:<span className="text-carb">{Math.round(todayMacros.carbs)}g</span></span>
                 <span>F:<span className="text-fat">{Math.round(todayMacros.fats)}g</span></span>
@@ -462,7 +462,6 @@ export default function Dashboard() {
             </div>
           ) : workoutTitle ? (
             <div className="glass glass-interactive overflow-hidden relative group">
-              <span className="absolute left-0 top-0 bottom-0 w-1 bg-brand" />
               <div className="p-5 relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -477,7 +476,7 @@ export default function Dashboard() {
                    <Dumbbell className="w-8 h-8 text-brand/30 group-hover:text-brand/50 transition-colors" />
                 </div>
                 <Link to={todayWorkoutLink}>
-                  <Button variant="energy" className="w-full h-12 text-md font-bold rounded-xl">
+                  <Button variant="energy" size="lg" className="w-full h-12 font-bold rounded-xl">
                     Start Workout <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>

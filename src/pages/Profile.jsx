@@ -253,7 +253,7 @@ export default function Profile({ hideHeader }) {
               }}
             >
               {/* Avatar card */}
-              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-4 text-center">
+              <div className="glass p-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
@@ -265,11 +265,11 @@ export default function Profile({ hideHeader }) {
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
-                      <p className="text-ink font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
-                      <p className="text-ink font-bold text-lg leading-tight">
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">
                         {profileStats.totalVolumeLbs >= 1000
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
@@ -277,7 +277,7 @@ export default function Profile({ hideHeader }) {
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
+                      <p className="text-brand font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export default function Profile({ hideHeader }) {
               </div>
 
               {/* Section nav */}
-              <nav className="rounded-xl bg-charcoal-surface border border-charcoal-border p-2 flex flex-col gap-0.5">
+              <nav className="glass-inset p-2 flex flex-col gap-0.5">
                 {NAV.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -311,7 +311,7 @@ export default function Profile({ hideHeader }) {
             {/* Mobile: hub view (profile card + nav list) */}
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
               <h1 className="text-[22px] font-bold text-ink leading-tight mb-4">Profile</h1>
-              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border p-5 text-center mb-3">
+              <div className="glass p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
                     {(formData.display_name || user.email || 'N')[0].toUpperCase()}
@@ -323,11 +323,11 @@ export default function Profile({ hideHeader }) {
                 {profileStats && (
                   <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
                     <div>
-                      <p className="text-ink font-bold text-lg leading-tight">{profileStats.totalWorkouts}</p>
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
                     </div>
                     <div>
-                      <p className="text-ink font-bold text-lg leading-tight">
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">
                         {profileStats.totalVolumeLbs >= 1000
                           ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
                           : profileStats.totalVolumeLbs}
@@ -335,13 +335,13 @@ export default function Profile({ hideHeader }) {
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-brand font-bold text-lg leading-tight">{profileStats.streak}</p>
+                      <p className="text-brand font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="rounded-xl bg-charcoal-surface border border-charcoal-border overflow-hidden">
+              <div className="glass-inset overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
                     key={id}
@@ -481,7 +481,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-ink-muted'
+                              formData.height_unit === 'in' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
                             }`}
                           >ft/in</button>
                           <button
@@ -495,7 +495,7 @@ export default function Profile({ hideHeader }) {
                               }
                             }}
                             className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'bg-charcoal-surface shadow text-brand font-medium' : 'text-ink-muted'
+                              formData.height_unit === 'cm' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
                             }`}
                           >cm</button>
                         </div>
@@ -584,14 +584,14 @@ export default function Profile({ hideHeader }) {
                     </div>
 
                     {tdee.tdee && (
-                      <div className="bg-brand/10 border border-brand/20 rounded-xl p-4">
+                      <div className="glass-inset p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-ink">{tdee.tdee} cal/day</div>
+                            <div className="text-2xl font-bold text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            tdee.method === 'adaptive' ? 'bg-leaf/10 text-leaf' : 'bg-info/10 text-info'
+                            tdee.method === 'adaptive' ? 'bg-leaf/10 text-leaf' : 'glass-inset text-ink-muted'
                           }`}>
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
@@ -703,16 +703,21 @@ export default function Profile({ hideHeader }) {
 
                     <div>
                       <Label htmlFor="timezone">Timezone</Label>
-                      <select
-                        id="timezone"
+                      <Select
                         value={formData.timezone}
-                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="mt-1 w-full rounded-md border border-charcoal-border bg-charcoal-surface text-ink text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                        onValueChange={(value) => setFormData({ ...formData, timezone: value })}
                       >
-                        {Intl.supportedValuesOf('timeZone').map(tz => (
-                          <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger id="timezone" className="mt-1">
+                          <SelectValue placeholder="Select timezone">
+                            {formData.timezone?.replace(/_/g, ' ')}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Intl.supportedValuesOf('timeZone').map(tz => (
+                            <SelectItem key={tz} value={tz}>{tz.replace(/_/g, ' ')}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <p className="text-sm text-ink-muted mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
@@ -830,7 +835,7 @@ export default function Profile({ hideHeader }) {
                       }}
                     >
                       {deleteLoading ? (
-                        <><LoadingSpinner size="small" className="mr-2" />Deleting...</>
+                        <><LoadingSpinner size="small" className="mr-2" />Deleting…</>
                       ) : (
                         <><Trash2 className="w-4 h-4 mr-2" />Yes, Delete My Account</>
                       )}
@@ -861,7 +866,7 @@ export default function Profile({ hideHeader }) {
             </Button>
             <Button type="button" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
               {updateProfileMutation.isPending ? (
-                <><LoadingSpinner size="small" className="mr-2" />Saving...</>
+                <><LoadingSpinner size="small" className="mr-2" />Saving…</>
               ) : (
                 <><Save className="w-4 h-4 mr-2" />Save Changes</>
               )}
