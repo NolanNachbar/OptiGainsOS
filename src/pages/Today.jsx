@@ -338,7 +338,7 @@ export default function Today() {
               type="button"
               onClick={() => setShowHeatmap((v) => !v)}
               aria-expanded={showHeatmap}
-              className="w-full flex items-center justify-between"
+              className="w-full flex items-center justify-between min-h-[44px]"
             >
               <SectionLabel icon={Activity}>Muscle load · 10 days</SectionLabel>
               <ChevronDown className={`w-4 h-4 text-faint transition-transform ${showHeatmap ? "rotate-180" : ""}`} />

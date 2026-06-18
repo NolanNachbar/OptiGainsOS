@@ -890,7 +890,7 @@ function InlineDayEditor({
   const cardioLibrary = libraryWorkouts.filter(w => w.focus === 'cardio' || w.focus === 'hiit');
 
   return (
-    <Card className="border-l-2 border-l-brand">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">

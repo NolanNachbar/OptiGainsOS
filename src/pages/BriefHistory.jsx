@@ -14,7 +14,7 @@ import { estimateBriefCost } from "@/utils/briefCost";
 const COACHES = [
   { key: "performance",  label: "Performance",  icon: Dumbbell,  hue: "!text-teal bg-teal/10" },
   { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-carb bg-carb/10" },
-  { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-coral bg-coral/10" },
+  { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-leaf bg-leaf/10" },
   { key: "body_comp",    label: "Body Comp",    icon: Scale,     hue: "!text-violet bg-violet/10" },
   { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-teal bg-teal/10" },
   { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-gold bg-gold/10" },

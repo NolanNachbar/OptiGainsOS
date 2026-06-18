@@ -136,14 +136,14 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               <span className="hidden sm:inline font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="min-h-[40px] text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-3">
+              <Button variant="ghost" size="sm" className="min-h-[44px] text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-3">
                 History
               </Button>
             </Link>
             <button
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expand brief" : "Collapse brief"}
-              className="p-2.5 -mr-1 text-muted-2 hover:text-ink transition-colors rounded"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 text-muted-2 hover:text-ink transition-colors rounded"
             >
               {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>
