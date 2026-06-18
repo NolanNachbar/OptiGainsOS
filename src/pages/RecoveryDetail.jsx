@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -14,14 +13,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, Activity, Moon, Zap, Brain, 
-  TrendingUp, TrendingDown, Info, Calendar
+import SubTabs from "@/components/ui/system/SubTabs";
+import {
+  Activity, Moon, Zap,
+  Info, Calendar
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 export default function RecoveryDetail() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { recoveryMetrics, isLoading, error } = useRecoveryMetrics(60); // Get 60 days for chronic load
@@ -79,6 +78,15 @@ export default function RecoveryDetail() {
   const hasSteps = chartData.some((d) => d.displaySteps != null);
   const hasSleep = chartData.some((d) => d.displaySleep > 0);
 
+  // One chart at a time inside a sub-tab strip to keep the page short.
+  const chartTabs = [
+    { id: "hrv", label: "HRV", icon: Activity },
+    { id: "steps", label: "Steps", icon: Zap },
+    { id: "sleep", label: "Sleep", icon: Moon },
+  ];
+  const firstWithData = hasHrv ? "hrv" : hasSteps ? "steps" : "sleep";
+  const [activeChart, setActiveChart] = useState(firstWithData);
+
   if (isLoading) return (
     <div className="p-4 space-y-4">
       {[1, 2, 3].map(i => (
@@ -90,22 +98,8 @@ export default function RecoveryDetail() {
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
       <div className="max-w-6xl mx-auto">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)} 
-          className="mb-6 -ml-2 min-h-[44px] text-ink-muted hover:text-ink"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-
-        <header className="mb-8">
-          <h1 className="type-display text-[26px] mb-2">Recovery & Readiness</h1>
-          <p className="text-ink-muted">Biological data flow and training load analysis.</p>
-        </header>
-
         {/* Readiness Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="md:col-span-1 glass-interactive">
             <CardHeader className="pb-2">
               <CardTitle className="section-label">Today's Readiness</CardTitle>
@@ -140,7 +134,7 @@ export default function RecoveryDetail() {
             <CardContent>
               <div className="flex items-center gap-6 py-2">
                 <div className="text-center">
-                  <div className="hero-metric text-ink text-4xl mb-1">{acwr ?? "—"}</div>
+                  <div className="font-technical text-2xl md:text-3xl font-extrabold text-ink mb-1">{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
                   <div className="text-xs font-semibold text-faint mt-0.5">{acwrSource}</div>
                 </div>
@@ -176,8 +170,7 @@ export default function RecoveryDetail() {
                 </div>
               </div>
               <p className="text-xs text-ink-muted mt-4 leading-relaxed">
-                Acute:Chronic Workload Ratio compares your last 7 days of activity to your 28-day average.
-                Staying in the optimal zone minimizes injury risk while maximizing fitness gains.
+                Compares your last 7 days of activity to your 28-day average; the shaded zone is lowest-risk.
               </p>
               {acwr != null && acwr > 1.6 && (
                 <div className="mt-2 px-3 py-2 bg-bad/10 border border-bad/20 rounded-lg text-xs text-bad">
@@ -189,7 +182,7 @@ export default function RecoveryDetail() {
         </div>
 
         {error ? (
-          <Card className="mb-8 glass">
+          <Card className="mb-6 glass">
             <CardContent className="pb-6">
               <div className="pt-6 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -212,7 +205,7 @@ export default function RecoveryDetail() {
             </CardContent>
           </Card>
         ) : (!hasHrv && !hasSteps && !hasSleep) ? (
-          <Card className="mb-8 glass">
+          <Card className="mb-6 glass">
             <CardContent className="pb-6">
               <div className="pt-6 flex items-center gap-3">
                 <Info className="w-5 h-5 text-ink-muted shrink-0" />
@@ -226,140 +219,135 @@ export default function RecoveryDetail() {
             </CardContent>
           </Card>
         ) : (
-        <>
-        {/* HRV Trend */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="glass-interactive">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="section-label">HRV Trend (ms)</CardTitle>
-              <Activity className="w-4 h-4 text-teal" />
-            </CardHeader>
-            <CardContent className={hasHrv ? "h-[250px] pt-4" : "pt-5 pb-5"}>
-              {!hasHrv ? (
-                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
-                  <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
-                </div>
-              ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                  <XAxis
-                    dataKey="formattedDate"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
-                  />
-                  <YAxis
-                    hide
-                    domain={['dataMin - 10', 'dataMax + 10']}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
-                    itemStyle={{ color: 'var(--text-primary)' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="displayHrv"
-                    stroke="var(--hue-teal-2)"
-                    strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: 'var(--hue-teal-2)', strokeWidth: 0 }}
-                    activeDot={{ r: 5.5, strokeWidth: 0 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+        <div className="mb-6">
+          <Card className="glass-interactive overflow-hidden">
+            <SubTabs
+              tabs={chartTabs}
+              active={activeChart}
+              onChange={setActiveChart}
+              sticky={false}
+              showOnDesktop
+            />
 
-          <Card className="glass-interactive">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="section-label">Step Count</CardTitle>
-              <Zap className="w-4 h-4 text-leaf" />
-            </CardHeader>
-            <CardContent className={hasSteps ? "h-[250px] pt-4" : "pt-5 pb-5"}>
-              {!hasSteps ? (
-                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
-                  <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
-                </div>
-              ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                  <XAxis
-                    dataKey="formattedDate"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
-                  />
-                  <YAxis hide />
-                  <Tooltip
-                    cursor={{ fill: 'var(--color-border-soft)' }}
-                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
-                  />
-                  <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
-                    {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(var(--hue-green-rgb) / 0.25)'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              )}
-            </CardContent>
+            {/* HRV Trend */}
+            {activeChart === "hrv" && (
+              <CardContent className={hasHrv ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+                {!hasHrv ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
+                    <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
+                  </div>
+                ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData.slice(-14)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
+                    <XAxis
+                      dataKey="formattedDate"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
+                    />
+                    <YAxis
+                      hide
+                      domain={['dataMin - 10', 'dataMax + 10']}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
+                      itemStyle={{ color: 'var(--text-primary)' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="displayHrv"
+                      stroke="var(--hue-teal-2)"
+                      strokeWidth={2.5}
+                      dot={{ r: 3.5, fill: 'var(--hue-teal-2)', strokeWidth: 0 }}
+                      activeDot={{ r: 5.5, strokeWidth: 0 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                )}
+              </CardContent>
+            )}
+
+            {/* Step Count */}
+            {activeChart === "steps" && (
+              <CardContent className={hasSteps ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+                {!hasSteps ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
+                    <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
+                  </div>
+                ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.slice(-14)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
+                    <XAxis
+                      dataKey="formattedDate"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
+                    />
+                    <YAxis hide />
+                    <Tooltip
+                      cursor={{ fill: 'var(--color-border-soft)' }}
+                      contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
+                    />
+                    <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
+                      {chartData.slice(-14).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(var(--hue-green-rgb) / 0.25)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                )}
+              </CardContent>
+            )}
+
+            {/* Sleep Duration */}
+            {activeChart === "sleep" && (
+              <CardContent className={hasSleep ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+                {!hasSleep ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
+                    <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
+                  </div>
+                ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.slice(-14)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
+                    <XAxis
+                      dataKey="formattedDate"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
+                      domain={[0, 12]}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'var(--color-border-soft)' }}
+                      contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
+                    />
+                    <ReferenceLine y={7.5} stroke="var(--text-faint)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }} />
+                    <Bar dataKey="displaySleep" radius={[4, 4, 0, 0]}>
+                      {chartData.slice(-14).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? 'var(--hue-violet)' : 'rgba(var(--hue-violet-rgb) / 0.30)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                )}
+              </CardContent>
+            )}
           </Card>
         </div>
-
-        {/* Sleep Detail */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
-          <Card className="glass-interactive">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="section-label">Sleep Duration (Hours)</CardTitle>
-              <Moon className="w-4 h-4 text-violet" />
-            </CardHeader>
-            <CardContent className={hasSleep ? "h-[250px] pt-4" : "pt-5 pb-5"}>
-              {!hasSleep ? (
-                <div className="flex items-center gap-2 text-xs font-semibold text-muted-2">
-                  <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
-                </div>
-              ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.slice(-14)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                  <XAxis
-                    dataKey="formattedDate"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }}
-                    domain={[0, 12]}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'var(--color-border-soft)' }}
-                    contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
-                  />
-                  <ReferenceLine y={7.5} stroke="var(--text-faint)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }} />
-                  <Bar dataKey="displaySleep" radius={[4, 4, 0, 0]}>
-                    {chartData.slice(-14).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.displaySleep >= 7.5 ? 'var(--hue-violet)' : 'rgba(var(--hue-violet-rgb) / 0.30)'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        </>
         )}
 
         {/* Endurance TSS — only rendered once the pipeline actually populates
             tss_run/tss_cycling/tss_swim. Previously this showed a permanent
             row of zeros because garmin-sync never writes these fields. */}
         {['swim', 'cycling', 'run'].some((s) => Number(latest?.[`tss_${s}`]) > 0) && (
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-xl font-extrabold mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-carb" />
               Endurance Stress (TSS)

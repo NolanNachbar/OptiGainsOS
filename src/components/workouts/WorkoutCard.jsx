@@ -48,15 +48,17 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
       transition={{ duration: 0.2 }}
     >
       <div className="group relative overflow-hidden glass glass-interactive">
-        <div className="pb-2 pt-4 px-6">
+        <div className="pb-2 pt-4 px-4 md:px-6">
           <div className="flex justify-between items-start gap-2">
             <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-              <Badge
-                variant="outline"
-                className="text-xs capitalize text-ink-muted border-charcoal-border border-charcoal-border"
-              >
-                {workout.focus}
-              </Badge>
+              {workout.focus && workout.focus !== "strength" && (
+                <Badge
+                  variant="outline"
+                  className="text-xs capitalize text-ink-muted border-charcoal-border"
+                >
+                  {workout.focus}
+                </Badge>
+              )}
               {workout.folder && (
                 <Badge
                   variant="slate"
@@ -120,7 +122,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           )}
         </div>
 
-        <div className="pt-0 pb-4 px-6 space-y-3">
+        <div className="pt-0 pb-4 px-4 md:px-6 space-y-3">
           {/* Stats row */}
           <div className="flex">
             {workout.duration_minutes && (
@@ -138,7 +140,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           {/* View Details */}
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
-              variant="primary"
+              variant="dim"
               className="w-full text-sm"
             >
               View Details

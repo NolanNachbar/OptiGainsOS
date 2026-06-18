@@ -66,6 +66,8 @@ export default function FoodTracker() {
   const [showFoodFormatGuide, setShowFoodFormatGuide] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [showRecipesPanel, setShowRecipesPanel] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [goalsExpanded, setGoalsExpanded] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('templates');
   const [mealTemplateType, setMealTemplateType] = useState("lunch");
   const [mealItems, setMealItems] = useState([]);
@@ -736,14 +738,15 @@ const handleSaveMealTemplate = () => {
 
 
   return (
-    <div className="bg-charcoal text-ink min-h-screen">
+    <div className="text-ink">
 
       {/* Date navigation + action bar */}
       <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-charcoal/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => changeDate(-1)}
-            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
+            aria-label="Previous day"
+            className="flex items-center justify-center w-11 h-11 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -751,17 +754,18 @@ const handleSaveMealTemplate = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-none text-sm font-semibold text-ink focus:outline-none cursor-pointer font-mono"
+            className="h-11 bg-transparent border-none text-sm font-semibold text-ink focus:outline-none cursor-pointer font-mono"
           />
           <button
             onClick={() => changeDate(1)}
-            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
+            aria-label="Next day"
+            className="flex items-center justify-center w-11 h-11 rounded-lg text-ink-muted hover:text-ink hover:bg-charcoal-surface transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-            className="text-xs text-ink-muted hover:text-brand transition-colors ml-1 hidden sm:block"
+            className="text-xs font-bold text-ink-muted hover:text-brand transition-colors ml-1 px-2 h-11 hidden sm:flex items-center"
           >
             Today
           </button>
@@ -876,7 +880,7 @@ const handleSaveMealTemplate = () => {
                 { label: 'Search', icon: Search, onClick: () => { resetForm(); setShowAddDialog(true); } },
                 { label: 'Barcode', icon: Camera, onClick: () => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); } },
                 { label: 'Recipes', icon: BookOpen, onClick: () => setShowRecipesPanel(true) },
-                { label: 'Templates', icon: Bookmark, onClick: () => { setSidebarTab('templates'); document.getElementById('fuel-templates-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+                { label: 'Templates', icon: Bookmark, onClick: () => { setSidebarTab('templates'); setShowMoreSheet(true); } },
               ].map(({ label, icon: Icon, onClick }) => (
                 <button
                   key={label}
@@ -1077,47 +1081,58 @@ const handleSaveMealTemplate = () => {
               </div>
             )}
 
-            {/* Mobile: sidebar content shown below meals */}
-            <div id="fuel-templates-panel" className="lg:hidden space-y-4 pt-2">
-              {/* Goals card */}
-              <div className="glass p-4">
-                <div className="flex items-center justify-between mb-4">
+            {/* Mobile: goals breakdown (tap-to-expand) + entry to More sheet */}
+            <div className="lg:hidden space-y-3.5 pt-1">
+              {/* Goals card — tap header to reveal the macro breakdown */}
+              <div className="glass overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setGoalsExpanded(v => !v)}
+                  aria-expanded={goalsExpanded}
+                  className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors"
+                >
                   <span className="section-label">Nutrition goals</span>
-                  <button onClick={() => setShowGoalsModal(true)} className="text-ink-muted hover:text-ink transition-colors">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                  {[
-                    { label: 'Calories', value: targets.calories, unit: 'kcal' },
-                    { label: 'Protein', value: targets.protein, unit: 'g' },
-                    { label: 'Carbs', value: targets.carbs, unit: 'g' },
-                    { label: 'Fats', value: targets.fats, unit: 'g' },
-                  ].map(({ label, value, unit }) => (
-                    <div key={label} className="flex justify-between items-center">
-                      <span className="text-xs text-ink-muted uppercase font-bold">{label}</span>
-                      <span className="font-technical text-xs font-bold text-ink">{value}<span className="opacity-50 font-normal ml-0.5 text-xs">{unit}</span></span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-technical text-xs font-bold text-ink">{targets.calories}<span className="opacity-50 font-normal ml-0.5">kcal</span></span>
+                    {goalsExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
+                  </div>
+                </button>
+                {goalsExpanded && (
+                  <div className="px-4 pb-4 pt-1 border-t hairline">
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-3">
+                      {[
+                        { label: 'Calories', value: targets.calories, unit: 'kcal' },
+                        { label: 'Protein', value: targets.protein, unit: 'g' },
+                        { label: 'Carbs', value: targets.carbs, unit: 'g' },
+                        { label: 'Fats', value: targets.fats, unit: 'g' },
+                      ].map(({ label, value, unit }) => (
+                        <div key={label} className="flex justify-between items-center">
+                          <span className="text-xs text-ink-muted uppercase font-bold">{label}</span>
+                          <span className="font-technical text-xs font-bold text-ink">{value}<span className="opacity-50 font-normal ml-0.5 text-xs">{unit}</span></span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <button
+                      onClick={() => setShowGoalsModal(true)}
+                      className="mt-3 w-full min-h-[44px] py-2 border border-dashed border-charcoal-border rounded-lg text-xs font-bold uppercase tracking-widest text-ink-muted hover:text-brand hover:border-brand/40 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit Goals
+                    </button>
+                  </div>
+                )}
               </div>
-              <MealTemplates compact />
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold tracking-widest text-ink-muted uppercase">Recipes</span>
-                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-xs font-bold text-brand uppercase tracking-widest">
-                    <Plus className="w-3 h-3" />New
-                  </button>
-                </div>
-                <RecipeBuilder compact showCreateDialog={showNewRecipe} onCreateDialogChange={setShowNewRecipe} />
-              </div>
-              <MealPlanIdeas
-                allFoodEntries={allFoodEntries}
-                calorieGoal={targets.calories}
-                proteinGoal={targets.protein}
-                carbsGoal={targets.carbs}
-                fatsGoal={targets.fats}
-              />
+
+              {/* Tail content (Templates / Cut apply / Recipes / Meal-plan ideas) tucked behind a sheet */}
+              <button
+                type="button"
+                onClick={() => setShowMoreSheet(true)}
+                className="w-full min-h-[44px] glass glass-interactive flex items-center justify-between px-4 py-3 text-ink-muted hover:text-ink transition-colors"
+              >
+                <span className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase">
+                  <BookOpen className="w-3.5 h-3.5" /> Templates, recipes &amp; ideas
+                </span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
           </div>
@@ -1281,7 +1296,7 @@ const handleSaveMealTemplate = () => {
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="border-none bg-transparent focus:outline-none w-full"
+                      className="h-11 border-none bg-transparent focus:outline-none w-full text-sm font-semibold text-ink font-mono"
                     />
                   </div>
                 </div>
@@ -1775,6 +1790,58 @@ const handleSaveMealTemplate = () => {
             {/* Sheet content */}
             <div className="flex-1 overflow-y-auto p-5">
               <RecipeBuilder hideHeader showCreateDialog={showNewRecipe} onCreateDialogChange={setShowNewRecipe} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ─── Mobile "More" sheet: Templates · Recipes · Meal-plan ideas ─── */}
+      {showMoreSheet && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[9999] bg-black/40 lg:hidden"
+            onClick={() => setShowMoreSheet(false)}
+          />
+          {/* Sheet */}
+          <div
+            className="fixed right-0 z-[10000] flex flex-col bg-charcoal-surface border-l border-charcoal-border shadow-2xl lg:hidden"
+            style={{
+              top: 'var(--layout-header-height, 0px)',
+              bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+              width: 'min(520px, 100vw)',
+            }}
+          >
+            {/* Sheet header */}
+            <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-charcoal-border">
+              <h2 className="text-base font-semibold text-ink">Templates &amp; Recipes</h2>
+              <button
+                onClick={() => setShowMoreSheet(false)}
+                aria-label="Close"
+                className="flex items-center justify-center w-11 h-11 -mr-2 text-ink-muted hover:text-ink transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Sheet content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <MealTemplates compact />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold tracking-widest text-ink-muted uppercase">Recipes</span>
+                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-xs font-bold text-brand uppercase tracking-widest min-h-[44px] px-1">
+                    <Plus className="w-3 h-3" />New
+                  </button>
+                </div>
+                <RecipeBuilder compact showCreateDialog={showNewRecipe} onCreateDialogChange={setShowNewRecipe} />
+              </div>
+              <MealPlanIdeas
+                allFoodEntries={allFoodEntries}
+                calorieGoal={targets.calories}
+                proteinGoal={targets.protein}
+                carbsGoal={targets.carbs}
+                fatsGoal={targets.fats}
+              />
             </div>
           </div>
         </>

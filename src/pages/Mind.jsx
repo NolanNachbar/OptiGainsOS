@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SubTabs } from "@/components/ui/system";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -48,7 +48,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet p-3 -m-1.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
+          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet p-3.5 -m-2"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -85,6 +85,7 @@ function ReadingTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showAllRest, setShowAllRest] = useState(false);
   const [form, setForm] = useState({ title: "", author: "", category: "technical", status: "want-to-read", rating: 0, notes: "" });
 
   const { data: books = [], isLoading, isError, refetch } = useQuery({
@@ -178,16 +179,25 @@ function ReadingTab() {
         </div>
       )}
 
-      {rest.length > 0 && (
-        <div>
-          <h3 className="section-label mb-3">All Books</h3>
-          <div className="space-y-3">
-            {[...rest].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status)).map(book => (
-              <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
-            ))}
+      {rest.length > 0 && (() => {
+        const sortedRest = [...rest].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status));
+        const visibleRest = showAllRest ? sortedRest : sortedRest.slice(0, 6);
+        return (
+          <div>
+            <h3 className="section-label mb-3">All Books</h3>
+            <div className="space-y-3">
+              {visibleRest.map(book => (
+                <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
+              ))}
+            </div>
+            {sortedRest.length > 6 && (
+              <Button variant="ghost" size="sm" className="w-full mt-3" onClick={() => setShowAllRest(v => !v)}>
+                {showAllRest ? "Show less" : `Show ${sortedRest.length - 6} more`}
+              </Button>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {!isLoading && !isError && books.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
@@ -268,10 +278,10 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
           {book.author && <p className="text-xs font-semibold text-muted-2">{book.author}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => onEdit(book)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center text-muted-2 hover:text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
+          <button onClick={() => onEdit(book)} className="min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center text-muted-2 hover:text-ink opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(book.id)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center text-muted-2 hover:text-bad opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
+          <button onClick={() => onDelete(book.id)} className="min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center text-muted-2 hover:text-bad opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -428,7 +438,7 @@ function StudyTab() {
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
-              <button onClick={() => setConfirmDelete(log.id)} className="min-w-10 min-h-10 -m-1 inline-flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+              <button onClick={() => setConfirmDelete(log.id)} className="min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -455,6 +465,7 @@ function SkillsTab() {
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showAllSkills, setShowAllSkills] = useState(false);
   const [form, setForm] = useState({ name: "", category: "", level: 3 });
 
   const { data: skills = [], isLoading, isError, refetch } = useQuery({
@@ -531,7 +542,7 @@ function SkillsTab() {
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {skills.map(skill => {
+        {(showAllSkills ? skills : skills.slice(0, 6)).map(skill => {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
@@ -541,7 +552,7 @@ function SkillsTab() {
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
                   {skill.category && <p className="text-[10px] font-semibold text-muted-2">{skill.category}</p>}
                 </div>
-                <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all min-w-10 min-h-10 -m-1 inline-flex items-center justify-center">
+                <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -550,7 +561,7 @@ function SkillsTab() {
                   <button
                     key={n}
                     onClick={() => updateLevel.mutate({ id: skill.id, level: n })}
-                    className="min-w-10 min-h-10 -m-2.5 inline-flex items-center justify-center rounded-full"
+                    className="min-w-11 min-h-11 -m-2.5 inline-flex items-center justify-center rounded-full"
                   >
                     <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
                   </button>
@@ -574,6 +585,12 @@ function SkillsTab() {
           );
         })}
       </div>
+
+      {skills.length > 6 && (
+        <Button variant="ghost" size="sm" className="w-full" onClick={() => setShowAllSkills(v => !v)}>
+          {showAllSkills ? "Show less" : `Show ${skills.length - 6} more`}
+        </Button>
+      )}
 
       {!isLoading && !isError && skills.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
@@ -678,7 +695,15 @@ function CaptureTab() {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
+const MIND_TABS = [
+  { id: "capture", label: "Capture", icon: Zap },
+  { id: "reading", label: "Reading", icon: BookOpen },
+  { id: "study", label: "Study", icon: GraduationCap },
+  { id: "skills", label: "Skills", icon: Layers },
+];
+
 export default function Mind({ hideHeader }) {
+  const [activeTab, setActiveTab] = useState("capture");
   return (
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
       <div className="max-w-3xl mx-auto">
@@ -693,18 +718,18 @@ export default function Mind({ hideHeader }) {
           </header>
         )}
 
-        <Tabs defaultValue="capture">
-          <TabsList className="mb-6">
-            <TabsTrigger value="capture">Capture</TabsTrigger>
-            <TabsTrigger value="reading">Reading</TabsTrigger>
-            <TabsTrigger value="study">Study</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
-          </TabsList>
-          <TabsContent value="capture"><CaptureTab /></TabsContent>
-          <TabsContent value="reading"><ReadingTab /></TabsContent>
-          <TabsContent value="study"><StudyTab /></TabsContent>
-          <TabsContent value="skills"><SkillsTab /></TabsContent>
-        </Tabs>
+        <SubTabs
+          tabs={MIND_TABS}
+          active={activeTab}
+          onChange={setActiveTab}
+          sticky={false}
+          showOnDesktop
+          className={`mb-6 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
+        />
+        {activeTab === "capture" && <CaptureTab />}
+        {activeTab === "reading" && <ReadingTab />}
+        {activeTab === "study" && <StudyTab />}
+        {activeTab === "skills" && <SkillsTab />}
       </div>
     </div>
   );

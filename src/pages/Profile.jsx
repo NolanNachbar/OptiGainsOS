@@ -36,6 +36,31 @@ function SectionDivider() {
   return <div className="border-t border-charcoal-border my-6" />;
 }
 
+// Compact volume formatter: >=1e6 rolls to one-decimal M (1.3M), >=1000 to k, else raw.
+function formatVol(n) {
+  const v = Number(n) || 0;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1000) return `${Math.round(v / 1000)}k`;
+  return `${v}`;
+}
+
+// Coerce the dirty-comparison-relevant numeric fields so string/number drift never reads as dirty.
+function normalizeFormData(f) {
+  const numOrEmpty = (x) => (x === '' || x === null || x === undefined ? '' : Number(x));
+  return {
+    ...f,
+    age: numOrEmpty(f.age),
+    height_cm: numOrEmpty(f.height_cm),
+    current_weight: numOrEmpty(f.current_weight),
+    daily_calorie_goal: numOrEmpty(f.daily_calorie_goal),
+    daily_protein_goal: numOrEmpty(f.daily_protein_goal),
+    daily_carbs_goal: numOrEmpty(f.daily_carbs_goal),
+    daily_fats_goal: numOrEmpty(f.daily_fats_goal),
+    tdee_override: numOrEmpty(f.tdee_override),
+    checkin_day: numOrEmpty(f.checkin_day),
+  };
+}
+
 export default function Profile({ hideHeader }) {
   const navigate = useNavigate();
   const { user, deleteAccount, signOut } = useAuth();
@@ -142,7 +167,7 @@ export default function Profile({ hideHeader }) {
       timezone:     p.timezone     || Intl.DateTimeFormat().resolvedOptions().timeZone,
     };
     setFormData(initial);
-    savedFormDataRef.current = initial;
+    savedFormDataRef.current = structuredClone(normalizeFormData(initial));
     if (p.height_unit === 'in' && p.height_cm) {
       const totalInches = p.height_cm;
       setHeightFeet(Math.floor(totalInches / 12).toString());
@@ -152,7 +177,7 @@ export default function Profile({ hideHeader }) {
 
   const isDirty = useMemo(() => {
     if (!savedFormDataRef.current) return false;
-    return JSON.stringify(formData) !== JSON.stringify(savedFormDataRef.current);
+    return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 
   const updateProfileMutation = useMutation({
@@ -172,7 +197,7 @@ export default function Profile({ hideHeader }) {
       }
     },
     onSuccess: (_, { formSnapshot, weightToLog }) => {
-      savedFormDataRef.current = { ...formSnapshot };
+      savedFormDataRef.current = structuredClone(normalizeFormData(formSnapshot));
       invalidateProfile(queryClient);
       queryClient.invalidateQueries({ queryKey: ['athlete-state-nutrition'] });
       if (weightToLog) invalidateBodyWeight(queryClient);
@@ -256,7 +281,7 @@ export default function Profile({ hideHeader }) {
               <div className="glass p-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
-                    {(formData.display_name || user.email || 'N')[0].toUpperCase()}
+                    {initials}
                   </span>
                 </div>
                 <p className="text-ink font-semibold mt-3 text-sm leading-tight">
@@ -270,14 +295,12 @@ export default function Profile({ hideHeader }) {
                     </div>
                     <div>
                       <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {profileStats.totalVolumeLbs >= 1000
-                          ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
-                          : profileStats.totalVolumeLbs}
+                        {formatVol(profileStats.totalVolumeLbs)}
                       </p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-brand font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
+                      <p className="text-leaf font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
@@ -314,7 +337,7 @@ export default function Profile({ hideHeader }) {
               <div className="glass p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
-                    {(formData.display_name || user.email || 'N')[0].toUpperCase()}
+                    {initials}
                   </span>
                 </div>
                 <p className="text-ink font-semibold mt-3 text-sm leading-tight">
@@ -328,14 +351,12 @@ export default function Profile({ hideHeader }) {
                     </div>
                     <div>
                       <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {profileStats.totalVolumeLbs >= 1000
-                          ? `${(profileStats.totalVolumeLbs / 1000).toFixed(0)}k`
-                          : profileStats.totalVolumeLbs}
+                        {formatVol(profileStats.totalVolumeLbs)}
                       </p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-brand font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
+                      <p className="text-leaf font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>

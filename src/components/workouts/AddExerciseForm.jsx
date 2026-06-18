@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Plus, X } from "lucide-react";
@@ -42,9 +41,8 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   }
 
   return (
-    <Card className="border border-dashed border-white/[0.14] mb-28 lg:mb-0">
-      <CardContent className="pt-4 pb-4">
-        <div className="flex gap-2">
+    <div className="glass rounded-2xl border border-dashed border-white/[0.14] px-4 pt-4 pb-4 mb-28 lg:mb-0">
+      <div className="flex gap-2">
           <div className="flex-1">
             <Combobox
               value={exerciseName}
@@ -68,7 +66,6 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

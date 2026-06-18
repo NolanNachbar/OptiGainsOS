@@ -34,6 +34,8 @@ function WeightTab() {
   const [date, setDate] = useState(getTodayString());
   const [notes, setNotes] = useState("");
   const [confirmId, setConfirmId] = useState(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const HISTORY_PAGE_SIZE = 7;
 
   const add = useMutation({
     mutationFn: async () => {
@@ -94,11 +96,15 @@ function WeightTab() {
       </Card>
 
       {/* History */}
-      {sorted.length > 0 && (
+      {sorted.length > 0 && (() => {
+        const reversed = [...sorted].reverse();
+        const visible = showAllHistory ? reversed : reversed.slice(0, HISTORY_PAGE_SIZE);
+        const remaining = reversed.length - visible.length;
+        return (
         <div>
           <h3 className="section-label mb-3">History</h3>
           <div className="space-y-1.5">
-            {[...sorted].reverse().slice(0, 20).map((entry, i, arr) => {
+            {visible.map((entry, i, arr) => {
               const prev = arr[i + 1];
               const diff = prev ? (entry.weight - prev.weight) : null;
               return (
@@ -119,8 +125,19 @@ function WeightTab() {
               );
             })}
           </div>
+          {reversed.length > HISTORY_PAGE_SIZE && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-2.5 cta-ghost"
+              onClick={() => setShowAllHistory(v => !v)}
+            >
+              {showAllHistory ? "Show less" : `Show more (${remaining})`}
+            </Button>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       <ConfirmDialog
         open={!!confirmId}

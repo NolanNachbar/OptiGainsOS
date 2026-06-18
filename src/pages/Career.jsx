@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,7 +187,7 @@ function PipelineTab() {
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
       {/* Kanban columns */}
-      {!isLoading && !isError && (
+      {!isLoading && !isError && apps.length > 0 && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {ACTIVE_STATUSES.map(status => {
           const col = apps.filter(a => a.status === status);
@@ -230,9 +229,10 @@ function PipelineTab() {
                     )}
                     <button
                       onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
-                      className="text-[10px] px-2.5 -mr-1 py-2.5 -my-1 text-muted-2 hover:text-bad transition-colors ml-auto"
+                      aria-label="Reject"
+                      className="px-2.5 -mr-1 py-2.5 -my-1 text-muted-2 hover:text-bad transition-colors ml-auto"
                     >
-                      ✕
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                   {app.next_action && (

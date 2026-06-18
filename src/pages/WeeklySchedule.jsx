@@ -97,6 +97,7 @@ export default function WeeklySchedule() {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [selectedDay, setSelectedDay] = useState(new Date());
+  const [showAllMuscles, setShowAllMuscles] = useState(false);
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -177,6 +178,9 @@ export default function WeeklySchedule() {
 
   const totalWeeklySets = muscleVolume.reduce((sum, [, n]) => sum + n, 0);
   const maxMuscleSets = muscleVolume.length ? muscleVolume[0][1] : 0;
+  const MUSCLE_PREVIEW = 7;
+  const visibleMuscleVolume = showAllMuscles ? muscleVolume : muscleVolume.slice(0, MUSCLE_PREVIEW);
+  const hiddenMuscleCount = muscleVolume.length - MUSCLE_PREVIEW;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
@@ -281,7 +285,7 @@ export default function WeeklySchedule() {
             </span>
           </div>
           <div className="space-y-1.5">
-            {muscleVolume.map(([muscle, sets]) => (
+            {visibleMuscleVolume.map(([muscle, sets]) => (
               <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-semibold text-ink capitalize truncate">
@@ -300,6 +304,15 @@ export default function WeeklySchedule() {
               </div>
             ))}
           </div>
+          {hiddenMuscleCount > 0 && (
+            <button
+              onClick={() => setShowAllMuscles(v => !v)}
+              aria-expanded={showAllMuscles}
+              className="w-full mt-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
+            >
+              {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
+            </button>
+          )}
         </div>
       )}
 

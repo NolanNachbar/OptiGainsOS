@@ -4,15 +4,9 @@ import FoodTracker from "./FoodTracker";
 import Supplements from "./Supplements";
 import Progress from "./Progress";
 import WeeklyPlanCard from "@/components/nutrition/WeeklyPlanCard";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/api/supabaseClient";
-import { getTodayString, dayWindowUtc } from "@/utils/dateUtils";
-import { format, parseISO } from "date-fns";
-import { Droplets, History, Utensils, TrendingUp, CalendarRange, ChevronRight } from "lucide-react";
+import { Droplets, Utensils, CalendarRange, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
-import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
 import { SubTabs } from "@/components/ui/system";
 
 export default function Fuel() {
@@ -21,42 +15,6 @@ export default function Fuel() {
   const activeTab = searchParams.get("tab") === "wellness" ? "wellness" : "nutrition";
   const switchTab = (t) => setSearchParams(t === "nutrition" ? {} : { tab: t });
   const [showWeekPlan, setShowWeekPlan] = useState(false);
-  const { user } = useAuth();
-  const { profile } = useProfile();
-  const today = getTodayString(profile?.timezone);
-  const dayWindow = dayWindowUtc(today, profile?.timezone);
-
-  const { weightEntries } = useBodyWeightEntries();
-  const todayWeight = weightEntries.find(e => e.recorded_date === today);
-
-  const { data: todayWater = [], isError: waterError, isLoading: waterLoading } = useQuery({
-    queryKey: ["water-logs", today, user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("water_logs")
-        .select("*")
-        .eq("created_by", user.id)
-        .gte("logged_at", dayWindow.start)
-        .lt("logged_at", dayWindow.end);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
-  const { data: todaySupps = [], isError: suppsError, isLoading: suppsLoading } = useQuery({
-    queryKey: ["supplement-logs", today, user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("supplement_logs")
-        .select("*")
-        .eq("created_by", user.id)
-        .gte("taken_at", dayWindow.start)
-        .lt("taken_at", dayWindow.end);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
   return (
     <div className="bg-charcoal min-h-screen text-ink">
       <SubTabs
@@ -99,67 +57,26 @@ export default function Fuel() {
             </Dialog>
           </>
         ) : (
-          <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">
+          <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 pb-12">
 
             {/* Body & Progress — weight (logger + trend), measurements, photos.
-                Merged in from the retired standalone /progress route. */}
-            <section className="space-y-2">
-              <h2 className="section-label flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-info" /> Body & Progress
-              </h2>
-              <Progress embedded />
-            </section>
+                Merged in from the retired standalone /progress route. The Progress
+                sub-tab strip is its own label, so no extra section heading here. */}
+            <Progress embedded />
 
             {/* Water + supplements (full type management) — reused from Supplements */}
             <Supplements embedded />
 
-            {/* Quick Capture */}
-            <section className="space-y-2">
-              <h2 className="section-label">Stream Note</h2>
-              <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
-            </section>
- 
-            {/* Recent History */}
-            <section className="space-y-2 pt-2 pb-12">
-              <h2 className="section-label flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 text-ink-muted" /> Recent Activity
-              </h2>
-              <div className="space-y-1">
-                {(waterError || suppsError) ? (
-                  <div className="px-4 py-3 surface text-xs text-ink-muted">Could not load today's activity—try again</div>
-                ) : (waterLoading || suppsLoading) ? (
-                  <>
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-[42px] surface animate-pulse" />
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {todaySupps.slice(-3).reverse().map(s => (
-                      <div key={s.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                        <span className="font-semibold">Took {s.supplement_name}</span>
-                        <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(s.taken_at), "h:mm a")}</span>
-                      </div>
-                    ))}
-                    {todayWater.slice(-3).reverse().map(w => (
-                      <div key={w.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                        <span className="font-semibold">Drank {w.amount_ml}ml water</span>
-                        <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(w.logged_at), "h:mm a")}</span>
-                      </div>
-                    ))}
-                    {todayWeight && (
-                      <div className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
-                        <span className="font-semibold">Logged Weight: {todayWeight.weight} {profile?.weight_unit || "lbs"}</span>
-                        <span className="font-technical text-[10px] text-ink-faint">{format(new Date(todayWeight.recorded_date + 'T00:00:00'), 'MMM d')}</span>
-                      </div>
-                    )}
-                    {todaySupps.length === 0 && todayWater.length === 0 && !todayWeight && (
-                      <div className="px-4 py-3 surface text-xs text-ink-muted">Nothing logged yet today</div>
-                    )}
-                  </>
-                )}
+            {/* Quick Capture — secondary, kept behind a disclosure to save height */}
+            <details className="group glass">
+              <summary className="px-4 py-3 flex items-center justify-between cursor-pointer list-none section-label">
+                Stream Note
+                <ChevronRight className="w-4 h-4 text-ink-faint transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="px-4 pb-4">
+                <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
               </div>
-            </section>
+            </details>
           </div>
         )}
       </div>
