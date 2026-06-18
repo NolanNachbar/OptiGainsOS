@@ -35,11 +35,11 @@ export default function MuscleHeatMap({ data = [], className = "", view: control
         <div className="flex rounded-full overflow-hidden border border-white/10 text-xs font-bold bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
           <button
             onClick={() => setOwnView("anterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "anterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
+            className={`px-4 min-h-[40px] flex items-center justify-center transition-colors ${view === "anterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
           >Front</button>
           <button
             onClick={() => setOwnView("posterior")}
-            className={`px-2.5 py-0.5 transition-colors ${view === "posterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
+            className={`px-4 min-h-[40px] flex items-center justify-center transition-colors ${view === "posterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
           >Back</button>
         </div>
       )}

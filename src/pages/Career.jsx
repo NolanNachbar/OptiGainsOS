@@ -24,7 +24,7 @@ import { toast } from "sonner";
 const APP_STATUSES = ["applied", "screening", "interview", "offer", "rejected"];
 const STATUS_COLORS = {
   applied:    "bg-carb/10 text-carb border-carb/20",
-  screening:  "bg-warn/10 text-warn border-warn/20",
+  screening:  "bg-violet/10 text-violet border-violet/20",
   interview:  "bg-gold/10 text-gold border-gold/20",
   offer:      "bg-leaf/10 text-leaf border-leaf/20",
   rejected:   "bg-bad/10 text-bad border-bad/20",
@@ -180,7 +180,7 @@ function PipelineTab() {
           <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
           <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
         </div>
-        <Button variant="volt" size="sm" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5">
+        <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
           <Plus className="w-3.5 h-3.5" /> Add Application
         </Button>
       </div>
@@ -195,17 +195,17 @@ function PipelineTab() {
           return (
             <div key={status} className="space-y-2">
               <div className="flex items-center justify-between mb-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>
-                <span className="font-technical text-[10px] font-semibold text-muted-2">{col.length}</span>
+                <span className="font-technical text-xs font-semibold text-muted-2">{col.length}</span>
               </div>
               {col.map(app => (
                 <div key={app.id} className="p-3 glass glass-interactive group text-left">
                   <div className="flex items-start justify-between gap-1 mb-1">
                     <div className="min-w-0">
                       <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
-                      <p className="text-[10px] font-semibold text-muted-2 truncate">{app.role}</p>
+                      <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
                     </div>
                     <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
                       <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
@@ -217,13 +217,13 @@ function PipelineTab() {
                     </div>
                   </div>
                   {app.date_applied && (
-                    <p className="font-technical text-[10px] font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
+                    <p className="font-technical text-xs font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
                   )}
                   <div className="flex gap-1">
                     {STATUS_NEXT[status] && (
                       <button
                         onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                        className="text-[10px] font-bold flex items-center gap-0.5 px-1.5 -mx-1.5 py-2.5 -my-1 text-muted-2 hover:text-gold transition-colors"
+                        className="text-xs font-bold flex items-center gap-0.5 px-1.5 -mx-1.5 py-2.5 -my-1 text-muted-2 hover:text-gold transition-colors"
                       >
                         <ArrowRight className="w-3 h-3" /> Move
                       </button>
@@ -236,7 +236,7 @@ function PipelineTab() {
                     </button>
                   </div>
                   {app.next_action && (
-                    <p className="text-[10px] font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
+                    <p className="text-xs font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
                   )}
                 </div>
               ))}
@@ -253,7 +253,7 @@ function PipelineTab() {
             {rejected.map(app => (
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
-                <span className="text-[10px] font-semibold text-muted-2">{app.role}</span>
+                <span className="text-xs font-semibold text-muted-2">{app.role}</span>
                 <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -267,6 +267,10 @@ function PipelineTab() {
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+            <Plus className="w-3.5 h-3.5" /> Add your first application
+          </Button>
         </div>
       )}
 
@@ -330,7 +334,7 @@ function NetworkForm({ initial, onSave, onClose }) {
       </div>
       <div>
         <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on..." className="h-9" />
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" className="h-9" />
       </div>
       <div className="flex gap-2 pt-1">
         <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
@@ -397,7 +401,7 @@ function NetworkingTab() {
             {overdue.length} follow-up{overdue.length > 1 ? "s" : ""} overdue
           </div>
         )}
-        <Button variant="volt" size="sm" className="gap-1.5 ml-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+        <Button variant="volt" className="gap-1.5 ml-auto min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
           <Plus className="w-3.5 h-3.5" /> Add Contact
         </Button>
       </div>
@@ -408,18 +412,22 @@ function NetworkingTab() {
           <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
+            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log a conversation to track follow-ups.</p>
+            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+              <Plus className="w-3.5 h-3.5" /> Add your first contact
+            </Button>
           </div>
         )}
         {contacts.map(contact => {
           const isOverdue = contact.follow_up_date && contact.follow_up_date < today;
           return (
-            <div key={contact.id} className={`p-4 group ${isOverdue ? "rounded-[20px] border-[0.5px] bg-bad/[0.04] border-bad/15" : "glass glass-interactive"}`}>
+            <div key={contact.id} className={`p-4 group ${isOverdue ? "glass border-bad/15 bg-bad/[0.04]" : "glass glass-interactive"}`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-extrabold text-ink">{contact.person_name}</span>
                     {contact.interaction_type && (
-                      <Badge variant="outline" className="text-[10px] border-charcoal-border text-muted-2 bg-transparent">{contact.interaction_type}</Badge>
+                      <Badge variant="outline" className="text-xs border-charcoal-border text-muted-2 bg-transparent">{contact.interaction_type}</Badge>
                     )}
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
@@ -434,7 +442,7 @@ function NetworkingTab() {
                 </div>
               </div>
               {contact.notes && <p className="text-xs font-semibold text-muted-2 mb-2">{contact.notes}</p>}
-              <div className="flex items-center gap-3 font-technical text-[10px] font-semibold">
+              <div className="flex items-center gap-3 font-technical text-xs font-semibold">
                 {contact.date && (
                   <span className="text-muted-2">
                     <Calendar className="w-3 h-3 inline mr-1" />
@@ -497,8 +505,8 @@ function CaptureTab() {
         <h2 className="section-label mb-4 flex items-center gap-2">
           <UserPlus className="w-3 h-3 text-gold" /> New Pipeline Event
         </h2>
-        <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn..." />
-        <p className="text-[10px] font-semibold text-muted-2 mt-2 italic">The desktop agent parses these into your career pipeline in Obsidian.</p>
+        <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
+        <p className="text-xs font-semibold text-muted-2 mt-2 italic">The desktop agent parses these into your career pipeline in Obsidian.</p>
       </div>
       <div>
         <h2 className="section-label mb-4 flex items-center gap-2">

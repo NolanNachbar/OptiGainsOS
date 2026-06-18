@@ -6,7 +6,7 @@ create table if not exists nutrition_overrides (
   id uuid primary key default gen_random_uuid(),
   created_by uuid references auth.users not null default auth.uid(),
   date date not null default current_date,
-  action text not null,                 -- 'ease'
+  action text not null,                 -- 'ease' (fuel a rough day) | 'push' (hold the full deficit, overruling the auto-ease)
   note text,
   created_at timestamptz default now(),
   unique (created_by, date)

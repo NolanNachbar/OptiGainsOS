@@ -16,11 +16,12 @@ export default function Insights() {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab");
 
+  // Compute all hooks unconditionally BEFORE any early return (Rules of Hooks).
+  const today = useMemo(() => getTodayString(profile?.timezone), [profile?.timezone]);
+
   // Legacy deep links from the old 4-tab layout.
   if (tab === "state") return <Navigate to="/athlete-state" replace />;
   if (tab === "career") return <Navigate to="/career" replace />;
-
-  const today = useMemo(() => getTodayString(profile?.timezone), [profile?.timezone]);
 
   return (
     <div className="bg-charcoal min-h-screen text-ink">

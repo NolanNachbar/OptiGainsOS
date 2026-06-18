@@ -704,11 +704,14 @@ export default function WorkoutDetail() {
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <Card>
           <CardContent className="py-12 text-center">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-white/[0.06] text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
+              <Dumbbell className="w-3.5 h-3.5" />
+            </i>
             <h2 className="text-[17px] font-extrabold text-ink mb-2">Workout not found</h2>
             <p className="text-[13px] font-semibold text-ink-muted mb-6">
               This workout may have been deleted, or the link is no longer valid.
             </p>
-            <Button variant="outline" onClick={() => navigate("/workouts")}>
+            <Button variant="outline" size="lg" onClick={() => navigate("/workouts")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Workouts
             </Button>
@@ -1025,15 +1028,15 @@ export default function WorkoutDetail() {
                             <div className="flex flex-wrap gap-4 text-[12.5px] font-semibold text-ink-muted">
                               {exercise.sets > 1 && (
                                 <div>
-                                  <span className="text-ink-faint">Sets:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.sets}</span>
+                                  <span className="text-ink-muted">Sets:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.sets}</span>
                                 </div>
                               )}
                               <div>
-                                <span className="text-ink-faint">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.reps}</span>
+                                <span className="text-ink-muted">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.reps}</span>
                               </div>
                               {exercise.rest_seconds > 0 && (
                                 <div>
-                                  <span className="text-ink-faint">Rest:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.rest_seconds}s</span>
+                                  <span className="text-ink-muted">Rest:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.rest_seconds}s</span>
                                 </div>
                               )}
                             </div>

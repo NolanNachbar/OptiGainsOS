@@ -213,6 +213,16 @@ class NutritionModulator:
             headroom = min(headroom, 0.25)
             gates.append("cut_too_long")
 
+        # Manual override (Nolan's call): he tapped "hold the hard deficit", telling
+        # the engine to ignore the easing gates and run the full deficit. The athlete
+        # outranks the auto-ease heuristics — but NOT the 4-6 week duration cap, which
+        # is a hard health safety, not an ease. Clears the soft gates so the rationale
+        # reads honestly.
+        if (phase == "cut" and signals.get("force_full_deficit")
+                and "cut_too_long" not in gates):
+            headroom = 1.0
+            gates = ["manual_push"]
+
         headroom = self._clamp(headroom, 0.0, 1.0)
 
         # Muscle-preservation macros (computed first — they set the cut floor).
@@ -264,6 +274,10 @@ class NutritionModulator:
         if not gates:
             rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
                          f"({kcal_deficit} kcal) for max fat loss.")
+        elif "manual_push" in gates:
+            rationale = (f"You chose to hold the hard deficit — running the full "
+                         f"{round(deficit_ratio*100)}% ({kcal_deficit} kcal) and ignoring the "
+                         "auto-ease. Back to recovery-gated targets tomorrow.")
         elif "overreaching" in gates:
             rationale = ("Overreaching flagged — deficit collapsed toward maintenance to protect "
                          f"recovery (target {calorie_target} kcal). Leanness can wait a day; recovery can't.")

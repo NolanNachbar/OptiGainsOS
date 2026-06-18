@@ -49,7 +49,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
             placeholder={placeholder}
             className="min-h-[120px] bg-transparent border-none focus-visible:ring-0 px-0 resize-none text-base text-ink placeholder:text-ink-muted"
           />
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-charcoal-border">
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
             <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest">
               Domain: {domain}
             </span>
@@ -58,7 +58,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
               variant="volt"
               disabled={!content.trim() || captureMutation.isPending}
               onClick={() => captureMutation.mutate()}
-              className="h-8 px-4"
+              className="min-h-[44px] px-5"
             >
               {captureMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

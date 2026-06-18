@@ -20,8 +20,8 @@ const CARDIO_TYPES = new Set(['cardio', 'hiit']);
 
 const STEP_TYPES = [
   { value: 'warmup',   label: 'Warmup',   border: 'border-l-carb/60',   text: 'text-carb' },
-  { value: 'active',   label: 'Active',   border: 'border-l-teal/70',   text: 'text-teal' },
-  { value: 'recovery', label: 'Recovery', border: 'border-l-leaf/60',   text: 'text-leaf' },
+  { value: 'active',   label: 'Active',   border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
+  { value: 'recovery', label: 'Recovery', border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
   { value: 'rest',     label: 'Rest',     border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
   { value: 'cooldown', label: 'Cooldown', border: 'border-l-charcoal-borderSoft', text: 'text-ink-muted' },
 ];
@@ -238,8 +238,9 @@ export default function CreateWorkout() {
   return (
     <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <p className="text-ink-muted text-sm">
+        <div className="mb-6 hidden lg:block">
+          <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
+          <p className="text-ink-muted text-sm mt-0.5">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
@@ -266,7 +267,7 @@ export default function CreateWorkout() {
                   id="description"
                   value={workout.description}
                   onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
-                  placeholder="Describe your workout..."
+                  placeholder="Describe your workout…"
                   rows={3}
                   className="mt-1"
                 />
@@ -287,7 +288,7 @@ export default function CreateWorkout() {
                 </Combobox>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Workout Type *</Label>
                   <Select value={workout.focus} onValueChange={handleTypeChange}>
@@ -300,14 +301,13 @@ export default function CreateWorkout() {
                   </Select>
                 </div>
 
-
                 <div>
                   <Label htmlFor="duration">Duration (minutes) *</Label>
                   <Input
                     id="duration"
                     type="number"
                     value={workout.duration_minutes}
-                    onChange={(e) => setWorkout({ ...workout, duration_minutes: parseInt(e.target.value) })}
+                    onChange={(e) => setWorkout({ ...workout, duration_minutes: Math.max(1, parseInt(e.target.value) || 1) })}
                     required
                     min="1"
                     className="mt-1"
@@ -362,18 +362,14 @@ export default function CreateWorkout() {
 
               {isCardio ? (
                 <div className="flex gap-2">
-                  <Button type="button" onClick={addExercise} variant="outline" className="flex-1">
+                  <Button type="button" onClick={addExercise} variant="outline" className="flex-1 min-h-[44px]">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Step
                   </Button>
-                  <button
-                    type="button"
-                    onClick={addRepeatBlock}
-                    className="flex-1 h-11 px-4 text-[13.5px] inline-flex items-center justify-center gap-1.5 font-semibold rounded-xl border border-violet/25 text-violet hover:bg-violet/10 transition-colors"
-                  >
+                  <Button type="button" onClick={addRepeatBlock} variant="outline" className="flex-1 min-h-[44px]">
                     <Repeat2 className="w-4 h-4 mr-2" />
                     Add Repeat
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <Button type="button" onClick={addExercise} variant="outline" className="w-full">
@@ -473,11 +469,11 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
 
 function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep, onRemoveStep, onChangeStep }) {
   return (
-    <div className="border-[0.5px] border-violet/25 rounded-xl overflow-hidden">
+    <div className="glass-inset overflow-hidden">
       {/* Repeat header */}
-      <div className="flex items-center gap-3 bg-violet/10 px-4 py-2.5">
-        <Repeat2 className="w-4 h-4 text-violet shrink-0" />
-        <span className="text-sm font-semibold text-violet">Repeat</span>
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-charcoal-borderSoft">
+        <Repeat2 className="w-4 h-4 text-ink-muted shrink-0" />
+        <span className="text-sm font-semibold text-ink">Repeat</span>
         <div className="flex items-center gap-1.5">
           <Input
             type="number"
@@ -487,7 +483,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             max="99"
             className="w-16 h-7 text-sm text-center font-technical"
           />
-          <span className="text-sm text-violet">×</span>
+          <span className="text-sm text-ink-muted">×</span>
         </div>
         <span className="font-technical text-xs text-ink-muted flex-1">
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
@@ -515,7 +511,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
         <button
           type="button"
           onClick={onAddStep}
-          className="w-full h-8 inline-flex items-center justify-center rounded-lg text-xs font-semibold text-violet hover:bg-violet/10 border border-dashed border-violet/25 transition-colors"
+          className="w-full min-h-[40px] inline-flex items-center justify-center rounded-lg text-xs font-semibold text-ink-muted hover:text-ink hover:bg-white/[0.06] border border-dashed border-charcoal-border transition-colors"
         >
           <Plus className="w-3 h-3 mr-1" />
           Add Step to Repeat
@@ -533,7 +529,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
   return (
     <div className={card}>
         <div className="flex justify-between items-start mb-4">
-          <span className={`text-[10.5px] font-bold uppercase tracking-[0.06em] ${meta.text}`}>
+          <span className={`text-xs font-bold uppercase tracking-[0.06em] ${meta.text}`}>
             Step {index + 1}
           </span>
           {canRemove && (

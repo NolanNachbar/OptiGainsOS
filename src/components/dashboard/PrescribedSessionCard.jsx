@@ -176,7 +176,7 @@ export default function PrescribedSessionCard({ today }) {
             <button
               type="button"
               onClick={() => setLiftsOpen((o) => !o)}
-              className="w-full flex items-center gap-1.5 section-label mb-1 lg:pointer-events-none"
+              className="w-full flex items-center gap-1.5 section-label mb-1 min-h-[44px] py-2 lg:min-h-0 lg:py-0 lg:pointer-events-none"
               aria-expanded={liftsOpen}
             >
               <Dumbbell className="w-3 h-3" /> Lifts

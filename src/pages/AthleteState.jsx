@@ -433,7 +433,7 @@ function HypertrophySection({ data, landmarks }) {
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-secondary capitalize">{muscle.replace("_", " ")}</span>
                   {learned && (
-                    <span className="text-[8px] uppercase tracking-[0.08em] text-teal/70 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
+                    <span className="text-[10px] uppercase tracking-[0.08em] text-teal/70 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
                       learned
                     </span>
                   )}
@@ -548,7 +548,7 @@ function FatigueSection({ data }) {
               {label}
             </div>
             <div className={`font-technical text-sm font-extrabold mt-0.5 ${warn ? "text-warn" : "text-ink"}`}>{value}</div>
-            <div className="text-[9px] font-semibold text-faint mt-0.5">{desc}</div>
+            <div className="text-[10px] font-semibold text-muted-2 mt-0.5">{desc}</div>
           </div>
         ))}
       </div>
@@ -625,7 +625,7 @@ function NutritionSection({ data, targets }) {
   const proteinPct    = protein_target > 0 ? Math.min((avg_protein_7d / protein_target) * 100, 120) : null;
   const calPct        = calorie_target  > 0 ? Math.min((avgCal / calorie_target)  * 100, 120) : null;
 
-  const phaseColor = phase === "cut" ? "text-carb" : phase === "bulk" ? "text-gold" : "text-muted-2";
+  const phaseColor = phase === "cut" ? "text-muted-2" : phase === "bulk" ? "text-gold" : "text-muted-2";
 
   const weightTrendColor =
     weight_trend_lbs_per_week == null ? "text-muted-2"

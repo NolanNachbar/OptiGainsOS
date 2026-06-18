@@ -8,17 +8,20 @@ import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useEnrollments } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
+import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 
 const RUN_NAMES = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
 const isRun = (ex) => RUN_NAMES.some(k => ex.name?.toLowerCase().includes(k));
 
-// Vapor × Macro day-type pills — each session type owns one hue.
+// Vapor × Macro day-type pills — neutral by default; only CARDIO owns its
+// on-semantic blue (carbs/cardio). Strength/mixed/two-a-day stay neutral so
+// the strict hue grammar isn't borrowed as a categorical palette.
 const TYPE_PILLS = {
-  STRENGTH:  { bg: "rgba(var(--hue-teal-rgb) / 0.14)",   fg: "var(--hue-teal)",   label: "STRENGTH" },
-  CARDIO:    { bg: "rgba(var(--hue-blue-rgb) / 0.14)",   fg: "var(--hue-blue)",   label: "CARDIO" },
-  MIXED:     { bg: "rgba(var(--hue-violet-rgb) / 0.14)", fg: "var(--hue-violet)", label: "MIXED" },
-  TWO_A_DAY: { bg: "rgba(var(--hue-gold-rgb) / 0.14)",   fg: "var(--hue-gold)",   label: "TWO-A-DAY" },
-  REST:      { bg: "var(--color-border-soft)",           fg: "var(--text-muted)", label: "REST" },
+  STRENGTH:  { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "STRENGTH" },
+  CARDIO:    { bg: "rgba(var(--hue-blue-rgb) / 0.14)", fg: "var(--hue-blue)",   label: "CARDIO" },
+  MIXED:     { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "MIXED" },
+  TWO_A_DAY: { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "TWO-A-DAY" },
+  REST:      { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "REST" },
 };
 
 function dayType(entries, log) {
@@ -139,6 +142,8 @@ export default function WeeklySchedule() {
   const selectedEntries = getEntriesForDay(selectedDay);
   const selectedLog = getLogForDay(selectedDay);
   const isToday = isSameDay(selectedDay, new Date());
+  const selectedDayType = dayType(selectedEntries, selectedLog);
+  const isTwoADay = selectedDayType === "TWO_A_DAY";
 
   const totalWorkouts = activeEnrollment
     ? (activeEnrollment.program?.days_per_week || 1) * (activeEnrollment.program?.num_cycles || activeEnrollment.program?.duration_weeks || 4)
@@ -148,13 +153,39 @@ export default function WeeklySchedule() {
 
   const hasAnything = selectedEntries.length > 0 || !!selectedLog;
 
+  // Weekly per-muscle SET volume — aggregate prescribed hard sets across the
+  // displayed week (Mon–Sun) per muscle group. Surfaces the Program Synthesis
+  // engine's volume allocation that the page already holds in programEntries.
+  const muscleVolume = useMemo(() => {
+    const totals = {};
+    const weekSet = new Set(
+      Array.from({ length: 7 }, (_, i) => format(addDays(weekStart, i), "yyyy-MM-dd"))
+    );
+    for (const entry of programEntries) {
+      if (!weekSet.has(entry.date)) continue;
+      for (const ex of entry.exercises || []) {
+        if (isRun(ex)) continue;
+        const sets = Number(ex.sets) || 0;
+        if (!sets) continue;
+        for (const m of getWorkoutMuscleGroups([ex])) {
+          totals[m] = (totals[m] || 0) + sets;
+        }
+      }
+    }
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  }, [programEntries, weekStart]);
+
+  const totalWeeklySets = muscleVolume.reduce((sum, [, n]) => sum + n, 0);
+  const maxMuscleSets = muscleVolume.length ? muscleVolume[0][1] : 0;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
       {/* Week nav */}
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
           onClick={() => setWeekStart(w => subWeeks(w, 1))}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          aria-label="Previous week"
+          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -163,14 +194,15 @@ export default function WeeklySchedule() {
         </span>
         <button
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          aria-label="Next week"
+          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Week rows — date · type pill · detail · status */}
-      <div className="glass px-3.5 py-2.5 mb-4 rise-in">
+      <div className="glass px-3.5 pt-3 pb-2.5 mb-4 rise-in">
         {logsLoading || enrollmentsLoading ? (
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
@@ -239,6 +271,38 @@ export default function WeeklySchedule() {
         })}
       </div>
 
+      {/* Weekly volume — sets per muscle across the displayed week */}
+      {muscleVolume.length > 0 && (
+        <div className="glass px-4 py-3.5 mb-4 rise-in-2">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="section-label">Weekly Volume</span>
+            <span className="font-technical text-[11px] font-extrabold text-muted-2">
+              {totalWeeklySets} sets · {muscleVolume.length} muscles
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {muscleVolume.map(([muscle, sets]) => (
+              <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-semibold text-ink capitalize truncate">
+                    {muscle.replace(/_/g, " ")}
+                  </span>
+                  <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
+                    {sets} <span className="text-[9.5px] font-semibold">sets</span>
+                  </span>
+                </div>
+                <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-teal rounded-full transition-all"
+                    style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Selected day */}
       <div className="mb-6">
         <h2 className="type-display text-[17px] mb-3">
@@ -257,13 +321,16 @@ export default function WeeklySchedule() {
             {/* ── Completed lift from log ── */}
             {selectedLog && (() => {
               const logLifts = (selectedLog.exercises || []).filter(ex => !isRun(ex));
+              const logRuns = (selectedLog.exercises || []).filter(isRun);
               const mins = selectedLog.duration_seconds ? Math.round(selectedLog.duration_seconds / 60) : null;
               return (
                 <div className="glass overflow-hidden rise-in-2">
                   <div className="px-4 pt-3.5 pb-2 flex items-start justify-between">
                     <div>
-                      <p className="section-label !text-leaf mb-1">Completed</p>
-                      <h3 className="text-[17px] font-extrabold text-ink leading-tight">
+                      <p className="section-label !text-leaf mb-1">
+                        {isTwoADay ? "AM — Completed" : "Completed"}
+                      </p>
+                      <h3 className="text-[15px] font-extrabold text-ink leading-tight">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
                       {mins && <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">{mins} min</p>}
@@ -272,20 +339,38 @@ export default function WeeklySchedule() {
                       <CheckCircle2 className="w-3.5 h-3.5 text-leaf" />
                     </div>
                   </div>
-                  <div className="px-4 pb-3.5">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Dumbbell className="w-3 h-3 text-muted-2" />
-                      <span className="section-label">Exercises</span>
+                  {logLifts.length > 0 && (
+                    <div className="px-4 pb-3.5">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Dumbbell className="w-3 h-3 text-muted-2" />
+                        <span className="section-label">Exercises</span>
+                      </div>
+                      <div>
+                        {logLifts.map((ex, j) => (
+                          <div key={j} className="data-row justify-between gap-2">
+                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">{formatSets(ex)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      {logLifts.map((ex, j) => (
-                        <div key={j} className="data-row justify-between gap-2">
-                          <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                          <span className="pill-value text-[11.5px] text-muted-2 shrink-0">{formatSets(ex)}</span>
-                        </div>
-                      ))}
+                  )}
+                  {logRuns.length > 0 && (
+                    <div className="px-4 pb-3.5">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Timer className="w-3 h-3 text-carb" />
+                        <span className="section-label !text-carb">Cardio</span>
+                      </div>
+                      <div>
+                        {logRuns.map((ex, j) => (
+                          <div key={j} className="data-row justify-between gap-2">
+                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">{formatSets(ex)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })()}
@@ -297,9 +382,9 @@ export default function WeeklySchedule() {
                 <div key={idx} className="glass overflow-hidden rise-in-2">
                   <div className="px-4 pt-3.5 pb-1">
                     <p className="section-label mb-1">
-                      {activeEnrollment?.program?.title || "Program"}
+                      {isTwoADay ? "AM — Strength" : activeEnrollment?.program?.title || "Program"}
                     </p>
-                    <h3 className="text-[17px] font-extrabold text-ink leading-tight">{entry.title}</h3>
+                    <h3 className="text-[15px] font-extrabold text-ink leading-tight">{entry.title}</h3>
                   </div>
                   {lifts.length > 0 && (
                     <div className="px-4 py-2">
@@ -312,7 +397,7 @@ export default function WeeklySchedule() {
                           <div key={j} className="data-row justify-between">
                             <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
                             <span className="pill-value text-[11.5px] shrink-0">
-                              {ex.sets > 1 ? `${ex.sets}×` : ""}{ex.rep_target || ex.reps}
+                              {ex.sets > 1 ? `${ex.sets}×` : ""}{ex.rep_target || ex.reps || "—"}
                             </span>
                           </div>
                         ))}
@@ -347,10 +432,16 @@ export default function WeeklySchedule() {
               return (
                 <div key={idx} className="glass overflow-hidden rise-in-3">
                   <div className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5 mb-3">
+                    <div className="flex items-center gap-1.5 mb-1">
                       <Timer className="w-3.5 h-3.5 text-carb" />
-                      <span className="section-label !text-carb">Cardio</span>
+                      <span className="section-label !text-carb">{isTwoADay ? "PM — Run" : "Cardio"}</span>
                     </div>
+                    {isTwoADay && (
+                      <p className="font-technical text-[11px] font-semibold text-muted-2 mb-3">
+                        ~6h separation from AM session
+                      </p>
+                    )}
+                    {!isTwoADay && <div className="mb-2" />}
                     <div className="space-y-3">
                       {runs.map((ex, j) => {
                         const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
@@ -366,6 +457,8 @@ export default function WeeklySchedule() {
                             </div>
                             <button
                               onClick={() => toggleCardio(name)}
+                              aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
+                              aria-pressed={done}
                               className="shrink-0 p-2.5 -m-2.5 mt-[-8px] rounded-full"
                             >
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${

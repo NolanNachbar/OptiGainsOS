@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete }) {
-  const borderColor = 'var(--hue-violet)';
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -48,10 +47,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div
-        className="group relative overflow-hidden rounded-xl border-l-4 bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-elevated/50 transition-colors duration-200"
-        style={{ borderLeftColor: borderColor }}
-      >
+      <div className="group relative overflow-hidden glass glass-interactive">
         <div className="pb-2 pt-4 px-6">
           <div className="flex justify-between items-start gap-2">
             <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">

@@ -51,3 +51,5 @@ The Complete Guide to Navy Seal Fitness.pdf
 *.mp4
 *.mov
 
+.gstack/
+.audit/

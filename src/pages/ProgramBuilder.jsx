@@ -456,7 +456,10 @@ export default function ProgramBuilder() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-ink-muted text-sm">
+            <h1 className="type-display text-[22px] text-ink">
+              {editId ? "Edit Program" : "Build Program"}
+            </h1>
+            <p className="text-ink-muted text-sm mt-0.5">
               Step {step + 1} of {STEPS.length}: {STEPS[step]}
             </p>
           </div>
@@ -479,13 +482,15 @@ export default function ProgramBuilder() {
                 </Button>
               </>
             )}
-            <button
+            <Button
+              variant="dim"
+              size="sm"
               onClick={() => navigate("/workouts")}
-              className="text-ink-muted hover:text-ink text-sm flex items-center gap-1 transition-colors py-3 px-2"
+              className="min-h-[40px]"
             >
               <ArrowLeft className="w-4 h-4" />
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -575,7 +580,7 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={next}
               disabled={!canProceed()}
-              className="flex-1 font-bold"
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -585,7 +590,7 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 font-bold"
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold"
             >
               <Save className="w-4 h-4 mr-2" />
               {createMutation.isPending || updateMutation.isPending
@@ -644,14 +649,14 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           <Textarea
             value={program.description}
             onChange={(e) => update("description", e.target.value)}
-            placeholder="Describe the program goals and approach..."
+            placeholder="Describe the program goals and approach…"
             rows={3}
             className="mt-1"
           />
         </div>
 
         {/* Cycle configuration */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <Label className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
@@ -719,10 +724,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         {/* rest day tip */}
         <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-muted">
           <Info className="w-4 h-4 flex-shrink-0" />
-          <span>
-            <strong className="text-ink-secondary">Tip:</strong> Include rest days in your cycle length. For example, a 7-day cycle
-            might have 4 training days and 3 rest days.
-          </span>
+          <span>Rest days count toward cycle length.</span>
         </div>
 
         <div>
@@ -914,7 +916,16 @@ function InlineDayEditor({
         {(workout.exercises || []).length === 0 && (
           <div className="text-center py-6 text-ink-muted">
             <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No exercises yet. Add one below.</p>
+            <p className="text-sm mb-3">No exercises yet — start building this day.</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => addExercise(dayIndex)}
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Exercise
+            </Button>
           </div>
         )}
 
@@ -981,7 +992,7 @@ function InlineDayEditor({
             }}
           >
             <SelectTrigger className="h-8 text-xs text-ink-muted">
-              <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout..." : "No cardio workouts in library yet"} />
+              <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout…" : "No cardio workouts in library yet"} />
             </SelectTrigger>
             <SelectContent>
               {cardioLibrary.map((w) => (
@@ -1019,7 +1030,7 @@ function InlineDayEditor({
           <Textarea
             value={workout.notes || ""}
             onChange={(e) => updateWorkoutByDay(dayIndex, "notes", e.target.value)}
-            placeholder="Workout notes..."
+            placeholder="Workout notes…"
             rows={2}
             className="mt-0.5 text-sm"
           />
@@ -1248,7 +1259,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
               {projections.map((p) => (
                 <div
                   key={p.week}
-                  className="flex-shrink-0 text-center bg-white/[0.05] rounded-[10px] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]"
+                  className="glass-inset flex-shrink-0 text-center px-4 py-2"
                 >
                   <p className="text-xs text-ink-muted">Cycle {p.week}</p>
                   <p className="font-technical text-sm font-bold text-ink mt-1">{p.weight} lbs</p>

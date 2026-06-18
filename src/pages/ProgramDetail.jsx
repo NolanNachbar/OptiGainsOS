@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -432,10 +432,8 @@ export default function ProgramDetail() {
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
                     return (
-                    <div
-                      key={name}
-                      className="flex items-center justify-between glass-inset p-3"
-                    >
+                    <div key={name} className="glass-inset p-3">
+                    <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm text-ink">{name}</p>
                         <p className="font-technical text-xs text-ink-muted">
@@ -449,12 +447,23 @@ export default function ProgramDetail() {
                         <p className="pill-value inline-block text-ink">
                           {state.working_weight ?? '—'} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
                         </p>
-                        {state.ready_to_progress && (
+                        {state.stalled ? (
+                          <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
+                            Stalled
+                          </Badge>
+                        ) : state.ready_to_progress && (
                           <Badge variant="green" className="text-xs mt-1">
                             Ready to progress
                           </Badge>
                         )}
                       </div>
+                    </div>
+                    {state.stalled && state.stall_suggestion && (
+                      <p className="font-technical text-xs text-warn mt-2 flex items-start gap-1.5">
+                        <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>{state.stall_suggestion}</span>
+                      </p>
+                    )}
                     </div>
                   );
                   })}
@@ -525,7 +534,7 @@ export default function ProgramDetail() {
                         <div>
                           <p className="font-medium text-sm text-ink">{c.title}</p>
                           <p className="font-technical text-xs text-ink-muted">
-                            {c.duration_minutes} min{c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
+                            {c.duration_minutes} min{c.time_of_day && c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
                           </p>
                         </div>
                       </div>

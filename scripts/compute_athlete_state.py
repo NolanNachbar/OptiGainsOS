@@ -1262,11 +1262,14 @@ def main():
         # the severe-crash recovery valve on a cut (the other half is HRV).
         poor_sleep_days = _consecutive_poor_sleep(recovery_rows)
 
-        # Manual escape valve: did he tap "ease today"?
-        _ease_rows = sb_get("nutrition_overrides", {
+        # Manual escape valves: did he tap "ease today" (fuel a rough day) or "hold
+        # the hard deficit" (override the auto-ease and run the full deficit)?
+        _ov_rows = sb_get("nutrition_overrides", {
             "select": "action", "created_by": f"eq.{USER_ID}",
             "date": f"eq.{datetime.date.today().isoformat()}", "limit": "1"})
-        ease_today = bool(_ease_rows and _ease_rows[0].get("action") == "ease")
+        _ov_action = _ov_rows[0].get("action") if _ov_rows else None
+        ease_today = _ov_action == "ease"
+        push_today = _ov_action == "push"
 
         nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
             "overreaching":  overreach_out.get("overreaching"),
@@ -1282,6 +1285,7 @@ def main():
             "glyco_week":    glyco_week,
             "poor_sleep_days": poor_sleep_days,
             "ease_today":    ease_today,
+            "force_full_deficit": push_today,
         })
         _rec = nutrition["recommended_intake"]
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "

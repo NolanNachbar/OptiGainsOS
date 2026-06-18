@@ -29,7 +29,7 @@ export default function Fuel() {
   const { weightEntries } = useBodyWeightEntries();
   const todayWeight = weightEntries.find(e => e.recorded_date === today);
 
-  const { data: todayWater = [], isError: waterError } = useQuery({
+  const { data: todayWater = [], isError: waterError, isLoading: waterLoading } = useQuery({
     queryKey: ["water-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,7 +43,7 @@ export default function Fuel() {
     },
     enabled: !!user,
   });
-  const { data: todaySupps = [], isError: suppsError } = useQuery({
+  const { data: todaySupps = [], isError: suppsError, isLoading: suppsLoading } = useQuery({
     queryKey: ["supplement-logs", today, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -76,6 +76,8 @@ export default function Fuel() {
             <div className="px-4 pt-4 max-w-3xl mx-auto">
               <button
                 onClick={() => setShowWeekPlan(true)}
+                aria-haspopup="dialog"
+                aria-expanded={showWeekPlan}
                 className="w-full glass glass-interactive px-4 py-3 flex items-center gap-3 text-left"
               >
                 <CalendarRange className="w-4 h-4 text-gold shrink-0" />
@@ -125,9 +127,15 @@ export default function Fuel() {
               <div className="space-y-1">
                 {(waterError || suppsError) ? (
                   <div className="px-4 py-3 surface text-xs text-ink-muted">Could not load today's activity—try again</div>
+                ) : (waterLoading || suppsLoading) ? (
+                  <>
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-[42px] surface animate-pulse" />
+                    ))}
+                  </>
                 ) : (
                   <>
-                    {todaySupps.slice(0, 3).map(s => (
+                    {todaySupps.slice(-3).reverse().map(s => (
                       <div key={s.id} className="flex items-center justify-between text-xs text-ink-secondary px-4 py-3 surface">
                         <span className="font-semibold">Took {s.supplement_name}</span>
                         <span className="font-technical text-[10px] text-ink-faint">{format(parseISO(s.taken_at), "h:mm a")}</span>

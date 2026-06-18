@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +48,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold p-3 -m-1.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
+          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet p-3 -m-1.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -193,7 +192,8 @@ function ReadingTab() {
       {!isLoading && !isError && books.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <BookOpen className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No books yet.</p>
+          <p className="text-sm font-semibold text-muted-2 mb-3">Start your reading list — track books, takeaways, and ratings.</p>
+          <Button variant="ghost" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
         </div>
       )}
 
@@ -362,12 +362,11 @@ function StudyTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="glass glass-interactive">
-        <CardContent className="px-5 pb-5">
-          <h3 className="section-label mb-4 flex items-center gap-2">
-            <Zap className="w-3 h-3 text-violet" /> Log Study Session
-          </h3>
-          <div className="space-y-3">
+      <div className="glass glass-interactive p-5">
+        <h3 className="section-label mb-4 flex items-center gap-2">
+          <Zap className="w-3 h-3 text-violet" /> Log Study Session
+        </h3>
+        <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" className="h-9" />
@@ -390,8 +389,7 @@ function StudyTab() {
               Log Session
             </Button>
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-inset p-4 text-center">
@@ -413,7 +411,7 @@ function StudyTab() {
           {!isLoading && !isError && logs.length === 0 && (
             <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">No study sessions yet.</p>
+              <p className="text-sm font-semibold text-muted-2">Log your first session above to start the streak.</p>
             </div>
           )}
           {logs.map(log => (
@@ -580,7 +578,8 @@ function SkillsTab() {
       {!isLoading && !isError && skills.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Layers className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No skills tracked yet.</p>
+          <p className="text-sm font-semibold text-muted-2 mb-3">Track what you're building — rate your level and keep skills warm.</p>
+          <Button variant="ghost" size="sm" onClick={() => setShowAdd(true)}>Add your first skill</Button>
         </div>
       )}
 
@@ -645,16 +644,15 @@ function CaptureTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-4 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
-        </h2>
+        </h3>
         <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
-        <p className="text-[10px] font-semibold text-muted-2 mt-2 italic">Picked up by your desktop agent and organized into Obsidian.</p>
       </div>
       <div>
-        <h2 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-4 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Streams
-        </h2>
+        </h3>
         <div className="space-y-3">
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
@@ -670,7 +668,7 @@ function CaptureTab() {
           )) : (!isLoading && !isError && (
             <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <GraduationCap className="w-8 h-8 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">No recent learning logs.</p>
+              <p className="text-sm font-semibold text-muted-2">Drop your first note above to start the stream.</p>
             </div>
           ))}
         </div>
@@ -686,13 +684,12 @@ export default function Mind({ hideHeader }) {
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6 rise-in">
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
                 <Brain className="w-[15px] h-[15px] text-violet" />
               </div>
               <h1 className="type-display text-2xl">Mind & Learning</h1>
             </div>
-            <p className="text-muted-2 font-semibold text-sm pl-11">Track what you're reading, studying, and building.</p>
           </header>
         )}
 

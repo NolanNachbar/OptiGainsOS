@@ -41,7 +41,7 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
 
   return (
     <div className={`w-full ${className || 'h-80'}`}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <LineChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.05)" strokeOpacity={1} />
           <XAxis

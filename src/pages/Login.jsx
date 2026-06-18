@@ -48,9 +48,9 @@ export default function Login() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 relative z-10 w-full">
         <div className="text-center rise-in">
-          <div className="type-display text-[26px] whitespace-nowrap text-ink">
+          <h1 className="type-display text-[26px] whitespace-nowrap text-ink">
             OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
-          </div>
+          </h1>
           <p className="text-[11.5px] font-semibold mt-1.5 tracking-[0.02em] text-muted-2">
             Performance OS · private build
           </p>
@@ -68,6 +68,9 @@ export default function Login() {
                 onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
                 className="!h-12 !rounded-xl"
                 autoComplete="email"
+                autoFocus
+                aria-invalid={!!errorMsg}
+                aria-describedby={errorMsg ? 'login-error' : undefined}
                 required
               />
             </div>
@@ -81,9 +84,11 @@ export default function Login() {
                 onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
                 className="!h-12 !rounded-xl"
                 autoComplete="current-password"
+                aria-invalid={!!errorMsg}
+                aria-describedby={errorMsg ? 'login-error' : undefined}
                 required
               />
-              {errorMsg && <p className="text-bad text-sm mt-2">{errorMsg}</p>}
+              {errorMsg && <p id="login-error" role="alert" className="text-bad text-sm mt-2">{errorMsg}</p>}
             </div>
 
             <Button type="submit" variant="volt" className="w-full mt-1" disabled={loading}>
@@ -104,7 +109,7 @@ export default function Login() {
               >
                 Forgot password
               </Link>
-              <span className="text-[11.5px] font-bold" style={{ color: 'var(--hue-teal)' }}>
+              <span className="text-[11.5px] font-bold text-faint">
                 Private build
               </span>
             </div>

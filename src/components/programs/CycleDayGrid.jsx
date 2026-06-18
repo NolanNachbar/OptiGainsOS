@@ -121,11 +121,20 @@ export default function CycleDayGrid({
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
+                  const cellStatus = isCompleted
+                    ? "completed"
+                    : isCurrent
+                    ? "current"
+                    : isPast
+                    ? "past"
+                    : "upcoming";
+
                   return (
                     <button
                       key={dayIndex}
                       onClick={() => onCellClick?.(workout, cycle, dayIndex)}
                       disabled={!onCellClick}
+                      aria-label={`Cycle ${cycle}, Day ${dayIndex}: ${workout?.title || "Rest"} — ${cellStatus}`}
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (

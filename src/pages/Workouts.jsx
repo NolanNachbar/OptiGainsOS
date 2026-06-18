@@ -288,25 +288,27 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         )}
 
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="activity-log">
-              <Activity className="w-4 h-4 mr-2" />
-              Activity Log
-              {(workoutLogs.length + cardioSessions.length) > 0 && (
-                <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                  {workoutLogs.length + cardioSessions.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="library">
-              <Dumbbell className="w-4 h-4 mr-2" />
-              Library
-            </TabsTrigger>
-            <TabsTrigger value="programs">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Programs
-            </TabsTrigger>
-          </TabsList>
+          {!hideHeader && (
+            <TabsList className="mb-6">
+              <TabsTrigger value="activity-log">
+                <Activity className="w-4 h-4 mr-2" />
+                Activity Log
+                {(workoutLogs.length + cardioSessions.length) > 0 && (
+                  <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    {workoutLogs.length + cardioSessions.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="library">
+                <Dumbbell className="w-4 h-4 mr-2" />
+                Library
+              </TabsTrigger>
+              <TabsTrigger value="programs">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Programs
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="library">
         <div className="glass mb-6 overflow-hidden">
