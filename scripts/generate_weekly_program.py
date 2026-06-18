@@ -41,7 +41,8 @@ import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title
-from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS, apply_running_interference
+from engine.hypertrophy_volume import (HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS,
+                                       apply_running_interference, apply_endurance_interference)
 from engine.allocator          import plan_week, default_goal_priorities
 from engine.nutrition_modulator import ETA_DEFICIT
 from engine.athlete_profile    import MUSCLE_EMPHASIS
@@ -646,6 +647,21 @@ def main():
     recent_run_tss = sum((float(r.get("duration_seconds") or 0) / 60.0) * 0.9 for r in cardio_rows)
     weekly_km      = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cardio_rows)
 
+    # E13: cycling/swimming volume interferes with leg hypertrophy far less than running,
+    # so pull it too and let the modality-aware interference (apply_endurance_interference)
+    # carry a large aerobic base on the bike/pool without crushing leg recoverable volume.
+    cycling_rows = sb_get("garmin_activities", {
+        "select": "distance_meters", "activity_type": "like.*cycl*",
+        "created_by": f"eq.{USER_ID}", "order": "activity_date.desc", "limit": "7"})
+    swim_rows = sb_get("garmin_activities", {
+        "select": "distance_meters", "activity_type": "like.*swim*",
+        "created_by": f"eq.{USER_ID}", "order": "activity_date.desc", "limit": "7"})
+    cycling_km = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in cycling_rows)
+    swim_km    = sum(float(r.get("distance_meters") or 0) / 1000.0 for r in swim_rows)
+    # Running km from Garmin is treated as continuous (the conservative worst case); HIIT/
+    # PST-pace runs would interfere less but Garmin doesn't tag intensity here.
+    modality_km = {"running_continuous": weekly_km, "cycling": cycling_km, "swimming": swim_km}
+
     # Per-region soreness from the morning check-in (daily_readiness.soreness_snapshot).
     # athlete_state has no soreness column, so the previous read here was always 0 —
     # the orthopedic mileage cap and the MRV-downgrade rule never saw real soreness.
@@ -1013,7 +1029,7 @@ def main():
 
     # Per-muscle running interference on the LIVE landmarks (F6) — the cut is left
     # to the systemic r_phase scalar in recovery_budget to avoid double-counting.
-    apply_running_interference(landmarks_lc, weekly_km)
+    apply_endurance_interference(landmarks_lc, modality_km)
 
     # Exploration probe (F3): raise the probed muscle's MRV ceiling by the delta so
     # the allocator actually funds the extra set this week (capped at prior+2). This
@@ -1171,11 +1187,12 @@ def main():
         # Two-a-day split evaluation
         total_sets  = sum(e.get("sets", 0) for e in exercises)
         planned_km  = sum(c.get("duration_minutes", 0) * 0.15 for c in cardio)
-        _split_2a, _split_reason = evaluate_two_a_day_split(total_sets, planned_km, reserve_score)
-        # (structure already separated: exercises AM, cardio PM — no structural change needed)
+        _split_2a, _split_reason, _seq = evaluate_two_a_day_split(total_sets, planned_km, reserve_score)
+        # E13 lift-before-endurance: stamp BOTH halves so the ordering is explicit in the
+        # data, not just convention — lift AM, cardio PM (≥6h apart on a split day).
         if _split_2a:
-            # Stamp the PM half so the UI's TWO_A_DAY classification (which keys
-            # off cardio time_of_day) can see engine-decided two-a-day days.
+            for e in exercises:
+                e.setdefault("time_of_day", "am")
             for c in cardio:
                 c["time_of_day"] = "pm"
 

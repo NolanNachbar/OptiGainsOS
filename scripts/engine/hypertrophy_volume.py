@@ -22,22 +22,28 @@ _ISOLATION_MUSCLES = {"triceps", "biceps"}
 
 # Lower body muscles affected by running interference
 _LOWER_BODY_MUSCLES = {"quads", "hamstrings", "calves", "glutes"}
-RUNNING_OMEGA = 0.05   # [ENG] lower-body MRV sets shed per weekly km
+RUNNING_OMEGA = 0.05   # [ENG] lower-body MRV sets shed per weighted interference-km
+
+# E13: endurance modality/intensity interference weights (learnable [COACH] priors, not
+# fixed law). Running interferes with leg hypertrophy far more than cycling (Type I SMD
+# −0.81 vs no significant cycling effect); swimming is mechanistically lowest (non-weight-
+# bearing, concentric-biased). CONTINUOUS steady running costs more than short HIIT/PST-
+# pace work. So the high-volume aerobic BASE should be cycling/swimming (also 2 of 3
+# Ironman disciplines) and running confined to HIIT/PST pace — this weighting is what makes
+# the engine prefer that structure instead of treating all endurance as one generic penalty.
+MODALITY_INTERFERENCE = {
+    "running_continuous": 1.00,   # weight-bearing eccentric, steady — worst for legs
+    "running":            1.00,   # alias: unqualified running treated as continuous
+    "running_hiit":       0.55,   # PST-pace / intervals: shorter, less eccentric volume
+    "cycling":            0.25,   # concentric, non-impact — low leg-hypertrophy interference
+    "swimming":           0.10,   # non-weight-bearing — lowest
+}
 
 
-def apply_running_interference(landmarks_lc: dict, weekly_km: float,
-                               omega: float = RUNNING_OMEGA) -> dict:
-    """
-    Subtract per-muscle running interference from a LIVE allocator landmarks dict
-    (lowercase mev/mav/mrv), in place, flooring MRV at mev+1 and keeping MAV<MRV.
-
-    CONVERGENCE_AUDIT F6: the engine computed this per-muscle lower-body interference
-    but only on the discarded in-memory volume engine, so it never reached the plan.
-    This applies it to the same `landmarks_lc` the allocator actually reads. The CUT
-    is deliberately NOT applied here — the systemic recovery_budget r_phase=0.8 scalar
-    already trims cut volume, and stacking a per-muscle cut on top would double-count.
-    """
-    reduction = omega * max(0.0, float(weekly_km or 0))
+def _apply_interference_reduction(landmarks_lc: dict, reduction: float) -> dict:
+    """Shared core: subtract `reduction` MRV sets from each lower-body muscle in place,
+    flooring MRV at mev+1 (a MAINTENANCE floor — running never zeros leg volume, E13
+    bullet 5) and keeping MAV < MRV."""
     if reduction <= 0:
         return landmarks_lc
     for m in _LOWER_BODY_MUSCLES:
@@ -47,6 +53,45 @@ def apply_running_interference(landmarks_lc: dict, weekly_km: float,
         lm["mrv"] = max(float(lm["mev"]) + 1, round(float(lm["mrv"]) - reduction))
         lm["mav"] = min(float(lm["mav"]), lm["mrv"] - 1)
     return landmarks_lc
+
+
+def endurance_interference_km(modality_km: dict) -> float:
+    """E13: weighted interference-equivalent km from a per-modality volume dict, e.g.
+    {'running_continuous': 20, 'running_hiit': 5, 'cycling': 40, 'swimming': 30}. Running
+    (especially continuous) dominates; cycling/swimming contribute little, so loading the
+    aerobic base on the bike/pool barely dents leg recoverable volume. Unknown modalities
+    are treated as continuous running (the conservative worst case)."""
+    worst = MODALITY_INTERFERENCE["running_continuous"]
+    return sum(MODALITY_INTERFERENCE.get(mode, worst) * max(0.0, float(km or 0))
+               for mode, km in (modality_km or {}).items())
+
+
+def apply_running_interference(landmarks_lc: dict, weekly_km: float,
+                               omega: float = RUNNING_OMEGA) -> dict:
+    """
+    Subtract per-muscle running interference from a LIVE allocator landmarks dict
+    (lowercase mev/mav/mrv), in place, flooring MRV at mev+1 and keeping MAV<MRV.
+    Backward-compatible running-only path: total weekly_km is treated as CONTINUOUS
+    running (weight 1.0). For modality-aware interference use apply_endurance_interference.
+
+    CONVERGENCE_AUDIT F6: the engine computed this per-muscle lower-body interference
+    but only on the discarded in-memory volume engine, so it never reached the plan.
+    This applies it to the same `landmarks_lc` the allocator actually reads. The CUT
+    is deliberately NOT applied here — the systemic recovery_budget r_phase=0.8 scalar
+    already trims cut volume, and stacking a per-muscle cut on top would double-count.
+    """
+    return _apply_interference_reduction(landmarks_lc, omega * max(0.0, float(weekly_km or 0)))
+
+
+def apply_endurance_interference(landmarks_lc: dict, modality_km: dict,
+                                 omega: float = RUNNING_OMEGA) -> dict:
+    """E13: modality-aware interference. `modality_km` maps each endurance modality
+    (running_continuous / running_hiit / cycling / swimming) to weekly km; the weighted
+    interference-km drives the lower-body MRV reduction. Cycling/swimming volume costs a
+    fraction of the equivalent running km, so the engine can carry a large aerobic base
+    without crushing leg hypertrophy. Same MAINTENANCE floor (MRV ≥ mev+1) as the
+    running-only path. Cut is still left to r_phase (no double-count)."""
+    return _apply_interference_reduction(landmarks_lc, omega * endurance_interference_km(modality_km))
 
 # ── Canonical per-muscle landmark PRIORS (sets/wk) ────────────────────────────
 # SINGLE SOURCE OF TRUTH for MEV/MAV/MRV. Replaces the old generic {6,12,18} /

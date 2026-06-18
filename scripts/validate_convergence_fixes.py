@@ -176,6 +176,57 @@ check("E4 strength_weights reflects strength relevance (quads >> side_delts)",
       _sw["quads"] > _sw["side_delts"] > 0, f"quads {_sw['quads']:.3f}, side_delts {_sw['side_delts']:.3f}")
 
 
+# ── E13: modality-aware interference, polarized run plan, lift-first ordering ──
+from engine.hypertrophy_volume import (apply_endurance_interference, apply_running_interference,
+                                       endurance_interference_km, MODALITY_INTERFERENCE)
+from engine.allocator import build_run_plan, RUN_QUALITY_FLOOR, RUN_QUALITY_CAP
+from engine.resource_allocator import evaluate_two_a_day_split, LIFT_BEFORE_ENDURANCE
+# Modality weighting: running interferes most, cycling less, swimming least.
+check("E13 modality interference ranks running > cycling > swimming",
+      MODALITY_INTERFERENCE["running_continuous"] > MODALITY_INTERFERENCE["cycling"]
+      > MODALITY_INTERFERENCE["swimming"] > 0)
+check("E13 continuous running costs more than HIIT/PST-pace running",
+      MODALITY_INTERFERENCE["running_continuous"] > MODALITY_INTERFERENCE["running_hiit"])
+# 40 km cycling dents leg MRV far less than 40 km running.
+def _legs():
+    return {m: {"mev": 8, "mav": 14, "mrv": 20} for m in ("quads", "hamstrings", "calves", "glutes")}
+_run = apply_endurance_interference(_legs(), {"running_continuous": 40})
+_cyc = apply_endurance_interference(_legs(), {"cycling": 40})
+_swm = apply_endurance_interference(_legs(), {"swimming": 40})
+check("E13 equal-km cycling compresses leg MRV far less than running",
+      _cyc["quads"]["mrv"] > _run["quads"]["mrv"] and _swm["quads"]["mrv"] >= _cyc["quads"]["mrv"],
+      f"run {_run['quads']['mrv']}, cyc {_cyc['quads']['mrv']}, swim {_swm['quads']['mrv']}")
+# Backward-compat: running-only path == continuous-running modality dict.
+check("E13 apply_running_interference == continuous-running modality path",
+      apply_running_interference(_legs(), 30)["quads"]["mrv"]
+      == apply_endurance_interference(_legs(), {"running_continuous": 30})["quads"]["mrv"])
+# Maintenance floor (bullet 5): even crushing running never zeros leg volume (MRV >= mev+1).
+_crush = apply_endurance_interference(_legs(), {"running_continuous": 999})
+check("E13 leg MRV floored at mev+1 — running never zeros leg volume (maintenance floor)",
+      all(_crush[m]["mrv"] >= _crush[m]["mev"] + 1 for m in _crush))
+# Polarized run plan: hard quality floored at the maintenance dose, capped, intensity-tagged.
+_rp_low  = build_run_plan(days_available=6, vdot_gap=0.0, pst_mult=1.0)
+_rp_high = build_run_plan(days_available=6, vdot_gap=5.0, pst_mult=1.3)
+_hard_low  = sum(r["count"] for r in _rp_low  if r["intensity"] == "hard")
+_hard_high = sum(r["count"] for r in _rp_high if r["intensity"] == "hard")
+check("E13 run plan keeps a hard maintenance floor (never zero quality)",
+      _hard_low >= RUN_QUALITY_FLOOR >= 1)
+check("E13 hard fraction scales UP with the PST gap (not a taper)", _hard_high > _hard_low)
+check("E13 hard quality is capped to keep the plan polarized",
+      _hard_high <= RUN_QUALITY_CAP)
+check("E13 every run session is intensity-tagged with a duration cap",
+      all("intensity" in r and "max_minutes" in r for r in _rp_high))
+check("E13 hard intervals are shorter than the continuous easy/long base (duration cap)",
+      max(r["max_minutes"] for r in _rp_high if r["intensity"] == "hard")
+      <= min(r["max_minutes"] for r in _rp_high if r["intensity"] == "easy"))
+# Lift-before-endurance ordering is a first-class output on every shared day.
+_split, _why, _seq = evaluate_two_a_day_split(total_sets=12, planned_km=8.0, reserve_score=0.7)
+check("E13 high-volume shared day splits two-a-day", _split is True)
+check("E13 two-a-day sequence encodes lift before endurance", _seq == ("lift", "endurance"))
+check("E13 lift-first ordering holds even on a combined (non-split) day",
+      evaluate_two_a_day_split(4, 1.0, 0.7)[2] == LIFT_BEFORE_ENDURANCE)
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]

@@ -237,7 +237,19 @@ The hypertrophy + endurance goal is pursued TRUE CONCURRENTLY year-round (resolv
 These changes make the engine manage the interference instead of treating running as one
 generic penalty.
 
-### E13 [med]: Modality-aware interference, lift-first scheduling, polarized base, maintenance levers
+### [DONE] E13 [med]: Modality-aware interference, lift-first scheduling, polarized base, maintenance levers
+- *Done:* (1) Modality-weighted interference: `MODALITY_INTERFERENCE` (running 1.0 ≫
+  cycling 0.25 > swimming 0.10; continuous>HIIT) + `apply_endurance_interference`;
+  generate_weekly_program now queries cycling/swim km and feeds a modality dict, so the
+  bike/pool aerobic base barely dents leg MRV. `apply_running_interference` kept as
+  backward-compat wrapper. (2) Duration: run sessions carry `max_minutes` caps (continuous
+  capped longer than short hard intervals). (3) Lift-before-endurance: `evaluate_two_a_day_split`
+  returns an explicit `LIFT_BEFORE_ENDURANCE` sequence; caller stamps lift AM / cardio PM on
+  both halves. (4) Polarized 80/20: `build_run_plan` floors hard quality at a maintenance dose
+  (never zero), caps it, scales by PST gap (no taper), tags intensity. (5) Maintenance floors:
+  leg MRV floored at mev+1 (running never zeros legs); run quality floored. Partial: full
+  cross-day hard-leg/hard-run separation in the MPC sequencer is not deepened (the two-a-day
+  6h separation + lift-first ordering covers the shared-day case).
 - *Current:* `hypertrophy_volume.apply_running_interference` applies one generic per-km
   lower-body MRV reduction (`RUNNING_OMEGA`); the engine does not distinguish endurance
   MODALITY (running vs cycling vs swimming) or continuous vs HIIT running. `build_run_plan`

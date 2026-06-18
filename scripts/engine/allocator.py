@@ -270,13 +270,32 @@ def frequency_targets(set_targets: dict, days_available: int,
     return freq
 
 
+# E13 run-plan priors (learnable [ENG]). The run layer is the PST SPEED layer, not the
+# aerobic base — the high-volume Zone-2 base belongs on the bike/pool (low interference,
+# see hypertrophy_volume.MODALITY_INTERFERENCE). Runs stay polarized and short.
+RUN_QUALITY_FLOOR      = 1    # maintenance dose: hard run quality never drops to zero
+RUN_QUALITY_CAP        = 2    # keep the split polarized — small hard fraction (~80/20 by time)
+RUN_CONTINUOUS_CAP_MIN = 45   # cap continuous easy/long run duration (interference ∝ duration)
+RUN_INTERVAL_CAP_MIN   = 30   # hard interval/PST-pace sessions stay short
+
+
 def build_run_plan(days_available: int, vdot_gap: float, pst_mult: float) -> list:
-    """Lightweight polarized run plan: more quality as the PST deadline nears /
-    the VDOT gap is large. [ENG] — full running optimization is a later increment."""
-    quality = 2 if (pst_mult > 1.15 or (vdot_gap or 0) > 3) else 1
-    runs = [{"type": "interval", "count": quality},
-            {"type": "long", "count": 1},
-            {"type": "easy", "count": max(0, min(2, days_available - quality - 1))}]
+    """Explicit polarized (~80/20 by time) run plan: a SMALL hard fraction (threshold /
+    VO2 / PST-pace) scaled by the PST readiness gap — never a peak or taper — over a mostly
+    easy Zone-2 base. Hard quality is floored at a maintenance dose (RUN_QUALITY_FLOOR;
+    VO2max holds on ~2 quality sessions/wk) so it is never zeroed, and capped so the plan
+    stays polarized. Continuous runs are duration-capped (interference scales with duration);
+    the long low-intensity aerobic base belongs on the bike/pool, so these runs are the speed
+    layer, not the base. Each session is intensity-tagged with a duration cap. [ENG]"""
+    hard = RUN_QUALITY_CAP if (pst_mult > 1.15 or (vdot_gap or 0) > 3) else RUN_QUALITY_FLOOR
+    hard = max(RUN_QUALITY_FLOOR, min(hard, max(1, days_available - 1)))  # leave room for ≥1 easy
+    easy = max(0, min(2, days_available - hard - 1))
+    runs = [{"type": "interval", "count": hard, "intensity": "hard",
+             "max_minutes": RUN_INTERVAL_CAP_MIN},
+            {"type": "long", "count": 1, "intensity": "easy",
+             "max_minutes": RUN_CONTINUOUS_CAP_MIN},
+            {"type": "easy", "count": easy, "intensity": "easy",
+             "max_minutes": RUN_CONTINUOUS_CAP_MIN}]
     return [r for r in runs if r["count"] > 0]
 
 
