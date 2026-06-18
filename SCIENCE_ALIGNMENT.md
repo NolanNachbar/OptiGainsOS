@@ -140,7 +140,16 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   Given the priorities above, this is lower urgency than E1-E4; recommend aligning the
   doc now and deferring the EKF.
 
-### E8 [med]: Enforce bounded self-experimentation dosage (the "how much to experiment" policy)
+### [DONE] E8 [med]: Enforce bounded self-experimentation dosage (the "how much to experiment" policy)
+- *Done:* `select_exploration_parameter`/`get_exploration_delta` gained an `eligible`
+  filter; the orchestrator now (a) suppresses the bandit probe entirely while a
+  volume-tolerance controlled test is active (one probe at a time), and (b) restricts
+  eligible arms to muscles whose MRV posterior is still WIDE (not `mature` = Clues/Patterns
+  phase), so as posteriors converge to Established the eligible set shrinks and exploration
+  DECAYS to silence (empty eligible → no probe). Probe magnitude stays +1 set (recovery-safe);
+  the hazard halt is unchanged. Probe computation moved after the landmark/test state is known
+  so the gate sees fresh maturity flags. Mesocycle window: maturity now needs ≥8 weeks (E5),
+  which is what gates an arm out of eligibility.
 - *Current:* `exploration_manager.py` + `controlled_tests.py` run probes and halt on
   `hazard_score > 0.6` (audit), but there is no explicit guarantee of one-probe-at-a-time,
   no uncertainty gate that decays exploration as posteriors mature, and no enforced

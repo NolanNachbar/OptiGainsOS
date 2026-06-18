@@ -783,14 +783,12 @@ def main():
     #     at the allocator below; the cut is left to the systemic r_phase scalar.
 
     # ── 5. Exploration probe ──────────────────────────────────────────────────
-    # Which muscle (if any) to probe with +1 set this week. The delta is applied to
-    # the LIVE allocator landmarks (landmarks_lc) at §6b — NOT to a discarded
-    # in-memory mrv_dict as before (F3/F6), so a fired probe actually changes the plan.
-    exploration_delta = exploration_manager.get_exploration_delta(step_count) if not already_ran else {}
-    if exploration_delta:
-        print(f"  Exploration delta: {exploration_delta}")
-    # Remember which muscles were probed so next week can score their response.
-    new_last_explored = list(exploration_delta.keys())
+    # E8 (bounded self-experimentation): the probe is computed LATER (§6a-probe, after
+    # the landmark posteriors and any active controlled test are known) so it can be gated
+    # on posterior UNCERTAINTY and kept to one-probe-at-a-time. It is applied to the LIVE
+    # allocator landmarks (landmarks_lc) at §6b. Initialised here for clarity.
+    exploration_delta = {}
+    new_last_explored = []
 
     # ── 5b. Notes + deviations → exercise-value learning ──────────────────────
     # Read what Nolan WROTE and what he actually DID, and fold both into the
@@ -1006,6 +1004,28 @@ def main():
                 "created_by": USER_ID})
             active_test = {"test_type": "volume_tolerance", "baseline": {"muscle": tm, "week": 1}}
             print(f"  Scheduled volume-tolerance test: {tm}")
+
+    # ── 6a-probe. Exploration probe (E8: bounded self-experimentation) ────────
+    # Now that the landmark posteriors and any active controlled test are known, fire at
+    # most ONE bandit probe, gated on UNCERTAINTY:
+    #   - Suppressed entirely while a volume-tolerance test is running — never more than
+    #     one active probe (one muscle × one variable) at a time.
+    #   - Eligible muscles are those whose MRV posterior is still WIDE (not yet mature =
+    #     Clues/Patterns phase). As posteriors converge to Established the eligible set
+    #     shrinks and exploration decays toward zero (aggressive early, near-silent once
+    #     converged). The +1-set magnitude is a bounded, recovery-safe probe; the hazard
+    #     halt (exploration_manager caller guard, hazard_score > 0.6) still applies.
+    _test_running = bool(active_test and active_test.get("test_type") == "volume_tolerance")
+    if not already_ran and not _test_running:
+        _eligible = {m for m in MUSCLE_GROUPS if not (landmarks_db.get(m) or {}).get("mature")}
+        exploration_delta = exploration_manager.get_exploration_delta(step_count, eligible=_eligible)
+        if exploration_delta:
+            print(f"  Exploration probe ({len(_eligible)} immature eligible): {exploration_delta}")
+        elif not _eligible:
+            print("  Exploration: all posteriors converged — probing is silent (E8 decay).")
+        new_last_explored = list(exploration_delta.keys())
+    elif _test_running:
+        print("  Exploration probe suppressed — volume-tolerance test active (one probe at a time).")
 
     # ── 6a-pst. PST diagnostic scheduler (§6.4) — benchmark every 4 weeks ─────
     if not already_ran:

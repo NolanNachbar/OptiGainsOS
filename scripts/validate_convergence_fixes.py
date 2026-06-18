@@ -247,6 +247,21 @@ check("E5 but MRV cannot MATURE before a mesocycle of observations (C8 floor)",
       _matured_at is not None and _matured_at >= MESOCYCLE_MIN_OBS, f"matured at n_obs={_matured_at}")
 
 
+# ── E8: bounded self-experimentation (uncertainty gate, decay, one-at-a-time) ─
+_me8 = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
+_pw = next(w for w in range(40) if _me8.get_exploration_delta(w))  # a probe week
+check("E8 a fired probe targets a single muscle (one probe at a time)",
+      len(_me8.get_exploration_delta(_pw)) == 1)
+check("E8 probe is restricted to the eligible (still-uncertain) set",
+      set(_me8.get_exploration_delta(_pw, eligible={"calves"})) <= {"calves"})
+check("E8 exploration is SILENT once all posteriors converge (empty eligible → no probe)",
+      _me8.get_exploration_delta(_pw, eligible=set()) == {})
+check("E8 an ineligible-only probe week fires nothing (decay as model matures)",
+      _me8.get_exploration_delta(_pw, eligible={"not_a_muscle"}) == {})
+check("E8 eligible=None preserves back-compat (all parameters eligible)",
+      _me8.get_exploration_delta(_pw) != {})
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]
