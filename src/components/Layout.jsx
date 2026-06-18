@@ -59,6 +59,8 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/insights") },
       { label: "Brief History", url: "/brief-history",
         active: (l) => l.pathname.startsWith("/brief-history") },
+      { label: "Mind", url: "/mind",
+        active: (l) => l.pathname.startsWith("/mind") },
     ] },
 ];
 

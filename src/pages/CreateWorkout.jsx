@@ -236,7 +236,7 @@ export default function CreateWorkout() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 pb-28 md:pb-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6 hidden lg:block">
           <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
@@ -268,7 +268,7 @@ export default function CreateWorkout() {
                   value={workout.description}
                   onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
                   placeholder="Describe your workout…"
-                  rows={3}
+                  rows={2}
                   className="mt-1"
                 />
               </div>
@@ -489,9 +489,9 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <button type="button" onClick={onRemove} className="text-ink-muted hover:text-bad transition-colors ml-auto shrink-0">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <Button type="button" variant="dim" size="sm" onClick={onRemove} className="ml-auto shrink-0">
+            <Trash2 className="w-3.5 h-3.5 text-bad" />
+          </Button>
         )}
       </div>
 
@@ -511,7 +511,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
         <button
           type="button"
           onClick={onAddStep}
-          className="w-full min-h-[40px] inline-flex items-center justify-center rounded-lg text-xs font-semibold text-ink-muted hover:text-ink hover:bg-white/[0.06] border border-dashed border-charcoal-border transition-colors"
+          className="w-full min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs font-semibold text-ink-muted hover:text-ink hover:bg-white/[0.06] border border-dashed border-charcoal-border transition-colors"
         >
           <Plus className="w-3 h-3 mr-1" />
           Add Step to Repeat
@@ -569,7 +569,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             <Label>Duration</Label>
             <div className="flex gap-2 mt-1 items-center">
               <Select value={step.duration_type} onValueChange={(v) => onChange("duration_type", v)}>
-                <SelectTrigger className="w-36 shrink-0"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-36 shrink-0"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="time">Time (min)</SelectItem>
                   <SelectItem value="distance">Distance (km)</SelectItem>
@@ -595,7 +595,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             <Label>Target</Label>
             <div className="flex gap-2 mt-1 items-center flex-wrap">
               <Select value={step.target_type} onValueChange={(v) => onChange("target_type", v)}>
-                <SelectTrigger className="w-48 shrink-0"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-48 shrink-0"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TARGET_TYPES.map(tt => (
                     <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>

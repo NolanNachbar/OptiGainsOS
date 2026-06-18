@@ -37,6 +37,7 @@ import {
   Save,
   Check,
   ChevronUp,
+  ChevronDown,
   Dumbbell,
   TrendingUp,
   Calendar,
@@ -477,6 +478,7 @@ export default function ProgramBuilder() {
                   variant="outline"
                   size="sm"
                   onClick={() => importFileRef.current?.click()}
+                  className="min-h-[44px]"
                 >
                   Import JSON
                 </Button>
@@ -486,7 +488,7 @@ export default function ProgramBuilder() {
               variant="dim"
               size="sm"
               onClick={() => navigate("/workouts")}
-              className="min-h-[40px]"
+              className="min-h-[44px]"
             >
               <ArrowLeft className="w-4 h-4" />
               Cancel
@@ -783,6 +785,7 @@ function StepCycleDays({
   removeCardioWorkout,
   updateCardioWorkout,
 }) {
+  const [showLibraryMobile, setShowLibraryMobile] = useState(false);
   return (
     <div className="space-y-4">
       <Card className="">
@@ -809,7 +812,27 @@ function StepCycleDays({
           />
 
           <div className="mt-4 pt-4 border-t hairline">
-            <WorkoutLibrarySidebar />
+            {/* Mobile: keep the cycle grid focal — collapse the library behind a toggle.
+                Desktop always shows it. Sidebar stays mounted so DnD drag source persists. */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLibraryMobile((v) => !v)}
+              className="md:hidden w-full justify-between min-h-[44px] mb-3"
+            >
+              <span className="flex items-center gap-2">
+                <Dumbbell className="w-4 h-4" />
+                Workout Library
+              </span>
+              {showLibraryMobile ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+            <div className={showLibraryMobile ? "block" : "hidden md:block"}>
+              <WorkoutLibrarySidebar />
+            </div>
           </div>
         </CardContent>
       </Card>

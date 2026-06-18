@@ -42,7 +42,7 @@ export default function ProgramCard({ program, enrollment }) {
               )}
             </div>
 
-            <h3 className="text-base font-bold text-ink group-hover:text-brand transition-colors mb-1">
+            <h3 className="text-base font-bold text-ink mb-1">
               {program.title || program.name}
             </h3>
             {program.description && (

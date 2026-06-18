@@ -6,7 +6,7 @@
  *   2. The engine's prescribed session (rows + load pills + coral CTA)
  *   3. Fuel today — hue-coded rings, one tap to the log
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
@@ -19,9 +19,12 @@ import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
+import WeighInModal from "@/components/WeighInModal";
+import QuickCapture from "@/components/QuickCapture";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatRing, MetricTile, SectionLabel, MiniRing } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, ChevronDown, Scale, Apple, NotebookPen } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
@@ -34,6 +37,14 @@ export default function Today() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
+
+  // Morning check-in surfaces (weigh-in + quick note) and the muscle-load
+  // disclosure — kept local so the home stays the daily-ritual home without
+  // depending on the global FAB.
+  const [showWeighIn, setShowWeighIn] = useState(false);
+  const [showNote, setShowNote] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const weightUnit = profile?.weight_unit || "lb";
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
@@ -209,6 +220,46 @@ export default function Today() {
             </div>
             </>)}
           </div>
+
+          {/* Morning check-in — the daily ritual lives on the home, not buried in the FAB */}
+          <div className="glass px-4 pt-3 pb-3 mt-3 rise-in">
+            <SectionLabel className="mb-2">Morning check-in</SectionLabel>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowWeighIn(true)}
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
+              >
+                <Scale className="w-[18px] h-[18px]" style={{ color: "var(--hue-violet)" }} />
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Weigh in</span>
+                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">
+                  {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Log"}
+                </span>
+              </button>
+              <Link
+                to="/food-tracker?addFood=true"
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
+              >
+                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Log food</span>
+                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Track</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowNote(true)}
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
+              >
+                <NotebookPen className="w-[18px] h-[18px]" style={{ color: "var(--hue-teal-2)" }} />
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Note</span>
+                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Capture</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* The day's CTA — above fuel/state on mobile so the next action is never buried */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
+          <PrescribedSessionCard today={today} />
         </div>
 
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-2 space-y-3 rise-in-3">
@@ -272,9 +323,8 @@ export default function Today() {
 
         </aside>
 
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 space-y-3 rise-in-2">
-          <PrescribedSessionCard today={today} />
-          <DailyBriefCard today={today} />
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
+          <DailyBriefCard today={today} defaultCollapsed />
         </div>
 
         {heatmapError ? (
@@ -283,14 +333,41 @@ export default function Today() {
             <p className="text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
           </div>
         ) : fatigueData.length > 0 && (
-          <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
-            <SectionLabel icon={Activity} className="mb-2">Muscle load · 10 days</SectionLabel>
-            <div className="flex justify-center">
-              <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
-            </div>
+          <div className="surface px-4 py-3 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
+            <button
+              type="button"
+              onClick={() => setShowHeatmap((v) => !v)}
+              aria-expanded={showHeatmap}
+              className="w-full flex items-center justify-between"
+            >
+              <SectionLabel icon={Activity}>Muscle load · 10 days</SectionLabel>
+              <ChevronDown className={`w-4 h-4 text-faint transition-transform ${showHeatmap ? "rotate-180" : ""}`} />
+            </button>
+            {showHeatmap && (
+              <div className="flex justify-center mt-2">
+                <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Morning check-in modals (local so the home owns the ritual) */}
+      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
+      <Dialog open={showNote} onOpenChange={setShowNote}>
+        <DialogContent className="max-w-md glass-elevated text-ink">
+          <DialogHeader>
+            <DialogTitle className="text-ink">Quick note</DialogTitle>
+          </DialogHeader>
+          <div className="pt-2">
+            <QuickCapture
+              domain="general"
+              placeholder="Stream a note to Second Brain..."
+              onCapture={() => setShowNote(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

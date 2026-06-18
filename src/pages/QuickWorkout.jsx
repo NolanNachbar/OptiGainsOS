@@ -76,6 +76,11 @@ export default function QuickWorkout() {
       ? `${prescribed.title} — ${format(new Date(), "MMM d")}`
       : `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`
   );
+  // Only surface run-pace zones for run/cardio intent — a generic lifting
+  // "Quick Workout" should not show VDOT paces. Driven by prescribed modality
+  // or run/cardio keywords in the (editable) title.
+  const isRunCardio =
+    prescribed?.modality === "run" || /run|cardio|interval/i.test(workoutTitle);
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
@@ -294,13 +299,13 @@ export default function QuickWorkout() {
                 className="text-2xl font-extrabold h-10 flex-1"
               />
             ) : (
-              <h1 className="type-display text-2xl">{workoutTitle}</h1>
+              <h1 className="type-display text-xl md:text-2xl">{workoutTitle}</h1>
             )}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="h-8 w-8 text-ink-muted hover:text-ink"
+              className="h-11 w-11 text-ink-muted hover:text-ink"
             >
               {editingTitle ? (
                 <Check className="w-4 h-4 text-teal" />
@@ -309,6 +314,9 @@ export default function QuickWorkout() {
               )}
             </Button>
           </div>
+          <p className="text-sm font-semibold text-secondary mt-1">
+            {format(new Date(startTime), "EEEE, MMM d")}
+          </p>
           {prescribed && (
             <p className="text-[12.5px] font-semibold text-ink-muted mt-1">
               Logging the engine's prescribed session — targets pre-filled
@@ -316,7 +324,7 @@ export default function QuickWorkout() {
           )}
         </div>
 
-        <VdotZonesCard className="mb-6" />
+        {isRunCardio && <VdotZonesCard className="mb-6" />}
 
         {/* Engine prescription banner */}
         {prescribed && (
@@ -338,6 +346,17 @@ export default function QuickWorkout() {
             onAccept={handleInsightAccept}
             onDismiss={() => setInsightDismissed(true)}
           />
+        )}
+
+        {/* Empty state — passive prompt; AddExerciseForm below provides the action */}
+        {exercises.length === 0 && (
+          <div className="glass rounded-xl px-4 py-8 mb-4 flex flex-col items-center text-center">
+            <Dumbbell className="w-7 h-7 text-faint mb-3" />
+            <p className="text-sm font-bold text-ink">No exercises yet</p>
+            <p className="text-xs font-semibold text-secondary mt-1 max-w-[260px]">
+              Add your first exercise below to start logging this session.
+            </p>
+          </div>
         )}
 
         {/* Exercise List */}

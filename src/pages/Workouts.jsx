@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LoadingScreen, LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateReactions, invalidateWorkouts, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { useProfile } from "@/hooks/useUserQueries";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -32,6 +32,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const [filterOpen, setFilterOpen] = useState(false);
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState("");
+  const [libraryVisible, setLibraryVisible] = useState(8);
   const queryClient = useQueryClient();
 
   const { data: workouts = [], isLoading: workoutsLoading, error: workoutsError } = useQuery({
@@ -312,7 +313,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
           <TabsContent value="library">
         <div className="glass mb-6 overflow-hidden">
-          <div className="px-6 pt-4 pb-2">
+          <div className="px-4 pt-4 pb-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-bold text-ink shrink-0">Saved Workouts</h2>
               <div className="flex items-center gap-2 shrink-0">
@@ -353,7 +354,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="px-6 pb-4 border-t hairline pt-3 space-y-3">
+            <div className="px-4 pb-4 border-t hairline pt-3 space-y-3">
               <div>
                 <p className="section-label mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -441,7 +442,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               )}
             </div>
           )}
-          <div className="px-6 pb-6">
+          <div className="px-4 pb-6">
             <div className="pr-2">
               {workoutsLoading ? (
                 <div className="space-y-4">
@@ -450,18 +451,28 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   ))}
                 </div>
               ) : filteredWorkouts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredWorkouts.map((workout) => (
-                    <WorkoutCard
-                      key={workout.id}
-                      workout={workout}
-                      userId={user.id}
-                      onEdit={handleEdit}
-                      onClone={handleClone}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredWorkouts.slice(0, libraryVisible).map((workout) => (
+                      <WorkoutCard
+                        key={workout.id}
+                        workout={workout}
+                        userId={user.id}
+                        onEdit={handleEdit}
+                        onClone={handleClone}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </div>
+                  {filteredWorkouts.length > libraryVisible && (
+                    <div className="flex justify-center mt-6">
+                      <Button variant="dim" size="sm" onClick={() => setLibraryVisible(v => v + 8)}>
+                        Show more
+                        <span className="ml-1.5 text-ink-faint">{filteredWorkouts.length - libraryVisible}</span>
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-6">
                   <Zap className="w-10 h-10 text-ink-muted mx-auto mb-3" />
@@ -530,8 +541,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
               <TabsContent value="active">
                 {enrollmentsLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingSpinner />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-40 rounded-xl animate-pulse bg-charcoal-elevated" />
+                    ))}
                   </div>
                 ) : activeEnrollments.length === 0 ? (
                   <ProgramsEmptyState
@@ -572,8 +585,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
               <TabsContent value="my-programs">
                 {programsLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingSpinner />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-40 rounded-xl animate-pulse bg-charcoal-elevated" />
+                    ))}
                   </div>
                 ) : programs.length === 0 ? (
                   <ProgramsEmptyState
@@ -845,11 +860,15 @@ function CardioEntryCard({ entry }) {
 
 function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(12);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <LoadingSpinner />
+      <div className="space-y-3">
+        <div className="h-20 rounded-xl animate-pulse bg-charcoal-elevated" />
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-28 rounded-xl animate-pulse bg-charcoal-elevated" />
+        ))}
       </div>
     );
   }
@@ -919,7 +938,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
     .filter(e => e.type === 'cardio' && e.distance)
     .reduce((sum, e) => sum + e.distance / 1609.34, 0);
 
-  const grouped = groupByDay(allEntries);
+  const grouped = groupByDay(allEntries.slice(0, visibleCount));
 
   return (
     <>
@@ -977,9 +996,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {grouped.map(({ label, entries }) => (
-            <section key={label}>
+        <div className="space-y-6">
+          {grouped.map(({ label, entries }, i) => (
+            <section key={label} className={i > 0 ? 'border-t hairline pt-6' : ''}>
               <h3 className="section-label mb-3">{label}</h3>
               <div className="space-y-3">
                 {entries.map(entry =>
@@ -995,6 +1014,14 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
               </div>
             </section>
           ))}
+          {allEntries.length > visibleCount && (
+            <div className="flex justify-center pt-2">
+              <Button variant="dim" size="sm" onClick={() => setVisibleCount(v => v + 12)}>
+                Load more
+                <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

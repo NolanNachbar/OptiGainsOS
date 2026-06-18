@@ -5,21 +5,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Dumbbell, Activity, Apple, Scale, BookOpen, Briefcase,
-  Lightbulb, ChevronDown, ChevronUp, Bot, History, Coins,
+  Dumbbell, Activity, Apple, Scale, BookOpen,
+  Lightbulb, ChevronDown, ChevronUp, Bot, History,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getTodayString } from "@/utils/dateUtils";
 import { estimateBriefCost } from "@/utils/briefCost";
 import { format, parseISO } from "date-fns";
 
+// Career was cut from the IA — its coach is dropped here so the brief never
+// renders an orphaned section.
 const COACHES = [
   { key: "performance",  label: "Performance",  icon: Dumbbell },
   { key: "endurance",    label: "Endurance",    icon: Activity },
   { key: "nutrition",    label: "Nutrition",    icon: Apple },
   { key: "body_comp",    label: "Body Comp",    icon: Scale },
   { key: "learning",     label: "Learning",     icon: BookOpen },
-  { key: "career",       label: "Career",       icon: Briefcase },
 ];
 
 /** Coach-persona tag — tiny uppercase teal chip (the an-coach <b>). */
@@ -56,11 +57,17 @@ function CoachSection({ coach, content }) {
   );
 }
 
-export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
+export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCollapsed = false }) {
   const { user } = useAuth();
   const todayStr = today || getTodayString();
+  // Honor a saved preference; otherwise fall back to the caller's default
+  // (the home keeps the brief collapsed so it never dominates the page height,
+  //  while Analyze leaves it open since the brief is that page's main content).
   const [isCollapsed, setIsCollapsed] = useState(() => {
-    try { return localStorage.getItem("ai_brief_collapsed") === "true"; } catch { return false; }
+    try {
+      const saved = localStorage.getItem("ai_brief_collapsed");
+      return saved === null ? defaultCollapsed : saved === "true";
+    } catch { return defaultCollapsed; }
   });
 
   const toggleCollapse = () => {
@@ -126,7 +133,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false }) {
           </CardTitle>
           <div className="flex items-center gap-3">
             {generatedAt && (
-              <span className="font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
+              <span className="hidden sm:inline font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
               <Button variant="ghost" size="sm" className="min-h-[40px] text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-3">
