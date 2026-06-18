@@ -43,6 +43,7 @@ from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title
 from engine.hypertrophy_volume import HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS, apply_running_interference
 from engine.allocator          import plan_week, default_goal_priorities
+from engine.nutrition_modulator import ETA_DEFICIT
 from engine.athlete_profile    import MUSCLE_EMPHASIS
 from engine.hypertrophy_volume import LANDMARK_PRIORS
 from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation, OBS_VAR
@@ -1037,9 +1038,23 @@ def main():
     emphasis  = profile.get("muscle_emphasis") or MUSCLE_EMPHASIS
     vdot_gap  = float(vdot_zones.get("vdot_gap") or 0.0)
 
+    # E9: feed the nutrition modulator's deficit (the driver of its previously-dead
+    # mrv_adj = base·(1 − ETA·deficit_ratio)) into the allocator's recovery-cost term
+    # (E3) as the inverse compression. This is COMPLEMENTARY to — not a duplicate of —
+    # the flat systemic r_phase cut in recovery_budget (which handles the categorical
+    # "cut" budget): r_phase scales the total budget, while this adds the continuous,
+    # deficit-magnitude-scaled per-muscle recovery-cost shape, biting on muscles pushed
+    # toward MRV. (The deficit also slows fatigue clearance via tau_fat_adj → Kalman →
+    # lower TSB → smaller budget; see compute_athlete_state E9 wiring.)
+    _deficit_ratio = float((latest_athlete.get("nutrition_modulation") or {}).get("deficit_ratio") or 0.0)
+    recovery_cost_mult = 1.0 / max(0.5, 1.0 - ETA_DEFICIT * _deficit_ratio)
+
     plan = plan_week(landmarks_lc, tsb_now, phase_now, goal_prio, deadline_mult,
                      days_available=6, vdot_gap=vdot_gap, learned_freq=learned_freq,
-                     muscle_emphasis=emphasis)
+                     muscle_emphasis=emphasis, recovery_cost_mult=recovery_cost_mult)
+    if _deficit_ratio > 0:
+        print(f"  E9 deficit coupling: deficit_ratio={_deficit_ratio:.2f} → "
+              f"recovery_cost_mult={recovery_cost_mult:.3f}")
     weekly_targets = {m: int(v) for m, v in plan["set_targets"].items()}
 
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")

@@ -1157,19 +1157,9 @@ def main():
         run_trimp = compute_normalized_cardio_trimp(recovery_rows)
         str_vol   = compute_normalized_strength_vol(workout_logs)
 
-        # 4. Kalman step (predict + update)
-        _obs = f"{y_t:.2f} (strength perf vs baseline)" if y_t is not None else "none → predict-only"
-        print(f"  Observation y_t: {_obs}")
-        banister_out = kalman.step(u_t, y_t, hrv_z=hrv_z, soreness=soreness)
-        print(f"  Banister: F={banister_out['fitness']:.2f}  f={banister_out['fatigue']:.2f}  "
-              f"TSB={banister_out['tsb_banister']:.2f}  conf={banister_out['confidence']}")
-
-        # 5. Cellular ODE step
-        cellular_out = cellular.step(run_trimp, str_vol)
-        print(f"  Cellular: AMPK={cellular_out['ampk']:.3f}  mTORC1={cellular_out['mtorc1']:.3f}  "
-              f"interference={cellular_out['interference_level']}")
-
-        # 6. Nutrition modulation
+        # 4. Nutrition modulation (computed BEFORE the Kalman step so a caloric deficit
+        #    can slow fatigue-clearance for THIS step — E9 wires this previously-dead
+        #    output into the engine).
         maintenance_kcal  = estimate_tdee(
             float(profile.get("current_weight") or 0),
             nutrition.get("avg_calories_7d"),
@@ -1187,6 +1177,23 @@ def main():
         print(f"  Nutrition: deficit_ratio={nutrition_mod_out['deficit_ratio']:.2f}  "
               f"tau_fat_adj={nutrition_mod_out['tau_fat_adj']}  "
               f"reliability={nutrition_mod_out['metric_reliability']}")
+        # E9: under a deficit feed the slowed fatigue-clearance into THIS Kalman step
+        # (transient — never overwrites the learned base tau_fat, so it can't compound).
+        _tau_fat_eff = (nutrition_mod_out["tau_fat_adj"]
+                        if nutrition_mod_out.get("phase") == "deficit" else None)
+
+        # 5. Kalman step (predict + update)
+        _obs = f"{y_t:.2f} (strength perf vs baseline)" if y_t is not None else "none → predict-only"
+        print(f"  Observation y_t: {_obs}")
+        banister_out = kalman.step(u_t, y_t, hrv_z=hrv_z, soreness=soreness,
+                                   tau_fat_eff=_tau_fat_eff)
+        print(f"  Banister: F={banister_out['fitness']:.2f}  f={banister_out['fatigue']:.2f}  "
+              f"TSB={banister_out['tsb_banister']:.2f}  conf={banister_out['confidence']}")
+
+        # 6. Cellular ODE step
+        cellular_out = cellular.step(run_trimp, str_vol)
+        print(f"  Cellular: AMPK={cellular_out['ampk']:.3f}  mTORC1={cellular_out['mtorc1']:.3f}  "
+              f"interference={cellular_out['interference_level']}")
 
         # 7. VDOT: derive from real Garmin runs (HR-corrected for effort).
         # Garmin run data lives in garmin_activities with avg_hr, so submax base

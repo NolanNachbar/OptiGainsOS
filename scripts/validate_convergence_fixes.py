@@ -115,6 +115,41 @@ check("E3 MILP respects the soft overshoot ceiling",
       bool((_weekly <= 18 * _MILP_OVER + 0.01).all()))
 
 
+# ── E9: nutrition modulation wired into Kalman (tau_fat) + allocator (recovery cost) ─
+from engine.banister_kalman import BanisterKalman
+from engine.nutrition_modulator import NutritionModulator, ETA_DEFICIT
+# (a) Transient tau_fat_eff slows fatigue clearance for one step, without mutating base.
+_k1, _k2 = BanisterKalman(), BanisterKalman()
+for _ in range(5):
+    _k1.predict(70.0); _k2.predict(70.0)        # identical fatigue build-up
+_base_tau = _k2.tau_fat
+_k1.predict(0.0)                                 # normal clearance
+_k2.predict(0.0, tau_fat_eff=_base_tau * 1.5)    # deficit: slower clearance
+check("E9 a larger transient tau_fat retains MORE fatigue (slower clearance)",
+      float(_k2.x[1, 0]) > float(_k1.x[1, 0]),
+      f"slowed {float(_k2.x[1,0]):.4f} > normal {float(_k1.x[1,0]):.4f}")
+check("E9 transient tau_fat does NOT mutate the persisted base (no compounding)",
+      _k2.tau_fat == _base_tau)
+# (b) modulate() actually produces the deficit adjustments E9 feeds downstream.
+_nm  = NutritionModulator(maintenance_kcal=3000)
+_mod = _nm.modulate(current_kcal_7d_avg=2400, base_tau_fat=15.0, base_mrv_sets=16.0)  # ~20% deficit
+check("E9 deficit slows fatigue clearance (tau_fat_adj > base)", _mod["tau_fat_adj"] > 15.0)
+check("E9 deficit compresses recoverable volume (mrv_adj < base)", _mod["mrv_adj"] < 16.0)
+check("E9 maintenance/surplus stays neutral (tau_fat_adj == base)",
+      _nm.modulate(3000, 15.0, 16.0)["tau_fat_adj"] == 15.0)
+# (c) The deficit-derived recovery_cost_mult (as wired in generate_weekly_program)
+#     compresses the high-volume allocation through E3's recovery-cost term. Use the
+#     deepest (capped) deficit so the gentle per-muscle lever produces a visible cut.
+_deep = _nm.modulate(current_kcal_7d_avg=1950, base_tau_fat=15.0, base_mrv_sets=16.0)
+_rcm = 1.0 / max(0.5, 1.0 - ETA_DEFICIT * _deep["deficit_ratio"])
+check("E9 deficit yields a recovery_cost_mult > 1", _rcm > 1.0, f"mult {_rcm:.3f}")
+_e9_neutral = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=1.0)
+_e9_deficit = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=_rcm)
+check("E9 the deep-deficit mult compresses high-volume allocation (volume lever only)",
+      _e9_deficit["quads"] < _e9_neutral["quads"],
+      f"neutral {_e9_neutral['quads']} → deficit {_e9_deficit['quads']}")
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]

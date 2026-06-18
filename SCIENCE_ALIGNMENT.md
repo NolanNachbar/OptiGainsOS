@@ -143,7 +143,14 @@ From the data-ingestion audit. Most inputs are properly used (HRV, RHR, sleep sc
 battery, Garmin stress, training load, logged sets/RIR/e1RM, soreness, energy, bodyweight
 trend all feed real engine paths). The items below are the exceptions.
 
-### E9 [high]: Wire the nutrition modulation outputs into the engine (currently dead code)
+### [DONE] E9 [high]: Wire the nutrition modulation outputs into the engine (currently dead code)
+- *Done:* (1) `tau_fat_adj` now feeds the Kalman fatigue-decay: nutrition modulation moved
+  BEFORE the daily Kalman step, and `BanisterKalman.predict/step` gained a TRANSIENT
+  `tau_fat_eff` (deficit slows clearance for that step only — never overwrites/compounds the
+  learned base tau_fat). (2) `mrv_adj`'s deficit feeds the allocator via E3's
+  `recovery_cost_mult = 1/(1−ETA·deficit_ratio)` in generate_weekly_program → plan_week,
+  complementary to the systemic r_phase budget cut (mult bounded ≤1.356 at max deficit).
+  Volume-only; bar load/RIR untouched. Safe when nutrition data absent (→ neutral).
 - *Current:* `nutrition_modulator` computes `tau_fat_adj` (deficit slows fatigue clearance)
   and `mrv_adj` (`base_mrv_sets * (1 - 0.75 * deficit_ratio)`), writes them to
   `athlete_state` for the UI, but **neither is consumed**. The Kalman filter always uses

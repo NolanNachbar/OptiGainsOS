@@ -71,7 +71,9 @@ SOFT_MRV_OVERSHOOT   = 1.30   # [ENG] numeric backstop ceiling; the recovery-cos
 R_RECOVERY_MIN  = 0.80   # [ENG] deep fatigue trims volume modestly, never sandbags
 R_RECOVERY_MAX  = 1.15   # [ENG] freshness flexes the budget toward MRV territory
 R_RECOVERY_GAIN = 0.02   # [ENG] sets of budget scale per unit TSB
-R_PHASE_CUT     = 0.8    # [ENG] systemic cut volume scalar (the per-muscle cut lives nowhere else)
+R_PHASE_CUT     = 0.8    # [ENG] systemic (whole-budget) cut volume scalar. The per-muscle
+                         # deficit effect rides E9's recovery_cost_mult (E3 cost term), which
+                         # is complementary: this scales total budget, that reshapes per-muscle cost.
 # Low per-session muscle volume (Nolan's philosophy) → weekly sets are delivered
 # by FREQUENCY, not by piling sets onto one day. Sourced from athlete_profile so
 # the allocator and session generator can't disagree on the cap.
