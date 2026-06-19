@@ -38,7 +38,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
             <Icon className={`w-3 h-3 ${iconColor}`} />
           </div>
           <p className="text-[12.5px] font-semibold text-ink-muted leading-relaxed">{insight.message}</p>
-          {insight.suggestedWeight && (
+          {Number(insight.suggestedWeight) > 0 && (
             <div className="flex items-center gap-2 mt-3">
               <Button
                 size="sm"
@@ -58,7 +58,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
               </Button>
             </div>
           )}
-          {!insight.suggestedWeight && (
+          {!(Number(insight.suggestedWeight) > 0) && (
             <Button
               size="sm"
               variant="ghost"

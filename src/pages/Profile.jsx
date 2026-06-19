@@ -64,7 +64,9 @@ function normalizeFormData(f) {
 export default function Profile({ hideHeader }) {
   const navigate = useNavigate();
   const { user, deleteAccount, signOut } = useAuth();
-  const { isSupported: pushSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user?.id);
+  // Push notifications are managed inside <NotificationSettings/>; the hook is
+  // retained here only for any account-scoped initialization side effects.
+  usePushNotifications(user?.id);
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -175,8 +177,18 @@ export default function Profile({ hideHeader }) {
     }
   }, [profile, isLoading]);
 
+  // Re-baseline the dirty snapshot to the committed formData once after init, so
+  // a fresh load is never falsely "unsaved" due to any normalize/shape/timing
+  // drift between the constructed `initial` and the live formData. Runs once.
+  const baselineSyncedRef = useRef(false);
+  useEffect(() => {
+    if (!initializedRef.current || baselineSyncedRef.current) return;
+    baselineSyncedRef.current = true;
+    savedFormDataRef.current = structuredClone(normalizeFormData(formData));
+  }, [formData]);
+
   const isDirty = useMemo(() => {
-    if (!savedFormDataRef.current) return false;
+    if (!savedFormDataRef.current || !baselineSyncedRef.current) return false;
     return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 

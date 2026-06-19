@@ -244,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Main content */}
           <main
             className="flex-1 flex flex-col min-h-0 lg:pb-0"
-            style={{ paddingBottom: "calc(5.75rem + env(safe-area-inset-bottom))" }}
+            style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex-1 min-h-0">{children}</div>
           </main>
@@ -281,7 +281,12 @@ export default function Layout({ children, currentPageName }) {
         })}
       </nav>
 
-      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder'].some(p => location.pathname.startsWith(p)) && (
+      {/* FAB is suppressed on form/builder pages and on dense log/list surfaces
+          where it would float over tabular data and a native add action already
+          exists (Fuel/FoodTracker, Train hub + lists, Career, Mind, ProgramDetail). */}
+      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
+         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/'
+        ].some(p => location.pathname.startsWith(p)) && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
           onCalculators={() => setShowCalculators(true)}

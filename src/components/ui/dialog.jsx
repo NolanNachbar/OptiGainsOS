@@ -9,14 +9,15 @@ const Dialog = ({ open, onOpenChange, children }) => {
 
   return createPortal(
     <DialogContext.Provider value={{ onOpenChange }}>
-      <div className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 z-[10000]" style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="fixed inset-0 z-[10000]">
+        {/* Full-screen scrim — covers the dock too (a modal owns the screen). */}
         <div
-          className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 bg-black/50"
-          style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}
+          className="fixed inset-0 bg-black/60"
           onClick={() => onOpenChange(false)}
         />
-        <div className="fixed inset-0 top-[var(--layout-header-height,0px)] md:bottom-0 flex items-center justify-center p-2 sm:p-4 pointer-events-none" style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="pointer-events-auto">
+        {/* Positioner: bottom sheet on mobile, centered dialog on desktop. */}
+        <div className="fixed inset-0 flex items-end justify-center md:items-center md:p-4 pointer-events-none">
+          <div className="pointer-events-auto w-full md:w-auto">
             {React.Children.map(children, child =>
               child?.type === DialogContent ? child : null
             )}
@@ -41,10 +42,19 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
   return (
     <div
       ref={ref}
-      className={`relative z-50 glass-elevated text-ink rounded-xl w-full max-w-lg md:max-h-[calc(100vh-var(--layout-header-height,0px)-1rem)] ${hasCustomPadding ? "" : "p-6"} ${className}`}
-      style={{ maxHeight: 'calc(100vh - var(--layout-header-height, 0px) - 56px - env(safe-area-inset-bottom, 0px) - 1rem)' }}
+      className={`relative z-50 glass-sheet text-ink w-full max-w-lg overflow-y-auto
+        rounded-t-2xl rounded-b-none border-b-0
+        md:rounded-xl md:border-b md:mx-auto
+        sheet-rise md:rise-in
+        ${hasCustomPadding ? "" : "p-6"} ${className}`}
+      style={{
+        maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem)',
+        paddingBottom: hasCustomPadding ? undefined : 'calc(1.5rem + env(safe-area-inset-bottom))',
+      }}
       {...props}
     >
+      {/* Mobile drag-handle affordance */}
+      <div className="md:hidden mx-auto -mt-2 mb-3 h-1 w-9 rounded-full bg-white/20" aria-hidden="true" />
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}

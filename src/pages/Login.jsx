@@ -91,7 +91,7 @@ export default function Login() {
               {errorMsg && <p id="login-error" role="alert" className="text-bad text-sm mt-2">{errorMsg}</p>}
             </div>
 
-            <Button type="submit" variant="volt" className="w-full mt-1" disabled={loading}>
+            <Button type="submit" variant="volt" size="lg" className="w-full mt-1" disabled={loading}>
               {loading ? (
                 <>
                   <LoadingSpinner size="small" className="mr-1" />

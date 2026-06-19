@@ -74,6 +74,9 @@
   --glass-edge-strong: rgba(255, 255, 255, 0.13);
   --glass-specular:    rgba(255, 255, 255, 0.12);
   --dock-tint:         rgba(120, 120, 128, 0.18);
+  /* Sheet/dialog material — heavier & near-opaque so busy page content
+     never bleeds through behind a form (dock-tint is too transparent). */
+  --sheet-bg:          rgba(20, 24, 31, 0.92);
   --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
 
@@ -133,6 +136,7 @@ html.light {
   --glass-edge-strong: rgba(18, 24, 34, 0.12);
   --glass-specular:    rgba(255, 255, 255, 0.85);
   --dock-tint:         rgba(255, 255, 255, 0.66);
+  --sheet-bg:          rgba(255, 255, 255, 0.97);
   --shadow-1: 0 10px 28px rgba(22, 28, 40, 0.10);
   --shadow-2: 0 8px 24px rgba(22, 28, 40, 0.14);
 }
@@ -272,6 +276,15 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     border: 0.5px solid var(--glass-edge-strong);
     box-shadow: inset 1.5px 1.5px 1px var(--glass-specular), var(--shadow-2);
   }
+  /* Sheet/dialog chrome — heavier liquid glass, near-opaque so forms stay
+     legible over busy pages. Used by the bottom-sheet dialog primitive. */
+  .glass-sheet {
+    background: var(--sheet-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 0.5px solid var(--glass-edge-strong);
+    box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-2);
+  }
   .glass-brand {
     background: rgba(var(--color-brand-rgb) / 0.14);
     backdrop-filter: blur(14px) saturate(160%);
@@ -343,6 +356,14 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   .rise-in   { animation: riseIn .28s var(--ease) both; }
   .rise-in-2 { animation: riseIn .28s var(--ease) .06s both; }
   .rise-in-3 { animation: riseIn .28s var(--ease) .12s both; }
+
+  /* Bottom-sheet entrance — slides up from the bottom edge on mobile. */
+  .sheet-rise { animation: sheetRise .30s var(--ease) both; }
+}
+
+@keyframes sheetRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes riseIn {
@@ -372,5 +393,5 @@ html.light body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .glass-interactive, .cta-coral { transition: none; }
-  .rise-in, .rise-in-2, .rise-in-3 { animation: none; }
+  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise { animation: none; }
 }

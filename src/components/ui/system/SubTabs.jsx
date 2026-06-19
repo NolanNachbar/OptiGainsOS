@@ -1,3 +1,5 @@
+import { useRef, useEffect } from "react";
+
 /**
  * SubTabs — the section-level tab strip used by every hub (Train, Fuel, Analyze…).
  * Liquid-glass strip; the active tab is a coral pill (the dock language).
@@ -10,17 +12,27 @@
  *   right:   optional right-aligned node (defaults to nothing)
  */
 export default function SubTabs({ tabs, active, onChange, right, sticky = true, showOnDesktop = false, className = "" }) {
+  const stripRef = useRef(null);
+  const activeRef = useRef(null);
+
+  // Keep the active tab fully in view in the scrollable strip so a 4th/5th tab
+  // is never clipped at the right edge (it could otherwise show icon-only).
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [active]);
+
   return (
     <div
       className={`${sticky ? "sticky top-0 z-50" : ""} ${showOnDesktop ? "" : "lg:hidden"} glass-elevated border-x-0 border-t-0 rounded-none ${className}`}
     >
       <div className="max-w-5xl mx-auto px-3 flex items-center justify-between h-12">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar items-center h-full">
+        <div ref={stripRef} className="flex gap-1 overflow-x-auto no-scrollbar items-center h-full">
           {tabs.map(({ id, label, icon: Icon }) => {
             const isActive = active === id;
             return (
               <button
                 key={id}
+                ref={isActive ? activeRef : null}
                 onClick={() => onChange(id)}
                 className={`relative px-3.5 h-11 rounded-full flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
                   isActive

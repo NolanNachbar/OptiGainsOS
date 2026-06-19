@@ -94,6 +94,7 @@ export default function ForgotPassword() {
                 <Button
                   type="submit"
                   variant="volt"
+                  size="lg"
                   className="w-full font-bold"
                   disabled={loading}
                 >

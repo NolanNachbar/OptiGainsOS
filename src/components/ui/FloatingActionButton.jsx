@@ -48,7 +48,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
       {/* Fan-out actions — positioned above the FAB */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed right-4 md:bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 4rem)' }}>
+          <div className="fixed right-[18px] md:bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom) + 4rem)' }}>
             {actions.map((action, index) => (
               <div
                 key={action.label}
@@ -92,8 +92,8 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
         onClick={() => {
           setIsOpen(!isOpen);
         }}
-        className="fixed right-4 md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] text-[var(--color-action-dark)] rounded-full shadow-energy flex items-center justify-center transition-colors bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]"
-        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+        className="fixed right-[18px] md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] text-[var(--color-action-dark)] rounded-full shadow-energy flex items-center justify-center transition-colors bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]"
+        style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"
       >

@@ -82,6 +82,7 @@ export default function WeighInModal({ open, onOpenChange }) {
             <Button
               type="button"
               variant="outline"
+              size="lg"
               className="flex-1"
               onClick={() => onOpenChange(false)}
             >
@@ -90,6 +91,7 @@ export default function WeighInModal({ open, onOpenChange }) {
             <Button
               type="submit"
               variant="primary"
+              size="lg"
               className="flex-1"
               disabled={weighInMutation.isPending}
             >
