@@ -64,21 +64,21 @@ function AppForm({ initial, onSave, onClose }) {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label className="text-xs text-ink-muted mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
+          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
         </div>
         <div className="col-span-2">
-          <Label className="text-xs text-ink-muted mb-1.5 block">Role</Label>
-          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
+          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Applied</Label>
-          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="h-9 text-sm" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
+          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="text-sm" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Status</Label>
+          <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
           <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-            <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
             </SelectContent>
@@ -86,22 +86,22 @@ function AppForm({ initial, onSave, onClose }) {
         </div>
       </div>
       <div>
-        <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." className="h-9" />
+        <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label className="text-xs text-ink-muted mb-1.5 block">Next action</Label>
-          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
+          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" />
         </div>
         <div className="col-span-2">
-          <Label className="text-xs text-ink-muted mb-1.5 block">Next action date</Label>
-          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="h-9 text-sm" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
+          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="text-sm" />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="sm" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
+        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="volt" size="lg" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
   );
@@ -175,13 +175,17 @@ function PipelineTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 font-technical text-xs font-semibold text-muted-2">
-          <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
-          <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
-        </div>
-        <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
-          <Plus className="w-3.5 h-3.5" /> Add Application
-        </Button>
+        {apps.length > 0 && (
+          <div className="flex items-center gap-4 font-technical text-xs font-semibold text-muted-2">
+            <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
+            <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
+          </div>
+        )}
+        {apps.length > 0 && (
+          <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
+            <Plus className="w-3.5 h-3.5" /> Add Application
+          </Button>
+        )}
       </div>
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -264,7 +268,7 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+        <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
           <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
@@ -312,33 +316,33 @@ function NetworkForm({ initial, onSave, onClose }) {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label className="text-xs text-ink-muted mb-1.5 block">Person</Label>
-          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
+          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
+          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Type</Label>
-          <Input value={form.interaction_type} onChange={e => setForm(p => ({ ...p, interaction_type: e.target.value }))} placeholder="LinkedIn, Coffee chat" className="h-9" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Type</Label>
+          <Input value={form.interaction_type} onChange={e => setForm(p => ({ ...p, interaction_type: e.target.value }))} placeholder="LinkedIn, Coffee chat" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="h-9 text-sm" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
+          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="text-sm" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Follow-up by</Label>
-          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="h-9 text-sm" />
+          <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
+          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="text-sm" />
         </div>
       </div>
       <div>
-        <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" className="h-9" />
+        <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="sm" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
+        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="volt" size="lg" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
   );
@@ -409,7 +413,7 @@ function NetworkingTab() {
       <div className="space-y-3">
         <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
         {!isLoading && !isError && contacts.length === 0 && (
-          <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+          <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
             <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log a conversation to track follow-ups.</p>
@@ -506,7 +510,7 @@ function CaptureTab() {
           <UserPlus className="w-3 h-3 text-gold" /> New Pipeline Event
         </h2>
         <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
-        <p className="text-xs font-semibold text-muted-2 mt-2 italic">The desktop agent parses these into your career pipeline in Obsidian.</p>
+        <p className="text-xs font-semibold text-muted-2 mt-2 italic">Captured events sync to your pipeline.</p>
       </div>
       <div>
         <h2 className="section-label mb-4 flex items-center gap-2">
@@ -517,7 +521,7 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-gold font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[7px] bg-gold/10">
+                <span className="font-technical text-[10px] text-gold font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gold/10">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
                 {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Processed</span>}
@@ -542,9 +546,9 @@ export default function Career({ hideHeader }) {
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <header className="mb-6 rise-in">
+          <header className="mb-6 rise-in hidden lg:block">
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-gold/[0.13]">
+              <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-gold/[0.13]">
                 <Briefcase className="w-[15px] h-[15px] text-gold" />
               </div>
               <h1 className="type-display text-2xl">Career & Pipeline</h1>

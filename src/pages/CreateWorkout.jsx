@@ -236,7 +236,7 @@ export default function CreateWorkout() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 pb-28 md:pb-6 bg-charcoal min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6 hidden lg:block">
           <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
@@ -372,7 +372,7 @@ export default function CreateWorkout() {
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={addExercise} variant="outline" className="w-full">
+                <Button type="button" onClick={addExercise} variant="outline" size="lg" className="w-full">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
                 </Button>
@@ -380,11 +380,11 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/workouts")} className="flex-1">
+          <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] md:static z-[9000] -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated rounded-2xl md:rounded-none md:bg-transparent md:shadow-none md:border-0 md:[backdrop-filter:none]">
+            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" variant="volt" className="flex-1">
+            <Button type="submit" variant="volt" size="lg" className="flex-[2]">
               <Save className="w-4 h-4 mr-2" />
               {editId ? 'Update Workout' : 'Save Workout'}
             </Button>
@@ -401,7 +401,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove}>
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}
@@ -481,7 +481,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 h-7 text-sm text-center font-technical"
+            className="w-16 min-h-[44px] text-sm text-center font-technical"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>
@@ -489,7 +489,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="dim" size="sm" onClick={onRemove} className="ml-auto shrink-0">
+          <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
             <Trash2 className="w-3.5 h-3.5 text-bad" />
           </Button>
         )}
@@ -508,14 +508,15 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             nested
           />
         ))}
-        <button
+        <Button
           type="button"
           onClick={onAddStep}
-          className="w-full min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs font-semibold text-ink-muted hover:text-ink hover:bg-white/[0.06] border border-dashed border-charcoal-border transition-colors"
+          variant="outline"
+          className="w-full min-h-[44px] border-dashed border-charcoal-border"
         >
-          <Plus className="w-3 h-3 mr-1" />
+          <Plus className="w-4 h-4 mr-2" />
           Add Step to Repeat
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -533,7 +534,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove}>
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}
@@ -625,14 +626,14 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                     value={step.target_low}
                     onChange={(e) => onChange("target_low", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "5:30" : "min"}
-                    className="w-20"
+                    className="w-20 min-h-[44px]"
                   />
                   <span className="text-ink-muted text-sm">–</span>
                   <Input
                     value={step.target_high}
                     onChange={(e) => onChange("target_high", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "6:00" : "max"}
-                    className="w-20"
+                    className="w-20 min-h-[44px]"
                   />
                   <span className="text-xs text-ink-muted shrink-0">
                     {step.target_type === 'pace' ? '/km'

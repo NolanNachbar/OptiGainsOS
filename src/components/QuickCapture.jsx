@@ -49,7 +49,7 @@ export default function QuickCapture({ domain = "general", placeholder = "Captur
             placeholder={placeholder}
             className="min-h-[120px] bg-transparent border-none focus-visible:ring-0 px-0 resize-none text-base text-ink placeholder:text-ink-muted"
           />
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between mt-2 pt-2 border-t hairline">
             <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest">
               Domain: {domain}
             </span>

@@ -58,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-[38px] w-full items-center rounded-xl border border-transparent bg-charcoal-surface pr-3 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] transition-[border-color,box-shadow] duration-150"
+      className="flex h-11 w-full items-center rounded-xl border border-transparent bg-charcoal-surface pr-3 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] transition-[border-color,box-shadow] duration-150"
     >
       <input
         type="text"
@@ -67,9 +67,9 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-ink outline-none placeholder:text-ink-muted"
+        className="flex-1 self-stretch bg-transparent px-3 py-2 text-[14px] text-ink outline-none placeholder:text-ink-muted"
       />
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center text-ink-muted">
+      <button type="button" aria-label="Toggle options" onClick={() => setOpen((o) => !o)} className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-muted">
         <ChevronDown className="h-4 w-4" />
       </button>
     </div>

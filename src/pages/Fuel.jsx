@@ -4,7 +4,7 @@ import FoodTracker from "./FoodTracker";
 import Supplements from "./Supplements";
 import Progress from "./Progress";
 import WeeklyPlanCard from "@/components/nutrition/WeeklyPlanCard";
-import { Droplets, Utensils, CalendarRange, ChevronRight } from "lucide-react";
+import { Droplets, Utensils, CalendarRange, ChevronRight, LineChart } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
 import { SubTabs } from "@/components/ui/system";
@@ -12,7 +12,13 @@ import { SubTabs } from "@/components/ui/system";
 export default function Fuel() {
   const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the single source of truth — sidebar/sub-tab links both work.
-  const activeTab = searchParams.get("tab") === "wellness" ? "wellness" : "nutrition";
+  // "wellness" kept as a legacy alias that lands on the Body tab.
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "body" || tabParam === "wellness"
+    ? "body"
+    : tabParam === "hydration"
+    ? "hydration"
+    : "nutrition";
   const switchTab = (t) => setSearchParams(t === "nutrition" ? {} : { tab: t });
   const [showWeekPlan, setShowWeekPlan] = useState(false);
   return (
@@ -20,7 +26,8 @@ export default function Fuel() {
       <SubTabs
         tabs={[
           { id: "nutrition", label: "Nutrition & Meals", icon: Utensils },
-          { id: "wellness", label: "Hydration & Wellness", icon: Droplets },
+          { id: "body", label: "Body", icon: LineChart },
+          { id: "hydration", label: "Hydration", icon: Droplets },
         ]}
         active={activeTab}
         onChange={switchTab}
@@ -56,16 +63,13 @@ export default function Fuel() {
               </DialogContent>
             </Dialog>
           </>
-        ) : (
+        ) : activeTab === "body" ? (
           <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 pb-12">
 
             {/* Body & Progress — weight (logger + trend), measurements, photos.
                 Merged in from the retired standalone /progress route. The Progress
                 sub-tab strip is its own label, so no extra section heading here. */}
             <Progress embedded />
-
-            {/* Water + supplements (full type management) — reused from Supplements */}
-            <Supplements embedded />
 
             {/* Quick Capture — secondary, kept behind a disclosure to save height */}
             <details className="group glass">
@@ -77,6 +81,12 @@ export default function Fuel() {
                 <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
               </div>
             </details>
+          </div>
+        ) : (
+          <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 pb-12">
+
+            {/* Water + supplements (full type management) — reused from Supplements */}
+            <Supplements embedded />
           </div>
         )}
       </div>

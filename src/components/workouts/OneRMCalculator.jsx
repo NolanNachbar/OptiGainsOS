@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Calculator, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,23 +38,23 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
 
   const content = (
     <Card className={embedded ? "border-none shadow-none" : "w-full max-w-md border-none"}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5" />
-            1RM Calculator
-          </CardTitle>
-          {!embedded && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
+      {!embedded && (
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="w-5 h-5" />
+              1RM Calculator
+            </CardTitle>
+            <Button variant="dim" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
-          )}
-        </div>
-      </CardHeader>
+          </div>
+        </CardHeader>
+      )}
       <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Weight ({weightUnit})</label>
+              <Label className="text-sm font-medium text-secondary mb-1.5 block">Weight ({weightUnit})</Label>
               <Input
                 type="number"
                 value={weight}
@@ -63,7 +64,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Reps (1-12)</label>
+              <Label className="text-sm font-medium text-secondary mb-1.5 block">Reps (1-12)</Label>
               <Input
                 type="number"
                 value={reps}
@@ -82,18 +83,18 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
 
           {oneRM && (
             <div className="space-y-3 pt-2">
-              <div className="text-center p-4 bg-brand/[5%] rounded-lg">
+              <div className="text-center p-4 glass-brand rounded-lg">
                 <div className="text-sm text-ink-muted">Estimated 1 Rep Max</div>
-                <div className="text-3xl font-bold text-brand">{oneRM} {weightUnit}</div>
+                <div className="text-3xl font-bold text-brand font-technical">{oneRM} {weightUnit}</div>
               </div>
 
               <div className="space-y-2">
                 <div className="text-sm font-medium text-ink-muted">Weight for target reps:</div>
                 <div className="grid grid-cols-3 gap-2">
                   {repRanges.map((targetReps) => (
-                    <div key={targetReps} className="text-center p-2 bg-charcoal-surface rounded-lg">
+                    <div key={targetReps} className="text-center p-2 glass-inset rounded-lg">
                       <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
-                      <div className="font-semibold text-ink">
+                      <div className="font-semibold text-ink font-technical">
                         {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
                       </div>
                     </div>
@@ -104,7 +105,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           )}
 
           <p className="text-xs text-ink-muted text-center">
-            Uses Brzycki formula. Most accurate for 1-10 reps.
+            Uses Brzycki formula. Most accurate for 1-12 reps.
           </p>
         </CardContent>
       </Card>

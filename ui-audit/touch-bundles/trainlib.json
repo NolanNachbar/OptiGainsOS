@@ -1,0 +1,1 @@
+{"files":["src/pages/Workouts.jsx","src/components/workouts/WorkoutCard.jsx"],"controls":"Five BUTTON[36x36] (WorkoutCard 3-dot overflow menu and/or filter icon buttons) -> use min-h-[44px] min-w-[44px] (NOT h-11, which loses to size= class). 'Show more' button 30px -> min-h-[44px]."}

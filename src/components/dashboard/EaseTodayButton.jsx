@@ -47,7 +47,7 @@ export default function EaseTodayButton() {
 
   return (
     <Button variant="dim" size="sm" onClick={ease} disabled={busy}
-      className="h-8 px-3 text-xs hover:text-warn">
+      className="min-h-[44px] px-3 text-xs hover:text-warn">
       <BatteryLow className="w-3.5 h-3.5 mr-1.5" /> I'm wrecked — ease today's deficit
     </Button>
   );

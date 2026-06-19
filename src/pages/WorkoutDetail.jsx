@@ -701,17 +701,17 @@ export default function WorkoutDetail() {
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6">
-        <Card>
+      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-92px)] flex items-center justify-center">
+        <Card className="w-full">
           <CardContent className="py-12 text-center">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-white/[0.06] text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
-              <Dumbbell className="w-3.5 h-3.5" />
+            <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
+              <Dumbbell className="w-5 h-5" />
             </i>
-            <h2 className="text-[17px] font-extrabold text-ink mb-2">Workout not found</h2>
+            <h2 className="type-display text-[22px] text-ink mb-2">Workout not found</h2>
             <p className="text-[13px] font-semibold text-ink-muted mb-6">
               This workout may have been deleted, or the link is no longer valid.
             </p>
-            <Button variant="outline" size="lg" onClick={() => navigate("/workouts")}>
+            <Button variant="volt" size="lg" onClick={() => navigate("/workouts")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Workouts
             </Button>
@@ -884,7 +884,7 @@ export default function WorkoutDetail() {
             {recoveryWarnings.length > 0 && (
               <div className="glass px-4 py-3">
                 <div className="flex items-start gap-2.5">
-                  <i className="w-[26px] h-[26px] rounded-[9px] bg-warn/[0.15] text-warn flex items-center justify-center flex-shrink-0 not-italic">
+                  <i className="w-[26px] h-[26px] rounded-sm bg-warn/[0.15] text-warn flex items-center justify-center flex-shrink-0 not-italic">
                     <AlertTriangle className="w-3.5 h-3.5" />
                   </i>
                   <div className="pt-0.5">

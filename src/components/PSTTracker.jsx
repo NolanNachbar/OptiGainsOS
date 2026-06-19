@@ -55,7 +55,7 @@ function PSTBar({ event, value }) {
           {display} <span className="text-muted-2 font-semibold">/ target {targetDisplay}</span>
         </span>
       </div>
-      <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${isGood ? "bg-teal" : "bg-carb"}`}
           style={{ width: `${pct}%` }}
@@ -156,7 +156,7 @@ export default function PSTTracker() {
             {/* Comparison with previous */}
             {prev && (
               <div className="mt-3 pt-3 border-t hairline">
-                <p className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-2">vs previous ({prev.test_date})</p>
+                <p className="section-label mb-2">vs previous ({prev.test_date})</p>
                 <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },
@@ -195,7 +195,7 @@ export default function PSTTracker() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">Date</label>
+              <label className="text-xs text-muted-2 mb-1 block">Date</label>
               <Input
                 type="date"
                 value={form.test_date}
@@ -203,7 +203,7 @@ export default function PSTTracker() {
               />
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">500yd Swim (min:sec)</label>
+              <label className="text-xs text-muted-2 mb-1 block">500yd Swim (min:sec)</label>
               <div className="flex gap-2">
                 <Input type="number" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="w-20" />
                 <Input type="number" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="w-20" />
@@ -212,20 +212,20 @@ export default function PSTTracker() {
             <div className="grid grid-cols-3 gap-2">
               {[["pushups","Push-ups"],["situps","Sit-ups"],["pullups","Pull-ups"]].map(([field, label]) => (
                 <div key={field}>
-                  <label className="text-xs text-ink-muted mb-1 block">{label}</label>
+                  <label className="text-xs text-muted-2 mb-1 block">{label}</label>
                   <Input type="number" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">1.5mi Run (min:sec)</label>
+              <label className="text-xs text-muted-2 mb-1 block">1.5mi Run (min:sec)</label>
               <div className="flex gap-2">
                 <Input type="number" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="w-20" />
                 <Input type="number" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="w-20" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">Notes</label>
+              <label className="text-xs text-muted-2 mb-1 block">Notes</label>
               <Input placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-1">

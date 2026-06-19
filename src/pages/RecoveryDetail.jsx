@@ -71,6 +71,18 @@ export default function RecoveryDetail() {
     return engineScore != null ? engineScore : calculateReadinessScore(latest, null);
   }, [athleteState, latest]);
   const category = getReadinessCategory(score);
+  // Keep readiness in its owned hue (teal) for the healthy tiers so it doesn't
+  // collide with body-battery green; only degrade to warn/bad on low scores.
+  const readinessColor =
+    score == null ? "text-ink-muted"
+    : score >= 70 ? "text-teal"
+    : score >= 50 ? "text-warn"
+    : "text-bad";
+  const readinessBg =
+    score == null ? "bg-white/[0.06]"
+    : score >= 70 ? "bg-teal/10"
+    : score >= 50 ? "bg-warn/10"
+    : "bg-bad/10";
 
   // Which series actually have data — used to collapse empty chart shells
   // instead of reserving ~250px of void per chart.
@@ -106,8 +118,8 @@ export default function RecoveryDetail() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center py-4">
-                <div className="hero-metric text-ink text-6xl mb-2">{score ?? "—"}</div>
-                <Badge className={`${category.bg} ${category.color} text-sm px-4 py-1 rounded-full mb-4`}>
+                <div className={`hero-metric ${readinessColor} text-6xl mb-2`}>{score ?? "—"}</div>
+                <Badge className={`${readinessBg} ${readinessColor} text-sm px-4 py-1 rounded-full mb-4`}>
                   {category.label}
                 </Badge>
                 {athleteStateError && (
@@ -116,11 +128,11 @@ export default function RecoveryDetail() {
                 <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-4 mt-2">
                   <div className="text-center">
                     <div className="section-label mb-1">Body Battery</div>
-                    <div className="font-technical text-xl text-ink">{latest?.body_battery ?? "—"}</div>
+                    <div className="font-technical text-xl text-leaf">{latest?.body_battery ?? "—"}</div>
                   </div>
                   <div className="text-center">
                     <div className="section-label mb-1">Sleep Score</div>
-                    <div className="font-technical text-xl text-ink">{latest?.sleep_score ?? "—"}</div>
+                    <div className="font-technical text-xl text-violet">{latest?.sleep_score ?? "—"}</div>
                   </div>
                 </div>
               </div>
@@ -136,7 +148,7 @@ export default function RecoveryDetail() {
                 <div className="text-center">
                   <div className="font-technical text-2xl md:text-3xl font-extrabold text-ink mb-1">{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
-                  <div className="text-xs font-semibold text-faint mt-0.5">{acwrSource}</div>
+                  <div className="text-xs font-semibold text-ink-faint mt-0.5">source: {acwrSource}</div>
                 </div>
                 <div className="flex-1">
                   {/* ACWR band gauge — spectrum track, white band outline 0.8–1.3, white pin */}
@@ -148,7 +160,7 @@ export default function RecoveryDetail() {
                     }}
                   >
                     <span
-                      className="absolute -top-[3px] -bottom-[3px] rounded-[8px] border-[1.5px] border-white/35"
+                      className="absolute -top-[3px] -bottom-[3px] rounded-sm border-[1.5px] border-white/35"
                       style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
                     {acwr != null && (
@@ -251,6 +263,7 @@ export default function RecoveryDetail() {
                       domain={['dataMin - 10', 'dataMax + 10']}
                     />
                     <Tooltip
+                      formatter={(v) => [`${Math.round(v)} ms`, 'HRV']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                       itemStyle={{ color: 'var(--text-primary)' }}
                     />
@@ -288,6 +301,7 @@ export default function RecoveryDetail() {
                     <YAxis hide />
                     <Tooltip
                       cursor={{ fill: 'var(--color-border-soft)' }}
+                      formatter={(v) => [`${Math.round(v).toLocaleString()}`, 'Steps']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                     />
                     <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
@@ -326,6 +340,7 @@ export default function RecoveryDetail() {
                     />
                     <Tooltip
                       cursor={{ fill: 'var(--color-border-soft)' }}
+                      formatter={(v) => [`${v.toFixed(1)} h`, 'Sleep']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                     />
                     <ReferenceLine y={7.5} stroke="var(--text-faint)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }} />

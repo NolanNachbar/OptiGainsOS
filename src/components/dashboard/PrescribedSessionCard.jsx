@@ -30,11 +30,17 @@ function titleCase(s) {
   return String(s || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Humanize any raw engine enums the rationale string interpolates verbatim
+// (e.g. "Prescribed TWO_A_DAY action…") so users never see SCREAMING_SNAKE copy.
+function humanizeRationale(s) {
+  return String(s || "").replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g, (m) => ACTION_LABEL[m] || titleCase(m));
+}
+
 function intensityBadge(intensity) {
   if (intensity == null) return null;
   if (intensity >= 1.05) return { label: `${intensity.toFixed(2)}× intensity`, color: "var(--hue-teal)" };
   if (intensity < 0.85) return { label: `${intensity.toFixed(2)}× back off`, color: "var(--warn)" };
-  return { label: `${Number(intensity).toFixed(2)}× intensity`, color: "var(--text-secondary)" };
+  return { label: `${Number(intensity).toFixed(2)}× intensity`, color: "var(--hue-teal)" };
 }
 
 function ExerciseRow({ ex }) {
@@ -65,18 +71,18 @@ function CardioDoneToggle({ done, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors before:absolute before:-inset-3 ${
-        done ? "bg-ok text-ink" : "text-ink-faint hover:text-ink-secondary"
+      className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-colors ${
+        done ? "bg-ok text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
       aria-label={done ? "Mark conditioning not done" : "Mark conditioning done"}
     >
-      {done ? <Check className="w-3 h-3" /> : <Circle className="w-4 h-4" />}
+      {done ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
     </button>
   );
 }
 
-export default function PrescribedSessionCard({ today, loggedToday = false }) {
+export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false }) {
   const { prescription } = useTodayPrescription(today);
   const [liftsOpen, setLiftsOpen] = useState(false);
   // Pre-train check-in: free-text the athlete enters before lifting. Carried
@@ -129,8 +135,8 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
     return (
       <div key={kind} className="flex items-center gap-2 text-sm">
         {g ? (
-          <span className="shrink-0 w-5 h-5 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
-            <Check className="w-3 h-3" />
+          <span className="shrink-0 w-8 h-8 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
+            <Check className="w-4 h-4" />
           </span>
         ) : (
           <CardioDoneToggle done={manualDone} onToggle={() => toggle(name)} />
@@ -153,16 +159,16 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
     // fights custom py-* classes and lets the title touch the card edge.
     <div className="glass px-4 pt-4 pb-4 sm:px-5">
         {/* Title row — session name left, intensity multiplier right (teal) */}
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[15.5px] font-extrabold text-ink truncate">{titleText}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-lg font-extrabold text-ink leading-tight line-clamp-2">{titleText}</h3>
           {iBadge && (
-            <span className="font-technical text-[12px] font-bold whitespace-nowrap" style={{ color: iBadge.color }}>
+            <span className="font-technical text-[12px] font-bold whitespace-nowrap shrink-0 mt-0.5" style={{ color: iBadge.color }}>
               {iBadge.label}
             </span>
           )}
         </div>
         {prescription.rationale && (
-          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{prescription.rationale}</p>
+          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{humanizeRationale(prescription.rationale)}</p>
         )}
 
         {/* Deadline weighting + anabolic window — the "why today looks like this" line */}
@@ -305,7 +311,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
               }}
-              className={`cta-coral w-full ${strength.length > 0 ? "mt-2.5" : "mt-3.5"}`}
+              className={`${demoteCta ? "cta-ghost" : "cta-coral"} w-full ${strength.length > 0 ? "mt-2.5" : "mt-3.5"}`}
             >
               Begin Session
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>

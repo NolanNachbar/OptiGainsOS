@@ -261,7 +261,7 @@ export default function ExerciseCard({
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -272,7 +272,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -284,7 +284,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -295,7 +295,7 @@ export default function ExerciseCard({
                     onRemoveExercise(exerciseIndex);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
@@ -322,7 +322,7 @@ export default function ExerciseCard({
               )}
             </i>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
-            <button onClick={() => setNudgeMessage(null)} className="ml-auto flex-shrink-0 text-ink-faint hover:text-ink-muted pt-1">
+            <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -346,7 +346,7 @@ export default function ExerciseCard({
                 Apply
               </button>
             )}
-            <button onClick={() => setCoachingChip(null)} className="text-ink-faint hover:text-ink-muted flex-shrink-0">
+            <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>

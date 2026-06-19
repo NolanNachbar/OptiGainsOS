@@ -231,7 +231,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
             <span className="chip-gold">{pstDays} days · PST</span>
-            <Link to="/profile" className="shrink-0">
+            <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
               <UserAvatar
                 url={profile?.avatar_url}
                 username={profile?.username}
@@ -244,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Main content */}
           <main
             className="flex-1 flex flex-col min-h-0 lg:pb-0"
-            style={{ paddingBottom: "calc(5.75rem + env(safe-area-inset-bottom))" }}
+            style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex-1 min-h-0">{children}</div>
           </main>
@@ -281,7 +281,14 @@ export default function Layout({ children, currentPageName }) {
         })}
       </nav>
 
-      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder'].some(p => location.pathname.startsWith(p)) && (
+      {/* FAB is suppressed on form/builder pages and on dense log/list surfaces
+          where it would float over tabular data and a native add action already
+          exists (Fuel/FoodTracker, Train hub + lists, Career, Mind, ProgramDetail). */}
+      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
+         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/',
+         '/today', '/recovery', '/brief-history', '/workout-detail', '/insights',
+         '/dashboard', '/physique', '/athlete-state'
+        ].some(p => location.pathname.startsWith(p)) && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
           onCalculators={() => setShowCalculators(true)}

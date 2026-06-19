@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -47,7 +47,6 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import EngineStatusCard from "@/components/dashboard/EngineStatusCard";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
-import SorenessCheckin from "@/components/dashboard/SorenessCheckin";
 import PhaseRecommendationCard from "@/components/dashboard/PhaseRecommendationCard";
 import EaseTodayButton from "@/components/dashboard/EaseTodayButton";
 
@@ -69,6 +68,10 @@ function getWorkoutSplitTitle(exercises) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+
+  // Lower analytics/telemetry collapse behind a disclosure so the primary
+  // session CTA lands within ~2 viewports instead of a scroll marathon.
+  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
@@ -272,18 +275,18 @@ export default function Dashboard() {
   return (
     <div className="px-3 py-3 md:px-6 md:py-4 bg-charcoal min-h-screen relative">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex items-center justify-between rise-in">
+        {/* Header — desktop only; mobile uses the shared Layout header to avoid duplication */}
+        <div className="mb-4 hidden lg:flex items-center justify-between rise-in">
           <div className="flex items-center gap-3">
             <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-white/10" />
             <div>
               <h1 className="type-display text-lg leading-none">Today</h1>
-              <p className="text-[10px] text-muted-2 uppercase font-bold tracking-[0.08em] mt-1">
-                OptiGains Engine
+              <div className="flex items-center gap-2 mt-1">
+                <p className="section-label text-muted-2">OptiGains Engine</p>
                 {daysToRace != null && (
-                  <span className="font-technical text-gold ml-2">· {daysToRace}d to BUD/S</span>
+                  <span className="chip-gold !px-2 !py-0.5 text-[10px]">{daysToRace}d to BUD/S</span>
                 )}
-              </p>
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -345,13 +348,13 @@ export default function Dashboard() {
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{tdeeResult?.tdee?.toLocaleString() || "—"}</span>
-                <span className="text-[9px] text-gold font-semibold uppercase">kcal/day</span>
+                <span className="text-[10px] text-gold font-semibold uppercase">kcal/day</span>
               </div>
             </div>
             {tdeeResult?.method === 'adaptive' ? (
-              <span className="text-[8px] text-gold bg-gold/10 px-1.5 py-0.5 rounded border-[0.5px] border-gold/20 w-fit leading-none font-bold uppercase tracking-wider">Adaptive</span>
+              <span className="chip-gold !text-[10px] !px-2 !py-0.5 w-fit uppercase tracking-wider font-bold">Adaptive</span>
             ) : (
-              <span className="text-[8px] text-muted-2 leading-none uppercase tracking-wider font-semibold">Estimated</span>
+              <span className="text-[10px] text-muted-2 leading-none uppercase tracking-wider font-semibold">Estimated</span>
             )}
           </div>
 
@@ -363,10 +366,10 @@ export default function Dashboard() {
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{currentBodyWeight || "—"}</span>
-                <span className="text-[9px] text-muted-2 font-semibold uppercase">{weightUnit}</span>
+                <span className="text-[10px] text-muted-2 font-semibold uppercase">{weightUnit}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[9px] text-muted-2 leading-none">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-2 leading-none">
               <span className={`text-xs font-technical font-bold ${bodyWeightChange != null ? (bodyWeightChange > 0 ? "text-warn" : "text-ok") : "text-ink-muted"}`}>
                 {bodyWeightChange != null ? `${bodyWeightChange > 0 ? "+" : ""}${bodyWeightChange.toFixed(1)}` : "—"}
               </span>
@@ -383,7 +386,7 @@ export default function Dashboard() {
               </p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-technical font-extrabold text-ink leading-none">{readinessScore ?? "—"}</span>
-                <span className={`text-[9px] font-semibold uppercase ${readinessCat.color}`}>
+                <span className={`text-[10px] font-semibold uppercase ${readinessCat.color}`}>
                   {readinessScore == null ? "No data" : readinessCat.label}
                 </span>
               </div>
@@ -456,7 +459,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <Link to={todayWorkoutLink || "/workouts"}>
-                  <Button variant="dim" size="sm" className="text-xs">View Log</Button>
+                  <Button variant="dim" size="sm" className="text-xs min-h-[44px]">View Log</Button>
                 </Link>
               </div>
             </div>
@@ -465,7 +468,7 @@ export default function Dashboard() {
               <div className="p-5 relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-[10px] text-brand font-bold uppercase tracking-[0.08em] mb-1">Today's Mission</p>
+                    <p className="section-label text-muted-2 mb-1">Today's Mission</p>
                     <h3 className="text-xl font-extrabold text-ink leading-tight">{workoutTitle}</h3>
                     <p className="font-technical text-xs font-semibold text-muted-2 mt-1">
                       {exerciseCount} lift{exerciseCount !== 1 ? "s" : ""}
@@ -473,10 +476,10 @@ export default function Dashboard() {
                       {workoutDuration ? ` · ~${workoutDuration} min` : ""}
                     </p>
                   </div>
-                   <Dumbbell className="w-8 h-8 text-brand/30 group-hover:text-brand/50 transition-colors" />
+                   <Dumbbell className="w-8 h-8 text-faint group-hover:text-muted-2 transition-colors" />
                 </div>
-                <Link to={todayWorkoutLink}>
-                  <Button variant="energy" size="lg" className="w-full h-12 font-bold rounded-xl">
+                <Link to={todayWorkoutLink} className="block">
+                  <Button variant="volt" size="lg" className="w-full h-12 font-bold rounded-xl">
                     Start Workout <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -492,8 +495,10 @@ export default function Dashboard() {
 
         {/* ── SECONDARY CONTENT (Tabs/Lists) ── */}
         <div className="space-y-4">
-          {/* The engine's actual prescribed session for today (was never surfaced) */}
-          <PrescribedSessionCard today={today} />
+          {/* The engine's actual prescribed session for today (was never surfaced).
+              When the main workout card already shows a coral "Start Workout",
+              demote this card's CTA to ghost so only one coral primary fires. */}
+          <PrescribedSessionCard today={today} loggedToday={!!todayLog} demoteCta={!todayLog && !!workoutTitle} />
 
           {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
           <PhaseRecommendationCard />
@@ -504,43 +509,60 @@ export default function Dashboard() {
           {/* AI Insights */}
           <DailyBriefCard today={today} hideWhenEmpty={true} />
 
-          {/* Adaptive engine guardrails (ACWR / interference / overreach) */}
-          <EngineStatusCard today={today} />
+          {/* Today's coaching actions */}
+          <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
 
-          {/* Actions & Soreness */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
-            <SorenessCheckin today={today} />
-          </div>
+          {/* ── LOAD & RECOVERY (collapsed) ── engine telemetry + charts live
+              behind a disclosure so the primary CTA stays above the fold. */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setAnalysisOpen((o) => !o)}
+              className="w-full flex items-center gap-2 section-label min-h-[44px] py-2"
+              aria-expanded={analysisOpen}
+            >
+              <Activity className="w-3.5 h-3.5 text-teal" /> Load &amp; Recovery
+              <ChevronDown
+                className={`w-4 h-4 ml-auto transition-transform duration-200 ${analysisOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-          {/* Heatmap & Training Load */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="md:col-span-2 glass-interactive">
-              <CardHeader className="pb-0 pt-4 px-5">
-                <CardTitle className="section-label flex items-center gap-2">
-                  <Activity className="w-3.5 h-3.5 text-teal" /> Training Load
-                </CardTitle>
-              </CardHeader>
-              <div className="p-5">
-                <TrainingLoadTab
-                  cardioSessions={allCardioSessions}
-                  workoutLogs={workoutLogs}
-                  profile={profile}
-                  banister={prescription?.banister_state}
-                />
+            {analysisOpen && (
+              <div className="space-y-4 mt-2 rise-in">
+                {/* Adaptive engine guardrails (ACWR / interference / overreach) */}
+                <EngineStatusCard today={today} />
+
+                {/* Heatmap & Training Load */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="md:col-span-2 glass-interactive">
+                    <CardHeader className="pb-0 pt-4 px-5">
+                      <CardTitle className="section-label flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-teal" /> Training Load
+                      </CardTitle>
+                    </CardHeader>
+                    <div className="p-5">
+                      <TrainingLoadTab
+                        cardioSessions={allCardioSessions}
+                        workoutLogs={workoutLogs}
+                        profile={profile}
+                        banister={prescription?.banister_state}
+                      />
+                    </div>
+                  </Card>
+
+                  <Card className="glass-interactive overflow-hidden">
+                     <CardHeader className="pb-0 pt-4 px-5">
+                      <CardTitle className="section-label flex items-center gap-2">
+                        <Target className="w-3.5 h-3.5 text-teal" /> Muscle Fatigue
+                      </CardTitle>
+                    </CardHeader>
+                    <div className="p-4 flex justify-center">
+                       <MuscleHeatMap data={weeklyBodyData} view="anterior" className="h-[200px]" />
+                    </div>
+                  </Card>
+                </div>
               </div>
-            </Card>
-
-            <Card className="glass-interactive overflow-hidden">
-               <CardHeader className="pb-0 pt-4 px-5">
-                <CardTitle className="section-label flex items-center gap-2">
-                  <Target className="w-3.5 h-3.5 text-teal" /> Muscle Fatigue
-                </CardTitle>
-              </CardHeader>
-              <div className="p-4 flex justify-center">
-                 <MuscleHeatMap data={weeklyBodyData} view="anterior" className="h-[200px]" />
-              </div>
-            </Card>
+            )}
           </div>
         </div>
       </div>

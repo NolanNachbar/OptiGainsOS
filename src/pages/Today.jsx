@@ -44,6 +44,7 @@ export default function Today() {
   const [showWeighIn, setShowWeighIn] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showState, setShowState] = useState(false);
   const weightUnit = profile?.weight_unit || "lb";
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
@@ -172,8 +173,8 @@ export default function Today() {
         </Link>
       )}
 
-      {/* Mobile order: hero → fuel → state → session → brief → muscle.
-          Desktop: hero/session/brief in the left column, rail on the right —
+      {/* Mobile order: hero → session → check-in → fuel → state → brief → muscle.
+          Desktop: hero/session/check-in/brief in the left column, rail on the right —
           DOM order stays mobile-first; lg placement is explicit. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
@@ -188,16 +189,16 @@ export default function Today() {
             {(prescriptionLoading || stateLoading) ? (
               <div className="animate-pulse space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="w-[104px] h-[104px] rounded-full bg-white/10 shrink-0" />
+                  <div className="w-[104px] h-[104px] rounded-full glass-inset shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-5 bg-white/10 rounded w-2/3" />
-                    <div className="h-3 bg-white/10 rounded w-full" />
-                    <div className="h-3 bg-white/10 rounded w-4/5" />
+                    <div className="h-5 glass-inset w-2/3" />
+                    <div className="h-3 glass-inset w-full" />
+                    <div className="h-3 glass-inset w-4/5" />
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-[7px]">
                   {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 bg-white/10 rounded" />
+                    <div key={i} className="h-12 glass-inset" />
                   ))}
                 </div>
               </div>
@@ -229,9 +230,17 @@ export default function Today() {
             </div>
             </>)}
           </div>
+        </div>
 
-          {/* Morning check-in — the daily ritual lives on the home, not buried in the FAB */}
-          <div className="glass px-4 pt-3 pb-3 mt-3 rise-in">
+        {/* The day's CTA — directly under the verdict so the next action is never buried */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
+          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
+        </div>
+
+        {/* Morning check-in — the daily ritual lives on the home, demoted below the day's
+            CTA so the most-tapped tiles sit nearer the dock/thumb zone. */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
+          <div className="glass px-4 pt-3 pb-3 rise-in">
             <SectionLabel className="mb-2">Morning check-in</SectionLabel>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -266,11 +275,6 @@ export default function Today() {
           </div>
         </div>
 
-        {/* The day's CTA — above fuel/state on mobile so the next action is never buried */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
-        </div>
-
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-2 space-y-3 rise-in-3">
           {/* Fuel today — hue-coded rings, one tap to the log */}
           <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
@@ -292,57 +296,69 @@ export default function Today() {
                 frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
               />
               <MiniRing
-                label="lb/wk" hue="var(--hue-violet)"
+                label="lb/wk" hue="var(--hue-green)"
                 value={fmt(nutrition?.weight_trend_lbs_per_week, 1)}
-                frac={1}
+                frac={nutrition?.weight_trend_lbs_per_week != null
+                  ? Math.min(1, Math.abs(Number(nutrition.weight_trend_lbs_per_week)) / 2)
+                  : 0}
               />
               <ChevronRight className="w-4 h-4 text-faint" />
             </div>
           </Link>
 
-          <div>
-            <SectionLabel className="mb-2 px-0.5">State</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
-              <MetricTile
-                label="Form · TSB"
-                value={fmt(fatigue?.tsb)}
-                accent={String(fatigue?.interpretation || "").includes("overreach") ? "var(--bad)" : "var(--hue-teal)"}
-                sub={sentence(fatigue?.interpretation) || "—"}
-              />
-              <MetricTile
-                label="ACWR"
-                value={fmt(fatigue?.acwr, 2)}
-                accent={fatigue?.acwr > 1.3 ? "var(--warn)" : "var(--hue-teal)"}
-                sub="acute : chronic"
-              />
-              <MetricTile
-                label="VDOT"
-                value={fmt(vdot?.current_vdot, 1)}
-                accent="var(--hue-blue)"
-                sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
-              />
-              <MetricTile
-                label="To Aug 31"
-                value={endurance?.days_to_aug31 ?? "—"} unit="d"
-                accent="var(--hue-gold)"
-                sub="PST deadline"
-              />
-            </div>
+          <div className="surface px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setShowState((v) => !v)}
+              aria-expanded={showState}
+              className="w-full flex items-center justify-between min-h-[44px]"
+            >
+              <SectionLabel>State</SectionLabel>
+              <ChevronDown className={`w-4 h-4 text-faint transition-transform ${showState ? "rotate-180" : ""}`} />
+            </button>
+            {showState && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <MetricTile
+                  label="Form · TSB"
+                  value={fmt(fatigue?.tsb)}
+                  accent={String(fatigue?.interpretation || "").includes("overreach") ? "var(--bad)" : "var(--hue-teal)"}
+                  sub={sentence(fatigue?.interpretation) || "—"}
+                />
+                <MetricTile
+                  label="ACWR"
+                  value={fmt(fatigue?.acwr, 2)}
+                  accent={fatigue?.acwr > 1.3 ? "var(--warn)" : "var(--hue-teal)"}
+                  sub="acute : chronic"
+                />
+                <MetricTile
+                  label="VDOT"
+                  value={fmt(vdot?.current_vdot, 1)}
+                  accent="var(--hue-blue)"
+                  sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
+                />
+                <MetricTile
+                  label="To Aug 31"
+                  value={endurance?.days_to_aug31 ?? "—"} unit="d"
+                  accent="var(--hue-gold)"
+                  sub="PST deadline"
+                />
+              </div>
+            )}
           </div>
 
         </aside>
 
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
           <DailyBriefCard today={today} defaultCollapsed />
         </div>
 
         {heatmapError ? (
-          <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
+          <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-4 rise-in-3">
             <SectionLabel icon={Activity} className="mb-2">Muscle load · 10 days</SectionLabel>
             <p className="text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
           </div>
         ) : fatigueData.length > 0 && (
-          <div className="surface px-4 py-3 lg:col-start-9 lg:col-span-4 lg:row-start-3 rise-in-3">
+          <div className="surface px-4 py-3 lg:col-start-9 lg:col-span-4 lg:row-start-4 rise-in-3">
             <button
               type="button"
               onClick={() => setShowHeatmap((v) => !v)}

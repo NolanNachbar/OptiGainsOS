@@ -1,0 +1,1 @@
+{"files":["src/pages/Profile.jsx"],"controls":"Sticky save bar Cancel[79x36] and 'Save Changes'[152x36] buttons render at default 36px -> add size=\"lg\" to both so the save action meets 44px. Do NOT change the showSaveBar gating."}

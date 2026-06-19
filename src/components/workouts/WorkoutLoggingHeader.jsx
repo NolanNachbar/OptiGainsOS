@@ -115,25 +115,25 @@ export default function WorkoutLoggingHeader({
                 variant="destructive"
                 onClick={() => setShowConfirm(true)}
                 size="sm"
-                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3 transition-all hover:scale-105"
+                className="min-h-[44px] md:min-h-0 md:h-8 text-xs md:text-sm px-3 md:px-3"
               >
-                <X className="w-3 h-3 md:w-3.5 md:h-3.5 md:mr-1.5" />
-                <span className="hidden md:inline">Cancel</span>
+                <X className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
+                <span>Cancel</span>
               </Button>
               <Button
                 onClick={onFinish}
                 disabled={isSaving}
                 size="sm"
                 variant="volt"
-                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3 transition-all hover:scale-105"
+                className="min-h-[44px] md:min-h-0 md:h-8 text-xs md:text-sm px-3 md:px-3"
                 data-tutorial="finish-workout-btn"
               >
                 {isSaving ? (
                   <LoadingSpinner size="small" />
                 ) : (
                   <>
-                    <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 md:mr-1.5" />
-                    <span className="hidden md:inline">Finish</span>
+                    <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
+                    <span>Finish</span>
                   </>
                 )}
               </Button>
@@ -157,6 +157,7 @@ export default function WorkoutLoggingHeader({
             <div className="flex gap-2 mt-2">
               <Button
                 variant="outline"
+                size="lg"
                 className="flex-1"
                 onClick={() => setShowConfirm(false)}
               >
@@ -164,6 +165,7 @@ export default function WorkoutLoggingHeader({
               </Button>
               <Button
                 variant="destructive"
+                size="lg"
                 className="flex-1"
                 onClick={() => {
                   setShowConfirm(false);

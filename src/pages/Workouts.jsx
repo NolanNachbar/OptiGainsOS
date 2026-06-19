@@ -32,7 +32,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const [filterOpen, setFilterOpen] = useState(false);
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState("");
-  const [libraryVisible, setLibraryVisible] = useState(8);
+  const [libraryVisible, setLibraryVisible] = useState(5);
   const queryClient = useQueryClient();
 
   const { data: workouts = [], isLoading: workoutsLoading, error: workoutsError } = useQuery({
@@ -320,25 +320,25 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 {/* Filters button */}
                 <button
                   onClick={() => setFilterOpen(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                  className={`flex items-center gap-1.5 px-3 min-h-11 rounded-full text-xs font-bold transition-all ${
                     filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-brand text-[var(--color-action-dark)] border-transparent'
-                      : 'bg-white/[0.06] border-white/10 text-ink-muted hover:bg-white/[0.09] hover:text-ink'
+                      ? 'bg-brand text-[var(--color-action-dark)]'
+                      : 'glass-inset text-ink-muted hover:text-ink'
                   }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                   Filters
                   {(filter !== 'all' || folderFilter !== 'all') && (
-                    <span className="bg-black/20 text-[var(--color-action-dark)] text-xs font-bold px-1 rounded-full leading-none py-0.5">
+                    <span className="bg-[var(--color-action-dark)]/20 text-[var(--color-action-dark)] text-xs font-bold px-1 rounded-full leading-none py-0.5">
                       {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
                     </span>
                   )}
                 </button>
-                <Button variant="dim" size="sm" onClick={() => document.getElementById("import-workout-input").click()}>
+                <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
                   <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Import</span>
                 </Button>
-                <Button variant="dim" size="sm" onClick={() => setShowFormatGuide(true)} title="Import format guide">
+                <Button variant="dim" size="lg" className="w-11 px-0" onClick={() => setShowFormatGuide(true)} title="Import format guide">
                   <HelpCircle className="w-4 h-4" />
                 </Button>
                 <input
@@ -370,7 +370,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         filter === f.value
                           ? 'bg-brand text-[var(--color-action-dark)] font-bold'
-                          : 'bg-white/[0.06] text-ink-muted hover:bg-white/[0.09]'
+                          : 'glass-inset text-ink-muted hover:text-ink'
                       }`}
                     >
                       {f.label}
@@ -401,7 +401,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 bg-white/[0.06] text-ink outline-none w-28"
+                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 glass-inset text-ink outline-none w-28"
                             />
                             <button type="submit" className="p-1 text-leaf hover:text-leaf">
                               <Check className="w-3.5 h-3.5" />
@@ -419,7 +419,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                               folderFilter === f
                                 ? 'bg-brand text-[var(--color-action-dark)] font-bold'
-                                : 'bg-white/[0.06] text-ink-muted hover:bg-white/[0.09]'
+                                : 'glass-inset text-ink-muted hover:text-ink'
                             }`}
                           >
                             {f === 'all' && <FolderOpen className="w-3 h-3" />}
@@ -452,7 +452,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 </div>
               ) : filteredWorkouts.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredWorkouts.slice(0, libraryVisible).map((workout) => (
                       <WorkoutCard
                         key={workout.id}
@@ -466,7 +466,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   </div>
                   {filteredWorkouts.length > libraryVisible && (
                     <div className="flex justify-center mt-6">
-                      <Button variant="dim" size="sm" onClick={() => setLibraryVisible(v => v + 8)}>
+                      <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setLibraryVisible(v => v + 8)}>
                         Show more
                         <span className="ml-1.5 text-ink-faint">{filteredWorkouts.length - libraryVisible}</span>
                       </Button>
@@ -506,38 +506,38 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           </TabsContent>
 
           <TabsContent value="programs">
-            <div className="flex items-center justify-end gap-2 mb-4">
-              <input
-                ref={importProgramRef}
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={handleImportProgram}
-              />
-              <Link to="/program-builder">
-                <Button variant="primary">
-                  <Plus className="w-4 h-4" />
-                  Create Program
-                </Button>
-              </Link>
-            </div>
-
+            <input
+              ref={importProgramRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportProgram}
+            />
             <Tabs defaultValue="active" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="active">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Active
-                  {activeEnrollments.length > 0 && (
-                    <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                      {activeEnrollments.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="my-programs">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  My Programs
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between gap-2 mb-6">
+                <TabsList>
+                  <TabsTrigger value="active">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Active
+                    {activeEnrollments.length > 0 && (
+                      <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
+                        {activeEnrollments.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="my-programs">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    My Programs
+                  </TabsTrigger>
+                </TabsList>
+                <Link to="/program-builder" className="shrink-0">
+                  <Button variant="primary" size="lg">
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Create Program</span>
+                    <span className="sm:hidden">Create</span>
+                  </Button>
+                </Link>
+              </div>
 
               <TabsContent value="active">
                 {enrollmentsLoading ? (
@@ -662,7 +662,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <DialogHeader>
             <DialogTitle>Workout Import Format</DialogTitle>
             <DialogDescription>
-              Save a <code className="text-xs bg-white/[0.08] px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
+              Save a <code className="text-xs glass-inset px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
             </DialogDescription>
           </DialogHeader>
           <pre className="glass-inset font-technical p-3 text-xs overflow-auto max-h-72 text-ink-muted text-left">{WORKOUT_TEMPLATE}</pre>
@@ -763,9 +763,9 @@ function groupByDay(entries) {
 
 function StatBlock({ label, value, bordered }) {
   return (
-    <div className={`flex-1 flex flex-col ${bordered ? 'border-l border-charcoal-border pl-6' : ''}`}>
+    <div className={`flex-1 flex flex-col ${bordered ? 'border-l hairline pl-4' : ''}`}>
       <span className="section-label">{label}</span>
-      <span className="font-technical font-bold text-[17px] text-ink mt-1">{value ?? '—'}</span>
+      <span className="font-technical font-bold text-[17px] text-ink mt-1 whitespace-nowrap">{value ?? '—'}</span>
     </div>
   );
 }
@@ -777,19 +777,12 @@ function StrengthEntryCard({ entry }) {
     <div
       className="group relative overflow-hidden tile tile-interactive p-4"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h4 className="text-[15px] font-semibold text-ink">{entry.title}</h4>
-          <p className="section-label mt-1">
-            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
-          </p>
-        </div>
-      </div>
+      <h4 className="text-[15px] font-semibold text-ink mb-3">{entry.title}</h4>
       <div className="flex">
         <StatBlock label="Exercises" value={entry.exerciseCount} />
         {entry.sets > 0 && <StatBlock label="Sets" value={entry.sets} bordered />}
         {entry.volume && <StatBlock label="Volume" value={`${Math.round(entry.volume).toLocaleString()} lbs`} bordered />}
-        {entry.duration && <StatBlock label="Duration" value={`${entry.duration} min`} bordered />}
+        {entry.duration && <StatBlock label="Duration" value={entry.duration} bordered />}
       </div>
     </div>
   );
@@ -826,9 +819,7 @@ function CardioEntryCard({ entry }) {
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
-          <p className="section-label mt-1">
-            {typeLabel} · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
-          </p>
+          <p className="section-label mt-1">{typeLabel}</p>
         </div>
       </div>
 
@@ -837,7 +828,7 @@ function CardioEntryCard({ entry }) {
         {duration && <StatBlock label="Time" value={duration} bordered={!!distance} />}
         {pace && <StatBlock label="Pace" value={pace} bordered />}
         {entry.avgHeartrate && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l border-charcoal-border pl-6' : ''}`}>
+          <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l hairline pl-4' : ''}`}>
             <span className="section-label">Avg HR</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-technical font-bold text-[17px] text-ink">{Math.round(entry.avgHeartrate)}</span>
@@ -846,7 +837,7 @@ function CardioEntryCard({ entry }) {
           </div>
         )}
         {entry.aerobicEffect != null && (
-          <div className="flex-1 flex flex-col border-l border-charcoal-border pl-6">
+          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgHeartrate) ? 'border-l hairline pl-4' : ''}`}>
             <span className="section-label">Aerobic Effect</span>
             <span className="font-technical font-bold text-[17px] text-ink mt-1">{Number(entry.aerobicEffect).toFixed(1)}</span>
           </div>
@@ -903,7 +894,11 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
       exerciseCount: logExercises.length,
       exercises: logExercises,
       sets: totalSets,
-      duration: log.duration_seconds ? Math.round(log.duration_seconds / 60) : null,
+      // Guard implausible timer data (< 2 min or > 5 h) before surfacing it.
+      duration:
+        log.duration_seconds && log.duration_seconds >= 120 && log.duration_seconds <= 18000
+          ? fmtDuration(log.duration_seconds)
+          : null,
       volume: totalVolume > 0 ? totalVolume : null,
     };
   });
@@ -950,15 +945,15 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
         </div>
         <div className="flex flex-col px-4">
           <span className="section-label mb-1.5">Strength</span>
-          <span className="font-technical font-bold text-xl text-ink">{weekStrength}</span>
+          <span className="font-technical font-bold text-xl text-teal">{weekStrength}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
         </div>
         <div className="flex flex-col px-4">
           <span className="section-label mb-1.5">Cardio</span>
-          <span className="font-technical font-bold text-xl text-ink">{weekCardio}</span>
+          <span className="font-technical font-bold text-xl text-carb">{weekCardio}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
         </div>
         <div className="flex flex-col pl-4">
           <span className="section-label mb-1.5">Distance</span>
-          <span className="font-technical font-bold text-xl text-ink">
+          <span className="font-technical font-bold text-xl text-carb">
             {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[11px] font-semibold text-ink-faint ml-1">mi</span>
           </span>
         </div>
@@ -971,10 +966,10 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-3.5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
+              'px-3.5 py-1.5 min-h-[44px] rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
               filter === val
                 ? 'bg-brand text-[var(--color-action-dark)]'
-                : 'bg-white/[0.06] border border-white/10 text-ink-muted hover:bg-white/[0.09] hover:text-ink',
+                : 'glass-inset text-ink-muted hover:text-ink',
             ].join(' ')}
           >
             {label}
@@ -1016,7 +1011,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           ))}
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" onClick={() => setVisibleCount(v => v + 12)}>
+              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 12)}>
                 Load more
                 <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
               </Button>

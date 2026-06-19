@@ -48,7 +48,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet p-3.5 -m-2"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
+          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -223,17 +223,17 @@ function ReadingTab() {
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
-              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" className="h-9" />
+              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Author</Label>
-              <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" className="h-9" />
+              <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Category</Label>
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
@@ -242,7 +242,7 @@ function ReadingTab() {
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Status</Label>
                 <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
                   </SelectContent>
@@ -255,11 +255,11 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." className="h-9" />
+              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="sm" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
-              <Button variant="volt" size="sm" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -379,19 +379,20 @@ function StudyTab() {
         <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" className="h-9" />
+                <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" />
               </div>
-              <Input type="number" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" className="h-9" />
+              <Input type="number" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" />
               <Select value={form.medium} onValueChange={v => setForm(p => ({ ...p, medium: v }))}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["video","book","project","course","article"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" className="h-9" />
+            <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" />
             <Button
               variant="volt"
+              size="lg"
               className="w-full"
               disabled={!form.topic.trim() || !form.duration_min || save.isPending}
               onClick={() => save.mutate()}
@@ -546,7 +547,7 @@ function SkillsTab() {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
-            <div key={skill.id} className={`p-4 group ${isStale ? "rounded-[20px] border-[0.5px] bg-warn/[0.04] border-warn/15" : "glass glass-interactive"}`}>
+            <div key={skill.id} className={`glass p-4 group ${isStale ? "rounded-2xl border-warn/15 bg-warn/[0.04]" : "glass-interactive"}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
@@ -616,11 +617,11 @@ function SkillsTab() {
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Skill name</Label>
-              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. TypeScript" className="h-9" />
+              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. TypeScript" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Category (optional)</Label>
-              <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. Frontend, Machine Learning" className="h-9" />
+              <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. Frontend, Machine Learning" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Current level</Label>
@@ -635,8 +636,8 @@ function SkillsTab() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="sm" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button variant="volt" size="sm" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -659,15 +660,15 @@ function CaptureTab() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h3 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
         <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
       <div>
-        <h3 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-3 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Streams
         </h3>
         <div className="space-y-3">
@@ -675,7 +676,7 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[7px] bg-violet/10">
+                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet/10">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
                 {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Synced</span>}
@@ -684,8 +685,9 @@ function CaptureTab() {
             </div>
           )) : (!isLoading && !isError && (
             <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <GraduationCap className="w-8 h-8 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">Drop your first note above to start the stream.</p>
+              <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-2 mb-1">Drop your first note above to start the stream.</p>
+              <p className="text-xs font-semibold text-faint">Capture a thought, then organize it under Reading, Study, or Skills.</p>
             </div>
           ))}
         </div>
@@ -708,7 +710,7 @@ export default function Mind({ hideHeader }) {
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <header className="mb-6 rise-in">
+          <header className="mb-6 rise-in hidden lg:block">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
                 <Brain className="w-[15px] h-[15px] text-violet" />

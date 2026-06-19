@@ -35,7 +35,7 @@ const SelectTrigger = React.forwardRef(({ className = "", children, ...props }, 
       type="button"
       ref={mergedRef}
       onClick={() => setOpen(!open)}
-      className={`flex h-[38px] w-full items-center justify-between rounded-xl border border-transparent bg-charcoal-surface px-3 text-[14px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--color-brand-rgb)_/_0.1)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-11 w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-[14px] font-semibold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] placeholder:text-ink-faint focus-visible:outline-none focus-visible:border-[rgba(var(--hue-teal-rgb)/0.45)] focus-visible:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_3px_rgba(var(--hue-teal-rgb)/0.10)] transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -100,7 +100,7 @@ const SelectContent = ({ className = "", children, ...props }) => {
     <>
       <div className="fixed inset-0 z-[10001]" onClick={() => setOpen(false)} />
       <div
-        className={`fixed z-[10002] max-h-60 overflow-auto rounded-xl border border-charcoal-border bg-charcoal-surface p-1 ${className}`}
+        className={`glass-elevated fixed z-[10002] max-h-60 overflow-auto rounded-xl p-1.5 ${className}`}
         style={style}
         {...props}
       >
@@ -125,7 +125,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
         onValueChange(value);
         setOpen(false);
       }}
-      className={`relative flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[13px] outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-brand/[8%] text-brand' : ''} ${className}`}
+      className={`relative flex min-h-[44px] cursor-pointer select-none items-center rounded-md px-2 py-2.5 text-[13px] outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-brand/[8%] text-brand' : ''} ${className}`}
       {...props}
     >
       {children}

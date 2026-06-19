@@ -46,8 +46,9 @@ export default function CycleDayGrid({
   const startDateRaw = enrollment?.started_at || enrollment?.start_date;
   const startDate = startDateRaw ? parseISO(String(startDateRaw).slice(0, 10)) : null;
 
-  // View mode: wrap at 7 columns like a calendar
-  const colsPerRow = cycleLength > 7 ? 7 : cycleLength;
+  // View mode: cap at 4 columns so each day cell stays legible at 390px
+  // (a full 7-wide row crushes cells to ~40px). 7-day = 4+3, 8-day = 4+4, etc.
+  const colsPerRow = Math.min(4, cycleLength);
   // Edit mode: max 4 columns so cards stay readable; 8-day = 4+4, 7-day = 4+3, etc.
   const editColsPerRow = Math.min(4, cycleLength);
 
@@ -114,10 +115,10 @@ export default function CycleDayGrid({
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
-                    ? "text-xs font-medium truncate text-leaf"
+                    ? "text-xs font-medium line-clamp-2 leading-tight text-leaf"
                     : isCurrent
-                    ? "text-xs font-medium truncate text-brand"
-                    : "text-xs font-medium truncate text-ink-muted";
+                    ? "text-xs font-medium line-clamp-2 leading-tight text-brand"
+                    : "text-xs font-medium line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
@@ -138,7 +139,7 @@ export default function CycleDayGrid({
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (
-                        <p className="text-xs text-ink-muted mb-0.5">
+                        <p className="hidden sm:block text-xs text-ink-muted mb-0.5">
                           {format(calendarDate, "MMM d")}
                         </p>
                       )}
@@ -157,8 +158,13 @@ export default function CycleDayGrid({
                           <Circle className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
                         ) : null}
                       </div>
+                      {!compact && (workout?.focus || workout?.type) && (
+                        <p className="sm:hidden text-xs text-ink-muted mt-1 capitalize line-clamp-1">
+                          {workout.focus || workout.type}
+                        </p>
+                      )}
                       {!compact && workout?.exercises?.length > 0 && (
-                        <p className="text-xs text-ink-muted mt-1">
+                        <p className="hidden sm:block text-xs text-ink-muted mt-1">
                           {workout.exercises.length} exercises
                         </p>
                       )}

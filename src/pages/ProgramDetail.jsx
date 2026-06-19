@@ -40,6 +40,7 @@ import {
   AlertTriangle,
   Repeat,
   Activity,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,15 +73,28 @@ export default function ProgramDetail() {
   const [showWorkoutDetail, setShowWorkoutDetail] = useState(null);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAllCycles, setShowAllCycles] = useState(false);
+  const [showAllProgression, setShowAllProgression] = useState(false);
+  const [showManageActions, setShowManageActions] = useState(false);
 
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
-      <div className="min-h-screen bg-charcoal p-6 text-center">
-        <p className="text-ink-muted">Program not found.</p>
-        <Link to="/workouts">
-          <Button variant="outline" className="mt-4">Back to Workouts</Button>
-        </Link>
+      <div className="min-h-screen bg-charcoal p-4 md:p-6">
+        <div className="max-w-md mx-auto mt-12">
+          <div className="surface p-8 text-center flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center mb-4">
+              <Dumbbell className="w-6 h-6 text-ink-muted" />
+            </div>
+            <h2 className="text-lg font-bold text-ink mb-1">Program not found</h2>
+            <p className="text-sm text-ink-muted mb-5">
+              This program may have been deleted or the link is no longer valid.
+            </p>
+            <Link to="/workouts">
+              <Button variant="outline" size="lg">Back to Workouts</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -248,17 +262,17 @@ export default function ProgramDetail() {
                   <p className="text-ink-muted text-sm">{program.description}</p>
                 )}
 
-                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted ">
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-ink-muted " />
+                    <Calendar className="w-4 h-4 text-ink-muted" />
                     {durationLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-ink-muted " />
+                    <Repeat className="w-4 h-4 text-ink-muted" />
                     {frequencyLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Dumbbell className="w-4 h-4 text-ink-muted " />
+                    <Dumbbell className="w-4 h-4 text-ink-muted" />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
                   </div>
                 </div>
@@ -281,6 +295,8 @@ export default function ProgramDetail() {
                     <Button
                       onClick={() => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } })}
                       variant="volt"
+                      size="lg"
+                      className="w-full"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       {user ? "Start Program" : "Sign in to Start"}
@@ -303,63 +319,91 @@ export default function ProgramDetail() {
                   <Button
                     onClick={handleStartWorkout}
                     variant="volt"
+                    size="lg"
+                    className="w-full"
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Start Next Workout
                   </Button>
                 )}
-                {isEnrolled && (
-                  <Button variant="outline" size="sm" onClick={handlePause}>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </Button>
-                )}
                 {enrollment?.status === "paused" && (
-                  <Button variant="outline" size="sm" onClick={handleResume}>
+                  <Button variant="volt" size="lg" className="w-full" onClick={handleResume}>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
                 )}
-                {(isEnrolled || enrollment?.status === "paused") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRestart}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Cancel Enrollment
-                  </Button>
-                )}
-                {isOwner && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/program-builder?edit=${program.id}`)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        exportProgramAsJson(program);
-                        toast.success("Program exported");
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export JSON
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </>
+
+                {/* Secondary / management controls — keep at most two demoted controls
+                    inline; route power-user (Edit/Export) and destructive (Delete)
+                    actions behind a "Manage" overflow toggle. */}
+                {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {isEnrolled && (
+                        <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
+                          <Pause className="w-4 h-4 mr-1.5" />
+                          Pause
+                        </Button>
+                      )}
+                      {(isEnrolled || enrollment?.status === "paused") && (
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={handleRestart}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          Cancel
+                        </Button>
+                      )}
+                      {isOwner && (
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => setShowManageActions((v) => !v)}
+                          aria-expanded={showManageActions}
+                        >
+                          Manage
+                          <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
+                        </Button>
+                      )}
+                    </div>
+                    {isOwner && showManageActions && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => navigate(`/program-builder?edit=${program.id}`)}
+                        >
+                          <Edit className="w-4 h-4 mr-1.5" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => {
+                            exportProgramAsJson(program);
+                            toast.success("Program exported");
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1.5" />
+                          Export
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={handleDelete}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -374,11 +418,11 @@ export default function ProgramDetail() {
                     )}
                     {completedCount} / {totalWorkouts} workouts
                   </span>
-                  <span className="font-technical font-extrabold text-teal">{progressPercent}%</span>
+                  <span className="font-technical font-extrabold text-leaf">{progressPercent}%</span>
                 </div>
-                <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--color-border-soft)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-teal rounded-full transition-all duration-500"
+                    className="h-full bg-leaf rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -409,13 +453,22 @@ export default function ProgramDetail() {
           <CardContent>
             <CycleDayGrid
               workouts={workouts}
-              cycleLength={program.cycle_length || program.days_per_week || 7}
-              numCycles={program.num_cycles || program.duration_weeks || 4}
+              cycleLength={cycleLength}
+              numCycles={showAllCycles ? numCycles : Math.min(2, numCycles)}
               enrollment={enrollment}
               onCellClick={(workout) => {
                 if (workout) setShowWorkoutDetail(workout);
               }}
             />
+            {numCycles > 2 && (
+              <button
+                onClick={() => setShowAllCycles((v) => !v)}
+                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+              >
+                {showAllCycles ? "Show fewer cycles" : `Show all ${numCycles} cycles`}
+                <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
+              </button>
+            )}
           </CardContent>
         </Card>
 
@@ -426,9 +479,35 @@ export default function ProgramDetail() {
               <CardTitle className="text-lg text-ink">Progression Tracking</CardTitle>
             </CardHeader>
             <CardContent>
+              {(() => {
+              const DEFAULT_VISIBLE = 5;
+              const allEntries = Object.entries(enrollment.progression_state).filter(([key]) => !key.startsWith('_'));
+              // Prioritize stalled exercises ahead of ready-to-progress so the cap keeps the most urgent.
+              const actionableEntries = allEntries
+                .filter(([, state]) => state.stalled || state.ready_to_progress)
+                .sort(([, a], [, b]) => (b.stalled ? 1 : 0) - (a.stalled ? 1 : 0));
+              const baseEntries = actionableEntries.length === 0 ? allEntries : actionableEntries;
+              // Collapsed by default: lead with a small capped list, route the rest behind "Show all".
+              const visibleEntries = showAllProgression ? allEntries : baseEntries.slice(0, DEFAULT_VISIBLE);
+              const hiddenCount = allEntries.length - visibleEntries.length;
+              // Surface any stall suggestion that repeats verbatim on 2+ visible cards once as a
+              // banner instead of having the user re-read identical boilerplate per card.
+              const suggestionCounts = visibleEntries
+                .filter(([, s]) => s.stalled && s.stall_suggestion)
+                .reduce((acc, [, s]) => acc.set(s.stall_suggestion, (acc.get(s.stall_suggestion) || 0) + 1), new Map());
+              const sharedSuggestions = [...suggestionCounts.entries()]
+                .filter(([, count]) => count >= 2)
+                .map(([text]) => text);
+              const sharedSet = new Set(sharedSuggestions);
+              return (
               <div className="space-y-2">
-                {Object.entries(enrollment.progression_state)
-                  .filter(([key]) => !key.startsWith('_'))
+                {sharedSuggestions.map((text) => (
+                  <div key={text} className="glass-inset p-3 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warn" />
+                    <p className="font-technical text-xs text-warn">{text}</p>
+                  </div>
+                ))}
+                {visibleEntries
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
                     return (
@@ -458,7 +537,7 @@ export default function ProgramDetail() {
                         )}
                       </div>
                     </div>
-                    {state.stalled && state.stall_suggestion && (
+                    {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
                       <p className="font-technical text-xs text-warn mt-2 flex items-start gap-1.5">
                         <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                         <span>{state.stall_suggestion}</span>
@@ -467,7 +546,27 @@ export default function ProgramDetail() {
                     </div>
                   );
                   })}
+                {!showAllProgression && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setShowAllProgression(true)}
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                  >
+                    Show all {allEntries.length} exercises
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                )}
+                {showAllProgression && allEntries.length > DEFAULT_VISIBLE && (
+                  <button
+                    onClick={() => setShowAllProgression(false)}
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                  >
+                    Show fewer
+                    <ChevronDown className="w-4 h-4 rotate-180" />
+                  </button>
+                )}
               </div>
+              );
+              })()}
             </CardContent>
           </Card>
         )}
@@ -492,7 +591,7 @@ export default function ProgramDetail() {
                   )}
                 </div>
                 {showWorkoutDetail.notes && (
-                  <p className="text-sm text-ink-muted ">{showWorkoutDetail.notes}</p>
+                  <p className="text-sm text-ink-muted">{showWorkoutDetail.notes}</p>
                 )}
                 <div className="space-y-2">
                   {(showWorkoutDetail.exercises || []).map((ex, i) => {
@@ -556,7 +655,7 @@ export default function ProgramDetail() {
               <DialogHeader>
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-ink-muted  mt-2">
+              <p className="text-sm text-ink-muted mt-2">
                 Enter your current working weight for each exercise (optional — you can also
                 enter these during your first session).
               </p>
@@ -564,7 +663,7 @@ export default function ProgramDetail() {
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div>
-                <Label className="text-sm text-ink-muted ">Start Date</Label>
+                <Label className="text-sm text-ink-muted">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -576,12 +675,12 @@ export default function ProgramDetail() {
               <div className="space-y-3">
               {allExercises.map((ex) => (
                 <div key={ex.name} className="flex items-center gap-3">
-                  <Label className="flex-1 text-sm text-ink-muted ">{ex.name}</Label>
+                  <Label className="flex-1 text-sm text-ink-muted">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
                       placeholder="lbs"
-                      className="w-24 bg-charcoal-surface placeholder:text-ink-muted"
+                      className="w-24 glass glass-interactive placeholder:text-ink-muted"
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({
@@ -590,7 +689,7 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-xs text-ink-muted ">lbs</span>
+                    <span className="text-xs text-ink-muted">lbs</span>
                   </div>
                 </div>
               ))}
@@ -618,7 +717,7 @@ export default function ProgramDetail() {
             <DialogHeader>
               <DialogTitle>Cancel Enrollment?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-ink-muted ">
+            <p className="text-sm text-ink-muted">
               Are you sure you want to cancel your enrollment in this program? Future scheduled workouts will be removed, but your completed workout history will be preserved. You can re-enroll later to start fresh.
             </p>
             <div className="flex gap-3 mt-4">

@@ -21,7 +21,7 @@ export default function ProgramCard({ program, enrollment }) {
   const durationLabel = `${cycleLength}-day cycle`;
   const frequencyLabel = `${numCycles} cycle${numCycles !== 1 ? "s" : ""}`;
   const positionLabel = enrollment
-    ? `Cycle ${enrollment.current_cycle || enrollment.current_week || 1}, Day ${enrollment.current_day_index || enrollment.current_day || 1}`
+    ? `C${enrollment.current_cycle || enrollment.current_week || 1} · D${enrollment.current_day_index || enrollment.current_day || 1}`
     : null;
 
   return (
@@ -38,7 +38,7 @@ export default function ProgramCard({ program, enrollment }) {
                 <Badge variant="outline">{GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}</Badge>
               )}
               {enrollment?.status === 'active' && (
-                <Badge variant="green" className="ml-auto">Active</Badge>
+                <Badge variant="outline" className="ml-auto bg-teal/10 text-teal border-teal/25">Active</Badge>
               )}
             </div>
 
@@ -51,9 +51,9 @@ export default function ProgramCard({ program, enrollment }) {
 
             {/* Progress bar */}
             {enrollment && (
-              <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden mb-3">
+              <div className="h-1 bg-[var(--color-border-soft)] rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-teal rounded-full"
+                  className="h-full bg-leaf rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -66,11 +66,11 @@ export default function ProgramCard({ program, enrollment }) {
               <>
                 <div className="flex-1 flex flex-col">
                   <span className="section-label">Progress</span>
-                  <span className="font-technical text-lg font-bold text-teal mt-0.5">{progressPercent}%</span>
+                  <span className="font-technical text-lg font-bold text-leaf mt-0.5">{progressPercent}%</span>
                 </div>
                 <div className="flex-1 flex flex-col border-l hairline pl-4">
                   <span className="section-label">{positionLabel ? 'Position' : 'Cycle'}</span>
-                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{positionLabel || `${frequencyLabel}`}</span>
+                  <span className="font-technical text-lg font-bold text-ink mt-0.5 whitespace-nowrap">{positionLabel || `${frequencyLabel}`}</span>
                 </div>
                 <div className="flex-1 flex flex-col border-l hairline pl-4">
                   <span className="section-label">Sessions</span>

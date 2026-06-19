@@ -1,0 +1,1 @@
+{"files":["src/pages/WeeklySchedule.jsx","src/pages/PhysiqueTracker.jsx","src/pages/ProgramBuilder.jsx"],"controls":"Each surface has ONE remaining sub-44px interactive control (a small icon button, chip, or stepper). Find any a/button/input under 44px on the rendered page and raise it to >=44px using min-h-[44px]/min-w-[44px] without breaking layout."}
