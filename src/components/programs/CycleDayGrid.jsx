@@ -13,6 +13,7 @@ export default function CycleDayGrid({
   workouts = [],
   cycleLength,
   numCycles = 1,
+  startCycle = 1, // 1-based cycle to begin rendering from (collapsed views can window to the current cycle)
   enrollment,
   compact = false,
   onCellClick,
@@ -59,8 +60,11 @@ export default function CycleDayGrid({
   // View mode: show all cycles
   return (
     <div className="space-y-4">
-      {Array.from({ length: numCycles }, (_, cycleIdx) => {
-        const cycle = cycleIdx + 1;
+      {Array.from({ length: numCycles }, (_, i) => {
+        // Absolute (1-based) cycle number, so collapsed views can window to the
+        // current cycle while calendar-date math stays anchored to cycle 1.
+        const cycle = startCycle + i;
+        const cycleIdx = cycle - 1;
         const daySlots = Array.from({ length: cycleLength }, (_, i) => i + 1);
         const rows = [];
         for (let i = 0; i < daySlots.length; i += colsPerRow) {
@@ -74,7 +78,7 @@ export default function CycleDayGrid({
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                     cycle === currentCycle
-                      ? "bg-brand/15 text-brandTint"
+                      ? "bg-charcoal-surface2 text-ink border border-charcoal-border"
                       : "bg-white/[0.06] text-ink-muted border border-white/10"
                   }`}
                 >
@@ -102,11 +106,11 @@ export default function CycleDayGrid({
                     ? addDays(startDate, (cycleIdx * cycleLength) + dayIndex - 1)
                     : null;
 
-                  let cellClasses = "rounded-lg border-[0.5px] p-2 text-left transition-all duration-200 min-h-[60px] min-w-0 overflow-hidden ";
+                  let cellClasses = "rounded-lg border-[0.5px] p-2 text-left transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] min-h-[60px] min-w-0 overflow-hidden ";
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
-                    cellClasses += " border-brand ring-2 ring-brand/30 bg-brand/[5%]";
+                    cellClasses += " border-ink/40 ring-2 ring-white/15 bg-white/[0.07]";
                   } else if (isPast) {
                     cellClasses += " border-white/[0.06] bg-white/[0.02] opacity-60";
                   } else {
@@ -117,7 +121,7 @@ export default function CycleDayGrid({
                   const labelClass = isCompleted
                     ? "text-xs font-medium line-clamp-2 leading-tight text-leaf"
                     : isCurrent
-                    ? "text-xs font-medium line-clamp-2 leading-tight text-brand"
+                    ? "text-xs font-semibold line-clamp-2 leading-tight text-ink"
                     : "text-xs font-medium line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
@@ -153,7 +157,7 @@ export default function CycleDayGrid({
                         {isCompleted ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-leaf flex-shrink-0" />
                         ) : isCurrent ? (
-                          <PlayCircle className="w-3.5 h-3.5 text-brand flex-shrink-0 animate-pulse" />
+                          <PlayCircle className="w-3.5 h-3.5 text-ink flex-shrink-0 animate-pulse" />
                         ) : workout ? (
                           <Circle className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
                         ) : null}
@@ -233,7 +237,7 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
     <div
       ref={setNodeRef}
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
-      className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 cursor-pointer ${
+      className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
         isOver
           ? "border-brand bg-brand/[5%] scale-[1.02]"
           : hasWorkout

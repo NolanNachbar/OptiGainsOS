@@ -15,7 +15,6 @@ const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Today = lazy(() => import('./pages/Today'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
 const FoodTracker = lazy(() => import('./pages/FoodTracker'));
 const CreateWorkout = lazy(() => import('./pages/CreateWorkout'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -38,7 +37,6 @@ const queryClient = new QueryClient();
 
 const protectedRoutes = [
   { path: "/today", name: "Today", component: Today },
-  { path: "/dashboard", name: "Dashboard", component: Dashboard },
   { path: "/fuel", name: "Fuel", component: Fuel },
   { path: "/train", name: "Train", component: Train },
   { path: "/insights", name: "Insights", component: Insights },
@@ -124,6 +122,10 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/app" element={<Navigate to="/today" replace />} />
+                  {/* Dashboard retired — Today is the single canonical home. Its
+                      two unique features (MorningCheckin readiness form + Today's
+                      Actions todo list) were ported into Today.jsx. */}
+                  <Route path="/dashboard" element={<Navigate to="/today" replace />} />
                   {/* LogHub + Supplements consolidated into Fuel's Body tab */}
                   <Route path="/log" element={<Navigate to="/fuel?tab=body" replace />} />
                   <Route path="/supplements" element={<Navigate to="/fuel?tab=body" replace />} />

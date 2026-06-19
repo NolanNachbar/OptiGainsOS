@@ -52,13 +52,13 @@ function PSTBar({ event, value }) {
     <div className="mb-3">
       <div className="flex items-center justify-between text-xs mb-1">
         <span className="text-secondary font-bold">{cfg.label}</span>
-        <span className={`font-technical font-bold ${isGood ? "text-teal" : "text-muted-2"}`}>
+        <span className={`font-technical font-bold ${isGood ? "text-ok" : "text-info"}`}>
           {display} <span className="text-muted-2 font-semibold">/ target {targetDisplay}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
+      <div className="h-1.5 bg-track rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${isGood ? "bg-teal" : "bg-carb"}`}
+          className={`h-full rounded-full transition-[width] duration-300 ease-[cubic-bezier(.2,.7,.3,1)] ${isGood ? "bg-ok" : "bg-info"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -199,30 +199,31 @@ export default function PSTTracker() {
               <label className="section-label mb-1 block">Date</label>
               <Input
                 type="date"
+                className="[color-scheme:dark]"
                 value={form.test_date}
                 onChange={e => setForm(f => ({ ...f, test_date: e.target.value }))}
               />
             </div>
             <div>
-              <label className="section-label mb-1 block">500yd Swim (min:sec)</label>
+              <label className="section-label mb-1 block">{PST_TARGETS.swim.label} (min:sec)</label>
               <div className="flex gap-2">
-                <Input type="number" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="flex-1" />
-                <Input type="number" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="flex-1" />
+                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="flex-1" />
+                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="flex-1" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {[["pushups","Push-ups"],["situps","Sit-ups"],["pullups","Pull-ups"]].map(([field, label]) => (
+              {["pushups", "situps", "pullups"].map(field => (
                 <div key={field}>
-                  <label className="section-label mb-1 block">{label}</label>
-                  <Input type="number" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
+                  <label className="section-label mb-1 block">{PST_TARGETS[field].label}</label>
+                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
             </div>
             <div>
-              <label className="section-label mb-1 block">1.5mi Run (min:sec)</label>
+              <label className="section-label mb-1 block">{PST_TARGETS.run.label} (min:sec)</label>
               <div className="flex gap-2">
-                <Input type="number" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="flex-1" />
-                <Input type="number" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="flex-1" />
+                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="flex-1" />
+                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="flex-1" />
               </div>
             </div>
             <div>

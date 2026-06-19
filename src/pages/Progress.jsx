@@ -73,7 +73,7 @@ function WeightTab() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full" />
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full font-technical" />
               </div>
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
@@ -229,7 +229,7 @@ function MeasurementsTab() {
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36 font-technical" />
           </div>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map(f => (
@@ -441,7 +441,7 @@ export default function Progress() {
       {/* Subordinate to the parent Fuel SubTabs: a lighter, contained segmented
           control (glass-inset, no full-width underline strip) so the two nav
           levels read as a clear hierarchy rather than two equal-weight strips. */}
-      <TabsList className="mb-6 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
+      <TabsList className="mb-4 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
         <TabsTrigger value="metabolism" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
         <TabsTrigger value="weight" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
         <TabsTrigger value="measurements" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>

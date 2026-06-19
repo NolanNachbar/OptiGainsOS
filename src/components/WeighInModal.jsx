@@ -36,7 +36,7 @@ export default function WeighInModal({ open, onOpenChange }) {
       return entry;
     },
     onSuccess: () => {
-      toast.success("Weight logged successfully!");
+      toast.success("Weight logged");
       onOpenChange(false);
       setWeight("");
       invalidateBodyWeight(queryClient);

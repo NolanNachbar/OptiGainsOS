@@ -288,9 +288,14 @@ export default function Dashboard() {
         {/* Header — desktop only; mobile uses the shared Layout header to avoid duplication */}
         <div className="mb-4 hidden lg:flex items-center justify-between rise-in">
           <div className="flex items-center gap-3">
-            <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-white/10" />
+            <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-charcoal-border" />
             <div>
-              <h1 className="type-display text-lg leading-none">Today</h1>
+              {/* Canonical name for the /dashboard surface = "Dashboard" (the
+                  name the shared Layout chrome prints on mobile). The desktop
+                  H1 was hardcoded "Today", conflicting with the mobile chrome
+                  for the same surface; aligned here so the page has one name
+                  across viewports. (/today is the separate canonical home.) */}
+              <h1 className="type-display text-lg leading-none">Dashboard</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="section-label text-muted-2">OptiGains Engine</p>
                 {daysToRace != null && (
@@ -388,7 +393,7 @@ export default function Dashboard() {
           </div>
 
           {/* Readiness Tile → Recovery detail */}
-          <Link to="/recovery" className="glass-inset px-4 py-3 flex flex-col justify-between h-[90px] hover:bg-white/[0.07] transition-colors group">
+          <Link to="/recovery" className="glass-inset glass-interactive px-4 py-3 flex flex-col justify-between h-[90px] group">
             <div>
               <p className="section-label flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-teal" /> Readiness
@@ -499,7 +504,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <Card className="p-6 text-center border-dashed border-white/10">
+            <Card className="p-6 text-center border-dashed border-charcoal-border">
               <p className="text-muted-2 font-bold uppercase tracking-[0.08em] text-xs">Rest Day</p>
               <p className="text-sm font-semibold text-muted-2 mt-1">Focus on recovery and mobility</p>
             </Card>

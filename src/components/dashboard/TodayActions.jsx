@@ -148,7 +148,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
           </Button>
         </div>
         {total > 0 && (
-          <div className="h-[2px] bg-white/[0.08] rounded-full mt-2.5">
+          <div className="h-[2px] bg-track rounded-full mt-2.5">
             <div
               className="h-full bg-leaf rounded-full transition-all duration-500"
               style={{ width: `${(completed / total) * 100}%` }}

@@ -36,9 +36,11 @@ export default function Fuel() {
       <div className="max-w-5xl mx-auto">
         {activeTab === "nutrition" ? (
           <>
-            {/* Today leads. The week plan (carb cycle, shopping list, approve)
-                lives behind this row so it never crowds the daily log. */}
-            <div className="px-4 pt-4 max-w-3xl mx-auto">
+            {/* Today leads: the calorie ring + macro bars land first. The week
+                plan (carb cycle, shopping list, approve) is a navigate-elsewhere
+                row, so it sits BELOW the daily log where it never crowds it. */}
+            <FoodTracker />
+            <div className="px-4 pb-[var(--dock-clearance)] max-w-3xl mx-auto">
               <button
                 onClick={() => setShowWeekPlan(true)}
                 aria-haspopup="dialog"
@@ -55,7 +57,6 @@ export default function Fuel() {
                 <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
               </button>
             </div>
-            <FoodTracker />
 
             <Dialog open={showWeekPlan} onOpenChange={setShowWeekPlan}>
               <DialogContent className="max-w-lg p-0 max-h-[85vh] overflow-y-auto">
@@ -64,7 +65,7 @@ export default function Fuel() {
             </Dialog>
           </>
         ) : activeTab === "body" ? (
-          <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 pb-12">
+          <div className="px-4 pt-4 max-w-2xl mx-auto space-y-6 pb-[var(--dock-clearance)]">
 
             {/* Body & Progress — weight (logger + trend), measurements, photos.
                 Merged in from the retired standalone /progress route. The Progress
@@ -83,7 +84,7 @@ export default function Fuel() {
             </details>
           </div>
         ) : (
-          <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 pb-12">
+          <div className="px-4 pt-4 max-w-2xl mx-auto space-y-6 pb-[var(--dock-clearance)]">
 
             {/* Water + supplements (full type management) — reused from Supplements */}
             <Supplements embedded />

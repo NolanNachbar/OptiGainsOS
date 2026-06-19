@@ -12,9 +12,13 @@ const Button = React.forwardRef(({
 
   // Coral is THE action color: solid-action variants share the og-cta
   // gradient; everything secondary is frosted-glass ghost material.
+  // Disabled coral must stop reading as a live CTA: drop the gradient, neon
+  // shadow + specular and fall back to a neutral charcoal-surface fill with
+  // faint ink so the disabled state is unmistakably inert.
   const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
     "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
-    "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]";
+    "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)] " +
+    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100";
   // Token-driven glass so every secondary control re-tunes under html.light.
   // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
   // instead of raw white-alpha (which only reads on the dark field).

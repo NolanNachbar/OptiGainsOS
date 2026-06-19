@@ -38,15 +38,31 @@ function CoachSection({ coach, content, defaultOpen = false }) {
     <div className="border-b hairline last:border-0">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors text-left"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between min-h-[44px] px-4 py-2.5 tile-interactive text-left"
       >
         <div className="flex items-center gap-2.5">
           <CoachTag>{coach.label}</CoachTag>
         </div>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-faint" /> : <ChevronDown className="w-3.5 h-3.5 text-faint" />}
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-faint transition-transform ${open ? "rotate-180" : ""}`}
+          style={{ transitionDuration: "220ms", transitionTimingFunction: "var(--ease)" }}
+          aria-hidden="true"
+        />
       </button>
-      {open && content && (
-        <p className="px-4 pb-4 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
+      {content && (
+        <div
+          className="grid overflow-hidden"
+          style={{
+            gridTemplateRows: open ? "1fr" : "0fr",
+            opacity: open ? 1 : 0,
+            transition: "grid-template-rows 220ms var(--ease), opacity 220ms var(--ease)",
+          }}
+        >
+          <div className="min-h-0">
+            <p className="px-4 pb-4 pt-0.5 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -120,10 +136,15 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
     <Card className="glass glass-interactive">
       <CardHeader className={`pt-4 px-4 ${isCollapsed ? 'pb-4' : 'pb-0'}`}>
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="section-label !text-ink flex items-center gap-2 min-w-0">
-            <Bot className="w-4 h-4 text-teal shrink-0" />
-            <span className="truncate">AI Daily Brief</span>
-          </CardTitle>
+          <div className="flex flex-col min-w-0">
+            <CardTitle className="section-label !text-ink flex items-center gap-2 min-w-0">
+              <Bot className="w-4 h-4 text-teal shrink-0" />
+              <span className="truncate">AI Daily Brief</span>
+            </CardTitle>
+            {generatedAt && (
+              <span className="sm:hidden font-technical tabular-nums text-[10px] font-semibold text-faint whitespace-nowrap mt-0.5 pl-6">Generated {generatedAt}</span>
+            )}
+          </div>
           <div className="flex items-center gap-3 shrink-0">
             {generatedAt && (
               <span className="hidden sm:inline font-technical tabular-nums text-[10px] font-semibold text-faint whitespace-nowrap">Generated {generatedAt}</span>

@@ -106,8 +106,11 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   const iBadge = intensityBadge(intensity);
 
   // Deadline weighting (w_pst = conditioning/PST emphasis, w_str = strength).
-  const wPst = prescription.w_pst != null ? Math.round(Number(prescription.w_pst) * 100) : null;
-  const wStr = prescription.w_str != null ? Math.round(Number(prescription.w_str) * 100) : null;
+  // Round ONE side and derive the other as 100-minus so the displayed pair
+  // always sums to exactly 100 (rounding each independently can yield 101%).
+  const haveWeights = prescription.w_pst != null && prescription.w_str != null;
+  const wPst = haveWeights ? Math.round(Number(prescription.w_pst) * 100) : null;
+  const wStr = haveWeights ? 100 - wPst : null;
 
   const titleText = action === "REST"
     ? "Rest Day"
@@ -135,7 +138,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     return (
       <div key={kind} className="flex items-center gap-2 text-sm">
         {g ? (
-          <span className="shrink-0 w-8 h-8 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
+          <span className="shrink-0 w-11 h-11 -my-1.5 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
             <Check className="w-4 h-4" />
           </span>
         ) : (
@@ -228,7 +231,11 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
 
         {/* Run + Swim — completion driven by actual Garmin activity */}
         {(run || swim) && (
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-3">
+            <div className="flex items-center gap-1.5 section-label mb-1">
+              <Waves className="w-3 h-3" /> Conditioning
+            </div>
+            <div className="flex flex-col gap-2">
             {run && renderCardio({
               kind: "run",
               name: `${run.zone} run`,
@@ -255,6 +262,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                 </>
               ),
             })}
+            </div>
           </div>
         )}
 
@@ -284,6 +292,16 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
               Log another session
             </Link>
           </div>
+        )}
+
+        {/* Ad-hoc log — on a rest day the engine prescribes nothing to begin, but
+            an athlete may still train off-script. Surface a neutral (non-coral)
+            ghost link so logging a workout is never buried, without competing
+            with the coral primary that owns the train days. */}
+        {isRest && (
+          <Link to="/quick-workout" className="cta-ghost mt-3.5 w-full">
+            Log a workout
+          </Link>
         )}
 
         {/* Pre-train check-in + Begin Session — carry the prescribed lifts AND

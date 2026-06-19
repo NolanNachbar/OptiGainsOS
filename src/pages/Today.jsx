@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/api/supabaseClient";
+import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { useProfile } from "@/hooks/useUserQueries";
@@ -19,15 +19,23 @@ import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
+import MorningCheckin from "@/components/dashboard/MorningCheckin";
+import TodayActions from "@/components/dashboard/TodayActions";
 import WeighInModal from "@/components/WeighInModal";
-import QuickCapture from "@/components/QuickCapture";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatRing, MetricTile, SectionLabel, MiniRing, SubTabs } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight, Scale, Apple, NotebookPen } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, Scale, Apple, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
+// Compact kcal for the 50px MiniRing — "2,043" overruns the ring, so values
+// ≥1,000 collapse to a single-decimal "k" form (2043 → "2.0k"). MiniRing is a
+// shared primitive (no in-ring autosizing), so the abbreviation happens at the
+// call site to keep the digit count ≤4 glyphs.
+const compactK = (n) =>
+  n == null || Number.isNaN(Number(n)) ? "—"
+    : Number(n) >= 1000 ? `${(Number(n) / 1000).toFixed(1)}k`
+    : String(Math.round(Number(n)));
 const sentence = (s) => {
   const t = String(s || "").replace(/_/g, " ").trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
@@ -38,11 +46,17 @@ export default function Today() {
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
 
-  // Morning check-in surfaces (weigh-in + quick note) and the muscle-load
-  // disclosure — kept local so the home stays the daily-ritual home without
-  // depending on the global FAB.
+  // Morning check-in surfaces (weigh-in) and the muscle-load disclosure — kept
+  // local so the home stays the daily-ritual home without depending on the
+  // global FAB. (The Stream Note tile was retired — the mobile-strip Stream Note
+  // utility is the single canonical entry, so the freed thumb slot now hosts the
+  // subjective readiness check-in.)
   const [showWeighIn, setShowWeighIn] = useState(false);
-  const [showNote, setShowNote] = useState(false);
+  // Subjective readiness check-in (ported from Dashboard) — collapsed to a
+  // one-line prompt by default so the coral session CTA stays the single coral
+  // primary in the first viewport; the form's "Check In" only materializes once
+  // the athlete opens it.
+  const [checkinOpen, setCheckinOpen] = useState(false);
   // One consolidated detail card with a 3-way segmented control (State /
   // Brief / Muscle) replaces three stacked disclosure drawers.
   const [detailTab, setDetailTab] = useState("state");
@@ -50,6 +64,35 @@ export default function Today() {
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
+
+  // Subjective readiness check-in for today (ported from Dashboard). When a row
+  // exists, MorningCheckin renders its read-only summary; otherwise the
+  // collapsed one-line prompt is offered.
+  const { data: todayCheckIn } = useQuery({
+    queryKey: ["dailyReadiness", today, user?.id],
+    queryFn: async () => {
+      const rows = await db.entities.DailyReadiness.filter({ created_by: user.id, checkin_date: today });
+      return rows[0] || null;
+    },
+    enabled: !!user,
+  });
+
+  // The AI daily brief — its today_actions seed the ported Today's Actions list.
+  const { data: todayBrief, isError: briefError } = useQuery({
+    queryKey: ["daily-brief", today, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_briefs")
+        .select("brief_json")
+        .eq("created_by", user.id)
+        .eq("date", today)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Recent logs → muscle fatigue heatmap (same source the old dashboard used).
   const { data: recentLogs = [], isError: heatmapError } = useQuery({
@@ -83,7 +126,6 @@ export default function Today() {
   const recovery = state?.recovery || {};
   const fatigue = state?.fatigue || {};
   const nutrition = state?.nutrition || {};
-  const endurance = state?.endurance || {};
   const vdot = state?.vdot_zones || {};
   const score = recovery?.score ?? null;
   const band = bandFor(score);
@@ -108,7 +150,11 @@ export default function Today() {
     staleTime: 30 * 1000,
   });
 
-  // The directive — one headline, one supporting sentence.
+  // The directive — one headline, one supporting sentence. The lead word is
+  // derived from the readiness band (bandFor), so the WORD never contradicts the
+  // ring/verdict hue: "Primed" is gated to the ≥85 primed band, and a 72 reads
+  // "Ready" (its band) rather than overstating "Primed". The engine action
+  // (rest vs train, cleared intensity) is carried as the supporting detail.
   const { headline, detail } = useMemo(() => {
     const rec = state?.recovery || {};
     const fat = state?.fatigue || {};
@@ -125,8 +171,12 @@ export default function Today() {
       };
     }
     if (action) {
+      // Lead word from the band scale so it tracks the verdict hue; "Primed"
+      // only fires in the primed band. Below "Ready" the score itself says
+      // caution, so fall back to the band label as the directive word.
+      const word = band.label === "—" ? "Cleared to train" : `${band.label} to train`;
       return {
-        headline: "Primed to train",
+        headline: word,
         detail: intensity != null
           ? `${line ? line + ". " : ""}Load is cleared for ${intensity.toFixed(2)}× intensity.`
           : line ? `${line}.` : "Markers nominal.",
@@ -136,7 +186,7 @@ export default function Today() {
       headline: "Calibrating",
       detail: line ? `${line}.` : "Log a session and a check-in to sharpen the read.",
     };
-  }, [state, prescription, intensity]);
+  }, [state, prescription, intensity, band.label]);
 
   // The consolidated detail card's segmented control. Muscle is offered even
   // on error/empty so the tab set stays stable (the body renders the reason).
@@ -201,9 +251,12 @@ export default function Today() {
         </Link>
       )}
 
-      {/* Mobile order: hero → session → check-in → fuel → state → brief → muscle.
-          Desktop: hero/session/check-in/brief in the left column, rail on the right —
-          DOM order stays mobile-first; lg placement is explicit. */}
+      {/* Mobile order (the canonical home order):
+            readiness hero → subjective check-in → prescribed session (+ghost log)
+            → Fuel rings → thumb-zone quick actions (Log food / Weigh in)
+            → Today's Actions → Details disclosure (State / Brief / Muscle).
+          Desktop: hero/check-in/session/actions in the left column, the Fuel rail
+          on the right — DOM order stays mobile-first; lg placement is explicit. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
           {(prescriptionError || stateError) && (
@@ -232,7 +285,7 @@ export default function Today() {
               </div>
             ) : (
             <><div className="flex items-center gap-4 sm:gap-6">
-              <StatRing value={score} size={104} label="Readiness" />
+              <StatRing value={score} size={104} label="Readiness" color={band.color} />
               <div className="flex-1 min-w-0">
                 <h2 className="text-[17px] sm:text-xl font-extrabold" style={{ color: band.color }}>
                   {headline}
@@ -258,17 +311,59 @@ export default function Today() {
           </div>
         </div>
 
-        {/* The day's CTA — directly under the verdict so the next action is never buried */}
+        {/* Subjective readiness check-in — directly under the readiness hero so
+            it lives where the athlete already reads the verdict (resolves the
+            "subjective check-in buried / 99 taps" IA gap). Collapsed to a
+            one-line prompt; the coral "Check In" only fires once expanded, so the
+            session CTA below stays the single coral primary. Once logged,
+            MorningCheckin renders its own read-only summary. */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
+          {todayCheckIn ? (
+            <MorningCheckin today={today} existingCheckin={todayCheckIn} />
+          ) : checkinOpen ? (
+            <MorningCheckin today={today} existingCheckin={null} onComplete={() => setCheckinOpen(false)} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCheckinOpen(true)}
+              className="cta-ghost w-full justify-start gap-2 px-4"
+              aria-expanded={false}
+            >
+              <Activity className="w-3.5 h-3.5 text-teal shrink-0" />
+              <span>Log today&apos;s readiness check-in</span>
+              <ChevronDown className="w-4 h-4 ml-auto text-muted-2" />
+            </button>
+          )}
         </div>
 
-        {/* Morning check-in — the daily ritual lives on the home, demoted below the day's
-            CTA so the most-tapped tiles sit nearer the dock/thumb zone. */}
+        {/* The day's CTA — under the verdict + check-in so the next action is never buried.
+            When the engine prescribes nothing, PrescribedSessionCard renders null;
+            surface a neutral ad-hoc "Log a workout" ghost link so off-script
+            training is never buried (mirrors the rest/logged ghost states). */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
+          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
+          {!prescriptionLoading && !prescription && (
+            <Link to="/quick-workout" className="cta-ghost w-full">
+              Log a workout
+            </Link>
+          )}
+        </div>
+
+        {/* Thumb-zone quick actions — the two most-tapped daily logs (food + weigh-in),
+            kept in the lower third near the dock. The retired Stream Note tile freed
+            this slot; the readiness check-in took its thumb position above. */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
           <div className="glass px-4 pt-3 pb-3 rise-in">
-            <SectionLabel className="mb-2">Morning check-in</SectionLabel>
-            <div className="grid grid-cols-3 gap-2">
+            <SectionLabel className="mb-2">Quick actions</SectionLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                to="/food-tracker?addFood=true"
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
+              >
+                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Log food</span>
+                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Track</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => setShowWeighIn(true)}
@@ -280,28 +375,17 @@ export default function Today() {
                   {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Log"}
                 </span>
               </button>
-              <Link
-                to="/food-tracker?addFood=true"
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
-              >
-                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Log food</span>
-                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Track</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowNote(true)}
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
-              >
-                <NotebookPen className="w-[18px] h-[18px]" style={{ color: "var(--hue-teal-2)" }} />
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Note</span>
-                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Capture</span>
-              </button>
             </div>
           </div>
         </div>
 
-        <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-2 space-y-3 rise-in-3">
+        {/* Today's Actions — the coaching todo list ported from Dashboard. Self-hides
+            when empty, so it only occupies the slot when there is something to do. */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-5 rise-in-3">
+          <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
+        </div>
+
+        <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-3 space-y-3 rise-in-3">
           {/* Fuel today — hue-coded rings, one tap to the log */}
           <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
             <div className="flex items-baseline justify-between">
@@ -313,7 +397,7 @@ export default function Today() {
             <div className="flex items-center justify-around mt-2 px-1">
               <MiniRing
                 label="kcal" hue="var(--hue-gold)" size={50}
-                value={calTarget ? Math.round(calTarget).toLocaleString() : "—"}
+                value={compactK(calTarget)}
                 frac={calTarget && avgCal ? avgCal / calTarget : 0}
               />
               <MiniRing
@@ -336,7 +420,7 @@ export default function Today() {
             disclosure drawers (State / Brief / Muscle) collapse into a single
             glass card switched by the SubTabs segmented control, so the page
             ends on one card instead of three stacked toggles. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-4 rise-in-3">
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
           <div className="surface overflow-hidden">
             <SubTabs
               tabs={detailTabs}
@@ -367,11 +451,16 @@ export default function Today() {
                     accent="var(--hue-blue)"
                     sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
                   />
+                  {/* Fitness (chronic training load) replaces the former
+                      "To Aug 31 · PST" deadline tile, which duplicated the gold
+                      "days · PST" chip in the mobile header (Layout.jsx). CTL is
+                      a distinct training-state datum and shares the aerobic blue
+                      hue family with the load metrics around it. */}
                   <MetricTile
-                    label="To Aug 31"
-                    value={endurance?.days_to_aug31 ?? "—"} unit="d"
-                    accent="var(--hue-gold)"
-                    sub="PST deadline"
+                    label="Fitness · CTL"
+                    value={fmt(fatigue?.ctl)}
+                    accent="var(--hue-blue)"
+                    sub="chronic load"
                   />
                 </div>
               )}
@@ -396,23 +485,10 @@ export default function Today() {
         </div>
       </div>
 
-      {/* Morning check-in modals (local so the home owns the ritual) */}
+      {/* Weigh-in surface (local so the home owns the daily ritual). The Stream
+          Note modal was removed — the mobile-strip Stream Note utility is the
+          single canonical entry. */}
       <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
-      <Dialog open={showNote} onOpenChange={setShowNote}>
-        <DialogContent className="max-w-md glass-elevated text-ink">
-          <DialogHeader>
-            <DialogTitle className="text-ink">Quick note</DialogTitle>
-          </DialogHeader>
-          <div className="pt-2">
-            <QuickCapture
-              embedded
-              domain="general"
-              placeholder="Stream a note to Second Brain..."
-              onCapture={() => setShowNote(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

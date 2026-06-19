@@ -54,12 +54,12 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
-          <div className="font-technical text-[18px] font-extrabold text-secondary">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-[18px] font-extrabold text-ink">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
           <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
-          <div className={`font-technical text-[18px] font-extrabold ${weightChange > 0 ? 'text-warn' : weightChange < 0 ? 'text-teal' : 'text-ink'}`}>
+          <div className={`font-technical text-[18px] font-extrabold ${weightChange > 0 ? 'text-warn' : weightChange < 0 ? 'text-ok' : 'text-ink'}`}>
             {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
           </div>
           <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
@@ -69,40 +69,40 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       <div className={`w-full ${className || 'h-80'}`}>
         <ResponsiveContainer width="100%" height="100%" minHeight={200}>
           <LineChart data={trendedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.05)" strokeOpacity={1} />
+            <CartesianGrid strokeDasharray="0" stroke="var(--color-track)" strokeOpacity={1} />
             <XAxis
               dataKey="recorded_date"
               tickFormatter={(date) => format(parseISO(date), 'MMM d')}
-              stroke="rgba(255,255,255,0.05)"
-              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
+              stroke="var(--color-track)"
+              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              stroke="rgba(255,255,255,0.05)"
-              tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
+              stroke="var(--color-track)"
+              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
               width={36}
               domain={['dataMin - 5', 'dataMax + 5']}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.10)', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--color-track)', strokeWidth: 1 }} />
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="rgba(242,244,247,0.18)"
+              stroke="rgba(242,244,247,0.38)"
               strokeWidth={1}
               dot={false}
-              activeDot={{ r: 3, fill: 'rgba(242,244,247,0.4)', strokeWidth: 0 }}
+              activeDot={{ r: 3, fill: 'rgba(242,244,247,0.5)', strokeWidth: 0 }}
             />
             <Line
               type="monotone"
               dataKey="trendWeight"
-              stroke="rgba(242,244,247,0.65)"
+              stroke="var(--viz-1)"
               strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: 'rgba(242,244,247,0.65)', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--viz-1)', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -110,11 +110,11 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
       <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-[2.5px] rounded-full bg-white/20" />
+          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'rgba(242,244,247,0.38)' }} />
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed rgba(242,244,247,0.65)' }} />
+          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed var(--viz-1)' }} />
           Trend (EWMA)
         </span>
       </div>

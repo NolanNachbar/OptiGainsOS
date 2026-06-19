@@ -16,6 +16,7 @@ import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
 import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
+import { ProfileStatsCard } from "@/components/ui/system";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
@@ -192,10 +193,13 @@ export default function Profile({ hideHeader }) {
     return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 
-  // The save bar must never appear on the mobile hub list (no editable fields on
-  // screen). It is only meaningful when an editable section is actually open, or
-  // on desktop where editable fields are always visible alongside it.
-  const showSaveBar = isDirty && (activeSection !== null || hideHeader);
+  // The save bar must never appear on the mobile hub list or the Settings
+  // section (neither mounts an editable field). It is only meaningful when an
+  // editable section ('identity' / 'body') is actually open, or when embedded
+  // via hideHeader where the body fields are always mounted.
+  const editableSectionOpen =
+    activeSection === 'identity' || activeSection === 'body' || hideHeader;
+  const showSaveBar = isDirty && editableSectionOpen;
 
   const updateProfileMutation = useMutation({
     mutationFn: async ({ profileData, weightToLog }) => {
@@ -295,34 +299,15 @@ export default function Profile({ hideHeader }) {
               }}
             >
               {/* Avatar card */}
-              <div className="glass p-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
-                  <span className="text-brand text-2xl font-bold">
-                    {initials}
-                  </span>
-                </div>
-                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.email}
-                </p>
-                {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {formatVol(profileStats.totalVolumeLbs)}
-                      </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ProfileStatsCard
+                initials={initials}
+                name={formData.display_name || user.email}
+                stats={profileStats ? [
+                  { value: profileStats.totalWorkouts, label: "Workouts" },
+                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                  { value: profileStats.streak, label: "Streak" },
+                ] : null}
+              />
 
               {/* Section nav */}
               <nav className="glass-inset p-2 flex flex-col gap-0.5">
@@ -352,34 +337,17 @@ export default function Profile({ hideHeader }) {
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title on mobile, so a second one would stack redundantly. */}
-              <div className="glass p-5 text-center mb-3">
-                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
-                  <span className="text-brand text-2xl font-bold">
-                    {initials}
-                  </span>
-                </div>
-                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.email}
-                </p>
-                {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {formatVol(profileStats.totalVolumeLbs)}
-                      </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ProfileStatsCard
+                padding="p-5"
+                className="mb-3"
+                initials={initials}
+                name={formData.display_name || user.email}
+                stats={profileStats ? [
+                  { value: profileStats.totalWorkouts, label: "Workouts" },
+                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                  { value: profileStats.streak, label: "Streak" },
+                ] : null}
+              />
               <div className="glass-inset overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
@@ -396,6 +364,20 @@ export default function Profile({ hideHeader }) {
                   </button>
                 ))}
               </div>
+
+              {/* Quick action — Sign Out lives in the thumb zone so the hub
+                  carries value above the fold instead of trailing into a void. */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try { await signOut(); toast.success('Signed out successfully'); }
+                  catch { toast.error('Failed to sign out'); }
+                }}
+                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
             </div>
 
             {/* Mobile: back navigation when inside a section */}
@@ -453,7 +435,7 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" value={user.email} disabled className="mt-1" />
-                      <p className="text-sm text-ink-muted mt-1">This is your login email and cannot be changed</p>
+                      <p className="text-xs text-ink-muted mt-1">This is your login email and cannot be changed</p>
                     </div>
                   </div>
 
@@ -715,7 +697,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-ink-muted mt-1">Used when logging workout weights</p>
+                      <p className="text-xs text-ink-muted mt-1">Used when logging workout weights</p>
                     </div>
 
                     <div>
@@ -737,7 +719,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-ink-muted mt-1">Nutrition coach suggests adjustments on this day</p>
+                      <p className="text-xs text-ink-muted mt-1">Nutrition coach suggests adjustments on this day</p>
                     </div>
 
                     <div>
@@ -757,7 +739,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-ink-muted mt-1">Used to determine today's date for your schedule</p>
+                      <p className="text-xs text-ink-muted mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
 
@@ -811,8 +793,6 @@ export default function Profile({ hideHeader }) {
                 <h3 className="text-sm font-semibold text-bad">Danger Zone</h3>
               </div>
 
-              <SectionDivider />
-
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="font-medium text-ink">Sign Out</p>
@@ -859,7 +839,7 @@ export default function Profile({ hideHeader }) {
                       Cancel
                     </Button>
                     <Button
-                      className="bg-bad hover:bg-bad/80 text-ink"
+                      className="bg-bad hover:bg-bad/80 text-white"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -891,12 +871,15 @@ export default function Profile({ hideHeader }) {
 
       </div>{/* end max-w-6xl */}
 
-      {/* Sticky Save Bar — anchored above the floating mobile dock (7rem clearance,
-          matching Layout's content padding) so it never renders under the dock. */}
+      {/* Sticky Save Bar — on mobile it docks flush directly above the floating
+          liquid-glass dock (dock = ~52px tall, 12px from the bottom inset) and
+          shares the dock's glass-elevated chrome so the two read as one unit; no
+          detached gap. On desktop it pins to the bottom edge. */}
       <div
-        className={`fixed bottom-[calc(7rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
-          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+7rem+env(safe-area-inset-bottom,0px))]'
+        className={`fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] glass-elevated md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-transform duration-300 ease-out ${
+          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+72px+env(safe-area-inset-bottom,0px))] md:translate-y-full'
         }`}
+        style={{ transitionTimingFunction: 'var(--ease)' }}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <p className="hidden sm:block text-sm text-ink-muted">You have unsaved changes</p>

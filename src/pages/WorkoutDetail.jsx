@@ -21,10 +21,11 @@ import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueMana
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getWorkoutBodyData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
+import { SegmentedControl } from "@/components/ui/system";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 
@@ -74,7 +75,6 @@ export default function WorkoutDetail() {
   const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [recoveryWarnings, setRecoveryWarnings] = useState([]);
   const [restTimer, setRestTimer] = useState(null); // seconds remaining for rest (display only)
   const [restDuration, setRestDuration] = useState(90); // default rest duration
@@ -742,9 +742,9 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : ''}`}>
-        <div className="lg:flex lg:items-start lg:gap-6">
-        <div className="flex-1 min-w-0">
+      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-92px)] flex flex-col justify-center'}`}>
+        <div className="lg:flex lg:items-start lg:gap-6 w-full">
+        <div className="flex-1 min-w-0 rise-in">
         {!isLogging && (
           <Button
             variant="ghost"
@@ -773,16 +773,14 @@ export default function WorkoutDetail() {
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
                 <div className="hidden md:flex items-center gap-2 shrink-0 lg:hidden">
                   <span className="section-label">Muscles worked</span>
-                  <div className="flex rounded-full overflow-hidden bg-white/[0.05] border border-white/10 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
-                    <button
-                      onClick={() => setMuscleView("anterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "anterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
-                    >Front</button>
-                    <button
-                      onClick={() => setMuscleView("posterior")}
-                      className={`px-2.5 py-0.5 transition-colors ${muscleView === "posterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
-                    >Back</button>
-                  </div>
+                  <SegmentedControl
+                    value={muscleView}
+                    onChange={setMuscleView}
+                    options={[
+                      { value: "anterior", label: "Front" },
+                      { value: "posterior", label: "Back" },
+                    ]}
+                  />
                 </div>
               )}
             </div>
@@ -808,7 +806,7 @@ export default function WorkoutDetail() {
                     <Target className="w-5 h-5 text-ink-muted" />
                     <div>
                       <div className="section-label">Exercises</div>
-                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.exercises?.length || 0} <span className="text-[11px] font-semibold text-ink-muted">exercises</span></div>
+                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.exercises?.length || 0} <span className="text-[11px] font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
                     </div>
                   </div>
                 </div>
@@ -830,6 +828,7 @@ export default function WorkoutDetail() {
                         <Button
                           onClick={() => navigate(`/create-workout?edit=${workout.id}`)}
                           variant="outline"
+                          size="lg"
                           className="flex-1"
                         >
                           <Edit className="w-4 h-4 mr-2" />
@@ -838,6 +837,7 @@ export default function WorkoutDetail() {
                         <Button
                           onClick={() => cloneWorkoutMutation.mutate()}
                           variant="outline"
+                          size="lg"
                           className="flex-1"
                           disabled={cloneWorkoutMutation.isPending}
                         >
@@ -972,21 +972,6 @@ export default function WorkoutDetail() {
 
             {/* Add Exercise Form */}
             <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />
-
-            {/* Notes Section */}
-            <Card className="">
-              <CardHeader className="pt-4 pb-2">
-                <CardTitle className="section-label">Workout Notes (Optional)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={postWorkoutNotes}
-                  onChange={(e) => setPostWorkoutNotes(e.target.value)}
-                  placeholder="How did the workout feel? Any personal records? Notes for next time..."
-                  rows={3}
-                />
-              </CardContent>
-            </Card>
           </div>
         ) : (
           // View Mode - Show exercises read-only
@@ -1000,7 +985,7 @@ export default function WorkoutDetail() {
                 return (
                   <div key={index} className="glass-inset px-4 py-3.5">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-brand font-technical font-extrabold text-[13px] flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full glass-inset border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-[13px] flex-shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1008,7 +993,7 @@ export default function WorkoutDetail() {
                           {isLogFormat ? (
                             <table className="w-full text-sm mt-2">
                               <thead>
-                                <tr className="border-b border-white/[0.08]">
+                                <tr className="border-b border-charcoal-border">
                                   <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Set</th>
                                   <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Weight</th>
                                   <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Reps</th>
@@ -1016,7 +1001,7 @@ export default function WorkoutDetail() {
                               </thead>
                               <tbody>
                                 {exercise.sets.map((set, si) => (
-                                  <tr key={si} className="border-b border-white/[0.06]">
+                                  <tr key={si} className="border-b border-charcoal-borderSoft">
                                     <td className="py-2 px-2 font-technical font-extrabold text-ink-muted">{set.set_number}</td>
                                     <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-[10px] text-ink-faint">{weightUnit}</span></td>
                                     <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.reps}</td>
@@ -1063,16 +1048,16 @@ export default function WorkoutDetail() {
               style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
             >
               <p className="section-label mb-2 self-start">Muscles worked</p>
-              <div className="flex rounded-full overflow-hidden bg-white/[0.05] border border-white/10 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] mb-3">
-                <button
-                  onClick={() => setMuscleView("anterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "anterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
-                >Front</button>
-                <button
-                  onClick={() => setMuscleView("posterior")}
-                  className={`px-3 py-1 transition-colors ${muscleView === "posterior" ? "bg-white/[0.12] text-ink font-bold" : "text-ink-muted hover:bg-white/[0.06] hover:text-ink"}`}
-                >Back</button>
-              </div>
+              <SegmentedControl
+                value={muscleView}
+                onChange={setMuscleView}
+                size="md"
+                className="mb-3"
+                options={[
+                  { value: "anterior", label: "Front" },
+                  { value: "posterior", label: "Back" },
+                ]}
+              />
               <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />
             </div>
           ) : null;
@@ -1086,9 +1071,9 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-ink-muted">
+          <DialogDescription>
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </p>
+          </DialogDescription>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
@@ -1106,9 +1091,9 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Incomplete Sets</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-ink-muted">
+          <DialogDescription>
             Some sets haven't been checked off. Would you like to mark them all as complete?
-          </p>
+          </DialogDescription>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => handleIncompleteResponse(false)}>
               Leave As-Is
@@ -1128,7 +1113,7 @@ export default function WorkoutDetail() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ink-muted">Post-workout Notes</label>
+              <label className="section-label">Workout Notes</label>
               <Textarea
                 value={postWorkoutNotes}
                 onChange={(e) => setPostWorkoutNotes(e.target.value)}

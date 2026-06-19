@@ -214,10 +214,15 @@ export default function WeeklyPlanCard({ bare = false }) {
   const openDayData = openDay ? week.find((d) => d.date === openDay) : null;
   const creamiFoods = openDayData ? openDayData.rows.filter((r) => r.creami).map((r) => r.food_name) : [];
 
+  // In `bare` (sheet) mode we drop overflow-hidden so the Approve CTA's sticky
+  // footer can pin to the scrolling DialogContent. The rounded-corner clip it
+  // provides is only needed for the standalone glass card.
   return (
-    <div className={`${bare ? "" : "glass rounded-2xl"} overflow-hidden`}>
+    <div className={bare ? "" : "glass rounded-2xl overflow-hidden"}>
       {/* ── Header: what plan, what target ── */}
-      <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+      {/* pr-14 clears the DialogContent close X (absolute right-2 top-2, 44px)
+          so the calorie figure never sits under it when rendered as a sheet. */}
+      <div className="px-5 pt-4 pb-3 pr-14 flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4 text-brand" />
@@ -229,7 +234,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           <h3 className="text-lg font-bold text-ink leading-tight mt-1">{planLabel}</h3>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-2xl font-technical text-ink leading-none">
+          <div className="text-2xl font-technical text-gold leading-none">
             {calTarget ? Math.round(calTarget).toLocaleString() : "—"}
           </div>
           <div className="text-[9px] uppercase tracking-widest text-ink-muted font-bold mt-1">
@@ -270,20 +275,22 @@ export default function WeeklyPlanCard({ bare = false }) {
                 key={d.date}
                 onClick={() => setOpenDay(isOpen ? null : d.date)}
                 className={`rounded-lg px-1.5 py-2 text-center border transition-colors ${
-                  isOpen ? "border-brand bg-brand/[10%]"
-                  : isToday ? "border-brand/40 bg-brand/[6%]"
-                  : "border-charcoal-border bg-charcoal-surface/40 hover:border-white/[0.18]"
+                  isOpen ? "border-brand bg-brand/10"
+                  : isToday ? "border-brand/40 bg-brand/5"
+                  : "border-charcoal-border bg-charcoal-surface/40 hover:border-charcoal-borderSoft"
                 }`}
               >
-                <div className="text-[9px] uppercase tracking-wider text-ink-muted font-bold">{format(parseISO(d.date), "EEEEE")}</div>
+                <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold">{format(parseISO(d.date), "EEEEE")}</div>
                 <div className="flex justify-center my-1">
                   {d.trainingDay
                     ? <Dumbbell className="w-3 h-3 text-brand" />
                     : <Moon className="w-3 h-3 text-ink-faint" />}
                 </div>
-                <div className="font-technical text-[11px] text-ink leading-none">{d.totals.calories || "—"}</div>
-                <div className="text-[8px] text-ink-faint font-technical leading-none mt-0.5">
-                  {d.rows.length ? `${Math.round(d.totals.carbs)}c` : "eaten"}
+                <div className="font-technical text-[11px] text-gold leading-none">{d.totals.calories || "—"}</div>
+                <div className="text-[10px] font-technical leading-none mt-0.5">
+                  {d.rows.length
+                    ? <span className="text-viz-3">{Math.round(d.totals.carbs)}c</span>
+                    : <span className="text-ink-faint">eaten</span>}
                 </div>
               </button>
             );
@@ -305,7 +312,7 @@ export default function WeeklyPlanCard({ bare = false }) {
               {format(parseISO(openDayData.date), "EEEE, MMM d")}
               <span className="ml-1.5 text-[10px] font-semibold text-ink-muted">{openDayData.trainingDay ? "lift day" : "rest day"}</span>
             </span>
-            <span className="font-technical text-[10.5px] text-ink-muted">
+            <span className="font-technical text-[10px] text-ink-muted">
               target {Math.round(openDayData.target).toLocaleString()}
               {openDayData.eatenCal > 0 && ` · eaten ${Math.round(openDayData.eatenCal).toLocaleString()}`}
               {` · plan fills ${openDayData.totals.calories.toLocaleString()}`}
@@ -320,7 +327,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             <>
               {MEAL_ORDER.filter((m) => openDayData.rows.some((r) => r.meal_type === m)).map((m) => (
                 <div key={m} className="px-3.5 py-2 border-b hairline last:border-b-0">
-                  <div className="text-[9px] uppercase tracking-widest text-ink-faint font-bold mb-1">{MEAL_LABEL[m]}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-ink-faint font-bold mb-1">{MEAL_LABEL[m]}</div>
                   {openDayData.rows.filter((r) => r.meal_type === m).map((r) => (
                     <div key={r.food_name} className="flex items-center gap-2 py-0.5 text-xs">
                       <span className="text-ink font-semibold flex-1 truncate">{r.food_name}</span>
@@ -396,10 +403,10 @@ export default function WeeklyPlanCard({ bare = false }) {
                 <button
                   key={it.food}
                   onClick={() => toggleChecked(it.food)}
-                  className="w-full flex items-center gap-3 px-3.5 py-2 text-xs text-left hover:bg-white/[0.03] transition-colors"
+                  className="w-full flex items-center gap-3 min-h-[44px] px-3.5 py-3 text-xs text-left hover:bg-charcoal-surface transition-colors"
                 >
-                  <span className={`shrink-0 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-leaf/60 bg-leaf/15 text-leaf" : "border-white/[0.18] text-transparent"}`}>
-                    <Check className="w-2.5 h-2.5" />
+                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-leaf/60 bg-leaf/15 text-leaf" : "border-track text-transparent"}`}>
+                    <Check className="w-3 h-3" />
                   </span>
                   <span className={`font-semibold flex-1 truncate ${done ? "text-ink-faint line-through" : "text-ink"}`}>{it.food}</span>
                   <span className={`font-technical whitespace-nowrap ${done ? "text-ink-faint" : "text-ink-muted"}`}>
@@ -413,8 +420,11 @@ export default function WeeklyPlanCard({ bare = false }) {
         </div>
       )}
 
-      {/* ── Approve — primary action of the week view ── */}
-      <div className="px-5 pb-4 pt-1">
+      {/* ── Approve — primary action of the week view ──
+          Pinned to a sticky footer so it stays in the thumb zone instead of
+          living ~2000px down the scroll. Backed by the field colour + a hairline
+          top edge so scrolled content can't bleed through behind the CTA. */}
+      <div className="sticky bottom-0 px-5 pb-4 pt-3 bg-[var(--color-bg)]/95 backdrop-blur border-t hairline">
         <button
           onClick={() => approve.mutate()}
           disabled={approve.isPending || allRows.length === 0}

@@ -58,7 +58,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}
-          className="absolute right-2 top-2 h-11 w-11 flex items-center justify-center rounded-full text-ink-muted transition-colors hover:text-ink hover:bg-white/[0.06] focus:outline-none"
+          className="absolute right-2 top-2 h-11 w-11 flex items-center justify-center rounded-full text-ink-muted transition-colors hover:text-ink hover:bg-[var(--glass-edge)] focus:outline-none"
           aria-label="Close"
         >
           <X className="h-4 w-4" />

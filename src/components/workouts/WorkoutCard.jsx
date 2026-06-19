@@ -95,19 +95,19 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   <div className="absolute right-0 top-12 glass-elevated rounded-xl py-1 z-20 min-w-[140px]">
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
@@ -123,9 +123,9 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           )}
 
           <h3
-            className={`text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug ${
+            className={`text-base font-bold text-ink line-clamp-2 mt-0.5 leading-snug ${
               isOwner ? "pr-12" : ""
-            } ${isOwner && !hasBadgeRow ? "pt-12" : ""}`}
+            }`}
           >
             {workout.title}
           </h3>
@@ -137,15 +137,15 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
         </div>
 
         <div className="pt-0 pb-4 px-4 md:px-6">
-          {/* Stats row */}
+          {/* Stats row — both cells always render so columns stay stable */}
           <div className="flex">
-            {validDuration && (
-              <div className="flex-1 flex flex-col">
-                <span className="section-label">Duration</span>
-                <span className="font-technical text-lg font-bold text-ink mt-0.5">{validDuration} min</span>
-              </div>
-            )}
-            <div className={`flex-1 flex flex-col ${validDuration ? 'border-l hairline pl-4' : ''}`}>
+            <div className="flex-1 flex flex-col">
+              <span className="section-label">Duration</span>
+              <span className="font-technical text-lg font-bold text-ink mt-0.5">
+                {validDuration ? `${validDuration} min` : "—"}
+              </span>
+            </div>
+            <div className="flex-1 flex flex-col border-l hairline pl-4">
               <span className="section-label">Exercises</span>
               <span className="font-technical text-lg font-bold text-ink mt-0.5">{workout.exercises?.length || 0}</span>
             </div>

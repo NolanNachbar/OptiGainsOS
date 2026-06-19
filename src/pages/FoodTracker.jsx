@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, X } from "lucide-react";
+import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, X, ArrowUpRight } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -60,6 +60,7 @@ export default function FoodTracker() {
   const [fuzzyFallback, setFuzzyFallback] = useState(false);
   const [myFoodsExpanded, setMyFoodsExpanded] = useState(false);
   const [recentExpanded, setRecentExpanded] = useState(false);
+  const [manualExpanded, setManualExpanded] = useState(false);
   const [showNewRecipe, setShowNewRecipe] = useState(false);
   const [showNewMealDialog, setShowNewMealDialog] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -246,6 +247,19 @@ export default function FoodTracker() {
       setGoalFormInitialized(true);
     }
   }, [profile, goalFormInitialized]);
+
+  // Auto-expand the Manual entry disclosure once a food is picked/typed or when
+  // editing an existing entry; otherwise keep it collapsed so search leads.
+  useEffect(() => {
+    if (editingEntry || (newFood.food_name && newFood.food_name.length > 0)) {
+      setManualExpanded(true);
+    }
+  }, [editingEntry, newFood.food_name]);
+
+  // Reset the disclosure to collapsed each time the dialog opens fresh.
+  useEffect(() => {
+    if (!showAddDialog) setManualExpanded(false);
+  }, [showAddDialog]);
 
   const latestWeight = profile?.current_weight
     ?? (weightEntries.length > 0
@@ -817,7 +831,7 @@ const handleSaveMealTemplate = () => {
                     <span className="section-label flex items-center gap-1.5">
                       Daily log
                       {targets.engineSet && (
-                        <span className="text-[9px] font-extrabold tracking-wider text-teal bg-teal/10 rounded-sm px-1.5 py-0.5 normal-tracking">
+                        <span className="text-[9px] font-extrabold tracking-wider text-ink-muted bg-white/[0.06] rounded-sm px-1.5 py-0.5">
                           ENGINE-SET
                         </span>
                       )}
@@ -873,7 +887,7 @@ const handleSaveMealTemplate = () => {
                           <div key={label} className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-muted-2 w-3.5 shrink-0">{label}</span>
                             <div className="flex-1 h-1.5 rounded-full bg-track overflow-hidden">
-                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
+                              <div className="h-full rounded-full transition-[width]" style={{ width: `${pct}%`, background: hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
                             </div>
                             <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap shrink-0">
                               {Math.round(consumed)}<span className="opacity-60">/{goal}g</span>
@@ -936,15 +950,20 @@ const handleSaveMealTemplate = () => {
                 <Button variant="dim" size="sm" onClick={() => refetchEntries()}>Retry</Button>
               </div>
             ) : entriesLoading ? (
+              /* Loading skeletons: bars use the system `bg-track` material. The
+                 only motion is Tailwind's `animate-pulse` (opacity breathe) —
+                 a documented system exception, since Vapor × Macro has no
+                 dedicated shimmer utility and a pulse on the track token reads
+                 as restrained, hue-free placeholder motion. */
               <div className="space-y-4">
                 {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => (
                   <div key={mealType} className="glass overflow-hidden">
                     <div className="px-4 py-3 border-b hairline">
-                      <div className="h-3 w-24 rounded bg-white/[0.06] animate-pulse" />
+                      <div className="h-3 w-24 rounded bg-track animate-pulse" />
                     </div>
                     <div className="px-4 py-4 space-y-2">
-                      <div className="h-3 w-full rounded bg-white/[0.05] animate-pulse" />
-                      <div className="h-3 w-2/3 rounded bg-white/[0.05] animate-pulse" />
+                      <div className="h-3 w-full rounded bg-track animate-pulse" />
+                      <div className="h-3 w-2/3 rounded bg-track animate-pulse" />
                     </div>
                   </div>
                 ))}
@@ -965,10 +984,19 @@ const handleSaveMealTemplate = () => {
                     {/* Meal header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b hairline">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-leaf' : 'bg-white/[0.12]'}`} />
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-leaf' : 'bg-track'}`} />
                         <h3 className="section-label tracking-[0.12em]">{label}</h3>
                       </div>
                       <div className="flex items-center gap-2.5">
+                        {/* Desktop legend for the per-row macro grid — one per section, hue encodes identity */}
+                        {hasEntries && (
+                          <div className="hidden sm:grid grid-cols-4 gap-1.5 text-right text-[9px] uppercase tracking-wider font-semibold text-ink-faint w-[136px]">
+                            <span>Cal</span>
+                            <span>P</span>
+                            <span>C</span>
+                            <span>F</span>
+                          </div>
+                        )}
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
@@ -991,52 +1019,54 @@ const handleSaveMealTemplate = () => {
                         {entries.map((entry, i) => (
                           <div
                             key={entry.id}
-                            className={`flex items-center gap-2 md:gap-3 py-3 px-4 border-b hairline hover:bg-white/[0.03] transition-colors group ${entry.planned ? 'bg-white/[0.02]' : i % 2 === 1 ? 'bg-white/[0.015]' : ''}`}
+                            className={`flex items-center gap-2 md:gap-3 py-2.5 px-4 border-b hairline tile-interactive group ${entry.planned ? 'bg-track' : i % 2 === 1 ? 'bg-track' : ''}`}
                           >
-                            <div className="flex-1 min-w-0 flex items-center gap-2.5">
-                              {entry.planned && (
-                                <button
-                                  onClick={() => togglePlannedMutation.mutate(entry.id)}
-                                  title="Mark as eaten"
-                                  aria-label="Mark as eaten"
-                                  className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px]"
-                                >
-                                  <span className="w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-leaf/[0.18] hover:border-leaf/60 transition-colors" />
-                                </button>
-                              )}
-                              <div className="flex flex-col min-w-0 justify-center">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
-                                  {entry.tag && (
-                                    <span className={`shrink-0 text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${entry.tag === 'pre' ? 'text-carb bg-carb/15' : 'text-leaf bg-leaf/15'}`}>
-                                      {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
-                                    </span>
-                                  )}
-                                </div>
-                                {entry.serving_size != null && (
-                                  <span className="text-[10px] font-technical mt-0.5 font-semibold text-ink-muted">
-                                    {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}
+                            {entry.planned && (
+                              <button
+                                onClick={() => togglePlannedMutation.mutate(entry.id)}
+                                title="Mark as eaten"
+                                aria-label="Mark as eaten"
+                                className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px]"
+                              >
+                                <span className="w-6 h-6 rounded-full border-[1.5px] border-track text-leaf flex items-center justify-center hover:bg-leaf/[0.18] hover:border-leaf/60 transition-colors" />
+                              </button>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              {/* Name owns its own full-width line on mobile */}
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
+                                {entry.tag && (
+                                  <span className={`shrink-0 text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${entry.tag === 'pre' ? 'text-carb bg-carb/15' : 'text-leaf bg-leaf/15'}`}>
+                                    {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
                                   </span>
                                 )}
                               </div>
+                              {/* Mobile: single inline macro strip (hue encodes identity, no captions) */}
+                              <div className={`sm:hidden font-technical tabular-nums text-[11px] font-semibold mt-0.5 flex flex-wrap items-center gap-x-1.5 ${entry.planned ? 'opacity-45' : ''}`}>
+                                <span className="text-gold">{entry.calories} cal</span>
+                                <span className="text-ink-faint">·</span>
+                                <span className="text-coral">{entry.protein_grams}P</span>
+                                <span className="text-ink-faint">·</span>
+                                <span className="text-carb">{entry.carbs_grams}C</span>
+                                <span className="text-ink-faint">·</span>
+                                <span className="text-fat">{entry.fats_grams}F</span>
+                                {entry.serving_size != null && (
+                                  <span className="text-ink-muted">· {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}</span>
+                                )}
+                              </div>
+                              {/* Desktop: serving line under the name */}
+                              {entry.serving_size != null && (
+                                <span className="hidden sm:block text-[10px] font-technical mt-0.5 font-semibold text-ink-muted">
+                                  {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}
+                                </span>
+                              )}
                             </div>
-                            <div className={`shrink-0 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
-                              <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
-                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Cal</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-coral">{entry.protein_grams}</span>
-                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Pro</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-carb">{entry.carbs_grams}</span>
-                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Car</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-technical text-xs font-bold text-fat">{entry.fats_grams}</span>
-                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Fat</span>
-                              </div>
+                            {/* Desktop: per-column macro grid (one legend per section covers identity) */}
+                            <div className={`hidden sm:grid shrink-0 grid-cols-4 gap-1.5 w-[136px] text-right items-center font-technical tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
+                              <span className="text-xs font-bold text-gold">{entry.calories}</span>
+                              <span className="text-xs font-bold text-coral">{entry.protein_grams}</span>
+                              <span className="text-xs font-bold text-carb">{entry.carbs_grams}</span>
+                              <span className="text-xs font-bold text-fat">{entry.fats_grams}</span>
                             </div>
                             <div className="shrink-0 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors">
@@ -1061,7 +1091,7 @@ const handleSaveMealTemplate = () => {
                       </>
                     ) : (
                       <button
-                        className="w-full py-4 flex items-center justify-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
+                        className="w-full min-h-[44px] py-2.5 flex items-center justify-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
                         onClick={() => {
                           setNewFood(prev => ({ ...prev, meal_type: mealType }));
                           setShowAddDialog(true);
@@ -1082,7 +1112,7 @@ const handleSaveMealTemplate = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); }}
-                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 min-h-[44px] text-ink-muted hover:text-brand hover:border-brand/40 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 min-h-[44px] text-ink-muted hover:text-ink hover:border-charcoal-borderSoft transition-all"
                 >
                   <Save className="w-3.5 h-3.5" />
                   Save Day as Template
@@ -1123,7 +1153,7 @@ const handleSaveMealTemplate = () => {
                     </div>
                     <button
                       onClick={() => setShowGoalsModal(true)}
-                      className="mt-3 w-full min-h-[44px] py-2 border border-dashed border-charcoal-border rounded-lg text-xs font-bold uppercase tracking-widest text-ink-muted hover:text-brand hover:border-brand/40 transition-all flex items-center justify-center gap-1.5"
+                      className="mt-3 w-full min-h-[44px] py-2 border border-dashed border-charcoal-border rounded-lg text-xs font-bold uppercase tracking-widest text-ink-muted hover:text-ink hover:border-charcoal-borderSoft transition-all flex items-center justify-center gap-1.5"
                     >
                       <Pencil className="w-3.5 h-3.5" /> Edit Goals
                     </button>
@@ -1332,7 +1362,7 @@ const handleSaveMealTemplate = () => {
                       title="Scan a barcode"
                     >
                       <Camera className="w-4 h-4" />
-                      <span className="text-xs font-medium hidden sm:inline">Scan</span>
+                      <span className="text-xs font-medium">Scan</span>
                     </Button>
                   </div>
 
@@ -1349,7 +1379,7 @@ const handleSaveMealTemplate = () => {
                                 <Star className="w-3 h-3 fill-gold" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
-                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-white/[0.05] transition-colors">
+                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.food_name}</div>
                                   <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                 </button>
@@ -1363,7 +1393,7 @@ const handleSaveMealTemplate = () => {
                                 Generic Foods
                               </div>
                               {genericResults.map((food) => (
-                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
+                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.description}</div>
                                   <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                                 </button>
@@ -1382,7 +1412,7 @@ const handleSaveMealTemplate = () => {
                                 {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               </button>
                               {showBranded && brandedResults.map((food) => (
-                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
+                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.description}</div>
                                   {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
                                   <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
@@ -1408,7 +1438,7 @@ const handleSaveMealTemplate = () => {
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {recentExpanded && recentFoods.map((entry, i) => (
-                              <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
+                              <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
                                 <div className="font-medium text-ink text-sm">{entry.food_name}</div>
                                 <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">
                                   {entry.serving_size && <span>{entry.serving_size} · </span>}
@@ -1456,7 +1486,7 @@ const handleSaveMealTemplate = () => {
                             {myFoodsExpanded && (
                               <div className="max-h-36 overflow-y-auto">
                                 {customFoods.map((food) => (
-                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-white/[0.05] border-b last:border-b-0 transition-colors">
+                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
                                     <div className="font-medium text-ink text-sm">{food.food_name}</div>
                                     <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                   </button>
@@ -1468,10 +1498,19 @@ const handleSaveMealTemplate = () => {
                       </div>
                     )}
 
-                    <div className="border-t pt-4">
-                      <p className="section-label mb-3">Manual entry</p>
+                    <div className="border-t border-charcoal-border pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setManualExpanded(v => !v)}
+                        aria-expanded={manualExpanded}
+                        className="w-full min-h-[44px] flex items-center justify-between text-left mb-1"
+                      >
+                        <span className="section-label">Manual entry</span>
+                        {manualExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
+                      </button>
 
-                      <div className="space-y-4">
+                      {manualExpanded && (
+                      <div className="space-y-4 pt-1">
                         <div>
                           <Label htmlFor="food_name">Food Name *</Label>
                           <Input
@@ -1556,7 +1595,7 @@ const handleSaveMealTemplate = () => {
                         {(isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0) && (
                           <>
                           <p className="section-label">Total for {newFood.serving_amount} {newFood.serving_unit}</p>
-                          <div className="grid grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {[
                               { label: 'Calories', value: Math.round(newFood.calories), unit: '', hue: 'text-gold' },
                               { label: 'Protein', value: newFood.protein_grams, unit: 'g', hue: 'text-coral' },
@@ -1704,9 +1743,10 @@ const handleSaveMealTemplate = () => {
                             </button>
                           </div>
                         )}
+                      </div>
+                      )}
                   </div>
                 </div>
-              </div>
 
               {/* Fixed Footer */}
               <div className="px-6 pt-4 border-t bg-charcoal-surface shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
@@ -1743,7 +1783,7 @@ const handleSaveMealTemplate = () => {
         )}
       {/* ─── Goals Modal ─── */}
       <Dialog open={showGoalsModal} onOpenChange={setShowGoalsModal}>
-        <DialogContent className="max-w-xl flex flex-col p-0 overflow-hidden">
+        <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle>Nutrition Goals</DialogTitle>
           </DialogHeader>
@@ -1787,7 +1827,7 @@ const handleSaveMealTemplate = () => {
             <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-charcoal-border">
               <h2 className="text-base font-semibold text-ink">Your Recipes</h2>
               <div className="flex items-center gap-2">
-                <Button onClick={() => setShowNewRecipe(true)} className="bg-brand h-8 text-xs px-3">
+                <Button onClick={() => setShowNewRecipe(true)} variant="volt" size="sm">
                   <Plus className="w-3.5 h-3.5 mr-1" />New Recipe
                 </Button>
                 <button
@@ -2243,9 +2283,9 @@ function GoalsFormContent({
                   {phaseCalories.toLocaleString()} cal/day phase target
                 </div>
               </div>
-              <Button type="button" variant="ghost" size="sm" className="text-brand shrink-0"
+              <Button type="button" variant="ghost" size="sm" className="text-ink-muted hover:text-ink shrink-0 gap-1"
                 onClick={() => { setShowGoalsModal(false); navigate('/dashboard?tab=coach'); }}>
-                Manage ↗
+                Manage <ArrowUpRight className="w-3.5 h-3.5" />
               </Button>
             </div>
             {goalsOutOfSync && (
@@ -2280,14 +2320,17 @@ function GoalsFormContent({
 
       {tdee.tdee && latestWeight && (
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Label className="whitespace-nowrap text-sm shrink-0">Protein target</Label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <Label className="whitespace-nowrap text-sm sm:shrink-0">Protein target</Label>
             <div className="flex items-center gap-2 flex-1">
               <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
                 onChange={(e) => setProteinPerLb(e.target.value)} className="w-24" />
-              <span className="text-sm text-ink-muted whitespace-nowrap">
-                g / lb{latestWeight ? ` = ${Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day` : ''}
-              </span>
+              <span className="text-sm text-ink-muted whitespace-nowrap">g / lb</span>
+              {latestWeight && (
+                <span className="pill-value pill-value--sm text-ink ml-auto sm:ml-0">
+                  = {Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day
+                </span>
+              )}
             </div>
           </div>
           <Button type="button" variant="outline" className="w-full border-dashed"

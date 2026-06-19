@@ -103,13 +103,13 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10001] flex flex-col bg-black">
+    <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal sheet-rise">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80">
-        <span className="text-ink font-semibold text-sm">Scan Barcode</span>
+      <div className="flex items-center justify-between px-4 py-3 bg-charcoal/80 backdrop-blur border-b border-charcoal-border">
+        <span className="text-ink font-semibold text-base">Scan Barcode</span>
         <button
           onClick={onClose}
-          className="text-ink/70 hover:text-ink transition-colors p-1"
+          className="flex items-center justify-center min-h-11 min-w-11 -mr-2 text-ink/70 hover:text-ink transition-colors"
           aria-label="Close scanner"
         >
           <X className="w-5 h-5" />
@@ -137,10 +137,12 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
                 "bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg",
                 "bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg",
               ].map((cls, i) => (
-                <div key={i} className={`absolute w-8 h-8 border-white ${cls}`} />
+                <div key={i} className={`absolute w-8 h-8 border-ink/80 ${cls}`} />
               ))}
-              {/* Scan line animation */}
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand/80 animate-pulse" />
+              {/* Scan line — info hue reads "system active"; coral stays
+                  reserved for the action buttons. Bespoke vertical sweep on the
+                  single system easing instead of off-system animate-pulse. */}
+              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-info/70 scan-sweep" />
             </div>
           </div>
         )}
@@ -148,26 +150,38 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         {/* Status overlay */}
         <div className="absolute bottom-0 inset-x-0 pb-8 flex flex-col items-center gap-3">
           {scanState === "requesting" && (
-            <div className="flex items-center gap-2 bg-black/70 text-ink text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" /> Requesting camera…
             </div>
           )}
           {scanState === "scanning" && (
-            <div className="bg-black/60 text-ink/80 text-xs px-4 py-2 rounded-full">
+            <div className="bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink/80 text-xs px-4 py-2 rounded-full">
               Point camera at a barcode
             </div>
           )}
           {scanState === "looking_up" && (
-            <div className="flex items-center gap-2 bg-black/70 text-ink text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" /> Looking up {foundBarcode}…
             </div>
+          )}
+          {/* Thumb-zone Cancel — reachable while the camera is live (mobile law:
+              primary escape in the lower third). */}
+          {(scanState === "requesting" || scanState === "scanning" || scanState === "looking_up") && (
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={onClose}
+              className="min-h-[44px] px-8 backdrop-blur"
+            >
+              Cancel
+            </Button>
           )}
         </div>
       </div>
 
       {/* Not found state */}
       {scanState === "not_found" && (
-        <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border p-6 flex flex-col items-center gap-3 text-center">
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
@@ -177,7 +191,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
             <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
               Try again
             </Button>
-            <Button className="flex-1 bg-brand hover:bg-brand" onClick={() => onNotFound(foundBarcode)}>
+            <Button variant="primary" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
               Enter manually
             </Button>
           </div>
@@ -186,7 +200,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Error state */}
       {scanState === "error" && (
-        <div className="bg-charcoal-surface  p-6 flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border p-6 flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-10 h-10 text-bad" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>

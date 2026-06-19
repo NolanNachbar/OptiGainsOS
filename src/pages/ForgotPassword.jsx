@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Mail, ArrowLeft } from 'lucide-react';
-import Logo from '@/components/Logo';
+import { AuthShell, AuthHeader } from '@/pages/Login';
 import { toast } from 'sonner';
 
 export default function ForgotPassword() {
@@ -32,96 +31,77 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
-            'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
-        }}
-      />
-      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pt-[18vh] pb-[max(24px,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
-        <div className="text-center rise-in">
-          <Logo className="w-14 h-14 mx-auto mb-4" />
-          <h1 className="type-display text-[24px] text-ink">
-            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
-          </h1>
-        </div>
+    <AuthShell>
+      <AuthHeader subtitle="Reset your password" />
 
-        <Card className="w-full max-w-md mt-auto sm:mt-9 rise-in-2">
-          <CardHeader>
-            <CardTitle className="text-ink text-center">
-              {emailSent ? 'Check Your Email' : 'Forgot Password'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {emailSent ? (
-              <div className="text-center space-y-4">
-                <p className="text-secondary text-[12.5px]">
-                  We've sent a password reset link to <span className="font-medium text-ink">{email}</span>
-                </p>
-                <p className="text-secondary text-[11.5px]">
-                  Didn't receive the email? Check your spam folder or try again.
-                </p>
-                <Button
-                  onClick={() => setEmailSent(false)}
-                  variant="dark"
-                  size="lg"
-                  className="w-full"
-                >
-                  Try another email
-                </Button>
+      <div className="glass w-full max-w-sm mt-auto sm:mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+        {emailSent ? (
+          <div key="sent" className="text-center space-y-4 rise-in">
+            <p className="type-display text-[15px] text-ink">Check your email</p>
+            <p className="text-secondary text-[12.5px]">
+              We've sent a password reset link to <span className="font-semibold text-ink">{email}</span>
+            </p>
+            <p className="text-secondary text-[11.5px]">
+              Didn't receive the email? Check your spam folder or try again.
+            </p>
+            <Button
+              onClick={() => setEmailSent(false)}
+              variant="dark"
+              size="lg"
+              className="w-full"
+            >
+              Try another email
+            </Button>
+          </div>
+        ) : (
+          <form key="form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  autoComplete="email"
+                  autoFocus
+                  required
+                />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="email" className="text-ink">Email</Label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 !h-12"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="volt"
-                  size="lg"
-                  className="w-full font-bold !h-12 !rounded-xl"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <LoadingSpinner size="small" className="mr-2" />
-                      Sending...
-                    </>
-                  ) : (
-                    'Send Reset Link'
-                  )}
-                </Button>
-              </form>
-            )}
-
-            <div className="mt-6 text-center">
-              <Link
-                to="/login"
-                className="text-secondary hover:text-ink font-bold inline-flex items-center gap-2 transition-colors py-3 px-2 -my-3 -mx-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Sign In
-              </Link>
             </div>
-          </CardContent>
-        </Card>
+
+            <Button
+              type="submit"
+              variant="volt"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <LoadingSpinner size="small" className="mr-2" />
+                  Sending…
+                </>
+              ) : (
+                'Send reset link'
+              )}
+            </Button>
+          </form>
+        )}
+
+        <div className="flex items-center justify-center mt-3 px-0.5">
+          <Link
+            to="/login"
+            className="text-[13px] font-semibold text-secondary hover:text-ink transition-colors inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to sign in
+          </Link>
+        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

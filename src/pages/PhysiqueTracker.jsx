@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { PosePillRow } from "@/components/ui/system";
 import {
   AlertTriangle, ArrowLeftRight, Camera, Check,
   Loader2, Pencil, TrendingDown, TrendingUp, X,
@@ -58,6 +59,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       setEditingPose(null);
     },
   });
+
+  const fileInputRef = useRef(null);
 
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -140,35 +143,30 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         {!hideHeader && (
           <h1 className="hidden lg:block type-display text-[22px] mb-1 rise-in">Physique</h1>
         )}
-        <p className="text-xs font-semibold text-secondary mb-4">
+        {/* One instructional voice: the static "track the trend" guidance lives
+            here as the page subtitle (muted); the pose cue below is the only
+            per-shot instruction, at one ink level. */}
+        <p className="text-xs font-semibold text-muted-2 mb-4">
           Track the trend — same pose, lighting and distance each time.
         </p>
 
         {/* Pose picker */}
         <div className="section-label mb-2">Pose for this shot</div>
-        <div className="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar -mx-4 px-4 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]">
-          {POSES.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPose(p.key)}
-              disabled={busy}
-              className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                pose === p.key
-                  ? "bg-white/[0.08] text-ink border-white/[0.13]"
-                  : "bg-white/[0.04] text-muted-2 border-white/10 hover:bg-white/[0.07]"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs font-semibold text-muted-2 mb-4">
+        <PosePillRow
+          variant="solid"
+          value={pose}
+          onChange={setPose}
+          disabled={busy}
+          className="mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
+          options={POSES.map((p) => ({ value: p.key, label: p.label }))}
+        />
+        <p className="text-xs font-semibold text-secondary mb-4">
           {POSES.find((p) => p.key === pose)?.cue}
         </p>
 
         {/* Upload */}
         <label className="block">
-          <input type="file" accept="image/*,video/*"
+          <input ref={fileInputRef} type="file" accept="image/*,video/*"
                  className="hidden" onChange={handleFile} disabled={busy} />
           <Button asChild variant="volt" size="lg" className="w-full" disabled={busy}>
             <span className="flex items-center justify-center gap-2 cursor-pointer">
@@ -205,12 +203,17 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               )}
             </div>
             {latest.analysis.assessment && (
-              <p className="mt-2 text-sm font-semibold text-secondary">{latest.analysis.assessment}</p>
+              <p className="mt-2 text-sm font-semibold text-secondary line-clamp-2">{latest.analysis.assessment}</p>
             )}
             {Array.isArray(latest.analysis.focus_areas) && latest.analysis.focus_areas.length > 0 && (
-              <p className="mt-2 text-xs font-semibold text-muted-2">
-                <span>Focus: </span>{latest.analysis.focus_areas.join(", ")}
-              </p>
+              <div className="mt-2.5">
+                <div className="section-label mb-1.5">Focus</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {latest.analysis.focus_areas.map((area) => (
+                    <span key={area} className="pill-value pill-value--sm font-semibold">{area}</span>
+                  ))}
+                </div>
+              </div>
             )}
             {latest.analysis.vs_lean_goal && (
               <p className="mt-1 text-xs font-semibold text-muted-2">
@@ -225,9 +228,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         {loadingEntries ? (
           <div className="mt-6">
             <div className="section-label mb-2">History</div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="glass-inset h-28 animate-pulse" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="glass-inset h-48 sm:h-44 animate-pulse" />
               ))}
             </div>
           </div>
@@ -273,38 +276,32 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               </div>
             </div>
 
-            {/* Pose filter */}
-            <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar -mx-4 px-4">
-              <button
-                onClick={() => setFilterPose(null)}
-                className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] min-w-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                  filterPose === null ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
-                }`}
-              >All</button>
-              {POSES.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setFilterPose(p.key)}
-                  className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                    filterPose === p.key ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
-                  }`}
-                >{p.label}</button>
-              ))}
-            </div>
+            {/* Pose filter — quieter chips so a filter never competes with the selector */}
+            <PosePillRow
+              variant="chip"
+              value={filterPose}
+              onChange={setFilterPose}
+              className="mb-3"
+              options={[
+                { value: null, label: "All" },
+                ...POSES.map((p) => ({ value: p.key, label: p.label })),
+              ]}
+            />
 
             {/* Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {visibleEntries.map((e) => {
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {visibleEntries.map((e, i) => {
                 const isSelected = compareIds.includes(e.id);
                 return (
                   <div
                     key={e.id}
-                    className="group relative glass-inset overflow-hidden"
+                    className="group relative glass-inset tile tile-interactive overflow-hidden active:opacity-90 rise-in"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
                   >
                     {/* Image */}
                     {e.url && e.media_type === "photo"
-                      ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-28 object-cover" />
-                      : <div className="w-full h-28 flex items-center justify-center text-faint text-xs font-semibold">video</div>
+                      ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-48 sm:h-44 object-cover" />
+                      : <div className="w-full h-48 sm:h-44 flex items-center justify-center text-faint text-xs font-semibold">video</div>
                     }
 
                     {/* Compare mode tap overlay */}
@@ -314,7 +311,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         className="absolute inset-0 z-10"
                         aria-label={isSelected ? "Deselect" : "Select for comparison"}
                       >
-                        <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-brand/30" : "hover:bg-white/[0.06]"}`} />
+                        <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-brand/30" : "hover:bg-[var(--glass-bg)]"}`} />
                         {isSelected && (
                           <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
                             <Check className="w-3 h-3 text-[var(--color-action-dark)]" />
@@ -323,14 +320,17 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                       </button>
                     )}
 
-                    {/* Edit pencil — subtle, hidden in compare mode */}
+                    {/* Edit pencil — a glass-elevated chip so it reads over any
+                        photo without an ad-hoc drop-shadow. 44px tap target. */}
                     {!compareMode && (
                       <button
                         onClick={() => setEditingPose(e.id)}
-                        className="absolute top-0 right-0 z-10 min-h-[44px] min-w-[44px] flex items-start justify-end p-1.5 text-secondary hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        className="absolute top-1.5 right-1.5 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-secondary hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
                         aria-label="Fix pose"
                       >
-                        <Pencil className="w-3.5 h-3.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
+                        <span className="glass-elevated h-8 w-8 rounded-full flex items-center justify-center">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </span>
                       </button>
                     )}
 
@@ -350,7 +350,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             {!showAllHistory && filteredEntries.length > HISTORY_CAP && (
               <button
                 onClick={() => setShowAllHistory(true)}
-                className="mt-3 w-full min-h-[44px] rounded-md text-xs font-bold text-muted-2 hover:text-ink border-[0.5px] border-white/10 bg-white/[0.04] hover:bg-white/[0.07] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="mt-3 w-full min-h-[44px] rounded-md text-xs font-bold text-muted-2 hover:text-ink border-[0.5px] border-charcoal-border bg-[var(--glass-inset-bg)] hover:bg-[var(--glass-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 Show all {filteredEntries.length}
               </button>
@@ -358,6 +358,24 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           </div>
         )}
       </div>
+
+      {/* Thumb-zone upload — a floating coral action pinned within the safe
+          area, above the dock, so the primary action is reachable after the
+          fold (the inline CTA above sits in the upper third). Re-triggers the
+          same file input. Hidden while an overlay owns the screen or while a
+          shot is processing. */}
+      {entries.length > 0 && !showCompare && !editingEntry && (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy}
+          aria-label={`Upload ${POSE_LABEL[pose]} shot`}
+          className="fixed right-4 z-40 h-14 w-14 rounded-full cta-coral !p-0 disabled:opacity-60 rise-in"
+          style={{ bottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
+        >
+          {busy ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+        </button>
+      )}
 
       {/* Side-by-side comparison — bottom sheet on mobile */}
       <Dialog open={showCompare && compareEntries.length === 2} onOpenChange={setShowCompare}>
@@ -371,29 +389,36 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               <div className="mb-4">
                 <h2 className="type-display text-lg">Side by side</h2>
                 {hasDelta && (
-                  <div className={`mt-1 font-technical text-2xl font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
-                    {change > 0 ? "+" : ""}{change.toFixed(1)}%
-                    <span className="ml-1.5 text-xs font-semibold text-muted-2">since {format(parseISO(older.taken_at), 'MMM d, yyyy')}</span>
-                  </div>
+                  <>
+                    {/* Delta sized below the title so the title stays the loudest
+                        element; the date earns its own muted label line. */}
+                    <div className={`mt-1 font-technical text-xl font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
+                      {change > 0 ? "+" : ""}{change.toFixed(1)}%
+                    </div>
+                    <div className="section-label mt-0.5">since {format(parseISO(older.taken_at), 'MMM d, yyyy')}</div>
+                  </>
                 )}
               </div>
             );
           })()}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Photos are the feature — go single column / large on mobile and only
+              split into two columns at md+. Cap at ~58vh so a portrait shot still
+              reads full-height on a phone. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {compareEntries.map(e => (
               <div key={e.id}>
                 {e.url && e.media_type === "photo"
-                  ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "40vh" }} />
+                  ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "58vh" }} />
                   : <div className="w-full h-48 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold">video</div>
                 }
-                <div className="mt-2.5 space-y-0.5">
-                  <div className="text-[11px] font-bold text-muted-2">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
+                <div className="mt-2.5 space-y-1">
+                  <div className="section-label">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
                   <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</div>
                   {e.bodyfat_estimate != null && (
-                    <div className="font-technical text-xl font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
+                    <div className="font-technical text-2xl font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. BF</span></div>
                   )}
                   {e.analysis?.assessment && (
-                    <p className="text-[11px] font-semibold text-secondary pt-1 line-clamp-2">{e.analysis.assessment}</p>
+                    <p className="text-xs font-semibold text-secondary pt-1 line-clamp-2">{e.analysis.assessment}</p>
                   )}
                 </div>
               </div>

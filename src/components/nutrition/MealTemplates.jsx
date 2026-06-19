@@ -391,7 +391,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
               {(template.items || []).map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-charcoal-surface rounded-lg"
+                  className="flex items-center justify-between p-3 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg"
                 >
                   <div>
                     <div className="font-medium text-sm text-ink">
@@ -401,8 +401,8 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
                       {item.meal_type || template.meal_type}
                     </div>
                   </div>
-                  <div className="text-xs text-ink-muted">
-                    {item.calories} cal
+                  <div className="text-xs text-ink font-semibold tabular-nums">
+                    {item.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span>
                   </div>
                 </div>
               ))}
@@ -412,7 +412,9 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           <Button
             onClick={() => applyMutation.mutate()}
             disabled={applyMutation.isPending}
-            className="w-full bg-brand"
+            variant="primary"
+            size="lg"
+            className="w-full"
           >
             {applyMutation.isPending ? (
               <>
@@ -508,10 +510,11 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             <DialogHeader>
               <DialogTitle>Edit Template</DialogTitle>
             </DialogHeader>
+            <Label className="text-xs text-ink-muted mt-3 block">Template Name</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-3"
+              className="mt-1"
               placeholder="Template name"
             />
           </div>
@@ -532,15 +535,15 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                 />
               </div>
               {searchResults.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-charcoal-surface border border-charcoal-border rounded-lg max-h-52 overflow-y-auto">
+                <div className="mt-2 glass-sheet border border-charcoal-border/50 rounded-lg overflow-hidden">
                   {searchResults.map((food) => (
                     <button
                       key={food.fdcId}
                       onClick={() => addFromSearch(food)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors border-b border-charcoal-border/60 last:border-0"
+                      className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated/60 transition-colors border-b border-charcoal-border/50 last:border-0"
                     >
                       <p className="text-sm font-medium text-ink truncate">{food.description}</p>
-                      <p className="text-xs text-ink-muted font-mono">
+                      <p className="text-xs text-ink-muted font-mono tabular-nums">
                         {Math.round(food.calories * (food.servingSize || 100) / 100)} cal · P{Math.round(food.protein * (food.servingSize || 100) / 100)}g · C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g · F{Math.round(food.fats * (food.servingSize || 100) / 100)}g
                       </p>
                     </button>
@@ -558,32 +561,44 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                 <div key={idx} className="rounded-lg border border-charcoal-border overflow-hidden">
                   {/* Row header — click to expand */}
                   <div
-                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-charcoal-surface hover:bg-charcoal-elevated/50 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-charcoal-elevated/50 transition-colors"
                     onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
-                      <p className="text-xs font-mono text-ink-muted">{item.calories} cal · P{item.protein_grams}g · C{item.carbs_grams}g · F{item.fats_grams}g</p>
+                      <p className="text-xs font-mono tabular-nums text-ink-muted">
+                        {item.calories}<span className="text-ink-faint"> cal</span>
+                        <span className="text-ink-faint"> · </span>
+                        <span className="text-leaf">P{item.protein_grams}g</span>
+                        <span className="text-ink-faint"> · </span>
+                        <span className="text-carb">C{item.carbs_grams}g</span>
+                        <span className="text-ink-faint"> · </span>
+                        <span className="text-fat">F{item.fats_grams}g</span>
+                      </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-ink-muted shrink-0 transition-transform ${expandedIndex === idx ? 'rotate-180' : ''}`} />
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove item"
                       onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
-                      className="p-1 text-ink-muted hover:text-bad transition-colors shrink-0"
+                      className="h-11 w-11 ml-1 border-0 bg-transparent shadow-none text-ink-muted hover:text-bad hover:bg-transparent shrink-0"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
 
                   {/* Expanded edit form */}
                   {expandedIndex === idx && (
-                    <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface bg-charcoal-surface/50 space-y-2">
+                    <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface/50 space-y-2">
                       <div>
                         <Label className="text-xs text-ink-muted">Food Name</Label>
-                        <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 h-8 text-sm" />
+                        <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-sm" />
                       </div>
                       <div>
                         <Label className="text-xs text-ink-muted">Serving</Label>
-                        <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 h-8 text-sm" placeholder="e.g. 100 g" />
+                        <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-sm" placeholder="e.g. 100 g" />
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -598,7 +613,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                               type="number"
                               value={item[field]}
                               onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
-                              className="mt-1 h-8 text-sm"
+                              className="mt-1 text-sm px-2"
                               min={0}
                             />
                           </div>
@@ -613,7 +628,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             {/* Add manually */}
             <button
               onClick={addManual}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-violet-600 border border-dashed border-charcoal-border rounded-lg hover:border-violet-400 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-charcoal-border transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add manually
@@ -621,8 +636,11 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-charcoal-border bg-charcoal shrink-0 space-y-2">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold">
+          <div
+            className="px-6 py-4 border-t border-charcoal-border bg-charcoal-surface/80 shrink-0 space-y-2"
+            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          >
+            <Button onClick={handleSave} disabled={isSaving} variant="primary" size="lg" className="w-full">
               {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
             </Button>
             <Button
@@ -719,23 +737,34 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
             />
           </div>
 
-          <div className="text-sm text-ink-muted">
-            {entries.length} item{entries.length !== 1 ? "s" : ""} will be saved
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {entries.map((e, idx) => (
-              <div key={idx} className="flex justify-between p-2 bg-charcoal-surface rounded text-sm">
-                <span className="text-ink">{e.food_name}</span>
-                <span className="text-ink-muted">{e.calories} cal</span>
+          <div className="space-y-2">
+            <p className="text-[13px] text-ink-faint uppercase tracking-wide">
+              {entries.length} item{entries.length !== 1 ? "s" : ""} to save
+            </p>
+            <div className="relative">
+              <div className="space-y-2 max-h-48 overflow-y-auto pb-3">
+                {entries.map((e, idx) => (
+                  <div key={idx} className="flex justify-between p-2 bg-charcoal-surface/60 border border-charcoal-border/50 rounded text-sm">
+                    <span className="text-ink truncate">{e.food_name}</span>
+                    <span className="text-ink font-semibold tabular-nums shrink-0 ml-2">{e.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                  </div>
+                ))}
               </div>
-            ))}
+              {entries.length > 4 && (
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b"
+                  style={{ background: 'linear-gradient(to top, var(--sheet-bg), transparent)' }}
+                />
+              )}
+            </div>
           </div>
 
           <Button
             onClick={handleSave}
             disabled={createMutation.isPending || !name.trim()}
-            className="w-full bg-brand"
+            variant="primary"
+            size="lg"
+            className="w-full"
           >
             {createMutation.isPending ? (
               <>

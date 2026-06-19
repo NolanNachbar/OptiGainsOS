@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
@@ -34,9 +34,9 @@ export function ConfirmDialog({
             <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <p className="text-[13px] text-ink-secondary mt-2">
+        <DialogDescription className="mt-2">
           {description}
-        </p>
+        </DialogDescription>
         <div className="flex gap-3 mt-6">
           <Button
             variant="dim"
@@ -48,7 +48,7 @@ export function ConfirmDialog({
             {cancelText}
           </Button>
           <Button
-            variant={variant === "danger" ? "destructive-solid" : "volt"}
+            variant={variant === "danger" ? "destructive" : "volt"}
             size="lg"
             onClick={handleConfirm}
             className="flex-1"

@@ -62,15 +62,17 @@ export default function QuickCapture({
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="min-h-[120px] bg-transparent border-none px-0 resize-none text-base text-ink placeholder:text-ink-muted focus-visible:ring-1 focus-visible:ring-[rgba(var(--hue-teal-rgb)/0.40)] focus-visible:shadow-none rounded-md"
+        className="min-h-[120px] text-sm"
       />
-      <div className="flex items-center justify-between mt-2 pt-2 border-t hairline">
+      <div className="flex items-center justify-between mt-3 pt-3 border-t hairline">
         {domain !== "general" ? (
           <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest">
             {domain}
           </span>
         ) : (
-          <span aria-hidden="true" />
+          <span className="text-[10px] font-technical text-ink-faint">
+            ⌘/Ctrl + Enter to capture
+          </span>
         )}
         <Button
           size="lg"

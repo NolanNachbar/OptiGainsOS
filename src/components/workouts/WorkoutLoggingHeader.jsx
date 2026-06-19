@@ -20,6 +20,9 @@ export default function WorkoutLoggingHeader({
   restDuration = 90,
   onSkipRest = null,
   onAddRestTime = null,
+  // Empty workout → Finish is a dead-end; render it inert until there's
+  // something to log so only the Add CTA reads as the live coral action.
+  canFinish = true,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -52,22 +55,39 @@ export default function WorkoutLoggingHeader({
 
   const restActive = restTimer !== null && restTimer >= 0;
   const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
+  const restRunning = restActive && restTimer > 0;
 
-  // Rest controls (+30s / Skip) — shared between the desktop top bar and the
-  // mobile bottom action bar so the markup stays single-sourced.
-  const restControls = restActive && restTimer > 0 ? (
-    <div className="flex gap-2 items-center">
+  // Live rest countdown chip — teal coach hue throughout; urgency is a
+  // system-tokened pulse (.rest-urgent), not a hue swap. Reused inline in the
+  // mobile bottom bar so the countdown sits next to its own controls.
+  const restCountdown = restActive ? (
+    <div className={`flex items-center gap-1 font-technical ${restUrgent ? 'rest-urgent' : ''}`}>
+      <Timer className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 text-teal" />
+      <span className={`text-teal text-sm md:text-base tabular-nums ${restUrgent ? 'font-black' : 'font-extrabold'}`}>
+        {restTimer === 0 ? '0:00' : formatRestTime(restTimer)}
+      </span>
+    </div>
+  ) : null;
+
+  // Rest controls (+30s / Skip). The mobile bottom bar passes withCountdown so
+  // the countdown and its controls live together (no split attention); the
+  // desktop top bar shows the countdown in its own timer block above.
+  const restControls = (withCountdown) => restRunning ? (
+    <div className="flex gap-1.5 items-center min-w-0">
+      {withCountdown && restCountdown}
       <Button
         variant="ghost"
+        size="sm"
         onClick={() => onAddRestTime?.(30)}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 px-4 text-[12.5px] font-bold font-technical"
+        className="min-h-[44px] lg:min-h-0 font-bold font-technical"
       >
         +30s
       </Button>
       <Button
         variant="ghost"
+        size="sm"
         onClick={() => onSkipRest?.()}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 px-4 text-[12.5px] font-bold"
+        className="min-h-[44px] lg:min-h-0 font-bold"
       >
         Skip
       </Button>
@@ -88,7 +108,7 @@ export default function WorkoutLoggingHeader({
       </Button>
       <Button
         onClick={onFinish}
-        disabled={isSaving}
+        disabled={isSaving || !canFinish}
         variant="volt"
         className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-5 lg:px-4 flex-1 lg:flex-none"
         data-tutorial="finish-workout-btn"
@@ -136,12 +156,7 @@ export default function WorkoutLoggingHeader({
               {restActive && (
                 <div className="flex flex-col min-w-0 rise-in">
                   <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Rest</span>
-                  <div className={`flex items-center gap-1 font-technical ${restUrgent ? 'animate-pulse' : ''}`}>
-                    <Timer className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 text-teal" />
-                    <span className={`text-teal text-sm md:text-base ${restUrgent ? 'font-black' : 'font-extrabold'}`}>
-                      {restTimer === 0 ? 'Done!' : formatRestTime(restTimer)}
-                    </span>
-                  </div>
+                  {restCountdown}
                 </div>
               )}
             </div>
@@ -149,7 +164,7 @@ export default function WorkoutLoggingHeader({
             {/* Desktop-only action cluster + rest controls (top zone is fine
                 with a mouse; on mobile these live in the bottom bar). */}
             <div className="hidden lg:flex items-center gap-3">
-              {restControls}
+              {restControls(false)}
               {actionCluster}
             </div>
           </div>
@@ -162,8 +177,16 @@ export default function WorkoutLoggingHeader({
         style={{ bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }}
       >
         <div className="max-w-4xl mx-auto px-3 py-2.5 flex items-center justify-between gap-3">
-          {restControls ? (
-            restControls
+          {restRunning ? (
+            // Countdown + its controls live together in the thumb zone.
+            restControls(true)
+          ) : startTime ? (
+            // No rest active → carry the live elapsed timer here instead of a
+            // dead static label, so the bottom bar always shows a real datum.
+            <div className="flex items-center gap-1.5 font-technical min-w-0">
+              <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
+              <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
+            </div>
           ) : (
             <span className="text-[10px] uppercase text-ink-faint font-bold tracking-[0.08em]">Logging</span>
           )}

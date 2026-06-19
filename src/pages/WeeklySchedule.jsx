@@ -39,15 +39,22 @@ function dayType(entries, log) {
   return "REST";
 }
 
+// One grammar: "N×R @ W" (multi), "1×R @ W" (single with reps), with graceful
+// fallbacks. Never emits a zero/missing-rep token like "290 × 0" — degrades to
+// the bar load ("210 lb") or a plain set count.
 function formatSets(exercise) {
   const sets = (exercise.sets || []).filter(s => s.completed !== false);
   if (!sets.length) return "";
   const w = sets[0]?.weight;
   const r = sets[0]?.reps;
-  if (sets.length === 1) return w ? `${w} × ${r}` : `${r} reps`;
+  const hasReps = Number(r) > 0;
   const allSame = sets.every(s => s.weight === w && s.reps === r);
-  if (allSame) return w ? `${sets.length}×${r} @ ${w}` : `${sets.length}×${r}`;
-  return `${sets.length} sets`;
+  if (allSame && hasReps) {
+    return w ? `${sets.length}×${r} @ ${w}` : `${sets.length}×${r}`;
+  }
+  // No usable rep figure — show the load alone, else just the set count.
+  if (w) return `${sets.length}×${w} lb`;
+  return sets.length === 1 ? "1 set" : `${sets.length} sets`;
 }
 
 const getWorkoutSplitTitle = (log, scheduledTitle) => {
@@ -99,6 +106,7 @@ export default function WeeklySchedule() {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [showAllMuscles, setShowAllMuscles] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -243,7 +251,7 @@ export default function WeeklySchedule() {
             <button
               key={i}
               onClick={() => setSelectedDay(day)}
-              className={`data-row w-full text-left transition-colors active:bg-white/[0.06] ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
+              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors active:bg-white/[0.06] ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
             >
               <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
                 <span className={`block text-[11px] font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
@@ -273,15 +281,23 @@ export default function WeeklySchedule() {
                 </div>
               ) : isCurrentDay && type !== "REST" ? (
                 <span className="glass-inset text-[11px] font-extrabold text-ink whitespace-nowrap shrink-0 px-2 py-1 rounded-full">UP NEXT</span>
+              ) : type !== "REST" ? (
+                /* Consistent muted trailing affordance so future training rows
+                   don't read as a ragged right rail next to logged/UP NEXT rows. */
+                <ChevronRight className="w-4 h-4 text-faint shrink-0" />
               ) : null}
             </button>
           );
         })}
       </div>
 
-      {/* Selected day — the highlighted week row + each card's own title carry
-          the date context, so no standalone restatement heading here. */}
+      {/* Selected day — a lightweight day echo anchors the detail pane when the
+          page is scrolled past the week grid; each card's own title carries the
+          session name (the canonical title), so the week row stays a scan list. */}
       <div className="mb-6">
+        {hasAnything && (
+          <p className="section-label mb-2 px-1">{format(selectedDay, "EEEE, MMM d")}</p>
+        )}
         {!hasAnything ? (
           <div className="glass py-10 flex flex-col items-center gap-2 rise-in-2">
             <Moon className="w-6 h-6 text-faint" />
@@ -290,57 +306,72 @@ export default function WeeklySchedule() {
         ) : (
           <div className="space-y-3">
 
-            {/* ── Completed lift from log ── */}
+            {/* ── Completed lift from log — collapsed by default so it doesn't
+                dominate the fold and bury the 'Log another session' CTA. ── */}
             {selectedLog && (() => {
               const logLifts = (selectedLog.exercises || []).filter(ex => !isRun(ex));
               const logRuns = (selectedLog.exercises || []).filter(isRun);
               const mins = selectedLog.duration_seconds ? Math.round(selectedLog.duration_seconds / 60) : null;
+              const exCount = logLifts.length + logRuns.length;
               return (
                 <div className="glass overflow-hidden rise-in-2">
-                  <div className="px-4 pt-3.5 pb-2 flex items-start justify-between">
-                    <div>
-                      <p className="section-label !text-leaf mb-1">
+                  <button
+                    onClick={() => setShowCompleted(v => !v)}
+                    aria-expanded={showCompleted}
+                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors active:bg-white/[0.06]"
+                  >
+                    <div className="min-w-0">
+                      <p className="section-label mb-1">
                         {isTwoADay ? "AM — Completed" : "Completed"}
                       </p>
-                      <h3 className="type-display text-[15px] leading-tight">
+                      <h3 className="type-display text-[15px] leading-tight truncate">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
-                      {mins && <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">{mins} min</p>}
+                      <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">
+                        {mins ? `${mins} min · ` : ""}{exCount} {exCount === 1 ? "exercise" : "exercises"}
+                      </p>
                     </div>
-                    <div className="w-6 h-6 rounded-full bg-leaf/15 flex items-center justify-center shrink-0 mt-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-leaf" />
-                    </div>
-                  </div>
-                  {logLifts.length > 0 && (
-                    <div className="px-4 pb-3.5">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Dumbbell className="w-3 h-3 text-muted-2" />
-                        <span className="section-label">Exercises</span>
-                      </div>
-                      <div>
-                        {logLifts.map((ex, j) => (
-                          <div key={j} className="data-row justify-between gap-2">
-                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">{formatSets(ex)}</span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      <span className="w-6 h-6 rounded-full bg-leaf/15 flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-leaf" />
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${showCompleted ? "rotate-180" : ""}`} />
+                    </span>
+                  </button>
+                  {showCompleted && (
+                    <div className="rise-in">
+                      {logLifts.length > 0 && (
+                        <div className="px-4 pb-3.5">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Dumbbell className="w-3 h-3 text-muted-2" />
+                            <span className="section-label">Exercises</span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {logRuns.length > 0 && (
-                    <div className="px-4 pb-3.5">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Timer className="w-3 h-3 text-carb" />
-                        <span className="section-label !text-carb">Cardio</span>
-                      </div>
-                      <div>
-                        {logRuns.map((ex, j) => (
-                          <div key={j} className="data-row justify-between gap-2">
-                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">{formatSets(ex)}</span>
+                          <div>
+                            {logLifts.map((ex, j) => (
+                              <div key={j} className="data-row justify-between gap-2">
+                                <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
+                      {logRuns.length > 0 && (
+                        <div className="px-4 pb-3.5">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Timer className="w-3 h-3 text-carb" />
+                            <span className="section-label !text-carb">Cardio</span>
+                          </div>
+                          <div>
+                            {logRuns.map((ex, j) => (
+                              <div key={j} className="data-row justify-between gap-2">
+                                <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -365,14 +396,20 @@ export default function WeeklySchedule() {
                         <span className="section-label">Lifting</span>
                       </div>
                       <div>
-                        {lifts.map((ex, j) => (
-                          <div key={j} className="data-row justify-between">
-                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
-                              {ex.sets > 1 ? `${ex.sets} × ` : ""}{ex.rep_target || ex.reps || "—"} <span className="text-[11px] font-semibold">reps</span>
-                            </span>
-                          </div>
-                        ))}
+                        {lifts.map((ex, j) => {
+                          const reps = ex.rep_target || ex.reps;
+                          const sets = Number(ex.sets) || 1;
+                          // One grammar: "N×R reps". No usable rep target -> bare set count.
+                          const label = reps
+                            ? `${sets}×${reps} reps`
+                            : (sets === 1 ? "1 set" : `${sets} sets`);
+                          return (
+                            <div key={j} className="data-row justify-between">
+                              <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                              <span className="pill-value pill-value--sm text-muted-2 shrink-0">{label}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -419,10 +456,10 @@ export default function WeeklySchedule() {
                         const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
                         const done = isCardioDone(name);
                         return (
-                          <div key={j} className="flex items-start justify-between gap-3">
+                          <div key={j} className="flex items-center justify-between gap-3">
                             <div className={done ? "opacity-50" : ""}>
                               <div className="flex items-baseline gap-2">
-                                <span className={`type-display text-[15px] ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
+                                <span className={`text-[13px] font-semibold text-ink ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
                                 <span className="font-technical text-[12px] font-semibold text-muted-2 tabular-nums">{ex.duration_minutes} min</span>
                               </div>
                               {ex.notes && <p className="text-[11px] text-muted-2 mt-0.5">{ex.notes}</p>}
@@ -431,7 +468,7 @@ export default function WeeklySchedule() {
                               onClick={() => toggleCardio(name)}
                               aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
                               aria-pressed={done}
-                              className="shrink-0 p-2.5 -m-2.5 mt-[-8px] rounded-full transition-transform active:scale-95"
+                              className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform active:scale-95"
                             >
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                                 done
@@ -493,7 +530,7 @@ export default function WeeklySchedule() {
             </span>
           </button>
           {showVolume && (
-            <>
+            <div className="rise-in">
               <div className="space-y-1.5 mt-2.5">
                 {visibleMuscleVolume.map(([muscle, sets]) => (
                   <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
@@ -501,7 +538,7 @@ export default function WeeklySchedule() {
                       <span className="text-[13px] font-semibold text-ink capitalize truncate">
                         {muscle.replace(/_/g, " ")}
                       </span>
-                      <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
+                      <span className="pill-value pill-value--sm text-muted-2 shrink-0">
                         {sets} <span className="text-[11px] font-semibold">sets</span>
                       </span>
                     </div>
@@ -523,7 +560,7 @@ export default function WeeklySchedule() {
                   {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       )}

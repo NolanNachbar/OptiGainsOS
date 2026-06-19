@@ -92,6 +92,14 @@ export default function QuickWorkout() {
   const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
 
+  // Rest timer — mirrors WorkoutDetail: an absolute end timestamp ticked every
+  // 500ms so it stays accurate across backgrounding. Without this, the rest
+  // surface in WorkoutLoggingHeader stays dead on /quick-workout.
+  const [restTimer, setRestTimer] = useState(null);
+  const [restDuration, setRestDuration] = useState(90);
+  const restTimerRef = useRef(null);
+  const restTimerEndRef = useRef(null);
+
   const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
 
   const { profile } = useProfile();
@@ -203,6 +211,36 @@ export default function QuickWorkout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises]);
 
+  // Rest timer tick — single interval, absolute end timestamp (mirrors WorkoutDetail).
+  useEffect(() => {
+    const tick = () => {
+      if (restTimerEndRef.current === null) return;
+      const remaining = Math.max(0, Math.ceil((restTimerEndRef.current - Date.now()) / 1000));
+      setRestTimer(remaining);
+      if (remaining <= 0) restTimerEndRef.current = null;
+    };
+    restTimerRef.current = setInterval(tick, 500);
+    return () => clearInterval(restTimerRef.current);
+  }, []);
+
+  const startRestTimer = (duration) => {
+    setRestDuration(duration);
+    restTimerEndRef.current = Date.now() + duration * 1000;
+    setRestTimer(duration);
+  };
+
+  const skipRestTimer = () => {
+    restTimerEndRef.current = null;
+    setRestTimer(null);
+  };
+
+  const addRestTime = (seconds) => {
+    if (restTimerEndRef.current !== null) {
+      restTimerEndRef.current += seconds * 1000;
+      setRestDuration((prev) => prev + seconds);
+    }
+  };
+
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
@@ -287,9 +325,15 @@ export default function QuickWorkout() {
         }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending}
+        startTime={startTime}
+        canFinish={exercises.length > 0}
+        restTimer={restTimer}
+        restDuration={restDuration}
+        onSkipRest={skipRestTimer}
+        onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-40 lg:pb-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-28 lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -311,6 +355,47 @@ export default function QuickWorkout() {
               aria-label={editingTitle ? "Save workout title" : "Edit workout title"}
               onClick={() => setEditingTitle(editingTitle ? false : true)}
               className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink"
+            >
+              {editingTitle ? (
+                <Check className="w-4 h-4 text-teal" />
+              ) : (
+                <Pencil className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          {prescribed && (
+            <p className="text-xs font-semibold text-ink-muted mt-1">
+              Logging the engine's prescribed session — targets pre-filled
+            </p>
+          )}
+        </div>
+
+        {/* Mobile editable title row — the desktop block above (the
+            IntersectionObserver target) is hidden on phones, and the Layout
+            chrome only prints the static "Quick Workout" label, so without this
+            the user can neither see nor rename the actual session title at
+            390px. Compact type-display + a 44px Pencil/Check toggle. */}
+        <div className="mb-6 lg:hidden">
+          <div className="flex items-center gap-2">
+            <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
+            {editingTitle ? (
+              <Input
+                autoFocus
+                value={workoutTitle}
+                onChange={(e) => setWorkoutTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
+                className="type-display text-xl min-h-[44px] flex-1"
+              />
+            ) : (
+              <h1 className="type-display text-xl flex-1 min-w-0 truncate">{workoutTitle}</h1>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={editingTitle ? "Save workout title" : "Edit workout title"}
+              onClick={() => setEditingTitle(editingTitle ? false : true)}
+              className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
             >
               {editingTitle ? (
                 <Check className="w-4 h-4 text-teal" />
@@ -350,12 +435,13 @@ export default function QuickWorkout() {
           />
         )}
 
-        {/* Empty state — passive prompt; AddExerciseForm below provides the action */}
+        {/* Empty state — passive prompt; AddExerciseForm (docked to the thumb
+            zone on mobile) provides the action. */}
         {exercises.length === 0 && (
-          <div className="glass rounded-xl px-4 py-8 mb-4 flex flex-col items-center text-center">
-            <Dumbbell className="w-7 h-7 text-faint mb-3" />
+          <div className="glass rounded-xl px-4 py-6 mb-4 flex flex-col items-center text-center">
+            <Dumbbell className="w-7 h-7 text-ink-faint mb-3" />
             <p className="text-sm font-bold text-ink">No exercises yet</p>
-            <p className="text-xs font-semibold text-secondary mt-1 max-w-[260px]">
+            <p className="text-xs font-semibold text-ink-secondary mt-1 max-w-[260px]">
               Add your first exercise below to start logging this session.
             </p>
           </div>
@@ -383,6 +469,7 @@ export default function QuickWorkout() {
                 workoutLogs={allWorkoutLogs}
                 coachingPhase={coachingPhase}
                 onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
+                onStartRestTimer={startRestTimer}
               />
             );
           })}
@@ -392,6 +479,7 @@ export default function QuickWorkout() {
             onAdd={addExercise}
             showCloseButton={exercises.length > 0}
             exerciseNames={allHistoryExerciseNames}
+            hasExercises={exercises.length > 0}
           />
 
           {/* Session notes — feed back to notes_parser for programming adjustments */}
@@ -402,7 +490,7 @@ export default function QuickWorkout() {
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 placeholder="PRE: how you felt going in. POST: anything hard, easy, or painful."
-                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:text-faint resize-none outline-none min-h-[64px]"
+                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:text-ink-faint resize-none outline-none min-h-[64px]"
                 rows={3}
               />
             </div>

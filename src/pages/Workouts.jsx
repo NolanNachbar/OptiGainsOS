@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
+import { TabCount } from "@/components/ui/system";
 import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { parseISO } from "date-fns";
@@ -295,9 +296,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 <Activity className="w-4 h-4 mr-2" />
                 Activity Log
                 {(workoutLogs.length + cardioSessions.length) > 0 && (
-                  <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {workoutLogs.length + cardioSessions.length}
-                  </span>
+                  <TabCount>{workoutLogs.length + cardioSessions.length}</TabCount>
                 )}
               </TabsTrigger>
               <TabsTrigger value="library">
@@ -330,13 +329,15 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   </span>
                 )}
               </Button>
-              <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
-                <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
-                <span className="hidden sm:inline">Import</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="ml-auto h-11 w-11 text-ink-muted hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import format guide" title="Import format guide">
-                <HelpCircle className="w-4 h-4" />
-              </Button>
+              <div className="ml-auto flex items-center gap-1">
+                <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  Import
+                </Button>
+                <Button variant="ghost" size="icon" className="h-11 w-11 text-ink-muted hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import file format guide" title="Import file format guide">
+                  <HelpCircle className="w-4 h-4" />
+                </Button>
+              </div>
               <input
                 id="import-workout-input"
                 type="file"
@@ -515,9 +516,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <TrendingUp className="w-4 h-4 mr-2" />
                     Active
                     {activeEnrollments.length > 0 && (
-                      <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                        {activeEnrollments.length}
-                      </span>
+                      <TabCount>{activeEnrollments.length}</TabCount>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="my-programs">
@@ -525,14 +524,25 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     My Programs
                   </TabsTrigger>
                 </TabsList>
-                <Link to="/program-builder" className="shrink-0">
+                {/* Desktop: inline primary. Mobile: a thumb-zone FAB (below). */}
+                <Link to="/program-builder" className="hidden md:block shrink-0">
                   <Button variant="primary" size="lg">
                     <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Create Program</span>
-                    <span className="sm:hidden">Create</span>
+                    Create Program
                   </Button>
                 </Link>
               </div>
+
+              {/* Mobile thumb-zone create affordance — sits above the dock. */}
+              <Link
+                to="/program-builder"
+                className="md:hidden fixed right-4 z-30 cta-coral w-auto px-5 shadow-neon"
+                style={{ bottom: "calc(var(--dock-clearance) + 12px)" }}
+                aria-label="Create program"
+              >
+                <Plus className="w-5 h-5" />
+                Create Program
+              </Link>
 
               <TabsContent value="active">
                 {enrollmentsLoading ? (
@@ -768,10 +778,8 @@ function StatBlock({ label, value, bordered }) {
 // ─── Entry cards ─────────────────────────────────────────────────────────────
 
 function StrengthEntryCard({ entry }) {
-  return (
-    <div
-      className="relative overflow-hidden tile p-4"
-    >
+  const body = (
+    <>
       <h4 className="text-[15px] font-semibold text-ink mb-3">{entry.title}</h4>
       <div className="flex">
         <StatBlock label="Exercises" value={entry.exerciseCount} />
@@ -779,6 +787,23 @@ function StrengthEntryCard({ entry }) {
         {entry.volume && <StatBlock label="Volume" value={`${Math.round(entry.volume).toLocaleString()} lbs`} bordered />}
         {entry.duration && <StatBlock label="Duration" value={entry.duration} bordered />}
       </div>
+    </>
+  );
+  // Only link when the source workout still exists; otherwise render a static,
+  // de-emphasised tile so it doesn't read as a tappable button.
+  if (entry.workoutId) {
+    return (
+      <Link
+        to={`/workout-detail?id=${entry.workoutId}`}
+        className="block relative overflow-hidden tile tile-interactive p-4 transition-transform active:scale-[0.99]"
+      >
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <div className="relative overflow-hidden tile p-4">
+      {body}
     </div>
   );
 }
@@ -806,6 +831,15 @@ function CardioEntryCard({ entry }) {
   const duration = fmtDuration(entry.movingTime);
   const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
+  // Build only the cells we have, then drive dividers off grid position so a
+  // 3-col grid never leaves orphaned left hairlines on wrapped rows.
+  const cells = [];
+  if (distance) cells.push({ label: 'Distance', value: distance });
+  if (duration) cells.push({ label: 'Time', value: duration });
+  if (pace) cells.push({ label: 'Pace', value: pace });
+  if (entry.avgHeartrate) cells.push({ label: 'Avg HR', value: Math.round(entry.avgHeartrate), suffix: 'bpm' });
+  if (entry.aerobicEffect != null) cells.push({ label: 'Aerobic Effect', value: Number(entry.aerobicEffect).toFixed(1) });
+
   return (
     <div className="tile">
       <div className="flex items-start p-4 pb-3 gap-3">
@@ -818,26 +852,22 @@ function CardioEntryCard({ entry }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap px-4 pb-4 gap-y-2">
-        {distance && <StatBlock label="Distance" value={distance} />}
-        {duration && <StatBlock label="Time" value={duration} bordered={!!distance} />}
-        {pace && <StatBlock label="Pace" value={pace} bordered />}
-        {entry.avgHeartrate && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l hairline pl-4' : ''}`}>
-            <span className="section-label">Avg HR</span>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-technical font-bold text-[17px] text-ink">{Math.round(entry.avgHeartrate)}</span>
-              <span className="text-[10px] text-ink-faint uppercase">bpm</span>
+      {cells.length > 0 && (
+        <div className="grid grid-cols-3 gap-y-3 px-4 pb-4">
+          {cells.map((cell, i) => (
+            <div
+              key={cell.label}
+              className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
+            >
+              <span className="section-label">{cell.label}</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="font-technical font-bold text-[17px] text-ink">{cell.value}</span>
+                {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
+              </div>
             </div>
-          </div>
-        )}
-        {entry.aerobicEffect != null && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgHeartrate) ? 'border-l hairline pl-4' : ''}`}>
-            <span className="section-label">Aerobic Effect</span>
-            <span className="font-technical font-bold text-[17px] text-ink mt-1">{Number(entry.aerobicEffect).toFixed(1)}</span>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -846,7 +876,7 @@ function CardioEntryCard({ entry }) {
 
 function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   if (isLoading) {
     return (
@@ -884,6 +914,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
     return {
       type: 'strength',
       id: log.id,
+      workoutId: log.workout_id || null,
       date: log.log_date ? parseISO(log.log_date) : new Date(log.created_at),
       title: workout?.title || 'Workout',
       exerciseCount: logExercises.length,
@@ -932,8 +963,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
 
   return (
     <>
-      {/* Weekly Summary — hero total + secondary chips */}
-      <div className="flex items-stretch gap-4 p-4 surface mb-4">
+      {/* Weekly Summary — elevated above the tile feed so it reads as a header,
+          not just another entry. */}
+      <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-[20px] mb-4">
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
@@ -941,20 +973,20 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             {thisWeek.length}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">sess</span>
           </span>
         </div>
-        {/* Secondary cells */}
+        {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Strength</span>
-            <span className="font-technical font-bold text-[17px] text-teal">{weekStrength}<span className="text-[10px] font-semibold text-ink-faint ml-1">sess</span></span>
+            <span className="font-technical font-bold text-[17px] text-teal">{weekStrength}</span>
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Cardio</span>
-            <span className="font-technical font-bold text-[17px] text-carb">{weekCardio}<span className="text-[10px] font-semibold text-ink-faint ml-1">sess</span></span>
+            <span className="font-technical font-bold text-[17px] text-carb">{weekCardio}</span>
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Distance</span>
             <span className="font-technical font-bold text-[17px] text-carb">
-              {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[10px] font-semibold text-ink-faint ml-1">mi</span>
+              {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">mi</span>
             </span>
           </div>
         </div>
@@ -992,11 +1024,13 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-3">
           {grouped.map(({ label, entries }, i) => (
-            <section key={label} className={i > 0 ? 'border-t hairline pt-5' : ''}>
-              <h3 className="section-label mb-3">{label}</h3>
-              <div className="space-y-3">
+            <section key={label} className={`rise-in ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
+              {/* Day header — its own tier (brighter + tracked rule) so it reads
+                  above the in-card stat captions that share .section-label. */}
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-secondary mb-2.5">{label}</h3>
+              <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
                     <StrengthEntryCard key={entry.id} entry={entry} />
@@ -1012,7 +1046,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           ))}
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 12)}>
+              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 8)}>
                 Load more
                 <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
               </Button>

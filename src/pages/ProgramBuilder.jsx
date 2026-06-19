@@ -454,60 +454,63 @@ export default function ProgramBuilder() {
   return (
     <div className="p-4 md:p-6 bg-charcoal transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="section-label text-secondary">
-              Step {step + 1}/{STEPS.length}
-            </p>
-            <p className="type-display text-[20px] text-ink mt-0.5">
-              {STEPS[step]}
-            </p>
+        {/* Header — single row: step eyebrow + name, actions, progress bar.
+            Collapses the old Layout-title + page-title double chrome. */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">
+                Step {step + 1}/{STEPS.length}
+              </p>
+              <p className="type-display text-[18px] text-ink mt-0.5 truncate">
+                {STEPS[step]}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {!editId && (
+                <>
+                  <input
+                    ref={importFileRef}
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={handleImportJson}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importFileRef.current?.click()}
+                    className="min-h-[44px]"
+                  >
+                    Import JSON
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="dim"
+                size="sm"
+                onClick={() => navigate("/workouts")}
+                aria-label="Cancel"
+                className="min-h-[44px] min-w-[44px] px-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {!editId && (
-              <>
-                <input
-                  ref={importFileRef}
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={handleImportJson}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => importFileRef.current?.click()}
-                  className="min-h-[44px]"
-                >
-                  Import JSON
-                </Button>
-              </>
-            )}
-            <Button
-              variant="dim"
-              size="sm"
-              onClick={() => navigate("/workouts")}
-              aria-label="Cancel"
-              className="min-h-[44px] min-w-[44px] px-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
 
-        {/* Step indicator */}
-        <div className="flex gap-1 mb-6">
-          {STEPS.map((s, i) => (
-            <div
-              key={s}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= step
-                  ? "bg-brand"
-                  : "bg-white/[0.06]"
-              }`}
-            />
-          ))}
+          {/* Step indicator */}
+          <div className="flex gap-1 mt-3">
+            {STEPS.map((s, i) => (
+              <div
+                key={s}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  i <= step
+                    ? "bg-brand"
+                    : "bg-track"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
@@ -517,7 +520,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="pb-36 md:pb-0"
+            className="pb-48 md:pb-0"
           >
             {step === 0 && (
               <StepDetails
@@ -570,10 +573,13 @@ export default function ProgramBuilder() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation buttons — sticky footer that clears the fixed mobile dock (~92px) */}
+        {/* Navigation buttons — sticky footer raised to fully clear the floating
+            mobile dock (≈56px tall, 12px above the safe-area inset) with
+            breathing room. Scroll container pads pb-48 so the Tags 'Add' button
+            is never trapped behind this footer. */}
         <div
           className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated md:bg-transparent md:shadow-none md:border-0"
-          style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+          style={{ bottom: "calc(6.75rem + env(safe-area-inset-bottom))" }}
         >
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
@@ -643,11 +649,12 @@ function NumberStepper({ value, onChange, min, max, ariaLabel }) {
       </Button>
       <Input
         type="number"
+        inputMode="numeric"
         value={value}
         onChange={(e) => onChange(clamp(parseInt(e.target.value) || min))}
         min={min}
         max={max}
-        className="flex-1 min-h-[44px] text-center tabular-nums"
+        className="flex-1 min-h-[44px] text-center tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
       />
       <Button
         type="button"
@@ -675,11 +682,8 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
   };
 
   return (
-    <Card className="">
-      <CardHeader>
-        <CardTitle>Program Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card>
+      <CardContent className="space-y-4 pt-5">
         <div>
           <Label>Program Name *</Label>
           <Input
@@ -689,18 +693,9 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             className="mt-1"
           />
         </div>
-        <div>
-          <Label>Description</Label>
-          <Textarea
-            value={program.description}
-            onChange={(e) => update("description", e.target.value)}
-            placeholder="Describe the program goals and approach…"
-            rows={3}
-            className="mt-1"
-          />
-        </div>
 
-        {/* Cycle configuration */}
+        {/* Cycle configuration — the load-bearing controls, surfaced directly
+            under the name so duration is decided before optional copy. */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <Label className="flex items-center gap-1">
@@ -730,7 +725,9 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             />
             <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
           </div>
-          <div>
+          {/* Goal spans full width on mobile so it isn't orphaned beside the
+              two steppers; rejoins the row on desktop. */}
+          <div className="col-span-2 md:col-span-1">
             <Label>Goal</Label>
             <Select
               value={program.goal}
@@ -758,6 +755,17 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong className="text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
           </span>
+        </div>
+
+        <div>
+          <Label>Description</Label>
+          <Textarea
+            value={program.description}
+            onChange={(e) => update("description", e.target.value)}
+            placeholder="Describe the program goals and approach…"
+            rows={2}
+            className="mt-1"
+          />
         </div>
 
         <div>
@@ -819,7 +827,7 @@ function StepCycleDays({
   const [showLibraryMobile, setShowLibraryMobile] = useState(false);
   return (
     <div className="space-y-4">
-      <Card className="">
+      <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -1012,7 +1020,7 @@ function InlineDayEditor({
           <Select
             onValueChange={(targetDay) => onCopyDay(dayIndex, parseInt(targetDay))}
           >
-            <SelectTrigger className="w-auto text-xs">
+            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-xs">
               <Copy className="w-3 h-3 mr-1" />
               Copy to...
             </SelectTrigger>
@@ -1031,7 +1039,7 @@ function InlineDayEditor({
         {/* Cardio Workouts */}
         <div className="border-t hairline pt-3">
           <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
-            <Activity className="w-3.5 h-3.5 text-carb" />
+            <Activity className="w-3.5 h-3.5 text-ink-muted" />
             Cardio Workouts
           </Label>
           <Select
@@ -1047,7 +1055,7 @@ function InlineDayEditor({
               });
             }}
           >
-            <SelectTrigger className="text-xs text-ink-muted">
+            <SelectTrigger className="min-h-[44px] text-xs text-ink-muted">
               <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout…" : "No cardio workouts in library yet"} />
             </SelectTrigger>
             <SelectContent>
@@ -1059,11 +1067,11 @@ function InlineDayEditor({
           <div className="space-y-1.5 mt-2">
             {(workout.cardio_sessions || []).map((c, i) => (
               <div key={i} className="flex items-center gap-2 glass-inset px-3 py-1.5">
-                <Activity className="w-3.5 h-3.5 text-carb shrink-0" />
+                <Activity className="w-3.5 h-3.5 text-ink-muted shrink-0" />
                 <span className="text-xs font-medium text-ink flex-1 truncate">{c.title}</span>
                 <span className="font-technical text-xs text-ink-muted shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
-                  <SelectTrigger className="w-20 text-xs shrink-0">
+                  <SelectTrigger className="w-20 min-h-[44px] text-xs shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1240,7 +1248,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
 
   if (exercises.length === 0) {
     return (
-      <Card className="">
+      <Card>
         <CardContent className="pb-6 text-center">
           <div className="pt-6 pb-6">
             <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
@@ -1261,7 +1269,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
       : [];
 
   return (
-    <Card className="">
+    <Card>
       <CardHeader>
         <CardTitle>Progression Preview</CardTitle>
         <p className="text-sm text-ink-muted mb-3">
@@ -1350,7 +1358,7 @@ function StepConfirm({ program, workouts }) {
   ).length;
 
   return (
-    <Card className="">
+    <Card>
       <CardHeader>
         <CardTitle>Review & Confirm</CardTitle>
       </CardHeader>
@@ -1419,8 +1427,8 @@ function StepConfirm({ program, workouts }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-leaf/[0.08] text-leaf text-sm">
-          <Check className="w-4 h-4" />
+        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-secondary">
+          <Check className="w-4 h-4 shrink-0 text-ink" />
           <span>
             Ready to save: {filledDays} training days
             {totalExercises > 0 && `, ${totalExercises} exercises`}

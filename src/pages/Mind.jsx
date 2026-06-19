@@ -50,7 +50,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-ink min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-ink" : "text-ink-faint"}`}
+          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -163,7 +163,7 @@ function ReadingTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-technical text-xs font-semibold text-muted-2">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
+          <p className="font-technical tabular-nums text-xs font-semibold text-muted-2">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
         <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
           <Plus className="w-3.5 h-3.5" /> Add Book
@@ -257,7 +257,7 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
+              <Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
@@ -677,20 +677,20 @@ function CaptureTab() {
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet/10">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-technical text-[10px] font-semibold text-muted-2 tabular-nums">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Synced</span>}
+                {log.processed && (
+                  <span className="font-technical text-[10px] font-semibold text-muted-2">Synced</span>
+                )}
               </div>
-              <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
+              <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2 mb-1">Drop your first note above to start the stream.</p>
-              <p className="text-xs font-semibold text-faint">Capture a thought, then organize it under Reading, Study, or Skills.</p>
-            </div>
+            <p className="text-xs font-semibold text-faint px-1">
+              No streams yet — drop a note above to start.
+            </p>
           ))}
         </div>
       </div>
@@ -722,6 +722,19 @@ export default function Mind({ hideHeader }) {
           </header>
         )}
 
+        {/* Mobile identity row — the Layout chrome prints a monochrome "Mind"
+            title; surface the violet Brain identity (the section's owned hue) on
+            phones so the section reads as itself. Glyph + identity label, not a
+            duplicate H1. */}
+        {!hideHeader && (
+          <div className="flex items-center gap-2.5 mb-4 rise-in lg:hidden">
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
+              <Brain className="w-[15px] h-[15px] text-violet" />
+            </div>
+            <span className="section-label">Mind &amp; Learning</span>
+          </div>
+        )}
+
         <SubTabs
           tabs={MIND_TABS}
           active={activeTab}
@@ -730,10 +743,12 @@ export default function Mind({ hideHeader }) {
           showOnDesktop
           className={`mb-6 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
         />
-        {activeTab === "capture" && <CaptureTab />}
-        {activeTab === "reading" && <ReadingTab />}
-        {activeTab === "study" && <StudyTab />}
-        {activeTab === "skills" && <SkillsTab />}
+        <div key={activeTab} className="rise-in">
+          {activeTab === "capture" && <CaptureTab />}
+          {activeTab === "reading" && <ReadingTab />}
+          {activeTab === "study" && <StudyTab />}
+          {activeTab === "skills" && <SkillsTab />}
+        </div>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ import { toast } from "sonner";
 const CARDIO_TYPES = new Set(['cardio', 'hiit']);
 
 const STEP_TYPES = [
-  { value: 'warmup',   label: 'Warmup',   border: 'border-l-carb/60',   text: 'text-carb' },
+  { value: 'warmup',   label: 'Warmup',   border: 'border-l-charcoal-border',     text: 'text-ink' },
   { value: 'active',   label: 'Active',   border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
   { value: 'recovery', label: 'Recovery', border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
   { value: 'rest',     label: 'Rest',     border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
@@ -238,15 +238,19 @@ export default function CreateWorkout() {
   return (
     <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6 hidden lg:block">
-          <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
-          <p className="text-ink-muted text-sm mt-0.5">
+        {/* Title is desktop-only — the shared Layout chrome already prints the
+            page name on mobile (single title per viewport). The subtitle is
+            surfaced on every viewport so the 390px primary view still explains
+            what the page does. */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-ink hidden lg:block">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
+          <p className="text-ink-muted text-sm lg:mt-0.5">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="mb-6">
+          <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -288,7 +292,7 @@ export default function CreateWorkout() {
                 </Combobox>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Workout Type *</Label>
                   <Select value={workout.focus} onValueChange={handleTypeChange}>
@@ -317,7 +321,7 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>{isCardio ? 'Steps' : 'Exercises'}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {workout.exercises.map((exercise, index) => {
@@ -380,7 +384,11 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] md:static z-[9000] -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated rounded-2xl md:rounded-none md:bg-transparent md:shadow-none md:border-0 md:[backdrop-filter:none]">
+          {/* Static on every viewport: the primary action sits at the natural
+              end of the flow so it can never float over the last card. The
+              shared Layout <main> already reserves dock + safe-area space below,
+              so this bar is never clipped on a short form. */}
+          <div className="flex gap-3">
             <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
@@ -481,7 +489,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 min-h-[44px] text-sm text-center font-technical"
+            className="w-16 min-h-[44px] text-sm text-center"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>

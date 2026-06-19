@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -62,15 +63,17 @@ function AppForm({ initial, onSave, onClose }) {
   });
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+      <div className="space-y-3">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
           <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
         </div>
-        <div className="col-span-2">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
           <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
         </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
           <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
@@ -78,7 +81,7 @@ function AppForm({ initial, onSave, onClose }) {
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
           <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-            <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
             </SelectContent>
@@ -87,9 +90,9 @@ function AppForm({ initial, onSave, onClose }) {
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
+        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
           <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up" />
@@ -190,65 +193,88 @@ function PipelineTab() {
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
-      {/* Kanban columns */}
-      {!isLoading && !isError && apps.length > 0 && (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {ACTIVE_STATUSES.map(status => {
-          const col = apps.filter(a => a.status === status);
-          return (
-            <div key={status} className="space-y-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </span>
-                <span className="font-technical text-xs font-semibold text-muted-2">{col.length}</span>
+      {/* Pipeline — stacked single-column list grouped by status on mobile,
+          kanban columns at md+. Both share the same card via renderCard. */}
+      {!isLoading && !isError && apps.length > 0 && (() => {
+        const renderCard = (app, status) => (
+          <div key={app.id} className="p-3 glass glass-interactive group text-left">
+            <div className="flex items-start justify-between gap-1 mb-1">
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
+                <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
               </div>
-              {col.map(app => (
-                <div key={app.id} className="p-3 glass glass-interactive group text-left">
-                  <div className="flex items-start justify-between gap-1 mb-1">
-                    <div className="min-w-0">
-                      <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
-                      <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
-                    </div>
-                    <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => setConfirmDelete(app.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  {app.date_applied && (
-                    <p className="font-technical text-xs font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
-                  )}
-                  <div className="flex gap-1">
-                    {STATUS_NEXT[status] && (
-                      <button
-                        onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                        className="text-xs font-bold flex items-center gap-0.5 px-1.5 -mx-1.5 py-2.5 -my-1 text-muted-2 hover:text-gold transition-colors"
-                      >
-                        <ArrowRight className="w-3 h-3" /> Move
-                      </button>
-                    )}
-                    <button
-                      onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
-                      aria-label="Reject"
-                      className="px-2.5 -mr-1 py-2.5 -my-1 text-muted-2 hover:text-bad transition-colors ml-auto"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  {app.next_action && (
-                    <p className="text-xs font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
-                  )}
-                </div>
-              ))}
+              <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+                <button onClick={() => { setEditing(app); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setConfirmDelete(app.id)} aria-label="Delete" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          );
-        })}
-      </div>
-      )}
+            {app.date_applied && (
+              <p className="font-technical text-xs font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
+            )}
+            <div className="flex gap-1 -mx-1.5">
+              {STATUS_NEXT[status] && (
+                <button
+                  onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
+                  className="text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] px-2.5 text-muted-2 hover:text-gold transition-colors"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" /> Move
+                </button>
+              )}
+              <button
+                onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
+                aria-label="Reject"
+                className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad transition-colors ml-auto"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {app.next_action && (
+              <p className="text-xs font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
+            )}
+          </div>
+        );
+        const statusHeader = (status, count) => (
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </span>
+            <span className="font-technical text-xs font-semibold text-muted-2">{count}</span>
+          </div>
+        );
+        return (
+          <>
+            {/* Mobile: stacked list, status chip as section header */}
+            <div className="space-y-5 md:hidden">
+              {ACTIVE_STATUSES.map(status => {
+                const col = apps.filter(a => a.status === status);
+                if (col.length === 0) return null;
+                return (
+                  <div key={status}>
+                    {statusHeader(status, col.length)}
+                    <div className="space-y-2">{col.map(app => renderCard(app, status))}</div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop: kanban columns */}
+            <div className="hidden md:grid md:grid-cols-4 gap-3">
+              {ACTIVE_STATUSES.map(status => {
+                const col = apps.filter(a => a.status === status);
+                return (
+                  <div key={status} className="space-y-2">
+                    {statusHeader(status, col.length)}
+                    {col.map(app => renderCard(app, status))}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
 
       {rejected.length > 0 && (
         <div>
@@ -258,7 +284,7 @@ function PipelineTab() {
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-xs font-semibold text-muted-2">{app.role}</span>
-                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
+                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -268,13 +294,15 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-            <Plus className="w-3.5 h-3.5" /> Add your first application
-          </Button>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="w-full py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+            <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
+            <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+              <Plus className="w-3.5 h-3.5" /> Add your first application
+            </Button>
+          </div>
         </div>
       )}
 
@@ -314,11 +342,11 @@ function NetworkForm({ initial, onSave, onClose }) {
   });
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
-          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
-        </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
+        <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
           <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" />
@@ -329,16 +357,16 @@ function NetworkForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="text-sm" />
+          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
-          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="text-sm" />
+          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
         </div>
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
+        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
       <div className="flex gap-2 pt-1">
         <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
@@ -555,6 +583,15 @@ export default function Career({ hideHeader }) {
             </div>
             <p className="text-muted-2 font-semibold text-sm pl-11">Track applications, networking, and job search momentum.</p>
           </header>
+        )}
+
+        {/* Mobile-only subtitle — the Layout chrome prints the "Career" title on
+            phones but not this one-liner, so surface it above the tabs so the
+            390px view still explains the section. */}
+        {!hideHeader && (
+          <p className="text-xs text-muted-2 font-semibold mb-4 lg:hidden">
+            Track applications, networking, and job search momentum.
+          </p>
         )}
 
         <Tabs defaultValue="pipeline">

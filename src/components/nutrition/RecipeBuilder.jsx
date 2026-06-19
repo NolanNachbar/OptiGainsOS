@@ -45,7 +45,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Clock,
-  ChefHat,
   PenLine,
   Star,
   Share2,
@@ -130,7 +129,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-ink-muted hover:text-ink-muted transition-colors">
+                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-ink-muted hover:text-ink transition-colors">
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
@@ -195,8 +194,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
       {recipes.length === 0 ? (
         <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
           <BookOpen className="w-12 h-12 text-ink-muted mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-ink-muted text-ink-muted mb-1">No recipes yet</h3>
-          <p className="text-sm text-ink-muted text-ink-muted">Use the "New Recipe" button above to get started</p>
+          <h3 className="text-base font-semibold text-ink mb-1">No recipes yet</h3>
+          <p className="text-sm text-ink-muted">Use the "New Recipe" button above to get started</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -212,14 +211,14 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                       <p className="text-xs text-ink-muted mt-0.5 truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated bg-charcoal-elevated text-ink-muted text-ink-muted rounded-md px-1.5 py-0.5">
+                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated text-ink-muted rounded-md px-1.5 py-0.5">
                     {recipe.servings}×
                   </span>
                 </div>
                 {/* Macros */}
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-sm font-bold text-ink">{Math.round(perServing.calories)}</p>
+                    <p className="text-sm font-bold text-gold">{Math.round(perServing.calories)}</p>
                     <p className="text-xs text-ink-muted">Cal</p>
                   </div>
                   <div>
@@ -227,11 +226,11 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                     <p className="text-xs text-ink-muted">Pro</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-warn">{perServing.carbs_grams}g</p>
+                    <p className="text-sm font-bold text-carb">{perServing.carbs_grams}g</p>
                     <p className="text-xs text-ink-muted">Carb</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-bad">{perServing.fats_grams}g</p>
+                    <p className="text-sm font-bold text-fat">{perServing.fats_grams}g</p>
                     <p className="text-xs text-ink-muted">Fat</p>
                   </div>
                 </div>
@@ -250,7 +249,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                     <Pencil className="w-3 h-3" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleDelete(recipe)}
-                    className="h-8 w-8 p-0 text-bad hover:text-bad hover:bg-bad/10">
+                    className="h-8 w-8 p-0 text-bad hover:bg-bad/10">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -306,6 +305,11 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
 
 const SERVING_UNITS = ["g", "oz", "lb", "ml", "cup", "tbsp", "tsp", "piece", "serving"];
 
+// System easing: the single cubic-bezier(.2,.7,.3,1) from --ease in index.css,
+// expressed as a framer-motion bezier array.
+const SYSTEM_EASE = [0.2, 0.7, 0.3, 1];
+const STEP_TRANSITION = { duration: 0.26, ease: SYSTEM_EASE };
+
 const stepVariants = {
   enter: (dir) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -318,16 +322,16 @@ function StickyMacroBar({ ingredients, servings }) {
 
   return (
     <div
-      className={`sticky top-0 z-10 bg-charcoal-surface/95 backdrop-blur-sm border-b px-4 py-3 -mx-6 transition-opacity duration-300 ${
+      className={`sticky top-0 z-10 bg-charcoal-surface/95 backdrop-blur-sm border-b px-6 py-3 transition-opacity duration-300 ${
         hasIngredients ? "" : "opacity-40"
       }`}
     >
       <div className="grid grid-cols-4 gap-3 text-center">
         <div>
-          <div className="text-lg font-bold text-orange-600 transition-all duration-300">
+          <div className="text-lg font-bold text-gold transition-all duration-300">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-xs font-medium text-brand uppercase tracking-wide">
+          <div className="text-xs font-medium text-gold uppercase tracking-wide">
             Calories
           </div>
         </div>
@@ -340,18 +344,18 @@ function StickyMacroBar({ ingredients, servings }) {
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-green-600 transition-all duration-300">
+          <div className="text-lg font-bold text-carb transition-all duration-300">
             {Math.round(totals.total_carbs * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-ok uppercase tracking-wide">
+          <div className="text-xs font-medium text-carb uppercase tracking-wide">
             Carbs
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-yellow-600 transition-all duration-300">
+          <div className="text-lg font-bold text-fat transition-all duration-300">
             {Math.round(totals.total_fats * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-yellow-500 uppercase tracking-wide">
+          <div className="text-xs font-medium text-fat uppercase tracking-wide">
             Fats
           </div>
         </div>
@@ -388,16 +392,16 @@ function FoodSearchResult({ food, onClick, icon }) {
             <div className="text-xs text-ink-muted">{food.brandOwner}</div>
           )}
           <div className="flex gap-3 mt-1 text-xs">
-            <span className="text-orange-600 font-medium">
+            <span className="text-gold font-medium">
               {Math.round(food.calories ?? food.cal ?? 0)} cal
             </span>
             <span className="text-coral">
               {Math.round((food.protein ?? food.protein_grams ?? 0) * 10) / 10}g P
             </span>
-            <span className="text-green-600">
+            <span className="text-carb">
               {Math.round((food.carbs ?? food.carbs_grams ?? 0) * 10) / 10}g C
             </span>
-            <span className="text-yellow-600">
+            <span className="text-fat">
               {Math.round((food.fats ?? food.fats_grams ?? 0) * 10) / 10}g F
             </span>
           </div>
@@ -445,10 +449,10 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs">
             <span className="text-ink-muted font-medium">Per serving:</span>
-            <span className="text-orange-600 font-medium">{ingredient.calories} cal</span>
+            <span className="text-gold font-medium">{ingredient.calories} cal</span>
             <span className="text-coral">{ingredient.protein_grams}g P</span>
-            <span className="text-green-600">{ingredient.carbs_grams}g C</span>
-            <span className="text-yellow-600">{ingredient.fats_grams}g F</span>
+            <span className="text-carb">{ingredient.carbs_grams}g C</span>
+            <span className="text-fat">{ingredient.fats_grams}g F</span>
           </div>
         </div>
         <Button
@@ -467,7 +471,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
             value={ingredient.serving_size}
             onChange={(e) => onUpdateServing(index, e.target.value)}
             onFocus={(e) => e.target.select()}
-            className="w-16 h-8 text-sm text-center rounded-md border border-charcoal-border bg-charcoal-surface focus:outline-none focus:ring-2 focus:ring-slate-950"
+            className="w-16 h-8 text-sm text-center rounded-md border border-charcoal-border bg-charcoal-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             min="0"
             step="1"
           />
@@ -639,7 +643,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               min="0"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-brand font-medium text-center mt-0.5">
+            <div className="text-xs text-gold font-medium text-center mt-0.5">
               Calories
             </div>
           </div>
@@ -667,7 +671,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               step="0.1"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-ok font-medium text-center mt-0.5">
+            <div className="text-xs text-carb font-medium text-center mt-0.5">
               Carbs
             </div>
           </div>
@@ -681,7 +685,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
               step="0.1"
               className="h-10 text-sm text-center rounded-lg"
             />
-            <div className="text-xs text-yellow-500 font-medium text-center mt-0.5">
+            <div className="text-xs text-fat font-medium text-center mt-0.5">
               Fats
             </div>
           </div>
@@ -918,14 +922,14 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full max-h-[70dvh] sm:max-h-[75vh] my-2 sm:my-8 flex flex-col overflow-hidden p-0 min-h-0" hideClose>
+      <DialogContent className="max-w-3xl w-full max-h-[88dvh] sm:max-h-[75vh] sm:my-8 flex flex-col overflow-hidden p-0 min-h-0" hideClose>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b">
           <div className="flex items-center gap-3">
             {currentStep === 2 && (
               <button
                 onClick={() => goToStep(1)}
-                className="text-ink-muted hover:text-ink-muted transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
+                className="text-ink-muted hover:text-ink transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -959,7 +963,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-ink-muted hover:text-ink-muted transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
+            className="text-ink-muted hover:text-ink transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
           >
             <X className="w-5 h-5" />
           </button>
@@ -976,23 +980,11 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+                transition={STEP_TRANSITION}
                 className="flex-1 flex flex-col min-h-0"
               >
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 py-6">
                   <div className="max-w-md mx-auto space-y-6">
-                    <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-brand/[8%] rounded-xl flex items-center justify-center mx-auto mb-4">
-                        <ChefHat className="w-8 h-8 text-brand" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-ink">
-                        Recipe Details
-                      </h3>
-                      <p className="text-sm text-ink-muted mt-1">
-                        Give your recipe a name and set the serving size
-                      </p>
-                    </div>
-
                     <div>
                       <Label htmlFor="recipe-name" className="text-sm font-medium">
                         Recipe Name *
@@ -1052,7 +1044,10 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 </div>
 
                 {/* Step 1 footer */}
-                <div className="px-6 py-4 border-t bg-charcoal-surface/50">
+                <div
+                  className="px-6 py-4 border-t bg-charcoal-surface/50"
+                  style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+                >
                   <Button
                     onClick={() => {
                       if (!name.trim()) {
@@ -1076,7 +1071,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+                transition={STEP_TRANSITION}
                 className="flex-1 flex flex-col min-h-0"
               >
                 <div className="flex-1 overflow-y-auto min-h-0">
@@ -1110,7 +1105,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                   key={"custom-" + food.id}
                                   food={food}
                                   onClick={() => addCustomFood(food)}
-                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
@@ -1135,7 +1130,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               {customFoods.length > 0 && (
                                 <CollapsibleFoodSection
                                   label="My Foods"
-                                  icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
                                   count={customFoods.length}
                                 >
                                   {customFoods.map((food) => (
@@ -1143,7 +1138,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                       key={"my-" + food.id}
                                       food={food}
                                       onClick={() => addCustomFood(food)}
-                                      icon={<Star className="w-3.5 h-3.5 fill-yellow-400 text-warn" />}
+                                      icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
                                     />
                                   ))}
                                 </CollapsibleFoodSection>
@@ -1192,7 +1187,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-semibold text-ink-muted">
+                          <span className="text-sm font-semibold text-ink">
                             Ingredients
                           </span>
                           <Badge variant="secondary" className="text-xs">
@@ -1225,7 +1220,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
 
                     {ingredients.length === 0 && (
                       <div className="text-center py-8">
-                        <Search className="w-10 h-10 text-ink mx-auto mb-3" />
+                        <Search className="w-10 h-10 text-ink-muted mx-auto mb-3" />
                         <p className="text-sm text-ink-muted">
                           Search above to start adding ingredients
                         </p>
@@ -1235,7 +1230,10 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 </div>
 
                 {/* Step 2 footer */}
-                <div className="px-6 pt-4 pb-6 border-t bg-charcoal-surface/50 flex-shrink-0">
+                <div
+                  className="px-6 pt-4 pb-6 border-t bg-charcoal-surface/50 flex-shrink-0"
+                  style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+                >
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}
@@ -1350,29 +1348,29 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
           </div>
 
           <div className="grid grid-cols-4 gap-3">
-            <div className="text-center p-3 bg-[rgba(249,115,22,0.08)] rounded-lg">
-              <div className="text-lg font-bold text-orange-700">
+            <div className="text-center p-3 bg-gold/[0.08] rounded-lg">
+              <div className="text-lg font-bold text-gold">
                 {scaled.calories}
               </div>
-              <div className="text-xs text-orange-600">Calories</div>
+              <div className="text-xs text-gold">Calories</div>
             </div>
-            <div className="text-center p-3 bg-[rgba(59,130,246,0.08)] rounded-lg">
+            <div className="text-center p-3 bg-coral/[0.08] rounded-lg">
               <div className="text-lg font-bold text-coral">
                 {scaled.protein_grams}g
               </div>
               <div className="text-xs text-coral">Protein</div>
             </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-lg font-bold text-green-700">
+            <div className="text-center p-3 bg-carb/[0.08] rounded-lg">
+              <div className="text-lg font-bold text-carb">
                 {scaled.carbs_grams}g
               </div>
-              <div className="text-xs text-green-600">Carbs</div>
+              <div className="text-xs text-carb">Carbs</div>
             </div>
-            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-              <div className="text-lg font-bold text-yellow-700">
+            <div className="text-center p-3 bg-fat/[0.08] rounded-lg">
+              <div className="text-lg font-bold text-fat">
                 {scaled.fats_grams}g
               </div>
-              <div className="text-xs text-yellow-600">Fats</div>
+              <div className="text-xs text-fat">Fats</div>
             </div>
           </div>
 

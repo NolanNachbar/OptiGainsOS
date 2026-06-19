@@ -77,6 +77,34 @@ export function MacroGoalsEditor({ values, onChange }) {
 
   return (
     <div className="space-y-5">
+      {/* System extension (genuine gap): native <input type=range> has no token
+          for thumb sizing. Mobile law requires a >=44px touch zone with a
+          finger-sized thumb. The range track stays 1.5px (visual), the wrapper
+          above provides the 44px hit area, and these rules size the draggable
+          thumb to 24px in the coral action hue. Scoped to .og-macro-range so it
+          can't leak onto other ranges. */}
+      <style>{`
+        .og-macro-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: var(--color-brand);
+          border: 2px solid var(--color-bg);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+          cursor: pointer;
+        }
+        .og-macro-range::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: var(--color-brand);
+          border: 2px solid var(--color-bg);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+          cursor: pointer;
+        }
+      `}</style>
       {/* Calories */}
       <div>
         <Label>Daily Calories</Label>
@@ -109,14 +137,16 @@ export function MacroGoalsEditor({ values, onChange }) {
               </div>
             </div>
             {onSlide ? (
-              <input
-                type="range"
-                min={0}
-                max={max}
-                value={pct}
-                onChange={(e) => onSlide(parseInt(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-charcoal-elevated"
-              />
+              <div className="flex items-center min-h-[44px]">
+                <input
+                  type="range"
+                  min={0}
+                  max={max}
+                  value={pct}
+                  onChange={(e) => onSlide(parseInt(e.target.value))}
+                  className="og-macro-range w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-charcoal-elevated"
+                />
+              </div>
             ) : (
               <div className="h-1.5 w-full rounded-full bg-charcoal-elevated overflow-hidden">
                 <div className={`${bar} h-full rounded-full transition-all duration-150`} style={{ width: `${pct}%` }} />

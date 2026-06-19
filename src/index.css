@@ -213,6 +213,22 @@ input[type=number] { -moz-appearance: textfield; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
+/* Native date inputs paint a bright UA calendar glyph that fights the dark
+   field. Mute + invert it so the picker affordance reads as faint ink on the
+   glass surface (shared across Progress + Career date inputs). */
+input[type=date]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+  cursor: pointer;
+}
+html.light input[type=date]::-webkit-calendar-picker-indicator {
+  filter: opacity(0.5);
+}
+/* Date field text inherits our ink voice; the placeholder mask reads faint so
+   an unset date matches our text-input placeholder weight. */
+input[type=date]::-webkit-datetime-edit { color: var(--text-primary); }
+input[type=date]::-webkit-datetime-edit-text,
+input[type=date].is-empty::-webkit-datetime-edit { color: var(--text-faint); }
+
 /* Body Highlighter SVG overrides — the little anatomy figure */
 svg.rbh, .rbh { background-color: transparent !important; }
 svg.rbh path, svg.rbh polygon,
@@ -362,6 +378,9 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
   }
   html.light .pill-value { background: rgba(18, 24, 34, 0.05); }
+  /* Compact variant for dense row lists — snaps to the type scale (text-xs)
+     so callers drop the repeated arbitrary text-[11.5px]/text-[11px] sizing. */
+  .pill-value--sm { font-size: 12px; padding: 4px 8px; }
 
   /* Deadline chip — og-chip (gold). */
   .chip-gold {
@@ -386,6 +405,30 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
   /* Bottom-sheet entrance — slides up from the bottom edge on mobile. */
   .sheet-rise { animation: sheetRise .30s var(--ease) both; }
+
+  /* Rest-timer urgency — system-tokened pulse on our single easing, in the
+     180–320ms band. Replaces Tailwind's default `animate-pulse` (which uses an
+     off-system 2s cubic-bezier(.4,0,.6,1)) for the rest countdown. */
+  .rest-urgent { animation: restUrgent .30s var(--ease) infinite alternate; }
+
+  /* Barcode scan sweep — the line that travels the scan window to read as a
+     live, active scanner. A genuine system gap: no other surface needs a
+     vertical traveling line. On the single system easing, ~300ms per pass
+     (within the 180–320ms band), alternating so it sweeps down then back. */
+  .scan-sweep { animation: scanSweep .30s var(--ease) infinite alternate; }
+}
+
+@keyframes restUrgent {
+  from { opacity: 1; }
+  to   { opacity: .55; }
+}
+
+/* The scan line travels across the ~160px scan window (h-40). Translating it
+   from the top edge to the bottom edge communicates "scanning" via motion
+   rather than borrowing the coral action hue. */
+@keyframes scanSweep {
+  from { transform: translateY(-72px); }
+  to   { transform: translateY(72px); }
 }
 
 @keyframes sheetRise {
@@ -420,7 +463,7 @@ html.light body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .glass-interactive, .cta-coral { transition: none; }
-  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise { animation: none; }
+  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise, .rest-urgent, .scan-sweep { animation: none; }
 }
 
 /* Sonner toasts — og-toast. Themed to neutral glass surfaces so they obey the
@@ -441,7 +484,10 @@ html.light body::before {
   color: var(--text-primary);
   border-radius: 12px;
   box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
-  /* Replace Sonner's 0.4s default with the one system easing + 8px rise. */
+  /* Re-time Sonner's own enter/exit slide to the single system easing within
+     the 180–320ms band. Sonner v2 drives the actual mount translate via its
+     --y / --lift vars (its own slide), so we override the timing curve rather
+     than redefining a separate rise — fighting --y is fragile. */
   transition:
     transform 260ms var(--ease),
     opacity 260ms var(--ease),
@@ -449,6 +495,12 @@ html.light body::before {
     box-shadow 200ms var(--ease);
 }
 [data-sonner-toast].og-toast [data-description] {
+  color: var(--text-secondary);
+}
+/* Success / default icon reads as neutral glass — green is reserved for the
+   biometric spectrum, so Sonner's saturated check is desaturated to secondary
+   text. Only the error state below earns the coral action tint. */
+[data-sonner-toast].og-toast [data-icon] {
   color: var(--text-secondary);
 }
 /* Error / destructive is the only action accent — coral, never biometric red. */
@@ -459,19 +511,25 @@ html.light body::before {
   color: var(--color-brand);
 }
 /* Close button ≥ 44px tap target, neutral glass. Pinned INSIDE the toast at
-   the top-right corner (Sonner's defaults park it half-outside the top-left /
-   viewport edge via left:0 + translate(-35%,-35%)). We override Sonner's
-   position vars and clear the transform so the button sits fully within bounds
-   with an even inset, and force it always-visible for BOTH success and error
-   states (the WeighInModal success/error asymmetry is a visibility artifact —
-   opacity:1 !important makes the two symmetric). */
+   the top-right corner. Sonner v2 (^2.0.7) renders the X via [data-close-button]
+   and parks it half-outside the top-LEFT edge (defaults: left:0; right:unset;
+   transform:translate(-35%,-35%); 20px box). We override the position vars AND
+   target [data-close-button] directly (combined with the .og-toast__close class
+   for specificity) so the 44px box, pinned-right inset, and radius win over
+   Sonner's own [data-styled='true'] [data-close-button] rule. opacity:1
+   forces it always-visible for BOTH success and error states (Sonner only
+   reveals it on hover by default — the success/error asymmetry was a visibility
+   artifact; opacity:1 makes the two symmetric). */
 [data-sonner-toast].og-toast {
   --toast-close-button-start: unset;
   --toast-close-button-end: 6px;
   --toast-close-button-transform: none;
 }
-[data-sonner-toast].og-toast .og-toast__close {
+[data-sonner-toast].og-toast .og-toast__close[data-close-button] {
+  left: unset;
+  right: 6px;
   top: 6px;
+  transform: none;
   width: 44px;
   height: 44px;
   border-radius: 9999px;
@@ -481,10 +539,23 @@ html.light body::before {
   opacity: 1 !important;
   transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
 }
-[data-sonner-toast].og-toast:hover .og-toast__close:hover {
+[data-sonner-toast].og-toast:hover .og-toast__close[data-close-button]:hover {
   background: var(--color-elevated);
   border-color: var(--color-border);
   color: var(--text-primary);
+}
+/* Contained centered pill. Under 600px Sonner forces the toaster to width:100%
+   with the mobile offsets + transform:none (edge-to-edge). Cap the width and
+   re-center so the toast reads as a contained pill with symmetric gutters
+   instead of spanning the full viewport. Above 600px Sonner's own --width:356px
+   + translateX(-50%) already centers it, so this only reshapes mobile. */
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-x-position='center'] {
+    left: 50%;
+    right: auto;
+    width: min(356px, calc(100% - 32px));
+    transform: translateX(-50%);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-sonner-toast].og-toast { transition: none; }

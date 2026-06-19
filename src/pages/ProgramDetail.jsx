@@ -80,7 +80,7 @@ export default function ProgramDetail() {
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
-      <div className="min-h-screen bg-charcoal p-4 md:p-6">
+      <div className="p-4 md:p-6">
         <div className="max-w-md mx-auto mt-12">
           <div className="surface p-8 text-center flex flex-col items-center">
             <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center mb-4">
@@ -218,7 +218,7 @@ export default function ProgramDetail() {
     : null;
 
   return (
-    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <button
@@ -241,16 +241,7 @@ export default function ProgramDetail() {
                     </Badge>
                   )}
                   {enrollment?.status && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        enrollment.status === "active"
-                          ? "bg-teal/10 text-teal border-teal/25"
-                          : enrollment.status === "completed"
-                          ? "bg-leaf/10 text-leaf border-leaf/20"
-                          : "bg-white/[0.06] text-ink-muted border-white/10"
-                      }
-                    >
+                    <Badge variant="outline" className="text-ink-muted">
                       {enrollment.status}
                     </Badge>
                   )}
@@ -258,6 +249,19 @@ export default function ProgramDetail() {
                 <h1 className="type-display text-2xl mb-1">
                   {program.title || program.name}
                 </h1>
+                {/* Position + progress — the single most important status for an
+                    enrolled athlete. Promoted directly under the title with
+                    tabular numerals so it is read before any secondary metadata. */}
+                {enrollment && positionLabel && (
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="font-technical text-base font-extrabold text-ink">
+                      {positionLabel}
+                    </span>
+                    <span className="font-technical text-sm text-ink-muted">
+                      {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
+                    </span>
+                  </div>
+                )}
                 {program.description && (
                   <p className="text-ink-muted text-sm">{program.description}</p>
                 )}
@@ -408,21 +412,13 @@ export default function ProgramDetail() {
               </div>
             </div>
 
-            {/* Progress bar */}
+            {/* Progress bar — the position/count/percent now live in the
+                promoted slot under the title, so this is just the visual track. */}
             {enrollment && (
               <div className="mt-4 pt-4 border-t hairline">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="font-technical text-ink-muted">
-                    {positionLabel && (
-                      <span className="font-semibold mr-2">{positionLabel}</span>
-                    )}
-                    {completedCount} / {totalWorkouts} workouts
-                  </span>
-                  <span className="font-technical font-extrabold text-leaf">{progressPercent}%</span>
-                </div>
-                <div className="h-1.5 bg-[var(--color-border-soft)] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-track rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-leaf rounded-full transition-all duration-500"
+                    className="h-full bg-brand/40 rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -451,21 +447,25 @@ export default function ProgramDetail() {
             <CardTitle className="text-lg text-ink">Schedule</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Collapsed default: window to the single current cycle so the fold
+                lands on current-cycle schedule + progression within ~2 viewports.
+                Expanded reveals every cycle from the start via the toggle. */}
             <CycleDayGrid
               workouts={workouts}
               cycleLength={cycleLength}
-              numCycles={showAllCycles ? numCycles : Math.min(2, numCycles)}
+              startCycle={showAllCycles ? 1 : currentCycle}
+              numCycles={showAllCycles ? numCycles : 1}
               enrollment={enrollment}
               onCellClick={(workout) => {
                 if (workout) setShowWorkoutDetail(workout);
               }}
             />
-            {numCycles > 2 && (
+            {numCycles > 1 && (
               <button
                 onClick={() => setShowAllCycles((v) => !v)}
                 className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
               >
-                {showAllCycles ? "Show fewer cycles" : `Show all ${numCycles} cycles`}
+                {showAllCycles ? "Show current cycle only" : `Show all ${numCycles} cycles`}
                 <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
               </button>
             )}
@@ -524,7 +524,7 @@ export default function ProgramDetail() {
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '—'} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '—'} <small className="text-[10px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.stalled ? (
                           <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
@@ -578,7 +578,10 @@ export default function ProgramDetail() {
               <DialogTitle>{showWorkoutDetail?.title}</DialogTitle>
             </DialogHeader>
             {showWorkoutDetail && (
-              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+              <div
+                className="overflow-y-auto flex-1 px-6 py-4 space-y-3"
+                style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+              >
                 <div className="flex gap-2 text-sm text-ink-muted">
                   <span>Day {showWorkoutDetail.day_index || showWorkoutDetail.day_number}</span>
                   {showWorkoutDetail.type && (
@@ -614,7 +617,7 @@ export default function ProgramDetail() {
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small></p>
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[10px] font-semibold text-ink-muted">lbs</small></p>
                             <p className="font-technical text-xs text-ink-muted mt-0.5">
                               Min: {targets.dailyMin} lbs
                             </p>
@@ -695,7 +698,10 @@ export default function ProgramDetail() {
               ))}
               </div>
             </div>
-            <div className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0">
+            <div
+              className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+            >
               <Button variant="outline" className="flex-1" onClick={() => setShowEnrollDialog(false)}>
                 Cancel
               </Button>

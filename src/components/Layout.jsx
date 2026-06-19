@@ -58,6 +58,10 @@ const navigationItems = [
       { label: "Physique", url: "/physique",
         active: (l) => l.pathname.startsWith("/physique") },
     ] },
+  // Analyze reads as Brief + History only. Career was cut from the IA; Mind
+  // keeps a single entry point (the in-page Mind & Learning card on /insights),
+  // so neither is promoted to a nav sub-tab here. /mind and /career still match
+  // so the section stays highlighted when those routes are reached.
   { title: "Analyze", url: "/insights", icon: BarChart3,
     matches: ["/insights", "/brief-history", "/mind", "/career"],
     mobileStrip: true,
@@ -66,10 +70,6 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/insights") },
       { label: "Brief History", url: "/brief-history",
         active: (l) => l.pathname.startsWith("/brief-history") },
-      { label: "Mind", url: "/mind",
-        active: (l) => l.pathname.startsWith("/mind") },
-      { label: "Career", url: "/career",
-        active: (l) => l.pathname.startsWith("/career") },
     ] },
 ];
 
@@ -309,7 +309,7 @@ export default function Layout({ children, currentPageName }) {
                     type="button"
                     onClick={u.onClick}
                     aria-label={u.label}
-                    className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink transition-colors duration-150"
+                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink transition-colors duration-150"
                   >
                     <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </button>
@@ -370,7 +370,7 @@ export default function Layout({ children, currentPageName }) {
         weightUnit={profile?.weight_unit || "lbs"}
       />
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md glass-elevated text-ink">
+        <DialogContent className="max-w-md text-ink">
           <DialogHeader>
             <DialogTitle className="text-ink">Stream Note to Second Brain</DialogTitle>
           </DialogHeader>

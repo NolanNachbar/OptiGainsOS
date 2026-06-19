@@ -16,7 +16,7 @@ const COACHES = [
   { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-carb bg-carb/10" },
   { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-leaf bg-leaf/10" },
   { key: "body_comp",    label: "Body Comp",    icon: Scale,     hue: "!text-violet bg-violet/10" },
-  { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-teal bg-teal/10" },
+  { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-info bg-info/10" },
   { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-gold bg-gold/10" },
 ];
 
@@ -54,28 +54,27 @@ function BriefEntry({ brief, index = 0 }) {
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={`w-full px-5 py-3.5 flex items-center justify-between gap-2 text-left min-h-[44px] transition-colors hover:bg-white/[0.02] ${open ? "border-b hairline" : ""}`}
+        className={`w-full px-5 py-2.5 flex flex-col gap-1 text-left min-h-[44px] justify-center transition-colors hover:bg-white/[0.02] ${open ? "border-b hairline" : ""}`}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <Bot className="w-4 h-4 text-teal shrink-0" />
-          <span className="text-sm font-bold text-ink truncate">{date}</span>
+        <div className="flex items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bot className="w-4 h-4 text-teal shrink-0" />
+            <span className="text-sm font-bold text-ink truncate">{date}</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-muted-2 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
-        </div>
-      </button>
-
-      {!open ? (
-        <div className="px-5 py-3.5">
-          {json.insight ? (
-            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-2">{json.insight}</p>
+        {!open && (
+          json.insight ? (
+            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
           ) : (
-            <p className="text-xs font-semibold text-faint italic">
+            <p className="text-xs font-semibold text-faint italic pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
             </p>
-          )}
-        </div>
-      ) : (
+          )
+        )}
+      </button>
+
+      {open && (
         <>
           {json.insight && (
             <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
@@ -114,7 +113,7 @@ function BriefEntry({ brief, index = 0 }) {
               </p>
             )}
 
-            {approxCost && (
+            {approxCost && import.meta.env.DEV && (
               <div className="flex items-center gap-1.5 pt-1 border-t hairline">
                 <Coins className="w-3 h-3 text-faint shrink-0" />
                 <span className="text-xs font-semibold text-faint">
@@ -152,8 +151,13 @@ export default function BriefHistory() {
   });
 
   return (
-    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
+    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[max(6rem,env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto">
+        {/* Desktop-only header: the shared Layout chrome already prints
+            "Brief History" + the same "Last 30 AI-generated daily briefs"
+            subtitle on mobile (see Layout pageSubtitle), so showing this block
+            on mobile would duplicate the title. Single source per viewport:
+            Layout on mobile, this block on desktop (where chrome has no title). */}
         <div className="hidden lg:flex items-center gap-3 mb-8 rise-in">
           <Link to="/today" aria-label="Back to home" className="inline-flex p-3 -ml-3 text-muted-2 hover:text-ink transition-colors">
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
@@ -169,7 +173,10 @@ export default function BriefHistory() {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 glass animate-pulse" />
+              // Match the merged collapsed BriefEntry card (px-5 py-2.5 over a
+              // date row + single-line insight clamp ≈ 64px) so the skeleton
+              // doesn't jump on load.
+              <div key={i} className="h-[64px] glass animate-pulse" />
             ))}
           </div>
         ) : isError ? (
