@@ -531,7 +531,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   </TabsTrigger>
                 </TabsList>
                 <Link to="/program-builder" className="shrink-0">
-                  <Button variant="primary">
+                  <Button variant="primary" size="lg">
                     <Plus className="w-4 h-4" />
                     <span className="hidden sm:inline">Create Program</span>
                     <span className="sm:hidden">Create</span>
@@ -966,7 +966,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-3.5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
+              'px-3.5 py-1.5 min-h-[44px] rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
               filter === val
                 ? 'bg-brand text-[var(--color-action-dark)]'
                 : 'glass-inset text-ink-muted hover:text-ink',

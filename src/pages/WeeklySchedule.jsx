@@ -486,7 +486,7 @@ export default function WeeklySchedule() {
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
-            className="w-full flex items-center justify-between"
+            className="w-full min-h-[44px] flex items-center justify-between"
           >
             <span className="section-label">Weekly Volume</span>
             <span className="flex items-center gap-2">

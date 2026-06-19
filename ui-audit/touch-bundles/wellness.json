@@ -1,0 +1,1 @@
+{"files":["src/pages/Progress.jsx","src/pages/Supplements.jsx"],"controls":"Wellness sub-tab strip (Metabolism/Weight/Measurements/Photos) renders ~36px tall — bump to >=44px. ~7 icon/stepper BUTTONs at 38x38 (weight +/- steppers, measurement steppers, water/supplement add or delete icons) -> wrap to >=44px tap zones. 'Show more' button 30px -> min-h-[44px]."}

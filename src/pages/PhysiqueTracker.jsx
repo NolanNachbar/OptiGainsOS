@@ -286,7 +286,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar -mx-4 px-4">
               <button
                 onClick={() => setFilterPose(null)}
-                className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] min-w-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   filterPose === null ? "bg-white/[0.08] text-ink border-white/[0.13]" : "bg-white/[0.04] text-muted-2 border-white/10"
                 }`}
               >All</button>

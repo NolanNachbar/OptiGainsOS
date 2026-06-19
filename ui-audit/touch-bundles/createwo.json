@@ -1,0 +1,1 @@
+{"files":["src/pages/CreateWorkout.jsx"],"controls":"Two INPUT[~37px] (set weight/reps or step inputs) -> min-h-[44px] (or shared Input). Two BUTTON[16x16] tiny remove/close icons -> wrap in min-h-[44px] min-w-[44px] tap zones."}
