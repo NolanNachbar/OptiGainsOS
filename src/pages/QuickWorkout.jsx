@@ -420,10 +420,10 @@ export default function QuickWorkout() {
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
+            <Button variant="outline" size="lg" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
+            <Button variant="volt" size="lg" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

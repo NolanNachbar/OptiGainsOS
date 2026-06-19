@@ -157,6 +157,7 @@ export default function WorkoutLoggingHeader({
             <div className="flex gap-2 mt-2">
               <Button
                 variant="outline"
+                size="lg"
                 className="flex-1"
                 onClick={() => setShowConfirm(false)}
               >
@@ -164,6 +165,7 @@ export default function WorkoutLoggingHeader({
               </Button>
               <Button
                 variant="destructive"
+                size="lg"
                 className="flex-1"
                 onClick={() => {
                   setShowConfirm(false);

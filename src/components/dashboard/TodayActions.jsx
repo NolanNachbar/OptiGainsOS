@@ -165,7 +165,8 @@ export default function TodayActions({ today, briefActions = [], isError = false
             >
               <button
                 onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
-                className="shrink-0 text-faint hover:text-leaf transition-colors"
+                className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors"
+                aria-label={todo.completed ? "Mark incomplete" : "Mark complete"}
               >
                 {todo.completed
                   ? <CheckCircle2 className="w-4 h-4 text-leaf" />
@@ -180,7 +181,8 @@ export default function TodayActions({ today, briefActions = [], isError = false
               )}
               <button
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="opacity-0 group-hover:opacity-100 text-faint hover:text-bad transition-all shrink-0 p-0.5"
+                className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors"
+                aria-label="Delete action"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
