@@ -484,7 +484,7 @@ export default function ProgramBuilder() {
               </>
             )}
             <Button
-              variant="ghost"
+              variant="dim"
               size="sm"
               onClick={() => navigate("/workouts")}
               aria-label="Cancel"
@@ -896,7 +896,7 @@ function InlineDayEditor({
             </span>
             Editing Exercises
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close editor" className="min-h-[44px] min-w-[44px] px-0">
+          <Button variant="dim" size="sm" onClick={onClose} aria-label="Close editor" className="min-h-[44px] min-w-[44px] px-0">
             <ChevronUp className="w-4 h-4" />
           </Button>
         </div>

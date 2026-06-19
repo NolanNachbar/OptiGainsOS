@@ -62,7 +62,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
             Add
           </Button>
           {showCloseButton && (
-            <Button variant="ghost" size="lg" className="w-11 px-0" onClick={() => setShowForm(false)}>
+            <Button variant="dim" size="lg" className="w-11 px-0" onClick={() => setShowForm(false)}>
               <X className="w-4 h-4" />
             </Button>
           )}

@@ -45,7 +45,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
               <Calculator className="w-5 h-5" />
               1RM Calculator
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="dim" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
           </div>
