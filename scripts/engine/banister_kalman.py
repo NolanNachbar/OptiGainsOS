@@ -93,17 +93,27 @@ class BanisterKalman:
 
     # ── Kalman steps ──────────────────────────────────────────────────────────
 
-    def predict(self, u_t: float):
+    def predict(self, u_t: float, tau_fat_eff: Optional[float] = None):
         """
         Prediction step. Advance state by one day given training load u_t.
 
         u_t: daily training stress score (TSS), typically 0–150.
              Normalized internally to Banister load units.
+        tau_fat_eff: optional TRANSIENT fatigue-decay constant for this step only
+             (E9: a caloric deficit slows fatigue clearance → larger τ_fat). Applied
+             without overwriting the learned/base self.tau_fat, so it does not compound
+             day to day or pollute the persisted parameter.
         """
         # Normalize TSS → Banister load units (TSS 100 ≈ load 1.0)
         u = u_t / 100.0
-        self.x = self.A @ self.x + self.B * u
-        self.P = self.A @ self.P @ self.A.T + self.Q
+        A = self.A
+        if tau_fat_eff is not None and tau_fat_eff > 0:
+            A = np.array([
+                [self.A[0, 0], 0.0],
+                [0.0, math.exp(-1.0 / float(tau_fat_eff))],
+            ])
+        self.x = A @ self.x + self.B * u
+        self.P = A @ self.P @ A.T + self.Q
         # Enforce symmetry to prevent numerical drift
         self.P = 0.5 * (self.P + self.P.T)
 
@@ -146,14 +156,17 @@ class BanisterKalman:
         y_t:      Optional[float],
         hrv_z:    float = 0.0,
         soreness: float = 5.0,
+        tau_fat_eff: Optional[float] = None,
     ) -> dict:
         """
         Full daily predict + optional update.
 
         y_t may be None on days with no reliable observation (e.g., no Garmin data).
+        tau_fat_eff applies a transient fatigue-decay for this step only (E9 deficit
+        coupling); see predict().
         Returns state summary dict.
         """
-        self.predict(u_t)
+        self.predict(u_t, tau_fat_eff=tau_fat_eff)
         if y_t is not None:
             self.update(y_t, hrv_z=hrv_z, soreness=soreness)
         return self.state_dict()

@@ -87,6 +87,13 @@ def allocate_constrained_resources(
     return mat.astype(int), metadata
 
 
+# E13: lift-before-endurance is the mandated within-day order on any shared lift+run day.
+# Lifting first protects ~6.9% lower-body dynamic strength at no cost to hypertrophy or
+# aerobic adaptation, so it is the sequence the scheduler always encodes — AM lift, PM
+# endurance, ≥6h apart on a split; lift-then-cardio within a combined session otherwise.
+LIFT_BEFORE_ENDURANCE = ("lift", "endurance")
+
+
 def evaluate_two_a_day_split(
     total_sets: int,
     planned_km: float,
@@ -95,14 +102,18 @@ def evaluate_two_a_day_split(
     """
     Decide whether a two-a-day split is warranted.
 
-    Returns (should_split: bool, reason: str)
+    Returns (should_split: bool, reason: str, sequence: tuple). `sequence` is always
+    LIFT_BEFORE_ENDURANCE — lift first whether the day is split (AM lift / PM endurance,
+    ≥6h apart) or a single combined session (lift, then cardio). This encodes E13's
+    lift-before-endurance ordering as a first-class engine output, not an implicit
+    convention.
 
     Conditions for split (per OptiGainsOS spec):
       - total_sets > 8  AND planned_km > 5.0  AND reserve_score >= 0.40
     Minimum 6-hour separation enforced; lifting AM, cardio PM.
     """
     if reserve_score < 0.40:
-        return False, "suppressed_low_recovery"
+        return False, "suppressed_low_recovery", LIFT_BEFORE_ENDURANCE
     if total_sets > 8 and planned_km > 5.0:
-        return True, "high_volume_two_a_day"
-    return False, "combined_session"
+        return True, "high_volume_two_a_day", LIFT_BEFORE_ENDURANCE
+    return False, "combined_session", LIFT_BEFORE_ENDURANCE

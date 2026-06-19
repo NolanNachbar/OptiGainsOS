@@ -10,7 +10,8 @@ asserts the post-fix behavior. No DB / network — runs offline from scripts/.
 from engine.exploration_manager import ControlledExplorationManager
 from engine.learners import update_mrv, exercise_reward, OBS_VAR
 from engine.athlete_profile import clamp_rep_range, per_session_muscle_cap
-from engine.allocator import frequency_targets
+from engine.allocator import frequency_targets, default_goal_priorities
+from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
 from engine.session_generator import split_from_title, build_title
 
 PASS, FAIL = "✓ PASS", "✗ FAIL"
@@ -20,6 +21,307 @@ _results = []
 def check(name, ok, detail=""):
     _results.append(ok)
     print(f"  {PASS if ok else FAIL}  {name}" + (f"  — {detail}" if detail else ""))
+
+
+# ── E1: default goal priorities are hypertrophy-primary, PST/strength held ────
+_dgp = default_goal_priorities(None)
+check("E1 hypertrophy carries the top default weight",
+      _dgp["hypertrophy"] > _dgp["strength"] and _dgp["hypertrophy"] > _dgp["pst"],
+      f"{_dgp}")
+check("E1 PST/strength held at maintenance, not crushed (each ≥ 0.30)",
+      _dgp["pst"] >= 0.30 and _dgp["strength"] >= 0.30)
+check("E1 weights still sum to 1.0", abs(sum(_dgp.values()) - 1.0) < 1e-9)
+# BUD/S-prep branch is unchanged (conditioning-weighted for that explicit context).
+_buds = default_goal_priorities("buds_prep")
+check("E1 BUD/S-prep branch still weights conditioning (pst top)",
+      _buds["pst"] > _buds["strength"] and _buds["pst"] > _buds["hypertrophy"])
+
+
+# ── E2: proximity-to-failure generates extra fatigue (audit: 0 vs 3 RIR equal) ─
+_fail_sets = [{"weight": 100, "reps": 5, "rir": 0}, {"weight": 100, "reps": 5, "rir": 0}]
+_easy_sets = [{"weight": 100, "reps": 5, "rir": 3}, {"weight": 100, "reps": 5, "rir": 3}]
+_f_fail = proximity_fatigue_factor(_fail_sets)
+_f_easy = proximity_fatigue_factor(_easy_sets)
+check("E2 a 0-RIR session costs more fatigue than the same volume at 3 RIR",
+      _f_fail > _f_easy, f"failure {_f_fail:.3f} > easy {_f_easy:.3f}")
+check("E2 0-RIR factor matches 1 + coeff·5", abs(_f_fail - (1 + EFFORT_COST_PRIOR * 5)) < 1e-9)
+check("E2 sets left >=5 RIR add no extra fatigue (factor 1.0)",
+      abs(proximity_fatigue_factor([{"weight": 100, "reps": 5, "rir": 5},
+                                    {"weight": 100, "reps": 5, "rir": 7}]) - 1.0) < 1e-9)
+check("E2 factor is always >= 1.0 (never discounts bar load)", _f_easy >= 1.0)
+# Missing RIR defaults to failure (matches the rest of the ingest).
+check("E2 missing RIR is treated as failure",
+      abs(proximity_fatigue_factor([{"weight": 100, "reps": 5}]) - _f_fail) < 1e-9)
+# Volume-weighted: a heavy failure set dominates a tiny easy set.
+_mixed = proximity_fatigue_factor([{"weight": 200, "reps": 5, "rir": 0},
+                                   {"weight": 10, "reps": 1, "rir": 5}])
+check("E2 factor is volume-weighted (heavy failure set dominates)", _mixed > 1.25)
+# Empty / zero-volume session is neutral.
+check("E2 empty session is neutral (factor 1.0)",
+      proximity_fatigue_factor([]) == 1.0 and
+      proximity_fatigue_factor([{"weight": 0, "reps": 0, "rir": 0}]) == 1.0)
+# Real-world data: reps arrive as range strings ("8-12") and RIR may be malformed;
+# must not crash (regression — these reach the function from the app).
+try:
+    _str = proximity_fatigue_factor([{"weight": 135, "reps": "8-12", "rir": "0"},
+                                     {"weight": 135, "reps": "10", "rir": None},
+                                     {"weight": 135, "reps": "5.0", "rir": "n/a"}])
+    check("E2 tolerates string-range reps / malformed RIR without crashing", _str > 1.0)
+except Exception as _e:
+    check("E2 tolerates string-range reps / malformed RIR without crashing", False, str(_e))
+# Uncompleted sets are skipped (don't add phantom failure fatigue).
+check("E2 skips uncompleted sets",
+      proximity_fatigue_factor([{"weight": 100, "reps": 5, "rir": 0, "completed": False}]) == 1.0)
+
+
+# ── E3: soft MRV boundary (no inverted-U cliff) + recovery-cost compression ────
+from engine.allocator import (allocate as _alloc, marginal_benefit, recovery_cost,
+                              marginal_value as _mv, SOFT_MRV_OVERSHOOT)
+_lm = {"mev": 8, "mav": 16, "mrv": 20}
+# Marginal benefit no longer cliffs to 0 at/just past MRV (no inverted-U).
+check("E3 marginal benefit stays positive just past MRV (no cliff to 0)",
+      marginal_benefit(20, _lm) > 0 and marginal_benefit(22, _lm) > 0,
+      f"@mrv {marginal_benefit(20,_lm):.3f}, @mrv+2 {marginal_benefit(22,_lm):.3f}")
+check("E3 marginal benefit still diminishes (mrv+4 < mrv)",
+      marginal_benefit(24, _lm) < marginal_benefit(20, _lm))
+# Recovery cost is ~0 below MAV and rises (convex) past it.
+check("E3 recovery cost ~0 below MAV, rises past it",
+      recovery_cost(15, _lm) == 0.0 and recovery_cost(20, _lm) > recovery_cost(18, _lm) > 0)
+check("E3 recovery cost is convex (accelerates)",
+      (recovery_cost(22, _lm) - recovery_cost(20, _lm)) >
+      (recovery_cost(20, _lm) - recovery_cost(18, _lm)))
+# A muscle in the high-volume regime stops NEAR MRV at neutral (soft, not a hard wall).
+_neutral = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=1.0)
+check("E3 neutral state funds a high-priority muscle to ~MRV (soft boundary)",
+      18 <= _neutral["quads"] <= 22, f"quads {_neutral['quads']} (mrv 20)")
+# Higher recovery-cost multiplier (deficit / fatigue — the E9 lever) compresses volume.
+_deficit = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=2.5)
+check("E3 a high recovery-cost mult compresses volume below the neutral target",
+      _deficit["quads"] < _neutral["quads"], f"neutral {_neutral['quads']} → deficit {_deficit['quads']}")
+# Numeric backstop: never funds past MRV·SOFT_MRV_OVERSHOOT even with huge budget/weight.
+_runaway = _alloc(budget=500, weights={"quads": 50.0}, landmarks={"quads": _lm}, recovery_cost_mult=0.01)
+check("E3 soft backstop ceiling is never exceeded",
+      _runaway["quads"] <= _lm["mrv"] * SOFT_MRV_OVERSHOOT,
+      f"quads {_runaway['quads']} <= {_lm['mrv']*SOFT_MRV_OVERSHOOT}")
+# MILP: hard MRV wall replaced by a soft, bounded overshoot tier.
+from engine.program_synthesis import ProgramSynthesisEngine as _PSE, SOFT_MRV_OVERSHOOT as _MILP_OVER
+_pse = _PSE(["quads", "chest"])
+_mmat = _pse.synthesize_weekly_block({"quads": 18, "chest": 18},
+                                     {"max_daily_sets": 12, "min_strength_days": 4}, 1.0)
+_weekly = _mmat.sum(axis=1)
+check("E3 MILP can fund past MRV (soft penalty, not a hard wall)", bool((_weekly > 18).any()),
+      f"weekly {list(map(int,_weekly))}")
+check("E3 MILP respects the soft overshoot ceiling",
+      bool((_weekly <= 18 * _MILP_OVER + 0.01).all()))
+
+
+# ── E9: nutrition modulation wired into Kalman (tau_fat) + allocator (recovery cost) ─
+from engine.banister_kalman import BanisterKalman
+from engine.nutrition_modulator import NutritionModulator, ETA_DEFICIT
+# (a) Transient tau_fat_eff slows fatigue clearance for one step, without mutating base.
+_k1, _k2 = BanisterKalman(), BanisterKalman()
+for _ in range(5):
+    _k1.predict(70.0); _k2.predict(70.0)        # identical fatigue build-up
+_base_tau = _k2.tau_fat
+_k1.predict(0.0)                                 # normal clearance
+_k2.predict(0.0, tau_fat_eff=_base_tau * 1.5)    # deficit: slower clearance
+check("E9 a larger transient tau_fat retains MORE fatigue (slower clearance)",
+      float(_k2.x[1, 0]) > float(_k1.x[1, 0]),
+      f"slowed {float(_k2.x[1,0]):.4f} > normal {float(_k1.x[1,0]):.4f}")
+check("E9 transient tau_fat does NOT mutate the persisted base (no compounding)",
+      _k2.tau_fat == _base_tau)
+# (b) modulate() actually produces the deficit adjustments E9 feeds downstream.
+_nm  = NutritionModulator(maintenance_kcal=3000)
+_mod = _nm.modulate(current_kcal_7d_avg=2400, base_tau_fat=15.0, base_mrv_sets=16.0)  # ~20% deficit
+check("E9 deficit slows fatigue clearance (tau_fat_adj > base)", _mod["tau_fat_adj"] > 15.0)
+check("E9 deficit compresses recoverable volume (mrv_adj < base)", _mod["mrv_adj"] < 16.0)
+check("E9 maintenance/surplus stays neutral (tau_fat_adj == base)",
+      _nm.modulate(3000, 15.0, 16.0)["tau_fat_adj"] == 15.0)
+# (c) The deficit-derived recovery_cost_mult (as wired in generate_weekly_program)
+#     compresses the high-volume allocation through E3's recovery-cost term. Use the
+#     deepest (capped) deficit so the gentle per-muscle lever produces a visible cut.
+_deep = _nm.modulate(current_kcal_7d_avg=1950, base_tau_fat=15.0, base_mrv_sets=16.0)
+_rcm = 1.0 / max(0.5, 1.0 - ETA_DEFICIT * _deep["deficit_ratio"])
+check("E9 deficit yields a recovery_cost_mult > 1", _rcm > 1.0, f"mult {_rcm:.3f}")
+_e9_neutral = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=1.0)
+_e9_deficit = _alloc(budget=60, weights={"quads": 1.0}, landmarks={"quads": _lm}, recovery_cost_mult=_rcm)
+check("E9 the deep-deficit mult compresses high-volume allocation (volume lever only)",
+      _e9_deficit["quads"] < _e9_neutral["quads"],
+      f"neutral {_e9_neutral['quads']} → deficit {_e9_deficit['quads']}")
+
+
+# ── E4: separate strength vs hypertrophy curves (strength saturates early) ─────
+from engine.allocator import (effective_weight, strength_weights, STR_SAT_SETS,
+                              marginal_value as _mv4)
+# Below saturation the FULL blended weight applies (SBD sets credited to both goals).
+check("E4 below strength saturation the full weight applies (SBD funds both)",
+      effective_weight(STR_SAT_SETS - 1, 1.0, 0.6) == 1.0)
+# Past saturation the strength share decays; the hypertrophy/PST remainder persists.
+check("E4 strength share decays past saturation",
+      effective_weight(STR_SAT_SETS + 3, 1.0, 0.6) < 1.0 and
+      effective_weight(STR_SAT_SETS + 3, 1.0, 0.6) >= 1.0 - 0.6 - 1e-9)
+check("E4 a pure-hypertrophy muscle is unaffected (w_strength=0)",
+      effective_weight(20, 1.0, 0.0) == 1.0)
+# Two muscles, EQUAL blended weight: past saturation the strength-heavy one yields less.
+_lm4 = {"mev": 8, "mav": 16, "mrv": 20}
+_strengthy = _mv4(10, 1.0, _lm4, 1.0, 0.6)
+_hyp_pure  = _mv4(10, 1.0, _lm4, 1.0, 0.0)
+check("E4 past saturation a strength-heavy muscle yields LESS marginal value",
+      _strengthy < _hyp_pure, f"strengthy {_strengthy:.3f} < pure-hyp {_hyp_pure:.3f}")
+# strength_weights pulls only the strength relevance (quads high, biceps lower).
+_sw = strength_weights({"strength": 0.30, "hypertrophy": 0.40, "pst": 0.30},
+                       {"strength": 1.0, "hypertrophy": 1.0, "pst": 1.0},
+                       ["quads", "side_delts"])
+check("E4 strength_weights reflects strength relevance (quads >> side_delts)",
+      _sw["quads"] > _sw["side_delts"] > 0, f"quads {_sw['quads']:.3f}, side_delts {_sw['side_delts']:.3f}")
+
+
+# ── E13: modality-aware interference, polarized run plan, lift-first ordering ──
+from engine.hypertrophy_volume import (apply_endurance_interference, apply_running_interference,
+                                       endurance_interference_km, MODALITY_INTERFERENCE)
+from engine.allocator import build_run_plan, RUN_QUALITY_FLOOR, RUN_QUALITY_CAP
+from engine.resource_allocator import evaluate_two_a_day_split, LIFT_BEFORE_ENDURANCE
+# Modality weighting: running interferes most, cycling less, swimming least.
+check("E13 modality interference ranks running > cycling > swimming",
+      MODALITY_INTERFERENCE["running_continuous"] > MODALITY_INTERFERENCE["cycling"]
+      > MODALITY_INTERFERENCE["swimming"] > 0)
+check("E13 continuous running costs more than HIIT/PST-pace running",
+      MODALITY_INTERFERENCE["running_continuous"] > MODALITY_INTERFERENCE["running_hiit"])
+# 40 km cycling dents leg MRV far less than 40 km running.
+def _legs():
+    return {m: {"mev": 8, "mav": 14, "mrv": 20} for m in ("quads", "hamstrings", "calves", "glutes")}
+_run = apply_endurance_interference(_legs(), {"running_continuous": 40})
+_cyc = apply_endurance_interference(_legs(), {"cycling": 40})
+_swm = apply_endurance_interference(_legs(), {"swimming": 40})
+check("E13 equal-km cycling compresses leg MRV far less than running",
+      _cyc["quads"]["mrv"] > _run["quads"]["mrv"] and _swm["quads"]["mrv"] >= _cyc["quads"]["mrv"],
+      f"run {_run['quads']['mrv']}, cyc {_cyc['quads']['mrv']}, swim {_swm['quads']['mrv']}")
+# Backward-compat: running-only path == continuous-running modality dict.
+check("E13 apply_running_interference == continuous-running modality path",
+      apply_running_interference(_legs(), 30)["quads"]["mrv"]
+      == apply_endurance_interference(_legs(), {"running_continuous": 30})["quads"]["mrv"])
+# Maintenance floor (bullet 5): even crushing running never zeros leg volume (MRV >= mev+1).
+_crush = apply_endurance_interference(_legs(), {"running_continuous": 999})
+check("E13 leg MRV floored at mev+1 — running never zeros leg volume (maintenance floor)",
+      all(_crush[m]["mrv"] >= _crush[m]["mev"] + 1 for m in _crush))
+# Polarized run plan: hard quality floored at the maintenance dose, capped, intensity-tagged.
+_rp_low  = build_run_plan(days_available=6, vdot_gap=0.0, pst_mult=1.0)
+_rp_high = build_run_plan(days_available=6, vdot_gap=5.0, pst_mult=1.3)
+_hard_low  = sum(r["count"] for r in _rp_low  if r["intensity"] == "hard")
+_hard_high = sum(r["count"] for r in _rp_high if r["intensity"] == "hard")
+check("E13 run plan keeps a hard maintenance floor (never zero quality)",
+      _hard_low >= RUN_QUALITY_FLOOR >= 1)
+check("E13 hard fraction scales UP with the PST gap (not a taper)", _hard_high > _hard_low)
+check("E13 hard quality is capped to keep the plan polarized",
+      _hard_high <= RUN_QUALITY_CAP)
+check("E13 every run session is intensity-tagged with a duration cap",
+      all("intensity" in r and "max_minutes" in r for r in _rp_high))
+check("E13 hard intervals are shorter than the continuous easy/long base (duration cap)",
+      max(r["max_minutes"] for r in _rp_high if r["intensity"] == "hard")
+      <= min(r["max_minutes"] for r in _rp_high if r["intensity"] == "easy"))
+# Lift-before-endurance ordering is a first-class output on every shared day.
+_split, _why, _seq = evaluate_two_a_day_split(total_sets=12, planned_km=8.0, reserve_score=0.7)
+check("E13 high-volume shared day splits two-a-day", _split is True)
+check("E13 two-a-day sequence encodes lift before endurance", _seq == ("lift", "endurance"))
+check("E13 lift-first ordering holds even on a combined (non-split) day",
+      evaluate_two_a_day_split(4, 1.0, 0.7)[2] == LIFT_BEFORE_ENDURANCE)
+
+
+# ── E5: volume/MRV maturity gated to mesocycle timescales (C8) ────────────────
+from engine.learners import apply_mrv_observation, MESOCYCLE_MIN_OBS
+import math as _math5
+_e5_prior = 20.0
+_e5_row = {"mev": 8, "mav": 16, "mrv": 20, "mrv_mean": 20.0, "mrv_var": 9.0, "n_obs": 0}
+_matured_at = None
+_sep_at = None
+for _wk in range(1, 16):
+    _u = apply_mrv_observation(_e5_row, obs=26.0, obs_var=1.0, prior_mrv=_e5_prior)  # strong, low-noise
+    _e5_row.update(_u)
+    if _sep_at is None and abs(_u["mrv_mean"] - _e5_prior) > 1.96 * _math5.sqrt(max(_u["mrv_var"], 1e-9)):
+        _sep_at = _u["n_obs"]                       # week the CI first separated from the prior
+    if _u["mature"] and _matured_at is None:
+        _matured_at = _u["n_obs"]
+check("E5 a low-noise designed test separates the CI well before a mesocycle",
+      _sep_at is not None and _sep_at < MESOCYCLE_MIN_OBS, f"CI separated at n_obs={_sep_at}")
+check("E5 but MRV cannot MATURE before a mesocycle of observations (C8 floor)",
+      _matured_at is not None and _matured_at >= MESOCYCLE_MIN_OBS, f"matured at n_obs={_matured_at}")
+
+
+# ── E8: bounded self-experimentation (uncertainty gate, decay, one-at-a-time) ─
+_me8 = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
+_pw = next(w for w in range(40) if _me8.get_exploration_delta(w))  # a probe week
+check("E8 a fired probe targets a single muscle (one probe at a time)",
+      len(_me8.get_exploration_delta(_pw)) == 1)
+check("E8 probe is restricted to the eligible (still-uncertain) set",
+      set(_me8.get_exploration_delta(_pw, eligible={"calves"})) <= {"calves"})
+check("E8 exploration is SILENT once all posteriors converge (empty eligible → no probe)",
+      _me8.get_exploration_delta(_pw, eligible=set()) == {})
+check("E8 an ineligible-only probe week fires nothing (decay as model matures)",
+      _me8.get_exploration_delta(_pw, eligible={"not_a_muscle"}) == {})
+check("E8 eligible=None preserves back-compat (all parameters eligible)",
+      _me8.get_exploration_delta(_pw) != {})
+
+
+# ── E10: composition-aware adaptive TDEE (Forbes density, EWMA trend, no discard) ─
+from engine.tdee import (estimate_tdee as _tdee, composition_density_kcal_per_kg,
+                         energy_density_kcal_per_lb, ewma_trend, learned_intake_bias,
+                         KG_PER_LB, DEFAULT_BODYFAT_FRAC)
+# Forbes: a leaner athlete partitions more change to lean mass → LOWER energy density.
+check("E10 leaner body composition → lower energy density (Forbes partition)",
+      composition_density_kcal_per_kg(5.0) < composition_density_kcal_per_kg(40.0))
+# Energy density is NOT the old fixed 3500 kcal/lb (1 lb = 3500): composition-aware.
+_fm = 180 * KG_PER_LB * 0.15
+check("E10 energy density is composition-aware, not a fixed 3500 kcal/lb",
+      abs(energy_density_kcal_per_lb(_fm) - 3500.0) > 100)
+# Early-transient discount: a phase-change week books the water/glycogen step at LOW density.
+check("E10 early-transient density (wk1) is discounted vs a settled phase",
+      energy_density_kcal_per_lb(_fm, weeks_in_phase=1) < energy_density_kcal_per_lb(_fm))
+check("E10 early-transient density ramps back up by wk6+",
+      energy_density_kcal_per_lb(_fm, weeks_in_phase=6) == energy_density_kcal_per_lb(_fm))
+# EWMA trend weight lags / de-noises a step change (vs raw last value).
+_ew = ewma_trend([200, 200, 195, 195, 195], 0.10)
+check("E10 EWMA trend weight de-noises a step (lags the raw drop)", 195 < _ew[-1] < 200)
+# Directionally correct: losing weight → TDEE above intake; gaining → below intake.
+check("E10 losing weight implies TDEE above logged intake",
+      _tdee(180, 2400, -1.0) > 2400)
+check("E10 gaining weight implies TDEE below logged intake",
+      _tdee(180, 3200, +1.0) < 3200)
+# Replaces the 25% discard GATE: an energy-balance estimate far from the prior is now
+# BLENDED/clamped (uses the signal), not thrown away in favour of the bodyweight prior.
+_prior = round(180 * 15.5)
+_far = _tdee(180, 4000, 0.0)            # intake far above the prior; old code discarded it
+check("E10 a far-from-prior estimate is used (blended/clamped), not discarded to the prior",
+      _far > _prior + 100, f"tdee {_far} vs prior {_prior}")
+# But clamped (not gated) so a corrupt series can't run away.
+check("E10 the energy-balance estimate is sanity-CLAMPED (never unbounded)",
+      _tdee(180, 99999, 0.0) <= round(1.6 * _prior))
+# Learned intake bias: under-report correction, bounded [1.0, 1.5], scales TDEE up.
+_bias = learned_intake_bias(mean_intake=2000, expenditure_est=2790, daily_rate_lb=0.0,
+                            density_kcal_per_lb=2800.0, prev_bias=1.0)
+check("E10 learned intake bias corrects under-reporting (>1.0, bounded)", 1.0 < _bias <= 1.5)
+check("E10 a higher intake bias raises the TDEE estimate (under-report correction)",
+      _tdee(180, 2500, 0.0, intake_bias=1.3) > _tdee(180, 2500, 0.0, intake_bias=1.0))
+# A missing/zero bodyweight cleanly falls back to the prior (no degenerate all-lean density).
+check("E10 missing bodyweight falls back to the prior, not a degenerate estimate",
+      _tdee(0, 3000, -1.0, fallback=3200) == 3200)
+
+
+# ── E11: wire sleep_duration_min into a true sleep-debt signal ────────────────
+from engine.sleep_debt import sleep_debt_hours, is_poor_night
+# Cumulative hours below an 8h target; extra sleep banks no credit.
+check("E11 sleep debt accumulates hours below target",
+      sleep_debt_hours([7 * 60, 6 * 60, 5 * 60]) == (1 + 2 + 3))
+check("E11 extra sleep does not bank credit (debt floors per night)",
+      sleep_debt_hours([9 * 60, 9 * 60]) == 0.0)
+check("E11 missing/zero nights are skipped, not counted as debt",
+      sleep_debt_hours([None, 0, 8 * 60]) == 0.0)
+# Poor-night detection prefers actual DURATION, falls back to score, None when neither.
+check("E11 a short night is poor by duration regardless of a decent score",
+      is_poor_night(5 * 60, 80) is True)
+check("E11 falls back to sleep_score when duration is missing",
+      is_poor_night(None, 40) is True and is_poor_night(None, 90) is False)
+check("E11 a fully-missing night returns None (stops a consecutive run)",
+      is_poor_night(None, None) is None)
 
 
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────

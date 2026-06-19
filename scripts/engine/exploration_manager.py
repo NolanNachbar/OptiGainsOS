@@ -91,6 +91,7 @@ class ControlledExplorationManager:
         self,
         time_step: int,
         epsilon_override: float = None,
+        eligible=None,
     ) -> str | None:
         """
         Returns the name of the parameter to explore this step, or None.
@@ -98,15 +99,27 @@ class ControlledExplorationManager:
         Deterministic schedule: on a probe week, return the arm with highest UCB1
         score; otherwise None. `epsilon_override` (a constant rate, e.g. 0.20 to
         re-warm after a phase change) replaces the annealed schedule when given.
+
+        E8 (bounded self-experimentation): `eligible`, when given, restricts probing to
+        parameters whose posterior is still WIDE (immature — the Clues/Patterns phase).
+        As posteriors converge to Established the eligible set shrinks and exploration
+        DECAYS toward zero (near-silent once converged); when nothing is eligible no probe
+        fires. None means "all eligible" (back-compat).
         """
         if not self.parameters:
             return None
-        if _should_explore(time_step, epsilon_override):
-            total = int(self.counts.sum())
-            scores = self._ucb1_scores(total)
-            best_idx = int(np.argmax(scores))
-            return self.parameters[best_idx]
-        return None
+        if not _should_explore(time_step, epsilon_override):
+            return None
+        if eligible is None:
+            elig_idx = list(range(len(self.parameters)))
+        else:
+            elig_set = set(eligible)
+            elig_idx = [i for i, p in enumerate(self.parameters) if p in elig_set]
+        if not elig_idx:
+            return None                       # all converged → exploration is silent
+        scores = self._ucb1_scores(int(self.counts.sum()))
+        best_idx = max(elig_idx, key=lambda i: scores[i])
+        return self.parameters[best_idx]
 
     def record_outcome(self, parameter: str, reward: float) -> None:
         """Update counts and mean reward for the named arm."""
@@ -118,14 +131,17 @@ class ControlledExplorationManager:
         # Incremental mean update
         self.values[i] += (reward - self.values[i]) / n
 
-    def get_exploration_delta(self, time_step: int, epsilon_override=None) -> dict:
+    def get_exploration_delta(self, time_step: int, epsilon_override=None,
+                              eligible=None) -> dict:
         """
         Returns {muscle_name: extra_sets} if exploring this step, else {}.
 
-        Extra sets = +1 on the selected muscle. Pass `epsilon_override` (e.g. 0.20)
-        to re-warm exploration after a phase change.
+        Extra sets = +1 on the selected muscle (bounded, recovery-safe probe magnitude).
+        Pass `epsilon_override` (e.g. 0.20) to re-warm exploration after a phase change.
+        `eligible` (E8) restricts probing to still-uncertain parameters; an empty/converged
+        eligible set yields {} (no probe).
         """
-        param = self.select_exploration_parameter(time_step, epsilon_override)
+        param = self.select_exploration_parameter(time_step, epsilon_override, eligible)
         if param is None:
             return {}
         return {param: 1}

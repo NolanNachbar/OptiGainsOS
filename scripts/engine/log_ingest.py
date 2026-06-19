@@ -29,6 +29,51 @@ EPLEY_REP_CAP         = 12                 # Epley unreliable above this — set
                                            # with more reps are volume work, not a
                                            # 1RM proxy, so they fall to rep-tracking
 
+# ── E2: proximity-to-failure fatigue cost ─────────────────────────────────────
+# Training to failure (0 RIR) is Nolan's chosen style and is KEPT. The engine does
+# not push him off failure; instead it MODELS the extra fatigue that proximity to
+# failure generates so the allocator can manage it by trimming VOLUME. Without this,
+# a 0-RIR set and a 3-RIR set on the same lift produce identical Banister fatigue.
+# Effective-reps reference is 5 (Core Volume Model: Reps_eff = max(0, 5 - RIR)); sets
+# at/above this RIR add no extra fatigue beyond their raw volume.
+EFFORT_REF_RIR    = 5.0    # [ENG] reps-in-reserve at which a set adds no extra fatigue
+EFFORT_COST_PRIOR = 0.06   # [ENG] LEARNABLE wide prior: extra session-fatigue fraction
+                           # per RIR-point below the reference (his real recoverability
+                           # from failure work). Override per-athlete via engine params;
+                           # not a fixed law. At RIR 0 → 1+0.06·5 = 1.30× fatigue.
+
+
+def proximity_fatigue_factor(sets, coeff: float = EFFORT_COST_PRIOR,
+                             ref_rir: float = EFFORT_REF_RIR) -> float:
+    """Volume-weighted mean proximity-to-failure fatigue multiplier (>= 1.0) for a
+    session's sets. Lower RIR (closer to failure) → higher fatigue; sets at RIR >=
+    ref_rir add no extra fatigue. A set missing RIR defaults to failure (RIR 0),
+    matching the rest of the ingest. `coeff` is a learnable per-person prior, not a
+    constant. Returns 1.0 for a session with no countable volume."""
+    total_vol, weighted = 0.0, 0.0
+    for s in (sets or []):
+        if s.get("completed") is False:                # skip uncompleted sets
+            continue
+        try:
+            weight = float(s.get("weight") or 0)
+        except (ValueError, TypeError):
+            continue
+        vol = weight * _parse_reps(s.get("reps"))      # tolerant of "8-12" ranges
+        if vol <= 0:
+            continue
+        rir_raw = s.get("rir")
+        try:
+            rir = float(rir_raw) if rir_raw not in (None, "") else float(FAILURE_RIR)
+        except (ValueError, TypeError):
+            rir = float(FAILURE_RIR)                    # malformed RIR → failure default
+        prox = max(0.0, ref_rir - rir)                 # effective-reps proximity
+        factor = 1.0 + max(0.0, coeff) * prox          # >= 1.0, never discounts load
+        total_vol += vol
+        weighted += vol * factor
+    if total_vol <= 0:
+        return 1.0
+    return weighted / total_vol
+
 # Canonical exercise names (collapse case/plural/spacing dups).
 ALIASES = {
     "bench": "Bench Press",

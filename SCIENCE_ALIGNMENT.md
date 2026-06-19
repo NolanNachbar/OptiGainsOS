@@ -1,20 +1,345 @@
 # Science.md Alignment Report
 
-How OptiGainsOS's actual implementation maps to the engines specified in `Science.md`, and where the **frontend cannot close the gap alone** (engine/backend work). Page-fixable gaps were addressed in the UX/UI fix pass; this document is the report-only backlog.
+How OptiGainsOS's actual implementation maps to the engines specified in `Science-Unified.md` (the merged source-of-truth spec, which superseded `Science.md` + `sciencev2.md` on 2026-06-18), and where the **frontend cannot close the gap alone** (engine/backend work). Page-fixable gaps were addressed in the UX/UI fix pass; this document is the report-only backlog.
 
-> Framing: `Science.md` describes an idealized research backend (Go microservices, Kafka, OR-Tools CP-SAT, PyMC/JAX, GRPO RL, gRPC). This repo is React+Vite+Supabase + simplified Python in `scripts/engine/`. "Alignment" means the app faithfully surfaces each engine's *intended user-facing output* — not that it reimplements that infrastructure.
+> Framing: `Science-Unified.md` describes an idealized research backend (Go microservices, Kafka, OR-Tools CP-SAT, PyMC/JAX, GRPO RL, gRPC). This repo is React+Vite+Supabase + simplified Python in `scripts/engine/`. "Alignment" means the app faithfully surfaces each engine's *intended user-facing output*, not that it reimplements that infrastructure.
 
 ## Downregulation policy (binding: read before building any fatigue, deload, or auto-regulation surface)
 
-The athlete trains hard and rejects scheduled/calendar deloads as a programming crutch. There is no competition or event, so **no peaking taper applies** anywhere in this app. Any surface that reduces prescribed work must follow the rules below. Build to this policy, not to a generic "readiness app" pattern that backs the user off on a single bad HRV reading.
+The athlete trains hard and rejects scheduled/calendar deloads as a programming crutch. There is no competition or event, so **no peaking taper applies** anywhere in this app. The athlete also **trains to failure / 0 RIR by choice**: the engine does NOT raise his RIR or push him off failure as a fatigue lever. It accounts for the extra fatigue that failure generates (see Engine change E2) and manages it by trimming VOLUME. Any surface that reduces prescribed work must follow the rules below. Build to this policy, not to a generic "readiness app" pattern that backs the user off on a single bad HRV reading.
 
 1. **Train-as-prescribed is the default.** Downregulation is the earned exception, never the resting posture. A surface that nudges "take it easy" on weak or single-signal evidence is a defect, not a feature.
-2. **Never auto-drop the bar load from a readiness/HRV signal.** Load is the strength/hypertrophy stimulus. When fatigue is genuinely confirmed the levers are volume (cut sets) and RIR (move one step from failure), holding intensity. A `DELOAD` command must mean "cut ~30-50% of volume and add ~1 RIR for 3-5 days at held load," never "lower the weight."
+2. **Volume is the only downregulation lever. Never drop the bar load, never force RIR up.** Load is the stimulus and the athlete chooses to train to failure. When fatigue is genuinely confirmed, the engine cuts SETS (and may insert rest), holding both load and his chosen proximity-to-failure. A `DELOAD` concept must mean "cut ~30-50% of volume for 3-5 days at held load and held RIR," never "lower the weight" and never "back off to higher RIR."
 3. **Require converging, sustained evidence before any cut.** At least two independent signals (e1RM or rep-velocity decrement AND autonomic suppression: HRV down with RHR or all-day stress up), sustained 3-5 days. One signal or one day is noise. This matches `HYSTERESIS_DAYS = 3` and the existing gate in `strength_progression.process_strength_progression` (slope < -0.10 AND hrv_z_3d < -1.2).
 4. **Thresholds are learned priors, not fixed law.** The hardcoded z-score limits (`HRV_Z_OVERREACH` etc. in `guardrail.py`) are population defaults the Athlete Learning Engine should refine toward this athlete's tolerance. If his data shows he progresses through a given dip, the engine learns to stop flagging it and converges to his recoverable ceiling. Do not surface a fixed textbook threshold as if it were truth.
 5. **Keep exactly one mandatory reduction: the slow-tissue backstop.** If e1RM declines over *weeks* with sustained autonomic suppression, force a *volume* cut (never a load drop) as non-functional-overreaching / connective-tissue protection. This is the catch-the-fall rail the good programming is meant to never trigger, not a routine event. Frame it to the user as what lets him train hard without self-policing.
 
 No scheduled deloads. No peaking taper. Any "deload" concept elsewhere in this doc (the `/train` and `/workout-detail` progression commands, the `DELOAD` daily-prescription label in Model Orchestration) must conform to rules 2-5.
+
+## Engine behavior changes (make it train the way Nolan wants)
+
+This section is the actionable backend backlog. It is grounded in an audit of the
+current Python engine (file:line refs below) and in two verified deep-research passes
+(`RESEARCH_VS_SCIENCE_2026-06.md`). `Science-Unified.md` is the merged source-of-truth
+spec; this section is the diff between that target and what the code does today.
+
+Standing goals: **hypertrophy is primary, pursued through SBD (squat/bench/deadlift),
+with concurrent strength as a real secondary goal.** Train-to-failure stays. No
+deloads. Landmarks/thresholds are learnable priors, not laws.
+
+### [DONE] E1 [high]: Flip the default goal priorities to hypertrophy-primary
+- *Current:* `allocator.default_goal_priorities` (allocator.py:67-71) returns
+  `{strength 0.40, hypertrophy 0.30, pst 0.30}` for the default phase, weighting
+  strength above hypertrophy. This contradicts the stated primary goal.
+- *Change:* hypertrophy should carry the top weight but PST/endurance must stay
+  MAINTAINED, not crushed (the athlete wants concurrent PST readiness toward a soft
+  end-of-August 2026 target). Use e.g. `{hypertrophy 0.40, strength 0.30, pst 0.30}` for
+  the default phase: hypertrophy-led, strength and PST held. Keep the BUD/S-prep branch as
+  is. The run plan should build toward a maintainable PST readiness plateau by August
+  WITHOUT a peak/taper (steady build, not spike), consistent with the no-peaking policy.
+  Resolved (concurrent-training research, 2026-06-18, verified): TRUE YEAR-ROUND CONCURRENT,
+  not blocks. Keep ONE blended weight set (no rotating phase profiles); both adaptations
+  advance together at these volumes. See E13 for the concurrent-structure engine changes.
+
+### [DONE] E2 [high]: Model the fatigue cost of training to failure
+- *Done:* `log_ingest.proximity_fatigue_factor` scales the volume-fallback session
+  TSS (Banister fatigue channel) by proximity to failure (RIR<5 → >1.0×, 0 RIR →
+  1.30×), so a 0-RIR and a 3-RIR session no longer cost the same. Multiplier is
+  always ≥1.0 (never discounts load / raises RIR). Coeff `EFFORT_COST_PRIOR=0.06` is
+  a wide prior, override-able per athlete via the `effort_cost_coeff` engine param
+  (online learning of it deferred, consistent with RLS/cellular being persisted-but-
+  inert). Garmin EPOC path untouched (already a measured load). Tolerant of string
+  reps / malformed RIR.
+- *Current:* Fatigue accrues only from a fixed per-session TSS constant
+  (`mpc_prescriber.ACTION_TSS`, STRENGTH=70, mpc_prescriber.py:91-102) fed into the
+  2-state Banister model. RIR is used ONLY to back-calculate e1RM and scale load
+  (`strength_progression.compute_e1rm` 18-20; `session_generator` 1311). There is NO
+  effective-reps term and NO proximity-to-failure fatigue term: a 0-RIR set and a
+  3-RIR set on the same lift produce identical fatigue (audit dim 4).
+- *Change:* add a per-set/per-session fatigue contribution that scales with proximity
+  to failure (lower RIR → higher fatigue), feeding the Banister fatigue channel and/or
+  the recovery budget. This is what makes "he trains to failure, the engine manages it
+  by trimming volume" actually function. Failure is preserved; its cost becomes
+  visible to the allocator. Effort-cost should be a learnable coefficient (his real
+  recoverability from failure work), not a fixed constant.
+
+### [DONE] E3 [high]: Replace the hard MRV ceiling with diminishing-returns + recovery-cost
+- *Done:* Greedy `allocator` now uses NET marginal value = `marginal_benefit` (small-but-
+  positive past MRV, no cliff) − convex `recovery_cost` (≈0 below MAV, rising past it,
+  scaled by `recovery_cost_mult`). Hard `>= mrv: continue` replaced by a numeric backstop
+  at `mrv·SOFT_MRV_OVERSHOOT` (1.30). MILP `_milp_solve` hard `sum<=MRV` replaced by a
+  two-tier piecewise-concave overshoot (overshoot var `o[i]`, discounted at OVERSHOOT_VALUE).
+  `plan_week`/`allocate` thread `recovery_cost_mult` (default 1.0; E9 wires the deficit/
+  fatigue value). learners.py MRV-down ratchet relabeled recovery-limited (not inverted-U).
+- *Current:* HARD cap. `allocator.allocate` stops funding a muscle at MRV
+  (allocator.py:145-146); `marginal_value` returns 0 at/above MRV (allocator.py:111-122);
+  the fallback MILP enforces `sum(sets) <= MRV` (program_synthesis.py:158-165). The
+  marginal-value curve already tapers (1.0 → 0.80 → 0.20 → 0.0), which is the right
+  *shape*, but the hard zero at MRV is the cliff the evidence does not support
+  (inverted-U refuted; no plateau to ~25 sets).
+- *Change:* let marginal value stay small-but-positive past the old MRV, offset by an
+  explicit rising **recovery-cost** term (informed by E2's fatigue accounting), so the
+  allocator naturally stops adding volume when the recovery cost outweighs the
+  shrinking benefit, not at a fixed wall. Relax/remove the MILP hard cap to match.
+- *Reframe (learners.py:75-78):* the MRV-down ratchet (stall + soreness ≥ 7 → MRV−1)
+  is defensible but should be documented as a **recovery-limited** signal ("cost too
+  high here"), NOT as "more volume reverses gains." Keep it; relabel the rationale.
+
+### [DONE] E4 [med]: Separate the strength and hypertrophy volume curves
+- *Done:* The blended `w[m]` no longer drives volume all the way up. New
+  `strength_weights` exposes the strength share; `effective_weight`/`marginal_value`
+  saturate that share past `STR_SAT_SETS≈5` (exp decay), so the fast-saturating strength
+  demand is funded from the early SBD sets (credited to both goals below saturation) and
+  hypertrophy/PST carry the high-volume tail. Verified: a strength-heavy muscle yields
+  less marginal value than a pure-hypertrophy muscle of equal blended weight past
+  saturation. Strength prescription stays RIR-insensitive (volume-curve change only).
+- *Current:* a SINGLE combined weekly set target per muscle. `allocator.goal_weights`
+  (allocator.py:93-108) folds strength/hypertrophy/pst into one `w[m]`; one scalar
+  target per muscle (audit dim 3). SBD compounds already get FULL multi-muscle set
+  credit (muscle_map.py:20-106; audit dim 8), which is correct for concurrent work.
+- *Change:* recognize the two curves have different shapes (strength saturates ~4-6
+  hard sets on the SBD prime movers; hypertrophy keeps climbing). The allocator should
+  fund the small, fast-saturating strength requirement from the SBD work first, then
+  let hypertrophy volume climb on top, crediting the SBD sets toward both. This is how
+  "hypertrophy-primary via SBD + concurrent strength" becomes real rather than a single
+  blended number. Strength prescription must stay RIR-insensitive (research: RIR has a
+  null relationship with strength); only hypertrophy benefits from proximity to failure.
+
+### [DONE] E5 [med]: Gate volume/MRV convergence to mesocycle timescales; fix Banister personalization
+- *Done:* Added `MESOCYCLE_MIN_OBS=8` floor to BOTH MRV maturity sites (`update_mrv`,
+  `apply_mrv_observation`): a volume parameter now requires CI-separation AND ≥8 weekly
+  observations to be declared mature, so a low-`obs_var` designed test (which tightens the
+  CI in ~2 weeks) can no longer mature a slow hypertrophy signal prematurely. F1 maturity
+  still reached (~week 9). Frequency learner already gated on `FREQ_MIN_N`.
+- *Banister personalization:* already DISABLED as a Kalman consumer (CONVERGENCE_AUDIT F4,
+  documented at compute_athlete_state.py:1104-1117 — under-identified, kept persisted but
+  NOT consumed). Per E5's "or stop presenting its output as learned," that disable already
+  resolves it; re-enabling needs a structural joint state-parameter estimator (out of scope).
+- *Current:* MRV/frequency learners are Kalman-style Normal posteriors with a maturity
+  gate (95% CI excludes prior; learners.py:86, K_MAX=0.45). RLS personalization of the
+  Banister constants (rls_learner.py) is guarded to stay near population defaults and is
+  effectively **advisory/non-functional** (identifiability problem, audit dim 7).
+- *Change:* verify the maturity gate + `OBS_VAR` cannot let a hypertrophy-volume
+  parameter "mature" on under ~8-12 weeks of noisy data (hypertrophy signal is slow;
+  research). Either make Banister personalization actually work (structural/EKF joint
+  state-parameter estimation, as Science.md originally specified) or stop presenting its
+  output as learned.
+
+### [DONE] E6 [low / doc]: Frequency table is stale; code is already correct
+- *Done:* No code change (the allocator already derives frequency from set target ÷
+  per-session cap with a learned override). The fixed per-muscle peak-frequency table is
+  already ABSENT from `Science-Unified.md` — the merge removed it (changelog C3; see lines
+  ~53, ~214 "the per-muscle peak-frequency table is omitted entirely", ~1265). Nothing to
+  remove; satisfied by the unified spec.
+- *Current:* code DERIVES frequency from set target ÷ per-session cap with a learned
+  override (`allocator.frequency_targets` 157-182; bandit in learners.py 117-143). This
+  already matches the evidence (frequency is a volume-distribution lever, not a driver).
+- *Change:* none in code. Remove the fixed per-muscle peak-frequency table from the
+  science spec (handled in `Science-Unified.md`); it misrepresents how the engine works.
+
+### [DONE] E7 [note]: State estimation is 2-state Banister, not the 4-state EKF the spec claims
+- *Done (doc):* Added an "Implementation status (E7)" callout to `Science-Unified.md` §1
+  (State Estimation) stating the shipped engine is the 2-state Banister Kalman, the DEKF /
+  decoupled systemic-vs-structural split is aspirational, and the RLS parameter learner is
+  disabled-as-consumer (F4). Per the recommendation, the doc is aligned to reality and the
+  EKF is deferred. No code change.
+- *Current:* `banister_kalman.py` is a 2-state (fitness/fatigue) model; the decoupled
+  systemic-vs-structural 4-state EKF in Science.md is NOT implemented (audit divergence 1).
+  This is the root cause of several frontend "decoupled readiness / confidence" gaps below.
+- *Decision needed:* either build the EKF or align the spec to the Banister reality.
+  Given the priorities above, this is lower urgency than E1-E4; recommend aligning the
+  doc now and deferring the EKF.
+
+### [DONE] E8 [med]: Enforce bounded self-experimentation dosage (the "how much to experiment" policy)
+- *Done:* `select_exploration_parameter`/`get_exploration_delta` gained an `eligible`
+  filter; the orchestrator now (a) suppresses the bandit probe entirely while a
+  volume-tolerance controlled test is active (one probe at a time), and (b) restricts
+  eligible arms to muscles whose MRV posterior is still WIDE (not `mature` = Clues/Patterns
+  phase), so as posteriors converge to Established the eligible set shrinks and exploration
+  DECAYS to silence (empty eligible → no probe). Probe magnitude stays +1 set (recovery-safe);
+  the hazard halt is unchanged. Probe computation moved after the landmark/test state is known
+  so the gate sees fresh maturity flags. Mesocycle window: maturity now needs ≥8 weeks (E5),
+  which is what gates an arm out of eligibility.
+- *Current:* `exploration_manager.py` + `controlled_tests.py` run probes and halt on
+  `hazard_score > 0.6` (audit), but there is no explicit guarantee of one-probe-at-a-time,
+  no uncertainty gate that decays exploration as posteriors mature, and no enforced
+  mesocycle evaluation window.
+- *Change:* implement governing constraint 6 in `Science-Unified.md`: at most one active
+  probe (one muscle by one variable) with everything else held at known-good; gate probe
+  initiation on posterior width (explore only in the Clues phase, lock at Established);
+  decay exploration as the model converges; bound probe magnitude to a recovery-safe
+  range; keep the hazard-halt; use an 8-12 week probe/evaluation window. This is the
+  direct answer to "how much should the engine experiment on me": rarely, one thing at a
+  time, aggressively early and near-silent once converged.
+
+## Data-flow changes (make ingested data actually drive the engine)
+
+From the data-ingestion audit. Most inputs are properly used (HRV, RHR, sleep score, body
+battery, Garmin stress, training load, logged sets/RIR/e1RM, soreness, energy, bodyweight
+trend all feed real engine paths). The items below are the exceptions.
+
+### [DONE] E9 [high]: Wire the nutrition modulation outputs into the engine (currently dead code)
+- *Done:* (1) `tau_fat_adj` now feeds the Kalman fatigue-decay: nutrition modulation moved
+  BEFORE the daily Kalman step, and `BanisterKalman.predict/step` gained a TRANSIENT
+  `tau_fat_eff` (deficit slows clearance for that step only — never overwrites/compounds the
+  learned base tau_fat). (2) `mrv_adj`'s deficit feeds the allocator via E3's
+  `recovery_cost_mult = 1/(1−ETA·deficit_ratio)` in generate_weekly_program → plan_week,
+  complementary to the systemic r_phase budget cut (mult bounded ≤1.356 at max deficit).
+  Volume-only; bar load/RIR untouched. Safe when nutrition data absent (→ neutral).
+- *Current:* `nutrition_modulator` computes `tau_fat_adj` (deficit slows fatigue clearance)
+  and `mrv_adj` (`base_mrv_sets * (1 - 0.75 * deficit_ratio)`), writes them to
+  `athlete_state` for the UI, but **neither is consumed**. The Kalman filter always uses
+  static/RLS `tau_fat` (compute_athlete_state.py ~1149), and the session generator reads
+  only the nutrition *phase* (to suppress the MRV-down ratchet), never `mrv_adj`. The
+  `0.75 * deficit_ratio` formula is effectively dead.
+- *Change:* feed `tau_fat_adj` into the Kalman fatigue-decay update and feed `mrv_adj`
+  into the volume allocator's recovery-cost term (E3), so "a caloric deficit compresses
+  recoverable volume" is real rather than displayed. This is the highest-value data fix:
+  the deficit/recovery coupling the spec promises does not currently happen.
+
+### [DONE] E10 [med]: Harden the TDEE / trend-weight method
+- *Done:* New pure, tested `engine/tdee.py`; `compute_athlete_state.estimate_tdee` delegates
+  to it. Implements all five points: (1) EWMA trend weight (alpha~0.10/day) replaces the raw
+  linear regression in `compute_nutrition` (slope taken as OLS of the smoothed series to keep
+  magnitude unbiased); (2) rolling-window `adaptive_tdee` re-derived each call (captures
+  adaptive thermogenesis without hard-coding β_AT); (3) composition-aware Forbes energy density
+  `p·1820+(1-p)·9440`, `p=C/(C+F)`, C=10.4kg, replacing the fixed ~3500 kcal/lb; (4)
+  early-transient discount (`energy_density_kcal_per_lb(..., weeks_in_phase)`) so the wk1-2
+  water/glycogen step isn't booked as fat; (5) the 25% trust GATE replaced by a trust BLEND +
+  sanity CLAMP and a learned `intake_bias` term anchored on the trend-weight signal (logs are
+  corrected, never discarded). Guards bodyweight≤0 → clean prior fallback. Feeds the E9
+  nutrition modulation. Refinement available: pass real physique bodyfat (currently an 18%
+  prior) and a phase-start date for `weeks_in_phase` at the call site (both default safely).
+- *Current:* `estimate_tdee` blends a 15.5 kcal/lb bodyweight prior 50/50 with an
+  energy-balance estimate using a 500 kcal/lb constant, and falls back entirely to the
+  prior when logged calories sit outside 75-125% of it. Weight trend is a plain linear
+  regression over 3-14 entries (no exponential smoothing).
+- *Change (concrete spec, from verified research R1):* the single fixed constant is
+  indefensible because the energy density of weight change is composition-dependent and
+  time-varying (fat ~4280 kcal/lb / 9440 kcal/kg vs lean ~825 kcal/lb / 1820 kcal/kg, a
+  ~5x gap; short-window 2-week change is ~84% fat-free mass at only ~2380 kcal/kg).
+  Reference model: Hall/NIDDK dynamic energy-balance (Lancet 2011), validated to -0.47 kg
+  bias over 2 years. Implement:
+  1. **Trend weight:** replace the linear regression with an EWMA on daily scale weight,
+     alpha ~0.10/day (~7-10 day half-life; the public Hacker's-Diet analog of MacroFactor's
+     proprietary recency-weighted average). Derive the slope from the EWMA series.
+  2. **Adaptive TDEE:** rolling-window (trailing ~14-28 days) reconciliation:
+     `TDEE = mean_intake - (delta_trend_weight * energy_density) / days`. Re-derive every
+     window so adaptive thermogenesis (~120 kcal/day, beta_AT=0.14, tau_AT=14d) is captured
+     automatically without hard-coding it.
+  3. **Composition-aware energy density (not a constant):** use the Forbes partition
+     `p = C/(C+F)`, C=10.4 kg, F = current fat mass, to split weight change into lean
+     (~1820 kcal/kg) and fat (~9440 kcal/kg): `density = p*1820 + (1-p)*9440`. A lean
+     lifter partitions more change to lean, so the effective density is lower in a cut and
+     a real consideration in a bulk.
+  4. **Early-transient handling:** on a phase change (deficit onset, refeed, carb/sodium
+     swing) discount or widen-smooth the weight-trend->energy conversion for ~1-2 weeks, or
+     carry a separate glycogen/water compartment (Hall: ~500 g glycogen, 2.7 g water per g),
+     so the week 1-2 water step is not attributed to fat. Energy density ramps from ~2380
+     (wk2) toward ~6000 kcal/kg by ~wk6 of a sustained deficit.
+  5. **Replace the 25% trust gate:** under-logging is the dominant error channel (ΔEI
+     uncertainty explains ~48-61% of individual prediction variance). Do NOT discard logs
+     and fall back to a static prior. Treat logged intake as a noisy observation with a
+     **learned per-person bias term** (systematic under-report), and anchor TDEE on the
+     weight-trend signal (which integrates true energy balance). A Kalman/Bayesian
+     reconciliation fits and matches the learned-priors stance.
+- *Caveats / limits:* all source studies are in overweight/weight-stable adults under
+  restriction, not lean trained lifters in a surplus, so the bulk/recomp energy-density
+  numbers are extrapolations from the Forbes function. Recomposition (simultaneous fat
+  loss + muscle gain) breaks simple energy-balance bookkeeping outright; during recomp/
+  lean-bulk, lean more on intake-vs-weight-stability than on composition inference. R1
+  sources: Hall Lancet 2011 + NIDDK Web Appendix; Heymsfield/Thomas Obesity Reviews 2014
+  (PMC3970209); Bhutani/Schoeller 2017 (PMC5506524); Muller/Heymsfield Metabolism 2012;
+  Guo/Hall AJCN BWP validation; MacroFactor published method (constants proprietary).
+
+### [DONE] E11 [low]: Resolve collected-but-unused signals (use or drop)
+- *Done — per field:* `sleep_duration_min` is now USED — new `engine/sleep_debt.py`
+  (`sleep_debt_hours`, `is_poor_night`); `compute_recovery` surfaces `sleep_debt_7d_hours`
+  and `_consecutive_poor_sleep` now prefers actual duration (a night < 6h) over the 0-100
+  score (score kept as fallback). `tss_cycling`/`tss_swim` → cycling/swim DISTANCE is now
+  consumed by the modality-aware interference (E13). Remaining fields decided as DROP-
+  candidates (no active wiring, left collected for possible future use): `vo2max_cycling`,
+  `steps`, `active_calories`, `tss_run`, Apple-Health `ah_*`, `daily_readiness.mood`, and
+  the redundant scalar `daily_readiness.stress` (Garmin `stress_score` is the one used).
+  Dropping their collection is a frontend/DB change out of engine scope.
+- *Current, never read by any engine:* `sleep_duration_min`, `vo2max_cycling`, `steps`,
+  `active_calories`, `tss_run/cycling/swim`, Apple-Health `ah_*` fields, `daily_readiness.mood`,
+  and a redundant scalar `daily_readiness.stress` (Garmin `stress_score` is used instead).
+  `food_entries.carbs/fats` feed only the weekly meal planner, not the daily compute.
+- *Change:* decide per field. `sleep_duration_min` is the obvious one to actually use
+  (true sleep debt vs. the 0-100 sleep_score). Drop or stop collecting the rest, or wire
+  them deliberately. Don't leave ingested-but-dead fields implying coverage that isn't there.
+
+### [DONE] E12 [note]: Reconcile the spec to the sensing reality
+- *Done (doc):* Added an "Implementation status / sensing reality (E12)" callout to
+  `Science-Unified.md` §5 (Fatigue Detection): marks respiratory_rate, skin_temperature, and
+  movement/bar velocity as uncollected/future hardware; states the engine uses HRV/RHR as
+  Kalman noise-scalers + z-score gates and EWMA-ACWR/hazard (not the fixed 0.35/0.15/0.20
+  linear blend); notes true sleep debt now derives from logged duration (E11). The fixed
+  weighting is NOT forced into code. No code change.
+- *Current:* `Science-Unified.md` still inherits sensor claims the app does not collect
+  (`respiratory_rate`, `skin_temperature`, `movement_velocity` / bar velocity), and a
+  fixed fatigue-weighting (lnRMSSD 0.35, RHR 0.15, sleep debt 0.20). The engine instead
+  uses HRV/RHR as Kalman noise-scalers and z-score gates, which is more principled than a
+  fixed linear blend.
+- *Change (doc):* update `Science-Unified.md` to describe the noise-scaling/z-score approach
+  actually used and to drop the uncollected sensors (or mark them as future hardware).
+  Do not force the 0.35/0.15/0.20 weighting into code; the current approach is defensible.
+
+## Concurrent-training structure (E13, from verified research 2026-06-18)
+
+The hypertrophy + endurance goal is pursued TRUE CONCURRENTLY year-round (resolved; see E1).
+These changes make the engine manage the interference instead of treating running as one
+generic penalty.
+
+### [DONE] E13 [med]: Modality-aware interference, lift-first scheduling, polarized base, maintenance levers
+- *Done:* (1) Modality-weighted interference: `MODALITY_INTERFERENCE` (running 1.0 ≫
+  cycling 0.25 > swimming 0.10; continuous>HIIT) + `apply_endurance_interference`;
+  generate_weekly_program now queries cycling/swim km and feeds a modality dict, so the
+  bike/pool aerobic base barely dents leg MRV. `apply_running_interference` kept as
+  backward-compat wrapper. (2) Duration: run sessions carry `max_minutes` caps (continuous
+  capped longer than short hard intervals). (3) Lift-before-endurance: `evaluate_two_a_day_split`
+  returns an explicit `LIFT_BEFORE_ENDURANCE` sequence; caller stamps lift AM / cardio PM on
+  both halves. (4) Polarized 80/20: `build_run_plan` floors hard quality at a maintenance dose
+  (never zero), caps it, scales by PST gap (no taper), tags intensity. (5) Maintenance floors:
+  leg MRV floored at mev+1 (running never zeros legs); run quality floored. Partial: full
+  cross-day hard-leg/hard-run separation in the MPC sequencer is not deepened (the two-a-day
+  6h separation + lift-first ordering covers the shared-day case).
+- *Current:* `hypertrophy_volume.apply_running_interference` applies one generic per-km
+  lower-body MRV reduction (`RUNNING_OMEGA`); the engine does not distinguish endurance
+  MODALITY (running vs cycling vs swimming) or continuous vs HIIT running. `build_run_plan`
+  is already "lightweight polarized," which is correct. The 6h-separation / two-a-day logic
+  exists but does not encode lift-before-endurance ordering or a maintenance-dose floor.
+- *Changes:*
+  1. **Modality-weighted interference:** running interferes with leg hypertrophy far more
+     than cycling (Type I fiber SMD -0.81 vs no significant cycling effect); swimming is
+     mechanistically low-interference (non-weight-bearing, concentric-biased). Weight the
+     interference term by modality (running high, cycling low, swimming lowest) and make
+     CONTINUOUS running cost more than HIIT/PST-pace running. Prefer cycling/swimming for the
+     high-volume aerobic base (also 2 of 3 Ironman disciplines).
+  2. **Duration over frequency:** interference scales most steeply with session DURATION, so
+     penalize long continuous aerobic sessions more than session count. Cap continuous-run
+     duration; keep aerobic sessions short.
+  3. **Lift-before-endurance on shared days:** protects ~6.9% lower-body dynamic strength at
+     no cost to hypertrophy/aerobic. Encode in the two-a-day / scheduling sequence; keep hard-
+     leg and hard-run days separated.
+  4. **Polarized 80/20 run/aerobic intensity:** mostly easy Zone 2 (serves the Ironman base),
+     small hard fraction at threshold/VO2 (PST speed). `build_run_plan` already leans this way;
+     make the 80/20 split explicit and scale the hard fraction by the PST readiness gap, not by
+     a peak/taper.
+  5. **Maintenance-dose floors (the key to concurrent-without-blocks):** VO2max holds on ~2
+     quality sessions/wk at maintained intensity; muscle holds on 1-3 hard sets 2-3x/wk. When
+     one quality is de-emphasized, drop it to its maintenance floor rather than zero. Under
+     concurrent fatigue (his train-to-failure, no-deload style), the engine cuts VOLUME toward
+     these floors as the downregulation lever, never load, never RIR (ties to the
+     Downregulation policy and E2/E3).
+- *Caveats:* most sources are recreationally trained, not resistance-trained hybrid athletes;
+  swimming's low-interference profile is mechanistic inference, not measured; the running-vs-
+  cycling subgroup rests on ~3 studies. Treat modality weights as learnable priors (per the
+  learned-priors principle), not fixed constants. R2 sources: umbrella review PMID 41762427
+  (2026); Lundberg/Schumann 2022 (PMC9474354); Wang/Lu 2024 NMA (S1728869X23000679); Eddens
+  2017/2018 (PMC5752732); Hickson 1981 (PMID 7219129); Androulakis-Korakakis 2020 (PMID
+  31797219); Stoggl/Sperlich 2014 (fphys.2015.00295).
 
 ## Engine → implementation map
 

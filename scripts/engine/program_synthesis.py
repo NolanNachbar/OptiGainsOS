@@ -29,6 +29,16 @@ MUSCLE_GROUPS = [
 # place can't silently diverge; the compound-lift bias below is synthesis-specific.
 from engine.athlete_profile import MUSCLE_EMPHASIS as _EMPHASIS
 
+# E3: the MILP no longer enforces a HARD per-muscle `weekly sets <= MRV` ceiling
+# (the refuted inverted-U cliff). Instead each muscle may exceed MRV up to a soft
+# recovery-limited ceiling, with the overshoot sets DISCOUNTED in the objective — a
+# rising recovery-cost penalty (two-tier piecewise-concave) rather than a wall. The
+# binding global budget (7·max_daily) means this yields real diminishing returns:
+# productive sets go to high-priority muscles first, overshoot is funded only when
+# its discounted value still beats the alternative.
+SOFT_MRV_OVERSHOOT = 1.30   # [ENG] soft ceiling: weekly sets may reach MRV·this
+OVERSHOOT_VALUE    = 0.25   # [ENG] worth of an above-MRV set vs a productive one
+
 _DEFAULT_WEIGHTS = {m: 1.0 for m in MUSCLE_GROUPS}
 _DEFAULT_WEIGHTS.update({m: w for m, w in _EMPHASIS.items() if m in _DEFAULT_WEIGHTS})
 # Synthesis-only compound-lift bias (the big movers for the goal lifts).
@@ -124,30 +134,38 @@ class ProgramSynthesisEngine:
         """
         N  = self.n_muscles
         D  = 7
-        NV = N * D + D  # total decision variables
+        # Variable layout: x[i,d] (N·D) | z[d] (D) | o[i] (N overshoot vars). E3: o[i]
+        # is the per-muscle volume ABOVE MRV; it is discounted in the objective, so the
+        # hard MRV wall becomes a soft, penalised boundary.
+        Z0 = N * D            # first z index
+        O0 = N * D + D        # first overshoot index
+        NV = N * D + D + N    # total decision variables
 
         # ── Objective: maximise weighted volume (milp minimises) ──────────────
         w = np.array([self.weights.get(m, 1.0) for m in self.muscle_groups])
         # Repeat weights across 7 days
-        c_x = np.tile(-w, D)          # shape (N*D,)
-        c_z = np.zeros(D)             # binary variables don't contribute
-        c   = np.concatenate([c_x, c_z])
+        c_x = np.tile(-w, D)               # shape (N*D,) — every set earns its weight
+        c_z = np.zeros(D)                  # binary variables don't contribute
+        # Each overshoot set both increments x (earning -w) AND raises o; charging
+        # +w·(1-OVERSHOOT_VALUE) on o nets it down to OVERSHOOT_VALUE·w (recovery cost).
+        c_o = w * (1.0 - OVERSHOOT_VALUE)  # shape (N,)
+        c   = np.concatenate([c_x, c_z, c_o])
 
         # ── Variable bounds ───────────────────────────────────────────────────
         lb = np.zeros(NV)
         ub = np.empty(NV)
-        # x upper bounds: MRV per muscle (repeats across 7 days as per-day cap)
-        per_day_mrv = mrv_effective / D  # rough per-day limit used as soft cap
+        # x upper bounds: a single day may now reach the SOFT ceiling (no hard wall)
         for d in range(D):
             for i in range(N):
-                ub[d * N + i] = max(1.0, mrv_effective[i])  # daily can be at most full MRV (soft)
-        # z binary
-        ub[N * D:] = 1.0
+                ub[d * N + i] = max(1.0, mrv_effective[i] * SOFT_MRV_OVERSHOOT)
+        ub[Z0:O0] = 1.0                                   # z binary
+        for i in range(N):                                 # overshoot headroom per muscle
+            ub[O0 + i] = max(0.0, mrv_effective[i] * (SOFT_MRV_OVERSHOOT - 1.0))
 
         bounds = Bounds(lb=lb, ub=ub)
 
         # ── Integrality ───────────────────────────────────────────────────────
-        # 0 = continuous, 1 = integer
+        # 0 = continuous, 1 = integer (x, z, and o are all integer set counts)
         integrality = np.ones(NV)
 
         # ── Constraints ──────────────────────────────────────────────────────
@@ -155,11 +173,13 @@ class ProgramSynthesisEngine:
         constraint_lb   = []
         constraint_ub   = []
 
-        # 1. Per-muscle weekly sum <= MRV
+        # 1. Soft MRV: weekly sum - overshoot <= MRV  (o absorbs anything above MRV,
+        #    and o is penalised in the objective — the recovery-cost boundary, E3).
         for i in range(N):
             row = np.zeros(NV)
             for d in range(D):
                 row[d * N + i] = 1.0
+            row[O0 + i] = -1.0
             constraint_rows.append(row)
             constraint_lb.append(0.0)
             constraint_ub.append(float(mrv_effective[i]))
@@ -196,9 +216,9 @@ class ProgramSynthesisEngine:
             constraint_lb.append(0.0)
             constraint_ub.append(np.inf)
 
-        # 4. At least min_str_days with z_d = 1
+        # 4. At least min_str_days with z_d = 1  (sum the z block ONLY, not overshoot)
         row = np.zeros(NV)
-        row[N * D:] = 1.0
+        row[Z0:O0] = 1.0
         constraint_rows.append(row)
         constraint_lb.append(float(min_str_days))
         constraint_ub.append(float(D))
