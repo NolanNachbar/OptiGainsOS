@@ -1,5 +1,5 @@
 {
-  "round": 3,
+  "round": 5,
   "clean_sweeps": 0,
   "baseUrl": "http://localhost:5173",
   "history": [
@@ -70,6 +70,37 @@
       "fixes": "32 files: per-surface fixes redone on main tree + committed (90471a6a). Removed orphaned FloatingActionButton (relocated actions to mobile thumb strip); ScheduleAfterCreateModal + per-page density/coral/hierarchy.",
       "coverageWarning": "AUTH COMPROMISED: browse session expired mid-run; subagents BLOCKED by safety classifier from logging in. Fresh capture was thin (~31 shots vs round1 114); audits leaned on round-1 screenshots. Counts unreliable as convergence signal. NOT a valid clean sweep.",
       "resolution": "Orchestrator (main thread) now logs in + saves browse state (uiauth) before each round; capture agents never type passwords, load saved state if logged out. Round 3 = first fully-captured verification round."
+    },
+    {
+      "round": 3,
+      "counts": {
+        "blockers": 10,
+        "majors": 124,
+        "minors": 189
+      },
+      "cleanSweep": false,
+      "captureWasFull": true,
+      "captureShots": 36,
+      "fixes": "34 fixes (9 systemic + 25 per-surface) on main tree, all build-clean, committed 4282e086.",
+      "notable": [
+        "First fully-authed verification round (auth fix held).",
+        "Caught regression from round-2 FAB removal: Calculators/Weigh-In/Stream-Note only reachable from Body/Analyze mobile strip, not /today or /fuel (discoverability).",
+        "FUNCTIONAL BLOCKER (needs DB migration, not UI): Program Builder Create Program -> HTTP 400, programs table missing cycle_length column.",
+        "Dead code: workout-share-modal (showShareModal never set), fuel ?tab=wellness alias ignored."
+      ],
+      "trajectory": "Counts not converging via ruthless agnostic re-audit (R1 12/119/218, R2 thin 5/43/83, R3 full 10/124/189). Each agnostic pass re-litigates; full convergence to 0 blocker/major unlikely. Backstop at round 6 will produce the what-still-fails report."
+    },
+    {
+      "round": 4,
+      "counts": {
+        "blockers": 4,
+        "majors": 100,
+        "minors": 211
+      },
+      "cleanSweep": false,
+      "captureWasFull": true,
+      "fixes": "31 fixes (7 systemic + 24 per-surface), build-clean, committed.",
+      "trend": "blockers 12/10/4, majors 119/124/100 across full rounds 1/3/4 — serious issues declining; minors noisy (agnostic)."
     }
   ],
   "coverageGaps": [],
