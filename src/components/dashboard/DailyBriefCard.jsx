@@ -157,8 +157,11 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
             {(() => {
               // Expand the first coach section that actually has content so the
               // page delivers real coaching on load instead of all-collapsed stubs.
-              const firstWithContent = COACHES.find(c => json[c.key])?.key;
-              return COACHES.map(coach => (
+              // Only render coaches that actually have content — a section with
+              // no body is a dead toggle (chevron flips, nothing expands).
+              const withContent = COACHES.filter(c => json[c.key]);
+              const firstWithContent = withContent[0]?.key;
+              return withContent.map(coach => (
                 <CoachSection
                   key={coach.key}
                   coach={coach}

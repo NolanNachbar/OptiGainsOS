@@ -139,9 +139,10 @@ export default function TodayActions({ today, briefActions = [], isError = false
           </CardTitle>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => setAdding(v => !v)}
-            className="h-6 w-6 p-0"
+            className="h-11 w-11 p-0 -my-2"
+            aria-label="Add action"
           >
             <Plus className="w-4 h-4" />
           </Button>

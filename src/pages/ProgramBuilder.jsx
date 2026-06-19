@@ -516,6 +516,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
+            className="pb-24 md:pb-0"
           >
             {step === 0 && (
               <StepDetails
