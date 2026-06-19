@@ -12,7 +12,7 @@ const Dialog = ({ open, onOpenChange, children }) => {
       <div className="fixed inset-0 z-[10000]">
         {/* Full-screen scrim — covers the dock too (a modal owns the screen). */}
         <div
-          className="fixed inset-0 bg-black/60"
+          className="fixed inset-0 bg-black/75"
           onClick={() => onOpenChange(false)}
         />
         {/* Positioner: bottom sheet on mobile, centered dialog on desktop. */}
@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
       {...props}
     >
       {/* Mobile drag-handle affordance */}
-      <div className="md:hidden mx-auto -mt-2 mb-3 h-1 w-9 rounded-full bg-white/20" aria-hidden="true" />
+      <div className="md:hidden mx-auto -mt-2 mb-3 h-1 w-9 rounded-full bg-ink-muted/30" aria-hidden="true" />
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}

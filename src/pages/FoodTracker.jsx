@@ -808,7 +808,7 @@ const handleSaveMealTemplate = () => {
               const calsPct = Math.min(1, calsConsumed / calsGoal);
               const macroRows = [
                 { label: 'P', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
-                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--color-carb)' },
+                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
                 { label: 'F', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
               ];
               return (

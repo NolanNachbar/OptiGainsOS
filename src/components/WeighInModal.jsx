@@ -59,7 +59,7 @@ export default function WeighInModal({ open, onOpenChange }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
+        <DialogHeader className="text-left">
           <DialogTitle className="flex items-center gap-2">
             <Scale className="w-5 h-5" /> Log Your Weight
           </DialogTitle>

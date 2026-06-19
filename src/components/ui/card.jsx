@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 const Card = React.forwardRef(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`rounded-xl glass text-ink transition-all duration-300 ${className}`}
+    className={`rounded-2xl glass text-ink transition-all duration-300 ${className}`}
     {...props}
   />
 ));

@@ -1,99 +1,63 @@
-# OptiGains — Surface Inventory (UI Audit, mobile-first 390px)
+# OptiGains UI Audit — Surface Inventory
 
-Generated Phase 0. Every page + every overlay + how to reach it on mobile.
-Primary viewport: **390×844**. Login: nvtnachbar@gmail.com (real data account).
+Mobile-first (390px) audit coverage map. Source of truth for the convergence loop.
+Derived from `src/App.jsx`, `src/pages/*.jsx`, `src/components/Layout.jsx`, and an overlay grep.
 
-## Navigation model (src/components/Layout.jsx)
-5-section dock (mobile) / sidebar (desktop): **Today · Train · Fuel · Body · Analyze**.
-FAB present on all pages EXCEPT `/profile`, `/create-workout`, `/quick-workout`, `/program-builder`.
+- **baseUrl:** `http://localhost:5173` (pre-existing dev server; PWA service worker anchors this origin)
+- **Auth:** the browse session is already authenticated (login `nvtnachbar@gmail.com`)
+- **Browser:** `browse` is a single shared Chromium daemon → capture is serialized; audit/fix fan out.
+- **Total surfaces:** 26 pages + 39 overlays = **65**
 
----
+## Pages (26)
 
-## PAGES (real, user-reachable)
+| id | route | reach (mobile) |
+|----|-------|----------------|
+| login | /login | needs logout (authed nav redirects to /dashboard) |
+| forgot-password | /forgot-password | from /login (needs logout) |
+| reset-password | /reset-password | email recovery link (needs token) |
+| dashboard | /dashboard | default landing (Today dock) |
+| train-schedule | /train?tab=schedule | Train dock → Schedule |
+| train-library | /train?tab=library | Train dock → Library |
+| train-programs | /train?tab=programs | Train dock → Programs |
+| train-activity | /train?tab=activity-log | Train dock → Activity |
+| fuel-nutrition | /fuel | Fuel dock → Nutrition |
+| fuel-body | /fuel?tab=body | Fuel dock → Body |
+| fuel-hydration | /fuel?tab=hydration | Fuel dock → Hydration |
+| athlete-state | /athlete-state | Body dock → State |
+| recovery | /recovery | Body dock → Recovery |
+| physique | /physique | Body dock → Physique |
+| insights | /insights | Analyze dock → Daily Brief |
+| brief-history | /brief-history | Analyze dock → Brief History |
+| mind | /mind | Analyze dock → Mind |
+| career | /career | direct URL (unlinked in current IA) |
+| profile | /profile | header avatar tap |
+| weekly-schedule | /weekly-schedule | Train → Schedule → Edit week |
+| program-detail | /program/:id | Train → Programs → tap program (needs real id) |
+| program-builder | /program-builder | Train → Library → Create Program |
+| create-workout | /create-workout | FAB → Create Workout |
+| food-tracker | /food-tracker | FAB → Log Food |
+| quick-workout | /quick-workout | FAB → Quick Workout |
+| workout-detail | /workout-detail | Dashboard → Start Workout (needs params) |
 
-### Today section
-| # | Surface | Route | File | States to capture | Reach |
-|---|---|---|---|---|---|
-| P1 | Today (home) | `/today` | pages/Today.jsx | populated (default), workout-in-progress banner, rest-day, heatmap expanded | Dock |
-| P2 | Dashboard (legacy variant) | `/dashboard` | pages/Dashboard.jsx | populated, morning-checkin, secondary tabs | Deep link (nav maps to Today) |
+## Overlays (39)
 
-### Train section
-| # | Surface | Route | File | States | Reach |
-|---|---|---|---|---|---|
-| P3 | Train: Schedule | `/train?tab=schedule` | Train→WeeklySchedule | week nav, day cards, rest days | Dock |
-| P4 | Train: Library | `/train?tab=library` | Train→Workouts | populated, empty, filters | Sub-tab |
-| P5 | Train: Programs | `/train?tab=programs` | Train→Workouts | populated, empty | Sub-tab |
-| P6 | Train: Activity | `/train?tab=activity-log` | Train→Workouts | populated, empty | Sub-tab |
-| P7 | CreateWorkout | `/create-workout` | pages/CreateWorkout.jsx | empty form, strength vs cardio | Deep link (FAB hidden) |
-| P8 | ProgramBuilder | `/program-builder` | pages/ProgramBuilder.jsx | 4-step wizard | Deep link (FAB hidden) |
-| P9 | WorkoutDetail (logging) | `/workout-detail?...` | pages/WorkoutDetail.jsx | session-check, logging, heatmap, not-found | From Today/Schedule |
-| P10 | QuickWorkout | `/quick-workout` | pages/QuickWorkout.jsx | empty, prescribed, run-zones | FAB / prescribed card (FAB hidden) |
-| P11 | ProgramDetail | `/program/:id` | pages/ProgramDetail.jsx | enrolled, not-enrolled, not-found | Deep link |
+Grouped by host. Each reachable via the trigger noted in `STATE.json`.
 
-### Fuel section
-| # | Surface | Route | File | States | Reach |
-|---|---|---|---|---|---|
-| P12 | Fuel: Nutrition | `/fuel` | Fuel→FoodTracker | populated log, empty day, macro bars | Dock |
-| P13 | Fuel: Wellness | `/fuel?tab=wellness` | Fuel→Progress+Supplements | weight/water/supps | Sub-tab |
-| P14 | FoodTracker (direct) | `/food-tracker` | pages/FoodTracker.jsx | same as P12 + ?addFood=true | FAB |
+- **Global FAB / dashboard:** weigh-in-modal, calculators-modal, stream-note-modal, sonner-toast
+- **Food Tracker:** add-food-dialog, save-meal-template-dialog, meal-templates-sidebar, recipe-builder-panel, stats-setup-modal, barcode-scanner-modal, new-meal-dialog, meal-ideas-panel
+- **Fuel:** macro-goals-modal, week-plan-dialog, quick-capture-modal
+- **Workout logging:** workout-detail-share-modal, rest-timer-overlay, workout-logging-confirm-dialog
+- **Program builder / create:** program-duration-modal, schedule-after-create-modal
+- **Weekly schedule:** custom-split-selector-dialog
+- **Program detail:** program-enroll-dialog, program-restart-dialog, program-delete-dialog, program-workout-detail-modal, all-cycles-modal, all-progression-modal, confirm-pause-dialog
+- **Train library:** format-guide-dialog
+- **Mind:** mind-add-reading-dialog, mind-edit-reading-dialog, mind-delete-confirm-dialog
+- **Career:** career-add-app-dialog, career-edit-app-dialog, career-delete-confirm-dialog
+- **Physique:** physique-upload-modal, physique-compare-modal, physique-pose-edit-modal
+- **Profile:** profile-section-modal-mobile, profile-delete-confirm-dialog
 
-### Body section
-| # | Surface | Route | File | States | Reach |
-|---|---|---|---|---|---|
-| P15 | AthleteState | `/athlete-state` | pages/AthleteState.jsx | engine panel, load chart, heatmap, empty | Dock |
-| P16 | RecoveryDetail | `/recovery` | pages/RecoveryDetail.jsx | readiness/sleep/metrics tabs, empty | Sub-tab |
-| P17 | PhysiqueTracker | `/physique` | pages/PhysiqueTracker.jsx | camera, gallery, compare, empty | Sub-tab |
+## Known coverage gaps (logged, not silent)
 
-### Analyze section
-| # | Surface | Route | File | States | Reach |
-|---|---|---|---|---|---|
-| P18 | Insights (Daily Brief) | `/insights` | pages/Insights.jsx | brief populated, empty | Dock |
-| P19 | BriefHistory | `/brief-history` | pages/BriefHistory.jsx | list, expanded, empty | Sub-tab |
-| P20 | Mind | `/mind` | pages/Mind.jsx | reading/finished/paused/want tabs, empty | Sub-tab |
-| P21 | Career | `/career` | pages/Career.jsx | applied/screening/interview/offer/rejected, empty | Deep link (unlinked from nav) |
-
-### Account / Auth
-| # | Surface | Route | File | States | Reach |
-|---|---|---|---|---|---|
-| P22 | Profile | `/profile` | pages/Profile.jsx | collapsed sections, stats, forms | Avatar (FAB hidden) |
-| P23 | Login | `/login` | pages/Login.jsx | form, error | Public |
-| P24 | ForgotPassword | `/forgot-password` | pages/ForgotPassword.jsx | form, sent | Link from Login |
-| P25 | ResetPassword | `/reset-password` | pages/ResetPassword.jsx | form, access-denied | Email link |
-
-Legacy/redirected (NOT separate surfaces): Progress.jsx & Supplements.jsx → embedded in Fuel Wellness; Workouts.jsx → Train tabs; `/schedule`→`/weekly-schedule`; `/log`,`/supplements`→`/fuel?tab=wellness`.
-
----
-
-## OVERLAYS (every modal/sheet/popover/FAB)
-**SYSTEMIC: all dialogs use src/components/ui/dialog.jsx, which renders a CENTERED modal on mobile (not a bottom sheet).** Flagged for primitive-level fix.
-
-| # | Overlay | Type | File | Trigger on mobile |
-|---|---|---|---|---|
-| O1 | FAB menu | FAB fan-out | ui/FloatingActionButton.jsx | Tap + (bottom-right). 6 actions: Quick Workout, Log Food, Weigh In, Stream Note, Create Workout, Calculators |
-| O2 | WeighInModal | dialog | WeighInModal.jsx | FAB→Weigh In, or Today→Weigh In tile |
-| O3 | CalculatorsModal | dialog (tabs:1RM/Working/Plates) | CalculatorsModal.jsx | FAB→Calculators |
-| O4 | Stream Note | dialog | Layout.jsx:298 | FAB→Stream Note |
-| O5 | Today Quick Note | dialog | Today.jsx | Today→Note Capture tile |
-| O6 | BarcodeScanner | fullscreen (bespoke, z-10001) | nutrition/BarcodeScanner.jsx | FoodTracker→Add Food→Barcode |
-| O7 | DietPhase New Phase | dialog (scroll) | nutrition/DietPhaseCard.jsx | Fuel→Diet Phase card→New Phase |
-| O8 | Food search/add | dialog | FoodTracker.jsx | FoodTracker→Add Food |
-| O9 | Meal Week Plan | dialog | Fuel.jsx:53 | Fuel→Review Weekly Plan |
-| O10 | MealTemplate Apply | dialog | nutrition/MealTemplates.jsx:335 | FoodTracker→template→Apply |
-| O11 | MealTemplate Edit | dialog (scroll) | nutrition/MealTemplates.jsx:432 | FoodTracker→template→edit |
-| O12 | Save as Template | dialog | nutrition/MealTemplates.jsx:655 | MealPlanIdeas→Save Day |
-| O13 | RecipeBuilder form | dialog (2-step wizard) | nutrition/RecipeBuilder.jsx:712 | FoodTracker→Recipes→create/edit |
-| O14 | Recipe Log | dialog | nutrition/RecipeBuilder.jsx:1265 | FoodTracker→Recipes→Log |
-| O15 | StatsSetupModal (TDEE) | dialog (scroll) | nutrition/StatsSetupModal.jsx | TDEE setup (trigger TBD) |
-| O16 | ProgramDurationModal | dialog (scroll) | workouts/ProgramDurationModal.jsx | Create program flow |
-| O17 | ScheduleAfterCreate | dialog (scroll) | workouts/ScheduleAfterCreateModal.jsx | After program gen |
-| O18 | CustomSplitSelector | inline/modal | workouts/CustomSplitSelector.jsx | Program create flow |
-| O19 | ConfirmDialog (generic) | dialog (default/danger) | ui/ConfirmDialog.jsx | Any delete (Mind/Career/templates/recipes) |
-| O20 | Career App/Contact form | dialog | Career.jsx:287,475 | Career→New/Edit |
-| O21 | Mind Book/Skill form | dialog | Mind.jsx:220,613 | Mind→Add Book/Skill |
-| O22 | PST Test Logger | dialog | PSTTracker.jsx:191 | (PST card→Log Test) |
-| O23 | Rest Timer bar | fixed header (not modal) | workouts/WorkoutLoggingHeader.jsx | During logging |
-
-### Coverage gaps / notes
-- O15 StatsSetupModal trigger not definitively mapped (likely Profile/TDEE). Will probe in capture; log if unreachable.
-- O22 PSTTracker lives on Mind or AthleteState — confirm in capture.
-- Camera-dependent surfaces (O6 BarcodeScanner, P17 Physique camera) cannot grant camera in headless; capture the permission/idle state and audit chrome only — logged as partial.
+- **Auth pages** (login / forgot / reset) need a logged-out session or a recovery token; captured opportunistically, otherwise logged as gaps each round.
+- **Data-dependent surfaces** (program-detail `:id`, workout-detail params, recovery charts, insights/brief-history engine output, physique photos, mind/career lists) render empty states without seeded backend data — empty state is still audited; populated state logged as a gap when unseedable.
+- **Camera surfaces** (barcode-scanner, physique-upload) cannot grab a real camera feed headless — UI chrome audited, live feed logged as a gap.

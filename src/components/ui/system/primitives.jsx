@@ -42,7 +42,7 @@ const VERDICT = {
   primed:   { color: "var(--hue-teal)",  word: "Primed",      tone: "rgba(94,220,210,.10)" },
   ready:    { color: "var(--hue-green)", word: "Ready",       tone: "rgba(123,201,111,.09)" },
   moderate: { color: "var(--warn)",      word: "Moderate",    tone: "rgba(226,162,60,.09)" },
-  recover:  { color: "var(--bad)",       word: "Recover",     tone: "rgba(239,115,104,.10)" },
+  recover:  { color: "var(--bad)",       word: "Recover",     tone: "rgba(var(--bad-rgb) / .10)" },
   unknown:  { color: "var(--text-faint)", word: "Calibrating", tone: "rgba(255,255,255,.04)" },
 };
 

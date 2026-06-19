@@ -20,7 +20,7 @@ const qp = (loc, key, dflt = "") => new URLSearchParams(loc.search).get(key) || 
 
 const navigationItems = [
   { title: "Today", url: "/today", icon: Activity,
-    matches: ["/today", "/dashboard"] },
+    matches: ["/today"] },
   { title: "Train", url: "/train", icon: Dumbbell,
     matches: ["/train", "/workouts", "/program-builder", "/create-workout",
               "/quick-workout", "/weekly-schedule", "/schedule", "/workout-detail", "/program/"],
@@ -112,7 +112,6 @@ export default function Layout({ children, currentPageName }) {
 
   const pageDisplayName = {
     Today: "Today",
-    Dashboard: "Today",
     Fuel: "Fuel",
     Train: "Train",
     Insights: "Analyze",
@@ -131,8 +130,18 @@ export default function Layout({ children, currentPageName }) {
     ProgramBuilder: "Program Builder",
     AthleteState: "Body",
     Recovery: "Recovery",
-    BriefHistory: "Briefs",
+    BriefHistory: "Brief History",
   }[currentPageName] || currentPageName || "Home";
+
+  // Per-page contextual subtitle for the mobile header. Defaults to today's
+  // date; a page can override (or `null` to suppress) when the date is
+  // misleading — e.g. a history list isn't "today".
+  const pageSubtitle = {
+    BriefHistory: "Last 30 AI-generated daily briefs",
+  };
+  const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
+    ? pageSubtitle[currentPageName]
+    : format(new Date(), "EEEE, MMMM d");
 
   return (
     <>
@@ -226,9 +235,11 @@ export default function Layout({ children, currentPageName }) {
           >
             <div className="flex-1 min-w-0">
               <h1 className="type-display text-[22px] truncate">{pageDisplayName}</h1>
-              <div className="text-[12px] font-semibold text-muted-2 whitespace-nowrap">
-                {format(new Date(), "EEEE, MMMM d")}
-              </div>
+              {mobileSubtitle && (
+                <div className="text-[12px] font-semibold text-muted-2 truncate">
+                  {mobileSubtitle}
+                </div>
+              )}
             </div>
             <span className="chip-gold">{pstDays} days · PST</span>
             <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
@@ -287,7 +298,7 @@ export default function Layout({ children, currentPageName }) {
       {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
          '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/',
          '/today', '/recovery', '/brief-history', '/workout-detail', '/insights',
-         '/dashboard', '/physique', '/athlete-state'
+         '/physique', '/athlete-state', '/weekly-schedule', '/schedule'
         ].some(p => location.pathname.startsWith(p)) && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
@@ -309,6 +320,7 @@ export default function Layout({ children, currentPageName }) {
           </DialogHeader>
           <div className="pt-2">
             <QuickCapture
+              embedded
               domain="general"
               placeholder="Stream a note to Second Brain..."
               onCapture={() => setShowNoteModal(false)}

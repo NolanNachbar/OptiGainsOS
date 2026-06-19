@@ -78,7 +78,7 @@ export default function Fuel() {
                 <ChevronRight className="w-4 h-4 text-ink-faint transition-transform group-open:rotate-90" />
               </summary>
               <div className="px-4 pb-4">
-                <QuickCapture domain="general" placeholder="Stream a note to Second Brain..." />
+                <QuickCapture embedded domain="general" placeholder="Stream a note to Second Brain..." />
               </div>
             </details>
           </div>

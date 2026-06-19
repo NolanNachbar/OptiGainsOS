@@ -7,12 +7,12 @@ const Badge = React.forwardRef(({ className = "", variant = "default", ...props 
     green:   "bg-leaf/10 text-leaf border border-leaf/20",
     amber:   "bg-warn/10 text-warn border border-warn/20",
     red:     "bg-bad/10 text-bad border border-bad/[15%]",
-    slate:   "bg-white/[0.06] text-ink-muted border border-white/10",
+    slate:   "bg-charcoal-surface2 text-ink-muted border border-charcoal-border",
     /* legacy variants */
-    default:     "bg-white/[0.06] text-ink-muted border border-white/10",
-    secondary:   "bg-white/[0.06] text-ink-muted border border-white/10",
+    default:     "bg-charcoal-surface2 text-ink-muted border border-charcoal-border",
+    secondary:   "bg-charcoal-surface2 text-ink-muted border border-charcoal-border",
     destructive: "bg-bad/10 text-ink border-transparent",
-    outline:     "text-ink border border-white/10",
+    outline:     "text-ink border border-charcoal-border",
   };
 
   return (

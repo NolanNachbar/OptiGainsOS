@@ -21,14 +21,10 @@ export function ConfirmDialog({
     onConfirm();
   };
 
-  const confirmButtonClass = variant === "danger"
-    ? "bg-bad/10 hover:bg-bad/10 text-bad border border-bad/20"
-    : "";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md" hideClose>
+        <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             {variant === "danger" && (
               <div className="p-2 rounded-full bg-bad/10">
@@ -44,6 +40,7 @@ export function ConfirmDialog({
         <div className="flex gap-3 mt-6">
           <Button
             variant="outline"
+            size="lg"
             onClick={() => onOpenChange(false)}
             className="flex-1"
             disabled={loading}
@@ -51,9 +48,10 @@ export function ConfirmDialog({
             {cancelText}
           </Button>
           <Button
-            variant={variant === "danger" ? "dim" : "volt"}
+            variant={variant === "danger" ? "destructive" : "volt"}
+            size="lg"
             onClick={handleConfirm}
-            className={`flex-1 ${confirmButtonClass}`}
+            className="flex-1"
             disabled={loading}
           >
             {loading ? "Processing..." : confirmText}

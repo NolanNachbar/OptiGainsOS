@@ -386,6 +386,7 @@ export default function Today() {
           </DialogHeader>
           <div className="pt-2">
             <QuickCapture
+              embedded
               domain="general"
               placeholder="Stream a note to Second Brain..."
               onCapture={() => setShowNote(false)}

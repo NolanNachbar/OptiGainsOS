@@ -70,7 +70,19 @@ function App() {
       <ThemeProvider>
         <Router basename={import.meta.env.BASE_URL}>
           <AuthProvider>
-            <Toaster position="top-center" richColors />
+            <Toaster
+              position="top-center"
+              closeButton
+              offset={{ top: 'calc(var(--layout-header-height, 64px) + env(safe-area-inset-top) + 12px)' }}
+              mobileOffset={{ top: 'calc(var(--layout-header-height, 64px) + env(safe-area-inset-top) + 12px)' }}
+              toastOptions={{
+                classNames: {
+                  toast: 'og-toast',
+                  error: 'og-toast--error',
+                  closeButton: 'og-toast__close',
+                },
+              }}
+            />
             <ErrorBoundary>
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>
@@ -79,9 +91,9 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/app" element={<Navigate to="/today" replace />} />
-                  {/* LogHub + Supplements consolidated into Fuel's Hydration & Wellness tab */}
-                  <Route path="/log" element={<Navigate to="/fuel?tab=wellness" replace />} />
-                  <Route path="/supplements" element={<Navigate to="/fuel?tab=wellness" replace />} />
+                  {/* LogHub + Supplements consolidated into Fuel's Body tab */}
+                  <Route path="/log" element={<Navigate to="/fuel?tab=body" replace />} />
+                  <Route path="/supplements" element={<Navigate to="/fuel?tab=body" replace />} />
                   {/* Legacy Schedule page retired — WeeklySchedule is canonical */}
                   <Route path="/schedule" element={<Navigate to="/weekly-schedule" replace />} />
                   {/* Standalone Workouts page merged into the Train hub */}

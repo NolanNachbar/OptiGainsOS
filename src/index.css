@@ -54,10 +54,15 @@
   /* ── Physiological spectrum (biometrics ONLY) ───────────────────────── */
   --ok:   #7BC96F;  --ok-rgb:   123 201 111;
   --warn: #E2A23C;  --warn-rgb: 226 162 60;
-  --bad:  #EF7368;  --bad-rgb:  239 115 104;
+  /* Destructive red — a deeper, cooler true-red, deliberately distinct from
+     coral (--color-brand #EF7368). Coral is the single ACTION color; this is
+     the physiological-spectrum "bad" / destructive hue. They must never be the
+     same RGB, or a red destructive control becomes impossible to express
+     (button destructive, badge red, ConfirmDialog, "bad" biometric readouts). */
+  --bad:  #E5484D;  --bad-rgb:  229 72 77;
   --info: #5BA8F5;  --info-rgb: 91 168 245;
   --color-positive: #5EDCD2;
-  --color-danger:   #EF7368;
+  --color-danger:   #E5484D;
   --color-cardio:   #5BA8F5;
 
   /* ── Data-viz series ────────────────────────────────────────────────── */
@@ -75,8 +80,10 @@
   --glass-specular:    rgba(255, 255, 255, 0.12);
   --dock-tint:         rgba(120, 120, 128, 0.18);
   /* Sheet/dialog material — heavier & near-opaque so busy page content
-     never bleeds through behind a form (dock-tint is too transparent). */
-  --sheet-bg:          rgba(20, 24, 31, 0.96);
+     never bleeds through behind a form (dock-tint is too transparent).
+     Raised to 0.98 so bright/coral page content can't register through
+     the translucent sheet (SYS-07). */
+  --sheet-bg:          rgba(20, 24, 31, 0.98);
   --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
 
@@ -118,10 +125,12 @@ html.light {
 
   --ok:   #4D9A41;  --ok-rgb:   77 154 65;
   --warn: #C07F2A;  --warn-rgb: 192 127 42;
-  --bad:  #E05348;  --bad-rgb:  224 83 72;
+  /* Destructive red — deeper, cooler true-red distinct from coral
+     (--color-brand #E05348) in the light theme. See :root for rationale. */
+  --bad:  #CE2C31;  --bad-rgb:  206 44 49;
   --info: #2F6FD0;  --info-rgb: 47 111 208;
   --color-positive: #14A89D;
-  --color-danger:   #E05348;
+  --color-danger:   #CE2C31;
   --color-cardio:   #2F6FD0;
 
   --viz-1: #14A89D;
@@ -136,7 +145,7 @@ html.light {
   --glass-edge-strong: rgba(18, 24, 34, 0.12);
   --glass-specular:    rgba(255, 255, 255, 0.85);
   --dock-tint:         rgba(255, 255, 255, 0.66);
-  --sheet-bg:          rgba(255, 255, 255, 0.97);
+  --sheet-bg:          rgba(255, 255, 255, 0.98);
   --shadow-1: 0 10px 28px rgba(22, 28, 40, 0.10);
   --shadow-2: 0 8px 24px rgba(22, 28, 40, 0.14);
 }
@@ -394,4 +403,58 @@ html.light body::before {
 @media (prefers-reduced-motion: reduce) {
   .glass-interactive, .cta-coral { transition: none; }
   .rise-in, .rise-in-2, .rise-in-3, .sheet-rise { animation: none; }
+}
+
+/* Sonner toasts — og-toast. Themed to neutral glass surfaces so they obey the
+   Vapor × Macro system: Manrope + tabular numerals, 0.5px hairline edges, one
+   easing, 8px rise entrance. richColors is OFF — Sonner's saturated success
+   green / info blue / warning yellow would poach the biometric-only spectrum,
+   so success/info read as restrained neutral glass and only error/destructive
+   borrows coral (--color-brand), the single action color. Tokens are theme-
+   aware (re-tune on html.light) so one rule covers both themes. */
+[data-sonner-toaster],
+[data-sonner-toast] {
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+[data-sonner-toast].og-toast {
+  background: var(--color-elevated);
+  border: 0.5px solid var(--color-border);
+  color: var(--text-primary);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
+  /* Replace Sonner's 0.4s default with the one system easing + 8px rise. */
+  transition:
+    transform 260ms var(--ease),
+    opacity 260ms var(--ease),
+    height 260ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+[data-sonner-toast].og-toast [data-description] {
+  color: var(--text-secondary);
+}
+/* Error / destructive is the only action accent — coral, never biometric red. */
+[data-sonner-toast].og-toast.og-toast--error {
+  border-color: rgba(var(--color-brand-rgb) / 0.45);
+}
+[data-sonner-toast].og-toast.og-toast--error [data-icon] {
+  color: var(--color-brand);
+}
+/* Close button ≥ 44px tap target, neutral glass. */
+[data-sonner-toast].og-toast .og-toast__close {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: var(--color-surface-2);
+  border: 0.5px solid var(--color-border);
+  color: var(--text-secondary);
+  transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
+}
+[data-sonner-toast].og-toast:hover .og-toast__close:hover {
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+  color: var(--text-primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast].og-toast { transition: none; }
 }

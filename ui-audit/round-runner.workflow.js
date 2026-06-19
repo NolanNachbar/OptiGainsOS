@@ -1,26 +1,84 @@
 export const meta = {
   name: 'ui-audit-round',
-  description: 'One mobile-first UI audit round: capture → audit → IA → synthesize → fix, fanned out per surface (390px primary)',
+  description: 'One mobile-first UI audit round: serial capture (shared browser) → parallel audit → IA → synthesize → parallel fix',
   phases: [
-    { title: 'Capture', detail: 'one /browse agent per surface, 390px + 1280px' },
-    { title: 'Audit', detail: 'one opus agent per surface, blind agnostic walkthrough', model: 'opus' },
-    { title: 'IA', detail: 'tap-count + placement analysis (rounds 1–2 only)', model: 'opus' },
-    { title: 'Synthesize', detail: 'dedupe findings into systemic + per-surface fix plan', model: 'opus' },
+    { title: 'Capture', detail: 'serial batches against the single shared browse daemon, 390px + 1280px' },
+    { title: 'Audit', detail: 'one opus agent per surface, parallel, reads screenshots + source', model: 'opus' },
+    { title: 'IA', detail: 'tap-count + placement from source/inventory (rounds 1–2 only)', model: 'opus' },
+    { title: 'Synthesize', detail: 'dedupe into systemic + per-surface fix plan', model: 'opus' },
     { title: 'Fix', detail: 'systemic serial on main tree; per-surface parallel in worktrees' },
   ],
 }
 
-// ── args (passed by the /loop main thread) ──────────────────────────────────
-// {
-//   round:     number,
-//   baseUrl:   string,                 // dev server, e.g. http://localhost:5173
-//   runIA:     boolean,                // true on rounds 1–2 or when nav changed
-//   surfaces:  [{ id, type, route, reach, states }]   // from SURFACE_INVENTORY.md
-// }
-const { round, baseUrl, runIA, surfaces } = args
+// Self-contained: surfaces are embedded (passing 65 inline via args proved fragile).
+// args only carries small scalars: { round, baseUrl, runIA, login:{email,password} }.
+const round = (args && args.round) || 1
+const baseUrl = (args && args.baseUrl) || 'http://localhost:5173'
+const runIA = args && typeof args.runIA === 'boolean' ? args.runIA : (round <= 2)
+const login = (args && args.login) || { email: 'nvtnachbar@gmail.com', password: 'Gains123' }
 const DIR = `./ui-audit/round-${round}`
+const CAPTURE_BATCH = 10
 
-// ── design-system contract injected into every audit + fix agent ────────────
+// browse is ONE shared Chromium daemon → capture MUST be serial. Audit/IA/Fix never touch it.
+const SURFACES = [
+  { id: 'login', type: 'page', route: '/login', reach: 'requires logout first; authed nav redirects to /dashboard', states: ['empty', 'error'] },
+  { id: 'forgot-password', type: 'page', route: '/forgot-password', reach: 'from /login → Forgot password link (needs logout)', states: ['empty', 'email-sent'] },
+  { id: 'reset-password', type: 'page', route: '/reset-password', reach: 'via email recovery link (needs token)', states: ['empty'] },
+  { id: 'today', type: 'page', route: '/today', reach: 'default landing (Today dock)', states: ['populated', 'rest-day', 'workout-in-progress'] },
+  { id: 'dashboard', type: 'page', route: '/dashboard', reach: 'deep link (nav maps to Today)', states: ['populated', 'morning-checkin'] },
+  { id: 'train-schedule', type: 'page', route: '/train?tab=schedule', reach: 'Train dock → Schedule', states: ['populated', 'empty'] },
+  { id: 'train-library', type: 'page', route: '/train?tab=library', reach: 'Train dock → Library', states: ['populated', 'empty', 'filters'] },
+  { id: 'train-programs', type: 'page', route: '/train?tab=programs', reach: 'Train dock → Programs', states: ['populated', 'empty'] },
+  { id: 'train-activity', type: 'page', route: '/train?tab=activity-log', reach: 'Train dock → Activity', states: ['populated', 'empty'] },
+  { id: 'fuel-nutrition', type: 'page', route: '/fuel', reach: 'Fuel dock → Nutrition', states: ['populated', 'empty'] },
+  { id: 'fuel-wellness', type: 'page', route: '/fuel?tab=wellness', reach: 'Fuel dock → Wellness', states: ['populated', 'empty'] },
+  { id: 'food-tracker', type: 'page', route: '/food-tracker', reach: 'FAB → Log Food', states: ['populated', 'empty'] },
+  { id: 'athlete-state', type: 'page', route: '/athlete-state', reach: 'Body dock → State', states: ['populated', 'empty'] },
+  { id: 'recovery', type: 'page', route: '/recovery', reach: 'Body dock → Recovery', states: ['populated', 'empty'] },
+  { id: 'physique', type: 'page', route: '/physique', reach: 'Body dock → Physique', states: ['gallery', 'empty'] },
+  { id: 'insights', type: 'page', route: '/insights', reach: 'Analyze dock → Daily Brief', states: ['populated', 'empty'] },
+  { id: 'brief-history', type: 'page', route: '/brief-history', reach: 'Analyze dock → Brief History', states: ['list', 'empty'] },
+  { id: 'mind', type: 'page', route: '/mind', reach: 'Analyze dock → Mind', states: ['populated', 'empty'] },
+  { id: 'career', type: 'page', route: '/career', reach: 'direct URL (unlinked in nav)', states: ['populated', 'empty'] },
+  { id: 'profile', type: 'page', route: '/profile', reach: 'header avatar tap', states: ['hub', 'stats', 'forms'] },
+  { id: 'weekly-schedule', type: 'page', route: '/weekly-schedule', reach: 'Train → Schedule → Edit week', states: ['populated', 'empty'] },
+  { id: 'program-detail', type: 'page', route: '/program/_probe', reach: 'Train → Programs → tap a program card (needs real id)', states: ['enrolled', 'not-enrolled', 'not-found'] },
+  { id: 'program-builder', type: 'page', route: '/program-builder', reach: 'Train → Library → Create Program', states: ['wizard'] },
+  { id: 'create-workout', type: 'page', route: '/create-workout', reach: 'FAB → Create Workout', states: ['empty-form'] },
+  { id: 'quick-workout', type: 'page', route: '/quick-workout', reach: 'FAB → Quick Workout', states: ['empty', 'prescribed'] },
+  { id: 'workout-detail', type: 'page', route: '/workout-detail', reach: 'Today/Schedule → Start Workout (needs params)', states: ['logging', 'not-found'] },
+  // overlays
+  { id: 'fab-menu', type: 'overlay', route: '/today', reach: 'tap FAB (+) bottom-right', states: ['open'] },
+  { id: 'weigh-in-modal', type: 'overlay', route: '/today', reach: 'FAB → Weigh In', states: ['empty'] },
+  { id: 'calculators-modal', type: 'overlay', route: '/today', reach: 'FAB → Calculators', states: ['1rm', 'working-weight', 'plates'] },
+  { id: 'stream-note-modal', type: 'overlay', route: '/today', reach: 'FAB → Stream Note', states: ['empty'] },
+  { id: 'today-quick-note', type: 'overlay', route: '/today', reach: 'Today → Note Capture tile', states: ['empty'] },
+  { id: 'add-food-dialog', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Add Food', states: ['search', 'results'] },
+  { id: 'barcode-scanner-modal', type: 'overlay', route: '/food-tracker', reach: 'Add Food → Barcode (camera idle in headless)', states: ['idle'] },
+  { id: 'diet-phase-modal', type: 'overlay', route: '/fuel', reach: 'Fuel → Diet Phase card → New Phase', states: ['form'] },
+  { id: 'week-plan-dialog', type: 'overlay', route: '/fuel', reach: 'Fuel → Review Weekly Plan', states: ['plan'] },
+  { id: 'meal-template-apply', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → Apply', states: ['confirm'] },
+  { id: 'meal-template-edit', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → edit', states: ['form'] },
+  { id: 'save-as-template', type: 'overlay', route: '/food-tracker', reach: 'Meal plan ideas → Save Day', states: ['form'] },
+  { id: 'recipe-builder', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Recipes → create', states: ['wizard'] },
+  { id: 'recipe-log', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Recipes → Log', states: ['form'] },
+  { id: 'stats-setup-modal', type: 'overlay', route: '/food-tracker', reach: 'TDEE / Setup Stats (probe trigger)', states: ['form'] },
+  { id: 'program-duration-modal', type: 'overlay', route: '/program-builder', reach: 'Program create flow → duration', states: ['form'] },
+  { id: 'schedule-after-create-modal', type: 'overlay', route: '/create-workout', reach: 'after save → Schedule This?', states: ['form'] },
+  { id: 'custom-split-selector', type: 'overlay', route: '/weekly-schedule', reach: 'Schedule → Custom Split / Assign', states: ['selection'] },
+  { id: 'confirm-dialog-generic', type: 'overlay', route: '/mind', reach: 'any delete (Mind/Career/templates) → confirm', states: ['default', 'danger'] },
+  { id: 'mind-add-dialog', type: 'overlay', route: '/mind', reach: 'Mind → Add Book/Skill', states: ['form'] },
+  { id: 'career-form-dialog', type: 'overlay', route: '/career', reach: 'Career → New/Edit application', states: ['form'] },
+  { id: 'pst-test-logger', type: 'overlay', route: '/athlete-state', reach: 'PST card → Log Test (probe Mind/AthleteState)', states: ['form'] },
+  { id: 'physique-upload-modal', type: 'overlay', route: '/physique', reach: 'Physique → camera / Take Photo (camera idle headless)', states: ['idle'] },
+  { id: 'physique-compare-modal', type: 'overlay', route: '/physique', reach: 'Physique → select 2+ → Compare', states: ['side-by-side'] },
+  { id: 'rest-timer-bar', type: 'overlay', route: '/quick-workout', reach: 'during set logging → rest timer', states: ['countdown'] },
+  { id: 'workout-share-modal', type: 'overlay', route: '/workout-detail', reach: 'logging → Share after completion', states: ['share'] },
+  { id: 'sonner-toast', type: 'overlay', route: '/today', reach: 'global → trigger any mutation', states: ['success', 'error'] },
+]
+
+function chunk(a, n) { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o }
+
 const SYSTEM_LAW = `
 VAPOR × MACRO design system (read src/index.css + tailwind.config.js to confirm tokens):
 - Field #0A0D12; tiered translucent glass surfaces; 0.5px hairline edges; inset top highlight.
@@ -37,33 +95,32 @@ MOBILE LAWS (390px is the product; 1280px is a secondary sanity check only):
 - Core content of a primary page lands within ~2 phone viewport heights before fold-heavy stuff.
 - Text legible without zoom; tap feedback on every interactive element.`
 
-// ── schemas ─────────────────────────────────────────────────────────────────
-const CAPTURE_SCHEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['surface', 'reached', 'shots', 'scrollHeight390'],
+const BROWSE = `B="$HOME/.claude/skills/gstack/browse/dist/browse"`
+
+const CAPTURE_BATCH_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['shots'],
   properties: {
-    surface: { type: 'string' },
-    reached: { type: 'boolean', description: 'false if the surface could not be reached on mobile' },
-    note: { type: 'string', description: 'if not reached, why (coverage gap)' },
-    scrollHeight390: { type: 'number', description: 'full scroll height in px at 390px' },
     shots: {
       type: 'array',
       items: {
         type: 'object', additionalProperties: false,
-        required: ['state', 'viewport', 'path'],
+        required: ['surface', 'state', 'viewport', 'path', 'reached'],
         properties: {
-          state: { type: 'string', description: 'empty|loading|populated|error|expanded|scrolled' },
-          viewport: { type: 'string', enum: ['390', '1280'] },
-          path: { type: 'string' },
+          surface: { type: 'string' }, state: { type: 'string' },
+          viewport: { type: 'string', enum: ['390', '1280'] }, path: { type: 'string' },
+          reached: { type: 'boolean' }, scrollHeight390: { type: 'number' }, note: { type: 'string' },
         },
       },
+    },
+    gaps: {
+      type: 'array',
+      items: { type: 'object', additionalProperties: false, required: ['surface', 'note'], properties: { surface: { type: 'string' }, note: { type: 'string' } } },
     },
   },
 }
 
 const FINDINGS_SCHEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['surface', 'findings'],
+  type: 'object', additionalProperties: false, required: ['surface', 'findings'],
   properties: {
     surface: { type: 'string' },
     findings: {
@@ -73,13 +130,8 @@ const FINDINGS_SCHEMA = {
         required: ['severity', 'category', 'file', 'whatsWrong', 'fix'],
         properties: {
           severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
-          category: {
-            type: 'string',
-            enum: ['drift', 'mobile', 'consistency', 'hierarchy', 'density', 'belonging', 'slop', 'motion'],
-          },
-          file: { type: 'string', description: 'exact file:line' },
-          whatsWrong: { type: 'string' },
-          fix: { type: 'string', description: 'concrete fix using existing tokens / ui primitives' },
+          category: { type: 'string', enum: ['drift', 'mobile', 'consistency', 'hierarchy', 'density', 'belonging', 'slop', 'motion'] },
+          file: { type: 'string' }, whatsWrong: { type: 'string' }, fix: { type: 'string' },
         },
       },
     },
@@ -87,140 +139,97 @@ const FINDINGS_SCHEMA = {
 }
 
 const IA_SCHEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['tapCounts', 'findings', 'recommendedHomeOrder'],
+  type: 'object', additionalProperties: false, required: ['tapCounts', 'findings', 'recommendedHomeOrder'],
   properties: {
-    tapCounts: {
-      type: 'array',
-      items: {
-        type: 'object', additionalProperties: false,
-        required: ['feature', 'tapsFromLaunch', 'verdict'],
-        properties: {
-          feature: { type: 'string' },
-          tapsFromLaunch: { type: 'number' },
-          verdict: { type: 'string', enum: ['too-buried', 'over-promoted', 'ok'] },
-        },
-      },
-    },
-    findings: {
-      type: 'array',
-      items: {
-        type: 'object', additionalProperties: false,
-        required: ['severity', 'whatsWrong', 'fix'],
-        properties: {
-          severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
-          whatsWrong: { type: 'string' },
-          fix: { type: 'string' },
-        },
-      },
-    },
+    tapCounts: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['feature', 'tapsFromLaunch', 'verdict'], properties: { feature: { type: 'string' }, tapsFromLaunch: { type: 'number' }, verdict: { type: 'string', enum: ['too-buried', 'over-promoted', 'ok'] } } } },
+    findings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['severity', 'whatsWrong', 'fix'], properties: { severity: { type: 'string', enum: ['blocker', 'major', 'minor'] }, whatsWrong: { type: 'string' }, fix: { type: 'string' } } } },
     recommendedHomeOrder: { type: 'array', items: { type: 'string' } },
   },
 }
 
 const FIXPLAN_SCHEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['systemic', 'perSurface'],
+  type: 'object', additionalProperties: false, required: ['systemic', 'perSurface'],
   properties: {
-    systemic: {
-      type: 'array',
-      description: 'cross-page fixes that touch SHARED files (tokens, ui primitives). Run serially on main tree.',
-      items: {
-        type: 'object', additionalProperties: false,
-        required: ['id', 'title', 'files', 'instruction'],
-        properties: {
-          id: { type: 'string' },
-          title: { type: 'string' },
-          files: { type: 'array', items: { type: 'string' } },
-          instruction: { type: 'string' },
-        },
-      },
-    },
-    perSurface: {
-      type: 'array',
-      description: 'per-surface fixes. Files MUST be disjoint across entries so worktree edits never collide.',
-      items: {
-        type: 'object', additionalProperties: false,
-        required: ['surface', 'files', 'instruction'],
-        properties: {
-          surface: { type: 'string' },
-          files: { type: 'array', items: { type: 'string' } },
-          instruction: { type: 'string' },
-        },
-      },
-    },
+    systemic: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'files', 'instruction'], properties: { id: { type: 'string' }, title: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' } } } },
+    perSurface: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['surface', 'files', 'instruction'], properties: { surface: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' } } } },
   },
 }
 
 const FIXRESULT_SCHEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['id', 'filesChanged', 'buildPass', 'lintPass', 'summary'],
-  properties: {
-    id: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    buildPass: { type: 'boolean' },
-    lintPass: { type: 'boolean' },
-    summary: { type: 'string' },
-  },
+  type: 'object', additionalProperties: false, required: ['id', 'filesChanged', 'buildPass', 'lintPass', 'summary'],
+  properties: { id: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } }, buildPass: { type: 'boolean' }, lintPass: { type: 'boolean' }, summary: { type: 'string' } },
 }
 
-// ── STEP A+B: capture then audit, pipelined per surface (no global barrier) ──
-log(`Round ${round}: ${surfaces.length} surfaces @ ${baseUrl}`)
+// ── STEP A — CAPTURE (serial batches; browser is single-threaded) ───────────
+log(`Round ${round}: ${SURFACES.length} surfaces @ ${baseUrl} (serial capture, parallel audit)`)
+phase('Capture')
+const batches = chunk(SURFACES, CAPTURE_BATCH)
+const allShots = []
+const gaps = []
+for (let i = 0; i < batches.length; i++) {
+  const batch = batches[i]
+  const r = await agent(
+    `STEP A — CAPTURE (batch ${i + 1}/${batches.length}). Drive the gstack headless browser to screenshot each surface.
+CRITICAL: the browser is a SINGLE shared daemon — issue browse commands one at a time, never in parallel.
+Setup: ${BROWSE}  (invoke as "$B <cmd>"). Base URL: ${baseUrl} (a PWA; service worker anchors this origin).
+The session SHOULD already be logged in. Verify: $B goto ${baseUrl}/dashboard ; $B url. If it lands on /login,
+log in: $B snapshot -i, fill email "${login.email}", fill the password field, click submit, $B wait --networkidle.
 
-const auditPromise = pipeline(
-  surfaces,
-  (s) => agent(
-    `STEP A — CAPTURE surface "${s.id}" (type: ${s.type}).
-Use the gstack headless browse CLI (the same engine /browse uses) against ${baseUrl}${s.route}.
-Reach it on mobile by: ${s.reach}
-Capture at 390px FIRST (primary), then 1280px (secondary check). Capture every meaningful state
-that exists for this surface: ${(s.states || ['empty', 'loading', 'populated', 'error', 'expanded']).join(', ')}.
-Record the full scroll height at 390px. Save PNGs under ${DIR}/${s.id}/ with descriptive names.
-If you cannot reach the surface on mobile, set reached=false and explain (this is a logged coverage gap, never silent).
-Return the capture manifest.`,
-    { label: `capture:${s.id}`, phase: 'Capture', schema: CAPTURE_SCHEMA }
-  ),
-  (cap, s) => agent(
-    `STEP B — AGNOSTIC AUDIT of surface "${s.id}", blind to all other surfaces. Ruthless design-eye walkthrough.
+For EACH surface in this batch: ${JSON.stringify(batch)}
+  1. $B viewport 390x844
+  2. Reach it. type "page" → $B goto ${baseUrl}<route>. type "overlay" → goto the host route, $B snapshot -i,
+     then click the control in "reach" to open it. Always $B wait --networkidle after navigation.
+  3. Record full scroll height at 390: $B js "document.body.scrollHeight".
+  4. Screenshot each meaningful state it actually has (from "states"; skip states needing unseedable data and
+     record them in gaps): $B screenshot ${DIR}/<surface-id>/390-<state>.png
+  5. Secondary check: $B viewport 1280x900 ; $B screenshot ${DIR}/<surface-id>/1280-populated.png
+  6. If a surface cannot be reached on mobile, add it to gaps with the reason (never skip silently).
+Return the manifest of every shot saved (surface, state, viewport, path, reached, scrollHeight390) plus gaps.`,
+    { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA }
+  )
+  if (r && r.shots) allShots.push(...r.shots)
+  if (r && r.gaps) gaps.push(...r.gaps)
+}
+
+const shotsBySurface = {}
+for (const s of allShots) { (shotsBySurface[s.surface] || (shotsBySurface[s.surface] = [])).push(s) }
+
+// ── STEP B — AUDIT (parallel) + STEP C — IA (concurrent, source-only) ───────
+phase('Audit')
+const auditPromise = parallel(SURFACES.map((s) => () => {
+  const shots = shotsBySurface[s.id] || []
+  if (!shots.length) return Promise.resolve({ surface: s.id, findings: [] })
+  return agent(
+    `STEP B — AGNOSTIC AUDIT of surface "${s.id}" (${s.type}, route ${s.route}), blind to all other surfaces.
+Ruthless design-eye walkthrough at 390px primary.
 ${SYSTEM_LAW}
-Screenshots for this surface: ${JSON.stringify(cap?.shots || [])} (scrollHeight@390 = ${cap?.scrollHeight390}px).
-Open the relevant source: route ${s.route}, reached via ${s.reach}.
-Audit against this 8-point rubric and report EVERYTHING that looks bad, doesn't belong, is confusing,
-or would be better placed elsewhere:
-  1. DESIGN-SYSTEM DRIFT — any VAPOR × MACRO violation.
-  2. MOBILE FITNESS — touch targets, thumb zone, bottom-sheet behavior, safe areas, zero horizontal scroll, no dock/notch clipping.
-  3. VISUAL CONSISTENCY — spacing, radii, type ramp, card material, icon weight, button hierarchy.
-  4. HIERARCHY & CLARITY — primary action obvious in <2s? anything confusing/mislabeled/ambiguous/competing?
-  5. VERTICAL DENSITY — does it scroll excessively at 390px? propose density fixes (collapse/tab/summarize-then-expand).
-  6. BELONGING & PLACEMENT — does each element belong on THIS surface, or better elsewhere / in a sheet / removed?
-  7. AI-SLOP / UNFINISHED — placeholders, dead controls, lorem, debug UI, misalignment, orphaned/empty states.
-  8. MOTION & FEEDBACK — interactions confirm state per the motion law.
-Per finding give: severity (blocker/major/minor), category, exact file:line, what's wrong, concrete fix using
-existing tokens and src/components/ui/* primitives. Do NOT fix anything in this step.`,
+Screenshots to inspect (Read each PNG): ${JSON.stringify(shots)}
+Open the source for this surface to cite exact file:line.
+Report EVERYTHING against this 8-point rubric:
+  1. DESIGN-SYSTEM DRIFT  2. MOBILE FITNESS  3. VISUAL CONSISTENCY  4. HIERARCHY & CLARITY
+  5. VERTICAL DENSITY (excessive 390px scroll?)  6. BELONGING & PLACEMENT  7. AI-SLOP / UNFINISHED  8. MOTION & FEEDBACK
+Per finding: severity (blocker/major/minor), category, exact file:line, what's wrong, concrete fix using
+existing tokens + src/components/ui/* primitives. Do NOT fix anything.`,
     { label: `audit:${s.id}`, phase: 'Audit', schema: FINDINGS_SCHEMA, model: 'opus' }
   )
-)
+}))
 
-// STEP C — IA runs concurrently with capture/audit; rounds 1–2 (or nav changed) only.
 const iaPromise = runIA
   ? agent(
-      `STEP C — INFORMATION ARCHITECTURE pass for the OptiGains mobile PWA.
+      `STEP C — INFORMATION ARCHITECTURE for the OptiGains mobile PWA. Reason from source, do NOT drive the browser.
 ${SYSTEM_LAW}
-Importance = real usage: log today's workout, log food/macros, daily brief / readiness, weigh in.
-Drive the app at 390px from a cold launch via the gstack browse CLI against ${baseUrl}.
-For each high-value feature: count taps from app launch, judge whether it deserves a faster path
-(bottom-dock slot, FAB, or a home card in the thumb zone). Flag buried high-value features and
-over-promoted low-value ones. Propose a concrete home priority order a MacroFactor/Whoop user finds instantly.`,
+Read src/App.jsx (routes) and src/components/Layout.jsx (5-section dock Today·Train·Fuel·Body·Analyze + FAB).
+Importance = real usage: log today's workout, log food/macros, daily brief / readiness, weigh in. For each,
+count taps from a cold launch and judge whether it deserves a faster path (dock slot, FAB, home thumb-zone card).
+Flag buried high-value and over-promoted low-value features. Propose a concrete home priority order a
+MacroFactor/Whoop user finds instantly.`,
       { label: 'ia', phase: 'IA', schema: IA_SCHEMA, model: 'opus' }
     )
   : Promise.resolve(null)
 
 const [audited, ia] = await Promise.all([auditPromise, iaPromise])
-
-const captured = (audited || []).filter(Boolean)
-const findings = captured.flatMap((r) => r?.findings || [])
-const iaFindings = (ia?.findings || [])
-const all = [...findings, ...iaFindings]
+const findings = (audited || []).filter(Boolean).flatMap((r) => (r && r.findings) || [])
+const all = [...findings, ...((ia && ia.findings) || [])]
 const counts = {
   blockers: all.filter((f) => f.severity === 'blocker').length,
   majors: all.filter((f) => f.severity === 'major').length,
@@ -228,56 +237,52 @@ const counts = {
 }
 log(`Round ${round} findings — blocker:${counts.blockers} major:${counts.majors} minor:${counts.minors}`)
 
-// ── STEP D: synthesize (barrier — needs ALL findings to dedupe cross-page) ───
+// ── STEP D — SYNTHESIZE (barrier) ───────────────────────────────────────────
 phase('Synthesize')
 const plan = await agent(
   `STEP D — SYNTHESIZE. Merge and DEDUPE these findings into a fix plan. Collapse cross-page issues into
 SYSTEMIC fixes (e.g. "12 pages use raw slate text" → ONE token sweep, not 12 edits).
 ${SYSTEM_LAW}
 Findings: ${JSON.stringify(all)}
-IA recommendations: ${JSON.stringify(ia ? { tapCounts: ia.tapCounts, recommendedHomeOrder: ia.recommendedHomeOrder } : null)}
+IA: ${JSON.stringify(ia ? { tapCounts: ia.tapCounts, recommendedHomeOrder: ia.recommendedHomeOrder } : null)}
 Order of work: token sweep → shared primitives → per-page drift → mobile/IA → density → polish.
-Partition into:
-  - systemic[]: fixes touching SHARED files (tokens, src/components/ui/*, Layout). These run serially on the main tree.
-  - perSurface[]: per-page fixes. CRITICAL: files must be DISJOINT across perSurface entries so parallel
-    worktree edits never collide. If two surfaces need the same file, hoist that edit into systemic[].`,
+Partition:
+  - systemic[]: fixes touching SHARED files (tokens, src/components/ui/*, Layout). Run serially on main tree.
+  - perSurface[]: per-page fixes. CRITICAL: files MUST be DISJOINT across entries so parallel worktree edits
+    never collide. If two surfaces need the same file, hoist that edit into systemic[].`,
   { label: 'synth', phase: 'Synthesize', schema: FIXPLAN_SCHEMA, model: 'opus' }
 )
 
-// ── STEP E: fix. Systemic serial on main tree, then per-surface in worktrees ─
+// ── STEP E — FIX (systemic serial on main tree; per-surface in worktrees) ───
 phase('Fix')
 const systemic = []
-for (const fix of (plan?.systemic || [])) {
+for (const fix of ((plan && plan.systemic) || [])) {
   const r = await agent(
-    `STEP E — SYSTEMIC FIX "${fix.title}" (id ${fix.id}). Touches shared files: ${fix.files.join(', ')}.
+    `STEP E — SYSTEMIC FIX "${fix.title}" (id ${fix.id}). Shared files: ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
-Use existing tokens and src/components/ui/* primitives; only extend the system for a genuine gap, and
-document any new token/primitive. Then run \`npm run build\` and \`npm run lint\` — both MUST pass clean.
-Do NOT run any git commands.`,
+Use existing tokens + src/components/ui/* primitives; only extend the system for a genuine gap, and document it.
+Then run \`npm run build\` and \`npm run lint\` — both MUST pass clean. Do NOT run any git commands.`,
     { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
   )
   if (r) systemic.push(r)
 }
-
-const perSurface = (await parallel(
-  (plan?.perSurface || []).map((fix) => () =>
-    agent(
-      `STEP E — PER-SURFACE FIX for "${fix.surface}". Files (disjoint from other fixes): ${fix.files.join(', ')}.
+const perSurface = (await parallel(((plan && plan.perSurface) || []).map((fix) => () =>
+  agent(
+    `STEP E — PER-SURFACE FIX for "${fix.surface}". Files (disjoint from other fixes): ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
-Use existing tokens and src/components/ui/* primitives. Run \`npm run build\` and \`npm run lint\` — both MUST
-pass clean before you finish. Do NOT run any git commands (the harness owns the worktree).`,
-      { label: `fix:${fix.surface}`, phase: 'Fix', isolation: 'worktree', schema: FIXRESULT_SCHEMA }
-    )
+Use existing tokens + src/components/ui/* primitives. Run \`npm run build\` and \`npm run lint\` — both MUST pass
+clean before finishing. Do NOT run any git commands (the harness owns the worktree).`,
+    { label: `fix:${fix.surface}`, phase: 'Fix', isolation: 'worktree', schema: FIXRESULT_SCHEMA }
   )
-)).filter(Boolean)
+))).filter(Boolean)
 
 return {
   round,
   counts,
   cleanSweep: counts.blockers === 0 && counts.majors === 0,
-  coverageGaps: captured.filter((c) => c && c.reached === false).map((c) => ({ surface: c.surface, note: c.note })),
+  coverageGaps: gaps,
   findings: all,
   ia,
   plan,

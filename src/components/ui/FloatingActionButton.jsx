@@ -39,7 +39,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            style={{ top: "var(--layout-header-height, 56px)" }}
+            style={{ top: "var(--layout-header-height, 0px)" }}
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -55,27 +55,25 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 data-tutorial={action.label === 'Log Food' ? 'fab-log-food' : undefined}
               >
                 <motion.button
-                  initial={{ opacity: 0, scale: 0.3, y: 20 }}
+                  initial={{ opacity: 0, scale: 0.3, y: 8 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.3, y: 20 }}
+                  exit={{ opacity: 0, scale: 0.3, y: 8 }}
                   transition={{
-                    duration: 0.2,
-                    delay: index * 0.05,
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 24,
+                    duration: 0.28,
+                    delay: index * 0.03,
+                    ease: [0.2, 0.7, 0.3, 1],
                   }}
                   onClick={() => handleAction(action)}
                   className="flex items-center gap-3"
                 >
-                  <span className="glass-elevated text-ink text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
+                  <span className="glass-elevated text-ink text-[13px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap">
                     {action.label}
                   </span>
                   <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border ${
+                    className={`w-11 h-11 rounded-full flex items-center justify-center ${
                       action.primary
-                        ? "bg-brand text-[var(--color-action-dark)] border-transparent"
-                        : "glass-elevated text-brand border-charcoal-border"
+                        ? "bg-brand text-[var(--color-action-dark)]"
+                        : "glass-elevated text-ink-muted"
                     }`}
                   >
                     <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
