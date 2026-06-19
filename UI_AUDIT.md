@@ -23,12 +23,26 @@ Branch: `ui-audit-mobile-first`. Standard enforced: the **VAPOR × MACRO** syste
 | R3 | 43 | 1 | 22 | 20 | |
 | R4 | 6 | 0 | 4 | 2 | |
 | R5 | **0** | 0 | 0 | 0 | first clean sweep |
-| R6 | 2 | 0 | 2 | 0 | 1 real (Dashboard) + 1 false-positive (capture artifact) |
-| R7 | 3 | 0 | 3 | 0 | touch-target stragglers on tertiary controls |
-| R8 | _see LAUNCH_READINESS.md_ | | | | confirming sweep |
+| R6 | 2 | 0 | 2 | 0 | 1 real (Dashboard, fixed) + 1 false-positive (capture artifact) |
+| R7 | 3 | 0 | 3 | 0 | touch-target stragglers (fixed) |
+| R8 | **0** | 0 | 0 | 0 | clean confirming sweep |
+| R9 | 1 | 0 | 1 | 0 | coral close-button (fixed + class swept) |
 
-13 blockers and 111 majors at R1 → 0 blockers from R5 onward. The long tail (R6–R8) was
-progressively finer touch-target polish surfaced only after the larger issues cleared.
+13 blockers and 111 majors at R1 → 0 blockers from R5 onward. The long tail (R6–R9) was
+progressively finer polish surfaced only after the larger issues cleared.
+
+## Independent gate: /design-review (objective measurement)
+The `/design-review` lens (run at 390px, audit core only — no auto-fix loop) graded the app
+**Design A- / AI-Slop A**: Manrope-only typography, zero horizontal scroll on any surface, no
+AI-slop patterns, coral as the single action color, controlled density, no real console errors.
+Its one systematic catch was a class of **sub-44px touch targets** that vision-based agents
+could not measure (~47 controls across 17 files). All were raised to ≥44px using `min-h`/`min-w`
+(beats the `size=` `h-9`/`h-8` Tailwind class conflict), `size="lg"`, or 44px tap-zone wrappers.
+
+Final objective sweep (390px, authed): **0 horizontal scroll** on all 20 surfaces; **every
+interactive control ≥44px**. Sole residual: combobox *inner inputs* render 42px inside their
+44px tappable wrapper (the control's tap target is 44px) — a 2px structural artifact, not a
+reachability defect.
 
 ## Systemic fixes (one change → many surfaces)
 These were done on the main thread first because they touch shared primitives.

@@ -19,11 +19,21 @@ net-new lint errors.
 | R5 | 0 | 0 | 0 | 0 |
 | R6 | 2 | 0 | 2 | 0 |  ← 1 real (fixed) + 1 capture false-positive
 | R7 | 3 | 0 | 3 | 0 |  ← touch-target stragglers (fixed) |
-| R8 | 0 | 0 | 0 | 0 |  ← clean |
-| R9 | _PENDING_ | | | |  ← consecutive confirmation |
+| R8 | 0 | 0 | 0 | 0 |  ← clean confirming sweep |
+| R9 | 1 | 0 | 1 | 0 |  ← coral close-button (fixed + class swept) |
 
 The loop ran past the 6-round soft cap because each late round surfaced progressively finer
-touch-target details on tertiary controls; all were genuine and fixed. End state is clean.
+touch-target details on tertiary controls; all were genuine and fixed. Two full sweeps (R5, R8)
+came back clean; R6/R7/R9 each surfaced a small number of real stragglers (all fixed) — the
+nature of LLM-judge audits, where each blind pass varies slightly. End state is clean.
+
+## Independent gate: /design-review — Design A- / AI-Slop A
+Run at 390px (audit core; no auto-fix loop). Verdict: Manrope-only typography, **zero horizontal
+scroll** on all 20 surfaces, no AI-slop patterns, coral = single action color, controlled
+density, no real console errors. Its objective pixel measurement caught a class of **sub-44px
+touch targets** that 9 vision-based rounds missed (~47 controls / 17 files) — all fixed to ≥44px.
+Final objective sweep: every interactive control ≥44px; only residual is combobox inner inputs
+at 42px inside their 44px tappable wrapper (control tap target is 44px — not a reachability bug).
 
 ## Per-surface status (final / round-8 captures)
 All PASS at 390px unless noted.
