@@ -498,7 +498,7 @@ export default function Dashboard() {
           {/* The engine's actual prescribed session for today (was never surfaced).
               When the main workout card already shows a coral "Start Workout",
               demote this card's CTA to ghost so only one coral primary fires. */}
-          <PrescribedSessionCard today={today} demoteCta={!todayLog && !!workoutTitle} />
+          <PrescribedSessionCard today={today} loggedToday={!!todayLog} demoteCta={!todayLog && !!workoutTitle} />
 
           {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
           <PhaseRecommendationCard />
