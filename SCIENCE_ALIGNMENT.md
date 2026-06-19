@@ -137,7 +137,12 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
 - *Change:* none in code. Remove the fixed per-muscle peak-frequency table from the
   science spec (handled in `Science-Unified.md`); it misrepresents how the engine works.
 
-### E7 [note]: State estimation is 2-state Banister, not the 4-state EKF the spec claims
+### [DONE] E7 [note]: State estimation is 2-state Banister, not the 4-state EKF the spec claims
+- *Done (doc):* Added an "Implementation status (E7)" callout to `Science-Unified.md` §1
+  (State Estimation) stating the shipped engine is the 2-state Banister Kalman, the DEKF /
+  decoupled systemic-vs-structural split is aspirational, and the RLS parameter learner is
+  disabled-as-consumer (F4). Per the recommendation, the doc is aligned to reality and the
+  EKF is deferred. No code change.
 - *Current:* `banister_kalman.py` is a 2-state (fitness/fatigue) model; the decoupled
   systemic-vs-structural 4-state EKF in Science.md is NOT implemented (audit divergence 1).
   This is the root cause of several frontend "decoupled readiness / confidence" gaps below.
