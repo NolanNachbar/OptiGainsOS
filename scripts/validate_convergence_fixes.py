@@ -262,6 +262,50 @@ check("E8 eligible=None preserves back-compat (all parameters eligible)",
       _me8.get_exploration_delta(_pw) != {})
 
 
+# ── E10: composition-aware adaptive TDEE (Forbes density, EWMA trend, no discard) ─
+from engine.tdee import (estimate_tdee as _tdee, composition_density_kcal_per_kg,
+                         energy_density_kcal_per_lb, ewma_trend, learned_intake_bias,
+                         KG_PER_LB, DEFAULT_BODYFAT_FRAC)
+# Forbes: a leaner athlete partitions more change to lean mass → LOWER energy density.
+check("E10 leaner body composition → lower energy density (Forbes partition)",
+      composition_density_kcal_per_kg(5.0) < composition_density_kcal_per_kg(40.0))
+# Energy density is NOT the old fixed 3500 kcal/lb (1 lb = 3500): composition-aware.
+_fm = 180 * KG_PER_LB * 0.15
+check("E10 energy density is composition-aware, not a fixed 3500 kcal/lb",
+      abs(energy_density_kcal_per_lb(_fm) - 3500.0) > 100)
+# Early-transient discount: a phase-change week books the water/glycogen step at LOW density.
+check("E10 early-transient density (wk1) is discounted vs a settled phase",
+      energy_density_kcal_per_lb(_fm, weeks_in_phase=1) < energy_density_kcal_per_lb(_fm))
+check("E10 early-transient density ramps back up by wk6+",
+      energy_density_kcal_per_lb(_fm, weeks_in_phase=6) == energy_density_kcal_per_lb(_fm))
+# EWMA trend weight lags / de-noises a step change (vs raw last value).
+_ew = ewma_trend([200, 200, 195, 195, 195], 0.10)
+check("E10 EWMA trend weight de-noises a step (lags the raw drop)", 195 < _ew[-1] < 200)
+# Directionally correct: losing weight → TDEE above intake; gaining → below intake.
+check("E10 losing weight implies TDEE above logged intake",
+      _tdee(180, 2400, -1.0) > 2400)
+check("E10 gaining weight implies TDEE below logged intake",
+      _tdee(180, 3200, +1.0) < 3200)
+# Replaces the 25% discard GATE: an energy-balance estimate far from the prior is now
+# BLENDED/clamped (uses the signal), not thrown away in favour of the bodyweight prior.
+_prior = round(180 * 15.5)
+_far = _tdee(180, 4000, 0.0)            # intake far above the prior; old code discarded it
+check("E10 a far-from-prior estimate is used (blended/clamped), not discarded to the prior",
+      _far > _prior + 100, f"tdee {_far} vs prior {_prior}")
+# But clamped (not gated) so a corrupt series can't run away.
+check("E10 the energy-balance estimate is sanity-CLAMPED (never unbounded)",
+      _tdee(180, 99999, 0.0) <= round(1.6 * _prior))
+# Learned intake bias: under-report correction, bounded [1.0, 1.5], scales TDEE up.
+_bias = learned_intake_bias(mean_intake=2000, expenditure_est=2790, daily_rate_lb=0.0,
+                            density_kcal_per_lb=2800.0, prev_bias=1.0)
+check("E10 learned intake bias corrects under-reporting (>1.0, bounded)", 1.0 < _bias <= 1.5)
+check("E10 a higher intake bias raises the TDEE estimate (under-report correction)",
+      _tdee(180, 2500, 0.0, intake_bias=1.3) > _tdee(180, 2500, 0.0, intake_bias=1.0))
+# A missing/zero bodyweight cleanly falls back to the prior (no degenerate all-lean density).
+check("E10 missing bodyweight falls back to the prior, not a degenerate estimate",
+      _tdee(0, 3000, -1.0, fallback=3200) == 3200)
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]

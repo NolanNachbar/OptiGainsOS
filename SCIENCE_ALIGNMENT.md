@@ -187,7 +187,19 @@ trend all feed real engine paths). The items below are the exceptions.
   recoverable volume" is real rather than displayed. This is the highest-value data fix:
   the deficit/recovery coupling the spec promises does not currently happen.
 
-### E10 [med]: Harden the TDEE / trend-weight method
+### [DONE] E10 [med]: Harden the TDEE / trend-weight method
+- *Done:* New pure, tested `engine/tdee.py`; `compute_athlete_state.estimate_tdee` delegates
+  to it. Implements all five points: (1) EWMA trend weight (alpha~0.10/day) replaces the raw
+  linear regression in `compute_nutrition` (slope taken as OLS of the smoothed series to keep
+  magnitude unbiased); (2) rolling-window `adaptive_tdee` re-derived each call (captures
+  adaptive thermogenesis without hard-coding β_AT); (3) composition-aware Forbes energy density
+  `p·1820+(1-p)·9440`, `p=C/(C+F)`, C=10.4kg, replacing the fixed ~3500 kcal/lb; (4)
+  early-transient discount (`energy_density_kcal_per_lb(..., weeks_in_phase)`) so the wk1-2
+  water/glycogen step isn't booked as fat; (5) the 25% trust GATE replaced by a trust BLEND +
+  sanity CLAMP and a learned `intake_bias` term anchored on the trend-weight signal (logs are
+  corrected, never discarded). Guards bodyweight≤0 → clean prior fallback. Feeds the E9
+  nutrition modulation. Refinement available: pass real physique bodyfat (currently an 18%
+  prior) and a phase-start date for `weeks_in_phase` at the call site (both default safely).
 - *Current:* `estimate_tdee` blends a 15.5 kcal/lb bodyweight prior 50/50 with an
   energy-balance estimate using a 500 kcal/lb constant, and falls back entirely to the
   prior when logged calories sit outside 75-125% of it. Weight trend is a plain linear

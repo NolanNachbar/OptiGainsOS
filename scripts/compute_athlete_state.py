@@ -35,6 +35,7 @@ sys.path.insert(0, _SCRIPT_DIR)
 # numpy guard because compute_strength always runs and this needs no numpy.
 from engine.log_ingest import (normalize_workout_logs, goal_histories, GOAL_TARGETS,
                                proximity_fatigue_factor, EFFORT_COST_PRIOR)
+from engine.tdee import estimate_tdee as _estimate_tdee, ewma_trend as _ewma_trend
 from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
@@ -440,26 +441,19 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
 # ── Adaptive TDEE ─────────────────────────────────────────────────────────────
 
 def estimate_tdee(bodyweight_lb: float, avg_kcal_7d, weight_trend_lb_wk,
-                  fallback: float = 3200.0) -> float:
+                  fallback: float = 3200.0, bodyfat_frac=None,
+                  intake_bias: float = 1.0, weeks_in_phase=None) -> float:
     """
-    Adaptive maintenance estimate from intake + bodyweight (MacroFactor-style),
-    guarded against under-logging.
-
-      - Bodyweight prior: ~15.5 kcal/lb for an active concurrent athlete.
-      - Energy-balance estimate: intake - (weight_change_lb/wk * 3500/7).
-      - Trust energy balance only when it lands within 25% of the bodyweight prior
-        (outside that band almost always means incomplete food logging), then
-        blend 50/50; otherwise fall back to the bodyweight prior.
+    Adaptive maintenance estimate from intake + trend bodyweight (E10 / MacroFactor +
+    Hall-NIDDK style). Delegates to engine.tdee, which replaces the old single fixed
+    energy-density constant and the 25% under-logging GATE with a composition-aware
+    (Forbes) energy density, a learned-intake-bias trend anchor, an early-transient
+    discount, and a trust BLEND + sanity CLAMP (the signal is anchored, never discarded).
+    `weight_trend_lb_wk` should be the EWMA-trend slope (de-noised) from compute_nutrition.
     """
-    tdee_prior = bodyweight_lb * 15.5 if bodyweight_lb and bodyweight_lb > 0 else fallback
-    try:
-        if avg_kcal_7d and weight_trend_lb_wk is not None:
-            tdee_eb = float(avg_kcal_7d) - float(weight_trend_lb_wk) * 500.0
-            if 0.75 * tdee_prior <= tdee_eb <= 1.25 * tdee_prior:
-                return round(0.5 * tdee_prior + 0.5 * tdee_eb)
-    except (TypeError, ValueError):
-        pass
-    return round(tdee_prior)
+    return _estimate_tdee(bodyweight_lb, avg_kcal_7d, weight_trend_lb_wk, fallback,
+                          bodyfat_frac=bodyfat_frac, intake_bias=intake_bias,
+                          weeks_in_phase=weeks_in_phase)
 
 
 # ── Recovery computation ──────────────────────────────────────────────────────
@@ -637,11 +631,18 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
                if (r.get("weight") or 0) > 0 and r.get("recorded_date")]
     if len(valid_w) >= 3:
         sorted_w = sorted(valid_w, key=lambda r: r.get("recorded_date", ""))
-        recent_14 = sorted_w[-14:]
-        base = datetime.date.fromisoformat(recent_14[0]["recorded_date"])
-        x_vals = [(datetime.date.fromisoformat(r["recorded_date"]) - base).days for r in recent_14]
-        y_vals = [float(r["weight"]) for r in recent_14]
-        slope, _ = linear_regression(x_vals, y_vals)
+        recent = sorted_w[-28:]  # ~4 weeks for a stable EWMA trend
+        ys = [float(r["weight"]) for r in recent]
+        # E10: de-noise scale weight with an EWMA TREND WEIGHT (alpha~0.10/day, ~7-10 day
+        # half-life; the public Hacker's-Diet analog of MacroFactor's recency-weighted
+        # average), then take the OLS slope OF THE SMOOTHED SERIES against the actual day
+        # offsets. Regressing the smoothed series (rather than endpoint-differencing it)
+        # keeps the magnitude unbiased — endpoint differencing compresses a sustained trend
+        # by ~30% and would silently make the on_track thresholds stricter.
+        trend_series = _ewma_trend(ys, alpha=0.10)
+        base = datetime.date.fromisoformat(recent[0]["recorded_date"])
+        x_days = [(datetime.date.fromisoformat(r["recorded_date"]) - base).days for r in recent]
+        slope, _ = linear_regression(x_days, trend_series)
         weight_trend = round(slope * 7, 2)  # lbs/week
 
     # Diet phase drives the nutrition math. Prefer the dedicated diet_phase field
