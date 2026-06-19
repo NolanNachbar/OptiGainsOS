@@ -38,19 +38,19 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
 
   const content = (
     <Card className={embedded ? "border-none shadow-none" : "w-full max-w-md border-none"}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5" />
-            1RM Calculator
-          </CardTitle>
-          {!embedded && (
+      {!embedded && (
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="w-5 h-5" />
+              1RM Calculator
+            </CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
-          )}
-        </div>
-      </CardHeader>
+          </div>
+        </CardHeader>
+      )}
       <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -105,7 +105,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           )}
 
           <p className="text-xs text-ink-muted text-center">
-            Uses Brzycki formula. Most accurate for 1-10 reps.
+            Uses Brzycki formula. Most accurate for 1-12 reps.
           </p>
         </CardContent>
       </Card>

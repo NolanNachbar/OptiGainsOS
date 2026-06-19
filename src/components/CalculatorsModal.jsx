@@ -284,16 +284,16 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
           </DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="1rm" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto border-b-0 glass-inset rounded-lg p-1 mb-6">
-            <TabsTrigger value="1rm" className="rounded-md">
+          <TabsList className="w-full h-auto mb-6">
+            <TabsTrigger value="1rm" className="flex-1">
               <Scale className="w-4 h-4 mr-2" />
               1RM
             </TabsTrigger>
-            <TabsTrigger value="working" className="rounded-md">
+            <TabsTrigger value="working" className="flex-1">
               <Dumbbell className="w-4 h-4 mr-2" />
               Working
             </TabsTrigger>
-            <TabsTrigger value="plates" className="rounded-md">
+            <TabsTrigger value="plates" className="flex-1">
               <Disc className="w-4 h-4 mr-2" />
               Plates
             </TabsTrigger>

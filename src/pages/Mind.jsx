@@ -710,7 +710,7 @@ export default function Mind({ hideHeader }) {
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <header className="mb-6 rise-in">
+          <header className="mb-6 rise-in hidden lg:block">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
                 <Brain className="w-[15px] h-[15px] text-violet" />

@@ -150,27 +150,27 @@ function SupplementForm({ initial, onSave, onClose }) {
     <div className="space-y-4">
       <div>
         <Label className="text-xs text-ink-muted mb-1.5 block">Name</Label>
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Creatine" className="h-9" />
+        <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Creatine" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-ink-muted mb-1.5 block">Default Dose</Label>
-          <Input type="number" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" className="h-9" />
+          <Input type="number" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" />
         </div>
         <div>
           <Label className="text-xs text-ink-muted mb-1.5 block">Unit</Label>
-          <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="mg, g, IU, cap" className="h-9" />
+          <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="mg, g, IU, cap" />
         </div>
       </div>
       <div>
         <Label className="text-xs text-ink-muted mb-1.5 block">Timing note (optional)</Label>
-        <Input value={timing} onChange={e => setTiming(e.target.value)} placeholder="e.g. With breakfast" className="h-9" />
+        <Input value={timing} onChange={e => setTiming(e.target.value)} placeholder="e.g. With breakfast" />
       </div>
       <div className="flex gap-2 pt-2">
-        <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">Cancel</Button>
+        <Button variant="ghost" size="lg" onClick={onClose} className="flex-1">Cancel</Button>
         <Button
           variant="volt"
-          size="sm"
+          size="lg"
           onClick={() => onSave({ name, default_dose: dose ? parseFloat(dose) : null, unit, timing_note: timing })}
           disabled={!name.trim()}
           className="flex-1"

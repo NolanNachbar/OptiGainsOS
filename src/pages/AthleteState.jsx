@@ -825,7 +825,7 @@ export default function AthleteState({ hideHeader = false }) {
     <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-4xl mx-auto">
         {!hideHeader && (
-          <div className="mb-6 rise-in">
+          <div className="mb-6 rise-in hidden lg:block">
             <h1 className="type-display text-[22px]">Athlete State</h1>
             <p className="font-technical text-[13px] font-semibold text-muted-2 mt-0.5">
               Computed daily · {today}

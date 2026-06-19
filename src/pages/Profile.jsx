@@ -317,7 +317,7 @@ export default function Profile({ hideHeader }) {
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-leaf font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>
@@ -374,7 +374,7 @@ export default function Profile({ hideHeader }) {
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
                     </div>
                     <div>
-                      <p className="text-leaf font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
+                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
                       <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
                     </div>
                   </div>

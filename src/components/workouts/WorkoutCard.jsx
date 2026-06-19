@@ -55,8 +55,8 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     >
       <div className="group relative overflow-hidden glass glass-interactive">
         <div className="pb-2 pt-4 px-4 md:px-6">
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+          {(workout.focus && workout.focus !== "strength") || workout.folder ? (
+            <div className="flex flex-wrap gap-1.5 pr-12 min-w-0">
               {workout.focus && workout.focus !== "strength" && (
                 <Badge
                   variant="outline"
@@ -75,9 +75,10 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                 </Badge>
               )}
             </div>
+          ) : null}
 
-            {isOwner && (
-              <div className="relative flex-shrink-0" ref={menuRef}>
+          {isOwner && (
+              <div className="absolute right-2 top-2 z-10" ref={menuRef}>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -115,10 +116,9 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   </div>
                 )}
               </div>
-            )}
-          </div>
+          )}
 
-          <h3 className="text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug">
+          <h3 className="text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug pr-12">
             {workout.title}
           </h3>
           {workout.description && (

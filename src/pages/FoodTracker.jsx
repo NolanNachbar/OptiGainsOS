@@ -982,9 +982,9 @@ const handleSaveMealTemplate = () => {
                         {entries.map((entry, i) => (
                           <div
                             key={entry.id}
-                            className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b hairline hover:bg-white/[0.03] transition-colors group ${entry.planned ? 'bg-white/[0.02]' : i % 2 === 1 ? 'bg-white/[0.015]' : ''}`}
+                            className={`flex items-center gap-2 md:gap-3 py-3 px-4 border-b hairline hover:bg-white/[0.03] transition-colors group ${entry.planned ? 'bg-white/[0.02]' : i % 2 === 1 ? 'bg-white/[0.015]' : ''}`}
                           >
-                            <div className="col-span-5 md:col-span-7 flex items-center gap-2.5 min-w-0">
+                            <div className="flex-1 min-w-0 flex items-center gap-2.5">
                               {entry.planned && (
                                 <button
                                   onClick={() => togglePlannedMutation.mutate(entry.id)}
@@ -1011,7 +1011,7 @@ const handleSaveMealTemplate = () => {
                                 )}
                               </div>
                             </div>
-                            <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
+                            <div className={`shrink-0 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
                                 <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Cal</span>
@@ -1029,7 +1029,7 @@ const handleSaveMealTemplate = () => {
                                 <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
-                            <div className="col-span-2 md:col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <div className="shrink-0 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1413,7 +1413,7 @@ const handleSaveMealTemplate = () => {
                           <button
                             type="button"
                             onClick={() => document.getElementById("import-foods-csv-input").click()}
-                            className="text-xs text-ink-muted hover:text-brand flex items-center gap-1"
+                            className="min-h-[44px] px-2 text-xs text-ink-muted hover:text-brand flex items-center gap-1"
                             title="Import foods from CSV"
                           >
                             <Upload className="w-3 h-3" /> Import CSV
@@ -1421,7 +1421,7 @@ const handleSaveMealTemplate = () => {
                           <button
                             type="button"
                             onClick={() => setShowFoodFormatGuide(true)}
-                            className="text-ink-muted hover:text-brand"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-muted hover:text-brand"
                             title="CSV format guide"
                           >
                             <HelpCircle className="w-3 h-3" />

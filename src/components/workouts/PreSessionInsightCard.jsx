@@ -50,8 +50,8 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
-                className="text-ink-muted hover:text-ink-muted text-xs h-11 md:h-7 px-2"
+                variant="dim"
+                className="text-xs h-11 md:h-7 px-2"
                 onClick={handleDismiss}
               >
                 Keep my plan
@@ -61,8 +61,8 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
           {!(Number(insight.suggestedWeight) > 0) && (
             <Button
               size="sm"
-              variant="ghost"
-              className="text-ink-muted hover:text-ink-muted text-xs h-11 md:h-7 px-0 mt-2"
+              variant="dim"
+              className="text-xs h-11 md:h-7 px-3 mt-2"
               onClick={handleDismiss}
             >
               Got it

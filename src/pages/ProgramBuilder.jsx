@@ -568,10 +568,13 @@ export default function ProgramBuilder() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation buttons */}
-        <div className="flex gap-3 mt-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-[env(safe-area-inset-bottom)]">
+        {/* Navigation buttons — sticky footer that clears the fixed mobile dock (~92px) */}
+        <div
+          className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated md:bg-transparent md:shadow-none md:border-0"
+          style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+        >
           {step > 0 && (
-            <Button variant="outline" onClick={back} className="flex-1">
+            <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -581,7 +584,7 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={next}
               disabled={!canProceed()}
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold"
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -591,7 +594,7 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold"
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
             >
               <Save className="w-4 h-4 mr-2" />
               {createMutation.isPending || updateMutation.isPending
@@ -892,7 +895,7 @@ function InlineDayEditor({
             </span>
             Editing Exercises
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close editor" className="min-h-[44px] min-w-[44px] px-0">
             <ChevronUp className="w-4 h-4" />
           </Button>
         </div>
@@ -972,7 +975,7 @@ function InlineDayEditor({
           <Select
             onValueChange={(targetDay) => onCopyDay(dayIndex, parseInt(targetDay))}
           >
-            <SelectTrigger className="w-auto text-xs h-8">
+            <SelectTrigger className="w-auto text-xs">
               <Copy className="w-3 h-3 mr-1" />
               Copy to...
             </SelectTrigger>
@@ -1007,7 +1010,7 @@ function InlineDayEditor({
               });
             }}
           >
-            <SelectTrigger className="h-8 text-xs text-ink-muted">
+            <SelectTrigger className="text-xs text-ink-muted">
               <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout…" : "No cardio workouts in library yet"} />
             </SelectTrigger>
             <SelectContent>
@@ -1023,7 +1026,7 @@ function InlineDayEditor({
                 <span className="text-xs font-medium text-ink flex-1 truncate">{c.title}</span>
                 <span className="font-technical text-xs text-ink-muted shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
-                  <SelectTrigger className="w-20 h-6 text-xs">
+                  <SelectTrigger className="w-20 text-xs shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1032,7 +1035,7 @@ function InlineDayEditor({
                     <SelectItem value="anytime">Anytime</SelectItem>
                   </SelectContent>
                 </Select>
-                <button type="button" onClick={() => removeCardioWorkout(dayIndex, i)} className="text-ink-muted hover:text-bad transition-colors shrink-0">
+                <button type="button" aria-label="Remove cardio" onClick={() => removeCardioWorkout(dayIndex, i)} className="h-11 w-11 -my-2 flex items-center justify-center text-ink-muted hover:text-bad transition-colors shrink-0">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1091,10 +1094,11 @@ function ExerciseEditor({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              aria-label="Remove exercise"
+              className="h-11 w-11 p-0 -my-2"
               onClick={() => removeExercise(dayIndex, index)}
             >
-              <Trash2 className="w-3 h-3 text-bad" />
+              <Trash2 className="w-3.5 h-3.5 text-bad" />
             </Button>
           )}
         </div>
@@ -1115,7 +1119,7 @@ function ExerciseEditor({
                 value={exercise.focus || "hypertrophy"}
                 onValueChange={(v) => update("focus", v)}
               >
-                <SelectTrigger className="text-xs h-8">
+                <SelectTrigger className="text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1137,7 +1141,7 @@ function ExerciseEditor({
               min="0"
               max="5"
               step="0.5"
-              className="text-sm h-8"
+              className="text-sm"
             />
           </div>
           <div>
@@ -1147,7 +1151,7 @@ function ExerciseEditor({
               value={typeof exercise.sets === "number" ? exercise.sets : Array.isArray(exercise.sets) ? exercise.sets.length : 3}
               onChange={(e) => update("sets", parseInt(e.target.value) || 3)}
               min="1"
-              className="text-sm h-8"
+              className="text-sm"
             />
           </div>
           <div>
@@ -1156,7 +1160,7 @@ function ExerciseEditor({
               value={exercise.rep_target}
               onChange={(e) => update("rep_target", e.target.value)}
               placeholder={isCardio ? "e.g., 30 min, 5 km" : "e.g., 5 or 8-12"}
-              className="text-sm h-8"
+              className="text-sm"
             />
           </div>
           <div>
@@ -1166,7 +1170,7 @@ function ExerciseEditor({
               value={exercise.rest_seconds}
               onChange={(e) => update("rest_seconds", parseInt(e.target.value) || 90)}
               min="0"
-              className="text-sm h-8"
+              className="text-sm"
             />
           </div>
           {!isCardio && (
@@ -1183,7 +1187,7 @@ function ExerciseEditor({
                 }
                 min="0"
                 step="2.5"
-                className="text-sm h-8"
+                className="text-sm"
               />
             </div>
           )}
@@ -1257,7 +1261,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
               <Input
                 type="number"
                 placeholder="Start lbs"
-                className="w-28 text-sm h-9"
+                className="w-28 text-sm"
                 value={projectionWeights[currentExercise.name] || ""}
                 onChange={(e) =>
                   setProjectionWeights((prev) => ({

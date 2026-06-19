@@ -26,17 +26,17 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">{label}</span>
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center">
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="p-1 text-muted-2 hover:text-brand transition-colors"
+          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
         <span className="font-technical text-3xl font-extrabold text-ink w-12 text-center leading-none">{value}</span>
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="p-1 text-muted-2 hover:text-brand transition-colors"
+          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors"
         >
           <ChevronDown className="w-4 h-4" />
         </button>
@@ -188,8 +188,6 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
 
   return (
     <div className="glass p-4">
-      <h3 className="text-sm font-extrabold text-ink mb-4">Morning Check-in</h3>
-
       {/* Energy + Mood */}
       <div className="flex justify-around mb-5">
         <NumberPicker label="Energy" value={energy} onChange={setEnergy} />
@@ -205,7 +203,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
             <button
               key={group}
               onClick={() => cycleSoreness(group)}
-              className={`text-xs font-bold py-1.5 px-1 rounded-lg border-[0.5px] transition-all ${SORENESS_COLORS[soreness[group]]}`}
+              className={`text-xs font-bold min-h-[44px] flex flex-col items-center justify-center px-1 rounded-lg border-[0.5px] transition-all ${SORENESS_COLORS[soreness[group]]}`}
             >
               <span className="block truncate">{group}</span>
               <span className="block text-[10px] opacity-70 mt-0.5">{SORENESS_LABELS[soreness[group]]}</span>

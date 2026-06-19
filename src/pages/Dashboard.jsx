@@ -479,7 +479,7 @@ export default function Dashboard() {
                    <Dumbbell className="w-8 h-8 text-faint group-hover:text-muted-2 transition-colors" />
                 </div>
                 <Link to={todayWorkoutLink}>
-                  <Button variant="dark" size="lg" className="w-full h-12 font-bold rounded-xl">
+                  <Button variant="volt" size="lg" className="w-full h-12 font-bold rounded-xl">
                     Start Workout <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -495,8 +495,10 @@ export default function Dashboard() {
 
         {/* ── SECONDARY CONTENT (Tabs/Lists) ── */}
         <div className="space-y-4">
-          {/* The engine's actual prescribed session for today (was never surfaced) */}
-          <PrescribedSessionCard today={today} />
+          {/* The engine's actual prescribed session for today (was never surfaced).
+              When the main workout card already shows a coral "Start Workout",
+              demote this card's CTA to ghost so only one coral primary fires. */}
+          <PrescribedSessionCard today={today} demoteCta={!todayLog && !!workoutTitle} />
 
           {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
           <PhaseRecommendationCard />

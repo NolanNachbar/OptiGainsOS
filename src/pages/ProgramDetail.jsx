@@ -75,6 +75,7 @@ export default function ProgramDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showAllProgression, setShowAllProgression] = useState(false);
+  const [showManageActions, setShowManageActions] = useState(false);
 
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
@@ -332,61 +333,75 @@ export default function ProgramDetail() {
                   </Button>
                 )}
 
-                {/* Secondary / management controls — demoted to a compact wrap row */}
+                {/* Secondary / management controls — keep at most two demoted controls
+                    inline; route power-user (Edit/Export) and destructive (Delete)
+                    actions behind a "Manage" overflow toggle. */}
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
-                  <div className="flex flex-wrap gap-2">
-                    {isEnrolled && (
-                      <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
-                        <Pause className="w-4 h-4 mr-1.5" />
-                        Pause
-                      </Button>
-                    )}
-                    {isOwner && (
-                      <Button
-                        variant="dim"
-                        size="lg"
-                        className="flex-1 min-w-[44px]"
-                        onClick={() => navigate(`/program-builder?edit=${program.id}`)}
-                      >
-                        <Edit className="w-4 h-4 mr-1.5" />
-                        Edit
-                      </Button>
-                    )}
-                    {isOwner && (
-                      <Button
-                        variant="dim"
-                        size="lg"
-                        className="flex-1 min-w-[44px]"
-                        onClick={() => {
-                          exportProgramAsJson(program);
-                          toast.success("Program exported");
-                        }}
-                      >
-                        <Download className="w-4 h-4 mr-1.5" />
-                        Export
-                      </Button>
-                    )}
-                    {(isEnrolled || enrollment?.status === "paused") && (
-                      <Button
-                        variant="dim"
-                        size="lg"
-                        className="flex-1 min-w-[44px]"
-                        onClick={handleRestart}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1.5" />
-                        Cancel
-                      </Button>
-                    )}
-                    {isOwner && (
-                      <Button
-                        variant="destructive"
-                        size="lg"
-                        className="flex-1 min-w-[44px]"
-                        onClick={handleDelete}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1.5" />
-                        Delete
-                      </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {isEnrolled && (
+                        <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
+                          <Pause className="w-4 h-4 mr-1.5" />
+                          Pause
+                        </Button>
+                      )}
+                      {(isEnrolled || enrollment?.status === "paused") && (
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={handleRestart}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          Cancel
+                        </Button>
+                      )}
+                      {isOwner && (
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => setShowManageActions((v) => !v)}
+                          aria-expanded={showManageActions}
+                        >
+                          Manage
+                          <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
+                        </Button>
+                      )}
+                    </div>
+                    {isOwner && showManageActions && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => navigate(`/program-builder?edit=${program.id}`)}
+                        >
+                          <Edit className="w-4 h-4 mr-1.5" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="dim"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={() => {
+                            exportProgramAsJson(program);
+                            toast.success("Program exported");
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1.5" />
+                          Export
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="lg"
+                          className="flex-1 min-w-[44px]"
+                          onClick={handleDelete}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          Delete
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -448,7 +463,7 @@ export default function ProgramDetail() {
             {numCycles > 2 && (
               <button
                 onClick={() => setShowAllCycles((v) => !v)}
-                className="mt-4 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
               >
                 {showAllCycles ? "Show fewer cycles" : `Show all ${numCycles} cycles`}
                 <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
@@ -465,27 +480,33 @@ export default function ProgramDetail() {
             </CardHeader>
             <CardContent>
               {(() => {
+              const DEFAULT_VISIBLE = 5;
               const allEntries = Object.entries(enrollment.progression_state).filter(([key]) => !key.startsWith('_'));
-              const actionableEntries = allEntries.filter(([, state]) => state.stalled || state.ready_to_progress);
-              const hiddenCount = allEntries.length - actionableEntries.length;
-              const visibleEntries = showAllProgression || actionableEntries.length === 0 ? allEntries : actionableEntries;
-              // If 2+ visible stalled exercises share the exact same suggestion, surface it
-              // once as a banner instead of repeating it on every card.
-              const stallSuggestions = visibleEntries
+              // Prioritize stalled exercises ahead of ready-to-progress so the cap keeps the most urgent.
+              const actionableEntries = allEntries
+                .filter(([, state]) => state.stalled || state.ready_to_progress)
+                .sort(([, a], [, b]) => (b.stalled ? 1 : 0) - (a.stalled ? 1 : 0));
+              const baseEntries = actionableEntries.length === 0 ? allEntries : actionableEntries;
+              // Collapsed by default: lead with a small capped list, route the rest behind "Show all".
+              const visibleEntries = showAllProgression ? allEntries : baseEntries.slice(0, DEFAULT_VISIBLE);
+              const hiddenCount = allEntries.length - visibleEntries.length;
+              // Surface any stall suggestion that repeats verbatim on 2+ visible cards once as a
+              // banner instead of having the user re-read identical boilerplate per card.
+              const suggestionCounts = visibleEntries
                 .filter(([, s]) => s.stalled && s.stall_suggestion)
-                .map(([, s]) => s.stall_suggestion);
-              const sharedStallSuggestion =
-                stallSuggestions.length >= 2 && new Set(stallSuggestions).size === 1
-                  ? stallSuggestions[0]
-                  : null;
+                .reduce((acc, [, s]) => acc.set(s.stall_suggestion, (acc.get(s.stall_suggestion) || 0) + 1), new Map());
+              const sharedSuggestions = [...suggestionCounts.entries()]
+                .filter(([, count]) => count >= 2)
+                .map(([text]) => text);
+              const sharedSet = new Set(sharedSuggestions);
               return (
               <div className="space-y-2">
-                {sharedStallSuggestion && (
-                  <div className="glass-inset p-3 flex items-start gap-1.5">
+                {sharedSuggestions.map((text) => (
+                  <div key={text} className="glass-inset p-3 flex items-start gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warn" />
-                    <p className="font-technical text-xs text-warn">{sharedStallSuggestion}</p>
+                    <p className="font-technical text-xs text-warn">{text}</p>
                   </div>
-                )}
+                ))}
                 {visibleEntries
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
@@ -516,7 +537,7 @@ export default function ProgramDetail() {
                         )}
                       </div>
                     </div>
-                    {state.stalled && state.stall_suggestion && state.stall_suggestion !== sharedStallSuggestion && (
+                    {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
                       <p className="font-technical text-xs text-warn mt-2 flex items-start gap-1.5">
                         <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                         <span>{state.stall_suggestion}</span>
@@ -525,19 +546,19 @@ export default function ProgramDetail() {
                     </div>
                   );
                   })}
-                {!showAllProgression && actionableEntries.length > 0 && hiddenCount > 0 && (
+                {!showAllProgression && hiddenCount > 0 && (
                   <button
                     onClick={() => setShowAllProgression(true)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
                   >
                     Show all {allEntries.length} exercises
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 )}
-                {showAllProgression && hiddenCount > 0 && (
+                {showAllProgression && allEntries.length > DEFAULT_VISIBLE && (
                   <button
                     onClick={() => setShowAllProgression(false)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
                   >
                     Show fewer
                     <ChevronDown className="w-4 h-4 rotate-180" />

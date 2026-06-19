@@ -160,7 +160,7 @@ export default function RecoveryDetail() {
                     }}
                   >
                     <span
-                      className="absolute -top-[3px] -bottom-[3px] rounded-[8px] border-[1.5px] border-white/35"
+                      className="absolute -top-[3px] -bottom-[3px] rounded-sm border-[1.5px] border-white/35"
                       style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
                     {acwr != null && (

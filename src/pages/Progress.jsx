@@ -229,7 +229,7 @@ function MeasurementsTab() {
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-xs w-36" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs w-36" />
           </div>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map(f => (
@@ -241,16 +241,16 @@ function MeasurementsTab() {
                   value={form[f.key] || ""}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   placeholder={latest?.[f.key] ? String(latest[f.key]) : "—"}
-                  className="h-8 text-xs"
+                  className="text-xs"
                 />
               </div>
             ))}
           </div>
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" className="h-8 text-xs" />
+              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" className="text-xs" />
             </div>
-            <Button variant="volt" size="sm" className="h-8 px-4 shrink-0" disabled={!hasData || save.isPending} onClick={() => save.mutate()}>
+            <Button variant="volt" size="lg" className="px-4 shrink-0" disabled={!hasData || save.isPending} onClick={() => save.mutate()}>
               Save Entry
             </Button>
           </div>

@@ -236,7 +236,7 @@ export default function CreateWorkout() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 md:p-6 pb-28 md:pb-6 bg-charcoal min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6 hidden lg:block">
           <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
@@ -380,7 +380,7 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <div className="sticky bottom-0 -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 bg-charcoal/90 backdrop-blur-md border-t border-charcoal-borderSoft md:bg-transparent md:backdrop-blur-none md:border-0 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))] md:[padding-bottom:0]">
+          <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] md:static z-[9000] -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated rounded-2xl md:rounded-none md:bg-transparent md:shadow-none md:border-0 md:[backdrop-filter:none]">
             <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
@@ -401,7 +401,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove}>
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} className="h-11 w-11 px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}
@@ -481,7 +481,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 h-7 text-sm text-center font-technical"
+            className="w-16 text-sm text-center font-technical"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>
@@ -489,7 +489,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="dim" size="sm" onClick={onRemove} className="ml-auto shrink-0">
+          <Button type="button" variant="dim" size="sm" onClick={onRemove} className="ml-auto shrink-0 h-11 w-11 px-0">
             <Trash2 className="w-3.5 h-3.5 text-bad" />
           </Button>
         )}
@@ -534,7 +534,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove}>
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} className="h-11 w-11 px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}

@@ -320,7 +320,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 {/* Filters button */}
                 <button
                   onClick={() => setFilterOpen(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 min-h-11 rounded-full text-xs font-bold transition-all ${
                     filter !== 'all' || folderFilter !== 'all'
                       ? 'bg-brand text-[var(--color-action-dark)]'
                       : 'glass-inset text-ink-muted hover:text-ink'
@@ -334,11 +334,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     </span>
                   )}
                 </button>
-                <Button variant="dim" size="sm" onClick={() => document.getElementById("import-workout-input").click()}>
+                <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
                   <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Import</span>
                 </Button>
-                <Button variant="dim" size="sm" onClick={() => setShowFormatGuide(true)} title="Import format guide">
+                <Button variant="dim" size="lg" className="w-11 px-0" onClick={() => setShowFormatGuide(true)} title="Import format guide">
                   <HelpCircle className="w-4 h-4" />
                 </Button>
                 <input
@@ -777,11 +777,7 @@ function StrengthEntryCard({ entry }) {
     <div
       className="group relative overflow-hidden tile tile-interactive p-4"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h4 className="text-[15px] font-semibold text-ink">{entry.title}</h4>
-        </div>
-      </div>
+      <h4 className="text-[15px] font-semibold text-ink mb-3">{entry.title}</h4>
       <div className="flex">
         <StatBlock label="Exercises" value={entry.exerciseCount} />
         {entry.sets > 0 && <StatBlock label="Sets" value={entry.sets} bordered />}

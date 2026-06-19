@@ -56,12 +56,13 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
             onClick={handleAdd}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             variant="volt"
+            size="lg"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add
           </Button>
           {showCloseButton && (
-            <Button variant="ghost" onClick={() => setShowForm(false)}>
+            <Button variant="ghost" size="lg" className="w-11 px-0" onClick={() => setShowForm(false)}>
               <X className="w-4 h-4" />
             </Button>
           )}

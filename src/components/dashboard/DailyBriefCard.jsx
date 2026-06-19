@@ -119,14 +119,14 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
   return (
     <Card className="glass glass-interactive">
       <CardHeader className={`pt-4 px-4 ${isCollapsed ? 'pb-4' : 'pb-0'}`}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="section-label !text-ink flex items-center gap-2 normal-case">
-            <Bot className="w-4 h-4 text-teal" />
-            AI Daily Brief
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="section-label !text-ink flex items-center gap-2 min-w-0">
+            <Bot className="w-4 h-4 text-teal shrink-0" />
+            <span className="truncate">AI Daily Brief</span>
           </CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {generatedAt && (
-              <span className="font-technical tabular-nums text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
+              <span className="hidden sm:inline font-technical tabular-nums text-[10px] font-semibold text-faint whitespace-nowrap">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
               <Button variant="dim" size="sm" className="min-h-[44px] text-xs font-semibold text-secondary hover:text-ink gap-1.5 px-3">

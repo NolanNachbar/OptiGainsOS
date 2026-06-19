@@ -175,10 +175,12 @@ function PipelineTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 font-technical text-xs font-semibold text-muted-2">
-          <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
-          <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
-        </div>
+        {apps.length > 0 && (
+          <div className="flex items-center gap-4 font-technical text-xs font-semibold text-muted-2">
+            <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
+            <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
+          </div>
+        )}
         {apps.length > 0 && (
           <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
             <Plus className="w-3.5 h-3.5" /> Add Application
