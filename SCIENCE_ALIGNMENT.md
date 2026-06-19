@@ -270,7 +270,13 @@ trend all feed real engine paths). The items below are the exceptions.
   (true sleep debt vs. the 0-100 sleep_score). Drop or stop collecting the rest, or wire
   them deliberately. Don't leave ingested-but-dead fields implying coverage that isn't there.
 
-### E12 [note]: Reconcile the spec to the sensing reality
+### [DONE] E12 [note]: Reconcile the spec to the sensing reality
+- *Done (doc):* Added an "Implementation status / sensing reality (E12)" callout to
+  `Science-Unified.md` §5 (Fatigue Detection): marks respiratory_rate, skin_temperature, and
+  movement/bar velocity as uncollected/future hardware; states the engine uses HRV/RHR as
+  Kalman noise-scalers + z-score gates and EWMA-ACWR/hazard (not the fixed 0.35/0.15/0.20
+  linear blend); notes true sleep debt now derives from logged duration (E11). The fixed
+  weighting is NOT forced into code. No code change.
 - *Current:* `Science-Unified.md` still inherits sensor claims the app does not collect
   (`respiratory_rate`, `skin_temperature`, `movement_velocity` / bar velocity), and a
   fixed fatigue-weighting (lnRMSSD 0.35, RHR 0.15, sleep debt 0.20). The engine instead

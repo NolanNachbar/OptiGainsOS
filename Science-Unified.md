@@ -706,6 +706,19 @@ baseline, not fixed laws.
   morning post-wake evaluation. A temporal persistence filter requires a 3-day trend
   before any downregulation (no single-day reaction).
 
+> **Implementation status / sensing reality (E12).** The app does NOT currently collect
+> several signals this spec lists: **sleep/sleeping respiratory rate**, **skin temperature**
+> (the $1.5^\circ$C illness throttle), and **movement / warm-up bar velocity** (the
+> velocity-loss and "velocity at 80% load" features, and the RIR-correction in §7). Treat
+> these as FUTURE hardware, not active inputs. What is implemented: HRV ($\ln$RMSSD) and RHR
+> enter as **Kalman measurement-noise scalers and z-score gates**, plus the EWMA-ACWR and a
+> composite hazard score with a 3-day persistence filter — NOT the fixed linear fatigue
+> blend (lnRMSSD 0.35 / RHR 0.15 / sleep-debt 0.20) some earlier text implied; the
+> noise-scaling / z-score approach is more principled and is the one to follow. True sleep
+> debt now comes from logged sleep DURATION (E11), not only the 0-100 sleep score. Velocity
+> loss appears in the slow-tissue backstop description but is currently approximated by
+> e1RM-trend + soreness, since bar velocity is not captured.
+
 ```python
 def assess_fatigue_state(f_index, hazard, z_hrv, days_persisted):
     # Output is always a VOLUME directive (never a load cut).
