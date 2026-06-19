@@ -1,5 +1,5 @@
 {
-  "round": 5,
+  "round": 6,
   "clean_sweeps": 0,
   "baseUrl": "http://localhost:5173",
   "history": [
@@ -101,6 +101,22 @@
       "captureWasFull": true,
       "fixes": "31 fixes (7 systemic + 24 per-surface), build-clean, committed.",
       "trend": "blockers 12/10/4, majors 119/124/100 across full rounds 1/3/4 — serious issues declining; minors noisy (agnostic)."
+    },
+    {
+      "round": 5,
+      "counts": {
+        "blockers": 12,
+        "majors": 87,
+        "minors": 214
+      },
+      "cleanSweep": false,
+      "captureWasFull": true,
+      "fixes": "26 fixes (5 systemic + 21 per-surface), build-clean, committed.",
+      "realBugs": [
+        "/program/:id invalid renders an infinite spinner (no not-found fallback) — recurring, fix in R6",
+        "mobile sonner toast hidden behind Dialog scrim at 390px (z-index/portal) — fix in R6"
+      ],
+      "note": "blockers volatile (12/10/4/12) due to agnostic severity subjectivity; majors trend down 119/124/100/87."
     }
   ],
   "coverageGaps": [],
