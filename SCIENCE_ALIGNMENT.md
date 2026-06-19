@@ -242,7 +242,16 @@ trend all feed real engine paths). The items below are the exceptions.
   (PMC3970209); Bhutani/Schoeller 2017 (PMC5506524); Muller/Heymsfield Metabolism 2012;
   Guo/Hall AJCN BWP validation; MacroFactor published method (constants proprietary).
 
-### E11 [low]: Resolve collected-but-unused signals (use or drop)
+### [DONE] E11 [low]: Resolve collected-but-unused signals (use or drop)
+- *Done — per field:* `sleep_duration_min` is now USED — new `engine/sleep_debt.py`
+  (`sleep_debt_hours`, `is_poor_night`); `compute_recovery` surfaces `sleep_debt_7d_hours`
+  and `_consecutive_poor_sleep` now prefers actual duration (a night < 6h) over the 0-100
+  score (score kept as fallback). `tss_cycling`/`tss_swim` → cycling/swim DISTANCE is now
+  consumed by the modality-aware interference (E13). Remaining fields decided as DROP-
+  candidates (no active wiring, left collected for possible future use): `vo2max_cycling`,
+  `steps`, `active_calories`, `tss_run`, Apple-Health `ah_*`, `daily_readiness.mood`, and
+  the redundant scalar `daily_readiness.stress` (Garmin `stress_score` is the one used).
+  Dropping their collection is a frontend/DB change out of engine scope.
 - *Current, never read by any engine:* `sleep_duration_min`, `vo2max_cycling`, `steps`,
   `active_calories`, `tss_run/cycling/swim`, Apple-Health `ah_*` fields, `daily_readiness.mood`,
   and a redundant scalar `daily_readiness.stress` (Garmin `stress_score` is used instead).

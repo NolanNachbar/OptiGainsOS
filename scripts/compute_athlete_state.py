@@ -36,6 +36,7 @@ sys.path.insert(0, _SCRIPT_DIR)
 from engine.log_ingest import (normalize_workout_logs, goal_histories, GOAL_TARGETS,
                                proximity_fatigue_factor, EFFORT_COST_PRIOR)
 from engine.tdee import estimate_tdee as _estimate_tdee, ewma_trend as _ewma_trend
+from engine.sleep_debt import sleep_debt_hours, is_poor_night
 from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
@@ -515,12 +516,18 @@ def compute_recovery(recovery_rows: list, checkin: Optional[dict]) -> dict:
         else:
             break
 
+    # E11: true cumulative sleep debt from the actual logged DURATION (trailing 7 nights),
+    # a more principled systemic-fatigue input than the opaque 0-100 score.
+    sleep_debt_7d = sleep_debt_hours(
+        [row.get("sleep_duration_min") for row in recovery_rows[:7]])
+
     return {
         "data_available":       True,
         "score":                score,
         "push_readiness":       readiness,
         "hrv":                  hrv,
         "sleep_score":          sleep_score,
+        "sleep_debt_7d_hours":  sleep_debt_7d,
         "body_battery":         body_battery,
         "resting_hr":           resting_hr,
         "energy":               energy,
@@ -858,18 +865,20 @@ def _glycogen_demand(user_id: str):
 
 def _consecutive_poor_sleep(recovery_rows: list, threshold: int = 60) -> int:
     """
-    Count consecutive most-recent nights with sleep_score below threshold. Half of
-    the severe-crash recovery valve (the other half is sustained low HRV). Stops at
-    the first good or missing night so it measures a real run of bad sleep.
+    Count consecutive most-recent poor nights. Half of the severe-crash recovery valve
+    (the other half is sustained low HRV). E11: prefer the actual logged sleep DURATION
+    (a night under POOR_NIGHT_HOURS) when present, falling back to the 0-100 sleep_score;
+    stops at the first good or fully-missing night so it measures a real run of bad sleep.
     """
     rows = sorted([r for r in recovery_rows if r.get("date")],
                   key=lambda r: str(r.get("date")), reverse=True)
     n = 0
     for r in rows:
-        s = r.get("sleep_score")
-        if s is None or float(s) == 0:
+        poor = is_poor_night(r.get("sleep_duration_min"), r.get("sleep_score"),
+                             score_threshold=threshold)
+        if poor is None:      # neither duration nor score → missing night, stop the run
             break
-        if float(s) < threshold:
+        if poor:
             n += 1
         else:
             break

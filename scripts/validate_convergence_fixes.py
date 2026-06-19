@@ -306,6 +306,24 @@ check("E10 missing bodyweight falls back to the prior, not a degenerate estimate
       _tdee(0, 3000, -1.0, fallback=3200) == 3200)
 
 
+# ── E11: wire sleep_duration_min into a true sleep-debt signal ────────────────
+from engine.sleep_debt import sleep_debt_hours, is_poor_night
+# Cumulative hours below an 8h target; extra sleep banks no credit.
+check("E11 sleep debt accumulates hours below target",
+      sleep_debt_hours([7 * 60, 6 * 60, 5 * 60]) == (1 + 2 + 3))
+check("E11 extra sleep does not bank credit (debt floors per night)",
+      sleep_debt_hours([9 * 60, 9 * 60]) == 0.0)
+check("E11 missing/zero nights are skipped, not counted as debt",
+      sleep_debt_hours([None, 0, 8 * 60]) == 0.0)
+# Poor-night detection prefers actual DURATION, falls back to score, None when neither.
+check("E11 a short night is poor by duration regardless of a decent score",
+      is_poor_night(5 * 60, 80) is True)
+check("E11 falls back to sleep_score when duration is missing",
+      is_poor_night(None, 40) is True and is_poor_night(None, 90) is False)
+check("E11 a fully-missing night returns None (stops a consecutive run)",
+      is_poor_night(None, None) is None)
+
+
 # ── F3: exploration bandit fires (audit: never fired) ─────────────────────────
 m = ControlledExplorationManager.from_dict({"parameters": ["neck", "traps", "calves"]})
 fires = [w for w in range(30) if m.get_exploration_delta(w)]
