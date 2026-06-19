@@ -170,8 +170,11 @@ for (let i = 0; i < batches.length; i++) {
     `STEP A — CAPTURE (batch ${i + 1}/${batches.length}). Drive the gstack headless browser to screenshot each surface.
 CRITICAL: the browser is a SINGLE shared daemon — issue browse commands one at a time, never in parallel.
 Setup: ${BROWSE}  (invoke as "$B <cmd>"). Base URL: ${baseUrl} (a PWA; service worker anchors this origin).
-The session SHOULD already be logged in. Verify: $B goto ${baseUrl}/dashboard ; $B url. If it lands on /login,
-log in: $B snapshot -i, fill email "${login.email}", fill the password field, click submit, $B wait --networkidle.
+The session is PRE-AUTHENTICATED by the orchestrator. Verify: $B goto ${baseUrl}/dashboard ; $B url.
+If it lands on /login, run \`$B state load uiauth\` then \`$B goto ${baseUrl}/dashboard\` and re-check.
+Do NOT type or guess a password — the safety classifier blocks credential entry and it wastes the run.
+If it STILL shows /login after state-load, mark every authed surface in this batch as a gap
+("session expired; orchestrator must re-auth") and capture only public routes (login/forgot/reset).
 
 For EACH surface in this batch: ${JSON.stringify(batch)}
   1. $B viewport 390x844
