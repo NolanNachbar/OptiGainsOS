@@ -345,7 +345,7 @@ export default function Profile({ hideHeader }) {
           <div>
             {/* Mobile: hub view (profile card + nav list) */}
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
-              <h1 className="text-[22px] font-bold text-ink leading-tight mb-4">Profile</h1>
+              <h1 className="type-display text-[22px] text-ink mb-4">Profile</h1>
               <div className="glass p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
@@ -383,7 +383,7 @@ export default function Profile({ hideHeader }) {
                     className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-charcoal-elevated hover:bg-charcoal-elevated ${idx < NAV.length - 1 ? 'border-b border-charcoal-border' : ''}`}
                   >
                     <div className="p-1.5 rounded-md bg-charcoal-elevated">
-                      <Icon className="w-3.5 h-3.5 text-brand" />
+                      <Icon className="w-3.5 h-3.5 text-ink-muted" />
                     </div>
                     <span className="text-ink flex-1">{label}</span>
                     <ChevronRight className="w-4 h-4 text-ink-muted" />
@@ -403,7 +403,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="text-[22px] font-bold text-ink leading-tight">
+                <h1 className="type-display text-[22px] text-ink">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>
@@ -412,7 +412,7 @@ export default function Profile({ hideHeader }) {
             {/* Desktop section heading */}
             {!hideHeader && (
               <div className="hidden md:block mb-6">
-                <h1 className="text-[22px] font-bold text-ink leading-tight">
+                <h1 className="type-display text-[22px] text-ink">
                   {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
                 </h1>
                 <p className="text-[13px] text-ink-muted mt-0.5">
@@ -853,7 +853,7 @@ export default function Profile({ hideHeader }) {
                       Cancel
                     </Button>
                     <Button
-                      className="bg-bad hover:bg-bad/80 text-white"
+                      className="bg-bad hover:bg-bad/80 text-ink"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -891,10 +891,10 @@ export default function Profile({ hideHeader }) {
           isDirty ? 'translate-y-0' : 'translate-y-[calc(100%+env(safe-area-inset-bottom,0px)+64px)]'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-ink-muted">You have unsaved changes</p>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <p className="hidden sm:block text-sm text-ink-muted">You have unsaved changes</p>
+          <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
+            <Button type="button" variant="dim" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel
             </Button>
             <Button type="button" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>

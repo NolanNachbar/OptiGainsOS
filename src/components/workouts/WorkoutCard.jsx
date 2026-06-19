@@ -23,6 +23,12 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
 
   const isOwner = workout.created_by === userId;
 
+  // Guard against corrupted auto-saved durations (minute totals in the hundreds).
+  const validDuration =
+    workout.duration_minutes && workout.duration_minutes > 0 && workout.duration_minutes <= 240
+      ? workout.duration_minutes
+      : null;
+
   const handleExport = () => {
     const exportData = {
       _vektor_version: 1,
@@ -54,7 +60,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               {workout.focus && workout.focus !== "strength" && (
                 <Badge
                   variant="outline"
-                  className="text-xs capitalize text-ink-muted border-charcoal-border"
+                  className="text-xs capitalize text-ink-muted hairline"
                 >
                   {workout.focus}
                 </Badge>
@@ -76,27 +82,27 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   variant="ghost"
                   size="icon"
                   onClick={() => setOpenMenu(!openMenu)}
-                  className="h-7 w-7 text-ink-muted hover:text-ink-muted"
+                  className="h-11 w-11 text-ink-muted hover:text-ink-muted"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className="absolute right-0 top-8 bg-charcoal-elevated rounded-xl border border-charcoal-border py-1 z-20 min-w-[140px]">
+                  <div className="absolute right-0 top-12 glass-elevated rounded-xl py-1 z-20 min-w-[140px]">
                     <button
                       onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={() => { onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={() => { handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-charcoal-elevated flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
@@ -125,22 +131,22 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
         <div className="pt-0 pb-4 px-4 md:px-6 space-y-3">
           {/* Stats row */}
           <div className="flex">
-            {workout.duration_minutes && (
+            {validDuration && (
               <div className="flex-1 flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">Duration</span>
-                <span className="text-lg font-bold tabular-nums text-ink mt-0.5">{workout.duration_minutes} min</span>
+                <span className="section-label">Duration</span>
+                <span className="font-technical text-lg font-bold text-ink mt-0.5">{validDuration} min</span>
               </div>
             )}
-            <div className={`flex-1 flex flex-col ${workout.duration_minutes ? 'border-l border-charcoal-border pl-4' : ''}`}>
-              <span className="text-xs font-bold uppercase tracking-widest text-ink-muted">Exercises</span>
-              <span className="text-lg font-bold tabular-nums text-ink mt-0.5">{workout.exercises?.length || 0}</span>
+            <div className={`flex-1 flex flex-col ${validDuration ? 'border-l hairline pl-4' : ''}`}>
+              <span className="section-label">Exercises</span>
+              <span className="font-technical text-lg font-bold text-ink mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
 
           {/* View Details */}
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
-              variant="dim"
+              variant="primary"
               className="w-full text-sm"
             >
               View Details

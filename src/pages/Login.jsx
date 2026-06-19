@@ -102,26 +102,16 @@ export default function Login() {
               )}
             </Button>
 
-            <div className="flex items-center justify-between mt-3 px-0.5">
+            <div className="flex items-center justify-center mt-3 px-0.5">
               <Link
                 to="/forgot-password"
                 className="text-[11.5px] font-bold text-muted-2 hover:text-ink transition-colors inline-flex items-center py-3 px-2 -my-3 -mx-2"
               >
                 Forgot password
               </Link>
-              <span className="text-[11.5px] font-bold text-faint">
-                Private build
-              </span>
             </div>
           </form>
         </div>
-      </div>
-
-      <div
-        className="relative z-10 text-center text-[10.5px] font-semibold font-technical text-faint"
-        style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom))' }}
-      >
-        OptiGainsOS · adaptive engine recomputes daily
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import {
   Dumbbell, Activity, Apple, Scale, BookOpen, Briefcase,
   Lightbulb, Bot, ChevronLeft, ChevronDown, Coins,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { estimateBriefCost } from "@/utils/briefCost";
 
 const COACHES = [
@@ -31,6 +31,13 @@ function CoachTag({ children, hue = "!text-teal bg-teal/10" }) {
 
 const RISE_STAGGER = ["rise-in", "rise-in-2", "rise-in-3"];
 
+const NO_CONTENT_COPY = "No notes for this day.";
+
+/** Bucket a brief date into a coarse time group for list separators. */
+function dateGroup(dateStr) {
+  return differenceInCalendarDays(new Date(), parseISO(dateStr)) <= 7 ? "This week" : "Earlier";
+}
+
 function BriefEntry({ brief, index = 0 }) {
   const json = brief.brief_json || {};
   const date = format(parseISO(brief.date), "EEEE, MMMM d");
@@ -39,7 +46,7 @@ function BriefEntry({ brief, index = 0 }) {
   const hasContent = !!json.insight || hasCoachContent || json.today_actions?.length > 0;
   const riseClass = index < RISE_STAGGER.length ? RISE_STAGGER[index] : "";
 
-  const [open, setOpen] = useState(index === 0);
+  const [open, setOpen] = useState(false);
 
   return (
     <div className={`glass overflow-hidden mb-4 ${riseClass}`}>
@@ -51,15 +58,9 @@ function BriefEntry({ brief, index = 0 }) {
       >
         <div className="flex items-center gap-2 min-w-0">
           <Bot className="w-4 h-4 text-teal shrink-0" />
-          <span className="text-sm font-extrabold text-ink truncate">{date}</span>
+          <span className="text-sm font-bold text-ink truncate">{date}</span>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
-          {approxCost && (
-            <span className="flex items-center gap-1.5">
-              <Coins className="w-3 h-3 text-muted-2" />
-              <span className="font-technical text-xs font-semibold text-muted-2">{approxCost}</span>
-            </span>
-          )}
           <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
         </div>
       </button>
@@ -70,7 +71,7 @@ function BriefEntry({ brief, index = 0 }) {
             <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-2">{json.insight}</p>
           ) : (
             <p className="text-xs font-semibold text-faint italic">
-              {hasContent ? "Tap to view coach notes." : "Brief generated, no narrative content."}
+              {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
             </p>
           )}
         </div>
@@ -85,8 +86,10 @@ function BriefEntry({ brief, index = 0 }) {
 
           <div className="px-5 py-4 space-y-4">
             {COACHES.filter(c => json[c.key]).map(coach => (
-              <div key={coach.key} className="flex items-start gap-2.5">
-                <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
+              <div key={coach.key} className="space-y-1.5">
+                <div>
+                  <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
+                </div>
                 <p className="text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
               </div>
             ))}
@@ -107,8 +110,17 @@ function BriefEntry({ brief, index = 0 }) {
 
             {!hasContent && (
               <p className="text-xs font-semibold text-faint italic">
-                Brief generated, no narrative content.
+                {NO_CONTENT_COPY}
               </p>
+            )}
+
+            {approxCost && (
+              <div className="flex items-center gap-1.5 pt-1 border-t hairline">
+                <Coins className="w-3 h-3 text-faint shrink-0" />
+                <span className="text-xs font-semibold text-faint">
+                  Est. cost <span className="font-technical">{approxCost}</span>
+                </span>
+              </div>
             )}
           </div>
         </>
@@ -143,7 +155,7 @@ export default function BriefHistory() {
     <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-8 rise-in">
-          <Link to="/dashboard" aria-label="Back to dashboard" className="inline-flex p-3 -ml-3 text-muted-2 hover:text-ink transition-colors">
+          <Link to="/today" aria-label="Back to home" className="inline-flex p-3 -ml-3 text-muted-2 hover:text-ink transition-colors">
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <div>
@@ -163,22 +175,31 @@ export default function BriefHistory() {
         ) : isError ? (
           <div className="py-8 text-center glass-inset">
             <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load briefs.</p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
+            <Button variant="dark" size="sm" className="mt-3 min-h-[44px]" onClick={() => refetch()}>Retry</Button>
           </div>
         ) : briefs.length === 0 ? (
           <div className="py-20 text-center">
             <Bot className="w-10 h-10 text-faint mx-auto mb-3" />
             <p className="text-sm font-semibold text-muted-2">No briefs generated yet.</p>
             <p className="text-xs font-semibold text-faint mt-1">Run your Desktop Agent to generate the first one.</p>
-            <Button asChild variant="outline" size="sm" className="mt-4 min-h-[44px]">
-              <Link to="/dashboard">Back to dashboard</Link>
+            <Button asChild variant="dark" size="sm" className="mt-4 min-h-[44px]">
+              <Link to="/today">Back to home</Link>
             </Button>
           </div>
         ) : (
           <>
-            {briefs.slice(0, visibleCount).map((brief, i) => (
-              <BriefEntry key={brief.id} brief={brief} index={i} />
-            ))}
+            {briefs.slice(0, visibleCount).map((brief, i, arr) => {
+              const group = dateGroup(brief.date);
+              const showHeader = i === 0 || dateGroup(arr[i - 1].date) !== group;
+              return (
+                <div key={brief.id}>
+                  {showHeader && (
+                    <p className={`section-label mb-3 ${i === 0 ? "" : "mt-6"}`}>{group}</p>
+                  )}
+                  <BriefEntry brief={brief} index={i} />
+                </div>
+              );
+            })}
             {briefs.length > visibleCount && (
               <Button
                 variant="outline"

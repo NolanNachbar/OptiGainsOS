@@ -76,7 +76,7 @@
   --dock-tint:         rgba(120, 120, 128, 0.18);
   /* Sheet/dialog material — heavier & near-opaque so busy page content
      never bleeds through behind a form (dock-tint is too transparent). */
-  --sheet-bg:          rgba(20, 24, 31, 0.92);
+  --sheet-bg:          rgba(20, 24, 31, 0.96);
   --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
 

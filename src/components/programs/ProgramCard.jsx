@@ -38,7 +38,7 @@ export default function ProgramCard({ program, enrollment }) {
                 <Badge variant="outline">{GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}</Badge>
               )}
               {enrollment?.status === 'active' && (
-                <Badge variant="green" className="ml-auto">Active</Badge>
+                <Badge variant="outline" className="ml-auto bg-teal/10 text-teal border-teal/25">Active</Badge>
               )}
             </div>
 

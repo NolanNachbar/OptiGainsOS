@@ -34,7 +34,7 @@ function intensityBadge(intensity) {
   if (intensity == null) return null;
   if (intensity >= 1.05) return { label: `${intensity.toFixed(2)}× intensity`, color: "var(--hue-teal)" };
   if (intensity < 0.85) return { label: `${intensity.toFixed(2)}× back off`, color: "var(--warn)" };
-  return { label: `${Number(intensity).toFixed(2)}× intensity`, color: "var(--text-secondary)" };
+  return { label: `${Number(intensity).toFixed(2)}× intensity`, color: "var(--hue-teal)" };
 }
 
 function ExerciseRow({ ex }) {
@@ -65,13 +65,13 @@ function CardioDoneToggle({ done, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors before:absolute before:-inset-3 ${
-        done ? "bg-ok text-ink" : "text-ink-faint hover:text-ink-secondary"
+      className={`relative shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors before:absolute before:-inset-1.5 ${
+        done ? "bg-ok text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
       aria-label={done ? "Mark conditioning not done" : "Mark conditioning done"}
     >
-      {done ? <Check className="w-3 h-3" /> : <Circle className="w-4 h-4" />}
+      {done ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
     </button>
   );
 }
@@ -129,8 +129,8 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
     return (
       <div key={kind} className="flex items-center gap-2 text-sm">
         {g ? (
-          <span className="shrink-0 w-5 h-5 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
-            <Check className="w-3 h-3" />
+          <span className="shrink-0 w-8 h-8 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
+            <Check className="w-4 h-4" />
           </span>
         ) : (
           <CardioDoneToggle done={manualDone} onToggle={() => toggle(name)} />
@@ -153,10 +153,10 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
     // fights custom py-* classes and lets the title touch the card edge.
     <div className="glass px-4 pt-4 pb-4 sm:px-5">
         {/* Title row — session name left, intensity multiplier right (teal) */}
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[15.5px] font-extrabold text-ink truncate">{titleText}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-lg font-extrabold text-ink leading-tight line-clamp-2">{titleText}</h3>
           {iBadge && (
-            <span className="font-technical text-[12px] font-bold whitespace-nowrap" style={{ color: iBadge.color }}>
+            <span className="font-technical text-[12px] font-bold whitespace-nowrap shrink-0 mt-0.5" style={{ color: iBadge.color }}>
               {iBadge.label}
             </span>
           )}

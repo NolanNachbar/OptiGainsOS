@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getTodayString } from "@/utils/dateUtils";
-import { estimateBriefCost } from "@/utils/briefCost";
 import { format, parseISO } from "date-fns";
 
 // Career was cut from the IA — its coach is dropped here so the brief never
@@ -26,15 +25,14 @@ const COACHES = [
 /** Coach-persona tag — tiny uppercase teal chip (the an-coach <b>). */
 function CoachTag({ children }) {
   return (
-    <span className="text-[9px] font-extrabold tracking-[0.08em] uppercase text-teal bg-teal/10 rounded-sm px-[7px] py-[3px] whitespace-nowrap shrink-0">
+    <span className="text-[10px] font-extrabold tracking-wider uppercase text-teal bg-teal/10 rounded-sm px-2 py-1 whitespace-nowrap shrink-0">
       {children}
     </span>
   );
 }
 
-function CoachSection({ coach, content }) {
-  const [open, setOpen] = useState(false);
-  const preview = content?.slice(0, 90) + (content?.length > 90 ? "…" : "");
+function CoachSection({ coach, content, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div className="border-b hairline last:border-0">
@@ -47,9 +45,6 @@ function CoachSection({ coach, content }) {
         </div>
         {open ? <ChevronUp className="w-3.5 h-3.5 text-faint" /> : <ChevronDown className="w-3.5 h-3.5 text-faint" />}
       </button>
-      {!open && content && (
-        <p className="px-4 pb-3 text-[11.5px] font-semibold text-muted-2 leading-relaxed">{preview}</p>
-      )}
       {open && content && (
         <p className="px-4 pb-4 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
       )}
@@ -120,8 +115,6 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
 
   const json = brief.brief_json || {};
   const generatedAt = brief.generated_at ? format(parseISO(brief.generated_at), "h:mm a") : null;
-  const totalTokens = (brief.input_tokens || 0) + (brief.output_tokens || 0);
-  const approxCost = estimateBriefCost(brief);
 
   return (
     <Card className="glass glass-interactive">
@@ -133,11 +126,11 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
           </CardTitle>
           <div className="flex items-center gap-3">
             {generatedAt && (
-              <span className="hidden sm:inline font-technical text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
+              <span className="font-technical tabular-nums text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="min-h-[44px] text-[10px] text-muted-2 uppercase tracking-wider hover:text-ink px-3">
-                History
+              <Button variant="ghost" size="sm" className="min-h-[44px] text-xs font-semibold text-secondary hover:text-ink gap-1.5 px-3">
+                <History className="w-3.5 h-3.5" /> History
               </Button>
             </Link>
             <button
@@ -160,20 +153,21 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
             </div>
           )}
 
-          <div className="mt-2">
-            {COACHES.map(coach => (
-              <CoachSection key={coach.key} coach={coach} content={json[coach.key]} />
-            ))}
+          <div className="mt-2 mb-1">
+            {(() => {
+              // Expand the first coach section that actually has content so the
+              // page delivers real coaching on load instead of all-collapsed stubs.
+              const firstWithContent = COACHES.find(c => json[c.key])?.key;
+              return COACHES.map(coach => (
+                <CoachSection
+                  key={coach.key}
+                  coach={coach}
+                  content={json[coach.key]}
+                  defaultOpen={coach.key === firstWithContent}
+                />
+              ));
+            })()}
           </div>
-
-          {approxCost && (
-            <div className="px-4 py-2 border-t hairline flex items-center gap-1.5">
-              <Bot className="w-3 h-3 text-faint" />
-              <span className="font-technical text-[9px] font-semibold text-faint">
-                {brief.model_used || "claude-haiku-4-5"} · {totalTokens.toLocaleString()} tokens · {approxCost}
-              </span>
-            </div>
-          )}
         </>
       )}
     </Card>

@@ -40,6 +40,7 @@ import {
   AlertTriangle,
   Repeat,
   Activity,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,15 +73,27 @@ export default function ProgramDetail() {
   const [showWorkoutDetail, setShowWorkoutDetail] = useState(null);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAllCycles, setShowAllCycles] = useState(false);
+  const [showAllProgression, setShowAllProgression] = useState(false);
 
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
-      <div className="min-h-screen bg-charcoal p-6 text-center">
-        <p className="text-ink-muted">Program not found.</p>
-        <Link to="/workouts">
-          <Button variant="outline" className="mt-4">Back to Workouts</Button>
-        </Link>
+      <div className="min-h-screen bg-charcoal p-4 md:p-6">
+        <div className="max-w-md mx-auto mt-12">
+          <div className="surface p-8 text-center flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center mb-4">
+              <Dumbbell className="w-6 h-6 text-ink-muted" />
+            </div>
+            <h2 className="text-lg font-bold text-ink mb-1">Program not found</h2>
+            <p className="text-sm text-ink-muted mb-5">
+              This program may have been deleted or the link is no longer valid.
+            </p>
+            <Link to="/workouts">
+              <Button variant="outline" size="lg">Back to Workouts</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -248,17 +261,17 @@ export default function ProgramDetail() {
                   <p className="text-ink-muted text-sm">{program.description}</p>
                 )}
 
-                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted ">
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted">
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-ink-muted " />
+                    <Calendar className="w-4 h-4 text-ink-muted" />
                     {durationLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-ink-muted " />
+                    <Repeat className="w-4 h-4 text-ink-muted" />
                     {frequencyLabel}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Dumbbell className="w-4 h-4 text-ink-muted " />
+                    <Dumbbell className="w-4 h-4 text-ink-muted" />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
                   </div>
                 </div>
@@ -281,6 +294,8 @@ export default function ProgramDetail() {
                     <Button
                       onClick={() => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } })}
                       variant="volt"
+                      size="lg"
+                      className="w-full"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       {user ? "Start Program" : "Sign in to Start"}
@@ -303,19 +318,21 @@ export default function ProgramDetail() {
                   <Button
                     onClick={handleStartWorkout}
                     variant="volt"
+                    size="lg"
+                    className="w-full"
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Start Next Workout
                   </Button>
                 )}
                 {isEnrolled && (
-                  <Button variant="outline" size="sm" onClick={handlePause}>
+                  <Button variant="outline" size="lg" onClick={handlePause}>
                     <Pause className="w-4 h-4 mr-2" />
                     Pause
                   </Button>
                 )}
                 {enrollment?.status === "paused" && (
-                  <Button variant="outline" size="sm" onClick={handleResume}>
+                  <Button variant="outline" size="lg" onClick={handleResume}>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
@@ -323,7 +340,7 @@ export default function ProgramDetail() {
                 {(isEnrolled || enrollment?.status === "paused") && (
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     onClick={handleRestart}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -334,7 +351,7 @@ export default function ProgramDetail() {
                   <>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="lg"
                       onClick={() => navigate(`/program-builder?edit=${program.id}`)}
                     >
                       <Edit className="w-4 h-4 mr-2" />
@@ -342,7 +359,7 @@ export default function ProgramDetail() {
                     </Button>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="lg"
                       onClick={() => {
                         exportProgramAsJson(program);
                         toast.success("Program exported");
@@ -353,7 +370,7 @@ export default function ProgramDetail() {
                     </Button>
                     <Button
                       variant="destructive"
-                      size="sm"
+                      size="lg"
                       onClick={handleDelete}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -409,13 +426,22 @@ export default function ProgramDetail() {
           <CardContent>
             <CycleDayGrid
               workouts={workouts}
-              cycleLength={program.cycle_length || program.days_per_week || 7}
-              numCycles={program.num_cycles || program.duration_weeks || 4}
+              cycleLength={cycleLength}
+              numCycles={showAllCycles ? numCycles : Math.min(2, numCycles)}
               enrollment={enrollment}
               onCellClick={(workout) => {
                 if (workout) setShowWorkoutDetail(workout);
               }}
             />
+            {numCycles > 2 && (
+              <button
+                onClick={() => setShowAllCycles((v) => !v)}
+                className="mt-4 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+              >
+                {showAllCycles ? "Show fewer cycles" : `Show all ${numCycles} cycles`}
+                <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
+              </button>
+            )}
           </CardContent>
         </Card>
 
@@ -426,9 +452,14 @@ export default function ProgramDetail() {
               <CardTitle className="text-lg text-ink">Progression Tracking</CardTitle>
             </CardHeader>
             <CardContent>
+              {(() => {
+              const allEntries = Object.entries(enrollment.progression_state).filter(([key]) => !key.startsWith('_'));
+              const actionableEntries = allEntries.filter(([, state]) => state.stalled || state.ready_to_progress);
+              const hiddenCount = allEntries.length - actionableEntries.length;
+              const visibleEntries = showAllProgression || actionableEntries.length === 0 ? allEntries : actionableEntries;
+              return (
               <div className="space-y-2">
-                {Object.entries(enrollment.progression_state)
-                  .filter(([key]) => !key.startsWith('_'))
+                {visibleEntries
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
                     return (
@@ -467,7 +498,27 @@ export default function ProgramDetail() {
                     </div>
                   );
                   })}
+                {!showAllProgression && actionableEntries.length > 0 && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setShowAllProgression(true)}
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                  >
+                    Show all {allEntries.length} exercises
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                )}
+                {showAllProgression && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setShowAllProgression(false)}
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                  >
+                    Show fewer
+                    <ChevronDown className="w-4 h-4 rotate-180" />
+                  </button>
+                )}
               </div>
+              );
+              })()}
             </CardContent>
           </Card>
         )}
@@ -492,7 +543,7 @@ export default function ProgramDetail() {
                   )}
                 </div>
                 {showWorkoutDetail.notes && (
-                  <p className="text-sm text-ink-muted ">{showWorkoutDetail.notes}</p>
+                  <p className="text-sm text-ink-muted">{showWorkoutDetail.notes}</p>
                 )}
                 <div className="space-y-2">
                   {(showWorkoutDetail.exercises || []).map((ex, i) => {
@@ -556,7 +607,7 @@ export default function ProgramDetail() {
               <DialogHeader>
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-ink-muted  mt-2">
+              <p className="text-sm text-ink-muted mt-2">
                 Enter your current working weight for each exercise (optional — you can also
                 enter these during your first session).
               </p>
@@ -564,7 +615,7 @@ export default function ProgramDetail() {
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div>
-                <Label className="text-sm text-ink-muted ">Start Date</Label>
+                <Label className="text-sm text-ink-muted">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -576,12 +627,12 @@ export default function ProgramDetail() {
               <div className="space-y-3">
               {allExercises.map((ex) => (
                 <div key={ex.name} className="flex items-center gap-3">
-                  <Label className="flex-1 text-sm text-ink-muted ">{ex.name}</Label>
+                  <Label className="flex-1 text-sm text-ink-muted">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
                       placeholder="lbs"
-                      className="w-24 bg-charcoal-surface placeholder:text-ink-muted"
+                      className="w-24 glass glass-interactive placeholder:text-ink-muted"
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({
@@ -590,7 +641,7 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-xs text-ink-muted ">lbs</span>
+                    <span className="text-xs text-ink-muted">lbs</span>
                   </div>
                 </div>
               ))}
@@ -618,7 +669,7 @@ export default function ProgramDetail() {
             <DialogHeader>
               <DialogTitle>Cancel Enrollment?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-ink-muted ">
+            <p className="text-sm text-ink-muted">
               Are you sure you want to cancel your enrollment in this program? Future scheduled workouts will be removed, but your completed workout history will be preserved. You can re-enroll later to start fresh.
             </p>
             <div className="flex gap-3 mt-4">

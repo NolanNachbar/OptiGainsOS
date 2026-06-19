@@ -257,7 +257,7 @@ export default function CreateWorkout() {
                   onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
                   placeholder="e.g., Upper Body Strength"
                   required
-                  className="mt-1"
+                  className="mt-1 rounded-xl"
                 />
               </div>
 
@@ -310,7 +310,7 @@ export default function CreateWorkout() {
                     onChange={(e) => setWorkout({ ...workout, duration_minutes: Math.max(1, parseInt(e.target.value) || 1) })}
                     required
                     min="1"
-                    className="mt-1"
+                    className="mt-1 rounded-xl"
                   />
                 </div>
               </div>
@@ -372,7 +372,7 @@ export default function CreateWorkout() {
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={addExercise} variant="outline" className="w-full">
+                <Button type="button" onClick={addExercise} variant="outline" size="lg" className="w-full">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
                 </Button>
@@ -380,11 +380,11 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/workouts")} className="flex-1">
+          <div className="sticky bottom-0 -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 bg-charcoal/90 backdrop-blur-md border-t border-charcoal-borderSoft md:bg-transparent md:backdrop-blur-none md:border-0 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))] md:[padding-bottom:0]">
+            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" variant="volt" className="flex-1">
+            <Button type="submit" variant="volt" size="lg" className="flex-[2]">
               <Save className="w-4 h-4 mr-2" />
               {editId ? 'Update Workout' : 'Save Workout'}
             </Button>
@@ -429,7 +429,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
                 value={exercise.sets}
                 onChange={(e) => onChange("sets", Math.max(1, parseInt(e.target.value) || 1))}
                 min="1"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
             <div>
@@ -438,7 +438,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
                 value={exercise.reps}
                 onChange={(e) => onChange("reps", e.target.value)}
                 placeholder="e.g., 10-12"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
             <div>
@@ -448,7 +448,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
                 value={exercise.rest_seconds}
                 onChange={(e) => onChange("rest_seconds", parseInt(e.target.value) || 0)}
                 min="0"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
           </div>
@@ -481,7 +481,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 h-7 text-sm text-center font-technical"
+            className="w-16 h-7 text-sm text-center font-technical rounded-xl"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>
@@ -508,14 +508,15 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             nested
           />
         ))}
-        <button
+        <Button
           type="button"
           onClick={onAddStep}
-          className="w-full min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs font-semibold text-ink-muted hover:text-ink hover:bg-white/[0.06] border border-dashed border-charcoal-border transition-colors"
+          variant="outline"
+          className="w-full min-h-[44px] border-dashed border-charcoal-border"
         >
-          <Plus className="w-3 h-3 mr-1" />
+          <Plus className="w-4 h-4 mr-2" />
           Add Step to Repeat
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -548,7 +549,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                 value={step.name}
                 onChange={(e) => onChange("name", e.target.value)}
                 placeholder="e.g., Easy Run, Tempo"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
             <div>
@@ -584,7 +585,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                   min="0"
                   step={step.duration_type === "distance" ? "0.1" : "1"}
                   placeholder={step.duration_type === "time" ? "min" : "km"}
-                  className="flex-1"
+                  className="flex-1 rounded-xl"
                 />
               )}
             </div>
@@ -625,14 +626,14 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                     value={step.target_low}
                     onChange={(e) => onChange("target_low", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "5:30" : "min"}
-                    className="w-20"
+                    className="w-20 rounded-xl"
                   />
                   <span className="text-ink-muted text-sm">–</span>
                   <Input
                     value={step.target_high}
                     onChange={(e) => onChange("target_high", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "6:00" : "max"}
-                    className="w-20"
+                    className="w-20 rounded-xl"
                   />
                   <span className="text-xs text-ink-muted shrink-0">
                     {step.target_type === 'pace' ? '/km'

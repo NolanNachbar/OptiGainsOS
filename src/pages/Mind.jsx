@@ -48,7 +48,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet p-3.5 -m-2"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
+          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -546,7 +546,7 @@ function SkillsTab() {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
-            <div key={skill.id} className={`p-4 group ${isStale ? "rounded-[20px] border-[0.5px] bg-warn/[0.04] border-warn/15" : "glass glass-interactive"}`}>
+            <div key={skill.id} className={`glass p-4 group ${isStale ? "rounded-2xl border-warn/15 bg-warn/[0.04]" : "glass-interactive"}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
@@ -659,15 +659,15 @@ function CaptureTab() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h3 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
         <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
       <div>
-        <h3 className="section-label mb-4 flex items-center gap-2">
+        <h3 className="section-label mb-3 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Streams
         </h3>
         <div className="space-y-3">
@@ -675,7 +675,7 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[7px] bg-violet/10">
+                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet/10">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
                 {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Synced</span>}
@@ -683,9 +683,9 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <GraduationCap className="w-8 h-8 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">Drop your first note above to start the stream.</p>
+            <div className="flex items-center gap-2 py-2 text-muted-2">
+              <GraduationCap className="w-4 h-4 text-faint shrink-0" />
+              <p className="text-sm font-semibold">Drop your first note above to start the stream.</p>
             </div>
           ))}
         </div>

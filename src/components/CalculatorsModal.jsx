@@ -54,7 +54,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-2 block">
+          <Label className="text-sm font-medium text-secondary mb-2 block">
             Target Weight ({weightUnit})
           </Label>
           <Input
@@ -67,7 +67,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-2 block">
+          <Label className="text-sm font-medium text-secondary mb-2 block">
             Bar Weight ({weightUnit})
           </Label>
           <Select value={barWeight} onValueChange={setBarWeight}>
@@ -96,7 +96,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       </div>
 
       {result && (
-        <Card className="bg-brand/[8%] border-brand/30">
+        <Card className="glass-brand border-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Plates Per Side</CardTitle>
           </CardHeader>
@@ -104,13 +104,13 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
             {result.platesNeeded.length > 0 ? (
               <div className="space-y-3">
                 {result.platesNeeded.map((plate, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-charcoal-surface rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 glass-inset rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center text-black font-bold font-bold">
+                      <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center text-[var(--color-action-dark)] font-bold font-technical">
                         {plate.count}×
                       </div>
                       <div>
-                        <div className="font-semibold text-ink">
+                        <div className="font-semibold text-ink font-technical">
                           {plate.weight} {weightUnit}
                         </div>
                         <div className="text-sm text-ink-muted">
@@ -118,7 +118,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-brand border-brand/30">
+                    <Badge variant="outline" className="text-brand border-brand/30 font-technical">
                       {(plate.weight * plate.count).toFixed(1)} {weightUnit}
                     </Badge>
                   </div>
@@ -130,9 +130,9 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                   </div>
                 )}
 
-                <div className="pt-3 border-t border-charcoal-border">
+                <div className="pt-3 border-t border-white/10">
                   <div className="text-sm text-ink-muted mb-1">Total loaded:</div>
-                  <div className="text-2xl font-bold text-ink">
+                  <div className="text-2xl font-bold text-ink font-technical">
                     {parseFloat(barWeight) + (result.platesNeeded.reduce((sum, p) => sum + (p.weight * p.count), 0) * 2)} {weightUnit}
                   </div>
                 </div>
@@ -199,19 +199,19 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">
+            <Label className="text-sm font-medium text-secondary mb-1.5 block">
               Weight ({weightUnit})
             </Label>
             <Input type="number" step="0.5" placeholder={weightUnit === 'lbs' ? "225" : "100"}
               value={knownWeight} onChange={(e) => setKnownWeight(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Reps done</Label>
+            <Label className="text-sm font-medium text-secondary mb-1.5 block">Reps done</Label>
             <Input type="number" min="1" max="36" placeholder="5"
               value={knownReps} onChange={(e) => setKnownReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">RIR left</Label>
+            <Label className="text-sm font-medium text-secondary mb-1.5 block">RIR left</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={knownRir} onChange={(e) => setKnownRir(e.target.value)} />
           </div>
@@ -223,12 +223,12 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Target reps</Label>
+            <Label className="text-sm font-medium text-secondary mb-1.5 block">Target reps</Label>
             <Input type="number" min="1" max="36" placeholder="3"
               value={targetReps} onChange={(e) => setTargetReps(e.target.value)} />
           </div>
           <div>
-            <Label className="text-sm font-medium text-ink-muted text-ink-muted mb-1.5 block">Target RIR</Label>
+            <Label className="text-sm font-medium text-secondary mb-1.5 block">Target RIR</Label>
             <Input type="number" min="0" max="10" placeholder="2"
               value={targetRir} onChange={(e) => setTargetRir(e.target.value)} />
           </div>
@@ -236,11 +236,11 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
       </div>
 
       {result && (
-        <Card className="bg-brand/[8%] border-brand/30">
+        <Card className="glass-brand border-none">
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
               <div className="text-sm text-ink-muted mb-1">Working Weight</div>
-              <div className="text-5xl font-bold text-brand">
+              <div className="text-5xl font-bold text-brand font-technical">
                 {result.rounded} <span className="text-2xl">{weightUnit}</span>
               </div>
               <div className="text-sm text-ink-muted mt-1">
@@ -251,15 +251,15 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
             <div className="grid grid-cols-3 gap-3 pt-3 border-t border-brand/30">
               <div className="text-center">
                 <div className="text-xs text-ink-muted mb-0.5">Est. 1RM</div>
-                <div className="font-semibold text-ink">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
+                <div className="font-semibold text-ink font-technical">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-ink-muted mb-0.5">% of 1RM</div>
-                <div className="font-semibold text-ink">{result.targetPct.toFixed(1)}%</div>
+                <div className="font-semibold text-ink font-technical">{result.targetPct.toFixed(1)}%</div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-ink-muted mb-0.5">Exact weight</div>
-                <div className="font-semibold text-ink">{result.exact.toFixed(1)} {weightUnit}</div>
+                <div className="font-semibold text-ink font-technical">{result.exact.toFixed(1)} {weightUnit}</div>
               </div>
             </div>
           </CardContent>
@@ -284,16 +284,16 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
           </DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="1rm" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="1rm">
+          <TabsList className="grid w-full grid-cols-3 h-auto border-b-0 glass-inset rounded-lg p-1 mb-6">
+            <TabsTrigger value="1rm" className="rounded-md">
               <Scale className="w-4 h-4 mr-2" />
               1RM
             </TabsTrigger>
-            <TabsTrigger value="working">
+            <TabsTrigger value="working" className="rounded-md">
               <Dumbbell className="w-4 h-4 mr-2" />
-              Working Weight
+              Working
             </TabsTrigger>
-            <TabsTrigger value="plates">
+            <TabsTrigger value="plates" className="rounded-md">
               <Calculator className="w-4 h-4 mr-2" />
               Plates
             </TabsTrigger>

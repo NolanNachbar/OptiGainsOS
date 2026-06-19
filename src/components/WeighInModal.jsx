@@ -71,17 +71,19 @@ export default function WeighInModal({ open, onOpenChange }) {
             </label>
             <Input
               type="number"
+              inputMode="decimal"
               step="0.1"
               placeholder="Enter your weight"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
+              className="tabular-nums"
               autoFocus
             />
           </div>
           <div className="flex gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="dim"
               size="lg"
               className="flex-1"
               onClick={() => onOpenChange(false)}

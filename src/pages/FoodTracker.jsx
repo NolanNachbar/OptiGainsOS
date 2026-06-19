@@ -817,7 +817,7 @@ const handleSaveMealTemplate = () => {
                     <span className="section-label flex items-center gap-1.5">
                       Daily log
                       {targets.engineSet && (
-                        <span className="text-[9px] font-extrabold tracking-wider text-teal bg-teal/10 rounded-[7px] px-1.5 py-0.5 normal-tracking">
+                        <span className="text-[9px] font-extrabold tracking-wider text-teal bg-teal/10 rounded-sm px-1.5 py-0.5 normal-tracking">
                           ENGINE-SET
                         </span>
                       )}
@@ -875,7 +875,7 @@ const handleSaveMealTemplate = () => {
             })()}
 
             {/* Quick actions — Search / Barcode / Recipes / Templates */}
-            <div className="grid grid-cols-4 gap-[7px]">
+            <div className="grid grid-cols-4 gap-2">
               {[
                 { label: 'Search', icon: Search, onClick: () => { resetForm(); setShowAddDialog(true); } },
                 { label: 'Barcode', icon: Camera, onClick: () => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); } },
@@ -886,7 +886,7 @@ const handleSaveMealTemplate = () => {
                   key={label}
                   type="button"
                   onClick={onClick}
-                  className="h-11 rounded-[12px] bg-white/[0.05] border-[0.5px] border-white/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-ink-muted hover:text-ink hover:bg-white/[0.08] transition-colors whitespace-nowrap"
+                  className="h-11 tile tile-interactive rounded-md glass-inset flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-secondary hover:text-ink transition-colors whitespace-nowrap"
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {label}
@@ -1011,22 +1011,22 @@ const handleSaveMealTemplate = () => {
                                 )}
                               </div>
                             </div>
-                            <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>
+                            <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
-                                <span className="text-[9.5px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Cal</span>
+                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Cal</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-coral">{entry.protein_grams}</span>
-                                <span className="text-[9.5px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Pro</span>
+                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Pro</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-carb">{entry.carbs_grams}</span>
-                                <span className="text-[9.5px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Car</span>
+                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Car</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-fat">{entry.fats_grams}</span>
-                                <span className="text-[9.5px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Fat</span>
+                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -1285,20 +1285,15 @@ const handleSaveMealTemplate = () => {
           }
         }}>
           <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
+            <DialogHeader className="text-left px-6 pt-6 pb-4 pr-12 border-b border-charcoal-border shrink-0">
               <DialogTitle>{editingEntry ? "Edit Food Entry" : "Add Food Entry"}</DialogTitle>
             </DialogHeader>
 
               <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div>
-                  <div className="mb-3">
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="h-11 border-none bg-transparent focus:outline-none w-full text-sm font-semibold text-ink font-mono"
-                    />
-                  </div>
+                <div className="mb-3">
+                  <p className="text-xs text-ink-muted">
+                    Logging to <span className="font-technical font-semibold text-ink tabular-nums">{format(new Date(selectedDate + 'T00:00:00'), 'EEE, MMM d')}</span>
+                  </p>
                 </div>
 
                 <div>
@@ -1318,16 +1313,18 @@ const handleSaveMealTemplate = () => {
                         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted animate-spin" />
                       )}
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="dim"
+                      size="lg"
                       onClick={() => setShowBarcodeScanner(true)}
-                      className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-charcoal-border bg-charcoal-surface text-ink-muted hover:text-brand hover:border-brand/40 transition-colors shrink-0"
+                      className="shrink-0 min-w-[44px]"
                       aria-label="Scan barcode"
                       title="Scan a barcode"
                     >
                       <Camera className="w-4 h-4" />
                       <span className="text-xs font-medium hidden sm:inline">Scan</span>
-                    </button>
+                    </Button>
                   </div>
 
                       {/* Search results: My Foods → Generic → Branded */}
@@ -1343,9 +1340,9 @@ const handleSaveMealTemplate = () => {
                                 <Star className="w-3 h-3 fill-gold" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
-                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
+                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-white/[0.05] transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1357,9 +1354,9 @@ const handleSaveMealTemplate = () => {
                                 Generic Foods
                               </div>
                               {genericResults.map((food) => (
-                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
+                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.description}</div>
-                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1370,16 +1367,16 @@ const handleSaveMealTemplate = () => {
                               <button
                                 type="button"
                                 onClick={() => setShowBranded(v => !v)}
-                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-elevated transition-colors"
                               >
                                 <span>Branded Foods ({brandedResults.length})</span>
                                 {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               </button>
                               {showBranded && brandedResults.map((food) => (
-                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
+                                <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
                                   <div className="font-medium text-ink text-sm">{food.description}</div>
                                   {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
-                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
+                                  <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                                 </button>
                               ))}
                             </>
@@ -1396,15 +1393,15 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setRecentExpanded(!recentExpanded)}
-                              className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                              className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-elevated transition-colors"
                             >
                               <span>Recent</span>
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {recentExpanded && recentFoods.map((entry, i) => (
-                              <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
+                              <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated border-b last:border-b-0 transition-colors">
                                 <div className="font-medium text-ink text-sm">{entry.food_name}</div>
-                                <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">
+                                <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">
                                   {entry.serving_size && <span>{entry.serving_size} · </span>}
                                   {Math.round(entry.calories)} cal · P {Math.round(entry.protein_grams)}g · C {Math.round(entry.carbs_grams)}g · F {Math.round(entry.fats_grams)}g
                                 </div>
@@ -1455,9 +1452,9 @@ const handleSaveMealTemplate = () => {
                             {myFoodsExpanded && (
                               <div className="max-h-36 overflow-y-auto">
                                 {customFoods.map((food) => (
-                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 border-b last:border-b-0 transition-colors">
+                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-white/[0.05] border-b last:border-b-0 transition-colors">
                                     <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                                    <div className="flex gap-3 mt-0.5 text-xs text-ink-muted">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                                    <div className="flex gap-3 mt-0.5 text-xs text-ink-muted font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                                   </button>
                                 ))}
                               </div>
@@ -1484,7 +1481,7 @@ const handleSaveMealTemplate = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="meal_type">Meal Type *</Label>
+                            <Label htmlFor="meal_type">Meal Type</Label>
                             <Select
                               value={newFood.meal_type}
                               onValueChange={(value) => setNewFood({ ...newFood, meal_type: value })}
@@ -1553,6 +1550,8 @@ const handleSaveMealTemplate = () => {
                         </div>
 
                         {(isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0) && (
+                          <>
+                          <p className="section-label">Total for {newFood.serving_amount} {newFood.serving_unit}</p>
                           <div className="grid grid-cols-4 gap-2">
                             {[
                               { label: 'Calories', value: Math.round(newFood.calories), unit: '', hue: 'text-gold' },
@@ -1566,20 +1565,24 @@ const handleSaveMealTemplate = () => {
                               </div>
                             ))}
                           </div>
+                          </>
                         )}
 
                         <p className="text-xs text-ink-muted">
+                          Edit base values —{' '}
                           {isUsdaFood
-                            ? `Total for ${newFood.serving_amount} ${newFood.serving_unit}:`
-                            : (({ g: 'Per 100g:', ml: 'Per 100ml:', oz: 'Per 1 oz:', cup: 'Per 1 cup:', tbsp: 'Per 1 tbsp:', tsp: 'Per 1 tsp:', piece: 'Per piece:', serving: 'Per serving:' })[newFood.serving_unit] || 'Per serving:')}
+                            ? `per ${newFood.serving_unit}`
+                            : (({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[newFood.serving_unit] || 'per serving')}
+                          {isUsdaFood ? ' (total above scales with amount)' : ''}
                         </p>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="calories">Calories *</Label>
+                            <Label htmlFor="calories">Calories</Label>
                             <Input
                               id="calories"
                               type="number"
-                              value={isUsdaFood ? newFood.calories : baseMacros.calories}
+                              placeholder="0"
+                              value={(isUsdaFood ? newFood.calories : baseMacros.calories) || ""}
                               onChange={(e) => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
@@ -1600,11 +1603,12 @@ const handleSaveMealTemplate = () => {
                           </div>
 
                           <div>
-                            <Label htmlFor="protein">Protein (g) *</Label>
+                            <Label htmlFor="protein">Protein (g)</Label>
                             <Input
                               id="protein"
                               type="number"
-                              value={isUsdaFood ? newFood.protein_grams : baseMacros.protein_grams}
+                              placeholder="0"
+                              value={(isUsdaFood ? newFood.protein_grams : baseMacros.protein_grams) || ""}
                               onChange={(e) => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
@@ -1626,11 +1630,12 @@ const handleSaveMealTemplate = () => {
                           </div>
 
                           <div>
-                            <Label htmlFor="carbs">Carbs (g) *</Label>
+                            <Label htmlFor="carbs">Carbs (g)</Label>
                             <Input
                               id="carbs"
                               type="number"
-                              value={isUsdaFood ? newFood.carbs_grams : baseMacros.carbs_grams}
+                              placeholder="0"
+                              value={(isUsdaFood ? newFood.carbs_grams : baseMacros.carbs_grams) || ""}
                               onChange={(e) => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
@@ -1652,11 +1657,12 @@ const handleSaveMealTemplate = () => {
                           </div>
 
                           <div>
-                            <Label htmlFor="fats">Fats (g) *</Label>
+                            <Label htmlFor="fats">Fats (g)</Label>
                             <Input
                               id="fats"
                               type="number"
-                              value={isUsdaFood ? newFood.fats_grams : baseMacros.fats_grams}
+                              placeholder="0"
+                              value={(isUsdaFood ? newFood.fats_grams : baseMacros.fats_grams) || ""}
                               onChange={(e) => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
@@ -1714,6 +1720,7 @@ const handleSaveMealTemplate = () => {
                   }}
                   disabled={!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending}
                   variant="volt"
+                  size="lg"
                   className="w-full"
                   data-tutorial="add-food-submit"
                 >
@@ -1910,9 +1917,9 @@ const handleSaveMealTemplate = () => {
                 <>
                   <div className="px-3 py-1.5 bg-gold/10 text-xs font-semibold text-gold sticky top-0">My Foods</div>
                   {matchingCustomFoods.map((food) => (
-                    <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-warn/10 transition-colors">
+                    <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-white/[0.05] transition-colors">
                       <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                      <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
+                      <div className="text-xs text-ink-muted mt-0.5 font-technical tabular-nums">{Math.round(food.calories)} cal · P {Math.round(food.protein_grams)}g · C {Math.round(food.carbs_grams)}g · F {Math.round(food.fats_grams)}g</div>
                     </button>
                   ))}
                 </>
@@ -1921,7 +1928,7 @@ const handleSaveMealTemplate = () => {
                 <>
                   <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted sticky top-0">Generic Foods</div>
                   {genericResults.map((food) => (
-                    <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
+                    <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
                       <div className="font-medium text-ink text-sm">{food.description}</div>
                       <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal / 100g · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>
                     </button>
@@ -1935,7 +1942,7 @@ const handleSaveMealTemplate = () => {
                     {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                   {showBranded && brandedResults.map((food) => (
-                    <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors">
+                    <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated transition-colors">
                       <div className="font-medium text-ink text-sm">{food.description}</div>
                       {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
                       <div className="text-xs text-ink-muted mt-0.5">{Math.round(food.calories)} cal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · F {Math.round(food.fats)}g</div>

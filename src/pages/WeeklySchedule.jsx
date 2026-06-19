@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, addWeeks, subWeeks, startOfWeek, isSameDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Dumbbell, Timer, Moon, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Dumbbell, Timer, Moon, Check, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
@@ -98,6 +98,7 @@ export default function WeeklySchedule() {
   );
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [showAllMuscles, setShowAllMuscles] = useState(false);
+  const [showVolume, setShowVolume] = useState(false);
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -154,6 +155,11 @@ export default function WeeklySchedule() {
 
   const hasAnything = selectedEntries.length > 0 || !!selectedLog;
 
+  // The upcoming-program card renders its own (coral when today) CTA. We only
+  // add a persistent thumb-zone action when that inline CTA isn't shown, so the
+  // selected day always has a clear next action without nesting it three deep.
+  const hasInlineProgramCta = !selectedLog && selectedEntries.length > 0;
+
   // Weekly per-muscle SET volume — aggregate prescribed hard sets across the
   // displayed week (Mon–Sun) per muscle group. Surfaces the Program Synthesis
   // engine's volume allocation that the page already holds in programEntries.
@@ -189,7 +195,7 @@ export default function WeeklySchedule() {
         <button
           onClick={() => setWeekStart(w => subWeeks(w, 1))}
           aria-label="Previous week"
-          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -199,7 +205,7 @@ export default function WeeklySchedule() {
         <button
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
           aria-label="Next week"
-          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] border-[0.5px] border-white/10 text-ink-muted hover:text-ink transition-colors"
+          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -210,8 +216,8 @@ export default function WeeklySchedule() {
         {logsLoading || enrollmentsLoading ? (
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
-              <div className="w-[38px] h-9 rounded-[10px] bg-white/[0.05] animate-pulse shrink-0" />
-              <div className="flex-1 h-4 rounded-full bg-white/[0.05] animate-pulse" />
+              <div className="w-[38px] h-9 rounded bg-charcoal-borderSoft animate-pulse shrink-0" />
+              <div className="flex-1 h-4 rounded-full bg-charcoal-borderSoft animate-pulse" />
             </div>
           ))
         ) : logsError || enrollmentsError ? (
@@ -239,7 +245,7 @@ export default function WeeklySchedule() {
               onClick={() => setSelectedDay(day)}
               className={`data-row w-full text-left transition-colors ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
             >
-              <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "bg-brand/15 rounded-[10px] py-1" : ""}`}>
+              <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "bg-brand/15 rounded py-1" : ""}`}>
                 <span className={`block text-[9.5px] font-bold tracking-[0.1em] ${isCurrentDay ? "text-brandTint" : "text-muted-2"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
@@ -260,9 +266,7 @@ export default function WeeklySchedule() {
               </div>
               {log ? (
                 <div className="text-right shrink-0">
-                  <svg width="14" height="11" viewBox="0 0 12 10" fill="none" className="inline-block text-leaf">
-                    <path d="M1 5.5 4.2 8.5 11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <Check className="w-3.5 h-3.5 inline-block text-leaf" />
                   <div className="font-technical text-[10.5px] font-bold text-leaf whitespace-nowrap">
                     {mins ? `${mins} min` : `${(log.exercises || []).length} ex`}
                   </div>
@@ -274,47 +278,6 @@ export default function WeeklySchedule() {
           );
         })}
       </div>
-
-      {/* Weekly volume — sets per muscle across the displayed week */}
-      {muscleVolume.length > 0 && (
-        <div className="glass px-4 py-3.5 mb-4 rise-in-2">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="section-label">Weekly Volume</span>
-            <span className="font-technical text-[11px] font-extrabold text-muted-2">
-              {totalWeeklySets} sets · {muscleVolume.length} muscles
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {visibleMuscleVolume.map(([muscle, sets]) => (
-              <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[13px] font-semibold text-ink capitalize truncate">
-                    {muscle.replace(/_/g, " ")}
-                  </span>
-                  <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
-                    {sets} <span className="text-[9.5px] font-semibold">sets</span>
-                  </span>
-                </div>
-                <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-teal rounded-full transition-all"
-                    style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          {hiddenMuscleCount > 0 && (
-            <button
-              onClick={() => setShowAllMuscles(v => !v)}
-              aria-expanded={showAllMuscles}
-              className="w-full mt-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
-            >
-              {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Selected day */}
       <div className="mb-6">
@@ -409,8 +372,8 @@ export default function WeeklySchedule() {
                         {lifts.map((ex, j) => (
                           <div key={j} className="data-row justify-between">
                             <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value text-[11.5px] shrink-0">
-                              {ex.sets > 1 ? `${ex.sets}×` : ""}{ex.rep_target || ex.reps || "—"}
+                            <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
+                              {ex.sets > 1 ? `${ex.sets} × ` : ""}{ex.rep_target || ex.reps || "—"} <span className="text-[9.5px] font-semibold">reps</span>
                             </span>
                           </div>
                         ))}
@@ -493,7 +456,81 @@ export default function WeeklySchedule() {
 
           </div>
         )}
+
+        {/* Persistent primary action — the selected day always has a clear next
+            step even when the inline program card doesn't render its own CTA. */}
+        {isToday && !hasInlineProgramCta && (
+          selectedLog ? (
+            <button
+              className="cta-ghost w-full mt-3 rise-in-3"
+              onClick={() => navigate("/quick-workout")}
+            >
+              Log another session
+            </button>
+          ) : (
+            <button
+              className="cta-coral w-full mt-3 rise-in-3"
+              onClick={() => navigate("/quick-workout")}
+            >
+              Start today's session
+            </button>
+          )
+        )}
       </div>
+
+      {/* Weekly volume — secondary analytics, collapsed by default so the
+          selected-day session + action lead the page. Tap to expand the
+          per-muscle set breakdown. */}
+      {muscleVolume.length > 0 && (
+        <div className="glass px-4 py-3.5 mb-4 rise-in-3">
+          <button
+            onClick={() => setShowVolume(v => !v)}
+            aria-expanded={showVolume}
+            className="w-full flex items-center justify-between"
+          >
+            <span className="section-label">Weekly Volume</span>
+            <span className="flex items-center gap-2">
+              <span className="font-technical text-[11px] font-extrabold text-muted-2">
+                {totalWeeklySets} sets · {muscleVolume.length} muscles
+              </span>
+              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${showVolume ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+          {showVolume && (
+            <>
+              <div className="space-y-1.5 mt-2.5">
+                {visibleMuscleVolume.map(([muscle, sets]) => (
+                  <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[13px] font-semibold text-ink capitalize truncate">
+                        {muscle.replace(/_/g, " ")}
+                      </span>
+                      <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
+                        {sets} <span className="text-[9.5px] font-semibold">sets</span>
+                      </span>
+                    </div>
+                    <div className="h-1 bg-charcoal-borderSoft rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-teal rounded-full transition-all"
+                        style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {hiddenMuscleCount > 0 && (
+                <button
+                  onClick={() => setShowAllMuscles(v => !v)}
+                  aria-expanded={showAllMuscles}
+                  className="w-full mt-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
+                >
+                  {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Program progress */}
       {activeEnrollment?.program && (
@@ -504,7 +541,7 @@ export default function WeeklySchedule() {
             </p>
             <span className="font-technical text-xs font-extrabold text-teal shrink-0">{progressPct}%</span>
           </div>
-          <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden mb-1.5">
+          <div className="h-1 bg-charcoal-borderSoft rounded-full overflow-hidden mb-1.5">
             <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
           <p className="font-technical text-[11px] font-semibold text-muted-2">

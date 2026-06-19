@@ -44,7 +44,6 @@ import {
   Repeat,
   X,
   Activity,
-  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -457,11 +456,11 @@ export default function ProgramBuilder() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="type-display text-[22px] text-ink">
-              {editId ? "Edit Program" : "Build Program"}
-            </h1>
-            <p className="text-ink-muted text-sm mt-0.5">
-              Step {step + 1} of {STEPS.length}: {STEPS[step]}
+            <p className="section-label text-secondary">
+              Step {step + 1} of {STEPS.length}
+            </p>
+            <p className="type-display text-[20px] text-ink mt-0.5">
+              {STEPS[step]}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -485,13 +484,13 @@ export default function ProgramBuilder() {
               </>
             )}
             <Button
-              variant="dim"
+              variant="ghost"
               size="sm"
               onClick={() => navigate("/workouts")}
-              className="min-h-[44px]"
+              aria-label="Cancel"
+              className="min-h-[44px] min-w-[44px] px-0"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Cancel
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -504,7 +503,7 @@ export default function ProgramBuilder() {
               className={`h-1.5 flex-1 rounded-full transition-colors ${
                 i <= step
                   ? "bg-brand"
-                  : "bg-charcoal-elevated"
+                  : "bg-white/[0.06]"
               }`}
             />
           ))}
@@ -570,7 +569,7 @@ export default function ProgramBuilder() {
         </AnimatePresence>
 
         {/* Navigation buttons */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-6 pb-[env(safe-area-inset-bottom)]">
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -674,7 +673,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max="30"
               className="mt-1"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Days per cycle</p>
+            <p className="text-xs text-muted-2 mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
@@ -716,17 +715,11 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Total training days info */}
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary font-technical">
+        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-secondary font-technical">
           <Calendar className="w-4 h-4 flex-shrink-0 text-teal" />
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong className="text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
           </span>
-        </div>
-
-        {/* rest day tip */}
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-muted">
-          <Info className="w-4 h-4 flex-shrink-0" />
-          <span>Rest days count toward cycle length.</span>
         </div>
 
         <div>

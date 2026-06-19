@@ -100,7 +100,7 @@ function AdaptiveEnginePanel() {
       <CardContent className="px-5 pb-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2 mb-1">
+            <div className="section-label flex items-center justify-center gap-1.5 mb-1">
               <i className="w-[5px] h-[5px] rounded-full bg-carb" /> VDOT
             </div>
             <div className="font-technical text-xl font-extrabold text-ink">{vdot != null ? Number(vdot).toFixed(1) : "—"}</div>
@@ -111,15 +111,15 @@ function AdaptiveEnginePanel() {
             )}
           </div>
           <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2 mb-1">Personalization</div>
+            <div className="section-label mb-1">Personalization</div>
             <div className="text-sm font-bold text-ink mt-1.5">{personalization}</div>
           </div>
           <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2 mb-1">Model Confidence</div>
+            <div className="section-label mb-1">Model Confidence</div>
             <div className="font-technical text-xl font-extrabold text-ink">{confidence != null ? `${Math.round(confidence * 100)}%` : "—"}</div>
           </div>
           <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2 mb-1">Interference</div>
+            <div className="section-label mb-1">Interference</div>
             <div className="text-sm font-bold text-ink mt-1.5">{prescription?.interference?.interference_level || "—"}</div>
           </div>
         </div>
@@ -127,7 +127,7 @@ function AdaptiveEnginePanel() {
         {/* What the engine has learned about you (RLS constants + volume probe) */}
         {(tauFat != null || probe) && (
           <div className="mt-4 pt-3 border-t hairline space-y-1.5">
-            <div className="section-label !text-[9.5px]">Learnings</div>
+            <div className="section-label">Learnings</div>
             {tauFat != null && (
               <p className="text-xs font-semibold text-secondary">
                 Fatigue clears in <span className="font-technical font-extrabold text-ink">{tauFat.toFixed(0)}d</span>
@@ -295,7 +295,7 @@ function ReadinessBadge({ readiness }) {
     moderate: { label: "Moderate — Train", color: "bg-leaf/15 text-leaf" },
     low:      { label: "Low — Easy",       color: "bg-warn/15 text-warn" },
     rest:     { label: "Rest Day",         color: "bg-bad/15 text-bad" },
-    unknown:  { label: "Unknown",          color: "bg-white/[0.06] text-muted-2" },
+    unknown:  { label: "Unknown",          color: "bg-charcoal-elevated text-muted-2" },
   };
   const cfg = map[readiness] || map.unknown;
   return <Badge className={`${cfg.color} border-none text-xs font-bold`}>{cfg.label}</Badge>;
@@ -349,7 +349,7 @@ function StrengthSection({ data }) {
               </span>
             </div>
             {pct != null && (
-              <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden mt-1.5">
+              <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden mt-1.5">
                 <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${pct}%` }} />
               </div>
             )}
@@ -468,7 +468,7 @@ function HypertrophySection({ data, landmarks }) {
                   <FatigueColor score={d.fatigue_score} />
                 </div>
               </div>
-              <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
+              <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${overMrv ? "bg-bad" : d.fatigue_score >= 0.75 ? "bg-warn" : "bg-teal"}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -481,9 +481,11 @@ function HypertrophySection({ data, landmarks }) {
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-2 hover:text-ink transition-colors py-1.5"
+            aria-expanded={showAll}
+            className="cta-ghost !h-11 !text-[11px] !font-bold uppercase tracking-[0.08em] !text-muted-2 hover:!text-ink active:scale-[0.98] transition-transform w-full"
           >
             {showAll ? "Show less" : `Show all ${sorted.length} muscles`}
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
           </button>
         )}
         <InfoNote label="Reading these bars">
@@ -519,7 +521,7 @@ function RecoverySection({ data }) {
       <div className="flex items-center gap-4">
         <div className="text-center">
           <div className="hero-metric text-ink text-3xl">{data.score}</div>
-          <div className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em]">/ 100</div>
+          <div className="section-label">/ 100</div>
         </div>
         <ReadinessBadge readiness={data.push_readiness} />
       </div>
@@ -531,7 +533,7 @@ function RecoverySection({ data }) {
           { label: "Energy", value: data.energy ? `${data.energy}/10` : "—" },
         ].map(({ label, value }) => (
           <div key={label} className="glass-inset px-3 py-2">
-            <div className="flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2">
+            <div className="section-label flex items-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: RECOVERY_HUES[label] }} />
               {label}
             </div>
@@ -550,7 +552,7 @@ function FatigueSection({ data }) {
 
   let tsbColor = data.tsb > 5 ? "text-teal" : data.tsb > -5 ? "text-muted-2" : "text-bad";
   let tsbIcon  = data.tsb > 5 ? TrendingUp : data.tsb > -5 ? CheckCircle2 : TrendingDown;
-  if (data.tsb == null) { tsbColor = "text-ink-muted"; tsbIcon = null; }
+  if (data.tsb == null) { tsbColor = "text-muted-2"; tsbIcon = null; }
   const TSBIcon  = tsbIcon;
 
   return (
@@ -560,9 +562,9 @@ function FatigueSection({ data }) {
         {TSBIcon && <TSBIcon className={`w-6 h-6 ${tsbColor}`} />}
         <div>
           <div className={`font-technical text-2xl font-extrabold ${tsbColor}`}>{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
-          <div className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em]">Training Stress Balance</div>
+          <div className="section-label">Training Stress Balance</div>
         </div>
-        <Badge className="ml-auto bg-white/[0.06] text-muted-2 border-none capitalize text-xs">
+        <Badge className="ml-auto bg-charcoal-elevated text-muted-2 border-none capitalize text-xs">
           {(data.interpretation || "").replace("_", " ")}
         </Badge>
       </div>
@@ -576,7 +578,7 @@ function FatigueSection({ data }) {
           { label: "ACWR", value: data.acwr?.toFixed(2) ?? "—", desc: "acute:chronic", hue: "var(--hue-teal)", warn: data.acwr > 1.5 },
         ].map(({ label, value, desc, hue, warn }) => (
           <div key={label} className="glass-inset px-3 py-2 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">
+            <div className="section-label flex items-center justify-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hue }} />
               {label}
             </div>
@@ -613,7 +615,7 @@ function EnduranceSection({ data }) {
             <span className="font-bold text-secondary">Aerobic Fitness</span>
             <span className="font-technical text-carb font-extrabold">{(data.aerobic_fitness_proxy * 100).toFixed(0)}%</span>
           </div>
-          <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
+          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
             <div className="h-full bg-carb rounded-full transition-all" style={{ width: `${data.aerobic_fitness_proxy * 100}%` }} />
           </div>
           <p className="text-[10px] font-semibold text-muted-2 mt-1">
@@ -623,7 +625,7 @@ function EnduranceSection({ data }) {
       )}
       {data.running_fatigue_atl != null && (
         <div className="glass-inset px-3 py-2">
-          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">Running Fatigue (ATL)</div>
+          <div className="section-label">Running Fatigue (ATL)</div>
           <div className="font-technical text-sm font-extrabold text-ink mt-0.5">{data.running_fatigue_atl}</div>
         </div>
       )}
@@ -693,7 +695,7 @@ function NutritionSection({ data, targets }) {
           </span>
         </div>
         {calPct != null && (
-          <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
+          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${calPct > 110 ? "bg-bad" : calPct >= 90 ? "bg-gold" : "bg-warn"}`}
               style={{ width: `${Math.min(calPct, 100)}%` }}
@@ -712,7 +714,7 @@ function NutritionSection({ data, targets }) {
           </span>
         </div>
         {proteinPct != null && (
-          <div className="h-[5px] bg-white/[0.08] rounded-full overflow-hidden">
+          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${proteinPct >= 100 ? "bg-coral" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
               style={{ width: `${Math.min(proteinPct, 100)}%` }}
@@ -723,7 +725,7 @@ function NutritionSection({ data, targets }) {
 
       {/* Weight trend */}
       <div className="flex items-center justify-between glass-inset px-3 py-2">
-        <span className="flex items-center gap-1.5 text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em]">
+        <span className="section-label flex items-center gap-1.5">
           <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" />
           Weight Trend
         </span>
@@ -991,9 +993,9 @@ export default function AthleteState({ hideHeader = false }) {
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-[13.5px] font-extrabold text-ink">Physique photos</span>
-              <span className="block text-[11px] font-semibold text-ink-muted truncate">upload · AI body-comp estimate · trend</span>
+              <span className="block text-[11px] font-semibold text-muted-2 truncate">upload · AI body-comp estimate · trend</span>
             </span>
-            <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
+            <ChevronRight className="w-4 h-4 text-faint shrink-0" />
           </Link>
           <Link to="/recovery" className="glass glass-interactive px-4 py-3.5 flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-teal/[0.13] text-teal">
@@ -1001,9 +1003,9 @@ export default function AthleteState({ hideHeader = false }) {
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-[13.5px] font-extrabold text-ink">Recovery detail</span>
-              <span className="block text-[11px] font-semibold text-ink-muted truncate">HRV · RHR · sleep · ACWR trends</span>
+              <span className="block text-[11px] font-semibold text-muted-2 truncate">HRV · RHR · sleep · ACWR trends</span>
             </span>
-            <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
+            <ChevronRight className="w-4 h-4 text-faint shrink-0" />
           </Link>
         </div>
       </div>

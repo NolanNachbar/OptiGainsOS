@@ -318,11 +318,8 @@ export default function QuickWorkout() {
               )}
             </Button>
           </div>
-          <p className="text-sm font-semibold text-secondary mt-1">
-            {format(new Date(startTime), "EEEE, MMM d")}
-          </p>
           {prescribed && (
-            <p className="text-[12.5px] font-semibold text-ink-muted mt-1">
+            <p className="text-xs font-semibold text-ink-muted mt-1">
               Logging the engine's prescribed session — targets pre-filled
             </p>
           )}
@@ -333,11 +330,11 @@ export default function QuickWorkout() {
         {/* Engine prescription banner */}
         {prescribed && (
           <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
+            <i className="w-[26px] h-[26px] rounded-md bg-teal/15 text-teal flex items-center justify-center flex-shrink-0 not-italic">
               <Cpu className="w-3.5 h-3.5" />
             </i>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">
-              Loaded from <span className="text-brand font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
+              Loaded from <span className="text-ink font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
             </span>
           </div>
         )}
@@ -399,7 +396,7 @@ export default function QuickWorkout() {
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (
             <div className="glass px-4 py-3 rounded-xl space-y-1.5">
-              <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em]">Session notes</p>
+              <p className="section-label">Session notes</p>
               <textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}

@@ -59,16 +59,17 @@ export default function ForgotPassword() {
           <CardContent>
             {emailSent ? (
               <div className="text-center space-y-4">
-                <p className="text-ink-muted">
+                <p className="text-secondary">
                   We've sent a password reset link to <span className="font-medium text-ink">{email}</span>
                 </p>
-                <p className="text-ink-muted text-sm">
+                <p className="text-secondary text-sm">
                   Didn't receive the email? Check your spam folder or try again.
                 </p>
                 <Button
                   onClick={() => setEmailSent(false)}
-                  variant="outline"
-                  className="w-full bg-charcoal-elevated border-charcoal-border text-ink hover:bg-charcoal-surface"
+                  variant="dark"
+                  size="lg"
+                  className="w-full"
                 >
                   Try another email
                 </Button>
@@ -113,7 +114,7 @@ export default function ForgotPassword() {
             <div className="mt-6 text-center">
               <Link
                 to="/login"
-                className="text-brand hover:opacity-80 font-bold inline-flex items-center gap-2 transition-opacity"
+                className="text-secondary hover:text-ink font-bold inline-flex items-center gap-2 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Sign In
