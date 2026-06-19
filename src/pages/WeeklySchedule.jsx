@@ -260,7 +260,7 @@ export default function WeeklySchedule() {
                 >
                   {pill.label}
                 </span>
-                <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
+                <div className="text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
                   {detail}
                 </div>
               </div>
@@ -413,7 +413,7 @@ export default function WeeklySchedule() {
                       <span className="section-label !text-carb">{isTwoADay ? "PM — Run" : "Cardio"}</span>
                     </div>
                     {isTwoADay && (
-                      <p className="font-technical text-[11px] font-semibold text-muted-2 mb-3">
+                      <p className="text-[11px] font-semibold text-muted-2 mb-3">
                         ~6h separation from AM session
                       </p>
                     )}

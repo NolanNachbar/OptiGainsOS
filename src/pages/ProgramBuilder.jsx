@@ -451,15 +451,15 @@ export default function ProgramBuilder() {
   const editingWorkout = editingDay != null ? workouts.find((w) => w.day_index === editingDay) : null;
 
   return (
-    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
+    <div className="p-4 md:p-6 bg-charcoal transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="section-label text-secondary">
-              Step {step + 1} of {STEPS.length}
+              {STEPS[step]} · Step {step + 1}/{STEPS.length}
             </p>
-            <p className="type-display text-[20px] text-ink mt-0.5">
+            <p className="hidden lg:block type-display text-[20px] text-ink mt-0.5">
               {STEPS[step]}
             </p>
           </div>
@@ -569,7 +569,7 @@ export default function ProgramBuilder() {
         </AnimatePresence>
 
         {/* Navigation buttons */}
-        <div className="flex gap-3 mt-6 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex gap-3 mt-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-[env(safe-area-inset-bottom)]">
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1">
               <ArrowLeft className="w-4 h-4 mr-2" />

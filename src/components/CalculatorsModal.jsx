@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Calculator, Scale, Dumbbell } from "lucide-react";
+import { Calculator, Scale, Dumbbell, Disc } from "lucide-react";
 import OneRMCalculator from "@/components/workouts/OneRMCalculator";
 
 const STANDARD_PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
@@ -294,7 +294,7 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
               Working
             </TabsTrigger>
             <TabsTrigger value="plates" className="rounded-md">
-              <Calculator className="w-4 h-4 mr-2" />
+              <Disc className="w-4 h-4 mr-2" />
               Plates
             </TabsTrigger>
           </TabsList>

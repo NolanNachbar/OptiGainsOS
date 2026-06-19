@@ -30,6 +30,12 @@ function titleCase(s) {
   return String(s || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Humanize any raw engine enums the rationale string interpolates verbatim
+// (e.g. "Prescribed TWO_A_DAY action…") so users never see SCREAMING_SNAKE copy.
+function humanizeRationale(s) {
+  return String(s || "").replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g, (m) => ACTION_LABEL[m] || titleCase(m));
+}
+
 function intensityBadge(intensity) {
   if (intensity == null) return null;
   if (intensity >= 1.05) return { label: `${intensity.toFixed(2)}× intensity`, color: "var(--hue-teal)" };
@@ -162,7 +168,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false }) {
           )}
         </div>
         {prescription.rationale && (
-          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{prescription.rationale}</p>
+          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{humanizeRationale(prescription.rationale)}</p>
         )}
 
         {/* Deadline weighting + anabolic window — the "why today looks like this" line */}

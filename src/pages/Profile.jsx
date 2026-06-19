@@ -192,6 +192,11 @@ export default function Profile({ hideHeader }) {
     return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 
+  // The save bar must never appear on the mobile hub list (no editable fields on
+  // screen). It is only meaningful when an editable section is actually open, or
+  // on desktop where editable fields are always visible alongside it.
+  const showSaveBar = isDirty && (activeSection !== null || hideHeader);
+
   const updateProfileMutation = useMutation({
     mutationFn: async ({ profileData, weightToLog }) => {
       if (profile) {
@@ -345,7 +350,8 @@ export default function Profile({ hideHeader }) {
           <div>
             {/* Mobile: hub view (profile card + nav list) */}
             <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
-              <h1 className="type-display text-[22px] text-ink mb-4">Profile</h1>
+              {/* No in-page "Profile" h1 here: the Layout chrome header already shows
+                  the page title on mobile, so a second one would stack redundantly. */}
               <div className="glass p-5 text-center mb-3">
                 <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
                   <span className="text-brand text-2xl font-bold">
@@ -760,7 +766,7 @@ export default function Profile({ hideHeader }) {
           </div>{/* end body section */}
 
           {/* Spacer for sticky bar */}
-          {isDirty && <div className="h-28 md:h-20" />}
+          {showSaveBar && <div className="h-28 md:h-20" />}
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
@@ -885,10 +891,11 @@ export default function Profile({ hideHeader }) {
 
       </div>{/* end max-w-6xl */}
 
-      {/* Sticky Save Bar */}
+      {/* Sticky Save Bar — anchored above the floating mobile dock (7rem clearance,
+          matching Layout's content padding) so it never renders under the dock. */}
       <div
-        className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
-          isDirty ? 'translate-y-0' : 'translate-y-[calc(100%+env(safe-area-inset-bottom,0px)+64px)]'
+        className={`fixed bottom-[calc(7rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
+          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+7rem+env(safe-area-inset-bottom,0px))]'
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">

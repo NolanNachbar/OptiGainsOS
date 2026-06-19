@@ -146,8 +146,9 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           {/* View Details */}
           <Link to={`/workout-detail?id=${workout.id}`} className="block">
             <Button
-              variant="primary"
-              className="w-full text-sm"
+              variant="dim"
+              size="lg"
+              className="w-full"
             >
               View Details
             </Button>

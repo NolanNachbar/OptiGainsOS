@@ -32,7 +32,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         <div className="glass-elevated p-3 rounded-xl">
           <p className="font-bold text-[13px] text-ink">{format(parseISO(label), 'MMM d, yyyy')}</p>
           {rawEntry && <p className="text-[12px] text-muted-2 font-technical font-semibold">{rawEntry.value} {weightUnit}</p>}
-          {trendEntry && <p className="text-[12px] font-technical font-bold text-violet">Trend: {trendEntry.value} {weightUnit}</p>}
+          {trendEntry && <p className="text-[12px] font-technical font-bold text-ink">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
       );
     }
@@ -45,14 +45,17 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{currentWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
-          <div className="font-technical text-[18px] font-extrabold text-violet">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-[18px] font-extrabold text-secondary">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
@@ -95,11 +98,11 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <Line
               type="monotone"
               dataKey="trendWeight"
-              stroke="var(--hue-violet)"
+              stroke="rgba(242,244,247,0.65)"
               strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 4, fill: 'var(--hue-violet)', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'rgba(242,244,247,0.65)', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -111,7 +114,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed var(--hue-violet)' }} />
+          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed rgba(242,244,247,0.65)' }} />
           Trend (EWMA)
         </span>
       </div>

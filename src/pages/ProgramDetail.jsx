@@ -325,58 +325,70 @@ export default function ProgramDetail() {
                     Start Next Workout
                   </Button>
                 )}
-                {isEnrolled && (
-                  <Button variant="outline" size="lg" onClick={handlePause}>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </Button>
-                )}
                 {enrollment?.status === "paused" && (
-                  <Button variant="outline" size="lg" onClick={handleResume}>
+                  <Button variant="volt" size="lg" className="w-full" onClick={handleResume}>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
                 )}
-                {(isEnrolled || enrollment?.status === "paused") && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleRestart}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Cancel Enrollment
-                  </Button>
-                )}
-                {isOwner && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => navigate(`/program-builder?edit=${program.id}`)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => {
-                        exportProgramAsJson(program);
-                        toast.success("Program exported");
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export JSON
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="lg"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </>
+
+                {/* Secondary / management controls — demoted to a compact wrap row */}
+                {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
+                  <div className="flex flex-wrap gap-2">
+                    {isEnrolled && (
+                      <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
+                        <Pause className="w-4 h-4 mr-1.5" />
+                        Pause
+                      </Button>
+                    )}
+                    {isOwner && (
+                      <Button
+                        variant="dim"
+                        size="lg"
+                        className="flex-1 min-w-[44px]"
+                        onClick={() => navigate(`/program-builder?edit=${program.id}`)}
+                      >
+                        <Edit className="w-4 h-4 mr-1.5" />
+                        Edit
+                      </Button>
+                    )}
+                    {isOwner && (
+                      <Button
+                        variant="dim"
+                        size="lg"
+                        className="flex-1 min-w-[44px]"
+                        onClick={() => {
+                          exportProgramAsJson(program);
+                          toast.success("Program exported");
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-1.5" />
+                        Export
+                      </Button>
+                    )}
+                    {(isEnrolled || enrollment?.status === "paused") && (
+                      <Button
+                        variant="dim"
+                        size="lg"
+                        className="flex-1 min-w-[44px]"
+                        onClick={handleRestart}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1.5" />
+                        Cancel
+                      </Button>
+                    )}
+                    {isOwner && (
+                      <Button
+                        variant="destructive"
+                        size="lg"
+                        className="flex-1 min-w-[44px]"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1.5" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -391,11 +403,11 @@ export default function ProgramDetail() {
                     )}
                     {completedCount} / {totalWorkouts} workouts
                   </span>
-                  <span className="font-technical font-extrabold text-teal">{progressPercent}%</span>
+                  <span className="font-technical font-extrabold text-leaf">{progressPercent}%</span>
                 </div>
-                <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--color-border-soft)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-teal rounded-full transition-all duration-500"
+                    className="h-full bg-leaf rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -457,8 +469,23 @@ export default function ProgramDetail() {
               const actionableEntries = allEntries.filter(([, state]) => state.stalled || state.ready_to_progress);
               const hiddenCount = allEntries.length - actionableEntries.length;
               const visibleEntries = showAllProgression || actionableEntries.length === 0 ? allEntries : actionableEntries;
+              // If 2+ visible stalled exercises share the exact same suggestion, surface it
+              // once as a banner instead of repeating it on every card.
+              const stallSuggestions = visibleEntries
+                .filter(([, s]) => s.stalled && s.stall_suggestion)
+                .map(([, s]) => s.stall_suggestion);
+              const sharedStallSuggestion =
+                stallSuggestions.length >= 2 && new Set(stallSuggestions).size === 1
+                  ? stallSuggestions[0]
+                  : null;
               return (
               <div className="space-y-2">
+                {sharedStallSuggestion && (
+                  <div className="glass-inset p-3 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warn" />
+                    <p className="font-technical text-xs text-warn">{sharedStallSuggestion}</p>
+                  </div>
+                )}
                 {visibleEntries
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
@@ -489,7 +516,7 @@ export default function ProgramDetail() {
                         )}
                       </div>
                     </div>
-                    {state.stalled && state.stall_suggestion && (
+                    {state.stalled && state.stall_suggestion && state.stall_suggestion !== sharedStallSuggestion && (
                       <p className="font-technical text-xs text-warn mt-2 flex items-start gap-1.5">
                         <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                         <span>{state.stall_suggestion}</span>

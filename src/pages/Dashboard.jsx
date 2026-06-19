@@ -275,8 +275,8 @@ export default function Dashboard() {
   return (
     <div className="px-3 py-3 md:px-6 md:py-4 bg-charcoal min-h-screen relative">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex items-center justify-between rise-in">
+        {/* Header — desktop only; mobile uses the shared Layout header to avoid duplication */}
+        <div className="mb-4 hidden lg:flex items-center justify-between rise-in">
           <div className="flex items-center gap-3">
             <UserAvatar url={profile?.avatar_url} username={profile?.username} size="sm" className="border border-white/10" />
             <div>

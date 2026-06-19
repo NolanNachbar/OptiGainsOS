@@ -223,17 +223,17 @@ function ReadingTab() {
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
-              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" className="h-9" />
+              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Author</Label>
-              <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" className="h-9" />
+              <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Category</Label>
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
@@ -242,7 +242,7 @@ function ReadingTab() {
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Status</Label>
                 <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
                   </SelectContent>
@@ -255,11 +255,11 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." className="h-9" />
+              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="sm" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
-              <Button variant="volt" size="sm" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -379,19 +379,20 @@ function StudyTab() {
         <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" className="h-9" />
+                <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" />
               </div>
-              <Input type="number" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" className="h-9" />
+              <Input type="number" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" />
               <Select value={form.medium} onValueChange={v => setForm(p => ({ ...p, medium: v }))}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["video","book","project","course","article"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" className="h-9" />
+            <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" />
             <Button
               variant="volt"
+              size="lg"
               className="w-full"
               disabled={!form.topic.trim() || !form.duration_min || save.isPending}
               onClick={() => save.mutate()}
@@ -616,11 +617,11 @@ function SkillsTab() {
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Skill name</Label>
-              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. TypeScript" className="h-9" />
+              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. TypeScript" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Category (optional)</Label>
-              <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. Frontend, Machine Learning" className="h-9" />
+              <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. Frontend, Machine Learning" />
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Current level</Label>
@@ -635,8 +636,8 @@ function SkillsTab() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="sm" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button variant="volt" size="sm" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -683,9 +684,10 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="flex items-center gap-2 py-2 text-muted-2">
-              <GraduationCap className="w-4 h-4 text-faint shrink-0" />
-              <p className="text-sm font-semibold">Drop your first note above to start the stream.</p>
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-2 mb-1">Drop your first note above to start the stream.</p>
+              <p className="text-xs font-semibold text-faint">Capture a thought, then organize it under Reading, Study, or Skills.</p>
             </div>
           ))}
         </div>

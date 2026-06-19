@@ -339,10 +339,10 @@ function StrengthSection({ data }) {
           <div key={lift} className="py-2 border-t hairline first:border-t-0 first:pt-0.5">
             <div className="flex items-baseline justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[12.5px] font-extrabold text-ink capitalize whitespace-nowrap">{LIFT_LABEL[lift] ?? lift}</span>
+                <span className="text-xs font-extrabold text-ink capitalize whitespace-nowrap">{LIFT_LABEL[lift] ?? lift}</span>
                 <StallBadge risk={d.stall_risk} />
               </div>
-              <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap">
+              <span className="font-technical text-xs font-bold text-muted-2 whitespace-nowrap">
                 {d.current_e1rm}{d.target ? ` / ${d.target}` : ""} lb
                 {d.eta_days != null && d.eta_days > 0 && ` · ETA ${d.eta_days}d`}
                 {d.eta_days === 0 && " · target reached"}
@@ -470,7 +470,7 @@ function HypertrophySection({ data, landmarks }) {
               </div>
               <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${overMrv ? "bg-bad" : d.fatigue_score >= 0.75 ? "bg-warn" : "bg-teal"}`}
+                  className={`h-full rounded-full transition-all ${d.fatigue_score >= 0.75 ? "bg-bad" : d.fatigue_score >= 0.5 ? "bg-warn" : "bg-teal"}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
                 />
               </div>
@@ -992,7 +992,7 @@ export default function AthleteState({ hideHeader = false }) {
               <Camera className="w-4 h-4" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-[13.5px] font-extrabold text-ink">Physique photos</span>
+              <span className="block text-sm font-extrabold text-ink">Physique photos</span>
               <span className="block text-[11px] font-semibold text-muted-2 truncate">upload · AI body-comp estimate · trend</span>
             </span>
             <ChevronRight className="w-4 h-4 text-faint shrink-0" />
@@ -1002,7 +1002,7 @@ export default function AthleteState({ hideHeader = false }) {
               <Heart className="w-4 h-4" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-[13.5px] font-extrabold text-ink">Recovery detail</span>
+              <span className="block text-sm font-extrabold text-ink">Recovery detail</span>
               <span className="block text-[11px] font-semibold text-muted-2 truncate">HRV · RHR · sleep · ACWR trends</span>
             </span>
             <ChevronRight className="w-4 h-4 text-faint shrink-0" />

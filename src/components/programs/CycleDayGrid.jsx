@@ -115,10 +115,10 @@ export default function CycleDayGrid({
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
-                    ? "text-xs font-medium truncate text-leaf"
+                    ? "text-xs font-medium line-clamp-2 leading-tight text-leaf"
                     : isCurrent
-                    ? "text-xs font-medium truncate text-brand"
-                    : "text-xs font-medium truncate text-ink-muted";
+                    ? "text-xs font-medium line-clamp-2 leading-tight text-brand"
+                    : "text-xs font-medium line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
@@ -158,6 +158,11 @@ export default function CycleDayGrid({
                           <Circle className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
                         ) : null}
                       </div>
+                      {!compact && (workout?.focus || workout?.type) && (
+                        <p className="sm:hidden text-xs text-ink-muted mt-1 capitalize line-clamp-1">
+                          {workout.focus || workout.type}
+                        </p>
+                      )}
                       {!compact && workout?.exercises?.length > 0 && (
                         <p className="hidden sm:block text-xs text-ink-muted mt-1">
                           {workout.exercises.length} exercises

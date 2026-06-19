@@ -160,7 +160,7 @@ export default function ResetPassword() {
             <div className="mt-6 text-center">
               <p className="text-ink-muted">
                 Remember your password?{' '}
-                <Link to="/login" className="text-brand hover:opacity-80 transition-opacity font-medium">
+                <Link to="/login" className="text-secondary hover:text-ink transition-colors font-medium inline-flex items-center py-3 px-2 -my-3 -mx-2">
                   Sign in
                 </Link>
               </p>

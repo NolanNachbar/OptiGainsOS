@@ -296,7 +296,7 @@ export default function Today() {
                 frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
               />
               <MiniRing
-                label="lb/wk" hue="var(--hue-violet)"
+                label="lb/wk" hue="var(--hue-green)"
                 value={fmt(nutrition?.weight_trend_lbs_per_week, 1)}
                 frac={nutrition?.weight_trend_lbs_per_week != null
                   ? Math.min(1, Math.abs(Number(nutrition.weight_trend_lbs_per_week)) / 2)

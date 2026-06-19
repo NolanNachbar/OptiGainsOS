@@ -285,7 +285,8 @@ export default function Layout({ children, currentPageName }) {
           where it would float over tabular data and a native add action already
           exists (Fuel/FoodTracker, Train hub + lists, Career, Mind, ProgramDetail). */}
       {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
-         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/'
+         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/',
+         '/today', '/recovery', '/brief-history', '/workout-detail', '/insights'
         ].some(p => location.pathname.startsWith(p)) && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}

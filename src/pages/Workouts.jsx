@@ -32,7 +32,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const [filterOpen, setFilterOpen] = useState(false);
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState("");
-  const [libraryVisible, setLibraryVisible] = useState(8);
+  const [libraryVisible, setLibraryVisible] = useState(5);
   const queryClient = useQueryClient();
 
   const { data: workouts = [], isLoading: workoutsLoading, error: workoutsError } = useQuery({
@@ -841,7 +841,7 @@ function CardioEntryCard({ entry }) {
           </div>
         )}
         {entry.aerobicEffect != null && (
-          <div className="flex-1 flex flex-col border-l hairline pl-4">
+          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgHeartrate) ? 'border-l hairline pl-4' : ''}`}>
             <span className="section-label">Aerobic Effect</span>
             <span className="font-technical font-bold text-[17px] text-ink mt-1">{Number(entry.aerobicEffect).toFixed(1)}</span>
           </div>

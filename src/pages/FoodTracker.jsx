@@ -754,7 +754,7 @@ const handleSaveMealTemplate = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-11 bg-transparent border-none text-sm font-semibold text-ink focus:outline-none cursor-pointer font-mono"
+            className="h-11 bg-transparent border-none text-sm font-semibold text-ink focus:outline-none cursor-pointer font-technical tabular-nums"
           />
           <button
             onClick={() => changeDate(1)}
@@ -984,7 +984,7 @@ const handleSaveMealTemplate = () => {
                             key={entry.id}
                             className={`grid grid-cols-12 gap-2 md:gap-3 py-3 px-4 border-b hairline hover:bg-white/[0.03] transition-colors group ${entry.planned ? 'bg-white/[0.02]' : i % 2 === 1 ? 'bg-white/[0.015]' : ''}`}
                           >
-                            <div className="col-span-6 md:col-span-7 flex items-center gap-2.5 min-w-0">
+                            <div className="col-span-5 md:col-span-7 flex items-center gap-2.5 min-w-0">
                               {entry.planned && (
                                 <button
                                   onClick={() => togglePlannedMutation.mutate(entry.id)}
@@ -1011,7 +1011,7 @@ const handleSaveMealTemplate = () => {
                                 )}
                               </div>
                             </div>
-                            <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>
+                            <div className={`col-span-5 md:col-span-4 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
                                 <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Cal</span>
@@ -1029,7 +1029,7 @@ const handleSaveMealTemplate = () => {
                                 <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
-                            <div className="col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <div className="col-span-2 md:col-span-1 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1285,7 +1285,7 @@ const handleSaveMealTemplate = () => {
           }
         }}>
           <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
-            <DialogHeader className="text-left px-6 pt-6 pb-4 pr-12 border-b border-charcoal-border shrink-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
               <DialogTitle>{editingEntry ? "Edit Food Entry" : "Add Food Entry"}</DialogTitle>
             </DialogHeader>
 
@@ -1409,28 +1409,23 @@ const handleSaveMealTemplate = () => {
                             ))}
                           </div>
                         )}
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold text-gold flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-gold" /> My Foods
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => document.getElementById("import-foods-csv-input").click()}
-                              className="text-xs text-ink-muted hover:text-brand flex items-center gap-1"
-                              title="Import foods from CSV"
-                            >
-                              <Upload className="w-3 h-3" /> Import CSV
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowFoodFormatGuide(true)}
-                              className="text-ink-muted hover:text-brand"
-                              title="CSV format guide"
-                            >
-                              <HelpCircle className="w-3 h-3" />
-                            </button>
-                          </div>
+                        <div className="flex items-center justify-end gap-2 mb-1">
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById("import-foods-csv-input").click()}
+                            className="text-xs text-ink-muted hover:text-brand flex items-center gap-1"
+                            title="Import foods from CSV"
+                          >
+                            <Upload className="w-3 h-3" /> Import CSV
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowFoodFormatGuide(true)}
+                            className="text-ink-muted hover:text-brand"
+                            title="CSV format guide"
+                          >
+                            <HelpCircle className="w-3 h-3" />
+                          </button>
                           <input
                             id="import-foods-csv-input"
                             type="file"

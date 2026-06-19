@@ -138,7 +138,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? "pt-0 px-0 md:px-0 min-h-0" : ""}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <h1 className="type-display text-[22px] mb-1 rise-in">Physique</h1>
+          <h1 className="hidden lg:block type-display text-[22px] mb-1 rise-in">Physique</h1>
         )}
         <p className="text-xs font-semibold text-muted-2 mb-4">
           Track the trend — same pose, lighting and distance each time.

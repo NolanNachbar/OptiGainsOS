@@ -65,20 +65,20 @@ function AppForm({ initial, onSave, onClose }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" className="h-9" />
+          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
         </div>
         <div className="col-span-2">
           <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
-          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" className="h-9" />
+          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
-          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="h-9 text-sm" />
+          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="text-sm" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
           <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-            <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
             </SelectContent>
@@ -87,21 +87,21 @@ function AppForm({ initial, onSave, onClose }) {
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." className="h-9" />
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
-          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" className="h-9" />
+          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" />
         </div>
         <div className="col-span-2">
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
-          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="h-9 text-sm" />
+          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="text-sm" />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="sm" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
+        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="volt" size="lg" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
   );
@@ -179,9 +179,11 @@ function PipelineTab() {
           <span><span className="font-extrabold text-ink">{active.length}</span> active</span>
           <span><span className="font-extrabold text-ink">{thisWeek}</span> applied this week</span>
         </div>
-        <Button variant={apps.length === 0 ? "dark" : "volt"} onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
-          <Plus className="w-3.5 h-3.5" /> Add Application
-        </Button>
+        {apps.length > 0 && (
+          <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
+            <Plus className="w-3.5 h-3.5" /> Add Application
+          </Button>
+        )}
       </div>
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -313,32 +315,32 @@ function NetworkForm({ initial, onSave, onClose }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
-          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" className="h-9" />
+          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" className="h-9" />
+          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Type</Label>
-          <Input value={form.interaction_type} onChange={e => setForm(p => ({ ...p, interaction_type: e.target.value }))} placeholder="LinkedIn, Coffee chat" className="h-9" />
+          <Input value={form.interaction_type} onChange={e => setForm(p => ({ ...p, interaction_type: e.target.value }))} placeholder="LinkedIn, Coffee chat" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="h-9 text-sm" />
+          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="text-sm" />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
-          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="h-9 text-sm" />
+          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="text-sm" />
         </div>
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" className="h-9" />
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="sm" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
+        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="volt" size="lg" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
   );
@@ -544,7 +546,7 @@ export default function Career({ hideHeader }) {
         {!hideHeader && (
           <header className="mb-6 rise-in hidden lg:block">
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-gold/[0.13]">
+              <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-gold/[0.13]">
                 <Briefcase className="w-[15px] h-[15px] text-gold" />
               </div>
               <h1 className="type-display text-2xl">Career & Pipeline</h1>

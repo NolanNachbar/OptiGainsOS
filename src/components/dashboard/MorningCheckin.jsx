@@ -200,7 +200,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
       {/* Muscle soreness */}
       <div className="mb-4">
         <p className="section-label mb-2">Soreness — tap to cycle</p>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {MUSCLE_GROUPS.map(group => (
             <button
               key={group}

@@ -115,7 +115,7 @@ export default function WorkoutLoggingHeader({
                 variant="destructive"
                 onClick={() => setShowConfirm(true)}
                 size="sm"
-                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3"
+                className="h-11 md:h-8 text-xs md:text-sm px-3 md:px-3"
               >
                 <X className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
                 <span>Cancel</span>
@@ -125,7 +125,7 @@ export default function WorkoutLoggingHeader({
                 disabled={isSaving}
                 size="sm"
                 variant="volt"
-                className="h-10 md:h-8 text-xs md:text-sm px-3 md:px-3"
+                className="h-11 md:h-8 text-xs md:text-sm px-3 md:px-3"
                 data-tutorial="finish-workout-btn"
               >
                 {isSaving ? (

@@ -104,7 +104,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
             </p>
           </div>
           <Link to="/brief-history">
-            <Button variant="ghost" size="sm" className="text-muted-2 text-xs gap-1.5">
+            <Button variant="dim" size="sm" className="text-muted-2 text-xs gap-1.5">
               <History className="w-3.5 h-3.5" /> View Past Briefs
             </Button>
           </Link>
@@ -129,7 +129,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               <span className="font-technical tabular-nums text-[10px] font-semibold text-faint">Generated {generatedAt}</span>
             )}
             <Link to="/brief-history">
-              <Button variant="ghost" size="sm" className="min-h-[44px] text-xs font-semibold text-secondary hover:text-ink gap-1.5 px-3">
+              <Button variant="dim" size="sm" className="min-h-[44px] text-xs font-semibold text-secondary hover:text-ink gap-1.5 px-3">
                 <History className="w-3.5 h-3.5" /> History
               </Button>
             </Link>

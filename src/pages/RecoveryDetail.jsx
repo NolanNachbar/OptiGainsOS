@@ -263,6 +263,7 @@ export default function RecoveryDetail() {
                       domain={['dataMin - 10', 'dataMax + 10']}
                     />
                     <Tooltip
+                      formatter={(v) => [`${Math.round(v)} ms`, 'HRV']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                       itemStyle={{ color: 'var(--text-primary)' }}
                     />
@@ -300,6 +301,7 @@ export default function RecoveryDetail() {
                     <YAxis hide />
                     <Tooltip
                       cursor={{ fill: 'var(--color-border-soft)' }}
+                      formatter={(v) => [`${Math.round(v).toLocaleString()}`, 'Steps']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                     />
                     <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
@@ -338,6 +340,7 @@ export default function RecoveryDetail() {
                     />
                     <Tooltip
                       cursor={{ fill: 'var(--color-border-soft)' }}
+                      formatter={(v) => [`${v.toFixed(1)} h`, 'Sleep']}
                       contentStyle={{ backgroundColor: 'var(--color-elevated)', border: '0.5px solid var(--color-border)', borderRadius: 12, fontFamily: 'Manrope' }}
                     />
                     <ReferenceLine y={7.5} stroke="var(--text-faint)" strokeDasharray="3 3" label={{ position: 'right', value: 'Goal', fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Manrope' }} />
