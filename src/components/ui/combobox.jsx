@@ -67,7 +67,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent px-3 py-2 text-[14px] text-ink outline-none placeholder:text-ink-muted"
+        className="flex-1 self-stretch bg-transparent px-3 py-2 text-[14px] text-ink outline-none placeholder:text-ink-muted"
       />
       <button type="button" aria-label="Toggle options" onClick={() => setOpen((o) => !o)} className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-muted">
         <ChevronDown className="h-4 w-4" />
