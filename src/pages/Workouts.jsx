@@ -314,41 +314,36 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <TabsContent value="library">
         <div className="glass mb-6 overflow-hidden">
           <div className="px-4 pt-4 pb-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-ink shrink-0">Saved Workouts</h2>
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Filters button */}
-                <button
-                  onClick={() => setFilterOpen(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 min-h-11 rounded-full text-xs font-bold transition-all ${
-                    filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-brand text-[var(--color-action-dark)]'
-                      : 'glass-inset text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Filters
-                  {(filter !== 'all' || folderFilter !== 'all') && (
-                    <span className="bg-[var(--color-action-dark)]/20 text-[var(--color-action-dark)] text-xs font-bold px-1 rounded-full leading-none py-0.5">
-                      {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
-                    </span>
-                  )}
-                </button>
-                <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
-                  <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Import</span>
-                </Button>
-                <Button variant="dim" size="lg" className="w-11 px-0" onClick={() => setShowFormatGuide(true)} title="Import format guide">
-                  <HelpCircle className="w-4 h-4" />
-                </Button>
-                <input
-                  id="import-workout-input"
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={handleImportFile}
-                />
-              </div>
+            <div className="flex items-center gap-2">
+              {/* Filters — Button to match Import; coral-tinted only when active */}
+              <Button
+                variant={filter !== 'all' || folderFilter !== 'all' ? 'coralGhost' : 'dim'}
+                size="lg"
+                className="px-3"
+                onClick={() => setFilterOpen(v => !v)}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Filters
+                {(filter !== 'all' || folderFilter !== 'all') && (
+                  <span className="bg-brand/20 text-brand text-[11px] font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
+                    {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+              <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
+                <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Import</span>
+              </Button>
+              <Button variant="ghost" size="icon" className="ml-auto h-11 w-11 text-ink-muted hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import format guide" title="Import format guide">
+                <HelpCircle className="w-4 h-4" />
+              </Button>
+              <input
+                id="import-workout-input"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImportFile}
+              />
             </div>
           </div>
 
@@ -367,9 +362,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] ${
                         filter === f.value
-                          ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                          ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
                           : 'glass-inset text-ink-muted hover:text-ink'
                       }`}
                     >
@@ -416,9 +411,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                         <div key={f} className="flex items-center gap-0.5 group">
                           <button
                             onClick={() => setFolderFilter(f)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] ${
                               folderFilter === f
-                                ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
                                 : 'glass-inset text-ink-muted hover:text-ink'
                             }`}
                           >
@@ -775,7 +770,7 @@ function StatBlock({ label, value, bordered }) {
 function StrengthEntryCard({ entry }) {
   return (
     <div
-      className="group relative overflow-hidden tile tile-interactive p-4"
+      className="relative overflow-hidden tile p-4"
     >
       <h4 className="text-[15px] font-semibold text-ink mb-3">{entry.title}</h4>
       <div className="flex">
@@ -812,7 +807,7 @@ function CardioEntryCard({ entry }) {
   const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
   return (
-    <div className="tile tile-interactive">
+    <div className="tile">
       <div className="flex items-start p-4 pb-3 gap-3">
         <div className="w-9 h-9 rounded-full bg-carb/15 flex items-center justify-center shrink-0 text-carb">
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
@@ -937,38 +932,44 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
 
   return (
     <>
-      {/* Weekly Summary */}
-      <div className="grid grid-cols-4 gap-0 p-4 surface mb-6 divide-x divide-[var(--color-border)]">
-        <div className="flex flex-col pr-4">
-          <span className="section-label mb-1.5">This Week</span>
-          <span className="font-technical font-extrabold text-xl text-teal">{thisWeek.length}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col px-4">
-          <span className="section-label mb-1.5">Strength</span>
-          <span className="font-technical font-bold text-xl text-teal">{weekStrength}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col px-4">
-          <span className="section-label mb-1.5">Cardio</span>
-          <span className="font-technical font-bold text-xl text-carb">{weekCardio}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col pl-4">
-          <span className="section-label mb-1.5">Distance</span>
-          <span className="font-technical font-bold text-xl text-carb">
-            {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[11px] font-semibold text-ink-faint ml-1">mi</span>
+      {/* Weekly Summary — hero total + secondary chips */}
+      <div className="flex items-stretch gap-4 p-4 surface mb-4">
+        {/* Hero: This Week */}
+        <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
+          <span className="section-label mb-1">This Week</span>
+          <span className="hero-metric text-[34px] text-teal">
+            {thisWeek.length}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">sess</span>
           </span>
+        </div>
+        {/* Secondary cells */}
+        <div className="flex-1 grid grid-cols-3 gap-3">
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Strength</span>
+            <span className="font-technical font-bold text-[17px] text-teal">{weekStrength}<span className="text-[10px] font-semibold text-ink-faint ml-1">sess</span></span>
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Cardio</span>
+            <span className="font-technical font-bold text-[17px] text-carb">{weekCardio}<span className="text-[10px] font-semibold text-ink-faint ml-1">sess</span></span>
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Distance</span>
+            <span className="font-technical font-bold text-[17px] text-carb">
+              {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[10px] font-semibold text-ink-faint ml-1">mi</span>
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Filter pills */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-4">
         {[['all', 'All'], ['strength', 'Strength'], ['cardio', 'Cardio']].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-3.5 py-1.5 min-h-[44px] rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
+              'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)]',
               filter === val
-                ? 'bg-brand text-[var(--color-action-dark)]'
+                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
                 : 'glass-inset text-ink-muted hover:text-ink',
             ].join(' ')}
           >
@@ -991,9 +992,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {grouped.map(({ label, entries }, i) => (
-            <section key={label} className={i > 0 ? 'border-t hairline pt-6' : ''}>
+            <section key={label} className={i > 0 ? 'border-t hairline pt-5' : ''}>
               <h3 className="section-label mb-3">{label}</h3>
               <div className="space-y-3">
                 {entries.map(entry =>

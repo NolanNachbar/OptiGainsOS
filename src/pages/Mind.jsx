@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SubTabs } from "@/components/ui/system";
@@ -27,6 +28,7 @@ const STATUS_COLORS = {
   paused: "bg-warn/10 text-warn border-warn/20",
   "want-to-read": "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
 };
+const CAT_LABELS = { technical: "Technical", business: "Business", philosophy: "Philosophy", other: "Other" };
 const CAT_COLORS = {
   technical: "bg-carb/10 text-carb border-carb/20",
   business: "bg-gold/10 text-gold border-gold/20",
@@ -48,7 +50,7 @@ function StarRating({ value, onChange, readonly }) {
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
+          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-ink min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-ink" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -235,7 +237,7 @@ function ReadingTab() {
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{CAT_LABELS[c]}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -255,7 +257,7 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
+              <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>

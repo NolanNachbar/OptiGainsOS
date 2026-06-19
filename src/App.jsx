@@ -1,10 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Layout from '@/components/Layout';
@@ -57,6 +57,51 @@ const protectedRoutes = [
   { path: "/physique", name: "Physique", component: PhysiqueTracker },
 ];
 
+// Global toast surface. Theme is synced to the app theme so Sonner emits the
+// matching (dark/light) CSS vars and the .og-toast glass overrides hold. On
+// mobile the toast drops to the thumb zone (bottom-center) instead of colliding
+// with header content; desktop keeps top-center. The vertical offset references
+// --layout-header-height with a 0 fallback — auth routes (Login) render no
+// Layout, so a literal header height would push a dead gap; the var resolves to
+// 0 there (defaulted in index.css) and to the real header height once Layout
+// mounts. closeButton is forced always-visible via classNames so success and
+// error toasts stay symmetric.
+function AppToaster() {
+  const { theme } = useTheme();
+  // Mobile is the product (390px): land the toast in the thumb zone
+  // (bottom-center) so it never overlaps header content. Desktop keeps the
+  // conventional top-center.
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  return (
+    <Toaster
+      theme={theme}
+      position={isMobile ? 'bottom-center' : 'top-center'}
+      offset={
+        isMobile
+          ? { bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }
+          : { top: 'calc(var(--layout-header-height, 0px) + env(safe-area-inset-top) + 12px)' }
+      }
+      closeButton
+      toastOptions={{
+        classNames: {
+          toast: 'og-toast',
+          error: 'og-toast--error',
+          closeButton: 'og-toast__close',
+        },
+      }}
+    />
+  );
+}
+
 function RootRoute() {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
@@ -70,19 +115,7 @@ function App() {
       <ThemeProvider>
         <Router basename={import.meta.env.BASE_URL}>
           <AuthProvider>
-            <Toaster
-              position="top-center"
-              closeButton
-              offset={{ top: 'calc(var(--layout-header-height, 64px) + env(safe-area-inset-top) + 12px)' }}
-              mobileOffset={{ top: 'calc(var(--layout-header-height, 64px) + env(safe-area-inset-top) + 12px)' }}
-              toastOptions={{
-                classNames: {
-                  toast: 'og-toast',
-                  error: 'og-toast--error',
-                  closeButton: 'og-toast__close',
-                },
-              }}
-            />
+            <AppToaster />
             <ErrorBoundary>
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>

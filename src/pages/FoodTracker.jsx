@@ -741,7 +741,7 @@ const handleSaveMealTemplate = () => {
     <div className="text-ink">
 
       {/* Date navigation + action bar */}
-      <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-charcoal/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+      <div className="lg:sticky lg:top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-charcoal/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => changeDate(-1)}
@@ -832,7 +832,7 @@ const handleSaveMealTemplate = () => {
                     {/* Calorie ring — kcal owns gold */}
                     <div className="relative shrink-0" style={{ width: 92, height: 92 }}>
                       <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="46" cy="46" r="38" stroke="rgba(255,255,255,0.09)" strokeWidth="7" fill="transparent" />
+                        <circle cx="46" cy="46" r="38" stroke="var(--color-track)" strokeWidth="7" fill="transparent" />
                         <circle
                           cx="46" cy="46" r="38"
                           stroke={calsConsumed > calsGoal ? 'var(--bad)' : 'var(--hue-gold)'}
@@ -840,16 +840,29 @@ const handleSaveMealTemplate = () => {
                           fill="transparent"
                           strokeDasharray={`${calsPct * (2 * Math.PI * 38)} ${2 * Math.PI * 38}`}
                           strokeLinecap="round"
-                          style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                          style={{ transition: 'stroke-dasharray 280ms var(--ease)' }}
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="font-technical text-[22px] font-extrabold leading-none text-ink">
-                          {Math.round(calsConsumed)}
-                        </span>
-                        <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
-                          of {calsGoal}
-                        </span>
+                        {isToday ? (
+                          <>
+                            <span className={`font-technical text-[22px] font-extrabold leading-none ${calsRemaining < 0 ? 'text-bad' : 'text-gold'}`}>
+                              {Math.abs(Math.round(calsRemaining))}
+                            </span>
+                            <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
+                              {calsRemaining < 0 ? 'over' : 'left'} · {Math.round(calsConsumed)}/{calsGoal}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-technical text-[22px] font-extrabold leading-none text-ink">
+                              {Math.round(calsConsumed)}
+                            </span>
+                            <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
+                              of {calsGoal}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     {/* Macro bars — each macro owns one hue */}
@@ -859,8 +872,8 @@ const handleSaveMealTemplate = () => {
                         return (
                           <div key={label} className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-muted-2 w-3.5 shrink-0">{label}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: hue }} />
+                            <div className="flex-1 h-1.5 rounded-full bg-track overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
                             </div>
                             <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap shrink-0">
                               {Math.round(consumed)}<span className="opacity-60">/{goal}g</span>
@@ -874,13 +887,11 @@ const handleSaveMealTemplate = () => {
               );
             })()}
 
-            {/* Quick actions — Search / Barcode / Recipes / Templates */}
-            <div className="grid grid-cols-4 gap-2">
+            {/* Quick actions — the two distinct fast paths (Add Food owns search; Templates live in the More sheet) */}
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Search', icon: Search, onClick: () => { resetForm(); setShowAddDialog(true); } },
                 { label: 'Barcode', icon: Camera, onClick: () => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); } },
                 { label: 'Recipes', icon: BookOpen, onClick: () => setShowRecipesPanel(true) },
-                { label: 'Templates', icon: Bookmark, onClick: () => { setSidebarTab('templates'); setShowMoreSheet(true); } },
               ].map(({ label, icon: Icon, onClick }) => (
                 <button
                   key={label}
@@ -913,9 +924,6 @@ const handleSaveMealTemplate = () => {
                       : planFit.fits
                         ? 'fits remaining budget'
                         : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal — edit or remove items.`}
-                </span>
-                <span className="font-technical text-[10px] text-ink-faint whitespace-nowrap shrink-0">
-                  {Math.max(0, planFit.remaining).toLocaleString()} kcal left
                 </span>
               </div>
             )}
@@ -993,7 +1001,7 @@ const handleSaveMealTemplate = () => {
                                   aria-label="Mark as eaten"
                                   className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px]"
                                 >
-                                  <span className="w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-[rgba(123,201,111,0.18)] hover:border-leaf/60 transition-colors" />
+                                  <span className="w-6 h-6 rounded-full border-[1.5px] border-white/[0.18] text-leaf flex items-center justify-center hover:bg-leaf/[0.18] hover:border-leaf/60 transition-colors" />
                                 </button>
                               )}
                               <div className="flex flex-col min-w-0 justify-center">
@@ -1015,19 +1023,19 @@ const handleSaveMealTemplate = () => {
                             <div className={`shrink-0 grid grid-cols-4 gap-1.5 text-right items-center ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-gold">{entry.calories}</span>
-                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Cal</span>
+                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Cal</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-coral">{entry.protein_grams}</span>
-                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Pro</span>
+                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Pro</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-carb">{entry.carbs_grams}</span>
-                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Car</span>
+                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Car</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-technical text-xs font-bold text-fat">{entry.fats_grams}</span>
-                                <span className="text-[10px] uppercase text-ink-secondary font-bold tracking-wider leading-none mt-0.5">Fat</span>
+                                <span className="text-[9px] uppercase text-ink-faint font-semibold tracking-wider leading-none mt-0.5">Fat</span>
                               </div>
                             </div>
                             <div className="shrink-0 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">

@@ -73,7 +73,7 @@ function AppForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
-          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="text-sm" />
+          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
@@ -90,13 +90,13 @@ function AppForm({ initial, onSave, onClose }) {
         <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
-          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" />
+          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up" />
         </div>
-        <div className="col-span-2">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
-          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="text-sm" />
+          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
@@ -289,7 +289,7 @@ function PipelineTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
+        <DialogContent className="glass glass-interactive">
           <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle></DialogHeader>
           <AppForm
             initial={editing}

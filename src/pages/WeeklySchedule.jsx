@@ -212,7 +212,7 @@ export default function WeeklySchedule() {
       </div>
 
       {/* Week rows — date · type pill · detail · status */}
-      <div className="glass px-3.5 pt-3 pb-2.5 mb-4 rise-in">
+      <div className="glass px-3.5 pt-2.5 pb-2 mb-4 rise-in">
         {logsLoading || enrollmentsLoading ? (
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
@@ -243,19 +243,19 @@ export default function WeeklySchedule() {
             <button
               key={i}
               onClick={() => setSelectedDay(day)}
-              className={`data-row w-full text-left transition-colors ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
+              className={`data-row w-full text-left transition-colors active:bg-white/[0.06] ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
             >
-              <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "bg-brand/15 rounded py-1" : ""}`}>
-                <span className={`block text-[9.5px] font-bold tracking-[0.1em] ${isCurrentDay ? "text-brandTint" : "text-muted-2"}`}>
+              <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
+                <span className={`block text-[11px] font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
-                <span className={`block text-[15px] font-extrabold ${isCurrentDay ? "text-brandTint" : "text-ink"}`}>
+                <span className={`block text-[15px] font-extrabold text-ink`}>
                   {format(day, "d")}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <span
-                  className="inline-block rounded-full px-2 py-[3px] text-[9.5px] font-extrabold uppercase tracking-wide whitespace-nowrap"
+                  className="inline-block rounded-full px-2 py-[3px] text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap"
                   style={{ background: pill.bg, color: pill.fg }}
                 >
                   {pill.label}
@@ -267,25 +267,21 @@ export default function WeeklySchedule() {
               {log ? (
                 <div className="text-right shrink-0">
                   <Check className="w-3.5 h-3.5 inline-block text-leaf" />
-                  <div className="font-technical text-[10.5px] font-bold text-leaf whitespace-nowrap">
+                  <div className="font-technical text-[11px] font-bold text-muted-2 tabular-nums whitespace-nowrap">
                     {mins ? `${mins} min` : `${(log.exercises || []).length} ex`}
                   </div>
                 </div>
               ) : isCurrentDay && type !== "REST" ? (
-                <span className="text-[10.5px] font-extrabold text-brand whitespace-nowrap shrink-0">UP NEXT</span>
+                <span className="glass-inset text-[11px] font-extrabold text-ink whitespace-nowrap shrink-0 px-2 py-1 rounded-full">UP NEXT</span>
               ) : null}
             </button>
           );
         })}
       </div>
 
-      {/* Selected day */}
+      {/* Selected day — the highlighted week row + each card's own title carry
+          the date context, so no standalone restatement heading here. */}
       <div className="mb-6">
-        <h2 className="type-display text-[17px] mb-3">
-          {format(selectedDay, "EEEE")}
-          <span className="text-muted-2 font-semibold text-[13px] ml-2">{format(selectedDay, "MMMM d")}</span>
-        </h2>
-
         {!hasAnything ? (
           <div className="glass py-10 flex flex-col items-center gap-2 rise-in-2">
             <Moon className="w-6 h-6 text-faint" />
@@ -306,7 +302,7 @@ export default function WeeklySchedule() {
                       <p className="section-label !text-leaf mb-1">
                         {isTwoADay ? "AM — Completed" : "Completed"}
                       </p>
-                      <h3 className="text-[15px] font-extrabold text-ink leading-tight">
+                      <h3 className="type-display text-[15px] leading-tight">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
                       {mins && <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">{mins} min</p>}
@@ -360,7 +356,7 @@ export default function WeeklySchedule() {
                     <p className="section-label mb-1">
                       {isTwoADay ? "AM — Strength" : activeEnrollment?.program?.title || "Program"}
                     </p>
-                    <h3 className="text-[15px] font-extrabold text-ink leading-tight">{entry.title}</h3>
+                    <h3 className="type-display text-[15px] leading-tight">{entry.title}</h3>
                   </div>
                   {lifts.length > 0 && (
                     <div className="px-4 py-2">
@@ -373,7 +369,7 @@ export default function WeeklySchedule() {
                           <div key={j} className="data-row justify-between">
                             <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
                             <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
-                              {ex.sets > 1 ? `${ex.sets} × ` : ""}{ex.rep_target || ex.reps || "—"} <span className="text-[9.5px] font-semibold">reps</span>
+                              {ex.sets > 1 ? `${ex.sets} × ` : ""}{ex.rep_target || ex.reps || "—"} <span className="text-[11px] font-semibold">reps</span>
                             </span>
                           </div>
                         ))}
@@ -426,8 +422,8 @@ export default function WeeklySchedule() {
                           <div key={j} className="flex items-start justify-between gap-3">
                             <div className={done ? "opacity-50" : ""}>
                               <div className="flex items-baseline gap-2">
-                                <span className={`text-[15px] font-extrabold ${done ? "line-through text-muted-2" : "text-ink"}`}>{name}</span>
-                                <span className="font-technical text-[12px] font-semibold text-muted-2">{ex.duration_minutes} min</span>
+                                <span className={`type-display text-[15px] ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
+                                <span className="font-technical text-[12px] font-semibold text-muted-2 tabular-nums">{ex.duration_minutes} min</span>
                               </div>
                               {ex.notes && <p className="text-[11px] text-muted-2 mt-0.5">{ex.notes}</p>}
                             </div>
@@ -435,7 +431,7 @@ export default function WeeklySchedule() {
                               onClick={() => toggleCardio(name)}
                               aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
                               aria-pressed={done}
-                              className="shrink-0 p-2.5 -m-2.5 mt-[-8px] rounded-full"
+                              className="shrink-0 p-2.5 -m-2.5 mt-[-8px] rounded-full transition-transform active:scale-95"
                             >
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                                 done
@@ -486,7 +482,7 @@ export default function WeeklySchedule() {
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
-            className="w-full min-h-[44px] flex items-center justify-between"
+            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors active:bg-white/[0.06]"
           >
             <span className="section-label">Weekly Volume</span>
             <span className="flex items-center gap-2">
@@ -506,12 +502,12 @@ export default function WeeklySchedule() {
                         {muscle.replace(/_/g, " ")}
                       </span>
                       <span className="pill-value text-[11.5px] text-muted-2 shrink-0">
-                        {sets} <span className="text-[9.5px] font-semibold">sets</span>
+                        {sets} <span className="text-[11px] font-semibold">sets</span>
                       </span>
                     </div>
-                    <div className="h-1 bg-charcoal-borderSoft rounded-full overflow-hidden">
+                    <div className="h-1 bg-track rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-teal rounded-full transition-all"
+                        className="h-full bg-viz-1 rounded-full transition-all"
                         style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
                       />
                     </div>
@@ -539,10 +535,10 @@ export default function WeeklySchedule() {
             <p className="section-label truncate flex-1 mr-2">
               {activeEnrollment.program.title}
             </p>
-            <span className="font-technical text-xs font-extrabold text-teal shrink-0">{progressPct}%</span>
+            <span className="font-technical text-xs font-extrabold text-viz-4 shrink-0 tabular-nums">{progressPct}%</span>
           </div>
-          <div className="h-1 bg-charcoal-borderSoft rounded-full overflow-hidden mb-1.5">
-            <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+          <div className="h-1 bg-track rounded-full overflow-hidden mb-1.5">
+            <div className="h-full bg-viz-4 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
           <p className="font-technical text-[11px] font-semibold text-muted-2">
             Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}

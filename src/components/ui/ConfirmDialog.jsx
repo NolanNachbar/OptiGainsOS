@@ -34,12 +34,12 @@ export function ConfirmDialog({
             <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <p className="text-[13px] text-ink-muted mt-2">
+        <p className="text-[13px] text-ink-secondary mt-2">
           {description}
         </p>
         <div className="flex gap-3 mt-6">
           <Button
-            variant="outline"
+            variant="dim"
             size="lg"
             onClick={() => onOpenChange(false)}
             className="flex-1"
@@ -48,7 +48,7 @@ export function ConfirmDialog({
             {cancelText}
           </Button>
           <Button
-            variant={variant === "danger" ? "destructive" : "volt"}
+            variant={variant === "danger" ? "destructive-solid" : "volt"}
             size="lg"
             onClick={handleConfirm}
             className="flex-1"

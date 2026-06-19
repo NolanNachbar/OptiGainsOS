@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Waves, Plus, Trophy } from "lucide-react";
+import { Waves, Plus, Trophy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayString } from "@/utils/dateUtils";
 
@@ -171,7 +172,7 @@ export default function PSTTracker() {
                       <div key={label}>
                         <p className="text-muted-2 font-semibold">{label}</p>
                         {delta != null ? (
-                          <p className={`font-technical font-bold ${improved ? "text-teal" : "text-bad"}`}>
+                          <p className={`font-technical font-bold ${improved ? "text-teal" : "text-muted-2"}`}>
                             {lower ? (delta < 0 ? "-" : "+") : (delta > 0 ? "+" : "")}{lower ? Math.abs(delta) + "s" : Math.abs(delta)}
                           </p>
                         ) : (
@@ -195,7 +196,7 @@ export default function PSTTracker() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted-2 mb-1 block">Date</label>
+              <label className="section-label mb-1 block">Date</label>
               <Input
                 type="date"
                 value={form.test_date}
@@ -203,35 +204,39 @@ export default function PSTTracker() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-2 mb-1 block">500yd Swim (min:sec)</label>
+              <label className="section-label mb-1 block">500yd Swim (min:sec)</label>
               <div className="flex gap-2">
-                <Input type="number" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="w-20" />
-                <Input type="number" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="w-20" />
+                <Input type="number" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="flex-1" />
+                <Input type="number" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="flex-1" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[["pushups","Push-ups"],["situps","Sit-ups"],["pullups","Pull-ups"]].map(([field, label]) => (
                 <div key={field}>
-                  <label className="text-xs text-muted-2 mb-1 block">{label}</label>
+                  <label className="section-label mb-1 block">{label}</label>
                   <Input type="number" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
             </div>
             <div>
-              <label className="text-xs text-muted-2 mb-1 block">1.5mi Run (min:sec)</label>
+              <label className="section-label mb-1 block">1.5mi Run (min:sec)</label>
               <div className="flex gap-2">
-                <Input type="number" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="w-20" />
-                <Input type="number" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="w-20" />
+                <Input type="number" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="flex-1" />
+                <Input type="number" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="flex-1" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-muted-2 mb-1 block">Notes</label>
-              <Input placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+              <label className="section-label mb-1 block">Notes</label>
+              <Textarea rows={2} placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button variant="volt" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-                {saveMutation.isPending ? "Saving…" : "Save"}
+              <Button variant="outline" size="lg" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+                {saveMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving…
+                  </>
+                ) : "Save"}
               </Button>
             </div>
           </div>

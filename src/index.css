@@ -26,6 +26,12 @@
   --color-elevated:    #1C222C;
   --color-border:      rgba(255, 255, 255, 0.10);
   --color-border-soft: rgba(255, 255, 255, 0.08);
+  /* The single "empty track" material — the unfilled portion of every
+     progress / segment / ring track (readiness + macro bars, NumberPicker
+     ticks, calorie-ring stroke). One alpha for one material; surfaces that
+     previously hardcoded bg-white/[0.08] or stroke rgba(255,255,255,0.09)
+     reference this token instead. */
+  --color-track:       rgba(255, 255, 255, 0.08);
 
   /* ── Ink ────────────────────────────────────────────────────────────── */
   --text-primary:   #F2F4F7;
@@ -89,6 +95,17 @@
 
   --ease: cubic-bezier(.2, .7, .3, 1);
 
+  /* ── Layout chrome metrics ──────────────────────────────────────────── */
+  /* Default header height = 0. Layout overrides this to the real mobile
+     header height on mount; routes without a Layout (Login / auth) keep 0 so
+     header-anchored offsets (toasts, sticky headers) collapse cleanly instead
+     of leaving a dead 64px gap. */
+  --layout-header-height: 0px;
+  /* Clearance above the floating mobile dock (≈56px tall, 12px from the
+     bottom inset). Bottom-anchored overlays (toasts in the thumb zone) add
+     this so nothing is clipped under the dock. */
+  --dock-clearance: 80px;
+
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: 'Manrope', system-ui, sans-serif;
 }
@@ -101,6 +118,7 @@ html.light {
   --color-elevated:    #FFFFFF;
   --color-border:      rgba(18, 24, 34, 0.10);
   --color-border-soft: rgba(18, 24, 34, 0.07);
+  --color-track:       rgba(18, 24, 34, 0.08);
 
   --text-primary:   #171B22;
   --text-secondary: rgba(23, 27, 34, 0.74);
@@ -440,14 +458,27 @@ html.light body::before {
 [data-sonner-toast].og-toast.og-toast--error [data-icon] {
   color: var(--color-brand);
 }
-/* Close button ≥ 44px tap target, neutral glass. */
+/* Close button ≥ 44px tap target, neutral glass. Pinned INSIDE the toast at
+   the top-right corner (Sonner's defaults park it half-outside the top-left /
+   viewport edge via left:0 + translate(-35%,-35%)). We override Sonner's
+   position vars and clear the transform so the button sits fully within bounds
+   with an even inset, and force it always-visible for BOTH success and error
+   states (the WeighInModal success/error asymmetry is a visibility artifact —
+   opacity:1 !important makes the two symmetric). */
+[data-sonner-toast].og-toast {
+  --toast-close-button-start: unset;
+  --toast-close-button-end: 6px;
+  --toast-close-button-transform: none;
+}
 [data-sonner-toast].og-toast .og-toast__close {
+  top: 6px;
   width: 44px;
   height: 44px;
   border-radius: 9999px;
   background: var(--color-surface-2);
   border: 0.5px solid var(--color-border);
   color: var(--text-secondary);
+  opacity: 1 !important;
   transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
 }
 [data-sonner-toast].og-toast:hover .og-toast__close:hover {

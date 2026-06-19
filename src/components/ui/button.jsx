@@ -15,8 +15,11 @@ const Button = React.forwardRef(({
   const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
     "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
     "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]";
-  const glassGhost = "bg-white/[0.06] text-ink border border-white/10 rounded-xl " +
-    "[box-shadow:inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.09]";
+  // Token-driven glass so every secondary control re-tunes under html.light.
+  // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
+  // instead of raw white-alpha (which only reads on the dark field).
+  const glassGhost = "bg-[var(--glass-bg)] text-ink border border-charcoal-border rounded-xl " +
+    "[box-shadow:inset_0_1px_0_var(--glass-specular)] hover:bg-[var(--glass-edge)]";
   // Coral-tinted quiet affordance. Reserved for genuine secondary ACTIONS that
   // must still read coral (never for Cancel/Back/neutral). Opt in explicitly —
   // plain `ghost` is neutral glass so accidental coral decoration can't drift in.
@@ -29,14 +32,14 @@ const Button = React.forwardRef(({
     dark:        glassGhost,
     ghost:       glassGhost,
     coralGhost:  coralGhost,
-    dim:         "bg-transparent text-ink-muted border border-white/10 rounded-xl hover:bg-white/[0.06] hover:text-ink",
+    dim:         "bg-transparent text-ink-muted border border-charcoal-border rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
     /* utility / legacy variants */
     default:     glassGhost,
     primary:     coral,
     ai:          glassGhost,
     destructive: "bg-bad/12 text-bad border border-bad/45 rounded-xl font-bold hover:bg-bad/18 hover:border-bad/70",
-    outline:     "border border-white/10 bg-transparent text-ink-muted rounded-xl hover:bg-white/[0.06] hover:text-ink",
-    secondary:   "bg-white/[0.06] text-ink-muted rounded-xl hover:bg-white/[0.09] hover:text-ink",
+    outline:     "border border-charcoal-border bg-transparent text-ink-muted rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
+    secondary:   "bg-[var(--glass-bg)] text-ink-muted rounded-xl hover:bg-[var(--glass-edge)] hover:text-ink",
     link:        "text-brand underline-offset-4 hover:underline",
   };
 

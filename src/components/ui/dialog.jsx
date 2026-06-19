@@ -72,7 +72,7 @@ DialogContent.displayName = "DialogContent";
 
 const DialogHeader = ({ className = "", ...props }) => (
   <div
-    className={`flex flex-col space-y-1.5 text-center sm:text-left mb-4 ${className}`}
+    className={`flex flex-col space-y-1.5 text-left mb-4 ${className}`}
     {...props}
   />
 );
@@ -80,7 +80,7 @@ const DialogHeader = ({ className = "", ...props }) => (
 const DialogTitle = React.forwardRef(({ className = "", ...props }, ref) => (
   <h2
     ref={ref}
-    className={`text-lg font-semibold leading-none tracking-tight ${className}`}
+    className={`type-display text-lg leading-none ${className}`}
     {...props}
   />
 ));

@@ -22,9 +22,9 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import WeighInModal from "@/components/WeighInModal";
 import QuickCapture from "@/components/QuickCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { StatRing, MetricTile, SectionLabel, MiniRing } from "@/components/ui/system";
+import { StatRing, MetricTile, SectionLabel, MiniRing, SubTabs } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight, ChevronDown, Scale, Apple, NotebookPen } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, Scale, Apple, NotebookPen } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
@@ -43,8 +43,9 @@ export default function Today() {
   // depending on the global FAB.
   const [showWeighIn, setShowWeighIn] = useState(false);
   const [showNote, setShowNote] = useState(false);
-  const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showState, setShowState] = useState(false);
+  // One consolidated detail card with a 3-way segmented control (State /
+  // Brief / Muscle) replaces three stacked disclosure drawers.
+  const [detailTab, setDetailTab] = useState("state");
   const weightUnit = profile?.weight_unit || "lb";
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
@@ -137,6 +138,14 @@ export default function Today() {
     };
   }, [state, prescription, intensity]);
 
+  // The consolidated detail card's segmented control. Muscle is offered even
+  // on error/empty so the tab set stays stable (the body renders the reason).
+  const detailTabs = [
+    { id: "state", label: "State" },
+    { id: "brief", label: "Brief" },
+    { id: "muscle", label: "Muscle" },
+  ];
+
   // Hue-coded morning metrics — each datum owns one hue.
   const morningMetrics = [
     { k: "HRV", v: fmt(recovery?.hrv), u: "ms", hue: "var(--hue-teal-2)" },
@@ -147,6 +156,25 @@ export default function Today() {
 
   const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
   const { calories: calTarget, protein: proteinTarget } = useDailyTargets(today);
+
+  // lb/wk trend, colored by goal-alignment: ok when the trend matches the
+  // active phase goal (down on a cut, up on a bulk), warn when it opposes it.
+  // The sign is preserved (a loss reads "-0.8", a gain "+1.2") with directional
+  // hue so the datum keeps its meaning instead of a flat green abs() ring.
+  const trendPerWk = nutrition?.weight_trend_lbs_per_week;
+  const trend = {
+    value: trendPerWk == null ? "—"
+      : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
+    frac: trendPerWk != null ? Math.min(1, Math.abs(Number(trendPerWk)) / 2) : 0,
+    hue: (() => {
+      if (trendPerWk == null) return "var(--text-faint)";
+      const phase = nutrition?.phase;
+      const aligned = phase === "cut" ? trendPerWk < 0
+        : phase === "bulk" ? trendPerWk > 0
+        : Math.abs(trendPerWk) <= 0.5; // maintenance: holding is on-goal
+      return aligned ? "var(--hue-green)" : "var(--warn)";
+    })(),
+  };
 
   return (
     <div className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 pb-6 max-w-[1240px] mx-auto">
@@ -216,16 +244,14 @@ export default function Today() {
             </div>
             <div className="grid grid-cols-4 gap-[7px] mt-3">
               {morningMetrics.map((m) => (
-                <div key={m.k} className="glass-inset py-1.5 text-center">
-                  <div className="flex items-center justify-center gap-1 text-[9.5px] font-bold tracking-[0.08em] uppercase text-muted-2">
-                    <i className="w-[5px] h-[5px] rounded-full" style={{ background: m.hue }} />
-                    {m.k}
-                  </div>
-                  <div className="font-technical text-[15px] font-extrabold mt-0.5 text-ink">
-                    {m.v}
-                    {m.u && <span className="text-[9.5px] font-semibold text-muted-2"> {m.u}</span>}
-                  </div>
-                </div>
+                <MetricTile
+                  key={m.k}
+                  label={m.k}
+                  value={m.v}
+                  unit={m.u || undefined}
+                  accent={m.hue}
+                  className="!px-2.5 !py-2"
+                />
               ))}
             </div>
             </>)}
@@ -296,85 +322,78 @@ export default function Today() {
                 frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
               />
               <MiniRing
-                label="lb/wk" hue="var(--hue-green)"
-                value={fmt(nutrition?.weight_trend_lbs_per_week, 1)}
-                frac={nutrition?.weight_trend_lbs_per_week != null
-                  ? Math.min(1, Math.abs(Number(nutrition.weight_trend_lbs_per_week)) / 2)
-                  : 0}
+                label="lb/wk" hue={trend.hue}
+                value={trend.value}
+                frac={trend.frac}
               />
               <ChevronRight className="w-4 h-4 text-faint" />
             </div>
           </Link>
 
-          <div className="surface px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setShowState((v) => !v)}
-              aria-expanded={showState}
-              className="w-full flex items-center justify-between min-h-[44px]"
-            >
-              <SectionLabel>State</SectionLabel>
-              <ChevronDown className={`w-4 h-4 text-faint transition-transform ${showState ? "rotate-180" : ""}`} />
-            </button>
-            {showState && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <MetricTile
-                  label="Form · TSB"
-                  value={fmt(fatigue?.tsb)}
-                  accent={String(fatigue?.interpretation || "").includes("overreach") ? "var(--bad)" : "var(--hue-teal)"}
-                  sub={sentence(fatigue?.interpretation) || "—"}
-                />
-                <MetricTile
-                  label="ACWR"
-                  value={fmt(fatigue?.acwr, 2)}
-                  accent={fatigue?.acwr > 1.3 ? "var(--warn)" : "var(--hue-teal)"}
-                  sub="acute : chronic"
-                />
-                <MetricTile
-                  label="VDOT"
-                  value={fmt(vdot?.current_vdot, 1)}
-                  accent="var(--hue-blue)"
-                  sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
-                />
-                <MetricTile
-                  label="To Aug 31"
-                  value={endurance?.days_to_aug31 ?? "—"} unit="d"
-                  accent="var(--hue-gold)"
-                  sub="PST deadline"
-                />
-              </div>
-            )}
-          </div>
-
         </aside>
 
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
-          <DailyBriefCard today={today} defaultCollapsed />
+        {/* Consolidated detail card — one header, one body. The three former
+            disclosure drawers (State / Brief / Muscle) collapse into a single
+            glass card switched by the SubTabs segmented control, so the page
+            ends on one card instead of three stacked toggles. */}
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-4 rise-in-3">
+          <div className="surface overflow-hidden">
+            <SubTabs
+              tabs={detailTabs}
+              active={detailTab}
+              onChange={setDetailTab}
+              sticky={false}
+              showOnDesktop
+              className="!rounded-t-[inherit]"
+            />
+            <div key={detailTab} className="rise-in">
+              {detailTab === "state" && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-4 py-3">
+                  <MetricTile
+                    label="Form · TSB"
+                    value={fmt(fatigue?.tsb)}
+                    accent={String(fatigue?.interpretation || "").includes("overreach") ? "var(--bad)" : "var(--hue-teal)"}
+                    sub={sentence(fatigue?.interpretation) || "—"}
+                  />
+                  <MetricTile
+                    label="ACWR"
+                    value={fmt(fatigue?.acwr, 2)}
+                    accent={fatigue?.acwr > 1.3 ? "var(--warn)" : "var(--hue-teal)"}
+                    sub="acute : chronic"
+                  />
+                  <MetricTile
+                    label="VDOT"
+                    value={fmt(vdot?.current_vdot, 1)}
+                    accent="var(--hue-blue)"
+                    sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
+                  />
+                  <MetricTile
+                    label="To Aug 31"
+                    value={endurance?.days_to_aug31 ?? "—"} unit="d"
+                    accent="var(--hue-gold)"
+                    sub="PST deadline"
+                  />
+                </div>
+              )}
+              {detailTab === "brief" && (
+                <div className="px-4 py-3">
+                  <DailyBriefCard today={today} />
+                </div>
+              )}
+              {detailTab === "muscle" && (
+                heatmapError ? (
+                  <p className="px-4 py-4 text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
+                ) : fatigueData.length > 0 ? (
+                  <div className="flex justify-center px-4 py-3">
+                    <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
+                  </div>
+                ) : (
+                  <p className="px-4 py-4 text-[12px] text-muted-2 font-semibold">No recent training load to map</p>
+                )
+              )}
+            </div>
+          </div>
         </div>
-
-        {heatmapError ? (
-          <div className="surface px-4 py-4 lg:col-start-9 lg:col-span-4 lg:row-start-4 rise-in-3">
-            <SectionLabel icon={Activity} className="mb-2">Muscle load · 10 days</SectionLabel>
-            <p className="text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
-          </div>
-        ) : fatigueData.length > 0 && (
-          <div className="surface px-4 py-3 lg:col-start-9 lg:col-span-4 lg:row-start-4 rise-in-3">
-            <button
-              type="button"
-              onClick={() => setShowHeatmap((v) => !v)}
-              aria-expanded={showHeatmap}
-              className="w-full flex items-center justify-between min-h-[44px]"
-            >
-              <SectionLabel icon={Activity}>Muscle load · 10 days</SectionLabel>
-              <ChevronDown className={`w-4 h-4 text-faint transition-transform ${showHeatmap ? "rotate-180" : ""}`} />
-            </button>
-            {showHeatmap && (
-              <div className="flex justify-center mt-2">
-                <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Morning check-in modals (local so the home owns the ritual) */}

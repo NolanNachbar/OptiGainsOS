@@ -160,7 +160,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     <div className="glass px-4 pt-4 pb-4 sm:px-5">
         {/* Title row — session name left, intensity multiplier right (teal) */}
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-extrabold text-ink leading-tight line-clamp-2">{titleText}</h3>
+          <h3 className="type-display text-lg line-clamp-2">{titleText}</h3>
           {iBadge && (
             <span className="font-technical text-[12px] font-bold whitespace-nowrap shrink-0 mt-0.5" style={{ color: iBadge.color }}>
               {iBadge.label}
@@ -204,7 +204,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                 className={`w-3.5 h-3.5 ml-auto lg:hidden transition-transform duration-200 ${liftsOpen ? "rotate-180" : ""}`}
               />
             </button>
-            <div className={`${liftsOpen ? "block" : "hidden"} lg:block`}>
+            <div className={`${liftsOpen ? "block rise-in lg:animate-none" : "hidden"} lg:block`}>
               {strength.map((ex, i) => <ExerciseRow key={i} ex={ex} />)}
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             {run && renderCardio({
               kind: "run",
               name: `${run.zone} run`,
-              icon: <Activity className="w-3.5 h-3.5 text-brand shrink-0" />,
+              icon: <Activity className="w-3.5 h-3.5 text-info shrink-0" />,
               label: (
                 <>
                   {run.zone} run · <span className="font-technical text-ink-secondary">{run.session_miles} mi</span>

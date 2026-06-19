@@ -22,6 +22,9 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
   }, [openMenu]);
 
   const isOwner = workout.created_by === userId;
+  const hasBadgeRow = Boolean(
+    (workout.focus && workout.focus !== "strength") || workout.folder
+  );
 
   // Guard against corrupted auto-saved durations (minute totals in the hundreds).
   const validDuration =
@@ -49,14 +52,14 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
   };
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.3, 1] }}
     >
-      <div className="group relative overflow-hidden glass glass-interactive">
-        <div className="pb-2 pt-4 px-4 md:px-6">
-          {(workout.focus && workout.focus !== "strength") || workout.folder ? (
-            <div className="flex flex-wrap gap-1.5 pr-12 min-w-0">
+      <Link to={`/workout-detail?id=${workout.id}`} className="group relative overflow-hidden tile tile-interactive block">
+        <div className="pb-2 pt-3 px-4 md:px-6">
+          {hasBadgeRow ? (
+            <div className="flex flex-wrap gap-1.5 pr-12 min-w-0 min-h-[44px]">
               {workout.focus && workout.focus !== "strength" && (
                 <Badge
                   variant="outline"
@@ -82,34 +85,34 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setOpenMenu(!openMenu)}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenu(!openMenu); }}
                   aria-label="Workout options"
-                  className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink-muted"
+                  className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
                   <div className="absolute right-0 top-12 glass-elevated rounded-xl py-1 z-20 min-w-[140px]">
                     <button
-                      onClick={() => { onEdit(workout.id); setOpenMenu(false); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
-                      onClick={() => { onClone(workout.id); setOpenMenu(false); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClone(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
-                      onClick={() => { handleExport(); setOpenMenu(false); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-white/[0.06] flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
                     <button
-                      onClick={() => { onDelete(workout.id); setOpenMenu(false); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-bad hover:bg-bad/10 flex items-center gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />Delete
@@ -119,7 +122,11 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               </div>
           )}
 
-          <h3 className="text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug pr-12">
+          <h3
+            className={`text-base font-bold text-ink line-clamp-2 mt-1.5 leading-snug ${
+              isOwner ? "pr-12" : ""
+            } ${isOwner && !hasBadgeRow ? "pt-12" : ""}`}
+          >
             {workout.title}
           </h3>
           {workout.description && (
@@ -129,7 +136,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           )}
         </div>
 
-        <div className="pt-0 pb-4 px-4 md:px-6 space-y-3">
+        <div className="pt-0 pb-4 px-4 md:px-6">
           {/* Stats row */}
           <div className="flex">
             {validDuration && (
@@ -143,19 +150,8 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               <span className="font-technical text-lg font-bold text-ink mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
-
-          {/* View Details */}
-          <Link to={`/workout-detail?id=${workout.id}`} className="block">
-            <Button
-              variant="dim"
-              size="lg"
-              className="w-full"
-            >
-              View Details
-            </Button>
-          </Link>
         </div>
-      </div>
+      </Link>
     </motion.div>
   );
 }

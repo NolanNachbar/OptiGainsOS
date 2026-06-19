@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Plus,
+  Minus,
   Trash2,
   Copy,
   Save,
@@ -457,9 +458,9 @@ export default function ProgramBuilder() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="section-label text-secondary">
-              {STEPS[step]} · Step {step + 1}/{STEPS.length}
+              Step {step + 1}/{STEPS.length}
             </p>
-            <p className="hidden lg:block type-display text-[20px] text-ink mt-0.5">
+            <p className="type-display text-[20px] text-ink mt-0.5">
               {STEPS[step]}
             </p>
           </div>
@@ -516,7 +517,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="pb-24 md:pb-0"
+            className="pb-36 md:pb-0"
           >
             {step === 0 && (
               <StepDetails
@@ -623,6 +624,45 @@ export default function ProgramBuilder() {
 
 // ─── Step 1: Details ──────────────────────────────────────
 
+// Mobile-friendly numeric field: -/+ steppers flanking a bare number input.
+// Steppers are neutral-glass icon buttons (>=44px); they reuse the same clamp
+// the typed input does so all three entry paths stay in sync.
+function NumberStepper({ value, onChange, min, max, ariaLabel }) {
+  const clamp = (n) => Math.max(min, Math.min(max, n));
+  return (
+    <div className="flex items-stretch gap-2 mt-1">
+      <Button
+        type="button"
+        variant="dim"
+        aria-label={`Decrease ${ariaLabel}`}
+        onClick={() => onChange(clamp(value - 1))}
+        disabled={value <= min}
+        className="min-h-[44px] min-w-[44px] px-0 shrink-0"
+      >
+        <Minus className="w-4 h-4" />
+      </Button>
+      <Input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(clamp(parseInt(e.target.value) || min))}
+        min={min}
+        max={max}
+        className="flex-1 min-h-[44px] text-center tabular-nums"
+      />
+      <Button
+        type="button"
+        variant="dim"
+        aria-label={`Increase ${ariaLabel}`}
+        onClick={() => onChange(clamp(value + 1))}
+        disabled={value >= max}
+        className="min-h-[44px] min-w-[44px] px-0 shrink-0"
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
 function StepDetails({ program, setProgram, tagInput, setTagInput }) {
   const update = (field, value) => setProgram((p) => ({ ...p, [field]: value }));
 
@@ -667,32 +707,26 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               <Calendar className="w-3.5 h-3.5" />
               Cycle Length *
             </Label>
-            <Input
-              type="number"
+            <NumberStepper
               value={program.cycle_length}
-              onChange={(e) =>
-                update("cycle_length", Math.max(1, Math.min(30, parseInt(e.target.value) || 1)))
-              }
-              min="1"
-              max="30"
-              className="mt-1"
+              onChange={(v) => update("cycle_length", v)}
+              min={1}
+              max={30}
+              ariaLabel="cycle length"
             />
-            <p className="text-xs text-muted-2 mt-0.5">Days per cycle · rest days included</p>
+            <p className="text-xs text-ink-muted mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
               <Repeat className="w-3.5 h-3.5" />
               Cycles *
             </Label>
-            <Input
-              type="number"
+            <NumberStepper
               value={program.num_cycles}
-              onChange={(e) =>
-                update("num_cycles", Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))
-              }
-              min="1"
-              max="20"
-              className="mt-1"
+              onChange={(v) => update("num_cycles", v)}
+              min={1}
+              max={20}
+              ariaLabel="number of cycles"
             />
             <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
           </div>
@@ -720,7 +754,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
 
         {/* Total training days info */}
         <div className="flex items-center gap-2 glass-inset p-3 text-sm text-secondary font-technical">
-          <Calendar className="w-4 h-4 flex-shrink-0 text-teal" />
+          <Calendar className="w-4 h-4 flex-shrink-0 text-ink-muted" />
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong className="text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
           </span>

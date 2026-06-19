@@ -29,6 +29,10 @@ export default {
           border: 'var(--color-border)',
           borderSoft: 'var(--color-border-soft)',
         },
+        // The single "empty track" material for every progress / segment /
+        // ring track (readiness + macro bars, picker ticks, calorie ring).
+        // Replaces per-surface bg-white/[0.08] + raw rgba ring strokes.
+        track: 'var(--color-track)',
         // Hue-coded data — each datum owns one hue (never decoration).
         teal:   'rgb(var(--hue-teal-rgb) / <alpha-value>)',
         coral:  'rgb(var(--hue-coral-rgb) / <alpha-value>)',

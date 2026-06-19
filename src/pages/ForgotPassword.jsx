@@ -32,7 +32,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -41,16 +41,15 @@ export default function ForgotPassword() {
             'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
         }}
       />
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
+      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pt-[18vh] pb-[max(24px,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
+        <div className="text-center rise-in">
           <Logo className="w-14 h-14 mx-auto mb-4" />
           <h1 className="type-display text-[24px] text-ink">
             OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
           </h1>
-          <p className="text-[11.5px] font-semibold mt-1.5 text-muted-2">Reset your password</p>
         </div>
 
-        <Card>
+        <Card className="w-full max-w-md mt-auto sm:mt-9 rise-in-2">
           <CardHeader>
             <CardTitle className="text-ink text-center">
               {emailSent ? 'Check Your Email' : 'Forgot Password'}
@@ -59,10 +58,10 @@ export default function ForgotPassword() {
           <CardContent>
             {emailSent ? (
               <div className="text-center space-y-4">
-                <p className="text-secondary">
+                <p className="text-secondary text-[12.5px]">
                   We've sent a password reset link to <span className="font-medium text-ink">{email}</span>
                 </p>
-                <p className="text-secondary text-sm">
+                <p className="text-secondary text-[11.5px]">
                   Didn't receive the email? Check your spam folder or try again.
                 </p>
                 <Button
@@ -86,7 +85,7 @@ export default function ForgotPassword() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 !h-12"
                       required
                     />
                   </div>
@@ -96,7 +95,7 @@ export default function ForgotPassword() {
                   type="submit"
                   variant="volt"
                   size="lg"
-                  className="w-full font-bold"
+                  className="w-full font-bold !h-12 !rounded-xl"
                   disabled={loading}
                 >
                   {loading ? (
@@ -114,7 +113,7 @@ export default function ForgotPassword() {
             <div className="mt-6 text-center">
               <Link
                 to="/login"
-                className="text-secondary hover:text-ink font-bold inline-flex items-center gap-2 transition-colors"
+                className="text-secondary hover:text-ink font-bold inline-flex items-center gap-2 transition-colors py-3 px-2 -my-3 -mx-2"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Sign In

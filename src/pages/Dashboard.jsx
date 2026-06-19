@@ -73,6 +73,16 @@ export default function Dashboard() {
   // session CTA lands within ~2 viewports instead of a scroll marathon.
   const [analysisOpen, setAnalysisOpen] = useState(false);
 
+  // Readiness check-in is collapsed to a one-line prompt by default so the
+  // workout CTA stays the single coral primary in the first viewport — the
+  // coral "Check In" only materializes once the athlete opens the form.
+  const [checkinOpen, setCheckinOpen] = useState(false);
+
+  // Advisory cards (diet-phase call, AI brief) collapse to compact summary
+  // rows that expand on tap, mirroring the Load & Recovery disclosure so the
+  // primary session lands within ~2 viewports.
+  const [advisoryOpen, setAdvisoryOpen] = useState(false);
+
   const { profile } = useProfile();
   const today = getTodayString(profile?.timezone);
 
@@ -398,7 +408,7 @@ export default function Dashboard() {
                   <div
                     key={i}
                     className={`w-4 h-[3px] rounded-sm ${
-                      filled ? "bg-teal" : "bg-white/[0.08]"
+                      filled ? "bg-teal" : "bg-track"
                     }`}
                   />
                 );
@@ -418,7 +428,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <div className="h-1 bg-white/[0.08] rounded-full overflow-hidden w-full">
+              <div className="h-1 bg-track rounded-full overflow-hidden w-full">
                 <div className="h-full bg-gold" style={{ width: `${Math.min(100, (todayMacros.calories / (calorieTarget || 1)) * 100)}%` }} />
               </div>
               <div className="flex justify-between text-xs text-muted-2 font-technical leading-none">
@@ -432,17 +442,16 @@ export default function Dashboard() {
         )}
         </div>
 
-        {/* Morning Check-in (if not done) */}
-        {!todayCheckIn && (
-          <div className="mb-4">
-            <h2 className="section-label mb-1.5 flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-teal" /> Daily Readiness Check-in
-            </h2>
-            <MorningCheckin today={today} existingCheckin={todayCheckIn} />
-          </div>
-        )}
-
-        {/* ── MAIN WORKOUT CARD ── */}
+        {/* ── TODAY'S SESSION (single source of truth) ──
+            ONE workout card, ONE coral CTA, ABOVE the readiness check-in so the
+            primary action lands in the first viewport. Canonical order:
+              1. Already logged       → completion card (neutral "View Log")
+              2. Engine prescription  → PrescribedSessionCard owns the coral CTA
+                                        (the static "Today's Mission" block is
+                                        dropped to kill the duplicate session)
+              3. Program/scheduled    → static mission card (coral "Start Workout")
+              4. Nothing              → Rest Day
+            Cases 2/3 are mutually exclusive, so exactly one coral primary fires. */}
         <div className="mb-4">
           {workoutCardLoading ? (
             <Skeleton className="h-[104px] rounded-xl" />
@@ -454,7 +463,7 @@ export default function Dashboard() {
                     <CheckCircle2 className="w-6 h-6 text-leaf" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-extrabold text-ink">{displayWorkoutTitle || "Session Complete"}</h3>
+                    <h3 className="type-display text-lg">{displayWorkoutTitle || "Session Complete"}</h3>
                     <p className="text-xs text-leaf/70 font-bold uppercase tracking-[0.08em]">Training Done</p>
                   </div>
                 </div>
@@ -463,13 +472,17 @@ export default function Dashboard() {
                 </Link>
               </div>
             </div>
+          ) : prescription ? (
+            /* Engine prescribed today's session — it is the canonical card and
+               owns the single coral "Begin Session" CTA. */
+            <PrescribedSessionCard today={today} loggedToday={false} />
           ) : workoutTitle ? (
             <div className="glass glass-interactive overflow-hidden relative group">
               <div className="p-5 relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="section-label text-muted-2 mb-1">Today's Mission</p>
-                    <h3 className="text-xl font-extrabold text-ink leading-tight">{workoutTitle}</h3>
+                    <h3 className="type-display text-xl">{workoutTitle}</h3>
                     <p className="font-technical text-xs font-semibold text-muted-2 mt-1">
                       {exerciseCount} lift{exerciseCount !== 1 ? "s" : ""}
                       {todayProgramRuns.length > 0 && ` · ${todayProgramRuns.length} conditioning`}
@@ -493,21 +506,64 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Morning Check-in — collapsed to a one-line prompt below the workout
+            CTA. The coral "Check In" only appears once expanded, so the workout
+            card stays the single coral primary in the first viewport. */}
+        {!todayCheckIn && (
+          <div className="mb-4">
+            {checkinOpen ? (
+              <>
+                <h2 className="section-label mb-1.5 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-teal" /> Daily Readiness Check-in
+                </h2>
+                <MorningCheckin today={today} existingCheckin={todayCheckIn} onComplete={() => setCheckinOpen(false)} />
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCheckinOpen(true)}
+                className="cta-ghost w-full justify-start gap-2 px-4"
+                aria-expanded={false}
+              >
+                <Activity className="w-3.5 h-3.5 text-teal shrink-0" />
+                <span>Log today's readiness check-in</span>
+                <ChevronDown className="w-4 h-4 ml-auto text-muted-2" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ── SECONDARY CONTENT (Tabs/Lists) ── */}
         <div className="space-y-4">
-          {/* The engine's actual prescribed session for today (was never surfaced).
-              When the main workout card already shows a coral "Start Workout",
-              demote this card's CTA to ghost so only one coral primary fires. */}
-          <PrescribedSessionCard today={today} loggedToday={!!todayLog} demoteCta={!todayLog && !!workoutTitle} />
-
-          {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
-          <PhaseRecommendationCard />
-
           {/* Manual recovery valve — only renders on a cut */}
           <EaseTodayButton />
 
-          {/* AI Insights */}
-          <DailyBriefCard today={today} hideWhenEmpty={true} />
+          {/* Advisory cards (diet-phase call + AI brief) — compact summary row
+              that expands on tap, mirroring the Load & Recovery disclosure so
+              these never push the primary session below the fold. They self-hide
+              when empty, so the disclosure simply reveals whatever is live. */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setAdvisoryOpen((o) => !o)}
+              className="w-full flex items-center gap-2 section-label min-h-[44px] py-2"
+              aria-expanded={advisoryOpen}
+            >
+              <Brain className="w-3.5 h-3.5 text-gold" /> Coach &amp; AI Brief
+              <ChevronDown
+                className={`w-4 h-4 ml-auto transition-transform duration-200 ${advisoryOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {advisoryOpen && (
+              <div className="space-y-4 mt-2 rise-in">
+                {/* Coach's diet-phase call (cut / maintain / bulk) — accept or reject */}
+                <PhaseRecommendationCard />
+
+                {/* AI Insights */}
+                <DailyBriefCard today={today} hideWhenEmpty={true} />
+              </div>
+            )}
+          </div>
 
           {/* Today's coaching actions */}
           <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />

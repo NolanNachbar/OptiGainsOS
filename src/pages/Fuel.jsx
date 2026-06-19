@@ -22,7 +22,7 @@ export default function Fuel() {
   const switchTab = (t) => setSearchParams(t === "nutrition" ? {} : { tab: t });
   const [showWeekPlan, setShowWeekPlan] = useState(false);
   return (
-    <div className="bg-charcoal min-h-screen text-ink">
+    <div className="bg-charcoal text-ink">
       <SubTabs
         tabs={[
           { id: "nutrition", label: "Nutrition & Meals", icon: Utensils },

@@ -50,8 +50,64 @@ export default function WorkoutLoggingHeader({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const restActive = restTimer !== null && restTimer >= 0;
+  const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
+
+  // Rest controls (+30s / Skip) — shared between the desktop top bar and the
+  // mobile bottom action bar so the markup stays single-sourced.
+  const restControls = restActive && restTimer > 0 ? (
+    <div className="flex gap-2 items-center">
+      <Button
+        variant="ghost"
+        onClick={() => onAddRestTime?.(30)}
+        className="min-h-[44px] lg:min-h-0 lg:h-9 px-4 text-[12.5px] font-bold font-technical"
+      >
+        +30s
+      </Button>
+      <Button
+        variant="ghost"
+        onClick={() => onSkipRest?.()}
+        className="min-h-[44px] lg:min-h-0 lg:h-9 px-4 text-[12.5px] font-bold"
+      >
+        Skip
+      </Button>
+    </div>
+  ) : null;
+
+  // Cancel / Finish — Finish is the sole coral; Cancel is a neutral dim
+  // affordance. The bad hue is reserved for the in-dialog confirm.
+  const actionCluster = (
+    <div className="flex items-center gap-3 lg:gap-2 flex-shrink-0">
+      <Button
+        variant="dim"
+        onClick={() => setShowConfirm(true)}
+        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-4 lg:px-3"
+      >
+        <X className="w-3.5 h-3.5 mr-1.5" />
+        <span>Cancel</span>
+      </Button>
+      <Button
+        onClick={onFinish}
+        disabled={isSaving}
+        variant="volt"
+        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-5 lg:px-4 flex-1 lg:flex-none"
+        data-tutorial="finish-workout-btn"
+      >
+        {isSaving ? (
+          <LoadingSpinner size="small" />
+        ) : (
+          <>
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+            <span>Finish</span>
+          </>
+        )}
+      </Button>
+    </div>
+  );
+
   return (
     <>
+      {/* ── Top bar: read-only timers (+ actions on desktop only) ────────── */}
       <div className="fixed top-0 left-0 right-0 z-[9998] glass-elevated border-x-0 border-t-0" style={{ top: 'var(--layout-header-height, 0px)' }}>
         <div className="max-w-4xl mx-auto px-3 md:px-8 py-2">
           {/* Workout Title (when scrolled) - Desktop Only */}
@@ -64,81 +120,54 @@ export default function WorkoutLoggingHeader({
           {/* Main Row */}
           <div className="flex items-center justify-between gap-2">
             {/* Timers */}
-            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="flex items-center gap-3 md:gap-4 min-w-0">
               {/* Workout Timer */}
               {startTime && (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[9.5px] uppercase text-ink-muted font-bold tracking-[0.08em]">Workout</span>
+                  <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Workout</span>
                   <div className="flex items-center gap-1 font-technical">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-ink-muted flex-shrink-0" />
+                    <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-ink-muted flex-shrink-0" />
                     <span className="font-extrabold text-ink text-sm md:text-base">{formatTime(elapsedTime)}</span>
                   </div>
                 </div>
               )}
 
-              {/* Rest Timer */}
-              {restTimer !== null && restTimer >= 0 && (
-                <>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[9.5px] uppercase text-ink-muted font-bold tracking-[0.08em]">Rest</span>
-                    <div className="flex items-center gap-1 font-technical">
-                      <Timer className={`w-3 h-3 md:w-4 md:h-4 flex-shrink-0 ${restTimer <= 10 ? 'text-warn' : 'text-teal'}`} />
-                      <span className={`font-extrabold text-sm md:text-base ${restTimer <= 10 ? 'text-warn' : restTimer === 0 ? 'text-teal' : 'text-ink'}`}>
-                        {restTimer === 0 ? 'Done!' : formatRestTime(restTimer)}
-                      </span>
-                    </div>
+              {/* Rest Timer — teal throughout; urgency = pulse, not a hue swap */}
+              {restActive && (
+                <div className="flex flex-col min-w-0 rise-in">
+                  <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Rest</span>
+                  <div className={`flex items-center gap-1 font-technical ${restUrgent ? 'animate-pulse' : ''}`}>
+                    <Timer className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 text-teal" />
+                    <span className={`text-teal text-sm md:text-base ${restUrgent ? 'font-black' : 'font-extrabold'}`}>
+                      {restTimer === 0 ? 'Done!' : formatRestTime(restTimer)}
+                    </span>
                   </div>
-                  {/* Rest Timer Controls - Inline on mobile */}
-                  {restTimer > 0 && (
-                    <div className="flex gap-1.5 items-center">
-                      <button
-                        onClick={() => onAddRestTime?.(30)}
-                        className="h-10 md:h-8 px-3.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold font-technical text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
-                      >
-                        +30s
-                      </button>
-                      <button
-                        onClick={() => onSkipRest?.()}
-                        className="h-10 md:h-8 px-3.5 md:px-3 rounded-full bg-white/[0.07] border-[0.5px] border-white/10 text-[12px] font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.10] transition-colors"
-                      >
-                        Skip
-                      </button>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 md:gap-2 flex-shrink-0">
-              <Button
-                variant="destructive"
-                onClick={() => setShowConfirm(true)}
-                size="sm"
-                className="min-h-[44px] md:min-h-0 md:h-8 text-xs md:text-sm px-3 md:px-3"
-              >
-                <X className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
-                <span>Cancel</span>
-              </Button>
-              <Button
-                onClick={onFinish}
-                disabled={isSaving}
-                size="sm"
-                variant="volt"
-                className="min-h-[44px] md:min-h-0 md:h-8 text-xs md:text-sm px-3 md:px-3"
-                data-tutorial="finish-workout-btn"
-              >
-                {isSaving ? (
-                  <LoadingSpinner size="small" />
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
-                    <span>Finish</span>
-                  </>
-                )}
-              </Button>
+            {/* Desktop-only action cluster + rest controls (top zone is fine
+                with a mouse; on mobile these live in the bottom bar). */}
+            <div className="hidden lg:flex items-center gap-3">
+              {restControls}
+              {actionCluster}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Bottom action bar (mobile only) — thumb zone, above the dock ─── */}
+      <div
+        className="lg:hidden fixed left-0 right-0 z-[9998] glass-elevated border-x-0 border-b-0 rise-in"
+        style={{ bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }}
+      >
+        <div className="max-w-4xl mx-auto px-3 py-2.5 flex items-center justify-between gap-3">
+          {restControls ? (
+            restControls
+          ) : (
+            <span className="text-[10px] uppercase text-ink-faint font-bold tracking-[0.08em]">Logging</span>
+          )}
+          {actionCluster}
         </div>
       </div>
 

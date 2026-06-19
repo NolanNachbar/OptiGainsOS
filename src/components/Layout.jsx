@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Scale, Brain } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +15,12 @@ import QuickCapture from "@/components/QuickCapture";
 // Each top-level section owns a set of sub-routes; `matches` drives active state.
 // `children` are the section's sub-tabs, surfaced in the desktop sidebar as an
 // indented column under the active section (deep-linked via path or ?tab=).
+//
+// `mobileStrip` opts a section into the Layout-level mobile sub-tab strip (a
+// horizontal pill row under the mobile header that mirrors the desktop sidebar
+// children). Only set it on sections whose children are *separate routes* with
+// no in-page tab strip of their own (Body, Analyze). Train and Fuel render
+// their own in-page <SubTabs>, so a Layout strip there would duplicate.
 const qp = (loc, key, dflt = "") => new URLSearchParams(loc.search).get(key) || dflt;
 
 const navigationItems = [
@@ -44,6 +49,7 @@ const navigationItems = [
     ] },
   { title: "Body", url: "/athlete-state", icon: HeartPulse,
     matches: ["/athlete-state", "/recovery", "/physique"],
+    mobileStrip: true,
     children: [
       { label: "State", url: "/athlete-state",
         active: (l) => l.pathname.startsWith("/athlete-state") },
@@ -54,6 +60,7 @@ const navigationItems = [
     ] },
   { title: "Analyze", url: "/insights", icon: BarChart3,
     matches: ["/insights", "/brief-history", "/mind", "/career"],
+    mobileStrip: true,
     children: [
       { label: "Daily Brief", url: "/insights",
         active: (l) => l.pathname.startsWith("/insights") },
@@ -61,6 +68,8 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/brief-history") },
       { label: "Mind", url: "/mind",
         active: (l) => l.pathname.startsWith("/mind") },
+      { label: "Career", url: "/career",
+        active: (l) => l.pathname.startsWith("/career") },
     ] },
 ];
 
@@ -142,6 +151,20 @@ export default function Layout({ children, currentPageName }) {
   const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
     ? pageSubtitle[currentPageName]
     : format(new Date(), "EEEE, MMMM d");
+
+  // The active top-level section, used to render the mobile sub-tab strip when
+  // that section opts in (cross-route children with no in-page tab strip).
+  const activeSection = navigationItems.find((item) => isNavActive(item, location.pathname));
+  const showMobileStrip = activeSection?.mobileStrip && activeSection.children?.length;
+
+  // Layout-owned utilities (calculators / weigh-in / stream-note). These used to
+  // live only inside the dead FAB; they now sit in the mobile strip so they have
+  // a persistent, reachable home.
+  const utilities = [
+    { label: "Calculators", icon: Calculator, onClick: () => setShowCalculators(true) },
+    { label: "Weigh In", icon: Scale, onClick: () => setShowWeighIn(true) },
+    { label: "Stream Note", icon: Brain, onClick: () => setShowNoteModal(true) },
+  ];
 
   return (
     <>
@@ -252,6 +275,49 @@ export default function Layout({ children, currentPageName }) {
             </Link>
           </header>
 
+          {/* Mobile sub-tab strip — mirrors the desktop sidebar children for the
+              active section so Body/Analyze sub-routes (and the Calculators /
+              Weigh-In / Stream-Note utilities, formerly orphaned in the FAB) are
+              reachable on phones. Horizontal-scrolling pill row in the dock
+              language; hidden on desktop where the sidebar already lists these. */}
+          {showMobileStrip && (
+            <div
+              className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
+              style={{ top: "var(--layout-header-height, 0px)" }}
+            >
+              <div className="flex items-center gap-1 px-[18px] h-12 overflow-x-auto no-scrollbar">
+                {activeSection.children.map((c) => {
+                  const on = c.active(location);
+                  return (
+                    <Link
+                      key={c.label}
+                      to={c.url}
+                      className={`shrink-0 px-3 h-9 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                        on
+                          ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {c.label}
+                    </Link>
+                  );
+                })}
+                <span className="shrink-0 w-px h-5 mx-1 bg-white/[0.08]" aria-hidden="true" />
+                {utilities.map((u) => (
+                  <button
+                    key={u.label}
+                    type="button"
+                    onClick={u.onClick}
+                    aria-label={u.label}
+                    className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink transition-colors duration-150"
+                  >
+                    <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Main content */}
           <main
             className="flex-1 flex flex-col min-h-0 lg:pb-0"
@@ -292,21 +358,11 @@ export default function Layout({ children, currentPageName }) {
         })}
       </nav>
 
-      {/* FAB is suppressed on form/builder pages and on dense log/list surfaces
-          where it would float over tabular data and a native add action already
-          exists (Fuel/FoodTracker, Train hub + lists, Career, Mind, ProgramDetail). */}
-      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
-         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/',
-         '/today', '/recovery', '/brief-history', '/workout-detail', '/insights',
-         '/physique', '/athlete-state', '/weekly-schedule', '/schedule'
-        ].some(p => location.pathname.startsWith(p)) && (
-        <FloatingActionButton
-          onWeighIn={() => setShowWeighIn(true)}
-          onCalculators={() => setShowCalculators(true)}
-          onStreamNote={() => setShowNoteModal(true)}
-        />
-      )}
-
+      {/* The floating action button was removed: it rendered on zero real landing
+          routes (pure dead weight) and a free-floating coral action competed with
+          every page's native add action, breaking the "coral is THE single action
+          color" rule. Its only unique entry points — Calculators, Weigh-In and
+          Stream-Note — now live in the mobile sub-tab strip above. */}
       <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
       <CalculatorsModal
         isOpen={showCalculators}

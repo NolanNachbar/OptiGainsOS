@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, CalendarCheck, SkipForward, BookOpen } from "lucide-react";
+import { Calendar, CalendarCheck, SkipForward, BookOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -119,7 +119,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
-            <div className="border rounded-lg p-4 bg-charcoal-surface">
+            <div className="border border-charcoal-border rounded-lg p-4 bg-charcoal-surface">
               <h3 className="text-sm font-semibold text-ink-muted mb-3 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-brand" />
                 Cycle 1 Schedule Preview
@@ -129,22 +129,22 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 {scheduledWorkouts.map((workout, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between bg-charcoal-surface border border-charcoal-border rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-charcoal-surface2 border border-charcoal-border rounded-lg px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-brand/[5%] text-brand border-brand/20">
+                      <Badge variant="outline" className="bg-brand/10 text-brand border-brand/20">
                         Day {workout.dayIndex}
                       </Badge>
                       <span className="font-medium text-sm text-ink">{workout.title}</span>
                     </div>
-                    <span className="text-xs text-ink-muted">
+                    <span className="text-sm text-ink-muted tabular-nums">
                       {format(new Date(workout.date), "EEE, MMM d")}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t text-xs text-ink-muted space-y-1">
+              <div className="mt-3 pt-3 border-t border-charcoal-border text-xs text-ink-muted space-y-1">
                 <p>Rest days automatically distributed between training days.</p>
                 <p>All {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
               </div>
@@ -153,10 +153,11 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
         </div>
 
-        <div className="shrink-0 border-t bg-charcoal-surface  px-6 py-4">
+        <div className="shrink-0 border-t border-charcoal-border bg-charcoal-surface px-6 py-4">
           <div className="flex gap-3">
             <Button
               variant="outline"
+              size="lg"
               onClick={handleSkip}
               className="flex-1"
               disabled={isScheduling}
@@ -167,10 +168,15 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
             <Button
               onClick={handleSchedule}
               variant="primary"
-              className="flex-1 bg-brand"
+              size="lg"
+              className="flex-1"
               disabled={isScheduling}
             >
-              <CalendarCheck className="w-4 h-4 mr-1.5" />
+              {isScheduling ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <CalendarCheck className="w-4 h-4 mr-1.5" />
+              )}
               {isScheduling ? "Scheduling..." : "Schedule Program"}
             </Button>
           </div>

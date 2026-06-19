@@ -36,7 +36,6 @@ export default function Login() {
       navigate(returnTo, { replace: true });
     } catch (error) {
       setErrorMsg(error.message || 'Invalid email or password');
-      toast.error(error.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
@@ -46,7 +45,7 @@ export default function Login() {
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-5 relative z-10 w-full">
+      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pt-[18vh] pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
         <div className="text-center rise-in">
           <h1 className="type-display text-[26px] whitespace-nowrap text-ink">
             OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
@@ -56,7 +55,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="glass w-full max-w-sm mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+        <div className="glass w-full max-w-sm mt-auto sm:mt-9 px-4 pt-[18px] pb-4 rise-in-2">
           <form onSubmit={handleSubmit}>
             <div className="mb-[9px]">
               <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
@@ -88,7 +87,7 @@ export default function Login() {
                 aria-describedby={errorMsg ? 'login-error' : undefined}
                 required
               />
-              {errorMsg && <p id="login-error" role="alert" className="text-bad text-sm mt-2">{errorMsg}</p>}
+              {errorMsg && <p id="login-error" role="alert" className="text-brand text-sm mt-2">{errorMsg}</p>}
             </div>
 
             <Button type="submit" variant="volt" size="lg" className="w-full mt-1" disabled={loading}>
@@ -105,7 +104,7 @@ export default function Login() {
             <div className="flex items-center justify-center mt-3 px-0.5">
               <Link
                 to="/forgot-password"
-                className="text-[11.5px] font-bold text-muted-2 hover:text-ink transition-colors inline-flex items-center py-3 px-2 -my-3 -mx-2"
+                className="text-[12px] font-bold text-secondary hover:text-ink transition-colors inline-flex items-center py-3 px-2 -my-3 -mx-2"
               >
                 Forgot password
               </Link>

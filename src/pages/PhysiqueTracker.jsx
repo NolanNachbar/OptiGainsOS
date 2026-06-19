@@ -140,22 +140,22 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         {!hideHeader && (
           <h1 className="hidden lg:block type-display text-[22px] mb-1 rise-in">Physique</h1>
         )}
-        <p className="text-xs font-semibold text-muted-2 mb-4">
+        <p className="text-xs font-semibold text-secondary mb-4">
           Track the trend — same pose, lighting and distance each time.
         </p>
 
         {/* Pose picker */}
         <div className="section-label mb-2">Pose for this shot</div>
-        <div className="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar -mx-4 px-4">
+        <div className="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar -mx-4 px-4 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]">
           {POSES.map((p) => (
             <button
               key={p.key}
               onClick={() => setPose(p.key)}
               disabled={busy}
-              className={`shrink-0 whitespace-nowrap px-2.5 py-1 min-h-[44px] rounded-full text-xs font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 pose === p.key
-                  ? "bg-brand/15 text-brand border-brand/30"
-                  : "bg-white/[0.04] text-secondary border-white/10 hover:bg-white/[0.07]"
+                  ? "bg-white/[0.08] text-ink border-white/[0.13]"
+                  : "bg-white/[0.04] text-muted-2 border-white/10 hover:bg-white/[0.07]"
               }`}
             >
               {p.label}
@@ -192,7 +192,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="flex items-baseline justify-between">
               <div>
                 <div className="font-technical text-2xl font-extrabold text-ink">
-                  {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. bodyfat</span>
+                  {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">
                   {latest.analysis.bodyfat_range} · confidence {latest.confidence ?? "—"} · {format(parseISO(latest.taken_at), 'MMM d, yyyy')}
@@ -240,16 +240,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           <div className="mt-6 py-8 px-4 text-center glass-inset flex flex-col items-center">
             <Camera className="w-7 h-7 text-muted-2 mb-3" />
             <p className="text-sm font-semibold text-muted-2">No shots yet.</p>
-            <p className="text-xs font-semibold text-faint mt-1 mb-4">Upload your first photo to start tracking.</p>
-            <label className="block">
-              <input type="file" accept="image/*,video/*"
-                     className="hidden" onChange={handleFile} disabled={busy} />
-              <Button asChild variant="volt" size="lg" disabled={busy}>
-                <span className="flex items-center justify-center gap-2 cursor-pointer">
-                  <Camera className="w-4 h-4" /> Upload first photo
-                </span>
-              </Button>
-            </label>
+            <p className="text-xs font-semibold text-faint mt-1">Use the button above to upload your first photo.</p>
           </div>
         ) : (
           <div className="mt-6">
@@ -371,41 +362,43 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       {/* Side-by-side comparison — bottom sheet on mobile */}
       <Dialog open={showCompare && compareEntries.length === 2} onOpenChange={setShowCompare}>
         <DialogContent className="max-w-3xl">
-          <div className="section-label mb-4">Side by side</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(() => {
+            const hasDelta = compareEntries[0]?.bodyfat_estimate != null && compareEntries[1]?.bodyfat_estimate != null;
+            const newer = compareEntries.length === 2 && parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
+            const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
+            const change = hasDelta ? newer.bodyfat_estimate - older.bodyfat_estimate : null;
+            return (
+              <div className="mb-4">
+                <h2 className="type-display text-lg">Side by side</h2>
+                {hasDelta && (
+                  <div className={`mt-1 font-technical text-2xl font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
+                    {change > 0 ? "+" : ""}{change.toFixed(1)}%
+                    <span className="ml-1.5 text-xs font-semibold text-muted-2">since {format(parseISO(older.taken_at), 'MMM d, yyyy')}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <div className="grid grid-cols-2 gap-2">
             {compareEntries.map(e => (
               <div key={e.id}>
                 {e.url && e.media_type === "photo"
-                  ? <img src={e.url} alt="" className="w-full rounded-lg object-cover" style={{ maxHeight: "50vh" }} />
-                  : <div className="w-full h-64 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold">video</div>
+                  ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "40vh" }} />
+                  : <div className="w-full h-48 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold">video</div>
                 }
                 <div className="mt-2.5 space-y-0.5">
                   <div className="text-[11px] font-bold text-muted-2">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
-                  <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMMM d, yyyy')}</div>
+                  <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</div>
                   {e.bodyfat_estimate != null && (
                     <div className="font-technical text-xl font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
                   )}
                   {e.analysis?.assessment && (
-                    <p className="text-[11px] font-semibold text-secondary pt-1">{e.analysis.assessment}</p>
+                    <p className="text-[11px] font-semibold text-secondary pt-1 line-clamp-2">{e.analysis.assessment}</p>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          {compareEntries[0]?.bodyfat_estimate != null && compareEntries[1]?.bodyfat_estimate != null && (
-            <div className="mt-4 pt-4 border-t border-white/[0.07] text-center">
-              {(() => {
-                const newer = parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
-                const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
-                const change = newer.bodyfat_estimate - older.bodyfat_estimate;
-                return (
-                  <span className={`font-technical text-sm font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
-                    {change > 0 ? "+" : ""}{change.toFixed(1)}% since {format(parseISO(older.taken_at), 'MMM d')}
-                  </span>
-                );
-              })()}
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
