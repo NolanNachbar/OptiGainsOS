@@ -466,7 +466,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   </div>
                   {filteredWorkouts.length > libraryVisible && (
                     <div className="flex justify-center mt-6">
-                      <Button variant="dim" size="sm" onClick={() => setLibraryVisible(v => v + 8)}>
+                      <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setLibraryVisible(v => v + 8)}>
                         Show more
                         <span className="ml-1.5 text-ink-faint">{filteredWorkouts.length - libraryVisible}</span>
                       </Button>
@@ -1011,7 +1011,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           ))}
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" onClick={() => setVisibleCount(v => v + 12)}>
+              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 12)}>
                 Load more
                 <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
               </Button>

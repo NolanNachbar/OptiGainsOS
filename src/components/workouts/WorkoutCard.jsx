@@ -83,7 +83,8 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   variant="ghost"
                   size="icon"
                   onClick={() => setOpenMenu(!openMenu)}
-                  className="h-11 w-11 text-ink-muted hover:text-ink-muted"
+                  aria-label="Workout options"
+                  className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink-muted"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>

@@ -300,7 +300,7 @@ export default function QuickWorkout() {
                 onChange={(e) => setWorkoutTitle(e.target.value)}
                 onBlur={() => setEditingTitle(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
-                className="text-2xl font-extrabold h-10 flex-1"
+                className="text-2xl font-extrabold min-h-[44px] flex-1"
               />
             ) : (
               <h1 className="type-display text-xl md:text-2xl">{workoutTitle}</h1>
@@ -308,8 +308,9 @@ export default function QuickWorkout() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={editingTitle ? "Save workout title" : "Edit workout title"}
               onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="h-11 w-11 text-ink-muted hover:text-ink"
+              className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink"
             >
               {editingTitle ? (
                 <Check className="w-4 h-4 text-teal" />

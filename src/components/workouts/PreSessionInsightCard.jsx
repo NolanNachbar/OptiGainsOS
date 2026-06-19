@@ -43,7 +43,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
               <Button
                 size="sm"
                 variant="volt"
-                className="text-xs h-11 md:h-7 px-3"
+                className="text-xs min-h-[44px] md:min-h-0 md:h-7 px-3"
                 onClick={handleAccept}
               >
                 Use {insight.suggestedWeight} lbs
@@ -51,7 +51,7 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
               <Button
                 size="sm"
                 variant="dim"
-                className="text-xs h-11 md:h-7 px-2"
+                className="text-xs min-h-[44px] md:min-h-0 md:h-7 px-2"
                 onClick={handleDismiss}
               >
                 Keep my plan
@@ -62,14 +62,18 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
             <Button
               size="sm"
               variant="dim"
-              className="text-xs h-11 md:h-7 px-3 mt-2"
+              className="text-xs min-h-[44px] md:min-h-0 md:h-7 px-3 mt-2"
               onClick={handleDismiss}
             >
               Got it
             </Button>
           )}
         </div>
-        <button onClick={handleDismiss} className="text-ink-faint hover:text-ink-muted mt-0.5">
+        <button
+          onClick={handleDismiss}
+          aria-label="Dismiss insight"
+          className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>

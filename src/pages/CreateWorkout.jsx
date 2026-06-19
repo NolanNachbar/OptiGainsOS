@@ -401,7 +401,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} className="h-11 w-11 px-0 shrink-0">
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}
@@ -481,7 +481,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 text-sm text-center font-technical"
+            className="w-16 min-h-[44px] text-sm text-center font-technical"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>
@@ -489,7 +489,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="dim" size="sm" onClick={onRemove} className="ml-auto shrink-0 h-11 w-11 px-0">
+          <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
             <Trash2 className="w-3.5 h-3.5 text-bad" />
           </Button>
         )}
@@ -534,7 +534,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} className="h-11 w-11 px-0 shrink-0">
+            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
               <Trash2 className="w-4 h-4 text-bad" />
             </Button>
           )}
@@ -626,14 +626,14 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
                     value={step.target_low}
                     onChange={(e) => onChange("target_low", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "5:30" : "min"}
-                    className="w-20"
+                    className="w-20 min-h-[44px]"
                   />
                   <span className="text-ink-muted text-sm">–</span>
                   <Input
                     value={step.target_high}
                     onChange={(e) => onChange("target_high", e.target.value)}
                     placeholder={step.target_type === 'pace' ? "6:00" : "max"}
-                    className="w-20"
+                    className="w-20 min-h-[44px]"
                   />
                   <span className="text-xs text-ink-muted shrink-0">
                     {step.target_type === 'pace' ? '/km'

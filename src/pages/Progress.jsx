@@ -121,7 +121,7 @@ function WeightTab() {
                     </span>
                   )}
                   {entry.notes && <span className="text-xs font-semibold text-muted-2 italic flex-1 truncate">{entry.notes}</span>}
-                  <button onClick={() => setConfirmId(entry.id)} className="ml-auto p-3 -my-3 -mr-3 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
+                  <button aria-label="Delete entry" onClick={() => setConfirmId(entry.id)} className="ml-auto flex items-center justify-center min-h-[44px] min-w-[44px] -my-3 -mr-3 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -132,7 +132,7 @@ function WeightTab() {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full mt-2.5 cta-ghost"
+              className="w-full mt-2.5 min-h-[44px] cta-ghost"
               onClick={() => setShowAllHistory(v => !v)}
             >
               {showAllHistory ? "Show less" : `Show more (${remaining})`}
@@ -229,7 +229,7 @@ function MeasurementsTab() {
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs w-36" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36" />
           </div>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map(f => (
@@ -241,14 +241,14 @@ function MeasurementsTab() {
                   value={form[f.key] || ""}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   placeholder={latest?.[f.key] ? String(latest[f.key]) : "—"}
-                  className="text-xs"
+                  className="min-h-[44px] text-xs"
                 />
               </div>
             ))}
           </div>
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" className="text-xs" />
+              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" className="min-h-[44px] text-xs" />
             </div>
             <Button variant="volt" size="lg" className="px-4 shrink-0" disabled={!hasData || save.isPending} onClick={() => save.mutate()}>
               Save Entry
@@ -312,7 +312,7 @@ function MeasurementsTab() {
                       <td key={f.key} className="px-3 py-2.5 text-right font-technical font-bold text-ink">{row[f.key] ?? "—"}</td>
                     ))}
                     <td className="px-2 py-2.5">
-                      <button onClick={() => setConfirmId(row.id)} className="p-2 -my-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all">
+                      <button aria-label="Delete measurement" onClick={() => setConfirmId(row.id)} className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mx-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </td>
@@ -442,10 +442,10 @@ export default function Progress() {
           control (glass-inset, no full-width underline strip) so the two nav
           levels read as a clear hierarchy rather than two equal-weight strips. */}
       <TabsList className="mb-6 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
-        <TabsTrigger value="metabolism" className="!min-h-[36px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
-        <TabsTrigger value="weight" className="!min-h-[36px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
-        <TabsTrigger value="measurements" className="!min-h-[36px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
-        <TabsTrigger value="photos" className="!min-h-[36px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
+        <TabsTrigger value="metabolism" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
+        <TabsTrigger value="weight" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
+        <TabsTrigger value="measurements" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
+        <TabsTrigger value="photos" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
       </TabsList>
       <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
       <TabsContent value="weight"><WeightTab /></TabsContent>

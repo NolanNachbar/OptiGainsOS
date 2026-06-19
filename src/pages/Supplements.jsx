@@ -104,7 +104,7 @@ function WaterCard({ today }) {
               size="sm"
               onClick={() => addWater.mutate(ml)}
               disabled={addWater.isPending}
-              className="flex-1 h-11 glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-xs font-bold"
+              className="flex-1 min-h-[44px] glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-xs font-bold"
             >
               +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
             </Button>
@@ -125,8 +125,9 @@ function WaterCard({ today }) {
               <div key={entry.id} className="flex items-center justify-between group text-xs text-muted-2">
                 <span>{format(parseISO(entry.logged_at), "h:mm a")} · {entry.amount_ml}ml</span>
                 <button
+                  aria-label="Delete water entry"
                   onClick={() => deleteEntry.mutate(entry.id)}
-                  className="p-2 -m-1 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:text-bad transition-all"
+                  className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:text-bad transition-all"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -311,7 +312,7 @@ export default function Supplements({ embedded = false }) {
             </div>
             {/* Empty stack shows the empty-state CTA below; avoid two coral primaries for one action. */}
             {suppTypes.length > 0 && (
-              <Button variant="volt" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5">
+              <Button variant="volt" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5 min-h-[44px]">
                 <Plus className="w-3.5 h-3.5" /> Add Supplement
               </Button>
             )}
@@ -351,14 +352,16 @@ export default function Supplements({ embedded = false }) {
                       </div>
                       <div className="flex items-center gap-1">
                         <button
+                          aria-label="Edit supplement"
                           onClick={() => setEditingType(type)}
-                          className="p-2.5 text-muted-2 hover:text-brand transition-colors"
+                          className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 text-muted-2 hover:text-brand transition-colors"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
+                          aria-label="Delete supplement"
                           onClick={() => setDeletingType(type)}
-                          className="p-2.5 text-muted-2 hover:text-bad transition-colors"
+                          className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-muted-2 hover:text-bad transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -370,12 +373,12 @@ export default function Supplements({ embedded = false }) {
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
                         placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}
-                        className="h-7 text-xs flex-1 glass-inset"
+                        className="min-h-[44px] text-xs flex-1 glass-inset"
                       />
                       <Button
                         size="sm"
                         variant={taken ? "ghost" : "volt"}
-                        className="h-7 px-3 text-xs shrink-0"
+                        className="min-h-[44px] px-3 text-xs shrink-0"
                         onClick={() => logSupp.mutate({ type, dose: dose || type.default_dose })}
                         disabled={logSupp.isPending}
                       >
@@ -408,8 +411,9 @@ export default function Supplements({ embedded = false }) {
                   <div className="flex items-center gap-2">
                     <span className="font-technical text-[10px] text-muted-2 tabular-nums">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
+                      aria-label="Delete supplement log"
                       onClick={() => deleteLog.mutate(log.id)}
-                      className="p-2 -m-1 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all"
+                      className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>

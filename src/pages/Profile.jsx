@@ -901,10 +901,10 @@ export default function Profile({ hideHeader }) {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <p className="hidden sm:block text-sm text-ink-muted">You have unsaved changes</p>
           <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
-            <Button type="button" variant="dim" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
+            <Button type="button" size="lg" variant="dim" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
+            <Button type="button" size="lg" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
               {updateProfileMutation.isPending ? (
                 <><LoadingSpinner size="small" className="mr-2" />Saving…</>
               ) : (

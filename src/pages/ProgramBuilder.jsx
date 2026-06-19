@@ -740,7 +740,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
                 }
               }}
             />
-            <Button type="button" variant="outline" onClick={addTag}>
+            <Button type="button" variant="outline" onClick={addTag} className="min-h-[44px]">
               Add
             </Button>
           </div>
@@ -942,6 +942,7 @@ function InlineDayEditor({
               size="sm"
               variant="outline"
               onClick={() => addExercise(dayIndex)}
+              className="min-h-[44px]"
             >
               <Plus className="w-3 h-3 mr-1" />
               Add Exercise
@@ -968,6 +969,7 @@ function InlineDayEditor({
             size="sm"
             variant="outline"
             onClick={() => addExercise(dayIndex)}
+            className="min-h-[44px]"
           >
             <Plus className="w-3 h-3 mr-1" />
             Add Exercise
@@ -1036,7 +1038,7 @@ function InlineDayEditor({
                     <SelectItem value="anytime">Anytime</SelectItem>
                   </SelectContent>
                 </Select>
-                <button type="button" aria-label="Remove cardio" onClick={() => removeCardioWorkout(dayIndex, i)} className="h-11 w-11 -my-2 flex items-center justify-center text-ink-muted hover:text-bad transition-colors shrink-0">
+                <button type="button" aria-label="Remove cardio" onClick={() => removeCardioWorkout(dayIndex, i)} className="min-h-[44px] min-w-[44px] -my-2 flex items-center justify-center text-ink-muted hover:text-bad transition-colors shrink-0">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1096,7 +1098,7 @@ function ExerciseEditor({
               variant="ghost"
               size="sm"
               aria-label="Remove exercise"
-              className="h-11 w-11 p-0 -my-2"
+              className="min-h-[44px] min-w-[44px] p-0 -my-2"
               onClick={() => removeExercise(dayIndex, index)}
             >
               <Trash2 className="w-3.5 h-3.5 text-bad" />

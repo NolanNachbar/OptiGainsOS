@@ -223,7 +223,7 @@ export default function WeeklySchedule() {
         ) : logsError || enrollmentsError ? (
           <div className="py-4 flex flex-col items-center gap-2">
             <p className="text-[12px] font-semibold text-muted-2">Could not load your schedule.</p>
-            <button onClick={() => refetchLogs()} className="cta-ghost text-[12px] px-4 py-1.5">
+            <button onClick={() => refetchLogs()} className="cta-ghost text-[12px] px-4 py-1.5 min-h-[44px]">
               Retry
             </button>
           </div>
@@ -522,7 +522,7 @@ export default function WeeklySchedule() {
                 <button
                   onClick={() => setShowAllMuscles(v => !v)}
                   aria-expanded={showAllMuscles}
-                  className="w-full mt-2.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
+                  className="w-full mt-2.5 py-2 min-h-[44px] text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
                 >
                   {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
                 </button>
