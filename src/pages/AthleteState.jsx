@@ -894,7 +894,7 @@ export default function AthleteState({ hideHeader = false }) {
           type="button"
           onClick={() => setEngineOpen((v) => !v)}
           aria-expanded={engineOpen}
-          className="lg:hidden w-full glass glass-interactive px-4 py-3 mb-4 flex items-center gap-2.5 rise-in"
+          className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] mb-4 flex items-center gap-2.5 rise-in"
         >
           <Cpu className="w-3.5 h-3.5 text-teal shrink-0" />
           <span className="section-label !text-ink flex-1 text-left">Engine, Plan &amp; Pace Zones</span>

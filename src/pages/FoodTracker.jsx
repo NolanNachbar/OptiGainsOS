@@ -773,7 +773,7 @@ const handleSaveMealTemplate = () => {
         <div className="flex items-center gap-2">
           <Button
             variant="energy"
-            size="sm"
+            size="lg"
             onClick={() => { resetForm(); setShowAddDialog(true); }}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -964,7 +964,8 @@ const handleSaveMealTemplate = () => {
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
-                            className="text-ink-muted hover:text-brand transition-colors"
+                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors"
+                            aria-label="Save meal as template"
                             title="Save as template"
                           >
                             <Bookmark className="w-3.5 h-3.5" />
@@ -1073,7 +1074,7 @@ const handleSaveMealTemplate = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); }}
-                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 text-ink-muted hover:text-brand hover:border-brand/40 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase border border-dashed border-charcoal-border rounded-xl px-4 py-2.5 min-h-[44px] text-ink-muted hover:text-brand hover:border-brand/40 transition-all"
                 >
                   <Save className="w-3.5 h-3.5" />
                   Save Day as Template

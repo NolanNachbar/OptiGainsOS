@@ -141,7 +141,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             variant="ghost"
             size="icon"
             onClick={() => setAdding(v => !v)}
-            className="h-11 w-11 p-0 -my-2"
+            className="min-h-[44px] min-w-[44px] p-0 -my-2"
             aria-label="Add action"
           >
             <Plus className="w-4 h-4" />

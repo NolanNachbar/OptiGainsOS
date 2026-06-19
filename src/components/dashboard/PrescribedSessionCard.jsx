@@ -71,7 +71,7 @@ function CardioDoneToggle({ done, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors before:absolute before:-inset-1.5 ${
+      className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-colors ${
         done ? "bg-ok text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}

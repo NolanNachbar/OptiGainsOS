@@ -459,7 +459,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <Link to={todayWorkoutLink || "/workouts"}>
-                  <Button variant="dim" size="sm" className="text-xs">View Log</Button>
+                  <Button variant="dim" size="sm" className="text-xs min-h-[44px]">View Log</Button>
                 </Link>
               </div>
             </div>
@@ -478,7 +478,7 @@ export default function Dashboard() {
                   </div>
                    <Dumbbell className="w-8 h-8 text-faint group-hover:text-muted-2 transition-colors" />
                 </div>
-                <Link to={todayWorkoutLink}>
+                <Link to={todayWorkoutLink} className="block">
                   <Button variant="volt" size="lg" className="w-full h-12 font-bold rounded-xl">
                     Start Workout <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

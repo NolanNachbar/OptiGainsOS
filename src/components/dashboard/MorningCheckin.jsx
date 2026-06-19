@@ -223,6 +223,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
 
       <Button
         variant="volt"
+        size="lg"
         className="w-full"
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}

@@ -231,7 +231,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
             <span className="chip-gold">{pstDays} days · PST</span>
-            <Link to="/profile" className="shrink-0">
+            <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
               <UserAvatar
                 url={profile?.avatar_url}
                 username={profile?.username}
