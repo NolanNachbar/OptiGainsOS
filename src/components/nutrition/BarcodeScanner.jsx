@@ -105,7 +105,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal sheet-rise">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-charcoal/80 backdrop-blur border-b border-charcoal-border">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal/80 backdrop-blur border-b border-charcoal-border">
         <span className="text-ink font-semibold text-base">Scan Barcode</span>
         <button
           onClick={onClose}
@@ -126,6 +126,16 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
           muted
         />
 
+        {/* Idle/placeholder — until the camera is actually scanning the first
+            frame is a featureless black box; show intent so it never reads as
+            broken. */}
+        {(scanState === "idle" || scanState === "requesting") && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-charcoal text-center px-8">
+            <ScanLine className="w-12 h-12 text-ink-muted" />
+            <p className="text-sm text-ink-muted">Point your camera at a barcode</p>
+          </div>
+        )}
+
         {/* Scanning frame overlay */}
         {scanState === "scanning" && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -139,10 +149,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
               ].map((cls, i) => (
                 <div key={i} className={`absolute w-8 h-8 border-ink/80 ${cls}`} />
               ))}
-              {/* Scan line — info hue reads "system active"; coral stays
-                  reserved for the action buttons. Bespoke vertical sweep on the
-                  single system easing instead of off-system animate-pulse. */}
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-info/70 scan-sweep" />
+              {/* Scan line — neutral ink material; the `info` hue is reserved
+                  for biometrics, and coral stays reserved for the action
+                  buttons. Bespoke vertical sweep on the single system easing
+                  instead of off-system animate-pulse. */}
+              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-ink/70 scan-sweep" />
             </div>
           </div>
         )}
@@ -181,17 +192,19 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Not found state */}
       {scanState === "not_found" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border p-6 flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center">
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
             <p className="text-sm text-ink-muted mt-1">Barcode: {foundBarcode}</p>
           </div>
+          {/* Rescan is the single intended primary — keep coral on it; entering
+              manually is the secondary path on neutral glass. */}
           <div className="flex gap-2 w-full">
-            <Button variant="outline" className="flex-1" onClick={() => startScanning()}>
+            <Button variant="primary" className="flex-1" onClick={() => startScanning()}>
               Try again
             </Button>
-            <Button variant="primary" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+            <Button variant="ghost" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
               Enter manually
             </Button>
           </div>
@@ -200,13 +213,15 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
       {/* Error state */}
       {scanState === "error" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border p-6 flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-10 h-10 text-bad" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>
             <p className="text-sm text-ink-muted mt-1">{errorMessage}</p>
           </div>
-          <Button variant="outline" className="w-full" onClick={onClose}>
+          {/* One ghost dismiss treatment across states (matches the live-scan
+              Cancel) so the escape affordance is consistent. */}
+          <Button variant="ghost" className="w-full" onClick={onClose}>
             Close
           </Button>
         </div>

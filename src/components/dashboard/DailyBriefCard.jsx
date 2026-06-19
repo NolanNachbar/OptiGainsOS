@@ -33,15 +33,17 @@ function CoachTag({ children }) {
 
 function CoachSection({ coach, content, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  const Icon = coach.icon;
 
   return (
     <div className="border-b hairline last:border-0">
       <button
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between min-h-[44px] px-4 py-2.5 tile-interactive text-left"
+        className="w-full flex items-center justify-between min-h-[44px] px-4 py-3 tile-interactive text-left"
       >
         <div className="flex items-center gap-2.5">
+          {Icon && <Icon className="w-3.5 h-3.5 text-teal shrink-0" aria-hidden="true" />}
           <CoachTag>{coach.label}</CoachTag>
         </div>
         <ChevronDown
@@ -60,7 +62,7 @@ function CoachSection({ coach, content, defaultOpen = false }) {
           }}
         >
           <div className="min-h-0">
-            <p className="px-4 pb-4 pt-0.5 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
+            <p className="px-4 pb-3 pt-0 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
           </div>
         </div>
       )}
@@ -176,18 +178,18 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
 
           <div className="mt-2 mb-1">
             {(() => {
-              // Expand the first coach section that actually has content so the
-              // page delivers real coaching on load instead of all-collapsed stubs.
-              // Only render coaches that actually have content — a section with
-              // no body is a dead toggle (chevron flips, nothing expands).
+              // Auto-expand EVERY coach section that actually has content so the
+              // brief delivers real coaching on load instead of a stack of
+              // collapsed teal stubs. Only render coaches that have content — a
+              // section with no body is a dead toggle (chevron flips, nothing
+              // expands).
               const withContent = COACHES.filter(c => json[c.key]);
-              const firstWithContent = withContent[0]?.key;
               return withContent.map(coach => (
                 <CoachSection
                   key={coach.key}
                   coach={coach}
                   content={json[coach.key]}
-                  defaultOpen={coach.key === firstWithContent}
+                  defaultOpen
                 />
               ));
             })()}

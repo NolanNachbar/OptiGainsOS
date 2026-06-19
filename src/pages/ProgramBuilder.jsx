@@ -458,7 +458,11 @@ export default function ProgramBuilder() {
             Collapses the old Layout-title + page-title double chrome. */}
         <div className="mb-5">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
+            {/* Eyebrow + step title suppressed on mobile — the Layout mobile
+                header already owns the top row ("Program Builder" + date), so a
+                second in-page title would double-stack the chrome. Desktop has
+                no Layout header, so it keeps this title. */}
+            <div className="min-w-0 hidden md:block">
               <p className="section-label">
                 Step {step + 1}/{STEPS.length}
               </p>
@@ -516,11 +520,11 @@ export default function ProgramBuilder() {
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="pb-48 md:pb-0"
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.24, ease: [0.2, 0.7, 0.3, 1] }}
+            className="pb-32 md:pb-0"
           >
             {step === 0 && (
               <StepDetails
@@ -575,8 +579,9 @@ export default function ProgramBuilder() {
 
         {/* Navigation buttons — sticky footer raised to fully clear the floating
             mobile dock (≈56px tall, 12px above the safe-area inset) with
-            breathing room. Scroll container pads pb-48 so the Tags 'Add' button
-            is never trapped behind this footer. */}
+            breathing room. Scroll container pads pb-32 — enough to keep the last
+            field (Tags 'Add') clear of this footer without manufacturing an
+            empty extra screen on short forms. */}
         <div
           className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated md:bg-transparent md:shadow-none md:border-0"
           style={{ bottom: "calc(6.75rem + env(safe-area-inset-bottom))" }}
@@ -696,7 +701,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
 
         {/* Cycle configuration — the load-bearing controls, surfaced directly
             under the name so duration is decided before optional copy. */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
@@ -725,9 +730,9 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             />
             <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
           </div>
-          {/* Goal spans full width on mobile so it isn't orphaned beside the
-              two steppers; rejoins the row on desktop. */}
-          <div className="col-span-2 md:col-span-1">
+          {/* Steppers stack full-width on mobile so the number field can breathe;
+              all three controls rejoin one row on desktop. */}
+          <div className="md:col-span-1">
             <Label>Goal</Label>
             <Select
               value={program.goal}
@@ -750,7 +755,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Total training days info */}
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-secondary font-technical">
+        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary font-technical">
           <Calendar className="w-4 h-4 flex-shrink-0 text-ink-muted" />
           <span>
             {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong className="text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
@@ -789,14 +794,19 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           {program.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {program.tags.map((tag) => (
-                <Badge
+                // 44px hit target wraps the ~22px chip so the remove affordance
+                // is thumb-reachable while the Badge keeps its compact size.
+                <button
                   key={tag}
-                  variant="secondary"
-                  className="cursor-pointer"
+                  type="button"
+                  aria-label={`Remove tag ${tag}`}
                   onClick={() => update("tags", program.tags.filter((t) => t !== tag))}
+                  className="min-h-[44px] flex items-center"
                 >
-                  {tag} &times;
-                </Badge>
+                  <Badge variant="secondary" className="cursor-pointer">
+                    {tag} &times;
+                  </Badge>
+                </button>
               ))}
             </div>
           )}
@@ -933,9 +943,11 @@ function InlineDayEditor({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-bold bg-brand/15 text-brandTint">
+            {/* Day label is a static identifier, not an action — neutral outline
+                Badge, matching CycleDayGrid + StepConfirm. Coral is action-only. */}
+            <Badge variant="outline" className="text-xs">
               Day {dayIndex}
-            </span>
+            </Badge>
             Editing Exercises
           </CardTitle>
           <Button variant="dim" size="sm" onClick={onClose} aria-label="Close editor" className="min-h-[44px] min-w-[44px] px-0">
@@ -1071,7 +1083,7 @@ function InlineDayEditor({
                 <span className="text-xs font-medium text-ink flex-1 truncate">{c.title}</span>
                 <span className="font-technical text-xs text-ink-muted shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
-                  <SelectTrigger className="w-20 min-h-[44px] text-xs shrink-0">
+                  <SelectTrigger className="w-24 min-h-[44px] text-sm shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1364,7 +1376,9 @@ function StepConfirm({ program, workouts }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
+          {/* Name spans both columns so the remaining four stats pair off evenly
+              and the 5th ('Training Days') never orphans on its own row. */}
+          <div className="col-span-2">
             <p className="text-xs text-ink-muted">Name</p>
             <p className="font-semibold">{program.name}</p>
           </div>
@@ -1427,7 +1441,7 @@ function StepConfirm({ program, workouts }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-secondary">
+        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary">
           <Check className="w-4 h-4 shrink-0 text-ink" />
           <span>
             Ready to save: {filledDays} training days

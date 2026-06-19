@@ -15,9 +15,13 @@ const Button = React.forwardRef(({
   // Disabled coral must stop reading as a live CTA: drop the gradient, neon
   // shadow + specular and fall back to a neutral charcoal-surface fill with
   // faint ink so the disabled state is unmistakably inert.
+  // The coral glow is declared ONCE via the inline tokened box-shadow (drop +
+  // inset specular). Do NOT re-add `shadow-neon` here: it carries the same
+  // 0_8px_22px brand glow, and stacking it under the inline declaration doubled
+  // the halo into a soft bleed on large CTAs (e.g. CreateWorkout Save, lg).
   const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
     "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
-    "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)] " +
+    "[box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)] " +
     "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100";
   // Token-driven glass so every secondary control re-tunes under html.light.
   // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
@@ -31,8 +35,8 @@ const Button = React.forwardRef(({
 
   const variants = {
     /* design-system tiers */
-    volt:        coral,
-    energy:      coral,
+    volt:        coral,   // canonical coral action variant
+    energy:      coral,   // DEPRECATED alias of `volt`; migrate callers to volt
     dark:        glassGhost,
     ghost:       glassGhost,
     coralGhost:  coralGhost,

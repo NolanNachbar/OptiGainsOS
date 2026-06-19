@@ -32,6 +32,7 @@ import {
   Pause,
   RotateCcw,
   Trash2,
+  Ban,
   Edit,
   Share2,
   Download,
@@ -76,14 +77,15 @@ export default function ProgramDetail() {
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showAllProgression, setShowAllProgression] = useState(false);
   const [showManageActions, setShowManageActions] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
 
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
       <div className="p-4 md:p-6">
         <div className="max-w-md mx-auto mt-12">
-          <div className="surface p-8 text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center mb-4">
+          <div className="surface p-8 text-center flex flex-col items-center rise-in">
+            <div className="w-12 h-12 rounded-full glass-inset flex items-center justify-center mb-4">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
             </div>
             <h2 className="text-lg font-bold text-ink mb-1">Program not found</h2>
@@ -263,18 +265,40 @@ export default function ProgramDetail() {
                   </div>
                 )}
                 {program.description && (
-                  <p className="text-ink-muted text-sm">{program.description}</p>
+                  <>
+                    <p className={`text-ink-muted text-sm ${showDescription ? "" : "line-clamp-2"}`}>
+                      {program.description}
+                    </p>
+                    {program.description.length > 90 && (
+                      <button
+                        onClick={() => setShowDescription((v) => !v)}
+                        className="mt-0.5 min-h-[44px] -my-2.5 inline-flex items-center text-xs font-medium text-ink-muted hover:text-ink transition-colors"
+                        aria-expanded={showDescription}
+                      >
+                        {showDescription ? "Less" : "More"}
+                      </button>
+                    )}
+                  </>
                 )}
 
+                {/* Meta row. When enrolled, the promoted position line above already
+                    states the cycle/day cadence, so the duration/frequency chips are
+                    suppressed to keep Schedule near the first fold; only the unique
+                    training-day count remains. Unenrolled visitors still get the full
+                    cadence summary. */}
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-ink-muted" />
-                    {durationLabel}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-ink-muted" />
-                    {frequencyLabel}
-                  </div>
+                  {!enrollment && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4 text-ink-muted" />
+                        {durationLabel}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Repeat className="w-4 h-4 text-ink-muted" />
+                        {frequencyLabel}
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center gap-1">
                     <Dumbbell className="w-4 h-4 text-ink-muted" />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
@@ -342,9 +366,9 @@ export default function ProgramDetail() {
                     actions behind a "Manage" overflow toggle. */}
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
                   <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {isEnrolled && (
-                        <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
+                        <Button variant="dim" size="lg" className="w-full min-w-0" onClick={handlePause}>
                           <Pause className="w-4 h-4 mr-1.5" />
                           Pause
                         </Button>
@@ -353,10 +377,10 @@ export default function ProgramDetail() {
                         <Button
                           variant="dim"
                           size="lg"
-                          className="flex-1 min-w-[44px]"
+                          className="w-full min-w-0"
                           onClick={handleRestart}
                         >
-                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          <Ban className="w-4 h-4 mr-1.5" />
                           Cancel
                         </Button>
                       )}
@@ -364,7 +388,7 @@ export default function ProgramDetail() {
                         <Button
                           variant="dim"
                           size="lg"
-                          className="flex-1 min-w-[44px]"
+                          className="w-full min-w-0"
                           onClick={() => setShowManageActions((v) => !v)}
                           aria-expanded={showManageActions}
                         >
@@ -374,11 +398,11 @@ export default function ProgramDetail() {
                       )}
                     </div>
                     {isOwner && showManageActions && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         <Button
                           variant="dim"
                           size="lg"
-                          className="flex-1 min-w-[44px]"
+                          className="w-full min-w-0"
                           onClick={() => navigate(`/program-builder?edit=${program.id}`)}
                         >
                           <Edit className="w-4 h-4 mr-1.5" />
@@ -387,7 +411,7 @@ export default function ProgramDetail() {
                         <Button
                           variant="dim"
                           size="lg"
-                          className="flex-1 min-w-[44px]"
+                          className="w-full min-w-0"
                           onClick={() => {
                             exportProgramAsJson(program);
                             toast.success("Program exported");
@@ -399,7 +423,7 @@ export default function ProgramDetail() {
                         <Button
                           variant="destructive"
                           size="lg"
-                          className="flex-1 min-w-[44px]"
+                          className="w-full min-w-0"
                           onClick={handleDelete}
                         >
                           <Trash2 className="w-4 h-4 mr-1.5" />
@@ -418,7 +442,7 @@ export default function ProgramDetail() {
               <div className="mt-4 pt-4 border-t hairline">
                 <div className="h-1.5 bg-track rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-brand/40 rounded-full transition-all duration-500"
+                    className="h-full bg-leaf/40 rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>

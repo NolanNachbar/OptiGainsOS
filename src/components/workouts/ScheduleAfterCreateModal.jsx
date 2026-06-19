@@ -93,7 +93,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
         <div className="px-6 pt-6 pb-4 shrink-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-brand" />
+            <CalendarCheck className="w-5 h-5 text-ink-muted" />
             Schedule Your Program
           </DialogTitle>
         </DialogHeader>
@@ -109,19 +109,23 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
               <Calendar className="w-3.5 h-3.5" />
               Start Date
             </Label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              min={format(new Date(), "yyyy-MM-dd")}
-            />
+            <div className="relative">
+              <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                min={format(new Date(), "yyyy-MM-dd")}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
             <div className="border border-charcoal-border rounded-lg p-4 bg-charcoal-surface">
               <h3 className="text-sm font-semibold text-ink-muted mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-brand" />
+                <BookOpen className="w-4 h-4 text-ink-muted" />
                 Cycle 1 Schedule Preview
               </h3>
 
@@ -129,10 +133,10 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 {scheduledWorkouts.map((workout, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between bg-charcoal-surface2 border border-charcoal-border rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-charcoal-surface2 rounded-lg px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-brand/10 text-brand border-brand/20">
+                      <Badge variant="slate">
                         Day {workout.dayIndex}
                       </Badge>
                       <span className="font-medium text-sm text-ink">{workout.title}</span>
@@ -144,16 +148,15 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t border-charcoal-border text-xs text-ink-muted space-y-1">
-                <p>Rest days automatically distributed between training days.</p>
-                <p>All {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
+              <div className="mt-3 pt-3 border-t border-charcoal-borderSoft text-xs text-ink-muted">
+                <p>Rest days are distributed automatically; all {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
               </div>
             </div>
           )}
 
         </div>
 
-        <div className="shrink-0 border-t border-charcoal-border bg-charcoal-surface px-6 py-4">
+        <div className="shrink-0 border-t border-charcoal-borderSoft bg-charcoal-surface px-6 py-4">
           <div className="flex gap-3">
             <Button
               variant="outline"

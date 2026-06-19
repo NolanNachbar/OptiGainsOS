@@ -701,7 +701,7 @@ export default function WorkoutDetail() {
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-92px)] flex items-center justify-center">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex items-center justify-center">
         <Card className="w-full">
           <CardContent className="py-12 text-center">
             <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
@@ -711,7 +711,7 @@ export default function WorkoutDetail() {
             <p className="text-[13px] font-semibold text-ink-muted mb-6">
               This workout may have been deleted, or the link is no longer valid.
             </p>
-            <Button variant="volt" size="lg" onClick={() => navigate("/workouts")}>
+            <Button variant="ghost" size="lg" onClick={() => navigate("/workouts")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Workouts
             </Button>
@@ -742,12 +742,13 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-92px)] flex flex-col justify-center'}`}>
+      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] pb-32 lg:pb-6 flex flex-col'}`}>
         <div className="lg:flex lg:items-start lg:gap-6 w-full">
         <div className="flex-1 min-w-0 rise-in">
         {!isLogging && (
           <Button
             variant="ghost"
+            size="lg"
             onClick={() => navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/workouts")}
             className="mb-6"
           >
@@ -767,12 +768,12 @@ export default function WorkoutDetail() {
                   <Badge variant="slate">Program Workout</Badge>
                 )}
                 {isLogging && (
-                  <Badge variant="green">Logging Active</Badge>
+                  <Badge variant="slate">Logging Active</Badge>
                 )}
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
-                <div className="hidden md:flex items-center gap-2 shrink-0 lg:hidden">
-                  <span className="section-label">Muscles worked</span>
+                <div className="flex items-center gap-2 shrink-0 lg:hidden">
+                  <span className="section-label hidden sm:inline">Muscles worked</span>
                   <SegmentedControl
                     value={muscleView}
                     onChange={setMuscleView}
@@ -817,7 +818,8 @@ export default function WorkoutDetail() {
                     <Button
                       onClick={handleStartLogging}
                       variant="volt"
-                      className="w-full text-lg py-6"
+                      size="lg"
+                      className="w-full"
                       data-tutorial="start-logging-btn"
                     >
                       <Dumbbell className="w-5 h-5 mr-2" />
@@ -854,7 +856,7 @@ export default function WorkoutDetail() {
               {workout.exercises?.length > 0 && (() => {
                 const bodyData = getWorkoutBodyData(workout.exercises);
                 return bodyData.length > 0 ? (
-                  <div className="hidden md:flex flex-col md:mt-0 md:w-64 md:shrink-0 lg:hidden">
+                  <div className="flex flex-col mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
                     <MuscleHeatMap data={bodyData} view={muscleView} className="flex-1" maxWidth={220} />
                   </div>
                 ) : null;
@@ -975,6 +977,7 @@ export default function WorkoutDetail() {
           </div>
         ) : (
           // View Mode - Show exercises read-only
+          <>
           <Card className="">
             <CardHeader className="pt-4 pb-2">
               <CardTitle className="text-[17px] font-extrabold text-ink">Exercises</CardTitle>
@@ -1036,6 +1039,27 @@ export default function WorkoutDetail() {
               })}
             </CardContent>
           </Card>
+
+          {/* Sticky thumb-zone primary action — mobile only. Keeps "Start
+              Logging" reachable after scrolling the exercise list. Clears the
+              floating dock via --dock-clearance + safe-area inset. */}
+          <div
+            className="lg:hidden sticky bottom-0 -mx-4 px-4 pt-3 z-30 pointer-events-none"
+            style={{ paddingBottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
+          >
+            <div className="glass-elevated rounded-2xl p-2 pointer-events-auto">
+              <Button
+                onClick={handleStartLogging}
+                variant="volt"
+                size="lg"
+                className="w-full"
+              >
+                <Dumbbell className="w-5 h-5 mr-2" />
+                Start Logging Workout
+              </Button>
+            </div>
+          </div>
+          </>
         )}
         </div>{/* end main column */}
 
@@ -1107,7 +1131,7 @@ export default function WorkoutDetail() {
 
       {/* Post-workout notes prompt */}
       <Dialog open={showPostWorkoutDialog} onOpenChange={setShowPostWorkoutDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="md:max-w-md">
           <DialogHeader>
             <DialogTitle>Finish Workout</DialogTitle>
           </DialogHeader>
@@ -1122,12 +1146,13 @@ export default function WorkoutDetail() {
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
                 Go Back
               </Button>
               <Button
                 variant="volt"
-                className="flex-1"
+                size="lg"
+                className="flex-[2]"
                 disabled={saveWorkoutLogMutation.isPending}
                 onClick={() => saveWorkoutLogMutation.mutate()}
               >

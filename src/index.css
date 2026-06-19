@@ -95,6 +95,12 @@
 
   --ease: cubic-bezier(.2, .7, .3, 1);
 
+  /* Loop duration for ambient, continuously-repeating motion (scan sweep,
+     etc.). Deliberately OUTSIDE the 180–320ms entrance band: a repeating
+     traveling line at entrance speed strobes, so a calm ~1.6s-per-pass loop
+     reads as "alive" rather than "flashing". Not for one-shot entrances. */
+  --loop-dur: 1.6s;
+
   /* ── Layout chrome metrics ──────────────────────────────────────────── */
   /* Default header height = 0. Layout overrides this to the real mobile
      header height on mount; routes without a Layout (Login / auth) keep 0 so
@@ -413,9 +419,10 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
   /* Barcode scan sweep — the line that travels the scan window to read as a
      live, active scanner. A genuine system gap: no other surface needs a
-     vertical traveling line. On the single system easing, ~300ms per pass
-     (within the 180–320ms band), alternating so it sweeps down then back. */
-  .scan-sweep { animation: scanSweep .30s var(--ease) infinite alternate; }
+     vertical traveling line. On the single system easing, ~1.6s per pass via
+     the dedicated --loop-dur token (NOT the 180–320ms entrance band, which
+     strobes when repeated), alternating so it sweeps down then back. */
+  .scan-sweep { animation: scanSweep var(--loop-dur) var(--ease) infinite alternate; }
 }
 
 @keyframes restUrgent {
@@ -527,22 +534,42 @@ html.light body::before {
 }
 [data-sonner-toast].og-toast .og-toast__close[data-close-button] {
   left: unset;
-  right: 6px;
-  top: 6px;
+  right: 2px;
+  top: 2px;
   transform: none;
+  /* Keep the full 44px TAP target so the thumb has a forgiving hit area, but
+     the painted chip itself is only ~28px (via ::before) so a quiet X glyph no
+     longer visually dominates a short single-line message on a ~356px pill. */
   width: 44px;
   height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  color: var(--text-secondary);
+  opacity: 1 !important;
+  transition: color 200ms var(--ease);
+}
+/* The visible chip: ~28px low-weight glass disc centered inside the 44px hit
+   area. Sits behind the X glyph (negative z) so the icon still reads on top. */
+[data-sonner-toast].og-toast .og-toast__close[data-close-button]::before {
+  content: "";
+  position: absolute;
+  width: 28px;
+  height: 28px;
   border-radius: 9999px;
   background: var(--color-surface-2);
   border: 0.5px solid var(--color-border);
-  color: var(--text-secondary);
-  opacity: 1 !important;
-  transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
+  z-index: -1;
+  transition: background 200ms var(--ease), border-color 200ms var(--ease);
 }
 [data-sonner-toast].og-toast:hover .og-toast__close[data-close-button]:hover {
+  color: var(--text-primary);
+}
+[data-sonner-toast].og-toast:hover .og-toast__close[data-close-button]:hover::before {
   background: var(--color-elevated);
   border-color: var(--color-border);
-  color: var(--text-primary);
 }
 /* Contained centered pill. Under 600px Sonner forces the toaster to width:100%
    with the mobile offsets + transform:none (edge-to-edge). Cap the width and

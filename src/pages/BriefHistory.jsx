@@ -49,12 +49,12 @@ function BriefEntry({ brief, index = 0 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`glass overflow-hidden mb-4 ${riseClass}`}>
+    <div className={`glass overflow-hidden mb-2 ${riseClass}`}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={`w-full px-5 py-2.5 flex flex-col gap-1 text-left min-h-[44px] justify-center transition-colors hover:bg-white/[0.02] ${open ? "border-b hairline" : ""}`}
+        className={`w-full px-5 py-2.5 flex flex-col gap-1 text-left min-h-[44px] justify-center tile-interactive transition-colors duration-200 ease-[cubic-bezier(.2,.7,.3,1)] active:bg-[var(--glass-edge)] ${open ? "border-b hairline" : ""}`}
       >
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
@@ -65,9 +65,9 @@ function BriefEntry({ brief, index = 0 }) {
         </div>
         {!open && (
           json.insight ? (
-            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
+            <p className="font-technical text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
           ) : (
-            <p className="text-xs font-semibold text-faint italic pl-6">
+            <p className="text-xs font-semibold text-faint pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
             </p>
           )
@@ -79,7 +79,7 @@ function BriefEntry({ brief, index = 0 }) {
           {json.insight && (
             <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
               <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
-              <p className="text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
+              <p className="font-technical text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
             </div>
           )}
 
@@ -89,7 +89,7 @@ function BriefEntry({ brief, index = 0 }) {
                 <div>
                   <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
                 </div>
-                <p className="text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
+                <p className="font-technical text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
               </div>
             ))}
 
@@ -108,7 +108,7 @@ function BriefEntry({ brief, index = 0 }) {
             )}
 
             {!hasContent && (
-              <p className="text-xs font-semibold text-faint italic">
+              <p className="text-xs font-semibold text-faint">
                 {NO_CONTENT_COPY}
               </p>
             )}

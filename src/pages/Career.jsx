@@ -22,13 +22,10 @@ import { toast } from "sonner";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const APP_STATUSES = ["applied", "screening", "interview", "offer", "rejected"];
-const STATUS_COLORS = {
-  applied:    "bg-carb/10 text-carb border-carb/20",
-  screening:  "bg-violet/10 text-violet border-violet/20",
-  interview:  "bg-gold/10 text-gold border-gold/20",
-  offer:      "bg-leaf/10 text-leaf border-leaf/20",
-  rejected:   "bg-bad/10 text-bad border-bad/20",
-};
+// Pipeline status is a label, not a biometric — render every stage as a neutral
+// muted-glass chip. The count beside it carries the meaning; coral stays
+// reserved for the action (Add / Move), never for status garnish.
+const STATUS_CHIP = "glass-inset text-muted-2";
 
 function TabQueryState({ isLoading, isError, onRetry }) {
   if (isLoading) {
@@ -63,20 +60,18 @@ function AppForm({ initial, onSave, onClose }) {
   });
   return (
     <div className="space-y-3">
-      <div className="space-y-3">
-        <div>
-          <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
-          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
-        </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
+        <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
+        <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
-          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
+          <Input type="date" className="[color-scheme:dark]" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
@@ -99,7 +94,7 @@ function AppForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
-          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
+          <Input type="date" className="[color-scheme:dark]" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
@@ -197,10 +192,10 @@ function PipelineTab() {
           kanban columns at md+. Both share the same card via renderCard. */}
       {!isLoading && !isError && apps.length > 0 && (() => {
         const renderCard = (app, status) => (
-          <div key={app.id} className="p-3 glass glass-interactive group text-left">
+          <div key={app.id} className="p-4 glass glass-interactive group text-left">
             <div className="flex items-start justify-between gap-1 mb-1">
               <div className="min-w-0">
-                <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
+                <p className="text-sm font-extrabold text-ink truncate">{app.company}</p>
                 <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
               </div>
               <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
@@ -239,10 +234,10 @@ function PipelineTab() {
         );
         const statusHeader = (status, count) => (
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_CHIP}`}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
-            <span className="font-technical text-xs font-semibold text-muted-2">{count}</span>
+            <span className="font-technical text-xs font-semibold text-ink">{count}</span>
           </div>
         );
         return (
@@ -294,15 +289,13 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="w-full py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-            <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-            <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-              <Plus className="w-3.5 h-3.5" /> Add your first application
-            </Button>
-          </div>
+        <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
+          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+            <Plus className="w-3.5 h-3.5" /> Add your first application
+          </Button>
         </div>
       )}
 
@@ -357,11 +350,11 @@ function NetworkForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
+          <Input type="date" className="[color-scheme:dark]" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
-          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
+          <Input type="date" className="[color-scheme:dark]" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
         </div>
       </div>
       <div>
@@ -535,7 +528,7 @@ function CaptureTab() {
     <div className="space-y-6">
       <div>
         <h2 className="section-label mb-4 flex items-center gap-2">
-          <UserPlus className="w-3 h-3 text-gold" /> New Pipeline Event
+          <UserPlus className="w-3 h-3" /> New Pipeline Event
         </h2>
         <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
         <p className="text-xs font-semibold text-muted-2 mt-2 italic">Captured events sync to your pipeline.</p>
@@ -549,10 +542,10 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-gold font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gold/10">
+                <span className="section-label font-technical text-muted-2 px-2 py-0.5 rounded-sm glass-inset">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Processed</span>}
+                {log.processed && <span className="section-label text-leaf">Processed</span>}
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>

@@ -40,6 +40,9 @@ const CHART_TOOLTIP_ITEM = {
   color: 'var(--text-primary)',
   fontVariantNumeric: 'tabular-nums',
 };
+// One height for every chart-tab body — plotted OR empty — so the card holds a
+// fixed footprint and never jumps when you switch HRV / Steps / Sleep tabs.
+const CHART_BODY_H = "h-[170px]";
 
 export default function RecoveryDetail() {
   const { user } = useAuth();
@@ -100,7 +103,7 @@ export default function RecoveryDetail() {
     : score >= 50 ? "text-warn"
     : "text-bad";
   const readinessBg =
-    score == null ? "bg-white/[0.06]"
+    score == null ? "bg-track"
     : score >= 70 ? "bg-teal/10"
     : score >= 50 ? "bg-warn/10"
     : "bg-bad/10";
@@ -129,8 +132,8 @@ export default function RecoveryDetail() {
   );
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
-      <div className="max-w-6xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-[calc(96px+env(safe-area-inset-bottom))] min-h-screen text-ink">
+      <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="md:col-span-1 glass-interactive">
@@ -169,19 +172,19 @@ export default function RecoveryDetail() {
               <CardTitle className="section-label">Training Load (ACWR)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-6 py-1 md:py-2">
+              <div className="flex flex-col items-center md:flex-row md:items-center gap-4 md:gap-6 py-1 md:py-2">
                 <div className="text-center">
-                  <div className="font-technical text-2xl md:text-3xl font-extrabold text-ink mb-1">{acwr ?? "—"}</div>
+                  <div className="hero-metric text-6xl md:text-5xl text-ink mb-1">{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
                   <div className="text-xs font-semibold text-ink-faint mt-0.5">source: {acwrSource}</div>
                 </div>
-                <div className="flex-1">
+                <div className="w-full md:flex-1">
                   {/* ACWR band gauge — neutral track, ink band outline 0.8–1.3 marks the
                       lowest-risk zone, ink pin shows current ratio. Spectrum (warn/bad) is
                       reserved for the explicit out-of-range warning row below. */}
                   <div className="relative h-[10px] rounded-full bg-track">
                     <span
-                      className="absolute -top-[3px] -bottom-[3px] rounded-sm border-[1.5px] border-white/35"
+                      className="absolute -top-[3px] -bottom-[3px] rounded-sm border-[1.5px] border-charcoal-border"
                       style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
                     {acwr != null && (
@@ -264,9 +267,9 @@ export default function RecoveryDetail() {
 
             {/* HRV Trend */}
             {activeChart === "hrv" && (
-              <CardContent className={hasHrv ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+              <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasHrv ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
                   </div>
                 ) : (
@@ -304,9 +307,9 @@ export default function RecoveryDetail() {
 
             {/* Step Count */}
             {activeChart === "steps" && (
-              <CardContent className={hasSteps ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+              <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasSteps ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
                   </div>
                 ) : (
@@ -339,9 +342,9 @@ export default function RecoveryDetail() {
 
             {/* Sleep Duration */}
             {activeChart === "sleep" && (
-              <CardContent className={hasSleep ? "h-[170px] pt-4" : "pt-5 pb-5"}>
+              <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasSleep ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
                   </div>
                 ) : (

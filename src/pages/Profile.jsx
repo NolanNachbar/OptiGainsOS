@@ -193,12 +193,27 @@ export default function Profile({ hideHeader }) {
     return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 
+  // Single source of section visibility. On the mobile hub (no section chosen,
+  // standalone page) nothing is "resolved" — the hub list renders instead. On
+  // desktop a null selection defaults to Identity. Embedded (hideHeader) always
+  // resolves to the body fields. Each section block reads this one value via
+  // `sectionClass(id)` rather than its own bespoke ternary.
+  const onMobileHub = activeSection === null && !hideHeader;
+  const resolvedSection = hideHeader ? 'body' : (activeSection ?? 'identity');
+  // A given section block is shown when it matches resolvedSection AND we're not
+  // on the mobile hub. On desktop the hub never appears (md:block reveals the
+  // default section), so `md:block` is layered on for the null-selection case.
+  const sectionClass = (id) => {
+    if (onMobileHub) return id === resolvedSection ? 'hidden md:block' : 'hidden';
+    return id === resolvedSection ? '' : 'hidden';
+  };
+
   // The save bar must never appear on the mobile hub list or the Settings
   // section (neither mounts an editable field). It is only meaningful when an
   // editable section ('identity' / 'body') is actually open, or when embedded
   // via hideHeader where the body fields are always mounted.
   const editableSectionOpen =
-    activeSection === 'identity' || activeSection === 'body' || hideHeader;
+    (!onMobileHub && (resolvedSection === 'identity' || resolvedSection === 'body')) || hideHeader;
   const showSaveBar = isDirty && editableSectionOpen;
 
   const updateProfileMutation = useMutation({
@@ -327,14 +342,39 @@ export default function Profile({ hideHeader }) {
                   </button>
                 ))}
               </nav>
+
+              {/* Sidebar footer — Sign Out (moved out of the Danger Zone; it is a
+                  neutral session action, not a destructive one). */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try { await signOut(); toast.success('Signed out successfully'); }
+                  catch { toast.error('Failed to sign out'); }
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                Sign Out
+              </button>
             </div>
           </aside>
           )}
 
           {/* RIGHT CONTENT */}
           <div>
-            {/* Mobile: hub view (profile card + nav list) */}
-            <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
+            {/* Mobile: hub view (profile card + nav list). The whole hub is a
+                bounded flex column that fills the viewport between the chrome
+                header and the floating dock, so the ~500px dead void is gone:
+                Sign Out is pushed to the bottom (mt-auto) into the thumb zone and
+                the page never grows taller than one screen (no scroll). */}
+            <div
+              className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col'}`}
+              style={
+                activeSection !== null || hideHeader
+                  ? undefined
+                  : { minHeight: 'calc(100dvh - var(--layout-header-height, 64px) - var(--dock-clearance, 80px) - 2rem)' }
+              }
+            >
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title on mobile, so a second one would stack redundantly. */}
               <ProfileStatsCard
@@ -365,15 +405,16 @@ export default function Profile({ hideHeader }) {
                 ))}
               </div>
 
-              {/* Quick action — Sign Out lives in the thumb zone so the hub
-                  carries value above the fold instead of trailing into a void. */}
+              {/* Quick action — Sign Out is pinned to the bottom of the bounded
+                  hub (mt-auto) so it lands in the thumb zone instead of trailing
+                  the nav into a void. */}
               <button
                 type="button"
                 onClick={async () => {
                   try { await signOut(); toast.success('Signed out successfully'); }
                   catch { toast.error('Failed to sign out'); }
                 }}
-                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                className="mt-auto mb-1 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -401,13 +442,12 @@ export default function Profile({ hideHeader }) {
             {!hideHeader && (
               <div className="hidden md:block mb-6">
                 <h1 className="type-display text-[22px] text-ink">
-                  {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
+                  {NAV.find(n => n.id === resolvedSection)?.label}
                 </h1>
                 <p className="text-[13px] text-ink-muted mt-0.5">
-                  {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
-                  (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
-                  (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
-                                                                  'Notifications, integrations, and account actions'}
+                  {resolvedSection === 'identity' ? 'Your account details' :
+                  resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
+                                                    'Notifications, integrations, and account actions'}
                 </p>
               </div>
             )}
@@ -415,7 +455,7 @@ export default function Profile({ hideHeader }) {
         <form onSubmit={handleSubmit}>
 
           {/* ── IDENTITY SECTION ── */}
-          <div className={activeSection === 'identity' ? '' : activeSection === null && !hideHeader ? 'hidden md:block' : 'hidden'}>
+          <div className={sectionClass('identity')}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -444,7 +484,7 @@ export default function Profile({ hideHeader }) {
           </div>
 
           {/* ── BODY & NUTRITION SECTION ── */}
-          <div className={activeSection === 'body' ? '' : 'hidden'}>
+          <div className={sectionClass('body')}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -488,37 +528,41 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
-                        <div className="flex gap-1 bg-charcoal-elevated rounded-lg p-0.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.height_unit === 'cm' && formData.height_cm) {
-                                const totalInches = Math.round(formData.height_cm / 2.54);
-                                setHeightFeet(Math.floor(totalInches / 12).toString());
-                                setHeightInches((totalInches % 12).toString());
-                                setFormData({ ...formData, height_unit: 'in', height_cm: totalInches });
-                              } else {
-                                setFormData({ ...formData, height_unit: 'in' });
-                              }
-                            }}
-                            className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
-                            }`}
-                          >ft/in</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.height_unit === 'in' && formData.height_cm) {
-                                const cm = Math.round(formData.height_cm * 2.54);
-                                setFormData({ ...formData, height_unit: 'cm', height_cm: cm });
-                              } else {
-                                setFormData({ ...formData, height_unit: 'cm' });
-                              }
-                            }}
-                            className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
-                            }`}
-                          >cm</button>
+                        {/* Unit selection is passive metadata, not an action, so the
+                            selected pill stays NEUTRAL (glass-inset + ink) — coral is
+                            reserved for the single action color. The shared Tabs
+                            `segment` variant only paints a brand-tinted active pill, so
+                            this neutral segmented control is built inline from the same
+                            visual tokens (a genuine gap: Tabs has no neutral segment). */}
+                        <div className="flex gap-1 glass-inset p-0.5" role="group" aria-label="Height unit">
+                          {[
+                            { id: 'in', label: 'ft/in' },
+                            { id: 'cm', label: 'cm' },
+                          ].map(({ id, label }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              aria-pressed={formData.height_unit === id}
+                              onClick={() => {
+                                if (id === 'in' && formData.height_unit === 'cm' && formData.height_cm) {
+                                  const totalInches = Math.round(formData.height_cm / 2.54);
+                                  setHeightFeet(Math.floor(totalInches / 12).toString());
+                                  setHeightInches((totalInches % 12).toString());
+                                  setFormData({ ...formData, height_unit: 'in', height_cm: totalInches });
+                                } else if (id === 'cm' && formData.height_unit === 'in' && formData.height_cm) {
+                                  const cm = Math.round(formData.height_cm * 2.54);
+                                  setFormData({ ...formData, height_unit: 'cm', height_cm: cm });
+                                } else {
+                                  setFormData({ ...formData, height_unit: id });
+                                }
+                              }}
+                              className={`min-h-[36px] px-3.5 rounded-md text-sm transition-[color,background-color] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] ${
+                                formData.height_unit === id
+                                  ? 'bg-[var(--glass-bg)] text-ink font-semibold shadow-[inset_0_1px_0_var(--glass-specular)]'
+                                  : 'text-ink-muted hover:text-ink'
+                              }`}
+                            >{label}</button>
+                          ))}
                         </div>
                       </div>
                       {formData.height_unit === 'in' ? (
@@ -611,9 +655,11 @@ export default function Profile({ hideHeader }) {
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
                             <div className="text-2xl font-bold text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            tdee.method === 'adaptive' ? 'bg-leaf/10 text-leaf' : 'glass-inset text-ink-muted'
-                          }`}>
+                          {/* Metadata tag, not data: keep BOTH states neutral
+                              (glass-inset + muted ink) so no leaf/biometric hue is
+                              spent on a source label. The gold lives on the TDEE
+                              number, which is the datum that owns the hue. */}
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium glass-inset text-ink-muted">
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
                         </div>
@@ -752,7 +798,7 @@ export default function Profile({ hideHeader }) {
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
-        <div className={activeSection === 'settings' ? '' : hideHeader && activeSection === null ? '' : 'hidden'}>
+        <div className={sectionClass('settings')}>
           <Card className="mb-4">
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />
@@ -793,26 +839,9 @@ export default function Profile({ hideHeader }) {
                 <h3 className="text-sm font-semibold text-bad">Danger Zone</h3>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium text-ink">Sign Out</p>
-                  <p className="text-sm text-ink-muted">Sign out of your account</p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-bad/20 text-bad hover:bg-bad/10 hover:text-bad"
-                  onClick={async () => {
-                    try { await signOut(); toast.success('Signed out successfully'); }
-                    catch { toast.error('Failed to sign out'); }
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-
-              <SectionDivider />
-
+              {/* Sign Out is NOT a danger action — it lives in the mobile thumb-zone
+                  hub and the desktop sidebar footer. The Danger Zone holds only the
+                  irreversible Delete Account control. */}
               {!showDeleteConfirm ? (
                 <div className="flex items-center justify-between">
                   <div>
@@ -839,7 +868,7 @@ export default function Profile({ hideHeader }) {
                       Cancel
                     </Button>
                     <Button
-                      className="bg-bad hover:bg-bad/80 text-white"
+                      className="bg-bad hover:bg-bad/80 text-ink"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -881,13 +910,18 @@ export default function Profile({ hideHeader }) {
         }`}
         style={{ transitionTimingFunction: 'var(--ease)' }}
       >
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <p className="hidden sm:block text-sm text-ink-muted">You have unsaved changes</p>
-          <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
-            <Button type="button" size="lg" variant="dim" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Compact status label — muted ink, shown on every viewport. On mobile
+              it sits left of the thumb-zone buttons; on desktop it pushes the
+              actions to the right edge. */}
+          <p className="text-sm text-ink-muted whitespace-nowrap">Unsaved changes</p>
+          {/* Cancel / Save span the bar width on mobile (flex-1) so both land in
+              the thumb zone; on desktop they shrink to their content. */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <Button type="button" size="lg" variant="dim" className="flex-1 sm:flex-none" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" size="lg" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
+            <Button type="button" size="lg" variant="primary" className="flex-1 sm:flex-none" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
               {updateProfileMutation.isPending ? (
                 <><LoadingSpinner size="small" className="mr-2" />Saving…</>
               ) : (

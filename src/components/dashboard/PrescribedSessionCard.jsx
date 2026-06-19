@@ -72,7 +72,7 @@ function CardioDoneToggle({ done, onToggle }) {
       type="button"
       onClick={onToggle}
       className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-colors ${
-        done ? "bg-ok text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
+        done ? "bg-leaf text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
       aria-label={done ? "Mark conditioning not done" : "Mark conditioning done"}
@@ -91,7 +91,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   const [preNote, setPreNote] = useState("");
   const { isDone, toggle } = useCardioCompletions(today);
   const { match: garminMatch } = useTodayGarminCardio(today);
-  if (!prescription) return null;
+  // No engine prescription yet — own the single off-script fallback so logging a
+  // workout is never buried (Today no longer renders its own duplicate ghost).
+  if (!prescription) {
+    return (
+      <Link to="/quick-workout" className="cta-ghost w-full">
+        Log a workout
+      </Link>
+    );
+  }
 
   const action = prescription.mpc_action;
   const p = prescription.prescription || {};
@@ -138,7 +146,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     return (
       <div key={kind} className="flex items-center gap-2 text-sm">
         {g ? (
-          <span className="shrink-0 w-11 h-11 -my-1.5 rounded-full bg-ok text-ink flex items-center justify-center" title="Auto-detected from Garmin">
+          <span className="shrink-0 w-11 h-11 -my-1.5 rounded-full bg-leaf text-ink flex items-center justify-center" title="Auto-detected from Garmin">
             <Check className="w-4 h-4" />
           </span>
         ) : (
@@ -147,7 +155,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {icon}
         <span className={done ? "text-ink-faint line-through" : "text-ink"}>{label}</span>
         {g && (
-          <span className="ml-auto text-[11px] font-technical text-ok whitespace-nowrap">
+          <span className="ml-auto text-[11px] font-technical text-leaf whitespace-nowrap">
             {mi(g.distance_meters) ? `${mi(g.distance_meters)} mi` : "done"}
             {mmss(g.duration_seconds) ? ` · ${mmss(g.duration_seconds)}` : ""}
             <span className="text-ink-faint"> · Garmin</span>
@@ -278,18 +286,19 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
           </div>
         )}
 
-        {/* Already trained today — reflect it instead of nagging "Begin Session". */}
+        {/* Already trained today — a single compact completion ROW (status +
+            "log another" in one line) instead of a stacked banner + full-width
+            ghost, so the done state stays glanceable and doesn't nag. */}
         {!isRest && loggedToday && (
-          <div className="mt-3.5">
-            <div className="flex items-center gap-2 rounded-lg bg-ok/[0.12] px-3 py-2.5 text-sm font-semibold text-ok">
-              <Check className="w-4 h-4 shrink-0" /> Logged today — nice work.
-            </div>
+          <div className="mt-3.5 flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[44px] text-sm font-semibold text-leaf">
+            <Check className="w-4 h-4 shrink-0" />
+            <span>Logged today — nice work.</span>
             <Link
               to="/quick-workout"
               state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
-              className="cta-ghost mt-2 w-full"
+              className="ml-auto text-brand font-semibold whitespace-nowrap"
             >
-              Log another session
+              Log another
             </Link>
           </div>
         )}

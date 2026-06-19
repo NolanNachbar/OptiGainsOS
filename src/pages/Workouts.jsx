@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
 import { TabCount } from "@/components/ui/system";
-import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
+import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { parseISO } from "date-fns";
 
@@ -245,18 +245,27 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     workouts.map(w => w.folder).filter(Boolean)
   )].sort();
 
-  const filteredWorkouts = workouts.filter(workout => {
-    // Type/category filter
-    if (filter !== "all" && workout.focus !== filter) return false;
+  const isQaSeed = (w) => /qa\s*test\s*workout/i.test(w.title || "");
 
-    // Folder filter
-    if (folderFilter !== "all") {
-      if (folderFilter === "unfiled") return !workout.folder;
-      if (workout.folder !== folderFilter) return false;
-    }
+  const filteredWorkouts = workouts
+    .filter(workout => {
+      // Type/category filter
+      if (filter !== "all" && workout.focus !== filter) return false;
 
-    return true;
-  });
+      // Folder filter
+      if (folderFilter !== "all") {
+        if (folderFilter === "unfiled") return !workout.folder;
+        if (workout.folder !== folderFilter) return false;
+      }
+
+      return true;
+    })
+    // Demote the QA Test Workout seed to the bottom of the library so it never
+    // crowds the top of the list.
+    .sort((a, b) => (isQaSeed(a) ? 1 : 0) - (isQaSeed(b) ? 1 : 0));
+
+  const visibleWorkouts = filteredWorkouts.slice(0, libraryVisible);
+  const remainingWorkouts = filteredWorkouts.length - libraryVisible;
 
   if (!user) {
     navigate('/login');
@@ -311,8 +320,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           )}
 
           <TabsContent value="library">
-        <div className="glass mb-6 overflow-hidden">
-          <div className="px-4 pt-4 pb-2">
+        <div className="mb-6">
+          <div className="pb-2">
             <div className="flex items-center gap-2">
               {/* Filters — Button to match Import; coral-tinted only when active */}
               <Button
@@ -350,7 +359,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="px-4 pb-4 border-t hairline pt-3 space-y-3">
+            <div className="pb-4 border-t hairline pt-3 space-y-3">
               <div>
                 <p className="section-label mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -365,7 +374,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       onClick={() => setFilter(f.value)}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] ${
                         filter === f.value
-                          ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+                          ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
                           : 'glass-inset text-ink-muted hover:text-ink'
                       }`}
                     >
@@ -414,7 +423,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] ${
                               folderFilter === f
-                                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+                                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
                                 : 'glass-inset text-ink-muted hover:text-ink'
                             }`}
                           >
@@ -438,8 +447,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               )}
             </div>
           )}
-          <div className="px-4 pb-6">
-            <div className="pr-2">
+          <div className="pb-6">
+            <div>
               {workoutsLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
@@ -449,22 +458,23 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               ) : filteredWorkouts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredWorkouts.slice(0, libraryVisible).map((workout) => (
+                    {visibleWorkouts.map((workout, i) => (
                       <WorkoutCard
                         key={workout.id}
                         workout={workout}
                         userId={user.id}
+                        index={i}
                         onEdit={handleEdit}
                         onClone={handleClone}
                         onDelete={handleDelete}
                       />
                     ))}
                   </div>
-                  {filteredWorkouts.length > libraryVisible && (
+                  {remainingWorkouts > 0 && (
                     <div className="flex justify-center mt-6">
-                      <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setLibraryVisible(v => v + 8)}>
-                        Show more
-                        <span className="ml-1.5 text-ink-faint">{filteredWorkouts.length - libraryVisible}</span>
+                      <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setLibraryVisible(v => v + 8)}>
+                        Show {Math.min(8, remainingWorkouts)} more
+                        <span className="ml-1.5 text-ink-muted font-technical">{remainingWorkouts}</span>
                       </Button>
                     </div>
                   )}
@@ -558,13 +568,16 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     subtitle="Start a program to track your progress with auto-progression"
                   />
                 ) : (
-                  <div className="space-y-6">
+                  // Bottom pad on mobile clears the fixed Create-Program FAB so
+                  // the last card never scrolls under it.
+                  <div className="space-y-6 pb-[calc(var(--dock-clearance)+72px)] md:pb-0">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {activeEnrollments.map((enrollment) => (
+                      {activeEnrollments.map((enrollment, i) => (
                         <ProgramCard
                           key={enrollment.id}
                           program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
                           enrollment={enrollment}
+                          index={i}
                         />
                       ))}
                     </div>
@@ -574,11 +587,12 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                           Past Programs
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {pastEnrollments.map((enrollment) => (
+                          {pastEnrollments.map((enrollment, i) => (
                             <ProgramCard
                               key={enrollment.id}
                               program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
                               enrollment={enrollment}
+                              index={i}
                             />
                           ))}
                         </div>
@@ -602,9 +616,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     subtitle="Create a multi-week program with exercises, progression rules, and more"
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {programs.map((program) => (
-                      <ProgramCard key={program.id} program={program} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(var(--dock-clearance)+72px)] md:pb-0">
+                    {programs.map((program, i) => (
+                      <ProgramCard key={program.id} program={program} index={i} />
                     ))}
                   </div>
                 )}
@@ -811,7 +825,7 @@ function StrengthEntryCard({ entry }) {
 function ActivityTypeIcon({ type, className = "w-4 h-4" }) {
   const props = { className };
   switch (type) {
-    case 'running':    return <PersonStanding {...props} />;
+    case 'running':    return <Footprints {...props} />;
     case 'swimming':   return <Waves {...props} />;
     case 'cycling':    return <Bike {...props} />;
     case 'walking':    return <Footprints {...props} />;
@@ -969,7 +983,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
-          <span className="hero-metric text-[34px] text-teal">
+          <span className="hero-metric text-[34px] text-ink">
             {thisWeek.length}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">sess</span>
           </span>
         </div>
@@ -999,9 +1013,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)]',
+              'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97]',
               filter === val
-                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
                 : 'glass-inset text-ink-muted hover:text-ink',
             ].join(' ')}
           >
@@ -1027,9 +1041,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
         <div className="space-y-3">
           {grouped.map(({ label, entries }, i) => (
             <section key={label} className={`rise-in ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
-              {/* Day header — its own tier (brighter + tracked rule) so it reads
-                  above the in-card stat captions that share .section-label. */}
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-secondary mb-2.5">{label}</h3>
+              {/* Day header — its own tier (brighter) so it reads above the
+                  in-card stat captions that share .section-label. */}
+              <h3 className="section-label text-ink-secondary mb-2.5">{label}</h3>
               <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
@@ -1046,7 +1060,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           ))}
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 8)}>
+              <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setVisibleCount(v => v + 8)}>
                 Load more
                 <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
               </Button>

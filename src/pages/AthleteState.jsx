@@ -290,9 +290,12 @@ function StallBadge({ risk }) {
 }
 
 function ReadinessBadge({ readiness }) {
+  // Distinct ordinal ramp: high=teal → moderate=gold → low=warn → rest=bad.
+  // leaf (green) is reserved for done-states elsewhere, so it stays out of this
+  // ladder; gold separates "moderate" from the adjacent teal it used to share.
   const map = {
     high:     { label: "High — Push",      color: "bg-teal/15 text-teal" },
-    moderate: { label: "Moderate — Train", color: "bg-leaf/15 text-leaf" },
+    moderate: { label: "Moderate — Train", color: "bg-gold/15 text-gold" },
     low:      { label: "Low — Easy",       color: "bg-warn/15 text-warn" },
     rest:     { label: "Rest Day",         color: "bg-bad/15 text-bad" },
     unknown:  { label: "Unknown",          color: "bg-charcoal-elevated text-muted-2" },
@@ -355,7 +358,7 @@ function StrengthSection({ data }) {
             )}
             <div className="flex items-center gap-3 font-technical text-[10px] font-semibold text-muted-2 mt-1">
               {d.progression_rate_lbs_per_week !== 0 && (
-                <span className={d.progression_rate_lbs_per_week > 0 ? "text-teal" : "text-bad"}>
+                <span className={d.progression_rate_lbs_per_week > 0 ? "text-teal" : "text-muted-2"}>
                   {d.progression_rate_lbs_per_week > 0 ? "+" : ""}{d.progression_rate_lbs_per_week} lbs/wk
                 </span>
               )}
@@ -379,7 +382,7 @@ function StrengthSection({ data }) {
               <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-warn/10 border border-warn/20 px-2.5 py-1.5">
                 <AlertTriangle className="w-3 h-3 text-warn shrink-0 mt-0.5" />
                 <span className="text-[10px] font-semibold text-warn/90 leading-snug">
-                  <span className="font-extrabold uppercase tracking-wider">Stalled</span> — {d.swap_suggestion}
+                  {d.swap_suggestion}
                 </span>
               </div>
             )}
@@ -569,7 +572,10 @@ function FatigueSection({ data }) {
       <div className="flex items-center gap-4">
         {TSBIcon && <TSBIcon className={`w-6 h-6 ${tsbColor}`} />}
         <div>
-          <div className={`hero-metric text-3xl ${tsbColor}`}>{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
+          {/* Neutral value with the severity carried by the icon — matches the
+              SummaryStrip TSB tile (MetricTile renders its value neutral), so
+              the same TSB reads consistently in both surfaces. */}
+          <div className="hero-metric text-3xl text-ink">{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
           <div className="section-label">Training Stress Balance</div>
         </div>
         <Badge className="ml-auto bg-charcoal-elevated text-muted-2 border-none capitalize text-xs">
@@ -724,7 +730,7 @@ function NutritionSection({ data, targets }) {
         {proteinPct != null && (
           <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${proteinPct >= 100 ? "bg-coral" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
+              className={`h-full rounded-full transition-all ${proteinPct >= 100 ? "bg-teal" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
               style={{ width: `${Math.min(proteinPct, 100)}%` }}
             />
           </div>
@@ -948,13 +954,24 @@ export default function AthleteState({ hideHeader = false }) {
             type="button"
             onClick={() => setDetailOpen((v) => !v)}
             aria-expanded={detailOpen}
-            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 flex items-center gap-2.5 rise-in-2"
+            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform"
           >
-            <BarChart3 className="w-3.5 h-3.5 text-teal shrink-0" />
-            <span className="section-label !text-ink flex-1 text-left">Fatigue, Volume, Endurance &amp; Nutrition</span>
+            <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
+              <BarChart3 className="w-3.5 h-3.5" />
+            </span>
+            <span className="flex-1 min-w-0 text-left">
+              <span className="block section-label !text-ink">Body analytics</span>
+              <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Fatigue · Volume · Endurance · Nutrition</span>
+            </span>
             <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${detailOpen ? "rotate-180" : ""}`} />
           </button>
-          <div className={`${detailOpen ? "block" : "hidden"} lg:block`}>
+          {/* Height + opacity reveal via grid-rows (the system has no disclosure
+              primitive); single easing, in-band duration, content rises 8px in.
+              Forced open on lg via lg:!grid-rows-[1fr] / lg:!opacity-100. */}
+          <div
+            className={`grid lg:!grid-rows-[1fr] lg:!opacity-100 overflow-hidden transition-[grid-template-rows,opacity] duration-[280ms] ease-[cubic-bezier(.2,.7,.3,1)] ${detailOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+          >
+           <div className="min-h-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 lg:mt-4">
               {/* Fatigue */}
               {state?.fatigue && (
@@ -1011,6 +1028,7 @@ export default function AthleteState({ hideHeader = false }) {
               </Card>
             </div>
             )}
+           </div>
           </div>
 
           {/* Engine, Plan & Pace Zones — moved BELOW the primary + analytical
@@ -1021,16 +1039,24 @@ export default function AthleteState({ hideHeader = false }) {
               type="button"
               onClick={() => setEngineOpen((v) => !v)}
               aria-expanded={engineOpen}
-              className="w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3"
+              className="w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform"
             >
-              <Cpu className="w-3.5 h-3.5 text-teal shrink-0" />
-              <span className="section-label !text-ink flex-1 text-left">Engine, Plan &amp; Pace Zones</span>
+              <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-gold/[0.13] text-gold">
+                <Cpu className="w-3.5 h-3.5" />
+              </span>
+              <span className="flex-1 min-w-0 text-left">
+                <span className="block section-label !text-ink">Engine internals</span>
+                <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Adaptive engine · Weekly plan · Pace zones</span>
+              </span>
               <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${engineOpen ? "rotate-180" : ""}`} />
             </button>
-            <div className={engineOpen ? "block" : "hidden"}>
-              <AdaptiveEnginePanel />
-              <WeeklyPlanPanel />
-              <VdotZonesCard className="mb-4" />
+            {/* Same grid-rows height + opacity reveal as the analytics accordion. */}
+            <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[280ms] ease-[cubic-bezier(.2,.7,.3,1)] ${engineOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+              <div className="min-h-0">
+                <AdaptiveEnginePanel />
+                <WeeklyPlanPanel />
+                <VdotZonesCard className="mb-4" />
+              </div>
             </div>
           </div>
         </>

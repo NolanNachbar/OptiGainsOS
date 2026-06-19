@@ -9,6 +9,16 @@ import { addDays, format, parseISO } from "date-fns";
  * Edit mode: single row of day slots as droppable targets (ProgramBuilder).
  * View mode: numCycles rows × cycleLength columns with progress tracking (ProgramDetail).
  */
+
+/**
+ * Strip the trailing volume-coefficient suffix (e.g. "Push — 0.85 Volume") so the
+ * 4-col 390px grid shows a clean primary workout name. The full label is preserved
+ * for the detail sheet.
+ */
+function cleanWorkoutTitle(title) {
+  if (!title) return title;
+  return title.replace(/\s*[—–-]\s*[\d.]+\s*volume\s*$/i, "").trim();
+}
 export default function CycleDayGrid({
   workouts = [],
   cycleLength,
@@ -76,10 +86,10 @@ export default function CycleDayGrid({
             {!compact && (
               <div className="flex items-center gap-2 mb-2">
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-charcoal-border ${
                     cycle === currentCycle
-                      ? "bg-charcoal-surface2 text-ink border border-charcoal-border"
-                      : "bg-white/[0.06] text-ink-muted border border-white/10"
+                      ? "bg-charcoal-surface2 text-ink"
+                      : "bg-track text-ink-muted"
                   }`}
                 >
                   Cycle {cycle}
@@ -110,11 +120,11 @@ export default function CycleDayGrid({
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
-                    cellClasses += " border-ink/40 ring-2 ring-white/15 bg-white/[0.07]";
+                    cellClasses += " glass-inset border-brand ring-2 ring-brand/40";
                   } else if (isPast) {
-                    cellClasses += " border-white/[0.06] bg-white/[0.02] opacity-60";
+                    cellClasses += " border-charcoal-border bg-charcoal-surface opacity-60";
                   } else {
-                    cellClasses += " glass-inset border-white/[0.06] hover:bg-white/[0.06]";
+                    cellClasses += " glass-inset border-charcoal-border hover:bg-charcoal-surface2";
                   }
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
@@ -151,7 +161,7 @@ export default function CycleDayGrid({
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-ink-muted">Day {dayIndex}</p>
                           <span className={labelClass}>
-                            {workout?.title || "Rest"}
+                            {cleanWorkoutTitle(workout?.title) || "Rest"}
                           </span>
                         </div>
                         {isCompleted ? (
@@ -237,12 +247,10 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
     <div
       ref={setNodeRef}
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
-      className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
+      className={`glass-inset rounded-xl border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-[border-color,background] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
         isOver
-          ? "border-brand bg-brand/[5%] scale-[1.02]"
-          : hasWorkout
-          ? "border-solid border-white/10 bg-white/[0.04] hover:border-brand/30"
-          : "border-white/10 bg-white/[0.02] hover:border-brand/30 hover:bg-white/[0.04]"
+          ? "border-brand bg-brand/5"
+          : "border-charcoal-border hover:border-brand/40"
       }`}
     >
       <div className="flex items-center justify-between mb-1">

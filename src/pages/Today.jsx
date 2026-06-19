@@ -207,23 +207,25 @@ export default function Today() {
   const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
   const { calories: calTarget, protein: proteinTarget } = useDailyTargets(today);
 
-  // lb/wk trend, colored by goal-alignment: ok when the trend matches the
-  // active phase goal (down on a cut, up on a bulk), warn when it opposes it.
-  // The sign is preserved (a loss reads "-0.8", a gain "+1.2") with directional
-  // hue so the datum keeps its meaning instead of a flat green abs() ring.
+  // lb/wk trend. This is a FUEL datum, not a biometric, so it owns a stable
+  // fuel hue (gold, the kcal family) rather than riding the physiological
+  // ok/warn spectrum — green/warn here read as "good/bad body signal" and steal
+  // the biometric language. On- vs off-goal is expressed by the SIGN (a loss
+  // reads "-0.8", a gain "+1.2") plus a caption, not by recoloring the ring.
   const trendPerWk = nutrition?.weight_trend_lbs_per_week;
+  const trendAligned = (() => {
+    if (trendPerWk == null) return null;
+    const phase = nutrition?.phase;
+    return phase === "cut" ? trendPerWk < 0
+      : phase === "bulk" ? trendPerWk > 0
+      : Math.abs(trendPerWk) <= 0.5; // maintenance: holding is on-goal
+  })();
   const trend = {
     value: trendPerWk == null ? "—"
       : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
     frac: trendPerWk != null ? Math.min(1, Math.abs(Number(trendPerWk)) / 2) : 0,
-    hue: (() => {
-      if (trendPerWk == null) return "var(--text-faint)";
-      const phase = nutrition?.phase;
-      const aligned = phase === "cut" ? trendPerWk < 0
-        : phase === "bulk" ? trendPerWk > 0
-        : Math.abs(trendPerWk) <= 0.5; // maintenance: holding is on-goal
-      return aligned ? "var(--hue-green)" : "var(--warn)";
-    })(),
+    hue: trendPerWk == null ? "var(--text-faint)" : "var(--hue-gold)",
+    caption: trendAligned == null ? "lb/wk" : trendAligned ? "on goal" : "off goal",
   };
 
   return (
@@ -259,10 +261,20 @@ export default function Today() {
           on the right — DOM order stays mobile-first; lg placement is explicit. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
+          {/* Load-failure is an app condition, not a biometric — render it as
+              neutral glass (muted icon + brand-colored retry), not warn-amber,
+              so the physiological spectrum stays reserved for body data. */}
           {(prescriptionError || stateError) && (
-            <div className="flex items-center gap-2 px-4 py-3 mb-3 rounded-lg bg-warn/15 border border-warn/20 text-warn text-sm font-semibold">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              Could not load today&apos;s data
+            <div className="glass-inset flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-muted-2" />
+              <span className="font-semibold text-muted-2">Could not load today&apos;s data</span>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="ml-auto font-semibold text-brand min-h-[44px] -my-2 px-1"
+              >
+                Retry
+              </button>
             </div>
           )}
           {/* The readiness hero — verdict in 3 seconds */}
@@ -277,7 +289,7 @@ export default function Today() {
                     <div className="h-3 glass-inset w-4/5" />
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-[7px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px]">
                   {[0, 1, 2, 3].map((i) => (
                     <div key={i} className="h-12 glass-inset" />
                   ))}
@@ -285,6 +297,10 @@ export default function Today() {
               </div>
             ) : (
             <><div className="flex items-center gap-4 sm:gap-6">
+              {/* StatRing rule: the readiness ring is BAND-colored (the verdict
+                  hue), so the arc tracks the score/headline — the component's
+                  teal gradient is the default only for non-verdict rings. The
+                  micro-label below the score stays 'READINESS'. */}
               <StatRing value={score} size={104} label="Readiness" color={band.color} />
               <div className="flex-1 min-w-0">
                 <h2 className="text-[17px] sm:text-xl font-extrabold" style={{ color: band.color }}>
@@ -295,7 +311,9 @@ export default function Today() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-[7px] mt-3">
+            {/* 4 biometric tiles — 2-up at 390px so HRV/RHR/Sleep/Batt values
+                aren't cramped into a 4-col strip, widening to 4-up at sm+. */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-3">
               {morningMetrics.map((m) => (
                 <MetricTile
                   key={m.k}
@@ -319,9 +337,11 @@ export default function Today() {
             MorningCheckin renders its own read-only summary. */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
           {todayCheckIn ? (
-            <MorningCheckin today={today} existingCheckin={todayCheckIn} />
+            <MorningCheckin today={today} existingCheckin={todayCheckIn} coralCta={false} />
           ) : checkinOpen ? (
-            <MorningCheckin today={today} existingCheckin={null} onComplete={() => setCheckinOpen(false)} />
+            // coralCta={false}: embedded under the coral "Begin Session", so the
+            // check-in submits neutral and Begin Session stays the sole coral.
+            <MorningCheckin today={today} existingCheckin={null} coralCta={false} onComplete={() => setCheckinOpen(false)} />
           ) : (
             <button
               type="button"
@@ -330,24 +350,55 @@ export default function Today() {
               aria-expanded={false}
             >
               <Activity className="w-3.5 h-3.5 text-teal shrink-0" />
-              <span>Log today&apos;s readiness check-in</span>
+              <span>How you feel — subjective check-in</span>
               <ChevronDown className="w-4 h-4 ml-auto text-muted-2" />
             </button>
           )}
         </div>
 
-        {/* The day's CTA — under the verdict + check-in so the next action is never buried.
-            When the engine prescribes nothing, PrescribedSessionCard renders null;
-            surface a neutral ad-hoc "Log a workout" ghost link so off-script
-            training is never buried (mirrors the rest/logged ghost states). */}
+        {/* The day's CTA — under the verdict + check-in so the next action is never
+            buried. PrescribedSessionCard owns ALL its fallbacks now: when the
+            engine prescribes nothing it renders the neutral "Log a workout" ghost
+            itself (the duplicate ghost that used to live here was removed). */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
           <PrescribedSessionCard today={today} loggedToday={loggedToday} />
-          {!prescriptionLoading && !prescription && (
-            <Link to="/quick-workout" className="cta-ghost w-full">
-              Log a workout
-            </Link>
-          )}
         </div>
+
+        {/* Fuel today — the stated #3 priority, so on MOBILE it renders right
+            after the session (DOM order). On desktop it jumps to the right rail
+            via explicit lg:col/row-start, so this DOM move is mobile-only. */}
+        <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 space-y-3 rise-in-3">
+          {/* Fuel today — hue-coded rings, one tap to the log */}
+          <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
+            <div className="flex items-baseline justify-between">
+              <SectionLabel>Fuel today</SectionLabel>
+              <span className="text-[11px] font-semibold text-faint">
+                {nutrition?.phase ? `${nutrition.phase} phase` : "targets"}
+              </span>
+            </div>
+            <div className="flex items-center justify-around mt-2 px-1">
+              <MiniRing
+                label="kcal" hue="var(--hue-gold)" size={50}
+                value={compactK(calTarget)}
+                frac={calTarget && avgCal ? avgCal / calTarget : 0}
+              />
+              <MiniRing
+                label="protein" hue="var(--hue-coral)"
+                value={proteinTarget ? `${Math.round(proteinTarget)}` : "—"}
+                frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
+              />
+              {/* lb/wk rides the stable gold fuel hue; the SIGN (+/−) carries
+                  direction and the label flips to on/off goal so alignment is
+                  read from sign + caption, not from a biometric ring color. */}
+              <MiniRing
+                label={trend.caption} hue={trend.hue}
+                value={trend.value}
+                frac={trend.frac}
+              />
+              <ChevronRight className="w-4 h-4 text-faint" />
+            </div>
+          </Link>
+        </aside>
 
         {/* Thumb-zone quick actions — the two most-tapped daily logs (food + weigh-in),
             kept in the lower third near the dock. The retired Stream Note tile freed
@@ -384,37 +435,6 @@ export default function Today() {
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-5 rise-in-3">
           <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
         </div>
-
-        <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-3 space-y-3 rise-in-3">
-          {/* Fuel today — hue-coded rings, one tap to the log */}
-          <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
-            <div className="flex items-baseline justify-between">
-              <SectionLabel>Fuel today</SectionLabel>
-              <span className="text-[11px] font-semibold text-faint">
-                {nutrition?.phase ? `${nutrition.phase} phase` : "targets"}
-              </span>
-            </div>
-            <div className="flex items-center justify-around mt-2 px-1">
-              <MiniRing
-                label="kcal" hue="var(--hue-gold)" size={50}
-                value={compactK(calTarget)}
-                frac={calTarget && avgCal ? avgCal / calTarget : 0}
-              />
-              <MiniRing
-                label="protein" hue="var(--hue-coral)"
-                value={proteinTarget ? `${Math.round(proteinTarget)}` : "—"}
-                frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
-              />
-              <MiniRing
-                label="lb/wk" hue={trend.hue}
-                value={trend.value}
-                frac={trend.frac}
-              />
-              <ChevronRight className="w-4 h-4 text-faint" />
-            </div>
-          </Link>
-
-        </aside>
 
         {/* Consolidated detail card — one header, one body. The three former
             disclosure drawers (State / Brief / Muscle) collapse into a single

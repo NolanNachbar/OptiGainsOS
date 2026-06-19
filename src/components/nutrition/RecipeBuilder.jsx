@@ -922,14 +922,15 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full max-h-[88dvh] sm:max-h-[75vh] sm:my-8 flex flex-col overflow-hidden p-0 min-h-0" hideClose>
+      <DialogContent className={`${currentStep === 2 ? "max-w-2xl" : "max-w-md"} w-full max-h-[88dvh] sm:max-h-[75vh] sm:my-8 flex flex-col overflow-hidden p-0 min-h-0`} hideClose>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b">
           <div className="flex items-center gap-3">
             {currentStep === 2 && (
               <button
                 onClick={() => goToStep(1)}
-                className="text-ink-muted hover:text-ink transition-colors p-1 -ml-1 rounded-lg hover:bg-charcoal-elevated"
+                className="h-11 w-11 flex items-center justify-center -ml-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors"
+                aria-label="Back to details"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -944,14 +945,14 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 1
                         ? "bg-brand"
-                        : "bg-charcoal-elevated"
+                        : "bg-track"
                     }`}
                   />
                   <div
                     className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
                       currentStep >= 2
                         ? "bg-brand"
-                        : "bg-charcoal-elevated"
+                        : "bg-track"
                     }`}
                   />
                 </div>
@@ -963,7 +964,8 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-ink-muted hover:text-ink transition-colors p-1 rounded-lg hover:bg-charcoal-elevated"
+            className="h-11 w-11 flex items-center justify-center -mr-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

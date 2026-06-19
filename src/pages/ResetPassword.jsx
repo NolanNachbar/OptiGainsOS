@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
 import { AuthShell, AuthHeader } from '@/pages/Login';
 import { toast } from 'sonner';
 import { passwordSchema } from '@/lib/validation';
@@ -78,7 +78,7 @@ export default function ResetPassword() {
     <AuthShell>
       <AuthHeader subtitle="Set a new password" />
 
-      <div className="glass w-full max-w-sm mt-auto sm:mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2 min-h-[300px] flex flex-col justify-center">
         {hasSession === null ? (
           <div className="flex flex-col items-center py-6">
             <LoadingSpinner size="small" />
@@ -151,15 +151,13 @@ export default function ResetPassword() {
         )}
 
         <div className="flex items-center justify-center mt-3 px-0.5">
-          <p className="text-ink-muted text-[13px]">
-            Remember your password?{' '}
-            <Link
-              to="/login"
-              className="text-brand hover:opacity-80 transition-opacity font-semibold inline-flex items-center justify-center min-h-[44px] px-1"
-            >
-              Sign in
-            </Link>
-          </p>
+          <Link
+            to="/login"
+            className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to sign in
+          </Link>
         </div>
       </div>
     </AuthShell>

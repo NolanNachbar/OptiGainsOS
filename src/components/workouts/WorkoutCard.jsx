@@ -3,12 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Edit, Copy, Trash2, FolderOpen, Download } from "lucide-react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete }) {
+const RISE = ["rise-in", "rise-in-2", "rise-in-3"];
+
+export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete, index = 0 }) {
   const [openMenu, setOpenMenu] = useState(false);
+  // Collision-aware kebab: flip the menu above the trigger when the card sits
+  // near the viewport bottom so Delete never clips under the dock.
+  const [flipUp, setFlipUp] = useState(false);
   const menuRef = useRef(null);
+  const triggerRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,10 +26,18 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openMenu]);
 
+  const toggleMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!openMenu && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      // ~220px menu height + dock clearance; flip up if it would collide.
+      setFlipUp(rect.bottom + 220 > window.innerHeight - 80);
+    }
+    setOpenMenu((v) => !v);
+  };
+
   const isOwner = workout.created_by === userId;
-  const hasBadgeRow = Boolean(
-    (workout.focus && workout.focus !== "strength") || workout.folder
-  );
 
   // Guard against corrupted auto-saved durations (minute totals in the hundreds).
   const validDuration =
@@ -51,48 +64,45 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     toast.success(`"${workout.title}" exported`);
   };
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: [0.2, 0.7, 0.3, 1] }}
-    >
+    <div className={RISE[index % 3]}>
       <Link to={`/workout-detail?id=${workout.id}`} className="group relative overflow-hidden tile tile-interactive block">
         <div className="pb-2 pt-3 px-4 md:px-6">
-          {hasBadgeRow ? (
-            <div className="flex flex-wrap gap-1.5 pr-12 min-w-0 min-h-[44px]">
-              {workout.focus && workout.focus !== "strength" && (
-                <Badge
-                  variant="outline"
-                  className="text-xs capitalize text-ink-muted hairline"
-                >
-                  {workout.focus}
-                </Badge>
-              )}
-              {workout.folder && (
-                <Badge
-                  variant="slate"
-                  className="max-w-[120px] truncate text-xs"
-                >
-                  <FolderOpen className="w-3 h-3 mr-1 shrink-0" />
-                  <span className="truncate">{workout.folder}</span>
-                </Badge>
-              )}
-            </div>
-          ) : null}
+          {/* Reserved badge zone — always present so title baselines align
+              across cards regardless of focus/folder presence. */}
+          <div className="flex flex-wrap gap-1.5 pr-12 min-w-0 min-h-[28px]">
+            {workout.focus && workout.focus !== "strength" && (
+              <Badge
+                variant="outline"
+                className="text-xs capitalize text-ink-muted hairline"
+              >
+                {workout.focus}
+              </Badge>
+            )}
+            {workout.folder && (
+              <Badge
+                variant="outline"
+                className="max-w-[120px] truncate text-xs text-ink-muted hairline"
+              >
+                <FolderOpen className="w-3 h-3 mr-1 shrink-0" />
+                <span className="truncate">{workout.folder}</span>
+              </Badge>
+            )}
+          </div>
 
           {isOwner && (
               <div className="absolute right-2 top-2 z-10" ref={menuRef}>
                 <Button
+                  ref={triggerRef}
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenu(!openMenu); }}
+                  onClick={toggleMenu}
                   aria-label="Workout options"
                   className="min-h-[44px] min-w-[44px] text-ink-muted hover:text-ink"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className="absolute right-0 top-12 glass-elevated rounded-xl py-1 z-20 min-w-[140px]">
+                  <div className={`absolute right-0 glass-elevated rounded-xl py-1 z-20 min-w-[140px] ${flipUp ? "bottom-12" : "top-12"}`}>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
@@ -122,18 +132,18 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               </div>
           )}
 
-          <h3
-            className={`text-base font-bold text-ink line-clamp-2 mt-0.5 leading-snug ${
-              isOwner ? "pr-12" : ""
-            }`}
-          >
-            {workout.title}
-          </h3>
-          {workout.description && (
-            <p className="text-xs text-ink-muted line-clamp-2 mt-1 leading-relaxed">
-              {workout.description}
-            </p>
-          )}
+          {/* Reserved title + description zone keeps every card the same height
+              whether or not a description exists. */}
+          <div className="min-h-[60px]">
+            <h3 className="text-base font-bold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
+              {workout.title}
+            </h3>
+            {workout.description && (
+              <p className="text-xs text-ink-muted line-clamp-2 mt-1 leading-relaxed">
+                {workout.description}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="pt-0 pb-4 px-4 md:px-6">
@@ -141,7 +151,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <div className="flex">
             <div className="flex-1 flex flex-col">
               <span className="section-label">Duration</span>
-              <span className="font-technical text-lg font-bold text-ink mt-0.5">
+              <span className={`font-technical text-lg font-bold mt-0.5 ${validDuration ? "text-ink" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "—"}
               </span>
             </div>
@@ -152,6 +162,6 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }

@@ -59,8 +59,10 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
-          <div className={`font-technical text-[18px] font-extrabold ${weightChange > 0 ? 'text-warn' : weightChange < 0 ? 'text-ok' : 'text-ink'}`}>
-            {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
+          <div className="font-technical text-[18px] font-extrabold text-ink flex items-baseline gap-1">
+            {weightChange !== 0 && <span className="text-[12px]" aria-hidden="true">{weightChange > 0 ? '▲' : '▼'}</span>}
+            <span>{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}</span>
+            <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
           </div>
           <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
@@ -90,10 +92,10 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="rgba(242,244,247,0.38)"
+              stroke="var(--text-faint)"
               strokeWidth={1}
               dot={false}
-              activeDot={{ r: 3, fill: 'rgba(242,244,247,0.5)', strokeWidth: 0 }}
+              activeDot={{ r: 3, fill: 'var(--text-muted)', strokeWidth: 0 }}
             />
             <Line
               type="monotone"
@@ -110,7 +112,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
       <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'rgba(242,244,247,0.38)' }} />
+          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'var(--text-faint)' }} />
           Raw
         </span>
         <span className="flex items-center gap-1.5">

@@ -5,7 +5,7 @@ import { db } from "@/api/supabaseClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateBodyWeight, invalidateProfile } from "@/lib/queryKeys";
 import { format } from "date-fns";
-import { Scale } from "lucide-react";
+import { Scale, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,17 +66,18 @@ export default function WeighInModal({ open, onOpenChange }) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-ink-muted mb-2 block">
+            <label className="text-sm font-medium text-ink-muted mb-2 block text-center">
               Weight ({profile?.weight_unit || "lbs"})
             </label>
             <Input
               type="number"
               inputMode="decimal"
               step="0.1"
-              placeholder="Enter your weight"
+              enterKeyHint="done"
+              placeholder={profile?.current_weight ?? "Enter your weight"}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="tabular-nums"
+              className="type-display tabular-nums text-center text-2xl sm:text-3xl h-auto py-3"
               autoFocus
             />
           </div>
@@ -97,7 +98,13 @@ export default function WeighInModal({ open, onOpenChange }) {
               className="flex-1"
               disabled={weighInMutation.isPending}
             >
-              {weighInMutation.isPending ? "Saving..." : "Save"}
+              {weighInMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </form>

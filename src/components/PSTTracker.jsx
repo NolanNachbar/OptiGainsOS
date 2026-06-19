@@ -199,19 +199,18 @@ export default function PSTTracker() {
               <label className="section-label mb-1 block">Date</label>
               <Input
                 type="date"
-                className="[color-scheme:dark]"
                 value={form.test_date}
                 onChange={e => setForm(f => ({ ...f, test_date: e.target.value }))}
               />
             </div>
             <div>
-              <label className="section-label mb-1 block">{PST_TARGETS.swim.label} (min:sec)</label>
+              <label className="section-label mb-1 block">{PST_TARGETS.swim.label}</label>
               <div className="flex gap-2">
                 <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="flex-1" />
                 <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="flex-1" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {["pushups", "situps", "pullups"].map(field => (
                 <div key={field}>
                   <label className="section-label mb-1 block">{PST_TARGETS[field].label}</label>
@@ -220,7 +219,7 @@ export default function PSTTracker() {
               ))}
             </div>
             <div>
-              <label className="section-label mb-1 block">{PST_TARGETS.run.label} (min:sec)</label>
+              <label className="section-label mb-1 block">{PST_TARGETS.run.label}</label>
               <div className="flex gap-2">
                 <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="flex-1" />
                 <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="flex-1" />
@@ -231,8 +230,8 @@ export default function PSTTracker() {
               <Textarea rows={2} placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-1">
-              <Button variant="outline" size="lg" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+              <Button variant="ghost" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button variant="volt" size="lg" className="flex-[2]" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Saving…

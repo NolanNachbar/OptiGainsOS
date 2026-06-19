@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Dumbbell } from "lucide-react";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
@@ -51,6 +51,22 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
 
   const form = (
     <div className="glass rounded-2xl border border-dashed border-charcoal-border px-4 pt-4 pb-4 lg:mb-0">
+      {/* Empty-state prompt folded in: the input sits directly below it, so the
+          "first exercise" call-to-action and its action are one unit (no
+          split-away top card). */}
+      {isEmptyState && (
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
+            <Dumbbell className="w-3.5 h-3.5 text-teal" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-ink leading-tight">No exercises yet</p>
+            <p className="text-xs font-semibold text-ink-secondary leading-tight mt-0.5">
+              Add your first exercise to start logging.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2">
           <div className="flex-1">
             <Combobox
@@ -79,9 +95,11 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
     </div>
   );
 
-  // Empty workout on mobile: dock the add-exercise input into the thumb zone,
-  // resting just above the bottom action bar (dock-clearance + the action bar's
-  // own height). On desktop and once exercises exist it flows inline.
+  // Empty workout on mobile: dock the prompt + add-exercise input together into
+  // the thumb zone, resting just above the bottom action bar (dock-clearance +
+  // the action bar's own height). The folded-in prompt means the whole
+  // empty-state lives in one docked unit — no separate top-of-page card. On
+  // desktop and once exercises exist it flows inline.
   if (isEmptyState) {
     return (
       <>

@@ -27,9 +27,23 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { toast } from "sonner";
+
+// Sum macros across a template/entry item list. Module-scoped so the apply +
+// save dialogs (separate components) share one source of truth.
+const getTemplateTotals = (items = []) =>
+  items.reduce(
+    (acc, item) => ({
+      calories: acc.calories + (item.calories || 0),
+      protein: acc.protein + (item.protein_grams || 0),
+      carbs: acc.carbs + (item.carbs_grams || 0),
+      fats: acc.fats + (item.fats_grams || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  );
 
 export default function MealTemplates({ compact = false }) {
   const { user } = useAuth();
@@ -94,17 +108,6 @@ export default function MealTemplates({ compact = false }) {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  const getTemplateTotals = (items) =>
-    items.reduce(
-      (acc, item) => ({
-        calories: acc.calories + (item.calories || 0),
-        protein: acc.protein + (item.protein_grams || 0),
-        carbs: acc.carbs + (item.carbs_grams || 0),
-        fats: acc.fats + (item.fats_grams || 0),
-      }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
-    );
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -140,33 +143,39 @@ export default function MealTemplates({ compact = false }) {
                   <div className="min-w-0">
                     <span className="text-sm font-semibold text-ink truncate block">{template.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {template.is_favorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 shrink-0" />}
-                      <span className="text-xs text-ink-muted text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
+                      {template.is_favorite && <Star className="w-3 h-3 text-gold fill-gold shrink-0" />}
+                      <span className="text-xs text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => toggleFavoriteMutation.mutate({ id: template.id, is_favorite: !template.is_favorite })}
-                      className={`p-1.5 transition-colors ${template.is_favorite ? 'text-yellow-500 hover:text-warn' : 'text-ink-muted hover:text-yellow-500'}`}
-                      title={template.is_favorite ? 'Unstar' : 'Star'}
+                      aria-label={template.is_favorite ? 'Unstar' : 'Star'}
+                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-gold hover:text-gold' : 'text-ink-muted hover:text-gold'}`}
                     >
-                      <Star className="w-3 h-3" fill={template.is_favorite ? 'currentColor' : 'none'} />
-                    </button>
-                    <button
+                      <Star className="w-4 h-4" fill={template.is_favorite ? 'currentColor' : 'none'} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleEdit(template)}
-                      className="p-1.5 text-ink-muted hover:text-ink-muted transition-colors"
+                      aria-label="Edit template"
+                      className="h-11 w-11 border-0 bg-transparent shadow-none text-ink-muted hover:text-ink hover:bg-transparent transition-colors"
                     >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="primary"
                       onClick={() => handleApply(template)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-ink text-xs font-bold transition-colors"
+                      className="h-11 px-3 text-xs"
                     >
-                      <Play className="w-2.5 h-2.5" />Apply
-                    </button>
+                      <Play className="w-3 h-3" />Apply
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-3 text-xs font-mono">
+                <div className="flex gap-3 text-xs tabular-nums">
                   <span className="text-ink font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral">P{Math.round(totals.protein)}g</span>
                   <span className="text-carb">C{Math.round(totals.carbs)}g</span>
@@ -208,8 +217,8 @@ export default function MealTemplates({ compact = false }) {
                       }
                       className={
                         template.is_favorite
-                          ? "text-yellow-500 hover:text-yellow-600"
-                          : "text-ink-muted hover:text-yellow-500"
+                          ? "text-gold hover:text-gold"
+                          : "text-ink-muted hover:text-gold"
                       }
                     >
                       <Star
@@ -225,25 +234,25 @@ export default function MealTemplates({ compact = false }) {
                   </div>
                   <div className="flex gap-4 text-sm mb-4">
                     <div className="text-center">
-                      <div className="font-bold text-ink">
+                      <div className="font-bold text-ink tabular-nums">
                         {Math.round(totals.calories)}
                       </div>
                       <div className="text-xs text-ink-muted">Cal</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-coral">
+                      <div className="font-bold text-coral tabular-nums">
                         {Math.round(totals.protein)}g
                       </div>
                       <div className="text-xs text-ink-muted">Protein</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-green-600">
+                      <div className="font-bold text-carb tabular-nums">
                         {Math.round(totals.carbs)}g
                       </div>
                       <div className="text-xs text-ink-muted">Carbs</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-yellow-600">
+                      <div className="font-bold text-fat tabular-nums">
                         {Math.round(totals.fats)}g
                       </div>
                       <div className="text-xs text-ink-muted">Fats</div>
@@ -367,6 +376,8 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
     onError: () => toast.error("Failed to apply template"),
   });
 
+  const totals = getTemplateTotals(template.items || []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -376,33 +387,50 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
 
         <div className="space-y-4">
           <div>
-            <Label>Date</Label>
+            <Label className="section-label block mb-1">Date</Label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1"
+              className="mt-1 font-technical"
             />
           </div>
 
           <div>
-            <Label>Items to add ({template.items?.length || 0})</Label>
+            <Label className="section-label">Items to add ({template.items?.length || 0})</Label>
+            {/* Template total summary */}
+            <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
+              <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
+              <div className="flex gap-3 text-xs tabular-nums">
+                <span className="text-ink font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
+                <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
+                <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
+              </div>
+            </div>
             <div className="space-y-2 mt-2 max-h-64 overflow-y-auto">
               {(template.items || []).map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg"
+                  className="flex items-center justify-between gap-3 p-3 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg"
                 >
-                  <div>
-                    <div className="font-medium text-sm text-ink">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm text-ink truncate">
                       {item.food_name}
                     </div>
                     <div className="text-xs text-ink-muted capitalize">
                       {item.meal_type || template.meal_type}
                     </div>
                   </div>
-                  <div className="text-xs text-ink font-semibold tabular-nums">
-                    {item.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs text-ink font-semibold tabular-nums">
+                      {item.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span>
+                    </div>
+                    <div className="text-xs tabular-nums mt-0.5 flex gap-1.5 justify-end">
+                      <span className="text-coral">P{Math.round(item.protein_grams || 0)}</span>
+                      <span className="text-carb">C{Math.round(item.carbs_grams || 0)}</span>
+                      <span className="text-fat">F{Math.round(item.fats_grams || 0)}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -510,7 +538,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             <DialogHeader>
               <DialogTitle>Edit Template</DialogTitle>
             </DialogHeader>
-            <Label className="text-xs text-ink-muted mt-3 block">Template Name</Label>
+            <Label className="section-label mt-3 block">Template Name</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -543,8 +571,11 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                       className="w-full text-left px-4 py-2.5 hover:bg-charcoal-elevated/60 transition-colors border-b border-charcoal-border/50 last:border-0"
                     >
                       <p className="text-sm font-medium text-ink truncate">{food.description}</p>
-                      <p className="text-xs text-ink-muted font-mono tabular-nums">
-                        {Math.round(food.calories * (food.servingSize || 100) / 100)} cal · P{Math.round(food.protein * (food.servingSize || 100) / 100)}g · C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g · F{Math.round(food.fats * (food.servingSize || 100) / 100)}g
+                      <p className="text-xs tabular-nums flex gap-2">
+                        <span className="text-gold">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
+                        <span className="text-coral">P{Math.round(food.protein * (food.servingSize || 100) / 100)}g</span>
+                        <span className="text-carb">C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g</span>
+                        <span className="text-fat">F{Math.round(food.fats * (food.servingSize || 100) / 100)}g</span>
                       </p>
                     </button>
                   ))}
@@ -566,13 +597,10 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
-                      <p className="text-xs font-mono tabular-nums text-ink-muted">
-                        {item.calories}<span className="text-ink-faint"> cal</span>
-                        <span className="text-ink-faint"> · </span>
-                        <span className="text-leaf">P{item.protein_grams}g</span>
-                        <span className="text-ink-faint"> · </span>
+                      <p className="text-xs tabular-nums truncate flex gap-2">
+                        <span className="text-gold">{item.calories} cal</span>
+                        <span className="text-coral">P{item.protein_grams}g</span>
                         <span className="text-carb">C{item.carbs_grams}g</span>
-                        <span className="text-ink-faint"> · </span>
                         <span className="text-fat">F{item.fats_grams}g</span>
                       </p>
                     </div>
@@ -628,7 +656,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             {/* Add manually */}
             <button
               onClick={addManual}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-charcoal-border transition-colors"
+              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-charcoal-border transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add manually
@@ -643,14 +671,19 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             <Button onClick={handleSave} disabled={isSaving} variant="primary" size="lg" className="w-full">
               {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
             </Button>
-            <Button
-              onClick={() => setShowDeleteConfirm(true)}
-              variant="ghost"
-              className="w-full text-bad hover:text-bad hover:bg-bad/10"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Template
-            </Button>
+            {/* Destructive action demoted to a quiet, right-aligned text control
+                so the coral Save owns the thumb zone and Delete isn't adjacent. */}
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="dim"
+                size="sm"
+                className="border-0 text-ink-muted hover:text-bad"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Delete Template
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -673,7 +706,27 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
 export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, userId }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  // Per-item curation: every entry starts selected; the user can uncheck rows
+  // so a day-as-template doesn't have to capture everything they logged.
+  const [selected, setSelected] = useState(() => entries.map(() => true));
   const isDay = !mealType;
+
+  useEffect(() => {
+    setSelected(entries.map(() => true));
+  }, [entries]);
+
+  const toggle = (idx) =>
+    setSelected((prev) => prev.map((v, i) => (i === idx ? !v : v)));
+
+  const selectedEntries = entries.filter((_, idx) => selected[idx]);
+  const totals = getTemplateTotals(
+    selectedEntries.map((e) => ({
+      calories: e.calories,
+      protein_grams: e.protein_grams,
+      carbs_grams: e.carbs_grams,
+      fats_grams: e.fats_grams,
+    }))
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => db.entities.MealTemplate.create(data),
@@ -691,8 +744,12 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
       toast.error("Please enter a template name");
       return;
     }
+    if (selectedEntries.length === 0) {
+      toast.error("Select at least one item");
+      return;
+    }
 
-    const items = entries.map((e) => ({
+    const items = selectedEntries.map((e) => ({
       food_name: e.food_name,
       serving_size: e.serving_size,
       calories: e.calories,
@@ -723,7 +780,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
 
         <div className="space-y-4">
           <div>
-            <Label>Template Name</Label>
+            <Label className="section-label block mb-1">Template Name</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -738,30 +795,52 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
           </div>
 
           <div className="space-y-2">
-            <p className="text-[13px] text-ink-faint uppercase tracking-wide">
-              {entries.length} item{entries.length !== 1 ? "s" : ""} to save
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="section-label">
+                {selectedEntries.length} of {entries.length} item{entries.length !== 1 ? "s" : ""} to save
+              </p>
+            </div>
+            {/* Selected total summary */}
+            <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg glass-inset">
+              <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
+              <div className="flex gap-3 text-xs tabular-nums">
+                <span className="text-ink font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
+                <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
+                <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
+              </div>
+            </div>
             <div className="relative">
               <div className="space-y-2 max-h-48 overflow-y-auto pb-3">
                 {entries.map((e, idx) => (
-                  <div key={idx} className="flex justify-between p-2 bg-charcoal-surface/60 border border-charcoal-border/50 rounded text-sm">
-                    <span className="text-ink truncate">{e.food_name}</span>
-                    <span className="text-ink font-semibold tabular-nums shrink-0 ml-2">{e.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
-                  </div>
+                  <label
+                    key={idx}
+                    className="flex items-center gap-3 p-2.5 min-h-11 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg text-sm cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selected[idx]}
+                      onCheckedChange={() => toggle(idx)}
+                      aria-label={`Include ${e.food_name}`}
+                    />
+                    <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
+                    <span className="text-ink font-semibold tabular-nums shrink-0">{e.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                  </label>
                 ))}
               </div>
               {entries.length > 4 && (
                 <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b flex items-end justify-center"
                   style={{ background: 'linear-gradient(to top, var(--sheet-bg), transparent)' }}
-                />
+                >
+                  <span className="text-[10px] text-ink-muted font-semibold pb-0.5">+{entries.length - 4} more</span>
+                </div>
               )}
             </div>
           </div>
 
           <Button
             onClick={handleSave}
-            disabled={createMutation.isPending || !name.trim()}
+            disabled={createMutation.isPending || !name.trim() || selectedEntries.length === 0}
             variant="primary"
             size="lg"
             className="w-full"

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { AuthShell, AuthHeader } from '@/pages/Login';
 import { toast } from 'sonner';
 
@@ -34,20 +34,23 @@ export default function ForgotPassword() {
     <AuthShell>
       <AuthHeader subtitle="Reset your password" />
 
-      <div className="glass w-full max-w-sm mt-auto sm:mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
         {emailSent ? (
           <div key="sent" className="text-center space-y-4 rise-in">
+            <div className="glass-inset mx-auto flex h-12 w-12 items-center justify-center text-ink">
+              <CheckCircle className="w-5 h-5" />
+            </div>
             <p className="type-display text-[15px] text-ink">Check your email</p>
             <p className="text-secondary text-[12.5px]">
               We've sent a password reset link to <span className="font-semibold text-ink">{email}</span>
             </p>
-            <p className="text-secondary text-[11.5px]">
+            <p className="text-secondary text-[12.5px]">
               Didn't receive the email? Check your spam folder or try again.
             </p>
             <Button
               onClick={() => setEmailSent(false)}
               variant="dark"
-              size="lg"
+              size="default"
               className="w-full"
             >
               Try another email
@@ -55,6 +58,7 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <form key="form" onSubmit={handleSubmit} className="space-y-4">
+            <p className="type-display text-[15px] text-ink text-center">Enter your email</p>
             <div>
               <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
               <div className="relative">
@@ -95,7 +99,7 @@ export default function ForgotPassword() {
         <div className="flex items-center justify-center mt-3 px-0.5">
           <Link
             to="/login"
-            className="text-[13px] font-semibold text-secondary hover:text-ink transition-colors inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+            className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to sign in

@@ -22,7 +22,7 @@ export function AuthShell({ children }) {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
-      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pt-[18vh] pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
+      <div className="flex-1 flex flex-col items-center justify-center px-5 pt-[8vh] pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
         {children}
       </div>
     </div>
@@ -34,7 +34,7 @@ export function AuthHeader({ subtitle }) {
     <div className="text-center rise-in">
       <h1 className="type-display text-[24px] whitespace-nowrap text-ink">OPTIGAINS</h1>
       {subtitle && (
-        <p className="text-[12px] font-semibold mt-1.5 tracking-[0.02em] text-muted-2">
+        <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
           {subtitle}
         </p>
       )}
@@ -72,9 +72,9 @@ export default function Login() {
     <AuthShell>
       <AuthHeader subtitle="Performance OS · private build" />
 
-      <div className="glass w-full max-w-sm mt-auto sm:mt-9 px-4 pt-[18px] pb-4 rise-in-2">
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
         <form onSubmit={handleSubmit}>
-          <div className="mb-[9px]">
+          <div className="mb-2.5">
             <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
             <Input
               id="email"
@@ -83,13 +83,12 @@ export default function Login() {
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
               autoComplete="email"
-              autoFocus
               aria-invalid={!!errorMsg}
               aria-describedby={errorMsg ? 'login-error' : undefined}
               required
             />
           </div>
-          <div className="mb-[9px]">
+          <div className="mb-2">
             <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
             <Input
               id="password"
@@ -119,7 +118,7 @@ export default function Login() {
           <div className="flex items-center justify-center mt-3 px-0.5">
             <Link
               to="/forgot-password"
-              className="text-[13px] font-semibold text-secondary hover:text-ink transition-colors inline-flex items-center justify-center min-h-[44px] px-2"
+              className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center min-h-[44px] px-2"
             >
               Forgot password
             </Link>

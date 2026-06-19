@@ -9,7 +9,7 @@ import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { Dumbbell, Pencil, Check, Cpu } from "lucide-react";
 import { format } from "date-fns";
@@ -81,6 +81,13 @@ export default function QuickWorkout() {
   // or run/cardio keywords in the (editable) title.
   const isRunCardio =
     prescribed?.modality === "run" || /run|cardio|interval/i.test(workoutTitle);
+  // The Layout chrome already prints "Quick Workout" + today's date on mobile,
+  // so a default-titled session needs no second body title (that was the
+  // top-of-page duplicate). Only render the mobile body title when the session
+  // is customized — a prescribed session or a user-edited title — so the rename
+  // affordance is still reachable when the title actually carries information.
+  const defaultTitle = `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`;
+  const isCustomTitle = !!prescribed || workoutTitle !== defaultTitle;
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
@@ -370,15 +377,17 @@ export default function QuickWorkout() {
           )}
         </div>
 
-        {/* Mobile editable title row — the desktop block above (the
-            IntersectionObserver target) is hidden on phones, and the Layout
-            chrome only prints the static "Quick Workout" label, so without this
-            the user can neither see nor rename the actual session title at
-            390px. Compact type-display + a 44px Pencil/Check toggle. */}
-        <div className="mb-6 lg:hidden">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
-            {editingTitle ? (
+        {/* Mobile session title / rename — the desktop block above (the
+            IntersectionObserver target) is hidden on phones. The Layout chrome
+            already prints "Quick Workout" + today's date, so a DEFAULT-titled
+            session shows no duplicate body title — only a quiet "Rename
+            session" affordance so the user can still customize it. A customized
+            or prescribed session shows the real title (which the chrome can't
+            convey) with the same 44px Pencil/Check toggle. */}
+        {editingTitle ? (
+          <div className="mb-6 lg:hidden">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
               <Input
                 autoFocus
                 value={workoutTitle}
@@ -387,38 +396,61 @@ export default function QuickWorkout() {
                 onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
                 className="type-display text-xl min-h-[44px] flex-1"
               />
-            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Save workout title"
+                onClick={() => setEditingTitle(false)}
+                className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
+              >
+                <Check className="w-4 h-4 text-teal" />
+              </Button>
+            </div>
+          </div>
+        ) : isCustomTitle ? (
+          <div className="mb-6 lg:hidden">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
               <h1 className="type-display text-xl flex-1 min-w-0 truncate">{workoutTitle}</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Edit workout title"
+                onClick={() => setEditingTitle(true)}
+                className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+            {prescribed && (
+              <p className="text-xs font-semibold text-ink-muted mt-1">
+                Logging the engine's prescribed session — targets pre-filled
+              </p>
             )}
+          </div>
+        ) : (
+          <div className="mb-4 lg:hidden">
             <Button
               variant="ghost"
-              size="icon"
-              aria-label={editingTitle ? "Save workout title" : "Edit workout title"}
-              onClick={() => setEditingTitle(editingTitle ? false : true)}
-              className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
+              size="sm"
+              aria-label="Rename session"
+              onClick={() => setEditingTitle(true)}
+              className="min-h-[44px] text-ink-muted hover:text-ink"
             >
-              {editingTitle ? (
-                <Check className="w-4 h-4 text-teal" />
-              ) : (
-                <Pencil className="w-4 h-4" />
-              )}
+              <Pencil className="w-4 h-4 mr-1.5" />
+              Rename session
             </Button>
           </div>
-          {prescribed && (
-            <p className="text-xs font-semibold text-ink-muted mt-1">
-              Logging the engine's prescribed session — targets pre-filled
-            </p>
-          )}
-        </div>
+        )}
 
         {isRunCardio && <VdotZonesCard className="mb-6" />}
 
         {/* Engine prescription banner */}
         {prescribed && (
           <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-md bg-teal/15 text-teal flex items-center justify-center flex-shrink-0 not-italic">
-              <Cpu className="w-3.5 h-3.5" />
-            </i>
+            <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
+              <Cpu className="w-3.5 h-3.5 text-teal" />
+            </div>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">
               Loaded from <span className="text-ink font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
             </span>
@@ -435,17 +467,9 @@ export default function QuickWorkout() {
           />
         )}
 
-        {/* Empty state — passive prompt; AddExerciseForm (docked to the thumb
-            zone on mobile) provides the action. */}
-        {exercises.length === 0 && (
-          <div className="glass rounded-xl px-4 py-6 mb-4 flex flex-col items-center text-center">
-            <Dumbbell className="w-7 h-7 text-ink-faint mb-3" />
-            <p className="text-sm font-bold text-ink">No exercises yet</p>
-            <p className="text-xs font-semibold text-ink-secondary mt-1 max-w-[260px]">
-              Add your first exercise below to start logging this session.
-            </p>
-          </div>
-        )}
+        {/* Empty-state prompt is folded INTO the docked AddExerciseForm (it
+            renders its own header in the thumb zone), so there is no longer a
+            standalone top-of-page card split away from the bottom action. */}
 
         {/* Exercise List */}
         <div className="space-y-4">
@@ -505,9 +529,9 @@ export default function QuickWorkout() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-ink-muted ">
+          <DialogDescription>
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </p>
+          </DialogDescription>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" size="lg" className="flex-1" onClick={handleDismissResume}>
               Start Fresh

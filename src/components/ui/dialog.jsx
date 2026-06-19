@@ -36,7 +36,12 @@ const DialogTrigger = ({ asChild, children, ...props }) => {
   return <button {...props}>{children}</button>;
 };
 
-const DialogContent = React.forwardRef(({ className = "", hideClose = false, children, ...props }, ref) => {
+// `sheetMinHeight` (system extension): on mobile the sheet is a bottom sheet, so a
+// content-sized short sheet would leave the lower viewport showing the page at full
+// brightness through the gap above the scrim. Default `min-h-[40dvh]` guarantees the
+// sheet (with --sheet-bg) covers a stable portion of the screen; pass "" to opt out.
+// Reset to `md:min-h-0` so the centered desktop dialog stays content-sized.
+const DialogContent = React.forwardRef(({ className = "", hideClose = false, sheetMinHeight = "min-h-[40dvh]", children, ...props }, ref) => {
   const ctx = React.useContext(DialogContext);
   const hasCustomPadding = className.includes("p-0") || className.includes("px-") || className.includes("py-");
   return (
@@ -46,6 +51,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, chi
         rounded-t-2xl rounded-b-none border-b-0
         md:rounded-xl md:border-b md:mx-auto
         sheet-rise md:rise-in
+        ${sheetMinHeight} md:min-h-0
         ${hasCustomPadding ? "" : "p-6"} ${className}`}
       style={{
         maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem)',
@@ -72,7 +78,7 @@ DialogContent.displayName = "DialogContent";
 
 const DialogHeader = ({ className = "", ...props }) => (
   <div
-    className={`flex flex-col space-y-1.5 text-left mb-4 ${className}`}
+    className={`flex flex-col space-y-1.5 text-left mb-4 pr-12 ${className}`}
     {...props}
   />
 );
@@ -80,7 +86,7 @@ const DialogHeader = ({ className = "", ...props }) => (
 const DialogTitle = React.forwardRef(({ className = "", ...props }, ref) => (
   <h2
     ref={ref}
-    className={`type-display text-lg leading-none ${className}`}
+    className={`type-display text-lg leading-none pr-12 ${className}`}
     {...props}
   />
 ));

@@ -27,8 +27,8 @@ export function ConfirmDialog({
         <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             {variant === "danger" && (
-              <div className="p-2 rounded-full bg-bad/10">
-                <AlertTriangle className="w-5 h-5 text-bad" />
+              <div className="p-2 rounded-full bg-brand/10">
+                <AlertTriangle className="w-5 h-5 text-brand" />
               </div>
             )}
             <DialogTitle>{title}</DialogTitle>
@@ -37,21 +37,25 @@ export function ConfirmDialog({
         <DialogDescription className="mt-2">
           {description}
         </DialogDescription>
-        <div className="flex gap-3 mt-6">
+        {/* Coral is THE action/destructive hue in this identity: the single
+            coral confirm dominates while Cancel falls back to neutral glass.
+            Stacked + full-width on the mobile sheet (thumb zone), reverting to
+            an inline row from sm: up so the coral CTA reads first. */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
           <Button
-            variant="dim"
+            variant="ghost"
             size="lg"
             onClick={() => onOpenChange(false)}
-            className="flex-1"
+            className="w-full sm:flex-1"
             disabled={loading}
           >
             {cancelText}
           </Button>
           <Button
-            variant={variant === "danger" ? "destructive" : "volt"}
+            variant="volt"
             size="lg"
             onClick={handleConfirm}
-            className="flex-1"
+            className="w-full sm:flex-1"
             disabled={loading}
           >
             {loading ? "Processing..." : confirmText}

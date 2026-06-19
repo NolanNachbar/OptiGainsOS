@@ -39,9 +39,20 @@ function dayType(entries, log) {
   return "REST";
 }
 
-// One grammar: "N×R @ W" (multi), "1×R @ W" (single with reps), with graceful
-// fallbacks. Never emits a zero/missing-rep token like "290 × 0" — degrades to
-// the bar load ("210 lb") or a plain set count.
+// THE one set/rep grammar for the whole page. Both the logged-session branch
+// (formatSets) and the upcoming-program branch (formatPrescribed) funnel through
+// this so a completed row and a prescribed row read identically:
+//   "N×R" (reps known) · "N×W lb" (load only) · "N sets"/"1 set" (count only).
+// `repToken`, when present, may carry trailing units ("8 reps") or a load
+// suffix ("8 @ 210"); a missing/zero rep figure degrades, never emitting a
+// "290 × 0".
+function formatSetRep(count, repToken) {
+  const n = Number(count) || 1;
+  if (repToken) return `${n}×${repToken}`;
+  return n === 1 ? "1 set" : `${n} sets`;
+}
+
+// Logged session: derive the rep token from completed sets, never zero-reps.
 function formatSets(exercise) {
   const sets = (exercise.sets || []).filter(s => s.completed !== false);
   if (!sets.length) return "";
@@ -50,11 +61,18 @@ function formatSets(exercise) {
   const hasReps = Number(r) > 0;
   const allSame = sets.every(s => s.weight === w && s.reps === r);
   if (allSame && hasReps) {
-    return w ? `${sets.length}×${r} @ ${w}` : `${sets.length}×${r}`;
+    return formatSetRep(sets.length, w ? `${r} @ ${w}` : `${r}`);
   }
   // No usable rep figure — show the load alone, else just the set count.
-  if (w) return `${sets.length}×${w} lb`;
-  return sets.length === 1 ? "1 set" : `${sets.length} sets`;
+  if (w) return formatSetRep(sets.length, `${w} lb`);
+  return formatSetRep(sets.length, null);
+}
+
+// Prescribed program exercise: rep target known -> "N×R reps", else set count.
+function formatPrescribed(exercise) {
+  const reps = exercise.rep_target || exercise.reps;
+  const sets = Number(exercise.sets) || 1;
+  return formatSetRep(sets, reps ? `${reps} reps` : null);
 }
 
 const getWorkoutSplitTitle = (log, scheduledTitle) => {
@@ -154,6 +172,9 @@ export default function WeeklySchedule() {
   const isToday = isSameDay(selectedDay, new Date());
   const selectedDayType = dayType(selectedEntries, selectedLog);
   const isTwoADay = selectedDayType === "TWO_A_DAY";
+  // Day echo folded into each card's section-label so identity survives without
+  // a redundant standalone caption above the card (e.g. "FRI — COMPLETED").
+  const dayEcho = format(selectedDay, "EEE").toUpperCase();
 
   const totalWorkouts = activeEnrollment
     ? (activeEnrollment.program?.days_per_week || 1) * (activeEnrollment.program?.num_cycles || activeEnrollment.program?.duration_weeks || 4)
@@ -197,7 +218,7 @@ export default function WeeklySchedule() {
   const hiddenMuscleCount = muscleVolume.length - MUSCLE_PREVIEW;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+    <div className="max-w-2xl mx-auto px-4 py-6 pb-6">
       {/* Week nav */}
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
@@ -251,7 +272,7 @@ export default function WeeklySchedule() {
             <button
               key={i}
               onClick={() => setSelectedDay(day)}
-              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors active:bg-white/[0.06] ${isSelected ? "bg-white/[0.04] rounded-xl -mx-1.5 px-1.5" : ""}`}
+              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
             >
               <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
                 <span className={`block text-[11px] font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
@@ -272,32 +293,37 @@ export default function WeeklySchedule() {
                   {detail}
                 </div>
               </div>
-              {log ? (
-                <div className="text-right shrink-0">
-                  <Check className="w-3.5 h-3.5 inline-block text-leaf" />
-                  <div className="font-technical text-[11px] font-bold text-muted-2 tabular-nums whitespace-nowrap">
-                    {mins ? `${mins} min` : `${(log.exercises || []).length} ex`}
-                  </div>
-                </div>
-              ) : isCurrentDay && type !== "REST" ? (
-                <span className="glass-inset text-[11px] font-extrabold text-ink whitespace-nowrap shrink-0 px-2 py-1 rounded-full">UP NEXT</span>
-              ) : type !== "REST" ? (
-                /* Consistent muted trailing affordance so future training rows
-                   don't read as a ragged right rail next to logged/UP NEXT rows. */
-                <ChevronRight className="w-4 h-4 text-faint shrink-0" />
-              ) : null}
+              {/* Shared fixed-width trailing status slot so completed / up-next /
+                  future rows align on one scan column instead of a ragged rail.
+                  Completion reads as neutral ink + glyph (the leaf was the third
+                  competing green tint); 'UP NEXT' is demoted from a glass pill to
+                  a chevron-anchored section-label caption. */}
+              <div className="w-[68px] shrink-0 flex flex-col items-end justify-center text-right">
+                {log ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-ink" />
+                    <span className="font-technical text-[11px] font-bold text-muted-2 tabular-nums whitespace-nowrap">
+                      {mins ? `${mins} min` : `${(log.exercises || []).length} ex`}
+                    </span>
+                  </>
+                ) : isCurrentDay && type !== "REST" ? (
+                  <span className="flex items-center gap-0.5 whitespace-nowrap">
+                    <span className="section-label !text-ink">UP NEXT</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-ink" />
+                  </span>
+                ) : type !== "REST" ? (
+                  <ChevronRight className="w-4 h-4 text-faint" />
+                ) : null}
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Selected day — a lightweight day echo anchors the detail pane when the
-          page is scrolled past the week grid; each card's own title carries the
-          session name (the canonical title), so the week row stays a scan list. */}
+      {/* Selected day — each card's own section-label now carries the day echo
+          ("FRI — COMPLETED" / "FRI — STRENGTH"), so the standalone day caption is
+          dropped to avoid a redundant header above the card that repeats it. */}
       <div className="mb-6">
-        {hasAnything && (
-          <p className="section-label mb-2 px-1">{format(selectedDay, "EEEE, MMM d")}</p>
-        )}
         {!hasAnything ? (
           <div className="glass py-10 flex flex-col items-center gap-2 rise-in-2">
             <Moon className="w-6 h-6 text-faint" />
@@ -318,11 +344,11 @@ export default function WeeklySchedule() {
                   <button
                     onClick={() => setShowCompleted(v => !v)}
                     aria-expanded={showCompleted}
-                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors active:bg-white/[0.06]"
+                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors active:bg-track"
                   >
                     <div className="min-w-0">
                       <p className="section-label mb-1">
-                        {isTwoADay ? "AM — Completed" : "Completed"}
+                        {isTwoADay ? `${dayEcho} AM — Completed` : `${dayEcho} — Completed`}
                       </p>
                       <h3 className="type-display text-[15px] leading-tight truncate">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
@@ -332,8 +358,8 @@ export default function WeeklySchedule() {
                       </p>
                     </div>
                     <span className="flex items-center gap-2 shrink-0">
-                      <span className="w-6 h-6 rounded-full bg-leaf/15 flex items-center justify-center">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-leaf" />
+                      <span className="w-6 h-6 rounded-full glass-inset flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-ink" />
                       </span>
                       <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${showCompleted ? "rotate-180" : ""}`} />
                     </span>
@@ -385,7 +411,7 @@ export default function WeeklySchedule() {
                 <div key={idx} className="glass overflow-hidden rise-in-2">
                   <div className="px-4 pt-3.5 pb-1">
                     <p className="section-label mb-1">
-                      {isTwoADay ? "AM — Strength" : activeEnrollment?.program?.title || "Program"}
+                      {isTwoADay ? `${dayEcho} AM — Strength` : `${dayEcho} — ${activeEnrollment?.program?.title || "Program"}`}
                     </p>
                     <h3 className="type-display text-[15px] leading-tight">{entry.title}</h3>
                   </div>
@@ -396,20 +422,12 @@ export default function WeeklySchedule() {
                         <span className="section-label">Lifting</span>
                       </div>
                       <div>
-                        {lifts.map((ex, j) => {
-                          const reps = ex.rep_target || ex.reps;
-                          const sets = Number(ex.sets) || 1;
-                          // One grammar: "N×R reps". No usable rep target -> bare set count.
-                          const label = reps
-                            ? `${sets}×${reps} reps`
-                            : (sets === 1 ? "1 set" : `${sets} sets`);
-                          return (
-                            <div key={j} className="data-row justify-between">
-                              <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
-                              <span className="pill-value pill-value--sm text-muted-2 shrink-0">{label}</span>
-                            </div>
-                          );
-                        })}
+                        {lifts.map((ex, j) => (
+                          <div key={j} className="data-row justify-between">
+                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                            <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatPrescribed(ex)}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -472,8 +490,8 @@ export default function WeeklySchedule() {
                             >
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                                 done
-                                  ? "bg-leaf/15 text-leaf"
-                                  : "border-[1.5px] border-white/[0.18] hover:border-carb"
+                                  ? "glass-inset text-ink"
+                                  : "border border-charcoal-border hover:border-carb"
                               }`}>
                                 {done && <CheckCircle2 className="w-4 h-4" />}
                               </span>
@@ -519,7 +537,7 @@ export default function WeeklySchedule() {
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
-            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors active:bg-white/[0.06]"
+            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors active:bg-track"
           >
             <span className="section-label">Weekly Volume</span>
             <span className="flex items-center gap-2">

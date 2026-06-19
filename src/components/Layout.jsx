@@ -8,7 +8,7 @@ import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
 
 // Decision-first IA: Today (the home) → Train → Fuel → Body → Analyze.
@@ -152,10 +152,11 @@ export default function Layout({ children, currentPageName }) {
     ? pageSubtitle[currentPageName]
     : format(new Date(), "EEEE, MMMM d");
 
-  // The active top-level section, used to render the mobile sub-tab strip when
-  // that section opts in (cross-route children with no in-page tab strip).
+  // The active top-level section. Its cross-route children populate the mobile
+  // sub-tab strip when the section opts in (mobileStrip:true); sections with an
+  // in-page <SubTabs> (Train/Fuel) or none (Today) show no pills.
   const activeSection = navigationItems.find((item) => isNavActive(item, location.pathname));
-  const showMobileStrip = activeSection?.mobileStrip && activeSection.children?.length;
+  const hasSubTabs = activeSection?.mobileStrip && activeSection.children?.length;
 
   // Layout-owned utilities (calculators / weigh-in / stream-note). These used to
   // live only inside the dead FAB; they now sit in the mobile strip so they have
@@ -276,23 +277,26 @@ export default function Layout({ children, currentPageName }) {
           </header>
 
           {/* Mobile sub-tab strip — mirrors the desktop sidebar children for the
-              active section so Body/Analyze sub-routes (and the Calculators /
-              Weigh-In / Stream-Note utilities, formerly orphaned in the FAB) are
-              reachable on phones. Horizontal-scrolling pill row in the dock
-              language; hidden on desktop where the sidebar already lists these. */}
-          {showMobileStrip && (
-            <div
-              className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
-              style={{ top: "var(--layout-header-height, 0px)" }}
-            >
+              active section (Body/Analyze sub-routes) AND always carries the
+              Calculators / Weigh-In / Stream-Note utilities (formerly orphaned
+              in the dead FAB) so they're reachable from every section, not just
+              the two with cross-route children. Horizontal-scrolling pill row in
+              the dock language; hidden on desktop where the sidebar lists these.
+              A trailing fade mask in the field color signals that the row scrolls
+              when the last utility would otherwise clip flush at the edge. */}
+          <div
+            className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
+            style={{ top: "var(--layout-header-height, 0px)" }}
+          >
+            <div className="relative">
               <div className="flex items-center gap-1 px-[18px] h-12 overflow-x-auto no-scrollbar">
-                {activeSection.children.map((c) => {
+                {hasSubTabs && activeSection.children.map((c) => {
                   const on = c.active(location);
                   return (
                     <Link
                       key={c.label}
                       to={c.url}
-                      className={`shrink-0 px-3 h-9 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                      className={`shrink-0 px-3 h-11 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
                         on
                           ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                           : "text-ink-muted hover:text-ink"
@@ -302,21 +306,30 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                   );
                 })}
-                <span className="shrink-0 w-px h-5 mx-1 bg-white/[0.08]" aria-hidden="true" />
+                {hasSubTabs && (
+                  <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
+                )}
                 {utilities.map((u) => (
                   <button
                     key={u.label}
                     type="button"
                     onClick={u.onClick}
                     aria-label={u.label}
-                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink transition-colors duration-150"
+                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink active:bg-track active:scale-95 transition-[color,background-color,transform] duration-150 [transition-timing-function:var(--ease)]"
                   >
                     <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </button>
                 ))}
               </div>
+              {/* Right-edge scroll-fade affordance — content clipped at the edge
+                  reads as scrollable. Non-interactive so taps pass through. */}
+              <div
+                className="pointer-events-none absolute inset-y-0 right-0 w-8"
+                style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+                aria-hidden="true"
+              />
             </div>
-          )}
+          </div>
 
           {/* Main content */}
           <main
@@ -370,11 +383,16 @@ export default function Layout({ children, currentPageName }) {
         weightUnit={profile?.weight_unit || "lbs"}
       />
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md text-ink">
+        <DialogContent className="max-w-md text-ink flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-ink">Stream Note to Second Brain</DialogTitle>
+            <DialogDescription>
+              A quick thought, dropped straight into your Second Brain inbox.
+            </DialogDescription>
           </DialogHeader>
-          <div className="pt-2">
+          {/* Anchor the capture surface to the sheet bottom so the Capture action
+              lands in the thumb zone on mobile bottom sheets. */}
+          <div className="mt-auto pt-2">
             <QuickCapture
               embedded
               domain="general"

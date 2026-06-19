@@ -22,35 +22,28 @@ import { toast } from "sonner";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_LABELS = { reading: "Reading", finished: "Finished", paused: "Paused", "want-to-read": "Want to Read" };
+// One neutral chip for every enum value — color is data, not garnish, and these
+// taxonomic labels (status / category / medium) are not biometrics, so they get
+// no hue. The single exception is the emphasized "reading" state, which earns
+// Mind's owned violet accent so the active book stands out from the rest.
+const CHIP_NEUTRAL = "bg-charcoal-surface2 text-muted-2 border-charcoal-border";
+const CHIP_VIOLET = "bg-violet/10 text-violet border-violet/20";
 const STATUS_COLORS = {
-  reading: "bg-violet/10 text-violet border-violet/20",
-  finished: "bg-leaf/10 text-leaf border-leaf/20",
-  paused: "bg-warn/10 text-warn border-warn/20",
-  "want-to-read": "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
+  reading: CHIP_VIOLET,
+  finished: CHIP_NEUTRAL,
+  paused: CHIP_NEUTRAL,
+  "want-to-read": CHIP_NEUTRAL,
 };
 const CAT_LABELS = { technical: "Technical", business: "Business", philosophy: "Philosophy", other: "Other" };
-const CAT_COLORS = {
-  technical: "bg-carb/10 text-carb border-carb/20",
-  business: "bg-gold/10 text-gold border-gold/20",
-  philosophy: "bg-violet/10 text-violet border-violet/20",
-  other: "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
-};
-const MEDIUM_COLORS = {
-  video: "bg-carb/10 text-carb border-carb/20",
-  book: "bg-violet/10 text-violet border-violet/20",
-  project: "bg-leaf/10 text-leaf border-leaf/20",
-  course: "bg-gold/10 text-gold border-gold/20",
-  article: "bg-teal/10 text-teal border-teal/20",
-};
 
 function StarRating({ value, onChange, readonly }) {
   return (
-    <div className="flex gap-0.5">
+    <div className={`flex ${readonly ? "gap-0.5" : ""}`}>
       {[1, 2, 3, 4, 5].map(n => (
         <button
           key={n}
           onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
+          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold w-11 h-11"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
           disabled={readonly}
         >
           <Star className="w-4 h-4 fill-current" />
@@ -220,9 +213,9 @@ function ReadingTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
+        <DialogContent>
           <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
               <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" />
@@ -261,7 +254,7 @@ function ReadingTab() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="volt" size="lg" className="flex-[2]" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -296,7 +289,7 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
           {STATUS_LABELS[book.status]}
         </button>
         {book.category && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CAT_COLORS[book.category] || CAT_COLORS.other}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
             {book.category}
           </span>
         )}
@@ -437,7 +430,7 @@ function StudyTab() {
                   <div className="flex items-center gap-1 font-technical text-[10px] font-semibold text-muted-2">
                     <Timer className="w-3 h-3" />{log.duration_min} min
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border-[0.5px] ${MEDIUM_COLORS[log.medium] || ""}`}>{log.medium}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
@@ -580,7 +573,7 @@ function SkillsTab() {
                 ) : (
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{daysSince}d ago</span>
                 )}
-                <Button size="sm" variant="ghost" className="h-6 text-[10px] text-brand hover:bg-brand/10 px-2" onClick={() => practiced.mutate(skill.id)}>
+                <Button size="sm" variant="coralGhost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Practiced
                 </Button>
               </div>
@@ -688,9 +681,10 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <p className="text-xs font-semibold text-faint px-1">
-              No streams yet — drop a note above to start.
-            </p>
+            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <BookOpen className="w-7 h-7 text-faint mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note above to start.</p>
+            </div>
           ))}
         </div>
       </div>
@@ -722,18 +716,7 @@ export default function Mind({ hideHeader }) {
           </header>
         )}
 
-        {/* Mobile identity row — the Layout chrome prints a monochrome "Mind"
-            title; surface the violet Brain identity (the section's owned hue) on
-            phones so the section reads as itself. Glyph + identity label, not a
-            duplicate H1. */}
-        {!hideHeader && (
-          <div className="flex items-center gap-2.5 mb-4 rise-in lg:hidden">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
-              <Brain className="w-[15px] h-[15px] text-violet" />
-            </div>
-            <span className="section-label">Mind &amp; Learning</span>
-          </div>
-        )}
+        {/* Mobile identity is owned by the Layout header — no duplicate row here. */}
 
         <SubTabs
           tabs={MIND_TABS}
@@ -743,7 +726,9 @@ export default function Mind({ hideHeader }) {
           showOnDesktop
           className={`mb-6 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
         />
-        <div key={activeTab} className="rise-in">
+        {/* No key/rise-in per tab — the entrance is reserved for first mount so
+            switching tabs swaps content without re-animating every time. */}
+        <div>
           {activeTab === "capture" && <CaptureTab />}
           {activeTab === "reading" && <ReadingTab />}
           {activeTab === "study" && <StudyTab />}

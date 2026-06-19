@@ -4,10 +4,10 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PosePillRow } from "@/components/ui/system";
 import {
-  AlertTriangle, ArrowLeftRight, Camera, Check,
+  AlertTriangle, ArrowLeftRight, Camera, Check, Film,
   Loader2, Pencil, TrendingDown, TrendingUp, X,
 } from "lucide-react";
 
@@ -67,6 +67,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const [error, setError] = useState("");
   const [pose, setPose] = useState(POSES[0].key);
   const [filterPose, setFilterPose] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   // Compare
   const [compareMode, setCompareMode] = useState(false);
@@ -75,6 +76,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
 
   // Pose edit
   const [editingPose, setEditingPose] = useState(null);
+
+  // Upload review — file-select stages a preview; analysis only fires on confirm.
+  const [pending, setPending] = useState(null); // { file, previewUrl, isVideo }
 
   // History grid cap (avoid an unbounded scroll wall on the primary view)
   const HISTORY_CAP = 12;
@@ -97,14 +101,35 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const compareEntries = compareIds.map(id => entries.find(e => e.id === id)).filter(Boolean);
   const editingEntry = entries.find(e => e.id === editingPose);
 
-  const handleFile = async (ev) => {
+  // File-select only stages the chosen media for review — nothing uploads until
+  // the user confirms Analyze in the review sheet.
+  const handleFile = (ev) => {
     const file = ev.target.files?.[0];
     ev.target.value = "";
     if (!file || !user?.id) return;
+    setError("");
+    const isVideo = file.type.startsWith("video/");
+    setPending({ file, previewUrl: URL.createObjectURL(file), isVideo });
+  };
+
+  const closeReview = () => {
+    setPending((p) => {
+      if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl);
+      return null;
+    });
+  };
+
+  const retakePending = () => {
+    closeReview();
+    fileInputRef.current?.click();
+  };
+
+  const confirmUpload = async () => {
+    if (!pending || !user?.id) return;
+    const { file, isVideo } = pending;
     setError(""); setBusy(true);
 
     try {
-      const isVideo = file.type.startsWith("video/");
       const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
       const path = `${user.id}/${Date.now()}.${ext}`;
 
@@ -121,6 +146,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       if (data?.error) throw new Error(data.error);
 
       setStatus("");
+      closeReview();
       await queryClient.invalidateQueries({ queryKey: ['physique-entries', user?.id] });
     } catch (e) {
       setError(e.message || String(e));
@@ -141,14 +167,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? "pt-0 px-0 md:px-0 min-h-0" : ""}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <h1 className="hidden lg:block type-display text-[22px] mb-1 rise-in">Physique</h1>
+          <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
         )}
-        {/* One instructional voice: the static "track the trend" guidance lives
-            here as the page subtitle (muted); the pose cue below is the only
-            per-shot instruction, at one ink level. */}
-        <p className="text-xs font-semibold text-muted-2 mb-4">
-          Track the trend — same pose, lighting and distance each time.
-        </p>
 
         {/* Pose picker */}
         <div className="section-label mb-2">Pose for this shot</div>
@@ -160,15 +180,20 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           className="mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
           options={POSES.map((p) => ({ value: p.key, label: p.label }))}
         />
+        {/* One instructional voice: the per-shot pose cue is the single
+            instruction line; the static "same pose/lighting" reminder rides as a
+            muted tail rather than its own stacked subtitle above. */}
         <p className="text-xs font-semibold text-secondary mb-4">
-          {POSES.find((p) => p.key === pose)?.cue}
+          {POSES.find((p) => p.key === pose)?.cue}{" "}
+          <span className="text-muted-2">Same lighting and distance each time to track the trend.</span>
         </p>
 
-        {/* Upload */}
+        {/* Upload — inline affordance is the neutral entry point; the coral
+            thumb-zone FAB is the single coral action on this page. */}
         <label className="block">
           <input ref={fileInputRef} type="file" accept="image/*,video/*"
                  className="hidden" onChange={handleFile} disabled={busy} />
-          <Button asChild variant="volt" size="lg" className="w-full" disabled={busy}>
+          <Button asChild variant="ghost" size="lg" className="w-full" disabled={busy}>
             <span className="flex items-center justify-center gap-2 cursor-pointer">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
@@ -197,7 +222,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 </div>
               </div>
               {delta != null && (
-                <div className={`flex items-center gap-1 font-technical text-sm font-extrabold ${delta <= 0 ? "text-teal" : "text-warn"}`}>
+                <div className={`flex items-center gap-1 font-technical text-sm font-extrabold ${delta <= 0 ? "text-ok" : "text-warn"}`}>
                   {delta > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />} {delta > 0 ? "+" : ""}{delta.toFixed(1)}%
                 </div>
               )}
@@ -256,7 +281,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                       {compareIds.length === 0 ? "Pick 2 photos" : compareIds.length === 1 ? "Pick 1 more" : ""}
                     </span>
                     {compareIds.length === 2 && (
-                      <Button variant="outline" size="sm" className="min-h-[44px] text-xs" onClick={() => setShowCompare(true)}>
+                      <Button variant="ghost" size="sm" className="min-h-[44px] text-xs" onClick={() => setShowCompare(true)}>
                         Compare
                       </Button>
                     )}
@@ -267,7 +292,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 ) : (
                   <button
                     onClick={() => setCompareMode(true)}
-                    className="flex items-center gap-1.5 min-h-[44px] text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-3 py-1 rounded-md hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="flex items-center gap-1.5 min-h-[44px] text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-3 py-1 rounded-md hover:bg-[var(--glass-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <ArrowLeftRight className="w-3.5 h-3.5" />
                     Compare
@@ -276,17 +301,32 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               </div>
             </div>
 
-            {/* Pose filter — quieter chips so a filter never competes with the selector */}
-            <PosePillRow
-              variant="chip"
-              value={filterPose}
-              onChange={setFilterPose}
-              className="mb-3"
-              options={[
-                { value: null, label: "All" },
-                ...POSES.map((p) => ({ value: p.key, label: p.label })),
-              ]}
-            />
+            {/* Single Filter control — collapsed to one chip showing the active
+                filter so the duplicate full pill row never pushes the grid down;
+                the pose chips only unfurl on demand. */}
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((o) => !o)}
+                aria-expanded={filterOpen}
+                className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full text-[11px] font-bold border-[0.5px] border-charcoal-border bg-[var(--glass-inset-bg)] text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink active:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 rotate-90" />
+                Filter: <span className="text-ink">{filterPose ? POSE_LABEL[filterPose] : "All"}</span>
+              </button>
+              {filterOpen && (
+                <PosePillRow
+                  variant="chip"
+                  value={filterPose}
+                  onChange={(v) => { setFilterPose(v); setFilterOpen(false); }}
+                  className="mt-2 rise-in"
+                  options={[
+                    { value: null, label: "All" },
+                    ...POSES.map((p) => ({ value: p.key, label: p.label })),
+                  ]}
+                />
+              )}
+            </div>
 
             {/* Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -301,7 +341,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                     {/* Image */}
                     {e.url && e.media_type === "photo"
                       ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-48 sm:h-44 object-cover" />
-                      : <div className="w-full h-48 sm:h-44 flex items-center justify-center text-faint text-xs font-semibold">video</div>
+                      : <div className="w-full h-48 sm:h-44 flex flex-col items-center justify-center gap-1.5 text-faint text-xs font-semibold">
+                          <Film className="w-5 h-5" /> Video
+                        </div>
                     }
 
                     {/* Compare mode tap overlay */}
@@ -364,58 +406,65 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           fold (the inline CTA above sits in the upper third). Re-triggers the
           same file input. Hidden while an overlay owns the screen or while a
           shot is processing. */}
-      {entries.length > 0 && !showCompare && !editingEntry && (
-        <button
-          type="button"
+      {entries.length > 0 && !showCompare && !editingEntry && !pending && (
+        <Button
+          variant="volt"
           onClick={() => fileInputRef.current?.click()}
           disabled={busy}
           aria-label={`Upload ${POSE_LABEL[pose]} shot`}
-          className="fixed right-4 z-40 h-14 w-14 rounded-full cta-coral !p-0 disabled:opacity-60 rise-in"
+          className="fixed right-4 z-40 h-14 w-14 !rounded-full !p-0 rise-in"
           style={{ bottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
         >
           {busy ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-        </button>
+        </Button>
       )}
 
       {/* Side-by-side comparison — bottom sheet on mobile */}
       <Dialog open={showCompare && compareEntries.length === 2} onOpenChange={setShowCompare}>
-        <DialogContent className="max-w-3xl">
+        {/* Two side-by-side photos read fine within the standard sheet/dialog
+            width; max-w-2xl keeps the columns from stretching wide on desktop
+            while staying full-bleed on mobile (DialogContent is w-full there). */}
+        <DialogContent className="max-w-2xl">
           {(() => {
             const hasDelta = compareEntries[0]?.bodyfat_estimate != null && compareEntries[1]?.bodyfat_estimate != null;
             const newer = compareEntries.length === 2 && parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
             const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
             const change = hasDelta ? newer.bodyfat_estimate - older.bodyfat_estimate : null;
             return (
-              <div className="mb-4">
-                <h2 className="type-display text-lg">Side by side</h2>
+              <DialogHeader>
+                <DialogTitle>Side by side</DialogTitle>
                 {hasDelta && (
                   <>
-                    {/* Delta sized below the title so the title stays the loudest
-                        element; the date earns its own muted label line. */}
-                    <div className={`mt-1 font-technical text-xl font-extrabold ${change <= 0 ? "text-teal" : "text-warn"}`}>
+                    {/* Aggregate delta is the loudest datum in this sheet — sized
+                        above the per-photo figures. BF is a biometric so it rides
+                        the spectrum both ways: ok = leaner, warn = gain. */}
+                    <div className={`mt-1 font-technical text-xl font-extrabold ${change <= 0 ? "text-ok" : "text-warn"}`}>
                       {change > 0 ? "+" : ""}{change.toFixed(1)}%
                     </div>
                     <div className="section-label mt-0.5">since {format(parseISO(older.taken_at), 'MMM d, yyyy')}</div>
                   </>
                 )}
-              </div>
+              </DialogHeader>
             );
           })()}
-          {/* Photos are the feature — go single column / large on mobile and only
-              split into two columns at md+. Cap at ~58vh so a portrait shot still
-              reads full-height on a phone. */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {compareEntries.map(e => (
-              <div key={e.id}>
+          {/* The point of this sheet is the comparison, so the two shots stay
+              true side-by-side at every width (grid-cols-2 even at 390px). Cap
+              the height lower (~42vh) so both columns plus the per-photo readout
+              fit a phone without scrolling. */}
+          <div className="grid grid-cols-2 gap-3">
+            {compareEntries.map((e, i) => (
+              <div key={e.id} className="rise-in" style={{ animationDelay: `${i * 0.04}s` }}>
                 {e.url && e.media_type === "photo"
-                  ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "58vh" }} />
-                  : <div className="w-full h-48 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold">video</div>
+                  ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "42vh" }} />
+                  : <div className="w-full h-40 flex flex-col items-center justify-center gap-1.5 glass-inset rounded-lg text-muted-2 text-sm font-semibold">
+                      <Film className="w-6 h-6" /> Video
+                    </div>
                 }
                 <div className="mt-2.5 space-y-1">
                   <div className="section-label">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
                   <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</div>
                   {e.bodyfat_estimate != null && (
-                    <div className="font-technical text-2xl font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. BF</span></div>
+                    <div className="font-technical text-lg font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
                   )}
                   {e.analysis?.assessment && (
                     <p className="text-xs font-semibold text-secondary pt-1 line-clamp-2">{e.analysis.assessment}</p>
@@ -437,10 +486,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 key={p.key}
                 disabled={updatePoseMutation.isPending}
                 onClick={() => updatePoseMutation.mutate({ id: editingEntry.id, pose: p.key })}
-                className={`text-left px-3 min-h-[44px] rounded-md text-sm font-bold transition-colors flex items-center gap-2 ${
+                className={`text-left px-3 min-h-[44px] rounded-md text-sm font-bold transition-colors active:opacity-90 flex items-center gap-2 ${
                   editingEntry?.pose === p.key
                     ? "bg-brand/15 text-brand"
-                    : "text-ink hover:bg-white/[0.06]"
+                    : "text-ink hover:bg-[var(--glass-bg)]"
                 }`}
               >
                 {editingEntry?.pose === p.key && <Check className="w-4 h-4 shrink-0" />}
@@ -448,6 +497,46 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               </button>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload review — confirm before anything uploads. File-select only stages
+          the media; Analyze (coral) commits, Retake (ghost) re-opens the picker. */}
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !busy) closeReview(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review shot</DialogTitle>
+          </DialogHeader>
+          {pending && (
+            <>
+              <div className="rounded-lg overflow-hidden glass-inset flex items-center justify-center">
+                {pending.isVideo
+                  ? <div className="w-full h-56 flex flex-col items-center justify-center gap-1.5 text-muted-2 text-sm font-semibold">
+                      <Film className="w-7 h-7" /> Video selected
+                    </div>
+                  : <img src={pending.previewUrl} alt="Selected shot to review" className="w-full object-contain" style={{ maxHeight: "48vh" }} />
+                }
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="section-label">Pose</span>
+                <span className="pill-value pill-value--sm font-semibold">{POSE_LABEL[pose]}</span>
+              </div>
+              {error && (
+                <div className="mt-3 flex items-start gap-1.5 text-xs text-bad">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {error}
+                </div>
+              )}
+              <div className="mt-4 flex flex-col gap-2">
+                <Button variant="volt" size="lg" className="w-full" disabled={busy} onClick={confirmUpload}>
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {busy ? (status || "Working…") : "Analyze"}
+                </Button>
+                <Button variant="ghost" size="lg" className="w-full" disabled={busy} onClick={retakePending}>
+                  <Camera className="w-4 h-4" /> Retake
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

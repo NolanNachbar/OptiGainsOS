@@ -23,18 +23,23 @@ export default function Insights() {
 
   return (
     <div className="bg-charcoal min-h-screen text-ink">
-      <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-        <DailyBriefCard today={today} />
-        {/* Mind lives in the Analyze section — keep it reachable on mobile (sidebar links it on desktop) */}
-        <Link to="/mind" className="glass glass-interactive flex items-center gap-3 px-4 py-3.5">
-          <div className="p-2 rounded-full bg-teal/10 shrink-0">
-            <Brain className="w-4 h-4 text-teal" />
-          </div>
+      <div className="max-w-3xl mx-auto px-4 py-4 space-y-3">
+        <div className="rise-in">
+          <DailyBriefCard today={today} />
+        </div>
+        {/* Mind lives in the Analyze section — keep it reachable on mobile
+            (sidebar links it on desktop). Demoted to a lighter list-row so it
+            reads as nav subordinate to the brief above it. */}
+        <Link
+          to="/mind"
+          className="rise-in-2 tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
+        >
+          <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-ink">Mind &amp; Learning</p>
-            <p className="text-[11.5px] font-semibold text-muted-2">Reading, study notes & skills</p>
+            <p className="text-[13px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
+            <p className="text-[11.5px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-faint shrink-0" />
+          <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
         </Link>
       </div>
     </div>

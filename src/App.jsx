@@ -90,6 +90,9 @@ function AppToaster() {
       }
       closeButton
       toastOptions={{
+        // Thumb-zone mobile toasts also carry a persistent close button, so the
+        // reader needs longer than Sonner's default 4000ms to parse + act.
+        duration: 5000,
         classNames: {
           toast: 'og-toast',
           error: 'og-toast--error',

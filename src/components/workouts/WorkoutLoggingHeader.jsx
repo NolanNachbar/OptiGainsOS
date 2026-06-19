@@ -57,6 +57,12 @@ export default function WorkoutLoggingHeader({
   const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
   const restRunning = restActive && restTimer > 0;
 
+  // Depleting rest fraction — teal filled portion shrinks as the timer runs
+  // down. Guarded against a zero/short duration so the track never overflows.
+  const restFraction = restActive && restDuration > 0
+    ? Math.max(0, Math.min(1, restTimer / restDuration))
+    : 0;
+
   // Live rest countdown chip — teal coach hue throughout; urgency is a
   // system-tokened pulse (.rest-urgent), not a hue swap. Reused inline in the
   // mobile bottom bar so the countdown sits next to its own controls.
@@ -69,25 +75,38 @@ export default function WorkoutLoggingHeader({
     </div>
   ) : null;
 
-  // Rest controls (+30s / Skip). The mobile bottom bar passes withCountdown so
-  // the countdown and its controls live together (no split attention); the
-  // desktop top bar shows the countdown in its own timer block above.
+  // Depleting rest progress track — the bg-track material (one shared "empty
+  // track" token) with a teal filled portion that drains over the rest period.
+  // Communicates remaining rest at a glance so the +30s/Skip controls can step
+  // down to a thin secondary row without losing the live signal.
+  const restProgressTrack = restActive ? (
+    <div className="h-1 w-full rounded-full bg-track overflow-hidden">
+      <div
+        className="h-full rounded-full bg-teal transition-[width] duration-500 ease-[cubic-bezier(.2,.7,.3,1)]"
+        style={{ width: `${restFraction * 100}%` }}
+      />
+    </div>
+  ) : null;
+
+  // Rest controls (+30s / Skip). Uniform gap-2; full 44px tap height on mobile
+  // (no size="sm") so they match the Cancel/Finish rhythm. The mobile bottom
+  // bar renders these on their own thin secondary row (the countdown + track
+  // live above), so withCountdown only applies to the desktop top bar's inline
+  // cluster.
   const restControls = (withCountdown) => restRunning ? (
-    <div className="flex gap-1.5 items-center min-w-0">
+    <div className="flex gap-2 items-center min-w-0">
       {withCountdown && restCountdown}
       <Button
         variant="ghost"
-        size="sm"
         onClick={() => onAddRestTime?.(30)}
-        className="min-h-[44px] lg:min-h-0 font-bold font-technical"
+        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold font-technical"
       >
         +30s
       </Button>
       <Button
         variant="ghost"
-        size="sm"
         onClick={() => onSkipRest?.()}
-        className="min-h-[44px] lg:min-h-0 font-bold"
+        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold"
       >
         Skip
       </Button>
@@ -97,7 +116,7 @@ export default function WorkoutLoggingHeader({
   // Cancel / Finish — Finish is the sole coral; Cancel is a neutral dim
   // affordance. The bad hue is reserved for the in-dialog confirm.
   const actionCluster = (
-    <div className="flex items-center gap-3 lg:gap-2 flex-shrink-0">
+    <div className="flex items-center gap-2 flex-shrink-0">
       <Button
         variant="dim"
         onClick={() => setShowConfirm(true)}
@@ -109,7 +128,10 @@ export default function WorkoutLoggingHeader({
       <Button
         onClick={onFinish}
         disabled={isSaving || !canFinish}
-        variant="volt"
+        // Empty workout → Finish is inert, so it reads as neutral dim glass
+        // (NOT a dimmed coral CTA). That leaves the live Add input as the only
+        // coral action on the page. Once there's something to log it earns coral.
+        variant={canFinish ? "volt" : "dim"}
         className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-5 lg:px-4 flex-1 lg:flex-none"
         data-tutorial="finish-workout-btn"
       >
@@ -152,9 +174,12 @@ export default function WorkoutLoggingHeader({
                 </div>
               )}
 
-              {/* Rest Timer — teal throughout; urgency = pulse, not a hue swap */}
+              {/* Rest Timer — teal throughout; urgency = pulse, not a hue swap.
+                  While running it's hidden on mobile (lg:flex) so the countdown
+                  renders ONCE in the thumb-zone bottom bar; desktop keeps it
+                  here next to the workout clock. */}
               {restActive && (
-                <div className="flex flex-col min-w-0 rise-in">
+                <div className={`${restRunning ? 'hidden lg:flex' : 'flex'} flex-col min-w-0 rise-in`}>
                   <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Rest</span>
                   {restCountdown}
                 </div>
@@ -176,21 +201,34 @@ export default function WorkoutLoggingHeader({
         className="lg:hidden fixed left-0 right-0 z-[9998] glass-elevated border-x-0 border-b-0 rise-in"
         style={{ bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }}
       >
-        <div className="max-w-4xl mx-auto px-3 py-2.5 flex items-center justify-between gap-3">
+        <div className="max-w-4xl mx-auto px-3 py-2.5 flex flex-col gap-2">
           {restRunning ? (
-            // Countdown + its controls live together in the thumb zone.
-            restControls(true)
-          ) : startTime ? (
-            // No rest active → carry the live elapsed timer here instead of a
-            // dead static label, so the bottom bar always shows a real datum.
-            <div className="flex items-center gap-1.5 font-technical min-w-0">
-              <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
-              <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
-            </div>
+            <>
+              {/* Rest: countdown + depleting track on one calm row, the +30s /
+                  Skip controls on their own thin secondary row below — so the
+                  thumb-zone bar is never a crammed 5-element line. */}
+              <div className="flex items-center gap-2 min-w-0">
+                {restCountdown}
+                <div className="flex-1 min-w-0">{restProgressTrack}</div>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                {restControls(false)}
+                {actionCluster}
+              </div>
+            </>
           ) : (
-            <span className="text-[10px] uppercase text-ink-faint font-bold tracking-[0.08em]">Logging</span>
+            <div className="flex items-center justify-between gap-2">
+              {/* No rest active → carry the live elapsed timer here (a real
+                  datum), never a dead static label. */}
+              {startTime && (
+                <div className="flex items-center gap-1.5 font-technical min-w-0">
+                  <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
+                  <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
+                </div>
+              )}
+              {actionCluster}
+            </div>
           )}
-          {actionCluster}
         </div>
       </div>
 

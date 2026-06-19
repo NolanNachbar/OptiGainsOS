@@ -252,7 +252,7 @@ export default function CreateWorkout() {
         <form onSubmit={handleSubmit}>
           <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div>
                 <Label htmlFor="title">Workout Title *</Label>
                 <Input
@@ -292,7 +292,7 @@ export default function CreateWorkout() {
                 </Combobox>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <Label htmlFor="type">Workout Type *</Label>
                   <Select value={workout.focus} onValueChange={handleTypeChange}>
@@ -323,7 +323,7 @@ export default function CreateWorkout() {
 
           <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>{isCardio ? 'Steps' : 'Exercises'}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               {workout.exercises.map((exercise, index) => {
                 if (!isCardio) {
                   return (
@@ -389,7 +389,7 @@ export default function CreateWorkout() {
               shared Layout <main> already reserves dock + safe-area space below,
               so this bar is never clipped on a short form. */}
           <div className="flex gap-3">
-            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
+            <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
             <Button type="submit" variant="volt" size="lg" className="flex-[2]">
@@ -409,8 +409,8 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
-              <Trash2 className="w-4 h-4 text-bad" />
+            <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>
@@ -429,7 +429,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               </ComboboxContent>
             </Combobox>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div>
               <Label>Sets</Label>
               <Input
@@ -497,8 +497,8 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
-            <Trash2 className="w-3.5 h-3.5 text-bad" />
+          <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
       </div>
@@ -542,15 +542,15 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
-              <Trash2 className="w-4 h-4 text-bad" />
+            <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>
 
         <div className="grid gap-4">
           {/* Name + Step type */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Step Name</Label>
               <Input
