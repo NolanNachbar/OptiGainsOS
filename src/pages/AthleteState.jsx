@@ -53,10 +53,10 @@ function AdaptiveEnginePanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-5 pb-4 space-y-2">
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-3/4" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-1/2" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-2/3" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-5/12" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-3/4" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-1/2" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-2/3" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-5/12" />
         </CardContent>
       </Card>
     );
@@ -222,10 +222,10 @@ function WeeklyPlanPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-5 pb-4 space-y-2">
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-3/4" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-1/2" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-2/3" />
-          <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-5/12" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-3/4" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-1/2" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-2/3" />
+          <div className="pulse-loop rounded-lg bg-track h-4 w-5/12" />
         </CardContent>
       </Card>
     );
@@ -252,9 +252,9 @@ function WeeklyPlanPanel() {
               ? `Volume-tolerance test: ramping ${String(b.muscle || "").replace(/_/g, " ")} (week ${b.week ?? 1}) to probe your MRV.`
               : `${String(t.test_type).replace(/_/g, " ")} test active.`;
           return (
-            <div key={t.id} className="flex items-start gap-1.5 rounded-lg bg-gold/10 border border-gold/20 px-2.5 py-1.5">
+            <div key={t.id} className="flex items-start gap-1.5 rounded-lg bg-gold/10 border border-gold/20 px-2.5 py-2">
               <FlaskConical className="w-3 h-3 text-gold shrink-0 mt-0.5" />
-              <span className="text-[11px] font-semibold text-gold/90 leading-snug">{label}</span>
+              <span className="text-xs font-semibold text-gold/90 leading-snug">{label}</span>
             </div>
           );
         })}
@@ -352,8 +352,15 @@ function StrengthSection({ data }) {
               </span>
             </div>
             {pct != null && (
-              <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden mt-1.5">
-                <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${pct}%` }} />
+              <div className="h-1.5 bg-track rounded-full overflow-hidden mt-1.5">
+                {/* Fill tinted by stall state (mirrors HypertrophySection) so a
+                    'Stalled' badge never sits over a full teal bar. */}
+                <div
+                  className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${
+                    d.stall_risk >= 0.75 ? "bg-bad" : d.stall_risk >= 0.4 ? "bg-warn" : "bg-teal"
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
               </div>
             )}
             <div className="flex items-center gap-3 font-technical text-[10px] font-semibold text-muted-2 mt-1">
@@ -365,23 +372,21 @@ function StrengthSection({ data }) {
               {d.eta_days === 0 && <span className="text-teal">Target reached!</span>}
               <span>{d.sessions} sessions</span>
               {d.progression_command && d.progression_command !== "HOLD" && (
-                <span className={
-                  d.progression_command === "INCREASE_LOAD" ? "text-teal" :
-                  d.progression_command === "DELOAD" ? "text-warn" :
-                  d.progression_command === "SWAP_EXERCISE" ? "text-muted-2" : "text-muted-2"
-                }>
+                // Non-imperative status chip (glass-inset pill, muted ink) so the
+                // engine's progression verdict reads as state, not a tappable CTA.
+                <span className="glass-inset px-2 py-0.5 text-[10px] font-bold text-muted-2 uppercase tracking-[0.06em]">
                   {{
-                    INCREASE_LOAD: "Add load",
-                    DELOAD: "Deload",
-                    SWAP_EXERCISE: "Swap exercise",
+                    INCREASE_LOAD: "Load ready",
+                    DELOAD: "Deload due",
+                    SWAP_EXERCISE: "Swap due",
                   }[d.progression_command] ?? d.progression_command}
                 </span>
               )}
             </div>
             {d.swap_suggestion && (
-              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-warn/10 border border-warn/20 px-2.5 py-1.5">
+              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-warn/10 border border-warn/20 px-2.5 py-2">
                 <AlertTriangle className="w-3 h-3 text-warn shrink-0 mt-0.5" />
-                <span className="text-[10px] font-semibold text-warn/90 leading-snug">
+                <span className="text-[11px] font-semibold text-warn/90 leading-snug">
                   {d.swap_suggestion}
                 </span>
               </div>
@@ -529,11 +534,10 @@ function RecoverySection({ data }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="text-center">
-          <div className="hero-metric text-ink text-3xl">{data.score}</div>
-          <div className="section-label">/ 100</div>
-        </div>
+      {/* The glanceable score lives in the SummaryStrip up top, so this card
+          leads with the push-readiness verdict + the 4 sub-metrics instead of
+          repeating the giant number. */}
+      <div className="flex items-center">
         <ReadinessBadge readiness={data.push_readiness} />
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -770,7 +774,10 @@ function SummaryStrip({ state, vdot }) {
     fatigue?.tsb != null && {
       label: "TSB",
       value: `${fatigue.tsb > 0 ? "+" : ""}${fatigue.tsb.toFixed(1)}`,
-      accent: "var(--hue-violet)",
+      // TSB is a biometric, so key it on the physiological spectrum by threshold
+      // (mirroring FatigueSection's tsbColor) rather than a fixed hue. Violet is
+      // reserved for ATL elsewhere; using it here was a hue collision.
+      accent: fatigue.tsb > 5 ? "var(--hue-teal)" : fatigue.tsb > -5 ? "var(--text-muted)" : "var(--bad)",
       sub: (fatigue.interpretation || "").replace("_", " ") || undefined,
     },
     vdot != null && {
@@ -799,8 +806,8 @@ function SummaryStripSkeleton() {
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="glass-inset px-3 py-2.5">
-          <div className="animate-pulse rounded bg-charcoal-elevated h-2.5 w-2/3" />
-          <div className="animate-pulse rounded bg-charcoal-elevated h-5 w-1/2 mt-2" />
+          <div className="pulse-loop rounded bg-track h-2.5 w-2/3" />
+          <div className="pulse-loop rounded bg-track h-5 w-1/2 mt-2" />
         </div>
       ))}
     </div>
@@ -864,9 +871,9 @@ export default function AthleteState({ hideHeader = false }) {
               {[0, 1, 2, 3].map((i) => (
                 <Card key={i} className="glass glass-interactive">
                   <CardContent className="px-5 py-5 space-y-2">
-                    <div className="animate-pulse rounded-lg bg-charcoal-elevated h-3.5 w-2/5" />
-                    <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-3/4" />
-                    <div className="animate-pulse rounded-lg bg-charcoal-elevated h-4 w-1/2" />
+                    <div className="pulse-loop rounded-lg bg-track h-3.5 w-2/5" />
+                    <div className="pulse-loop rounded-lg bg-track h-4 w-3/4" />
+                    <div className="pulse-loop rounded-lg bg-track h-4 w-1/2" />
                   </CardContent>
                 </Card>
               ))}

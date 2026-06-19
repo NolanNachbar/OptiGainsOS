@@ -120,7 +120,10 @@ export default function CycleDayGrid({
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
-                    cellClasses += " glass-inset border-brand ring-2 ring-brand/40";
+                    // Non-coral "you are here" treatment — coral is reserved for
+                    // the Start CTA. A brighter ink hairline + inset specular lift
+                    // distinguishes the current cell without poaching the action hue.
+                    cellClasses += " glass-inset border-ink/30 shadow-[inset_0_1px_0_var(--glass-specular)]";
                   } else if (isPast) {
                     cellClasses += " border-charcoal-border bg-charcoal-surface opacity-60";
                   } else {
@@ -167,7 +170,7 @@ export default function CycleDayGrid({
                         {isCompleted ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-leaf flex-shrink-0" />
                         ) : isCurrent ? (
-                          <PlayCircle className="w-3.5 h-3.5 text-ink flex-shrink-0 animate-pulse" />
+                          <PlayCircle className="w-3.5 h-3.5 text-ink flex-shrink-0" />
                         ) : workout ? (
                           <Circle className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
                         ) : null}

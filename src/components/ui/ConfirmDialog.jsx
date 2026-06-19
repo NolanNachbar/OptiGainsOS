@@ -23,12 +23,12 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" hideClose>
+      <DialogContent className="sm:max-w-md" hideClose sheetMinHeight="">
         <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             {variant === "danger" && (
-              <div className="p-2 rounded-full bg-brand/10">
-                <AlertTriangle className="w-5 h-5 text-brand" />
+              <div className="p-2 rounded-full bg-bad/12">
+                <AlertTriangle className="w-5 h-5 text-bad" />
               </div>
             )}
             <DialogTitle>{title}</DialogTitle>
@@ -37,25 +37,29 @@ export function ConfirmDialog({
         <DialogDescription className="mt-2">
           {description}
         </DialogDescription>
-        {/* Coral is THE action/destructive hue in this identity: the single
-            coral confirm dominates while Cancel falls back to neutral glass.
-            Stacked + full-width on the mobile sheet (thumb zone), reverting to
-            an inline row from sm: up so the coral CTA reads first. */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
+        {/* Coral is THE action hue; destructive confirms route to the `bad`
+            `destructive` variant so a delete never masquerades as a coral CTA.
+            Stacked + full-width across the full bottom-sheet range (thumb zone),
+            reverting to an inline row only from md: up (centered desktop dialog)
+            so the layout holds for the whole sheet breakpoint. flex-col-reverse
+            (CTA visually first/lowest in the thumb zone) is gated to non-danger:
+            for danger we keep Cancel last/lowest so the destructive button is
+            not the closest tap target. */}
+        <div className={`flex ${variant === "danger" ? "flex-col" : "flex-col-reverse"} md:flex-row gap-3 mt-6`}>
           <Button
             variant="ghost"
             size="lg"
             onClick={() => onOpenChange(false)}
-            className="w-full sm:flex-1"
+            className="w-full md:flex-1"
             disabled={loading}
           >
             {cancelText}
           </Button>
           <Button
-            variant="volt"
+            variant={variant === "danger" ? "destructive" : "volt"}
             size="lg"
             onClick={handleConfirm}
-            className="w-full sm:flex-1"
+            className="w-full md:flex-1"
             disabled={loading}
           >
             {loading ? "Processing..." : confirmText}

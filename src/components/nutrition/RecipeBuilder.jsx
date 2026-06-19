@@ -114,13 +114,13 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
         {recipes.length === 0 ? (
           <div className="text-center py-6 text-ink-muted text-sm">
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p>No recipes yet.</p>
-            <p className="text-xs mt-1">Use the + button to create your first recipe.</p>
+            <p className="text-ink font-semibold">No recipes yet</p>
+            <p className="text-xs mt-1">Use the + button to create your first recipe</p>
           </div>
         ) : recipes.map((recipe) => {
           const perServing = scaleRecipeToServings(recipe, 1);
           return (
-            <div key={recipe.id} className="p-3 rounded-xl border border-charcoal-border/50 bg-charcoal-surface/60 space-y-2">
+            <div key={recipe.id} className="tile p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <span className="text-sm font-semibold text-ink truncate block">{recipe.name}</span>
@@ -129,18 +129,19 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleEdit(recipe)} className="p-1.5 text-ink-muted hover:text-ink transition-colors">
-                    <Pencil className="w-3 h-3" />
-                  </button>
                   <button
-                    onClick={() => handleLog(recipe)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold text-xs font-bold transition-colors"
+                    onClick={() => handleEdit(recipe)}
+                    aria-label="Edit recipe"
+                    className="h-11 w-11 flex items-center justify-center rounded-lg text-ink-muted transition-colors duration-200 [transition-timing-function:var(--ease)] hover:text-ink hover:bg-[var(--glass-edge)] active:opacity-90"
                   >
-                    <UtensilsCrossed className="w-2.5 h-2.5" />Log
+                    <Pencil className="w-4 h-4" />
                   </button>
+                  <Button variant="volt" size="sm" onClick={() => handleLog(recipe)} className="min-h-[44px]">
+                    <UtensilsCrossed className="w-3 h-3" />Log
+                  </Button>
                 </div>
               </div>
-              <div className="flex gap-3 text-xs font-mono">
+              <div className="flex gap-3 text-xs font-technical tabular-nums">
                 <span className="text-ink font-bold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral">P{perServing.protein_grams}g</span>
                 <span className="text-carb">C{perServing.carbs_grams}g</span>
@@ -195,14 +196,14 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
         <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
           <BookOpen className="w-12 h-12 text-ink-muted mx-auto mb-3" />
           <h3 className="text-base font-semibold text-ink mb-1">No recipes yet</h3>
-          <p className="text-sm text-ink-muted">Use the "New Recipe" button above to get started</p>
+          <p className="text-sm text-ink-muted">Use the "New Recipe" button above to create your first recipe</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {recipes.map((recipe) => {
             const perServing = scaleRecipeToServings(recipe, 1);
             return (
-              <div key={recipe.id} className="rounded-xl border border-charcoal-border bg-charcoal-surface p-4 flex flex-col gap-3">
+              <div key={recipe.id} className="tile p-4 flex flex-col gap-3">
                 {/* Name row */}
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
@@ -218,19 +219,19 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 {/* Macros */}
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-sm font-bold text-gold">{Math.round(perServing.calories)}</p>
+                    <p className="text-sm font-bold text-gold font-technical tabular-nums">{Math.round(perServing.calories)}</p>
                     <p className="text-xs text-ink-muted">Cal</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-coral">{perServing.protein_grams}g</p>
+                    <p className="text-sm font-bold text-coral font-technical tabular-nums">{perServing.protein_grams}g</p>
                     <p className="text-xs text-ink-muted">Pro</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-carb">{perServing.carbs_grams}g</p>
+                    <p className="text-sm font-bold text-carb font-technical tabular-nums">{perServing.carbs_grams}g</p>
                     <p className="text-xs text-ink-muted">Carb</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-fat">{perServing.fats_grams}g</p>
+                    <p className="text-sm font-bold text-fat font-technical tabular-nums">{perServing.fats_grams}g</p>
                     <p className="text-xs text-ink-muted">Fat</p>
                   </div>
                 </div>
@@ -239,18 +240,17 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 </p>
                 {/* Actions */}
                 <div className="flex gap-1.5">
-                  <Button size="sm" onClick={() => handleLog(recipe)} className="flex-1 bg-brand h-8 text-xs">
+                  <Button variant="volt" size="sm" onClick={() => handleLog(recipe)} className="flex-1 min-h-[44px]">
                     <UtensilsCrossed className="w-3 h-3 mr-1" />Log
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setSharingRecipe(recipe)} title="Share" className="h-8 w-8 p-0">
-                    <Share2 className="w-3 h-3" />
+                  <Button variant="outline" size="icon" onClick={() => setSharingRecipe(recipe)} title="Share" className="h-11 w-11">
+                    <Share2 className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(recipe)} className="h-8 w-8 p-0">
-                    <Pencil className="w-3 h-3" />
+                  <Button variant="outline" size="icon" onClick={() => handleEdit(recipe)} aria-label="Edit recipe" className="h-11 w-11">
+                    <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(recipe)}
-                    className="h-8 w-8 p-0 text-bad hover:bg-bad/10">
-                    <Trash2 className="w-3 h-3" />
+                  <Button variant="destructive" size="icon" onClick={() => handleDelete(recipe)} aria-label="Delete recipe" className="h-11 w-11">
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -322,46 +322,46 @@ function StickyMacroBar({ ingredients, servings }) {
 
   return (
     <div
-      className={`sticky top-0 z-10 bg-charcoal-surface/95 backdrop-blur-sm border-b px-6 py-3 transition-opacity duration-300 ${
+      className={`sticky top-0 z-10 glass-elevated border-b px-6 py-3 transition-opacity duration-300 [transition-timing-function:var(--ease)] ${
         hasIngredients ? "" : "opacity-40"
       }`}
     >
       <div className="grid grid-cols-4 gap-3 text-center">
         <div>
-          <div className="text-lg font-bold text-gold transition-all duration-300">
+          <div className="text-lg font-bold text-gold font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-xs font-medium text-gold uppercase tracking-wide">
+          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
             Calories
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-coral transition-all duration-300">
+          <div className="text-lg font-bold text-coral font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_protein * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-coral uppercase tracking-wide">
+          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
             Protein
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-carb transition-all duration-300">
+          <div className="text-lg font-bold text-carb font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_carbs * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-carb uppercase tracking-wide">
+          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
             Carbs
           </div>
         </div>
         <div>
-          <div className="text-lg font-bold text-fat transition-all duration-300">
+          <div className="text-lg font-bold text-fat font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_fats * 10) / 10}g
           </div>
-          <div className="text-xs font-medium text-fat uppercase tracking-wide">
+          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
             Fats
           </div>
         </div>
       </div>
       {servings > 1 && hasIngredients && (
-        <div className="text-xs text-ink-muted text-center mt-1.5">
+        <div className="text-xs text-ink-muted text-center mt-1.5 font-technical tabular-nums">
           Per serving: {Math.round(totals.total_calories / servings)} cal{" · "}
           {Math.round((totals.total_protein / servings) * 10) / 10}g P{" · "}
           {Math.round((totals.total_carbs / servings) * 10) / 10}g C{" · "}
@@ -441,13 +441,13 @@ function CollapsibleFoodSection({ label, icon, count, children }) {
 
 function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRemove }) {
   return (
-    <div className="p-3 bg-charcoal-surface rounded-xl border border-charcoal-border hover:border-charcoal-border transition-colors">
+    <div className="tile tile-interactive p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm text-ink truncate">
             {ingredient.food_name}
           </div>
-          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs">
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs font-technical tabular-nums">
             <span className="text-ink-muted font-medium">Per serving:</span>
             <span className="text-gold font-medium">{ingredient.calories} cal</span>
             <span className="text-coral">{ingredient.protein_grams}g P</span>
@@ -466,12 +466,12 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
       </div>
       <div className="flex justify-end mt-2">
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="number"
             value={ingredient.serving_size}
             onChange={(e) => onUpdateServing(index, e.target.value)}
             onFocus={(e) => e.target.select()}
-            className="w-16 h-8 text-sm text-center rounded-md border border-charcoal-border bg-charcoal-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="w-16 h-11 text-center"
             min="0"
             step="1"
           />
@@ -479,7 +479,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
             value={ingredient.serving_unit}
             onValueChange={(val) => onUpdateUnit(index, val)}
           >
-            <SelectTrigger className="h-8 w-20 text-xs">
+            <SelectTrigger className="h-11 w-20 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -703,8 +703,9 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
       )}
 
       <Button
+        variant="volt"
         onClick={handleAdd}
-        className="w-full h-10 bg-brand rounded-lg text-sm font-medium"
+        className="w-full h-11 text-sm"
       >
         <Plus className="w-4 h-4 mr-1.5" />
         Add Ingredient
@@ -1051,6 +1052,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
                 >
                   <Button
+                    variant="volt"
                     onClick={() => {
                       if (!name.trim()) {
                         toast.error("Recipe name is required");
@@ -1058,7 +1060,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       }
                       goToStep(2);
                     }}
-                    className="w-full h-11 bg-brand rounded-xl text-sm font-medium"
+                    className="w-full h-11 text-sm"
                   >
                     Next: Add Ingredients
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1237,9 +1239,10 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
                 >
                   <Button
+                    variant="volt"
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}
-                    className="w-full h-11 bg-brand rounded-xl text-sm font-medium disabled:opacity-50"
+                    className="w-full h-11 text-sm"
                   >
                     {isSaving ? (
                       <>
@@ -1293,7 +1296,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Date</Label>
               <Input
@@ -1306,7 +1309,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
             <div>
               <Label>Meal Type</Label>
               <Select value={mealType} onValueChange={setMealType}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1326,7 +1329,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
                 variant="outline"
                 size="icon"
                 onClick={() => setServingCount(Math.max(0.5, (parseFloat(servingCount) || 1) - 0.5))}
-                className="h-9 w-9"
+                className="h-11 w-11"
               >
                 <Minus className="w-4 h-4" />
               </Button>
@@ -1342,7 +1345,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
                 variant="outline"
                 size="icon"
                 onClick={() => setServingCount((parseFloat(servingCount) || 1) + 0.5)}
-                className="h-9 w-9"
+                className="h-11 w-11"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -1350,36 +1353,38 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
           </div>
 
           <div className="grid grid-cols-4 gap-3">
-            <div className="text-center p-3 bg-gold/[0.08] rounded-lg">
-              <div className="text-lg font-bold text-gold">
+            <div className="glass-inset text-center p-3">
+              <div className="text-lg font-bold text-gold font-technical tabular-nums">
                 {scaled.calories}
               </div>
-              <div className="text-xs text-gold">Calories</div>
+              <div className="text-xs text-ink-muted">Calories</div>
             </div>
-            <div className="text-center p-3 bg-coral/[0.08] rounded-lg">
-              <div className="text-lg font-bold text-coral">
+            <div className="glass-inset text-center p-3">
+              <div className="text-lg font-bold text-coral font-technical tabular-nums">
                 {scaled.protein_grams}g
               </div>
-              <div className="text-xs text-coral">Protein</div>
+              <div className="text-xs text-ink-muted">Protein</div>
             </div>
-            <div className="text-center p-3 bg-carb/[0.08] rounded-lg">
-              <div className="text-lg font-bold text-carb">
+            <div className="glass-inset text-center p-3">
+              <div className="text-lg font-bold text-carb font-technical tabular-nums">
                 {scaled.carbs_grams}g
               </div>
-              <div className="text-xs text-carb">Carbs</div>
+              <div className="text-xs text-ink-muted">Carbs</div>
             </div>
-            <div className="text-center p-3 bg-fat/[0.08] rounded-lg">
-              <div className="text-lg font-bold text-fat">
+            <div className="glass-inset text-center p-3">
+              <div className="text-lg font-bold text-fat font-technical tabular-nums">
                 {scaled.fats_grams}g
               </div>
-              <div className="text-xs text-fat">Fats</div>
+              <div className="text-xs text-ink-muted">Fats</div>
             </div>
           </div>
 
           <Button
+            variant="volt"
+            size="lg"
             onClick={handleLog}
             disabled={logMutation.isPending}
-            className="w-full bg-brand"
+            className="w-full"
           >
             {logMutation.isPending ? (
               <>

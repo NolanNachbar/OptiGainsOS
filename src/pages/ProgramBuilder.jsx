@@ -502,12 +502,24 @@ export default function ProgramBuilder() {
             </div>
           </div>
 
+          {/* Mobile wayfinding — the desktop eyebrow+title block above is
+              hidden on mobile (the Layout header owns the top row), so without
+              this the primary viewport was four anonymous bars. A compact
+              "Step 1/4 · Details" label restores wayfinding without re-stacking
+              a full page title under the Layout header. Hidden on desktop where
+              the full title already shows. */}
+          <p className="section-label md:hidden mt-3">
+            <span className="font-technical">Step {step + 1}/{STEPS.length}</span>
+            {" · "}
+            {STEPS[step]}
+          </p>
+
           {/* Step indicator */}
-          <div className="flex gap-1 mt-3">
+          <div className="flex gap-1 mt-2 md:mt-3">
             {STEPS.map((s, i) => (
               <div
                 key={s}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ease-[var(--ease)] ${
                   i <= step
                     ? "bg-brand"
                     : "bg-track"
@@ -517,6 +529,10 @@ export default function ProgramBuilder() {
           </div>
         </div>
 
+        {/* Documented exception to the system's 8px RISE entrance: this is a
+            linear stepper, so steps slide HORIZONTALLY (8px right on enter, left
+            on exit) to encode forward/back direction — wayfinding the vertical
+            rise can't express. Stays on the one system easing + 180–320ms band. */}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -524,7 +540,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.24, ease: [0.2, 0.7, 0.3, 1] }}
-            className="pb-32 md:pb-0"
+            className="pb-[calc(var(--dock-clearance)+88px+env(safe-area-inset-bottom))] md:pb-0"
           >
             {step === 0 && (
               <StepDetails
@@ -577,14 +593,16 @@ export default function ProgramBuilder() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation buttons — sticky footer raised to fully clear the floating
-            mobile dock (≈56px tall, 12px above the safe-area inset) with
-            breathing room. Scroll container pads pb-32 — enough to keep the last
-            field (Tags 'Add') clear of this footer without manufacturing an
-            empty extra screen on short forms. */}
+        {/* Navigation buttons — a true bottom-anchored bar above the floating
+            mobile dock, not a floated guess. Sits exactly one --dock-clearance
+            above the safe-area inset (same token the dock + Layout main padding
+            share), so it can never occlude Step-1 fields. The scroll container
+            reserves matching dock clearance below (see the motion.div pb above)
+            so Description + Tags clear both this bar and the dock at 390px. On
+            desktop it un-sticks and goes transparent. */}
         <div
           className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated md:bg-transparent md:shadow-none md:border-0"
-          style={{ bottom: "calc(6.75rem + env(safe-area-inset-bottom))" }}
+          style={{ bottom: "calc(var(--dock-clearance) + env(safe-area-inset-bottom))" }}
         >
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
@@ -677,6 +695,12 @@ function NumberStepper({ value, onChange, min, max, ariaLabel }) {
 
 function StepDetails({ program, setProgram, tagInput, setTagInput }) {
   const update = (field, value) => setProgram((p) => ({ ...p, [field]: value }));
+  // Optional copy (Description + Tags) is deferred behind a disclosure so the
+  // load-bearing duration controls + Next land within ~1.5 viewports on mobile.
+  // Opens automatically when editing a program that already has either filled.
+  const [showOptional, setShowOptional] = useState(
+    Boolean(program.description) || program.tags.length > 0
+  );
 
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
@@ -688,7 +712,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
 
   return (
     <Card>
-      <CardContent className="space-y-4 pt-5">
+      <CardContent className="space-y-3 pt-5">
         <div>
           <Label>Program Name *</Label>
           <Input
@@ -700,8 +724,11 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Cycle configuration — the load-bearing controls, surfaced directly
-            under the name so duration is decided before optional copy. */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            under the name so duration is decided before optional copy. Cycle
+            Length + Cycles share one row even on mobile (grid-cols-2) so the
+            two duration steppers + Next stay inside ~1.5 viewports; Goal drops
+            to its own full-width row on mobile, all three rejoin on desktop. */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
             <Label className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
@@ -714,7 +741,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={30}
               ariaLabel="cycle length"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Days per cycle · rest days included</p>
+            <p className="text-xs text-ink-faint mt-0.5">Days per cycle</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
@@ -728,11 +755,11 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={20}
               ariaLabel="number of cycles"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
+            <p className="text-xs text-ink-faint mt-0.5">Times repeated</p>
           </div>
-          {/* Steppers stack full-width on mobile so the number field can breathe;
-              all three controls rejoin one row on desktop. */}
-          <div className="md:col-span-1">
+          {/* Goal spans both mobile columns (own row) then rejoins the desktop
+              three-up row. */}
+          <div className="col-span-2 md:col-span-1">
             <Label>Goal</Label>
             <Select
               value={program.goal}
@@ -754,60 +781,89 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           </div>
         </div>
 
-        {/* Total training days info */}
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary font-technical">
+        {/* Total training days — the derived datum. font-technical (tabular
+            numerals) is scoped to the numbers only, not the whole sentence, so
+            the prose stays in the UI voice. Treatment mirrors StepConfirm's
+            "Total Days" stat: muted label prose + ink-weighted tabular total. */}
+        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary">
           <Calendar className="w-4 h-4 flex-shrink-0 text-ink-muted" />
           <span>
-            {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""} = <strong className="text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
+            <span className="font-technical">{program.cycle_length}</span>-day cycle repeated{" "}
+            <span className="font-technical">{program.num_cycles}</span> time{program.num_cycles !== 1 ? "s" : ""} ={" "}
+            <strong className="font-technical text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
           </span>
         </div>
 
-        <div>
-          <Label>Description</Label>
-          <Textarea
-            value={program.description}
-            onChange={(e) => update("description", e.target.value)}
-            placeholder="Describe the program goals and approach…"
-            rows={2}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label>Tags</Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="e.g., powerlifting"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
+        {/* Optional details — Description + Tags are deferred behind a
+            disclosure so the duration controls + Next land within ~1.5 phone
+            viewports. The toggle is a full-width 44px control; chevron rotates
+            on the single system easing. */}
+        <div className="border-t hairline pt-3">
+          <button
+            type="button"
+            onClick={() => setShowOptional((v) => !v)}
+            aria-expanded={showOptional}
+            className="w-full min-h-[44px] flex items-center justify-between text-left"
+          >
+            <span className="section-label">Optional details</span>
+            <ChevronDown
+              className={`w-4 h-4 text-ink-muted transition-transform duration-200 ease-[var(--ease)] ${
+                showOptional ? "rotate-180" : ""
+              }`}
             />
-            <Button type="button" variant="outline" onClick={addTag} className="min-h-[44px]">
-              Add
-            </Button>
-          </div>
-          {program.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {program.tags.map((tag) => (
-                // 44px hit target wraps the ~22px chip so the remove affordance
-                // is thumb-reachable while the Badge keeps its compact size.
-                <button
-                  key={tag}
-                  type="button"
-                  aria-label={`Remove tag ${tag}`}
-                  onClick={() => update("tags", program.tags.filter((t) => t !== tag))}
-                  className="min-h-[44px] flex items-center"
-                >
-                  <Badge variant="secondary" className="cursor-pointer">
-                    {tag} &times;
-                  </Badge>
-                </button>
-              ))}
+          </button>
+
+          {showOptional && (
+            <div className="space-y-3 mt-2 rise-in">
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={program.description}
+                  onChange={(e) => update("description", e.target.value)}
+                  placeholder="Describe the program goals and approach…"
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label>Tags</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    placeholder="e.g., powerlifting"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="outline" onClick={addTag} className="min-h-[44px]">
+                    Add
+                  </Button>
+                </div>
+                {program.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {program.tags.map((tag) => (
+                      // 44px hit target wraps the ~22px chip so the remove affordance
+                      // is thumb-reachable while the Badge keeps its compact size.
+                      <button
+                        key={tag}
+                        type="button"
+                        aria-label={`Remove tag ${tag}`}
+                        onClick={() => update("tags", program.tags.filter((t) => t !== tag))}
+                        className="min-h-[44px] flex items-center"
+                      >
+                        <Badge variant="secondary" className="cursor-pointer">
+                          {tag} &times;
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

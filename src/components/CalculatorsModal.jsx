@@ -96,7 +96,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       </div>
 
       {result && (
-        <Card className="glass-brand border-none rise-in">
+        <Card className="surface border-none rise-in">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Plates Per Side</CardTitle>
           </CardHeader>
@@ -104,7 +104,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
             {result.platesNeeded.length > 0 ? (
               <div className="space-y-3">
                 {result.platesNeeded.map((plate, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 glass-inset rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 glass-inset">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 glass-inset rounded-full flex items-center justify-center text-ink font-bold font-technical">
                         {plate.count}×
@@ -118,21 +118,21 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-brand border-brand/30 font-technical">
+                    <Badge variant="outline" className="text-ink-muted border-charcoal-borderSoft font-technical">
                       {(plate.weight * plate.count).toFixed(1)} {weightUnit}
                     </Badge>
                   </div>
                 ))}
 
                 {!result.exact && result.remainder > 0.1 && (
-                  <div className="p-3 bg-warn/10 border border-warn/20 rounded-lg text-sm text-warn">
-                    <strong>Note:</strong> Can't load exactly. Missing {result.remainder.toFixed(1)} {weightUnit} per side.
+                  <div className="p-3 glass-inset text-sm text-ink-muted">
+                    <strong className="text-ink">Note:</strong> Can't load exactly. Missing {result.remainder.toFixed(1)} {weightUnit} per side.
                   </div>
                 )}
 
-                <div className="pt-3 border-t border-charcoal-border">
+                <div className="pt-3 border-t hairline">
                   <div className="text-sm text-ink-muted mb-1">Total loaded:</div>
-                  <div className="text-2xl font-bold text-ink font-technical">
+                  <div className="hero-metric text-4xl text-ink">
                     {parseFloat(barWeight) + (result.platesNeeded.reduce((sum, p) => sum + (p.weight * p.count), 0) * 2)} {weightUnit}
                   </div>
                 </div>
@@ -196,7 +196,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-5">
       {/* Known performance */}
       <div>
-        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you know</p>
+        <p className="section-label mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label className="mb-1.5 block">
@@ -220,7 +220,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
 
       {/* Target */}
       <div>
-        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">What you want to do</p>
+        <p className="section-label mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="mb-1.5 block">Target reps</Label>
@@ -235,20 +235,24 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
         </div>
       </div>
 
+      <p className="text-xs text-ink-muted text-center">
+        Estimates 1RM from your known set, then calculates target weight. Uses Brzycki formula.
+      </p>
+
       {result && (
-        <Card className="glass-brand border-none rise-in">
+        <Card className="surface border-none rise-in">
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
               <div className="text-sm text-ink-muted mb-1">Working Weight</div>
-              <div className="text-5xl font-bold text-brand font-technical">
-                {result.rounded} <span className="text-2xl">{weightUnit}</span>
+              <div className="hero-metric text-4xl text-brand">
+                {result.rounded} <span className="text-2xl text-ink-muted">{weightUnit}</span>
               </div>
               <div className="text-sm text-ink-muted mt-1">
                 rounded to nearest {increment} {weightUnit}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-brand/30">
+            <div className="grid grid-cols-3 gap-3 pt-3 border-t hairline">
               <div className="text-center">
                 <div className="text-xs text-ink-muted mb-0.5">Est. 1RM</div>
                 <div className="font-semibold text-ink font-technical">{result.estimatedOneRM.toFixed(1)} {weightUnit}</div>
@@ -265,10 +269,6 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
           </CardContent>
         </Card>
       )}
-
-      <p className="text-xs text-ink-muted text-center">
-        Estimates 1RM from your known set, then calculates target weight. Uses Brzycki formula.
-      </p>
     </div>
   );
 }
@@ -276,7 +276,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
 export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="w-6 h-6 text-brand" />

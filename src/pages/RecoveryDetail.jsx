@@ -126,13 +126,13 @@ export default function RecoveryDetail() {
   if (isLoading) return (
     <div className="p-4 space-y-4">
       {[1, 2, 3].map(i => (
-        <div key={i} className="h-20 rounded-xl animate-pulse bg-charcoal-elevated" />
+        <div key={i} className="h-20 rounded-xl pulse-loop bg-track" />
       ))}
     </div>
   );
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-[calc(96px+env(safe-area-inset-bottom))] min-h-screen text-ink">
+    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
       <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -174,22 +174,24 @@ export default function RecoveryDetail() {
             <CardContent>
               <div className="flex flex-col items-center md:flex-row md:items-center gap-4 md:gap-6 py-1 md:py-2">
                 <div className="text-center">
-                  <div className="hero-metric text-6xl md:text-5xl text-ink mb-1">{acwr ?? "—"}</div>
+                  {/* Demoted to text-4xl on mobile so Readiness (text-6xl) owns
+                      the single largest number on the page. */}
+                  <div className="hero-metric text-4xl md:text-5xl text-ink mb-1">{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
-                  <div className="text-xs font-semibold text-ink-faint mt-0.5">source: {acwrSource}</div>
                 </div>
                 <div className="w-full md:flex-1">
-                  {/* ACWR band gauge — neutral track, ink band outline 0.8–1.3 marks the
-                      lowest-risk zone, ink pin shows current ratio. Spectrum (warn/bad) is
-                      reserved for the explicit out-of-range warning row below. */}
+                  {/* ACWR band gauge — neutral track, the 0.8–1.3 lowest-risk
+                      zone is a filled ink region (a 1.5px outline read as nearly
+                      invisible), ink pin shows current ratio. Spectrum (warn/bad)
+                      is reserved for the explicit out-of-range warning row below. */}
                   <div className="relative h-[10px] rounded-full bg-track">
                     <span
-                      className="absolute -top-[3px] -bottom-[3px] rounded-sm border-[1.5px] border-charcoal-border"
+                      className="absolute inset-y-0 rounded-sm bg-ink/[0.10]"
                       style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
                     {acwr != null && (
                       <span
-                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-ink transition-all duration-700"
+                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-ink transition-[left] duration-300 ease-[var(--ease)]"
                         style={{
                           left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 2px)`,
                           boxShadow: "0 0 0 3px var(--color-border)",
@@ -205,7 +207,10 @@ export default function RecoveryDetail() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-ink-muted mt-4 leading-relaxed">
+              <p
+                className="text-xs text-ink-muted mt-4 leading-relaxed"
+                title={`Source: ${acwrSource}`}
+              >
                 Compares your last 7 days of activity to your 28-day average; the shaded zone is lowest-risk.
               </p>
               {acwr != null && acwr > 1.6 && (
@@ -331,7 +336,7 @@ export default function RecoveryDetail() {
                     />
                     <Bar dataKey="displaySteps" radius={[4, 4, 0, 0]}>
                       {chartData.slice(-14).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(var(--hue-green-rgb) / 0.25)'} />
+                        <Cell key={`cell-${index}`} fill={entry.displaySteps >= 10000 ? 'var(--hue-green)' : 'rgba(var(--hue-green-rgb) / 0.30)'} />
                       ))}
                     </Bar>
                   </BarChart>

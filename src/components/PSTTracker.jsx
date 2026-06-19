@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Waves, Plus, Trophy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayString } from "@/utils/dateUtils";
@@ -62,6 +62,35 @@ function PSTBar({ event, value }) {
           style={{ width: `${pct}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+// A numeric time field with a PERSISTENT inline unit suffix. The old fields used
+// placeholder="min"/"sec", which vanish once a value is typed — leaving two bare
+// numbers with no unit. The suffix is painted as faint ink pinned to the right
+// edge (not a placeholder) so the unit survives after entry; the input carries
+// right-padding so the typed number never collides with it.
+function TimeField({ unit, value, onChange, disabled, max }) {
+  return (
+    <div className="relative flex-1">
+      <Input
+        type="number"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        min="0"
+        max={max}
+        disabled={disabled}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="pr-10"
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-ink-faint tabular-nums"
+      >
+        {unit}
+      </span>
     </div>
   );
 }
@@ -190,48 +219,61 @@ export default function PSTTracker() {
 
       {/* Log PST Test dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Log PST Test</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
+        <DialogContent className="max-w-sm p-0">
+          <div className="px-6 pt-6">
+            <DialogHeader>
+              <DialogTitle>Log PST Test</DialogTitle>
+              <DialogDescription>Record your latest scores; targets are BUD/S competitive standards.</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="space-y-3 px-6">
             <div>
               <label className="section-label mb-1 block">Date</label>
               <Input
                 type="date"
+                disabled={saveMutation.isPending}
                 value={form.test_date}
                 onChange={e => setForm(f => ({ ...f, test_date: e.target.value }))}
+                className={`[color-scheme:dark]${form.test_date ? "" : " is-empty"}`}
               />
             </div>
             <div>
               <label className="section-label mb-1 block">{PST_TARGETS.swim.label}</label>
               <div className="flex gap-2">
-                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.swim_min} onChange={e => setForm(f => ({ ...f, swim_min: e.target.value }))} className="flex-1" />
-                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.swim_sec} onChange={e => setForm(f => ({ ...f, swim_sec: e.target.value }))} className="flex-1" />
+                <TimeField unit="min" value={form.swim_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_min: v }))} />
+                <TimeField unit="sec" max="59" value={form.swim_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_sec: v }))} />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {["pushups", "situps", "pullups"].map(field => (
                 <div key={field}>
                   <label className="section-label mb-1 block">{PST_TARGETS[field].label}</label>
-                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
+                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" disabled={saveMutation.isPending} value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
             </div>
             <div>
               <label className="section-label mb-1 block">{PST_TARGETS.run.label}</label>
               <div className="flex gap-2">
-                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="min" min="0" value={form.run_min} onChange={e => setForm(f => ({ ...f, run_min: e.target.value }))} className="flex-1" />
-                <Input type="number" inputMode="numeric" pattern="[0-9]*" placeholder="sec" min="0" max="59" value={form.run_sec} onChange={e => setForm(f => ({ ...f, run_sec: e.target.value }))} className="flex-1" />
+                <TimeField unit="min" value={form.run_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_min: v }))} />
+                <TimeField unit="sec" max="59" value={form.run_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_sec: v }))} />
               </div>
             </div>
             <div>
               <label className="section-label mb-1 block">Notes</label>
-              <Textarea rows={2} placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+              <Textarea rows={2} placeholder="Optional notes" disabled={saveMutation.isPending} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
-            <div className="flex gap-3 pt-1">
+            {/* Sticky action footer — at 390px the form is tall enough to push the
+                actions below the fold, so pin Cancel/Save to the sheet's bottom
+                edge on the sheet material with a hairline lid + safe-area inset so
+                they stay in the thumb zone without scrolling. -mx-6 cancels the
+                content px-6 so the bar spans the sheet edge to edge. */}
+            <div
+              className="sticky bottom-0 -mx-6 mt-1 flex gap-3 border-t hairline px-6 pt-3 bg-[var(--sheet-bg)]"
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+            >
               <Button variant="ghost" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-[2]" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Saving…

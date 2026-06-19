@@ -72,6 +72,9 @@ export default function CreateWorkout() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [isLoading, setIsLoading] = useState(!!editId);
+  // Description is an optional, rarely-used field — keep it folded behind a
+  // single-row disclosure so the dense form stays short on a 390px viewport.
+  const [showDescription, setShowDescription] = useState(false);
   const [workout, setWorkout] = useState({
     title: "",
     description: "",
@@ -116,6 +119,7 @@ export default function CreateWorkout() {
         if (workouts.length > 0) {
           const existingWorkout = workouts[0];
           if (isMounted.current) {
+            if (existingWorkout.description) setShowDescription(true);
             setWorkout({
               title: existingWorkout.title || "",
               description: existingWorkout.description || "",
@@ -242,7 +246,7 @@ export default function CreateWorkout() {
             page name on mobile (single title per viewport). The subtitle is
             surfaced on every viewport so the 390px primary view still explains
             what the page does. */}
-        <div className="mb-6">
+        <div className="mb-3 lg:mb-6">
           <h1 className="text-2xl font-bold text-ink hidden lg:block">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
           <p className="text-ink-muted text-sm lg:mt-0.5">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
@@ -265,17 +269,30 @@ export default function CreateWorkout() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={workout.description}
-                  onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
-                  placeholder="Describe your workout…"
-                  rows={2}
-                  className="mt-1"
-                />
-              </div>
+              {showDescription ? (
+                <div className="rise-in">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    autoFocus={!workout.description}
+                    value={workout.description}
+                    onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
+                    placeholder="Describe your workout…"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowDescription(true)}
+                  className="w-full justify-start min-h-[44px] text-ink-muted"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add description
+                </Button>
+              )}
 
               <div>
                 <Label htmlFor="folder">Folder</Label>
@@ -405,7 +422,7 @@ export default function CreateWorkout() {
 
 function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, onRemove, onChange }) {
   return (
-    <div className="glass-inset p-4">
+    <div className="glass-inset p-4 rise-in">
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
@@ -477,7 +494,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
 
 function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep, onRemoveStep, onChangeStep }) {
   return (
-    <div className="glass-inset overflow-hidden">
+    <div className="glass-inset overflow-hidden rise-in">
       {/* Repeat header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-charcoal-borderSoft">
         <Repeat2 className="w-4 h-4 text-ink-muted shrink-0" />
@@ -533,7 +550,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
 function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = false }) {
   const meta = STEP_TYPES.find(s => s.value === step.step_type) || STEP_TYPES[1];
 
-  const card = `glass-inset p-4 border-l-[3px] ${meta.border}`;
+  const card = `glass-inset p-4 border-l-[3px] rise-in ${meta.border}`;
 
   return (
     <div className={card}>

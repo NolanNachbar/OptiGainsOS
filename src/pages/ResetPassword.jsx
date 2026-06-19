@@ -78,10 +78,10 @@ export default function ResetPassword() {
     <AuthShell>
       <AuthHeader subtitle="Set a new password" />
 
-      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2 min-h-[300px] flex flex-col justify-center">
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2 flex flex-col justify-center">
         {hasSession === null ? (
           <div className="flex flex-col items-center py-6">
-            <LoadingSpinner size="small" />
+            <LoadingSpinner size="default" />
             <p className="text-ink-muted text-[13px] mt-3">Verifying your reset link…</p>
           </div>
         ) : !hasSession ? (
@@ -94,7 +94,7 @@ export default function ResetPassword() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 min-h-[300px] flex flex-col justify-center">
             <div>
               <Label htmlFor="password" className="text-ink mb-1 block">New Password</Label>
               <div className="relative">
@@ -150,15 +150,17 @@ export default function ResetPassword() {
           </form>
         )}
 
-        <div className="flex items-center justify-center mt-3 px-0.5">
-          <Link
-            to="/login"
-            className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to sign in
-          </Link>
-        </div>
+        {hasSession !== null && (
+          <div className="flex items-center justify-center mt-3 px-0.5">
+            <Link
+              to="/login"
+              className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to sign in
+            </Link>
+          </div>
+        )}
       </div>
     </AuthShell>
   );

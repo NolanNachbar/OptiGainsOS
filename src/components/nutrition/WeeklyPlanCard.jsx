@@ -250,13 +250,16 @@ export default function WeeklyPlanCard({ bare = false }) {
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
             <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Recovery-Gated Deficit</span>
-            <span className="ml-auto font-technical text-sm text-warn">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
+            {/* This % is the PLANNED deficit magnitude (kcal series), not a warn
+                signal — render it as the gold kcal hue. text-warn is reserved for
+                the gate chips below, which are the actual recovery alarms. */}
+            <span className="ml-auto font-technical text-sm text-gold">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
           </div>
           <p className={`text-xs text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
           {rec.rationale && rec.rationale.length > 90 && (
             <button
               onClick={() => setShowRationale((s) => !s)}
-              className="glass-interactive mt-1 text-[10px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.97]"
+              className="glass-interactive mt-1 text-[10px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.98]"
             >
               {showRationale ? "Less" : "Why?"}
             </button>
@@ -283,31 +286,35 @@ export default function WeeklyPlanCard({ bare = false }) {
               <button
                 key={d.date}
                 onClick={() => setOpenDay(isOpen ? null : d.date)}
-                className={`glass-interactive rounded-lg px-1.5 py-2.5 text-center border active:scale-[0.97] active:bg-brand/15 ${
+                className={`glass-interactive rounded-lg px-1.5 py-3 text-center border active:scale-[0.97] active:bg-brand/15 ${
                   isOpen ? "border-brand bg-brand/10"
                   : isToday ? "border-brand/40 bg-brand/5"
                   : "border-charcoal-border bg-charcoal-surface/40"
                 }`}
               >
-                <div className="text-[10px] uppercase tracking-wider text-ink-muted font-bold">{format(parseISO(d.date), "EEEEE")}</div>
-                <div className="flex justify-center my-1">
+                <div className="text-[11px] uppercase tracking-wider text-ink-muted font-bold leading-none">{format(parseISO(d.date), "EEEEE")}</div>
+                <div className="flex justify-center my-1.5">
                   {d.trainingDay
                     ? <Dumbbell className="w-3 h-3 text-viz-1" />
                     : <Moon className="w-3 h-3 text-ink-faint" />}
                 </div>
-                <div className="font-technical text-[11px] text-gold leading-none">{d.totals.calories || "—"}</div>
-                <div className="text-[10px] font-technical leading-none mt-0.5">
-                  {d.rows.length
-                    ? <span className="text-viz-3">{Math.round(d.totals.carbs)}c</span>
-                    : <span className="text-ink-faint">eaten</span>}
-                </div>
+                {/* One datum per cell: the gold kcal figure (carb grams live in the
+                    day-detail panel). Eaten-out days keep the gold figure and swap
+                    only the sub-line to a muted tag, so the gold/viz-3 hue mapping
+                    stays uniform across all 7 cells. */}
+                <div className="font-technical text-xs text-gold leading-none">{d.totals.calories || "—"}</div>
+                {!d.rows.length && (
+                  <div className="text-[9px] uppercase tracking-wider font-bold text-ink-faint leading-none mt-1">logged</div>
+                )}
               </button>
             );
           })}
         </div>
-        <div className="flex items-center justify-between mt-2 text-[10px] text-ink-muted">
-          <span className="flex items-center gap-1"><Dumbbell className="w-3 h-3 text-viz-1" /> {trainCount} lift · <Moon className="w-3 h-3 text-ink-faint" /> {7 - trainCount} rest</span>
-          <span className="font-technical">
+        <div className="flex items-center justify-between mt-2 text-[10px]">
+          <span className="flex items-center gap-1 text-ink-muted"><Dumbbell className="w-3 h-3 text-viz-1" /> {trainCount} lift · <Moon className="w-3 h-3 text-ink-faint" /> {7 - trainCount} rest</span>
+          {/* Carb-cycle range is the headline datum of the strip — promote it to
+              font-technical + secondary ink; the lift/rest tally stays muted. */}
+          <span className="font-technical text-ink-secondary">
             carb cycle {restDay && trainDay ? `${Math.round(restDay.totals.carbs)}–${Math.round(trainDay.totals.carbs)}g` : trainDay ? `${Math.round(trainDay.totals.carbs)}g` : "—"}
           </span>
         </div>
@@ -431,13 +438,15 @@ export default function WeeklyPlanCard({ bare = false }) {
 
       {/* ── Approve — primary action of the week view ──
           Pinned to a sticky footer so it stays in the thumb zone instead of
-          living ~2000px down the scroll. Backed by the field colour + a hairline
-          top edge so scrolled content can't bleed through behind the CTA. */}
-      <div className="sticky bottom-0 px-5 pb-4 pt-3 bg-[var(--color-bg)]/95 backdrop-blur border-t hairline">
+          living ~2000px down the scroll. Backed by the glass-sheet recipe (the
+          near-opaque --sheet-bg + blur) so scrolled content can't bleed through
+          behind the CTA — bg-[var(--color-bg)]/95 silently dropped its alpha
+          (Tailwind can't inject /95 into a raw var()), leaving no real backing. */}
+      <div className="sticky bottom-0 px-5 pb-4 pt-3 glass-sheet border-t hairline">
         <button
           onClick={() => approve.mutate()}
           disabled={approve.isPending || allRows.length === 0}
-          className="cta-coral w-full disabled:opacity-60"
+          className="cta-coral w-full disabled:opacity-60 active:scale-[0.98] transition-transform duration-200 ease-[var(--ease)]"
         >
           {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
         </button>

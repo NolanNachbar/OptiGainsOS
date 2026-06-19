@@ -173,7 +173,7 @@ export default function ExerciseCard({
 
   return (
     <>
-    <Card>
+    <Card className="rise-in">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -261,7 +261,7 @@ export default function ExerciseCard({
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -272,7 +272,7 @@ export default function ExerciseCard({
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -284,7 +284,7 @@ export default function ExerciseCard({
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-white/[0.07] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -330,8 +330,8 @@ export default function ExerciseCard({
 
         {/* Between-set coaching chip (Phase 3) */}
         {coachingChip && (
-          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-[rgba(239,115,104,0.15)] text-coral flex items-center justify-center flex-shrink-0 not-italic">
+          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5 rise-in">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
               <TrendingUp className="w-3.5 h-3.5" />
             </i>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
@@ -477,22 +477,24 @@ export default function ExerciseCard({
                 aria-checked={set.completed}
                 aria-label={`Mark set ${set.set_number} ${set.completed ? 'incomplete' : 'complete'}`}
                 onClick={() => handleSetCompleted(setIndex, !set.completed)}
-                className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center transition-colors ${
-                  set.completed
-                    ? 'bg-[rgba(94,220,210,0.16)] text-teal'
-                    : 'border-[1.5px] border-white/[0.18] text-transparent hover:border-white/30'
-                }`}
+                className="min-h-[44px] w-full flex items-center justify-center touch-manipulation"
               >
-                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                  set.completed
+                    ? 'bg-teal/[0.16] text-teal'
+                    : 'border-[1.5px] border-charcoal-border text-transparent hover:border-white/30'
+                }`}>
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                </span>
               </button>
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
+                type="button"
+                aria-label={`Remove set ${set.set_number}`}
                 onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                className="h-7 w-7 bg-transparent border-0 text-ink-faint hover:text-bad hover:bg-bad/10"
+                className="min-h-[44px] w-full flex items-center justify-center text-ink-faint hover:text-bad touch-manipulation"
               >
                 <X className="w-3.5 h-3.5" />
-              </Button>
+              </button>
             </div>
 
             {/* Tag capture. failure_reason (miss): WHY it fell short — technical reasons
@@ -530,9 +532,8 @@ export default function ExerciseCard({
         })}
         <Button
           variant="ghost"
-          size="sm"
           onClick={() => onAddSet(exerciseIndex)}
-          className="mt-2 text-brand h-8"
+          className="mt-2 text-brand min-h-[44px]"
         >
           <Plus className="w-4 h-4 mr-1" />
           Add Set

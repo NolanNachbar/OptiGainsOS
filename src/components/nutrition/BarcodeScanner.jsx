@@ -103,7 +103,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal sheet-rise">
+    <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal rise-in">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal/80 backdrop-blur border-b border-charcoal-border">
         <span className="text-ink font-semibold text-base">Scan Barcode</span>
@@ -140,14 +140,16 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         {scanState === "scanning" && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-64 h-40">
-              {/* Corner brackets */}
+              {/* Corner brackets — thin border-2 at border-ink/60 so they sit
+                  close to the hairline language rather than reading as a heavy
+                  decorative frame. */}
               {[
-                "top-0 left-0 border-t-4 border-l-4 rounded-tl-lg",
-                "top-0 right-0 border-t-4 border-r-4 rounded-tr-lg",
-                "bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg",
-                "bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg",
+                "top-0 left-0 border-t-2 border-l-2 rounded-tl-lg",
+                "top-0 right-0 border-t-2 border-r-2 rounded-tr-lg",
+                "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg",
+                "bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg",
               ].map((cls, i) => (
-                <div key={i} className={`absolute w-8 h-8 border-ink/80 ${cls}`} />
+                <div key={i} className={`absolute w-8 h-8 border-ink/60 ${cls}`} />
               ))}
               {/* Scan line — neutral ink material; the `info` hue is reserved
                   for biometrics, and coral stays reserved for the action
@@ -165,11 +167,9 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
               <Loader2 className="w-4 h-4 animate-spin" /> Requesting camera…
             </div>
           )}
-          {scanState === "scanning" && (
-            <div className="bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink/80 text-xs px-4 py-2 rounded-full">
-              Point camera at a barcode
-            </div>
-          )}
+          {/* No scanning-state instruction pill — the reticle + traveling sweep
+              already communicate the live-scan state; a redundant text pill just
+              crowds the thumb zone above the single Cancel. */}
           {scanState === "looking_up" && (
             <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" /> Looking up {foundBarcode}…
@@ -190,9 +190,12 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         </div>
       </div>
 
-      {/* Not found state */}
+      {/* Not found state — a true bottom sheet: it sits at the bottom edge of
+          the column (the camera feed above is flex-1) so Try again / Enter
+          manually land in the thumb zone with safe-area padding, and rises in
+          on the sheet motion. */}
       {scanState === "not_found" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center sheet-rise">
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
@@ -201,19 +204,20 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
           {/* Rescan is the single intended primary — keep coral on it; entering
               manually is the secondary path on neutral glass. */}
           <div className="flex gap-2 w-full">
-            <Button variant="primary" className="flex-1" onClick={() => startScanning()}>
+            <Button variant="primary" size="lg" className="flex-1" onClick={() => startScanning()}>
               Try again
             </Button>
-            <Button variant="ghost" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+            <Button variant="ghost" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
               Enter manually
             </Button>
           </div>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state — same bottom-sheet anchoring so Close lands in the lower
+          third with safe-area padding. */}
       {scanState === "error" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center">
+        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center sheet-rise">
           <AlertTriangle className="w-10 h-10 text-bad" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>
@@ -221,7 +225,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
           </div>
           {/* One ghost dismiss treatment across states (matches the live-scan
               Cancel) so the escape affordance is consistent. */}
-          <Button variant="ghost" className="w-full" onClick={onClose}>
+          <Button variant="ghost" size="lg" className="w-full" onClick={onClose}>
             Close
           </Button>
         </div>

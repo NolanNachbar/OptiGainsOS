@@ -8,10 +8,11 @@ import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { Dumbbell, Pencil, Check, Cpu } from "lucide-react";
+import { Dumbbell, Pencil, Check, Cpu, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
@@ -340,7 +341,7 @@ export default function QuickWorkout() {
         onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-28 lg:pb-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--dock-clearance)+72px+env(safe-area-inset-bottom))] lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -429,17 +430,16 @@ export default function QuickWorkout() {
             )}
           </div>
         ) : (
-          <div className="mb-4 lg:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
+          <div className="mb-3 lg:hidden flex items-center gap-1.5">
+            <p className="section-label">This session</p>
+            <button
+              type="button"
               aria-label="Rename session"
               onClick={() => setEditingTitle(true)}
-              className="min-h-[44px] text-ink-muted hover:text-ink"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 text-ink-faint hover:text-ink touch-manipulation"
             >
-              <Pencil className="w-4 h-4 mr-1.5" />
-              Rename session
-            </Button>
+              <Pencil className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -457,14 +457,33 @@ export default function QuickWorkout() {
           </div>
         )}
 
-        {/* Pre-session insight card (Phase 2+) — suppressed when the engine has
-            already prescribed loads, to avoid two coaches contradicting. */}
+        {/* Pre-session insight (Phase 2+) — suppressed when the engine has
+            already prescribed loads, to avoid two coaches contradicting. On the
+            empty canvas it's a compact single-line teal coach chip so the first
+            viewport stays one coherent stack; once exercises exist it expands to
+            the full insight card with its accept/dismiss actions. */}
         {!prescribed && preSessionInsight && (
-          <PreSessionInsightCard
-            insight={preSessionInsight}
-            onAccept={handleInsightAccept}
-            onDismiss={() => setInsightDismissed(true)}
-          />
+          exercises.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => handleInsightAccept(preSessionInsight)}
+              className="w-full mb-4 glass px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-left rise-in touch-manipulation min-h-[44px]"
+            >
+              <span className="w-[22px] h-[22px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
+                <Brain className="w-3 h-3 text-teal" />
+              </span>
+              <span className="text-[10px] text-teal uppercase tracking-[0.08em] font-bold shrink-0">Coach</span>
+              <span className="text-[12.5px] font-semibold text-ink-muted truncate flex-1 min-w-0">
+                {preSessionInsight.message}
+              </span>
+            </button>
+          ) : (
+            <PreSessionInsightCard
+              insight={preSessionInsight}
+              onAccept={handleInsightAccept}
+              onDismiss={() => setInsightDismissed(true)}
+            />
+          )
         )}
 
         {/* Empty-state prompt is folded INTO the docked AddExerciseForm (it
@@ -510,12 +529,12 @@ export default function QuickWorkout() {
           {exercises.length > 0 && (
             <div className="glass px-4 py-3 rounded-xl space-y-1.5">
               <p className="section-label">Session notes</p>
-              <textarea
+              <Textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 placeholder="PRE: how you felt going in. POST: anything hard, easy, or painful."
-                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:text-ink-faint resize-none outline-none min-h-[64px]"
                 rows={3}
+                className="border-0 bg-transparent shadow-none px-0 focus-visible:shadow-none focus-visible:border-0"
               />
             </div>
           )}

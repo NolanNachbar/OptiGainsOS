@@ -79,23 +79,23 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           </div>
 
           {repsTooHigh && (
-            <p className="text-xs text-warn text-center">
+            <p className="text-xs text-ink-muted text-center">
               For accuracy, use 12 reps or fewer.
             </p>
           )}
 
           {oneRM && (
             <div className="space-y-3 pt-2 rise-in">
-              <div className="text-center p-4 glass-brand rounded-lg">
+              <div className="text-center p-4 glass-inset">
                 <div className="text-sm text-ink-muted">Estimated 1 Rep Max</div>
-                <div className="text-3xl font-bold text-brand font-technical">{oneRM} {weightUnit}</div>
+                <div className="hero-metric text-4xl text-ink">{oneRM} {weightUnit}</div>
               </div>
 
               <div className="space-y-2">
                 <div className="text-sm font-medium text-ink-muted">Weight for target reps:</div>
                 <div className="grid grid-cols-3 gap-2">
                   {repRanges.map((targetReps) => (
-                    <div key={targetReps} className="text-center p-2 glass-inset rounded-lg">
+                    <div key={targetReps} className="text-center p-2 glass-inset">
                       <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
                       <div className="font-semibold text-ink font-technical">
                         {calculateWeightForReps(oneRM, targetReps)} {weightUnit}

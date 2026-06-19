@@ -82,7 +82,6 @@ export default function FoodTracker() {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showFoodFormatGuide, setShowFoodFormatGuide] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [showRecipesPanel, setShowRecipesPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [goalsExpanded, setGoalsExpanded] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('templates');
@@ -768,7 +767,7 @@ const handleSaveMealTemplate = () => {
 
 
   return (
-    <div className="text-ink">
+    <div className="text-ink" style={{ scrollPaddingBottom: 'calc(var(--dock-clearance) + 88px)' }}>
 
       {/* Date navigation + action bar */}
       <div className="sticky top-[var(--layout-header-height,0px)] z-20 border-b border-charcoal-border bg-charcoal/95 backdrop-blur-md px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
@@ -795,16 +794,20 @@ const handleSaveMealTemplate = () => {
           </button>
           <button
             onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-            className="text-xs font-bold text-ink-muted hover:text-brand transition-colors ml-1 px-2 h-11 hidden sm:flex items-center"
+            className="text-xs font-bold text-ink-muted hover:text-brand transition-colors ml-1 px-2 h-11 flex items-center"
           >
             Today
           </button>
         </div>
         <div className="flex items-center gap-2">
+          {/* Coral discipline: the sticky-bar 'Add Food' is desktop-only — on
+              mobile the thumb-zone coral FAB is the SOLE Add-Food affordance, so
+              exactly one coral Add-Food exists per viewport. */}
           <Button
             variant="volt"
             size="lg"
             onClick={() => { resetForm(); setShowAddDialog(true); }}
+            className="hidden lg:inline-flex"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Food
@@ -828,7 +831,7 @@ const handleSaveMealTemplate = () => {
         onClick={() => { resetForm(); setShowAddDialog(true); }}
         aria-label="Add food"
         className="cta-coral lg:hidden fixed right-4 z-30 h-14 w-14 !rounded-full p-0"
-        style={{ bottom: 'var(--dock-clearance)' }}
+        style={{ bottom: 'calc(var(--dock-clearance) + 16px)' }}
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -863,15 +866,16 @@ const handleSaveMealTemplate = () => {
                         </span>
                       )}
                     </span>
-                    <span className="chip-gold">
-                      {isToday
-                        ? (calsConsumed === 0 && plannedCount > 0
-                            ? `${Math.round(planFit.plannedCal)} kcal planned`
-                            : calsRemaining < 0
-                              ? `${Math.abs(Math.round(calsRemaining))} kcal over`
-                              : `${Math.round(calsRemaining)} kcal left`)
-                        : `${Math.round(calsConsumed)} kcal eaten`}
-                    </span>
+                    {/* The kcal remaining/eaten figure is already the ring's
+                        center readout — restating it as a chip here was a
+                        redundant second kcal datum, so it's dropped. The only
+                        thing the ring can't show is the planned-but-unlogged
+                        budget, which is surfaced once when relevant. */}
+                    {isToday && calsConsumed === 0 && plannedCount > 0 && (
+                      <span className="chip-gold">
+                        {Math.round(planFit.plannedCal)} kcal planned
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-5 md:gap-8">
                     {/* Calorie ring — kcal owns gold */}
@@ -932,25 +936,10 @@ const handleSaveMealTemplate = () => {
               );
             })()}
 
-            {/* Quick actions — the two distinct fast paths (Add Food owns search; Templates live in the More sheet) */}
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Barcode', icon: Camera, onClick: () => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); } },
-                { label: 'Recipes', icon: BookOpen, onClick: () => setShowRecipesPanel(true) },
-              ].map(({ label, icon: Icon, onClick }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={onClick}
-                  className="h-11 glass-inset tile-interactive flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-secondary hover:text-ink transition-colors whitespace-nowrap"
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
- 
- 
+            {/* Quick-action grid removed: Barcode lives in the Add dialog (Scan)
+                and Recipes in the More sheet, so search owns the one Add path and
+                the top of the page goes straight to the ring → log. */}
+
             {/* Planned (meal-plan) items waiting to be checked off — with live
                 budget-fit status. Portions self-adjust to the day's current target,
                 so this normally reads "fits"; warn means the budget is too far gone
@@ -981,26 +970,32 @@ const handleSaveMealTemplate = () => {
                 <Button variant="dim" size="sm" onClick={() => refetchEntries()}>Retry</Button>
               </div>
             ) : entriesLoading ? (
-              /* Loading skeletons: bars use the system `bg-track` material. The
-                 only motion is Tailwind's `animate-pulse` (opacity breathe) —
-                 a documented system exception, since Vapor × Macro has no
-                 dedicated shimmer utility and a pulse on the track token reads
-                 as restrained, hue-free placeholder motion. */
+              /* Loading skeletons: bars use the system `bg-track` material with
+                 the tokened `.pulse-loop` shimmer (single easing, --loop-dur
+                 cadence) — a restrained, hue-free placeholder breathe. */
               <div className="space-y-4">
-                {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => (
+                {[
+                  { mealType: 'breakfast', label: '01. BREAKFAST' },
+                  { mealType: 'lunch',     label: '02. LUNCH' },
+                  { mealType: 'dinner',    label: '03. DINNER' },
+                  { mealType: 'snack',     label: '04. SNACK' },
+                ].map(({ mealType, label }) => (
                   <div key={mealType} className="glass overflow-hidden">
-                    <div className="px-4 py-3 border-b hairline">
-                      <div className="h-3 w-24 rounded bg-track animate-pulse" />
+                    {/* Real meal label in the skeleton header so the structure is
+                        recognizable while only the row content shimmers. */}
+                    <div className="flex items-center gap-2.5 px-4 py-3 border-b hairline">
+                      <div className="w-2 h-2 rounded-full shrink-0 bg-track" />
+                      <h3 className="section-label tracking-[0.12em]">{label}</h3>
                     </div>
                     <div className="px-4 py-4 space-y-2">
-                      <div className="h-3 w-full rounded bg-track animate-pulse" />
-                      <div className="h-3 w-2/3 rounded bg-track animate-pulse" />
+                      <div className="h-3 w-full rounded bg-track pulse-loop" />
+                      <div className="h-3 w-2/3 rounded bg-track pulse-loop" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 rise-in-2">
               {[
                 { mealType: 'breakfast', label: '01. BREAKFAST' },
                 { mealType: 'lunch',     label: '02. LUNCH' },
@@ -1038,9 +1033,28 @@ const handleSaveMealTemplate = () => {
                             <Bookmark className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <span className="pill-value font-technical text-ink">
-                          {mealCals} <span className="text-[9.5px] font-semibold text-ink-muted">kcal</span>
-                        </span>
+                        {/* kcal owns gold — matches the ring + trend grammar. */}
+                        {hasEntries && (
+                          <span className="pill-value font-technical text-gold">
+                            {mealCals} <span className="text-[9.5px] font-semibold text-gold/70">kcal</span>
+                          </span>
+                        )}
+                        {/* Per-section add demoted to an icon-only '+' in the
+                            header so each meal block stays a single, compact
+                            section and the whole log fits ~2 viewports. */}
+                        {hasEntries && (
+                          <button
+                            onClick={() => {
+                              setNewFood(prev => ({ ...prev, meal_type: mealType }));
+                              setShowAddDialog(true);
+                            }}
+                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-8 rounded-full text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
+                            aria-label={`Add item to ${mealType}`}
+                            title="Add item"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
  
@@ -1050,7 +1064,7 @@ const handleSaveMealTemplate = () => {
                         {entries.map((entry, i) => (
                           <div
                             key={entry.id}
-                            className={`flex items-center gap-2 md:gap-3 py-2.5 px-4 border-b hairline tile-interactive group ${entry.planned ? 'bg-track' : i % 2 === 1 ? 'bg-track' : ''}`}
+                            className={`flex items-center gap-2 md:gap-3 py-2.5 px-4 border-b hairline tile-interactive group ${entry.planned || i % 2 === 1 ? 'glass-inset !rounded-none' : ''}`}
                           >
                             {entry.planned && (
                               <button
@@ -1109,18 +1123,10 @@ const handleSaveMealTemplate = () => {
                             </div>
                           </div>
                         ))}
-                        <button
-                          className="w-full min-h-[44px] py-2.5 flex items-center justify-center gap-1.5 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
-                          onClick={() => {
-                            setNewFood(prev => ({ ...prev, meal_type: mealType }));
-                            setShowAddDialog(true);
-                          }}
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span className="text-xs font-bold tracking-widest uppercase">Add Item</span>
-                        </button>
                       </>
                     ) : (
+                      /* Empty meal collapses to a single compact Add Item line so
+                         four empty sections don't eat a full viewport. */
                       <button
                         className="w-full min-h-[44px] py-2.5 flex items-center justify-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors group"
                         onClick={() => {
@@ -1812,6 +1818,9 @@ const handleSaveMealTemplate = () => {
         <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
             <DialogTitle>Nutrition Goals</DialogTitle>
+            <DialogDescription>
+              Set your daily calorie and macro targets, or sync them to your active phase.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5" style={{ WebkitOverflowScrolling: 'touch' }}>
             <GoalsFormContent
@@ -1828,22 +1837,6 @@ const handleSaveMealTemplate = () => {
               setShowGoalsModal={setShowGoalsModal}
               setShowStatsModal={setShowStatsModal}
             />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── Recipes Sheet — bottom sheet on mobile, centered dialog on desktop ─── */}
-      <Dialog open={showRecipesPanel} onOpenChange={setShowRecipesPanel}>
-        <DialogContent className="max-w-xl flex flex-col p-0 overflow-hidden"
-          style={{ maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - var(--dock-clearance))' }}>
-          <DialogHeader className="px-5 pt-5 pb-4 border-b border-charcoal-border shrink-0 flex-row items-center justify-between gap-3 space-y-0 pr-14">
-            <DialogTitle className="pr-0">Your Recipes</DialogTitle>
-            <Button onClick={() => setShowNewRecipe(true)} variant="volt" size="sm">
-              <Plus className="w-3.5 h-3.5 mr-1" />New Recipe
-            </Button>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto overscroll-contain p-5" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <RecipeBuilder hideHeader showCreateDialog={showNewRecipe} onCreateDialogChange={setShowNewRecipe} />
           </div>
         </DialogContent>
       </Dialog>
@@ -2242,14 +2235,13 @@ function GoalsFormContent({
         const goalsOutOfSync = Math.abs((profile?.daily_calorie_goal || 0) - phaseCalories) > 50;
         return (
           <div className={`rounded-xl border p-4 space-y-3 ${goalsOutOfSync ? 'border-warn/40 bg-warn/[8%]' : 'border-charcoal-border'}`}>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    activePhase.phase_type === 'cut'  ? 'bg-info/10 text-info'
-                    : activePhase.phase_type === 'bulk' ? 'bg-ok/10 text-ok'
-                    : 'bg-charcoal-elevated text-ink-muted'
-                  }`}>
+                  {/* Phase is a category label, not a biometric — neutral glass
+                      treatment so the ok/info physiological spectrum stays
+                      reserved for biometrics. */}
+                  <span className="pill-value pill-value--sm text-ink-secondary">
                     {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
                   </span>
                   <span className="text-sm text-ink-muted">
@@ -2258,8 +2250,16 @@ function GoalsFormContent({
                       : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
                   </span>
                 </div>
-                <div className="text-sm font-medium text-ink mt-1">
-                  {phaseCalories.toLocaleString()} cal/day phase target
+                {/* One hero number: the saved Daily Calories goal (kcal owns
+                    gold). The phase target demotes to a muted reference line. */}
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <span className="type-display text-gold text-3xl tabular-nums">
+                    {(profile?.daily_calorie_goal || goalForm?.calories || phaseCalories).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-semibold text-ink-muted">cal/day</span>
+                </div>
+                <div className="text-xs text-ink-muted mt-0.5 tabular-nums">
+                  Phase target {phaseCalories.toLocaleString()} cal/day
                 </div>
               </div>
               <Button type="button" variant="ghost" size="sm" className="text-ink-muted hover:text-ink shrink-0 gap-1"
@@ -2272,7 +2272,7 @@ function GoalsFormContent({
                 <p className="text-xs text-warn">
                   Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
                 </p>
-                <Button type="button" size="sm" className="shrink-0 bg-warn/90 hover:bg-warn text-charcoal text-xs h-7"
+                <Button type="button" variant="volt" size="sm" className="shrink-0"
                   onClick={() => {
                     const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
                     const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;
@@ -2303,7 +2303,7 @@ function GoalsFormContent({
             <Label className="whitespace-nowrap text-sm sm:shrink-0">Protein target</Label>
             <div className="flex items-center gap-2 flex-1">
               <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
-                onChange={(e) => setProteinPerLb(e.target.value)} className="w-24" />
+                onChange={(e) => setProteinPerLb(e.target.value)} className="flex-1 min-w-0" />
               <span className="text-sm text-ink-muted whitespace-nowrap">g / lb</span>
               {latestWeight && (
                 <span className="pill-value pill-value--sm text-ink ml-auto sm:ml-0">

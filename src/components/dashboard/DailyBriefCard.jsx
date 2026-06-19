@@ -43,7 +43,11 @@ function CoachSection({ coach, content, defaultOpen = false }) {
         className="w-full flex items-center justify-between min-h-[44px] px-4 py-3 tile-interactive text-left"
       >
         <div className="flex items-center gap-2.5">
-          {Icon && <Icon className="w-3.5 h-3.5 text-teal shrink-0" aria-hidden="true" />}
+          {Icon && (
+            <span className="shrink-0 grid place-items-center w-7 h-7 rounded-lg bg-teal/10">
+              <Icon className="w-4 h-4 text-teal" aria-hidden="true" />
+            </span>
+          )}
           <CoachTag>{coach.label}</CoachTag>
         </div>
         <ChevronDown
@@ -62,7 +66,7 @@ function CoachSection({ coach, content, defaultOpen = false }) {
           }}
         >
           <div className="min-h-0">
-            <p className="px-4 pb-3 pt-0 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
+            <p className="font-technical tabular-nums px-4 pb-3 pt-0 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
           </div>
         </div>
       )}
@@ -159,9 +163,11 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
             <button
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expand brief" : "Collapse brief"}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 text-muted-2 hover:text-ink transition-colors rounded"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 transition-colors duration-200 [transition-timing-function:var(--ease)] rounded group"
             >
-              {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              <span className="grid place-items-center w-7 h-7 rounded-full glass-inset text-muted-2 group-hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]">
+                {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              </span>
             </button>
           </div>
         </div>
@@ -178,18 +184,18 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
 
           <div className="mt-2 mb-1">
             {(() => {
-              // Auto-expand EVERY coach section that actually has content so the
-              // brief delivers real coaching on load instead of a stack of
-              // collapsed teal stubs. Only render coaches that have content — a
-              // section with no body is a dead toggle (chevron flips, nothing
-              // expands).
+              // Open only the FIRST coach section that has content; the rest stay
+              // collapsed so the brief lands within one viewport instead of a tall
+              // stack of five auto-expanded sections. Only render coaches that have
+              // content — a section with no body is a dead toggle (chevron flips,
+              // nothing expands).
               const withContent = COACHES.filter(c => json[c.key]);
-              return withContent.map(coach => (
+              return withContent.map((coach, i) => (
                 <CoachSection
                   key={coach.key}
                   coach={coach}
                   content={json[coach.key]}
-                  defaultOpen
+                  defaultOpen={i === 0}
                 />
               ));
             })()}

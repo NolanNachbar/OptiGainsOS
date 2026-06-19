@@ -22,6 +22,9 @@ export default function WeighInModal({ open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [weight, setWeight] = useState("");
 
+  const weightUnit = profile?.weight_unit || "lbs";
+  const lastWeight = profile?.current_weight;
+
   const weighInMutation = useMutation({
     mutationFn: async (weightData) => {
       const entry = await db.entities.BodyWeightEntry.create({
@@ -59,27 +62,32 @@ export default function WeighInModal({ open, onOpenChange }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader className="text-left">
-          <DialogTitle className="flex items-center gap-2">
+        <DialogHeader className="text-center">
+          <DialogTitle className="flex items-center justify-center gap-2">
             <Scale className="w-5 h-5" /> Log Your Weight
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium text-ink-muted mb-2 block text-center">
-              Weight ({profile?.weight_unit || "lbs"})
+              Weight ({weightUnit})
             </label>
             <Input
               type="number"
               inputMode="decimal"
               step="0.1"
               enterKeyHint="done"
-              placeholder={profile?.current_weight ?? "Enter your weight"}
+              placeholder="Enter weight"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               className="type-display tabular-nums text-center text-2xl sm:text-3xl h-auto py-3"
               autoFocus
             />
+            {lastWeight != null && (
+              <p className="text-xs text-ink-faint text-center mt-2">
+                Last: <span className="tabular-nums">{lastWeight}</span> {weightUnit}
+              </p>
+            )}
           </div>
           <div className="flex gap-3">
             <Button
@@ -96,11 +104,11 @@ export default function WeighInModal({ open, onOpenChange }) {
               variant="primary"
               size="lg"
               className="flex-1"
-              disabled={weighInMutation.isPending}
+              disabled={weighInMutation.isPending || !weight || parseFloat(weight) <= 0}
             >
               {weighInMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                  <Loader2 className="w-4 h-4 spin-loop" /> Saving…
                 </>
               ) : (
                 "Save"

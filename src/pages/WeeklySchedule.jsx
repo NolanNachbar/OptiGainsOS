@@ -13,6 +13,24 @@ import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 const RUN_NAMES = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
 const isRun = (ex) => RUN_NAMES.some(k => ex.name?.toLowerCase().includes(k));
 
+// The week query orders logs by duration_seconds DESC and the row picks the
+// longest log per day, so a single runaway duration_seconds (a session left
+// "open" for hours, a clock skew) renders as e.g. "398 min" and dominates the
+// scan column. Guard: anything past a plausible single-session ceiling is
+// treated as corrupt and falls back to the exercise count instead of a number
+// that lies. Below the ceiling, format > ~90 min as h:mm so a long-but-real
+// session reads as "1:48" rather than a bare three-digit minute count.
+const MAX_PLAUSIBLE_SESSION_MIN = 240; // 4h hard ceiling for one logged session
+function formatDuration(seconds) {
+  if (!seconds) return null;
+  const mins = Math.round(seconds / 60);
+  if (mins <= 0 || mins > MAX_PLAUSIBLE_SESSION_MIN) return null; // implausible → caller falls back
+  if (mins <= 90) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
 // Vapor × Macro day-type pills — neutral by default; only CARDIO owns its
 // on-semantic blue (carbs/cardio). Strength/mixed/two-a-day stay neutral so
 // the strict hue grammar isn't borrowed as a categorical palette.
@@ -23,6 +41,22 @@ const TYPE_PILLS = {
   TWO_A_DAY: { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "TWO-A-DAY" },
   REST:      { bg: "var(--color-border-soft)",         fg: "var(--text-muted)", label: "REST" },
 };
+
+// Shared chip primitive for this page: the day-type pill and the "Show all /
+// Show less" micro-label both render through the SAME chip so the page has one
+// chip voice instead of two hand-rolled ones. Typography rides .section-label
+// (the og-cap: Manrope 700, 0.06em, uppercase) so casing/tracking/weight match
+// every other label on the page; only the fill/ink tint varies per call.
+function Chip({ children, bg = "var(--color-border-soft)", fg, className = "" }) {
+  return (
+    <span
+      className={`section-label inline-block rounded-full px-2 py-[3px] whitespace-nowrap ${className}`}
+      style={{ background: bg, ...(fg ? { color: fg } : null) }}
+    >
+      {children}
+    </span>
+  );
+}
 
 function dayType(entries, log) {
   const entry = entries[0];
@@ -124,7 +158,19 @@ export default function WeeklySchedule() {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [showAllMuscles, setShowAllMuscles] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  // The completed-session card starts expanded when the selected day is today,
+  // so the day the user lands on immediately shows its logged exercises rather
+  // than a collapsed summary. Selecting another day re-derives this from
+  // whether THAT day is today (see selectDay below).
+  // selectedDay defaults to today, so the completed card opens on mount.
+  const [showCompleted, setShowCompleted] = useState(true);
+
+  // One entry point for picking a day so the completed-card default-expand stays
+  // tied to "is the tapped day today" without an effect chasing selectedDay.
+  const selectDay = (day) => {
+    setSelectedDay(day);
+    setShowCompleted(isSameDay(day, new Date()));
+  };
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -173,8 +219,12 @@ export default function WeeklySchedule() {
   const selectedDayType = dayType(selectedEntries, selectedLog);
   const isTwoADay = selectedDayType === "TWO_A_DAY";
   // Day echo folded into each card's section-label so identity survives without
-  // a redundant standalone caption above the card (e.g. "FRI — COMPLETED").
-  const dayEcho = format(selectedDay, "EEE").toUpperCase();
+  // a redundant standalone caption above the card (e.g. "Fri — Completed").
+  // ONE casing convention: source strings stay title-case ("Fri — Completed");
+  // .section-label owns the uppercase transform so every echo renders the same
+  // way without each call-site pre-uppercasing (which fought the title-cased
+  // words after the em-dash).
+  const dayEcho = format(selectedDay, "EEE");
 
   const totalWorkouts = activeEnrollment
     ? (activeEnrollment.program?.days_per_week || 1) * (activeEnrollment.program?.num_cycles || activeEnrollment.program?.duration_weeks || 4)
@@ -224,7 +274,7 @@ export default function WeeklySchedule() {
         <button
           onClick={() => setWeekStart(w => subWeeks(w, 1))}
           aria-label="Previous week"
-          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors"
+          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -234,7 +284,7 @@ export default function WeeklySchedule() {
         <button
           onClick={() => setWeekStart(w => addWeeks(w, 1))}
           aria-label="Next week"
-          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors"
+          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -245,8 +295,8 @@ export default function WeeklySchedule() {
         {logsLoading || enrollmentsLoading ? (
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
-              <div className="w-[38px] h-9 rounded bg-charcoal-borderSoft animate-pulse shrink-0" />
-              <div className="flex-1 h-4 rounded-full bg-charcoal-borderSoft animate-pulse" />
+              <div className="w-[38px] h-9 rounded bg-track pulse-loop shrink-0" />
+              <div className="flex-1 h-4 rounded-full bg-track pulse-loop" />
             </div>
           ))
         ) : logsError || enrollmentsError ? (
@@ -263,7 +313,6 @@ export default function WeeklySchedule() {
           const isCurrentDay = isSameDay(day, new Date());
           const type = dayType(entries, log);
           const pill = TYPE_PILLS[type];
-          const mins = log?.duration_seconds ? Math.round(log.duration_seconds / 60) : null;
           const detail = log
             ? getWorkoutSplitTitle(log, entries[0]?.title)
             : entries[0]?.title || "—";
@@ -271,8 +320,8 @@ export default function WeeklySchedule() {
           return (
             <button
               key={i}
-              onClick={() => setSelectedDay(day)}
-              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
+              onClick={() => selectDay(day)}
+              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
             >
               <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
                 <span className={`block text-[11px] font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
@@ -283,34 +332,27 @@ export default function WeeklySchedule() {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <span
-                  className="inline-block rounded-full px-2 py-[3px] text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap"
-                  style={{ background: pill.bg, color: pill.fg }}
-                >
-                  {pill.label}
-                </span>
+                <Chip bg={pill.bg} fg={pill.fg}>{pill.label}</Chip>
                 <div className="text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
                   {detail}
                 </div>
               </div>
               {/* Shared fixed-width trailing status slot so completed / up-next /
                   future rows align on one scan column instead of a ragged rail.
-                  Completion reads as neutral ink + glyph (the leaf was the third
-                  competing green tint); 'UP NEXT' is demoted from a glass pill to
-                  a chevron-anchored section-label caption. */}
-              <div className="w-[68px] shrink-0 flex flex-col items-end justify-center text-right">
-                {log ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-ink" />
-                    <span className="font-technical text-[11px] font-bold text-muted-2 tabular-nums whitespace-nowrap">
-                      {mins ? `${mins} min` : `${(log.exercises || []).length} ex`}
-                    </span>
-                  </>
-                ) : isCurrentDay && type !== "REST" ? (
+                  The high-contrast (ink) trailing slot is RESERVED for the one
+                  actionable day — today's 'UP NEXT' + chevron — so the page still
+                  answers "what's next" even when today is fully logged. A logged
+                  day reads as a quiet neutral check; its minute count is demoted
+                  into the expandable detail card below (it was poaching the
+                  attention the next action needs). */}
+              <div className="w-[68px] shrink-0 flex items-center justify-end text-right">
+                {isCurrentDay && type !== "REST" && !log ? (
                   <span className="flex items-center gap-0.5 whitespace-nowrap">
                     <span className="section-label !text-ink">UP NEXT</span>
                     <ChevronRight className="w-3.5 h-3.5 text-ink" />
                   </span>
+                ) : log ? (
+                  <Check className="w-4 h-4 text-muted-2" />
                 ) : type !== "REST" ? (
                   <ChevronRight className="w-4 h-4 text-faint" />
                 ) : null}
@@ -337,14 +379,14 @@ export default function WeeklySchedule() {
             {selectedLog && (() => {
               const logLifts = (selectedLog.exercises || []).filter(ex => !isRun(ex));
               const logRuns = (selectedLog.exercises || []).filter(isRun);
-              const mins = selectedLog.duration_seconds ? Math.round(selectedLog.duration_seconds / 60) : null;
+              const dur = formatDuration(selectedLog.duration_seconds);
               const exCount = logLifts.length + logRuns.length;
               return (
                 <div className="glass overflow-hidden rise-in-2">
                   <button
                     onClick={() => setShowCompleted(v => !v)}
                     aria-expanded={showCompleted}
-                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors active:bg-track"
+                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
                   >
                     <div className="min-w-0">
                       <p className="section-label mb-1">
@@ -353,15 +395,15 @@ export default function WeeklySchedule() {
                       <h3 className="type-display text-[15px] leading-tight truncate">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
-                      <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">
-                        {mins ? `${mins} min · ` : ""}{exCount} {exCount === 1 ? "exercise" : "exercises"}
+                      <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 tabular-nums">
+                        {dur ? `${dur} · ` : ""}{exCount} {exCount === 1 ? "exercise" : "exercises"}
                       </p>
                     </div>
                     <span className="flex items-center gap-2 shrink-0">
                       <span className="w-6 h-6 rounded-full glass-inset flex items-center justify-center">
                         <CheckCircle2 className="w-3.5 h-3.5 text-ink" />
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${showCompleted ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
                     </span>
                   </button>
                   {showCompleted && (
@@ -486,12 +528,12 @@ export default function WeeklySchedule() {
                               onClick={() => toggleCardio(name)}
                               aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
                               aria-pressed={done}
-                              className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform active:scale-95"
+                              className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                             >
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
                                 done
                                   ? "glass-inset text-ink"
-                                  : "border border-charcoal-border hover:border-carb"
+                                  : "border border-carb/40"
                               }`}>
                                 {done && <CheckCircle2 className="w-4 h-4" />}
                               </span>
@@ -537,14 +579,14 @@ export default function WeeklySchedule() {
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
-            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors active:bg-track"
+            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
           >
             <span className="section-label">Weekly Volume</span>
             <span className="flex items-center gap-2">
-              <span className="font-technical text-[11px] font-extrabold text-muted-2">
+              <span className="font-technical text-[11px] font-extrabold text-muted-2 tabular-nums">
                 {totalWeeklySets} sets · {muscleVolume.length} muscles
               </span>
-              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${showVolume ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showVolume ? "rotate-180" : ""}`} />
             </span>
           </button>
           {showVolume && (
@@ -562,7 +604,7 @@ export default function WeeklySchedule() {
                     </div>
                     <div className="h-1 bg-track rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-viz-1 rounded-full transition-all"
+                        className="h-full bg-viz-1 rounded-full transition-all duration-200 [transition-timing-function:var(--ease)]"
                         style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
                       />
                     </div>
@@ -573,9 +615,9 @@ export default function WeeklySchedule() {
                 <button
                   onClick={() => setShowAllMuscles(v => !v)}
                   aria-expanded={showAllMuscles}
-                  className="w-full mt-2.5 py-2 min-h-[44px] text-[11px] font-extrabold uppercase tracking-wide text-muted-2 hover:text-ink transition-colors"
+                  className="w-full mt-2.5 py-2 min-h-[44px] flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
                 >
-                  {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
+                  <Chip>{showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}</Chip>
                 </button>
               )}
             </div>
@@ -590,10 +632,10 @@ export default function WeeklySchedule() {
             <p className="section-label truncate flex-1 mr-2">
               {activeEnrollment.program.title}
             </p>
-            <span className="font-technical text-xs font-extrabold text-viz-4 shrink-0 tabular-nums">{progressPct}%</span>
+            <span className="font-technical text-xs font-extrabold text-muted-2 shrink-0 tabular-nums">{progressPct}%</span>
           </div>
           <div className="h-1 bg-track rounded-full overflow-hidden mb-1.5">
-            <div className="h-full bg-viz-4 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+            <div className="h-full bg-viz-1 rounded-full transition-all duration-200 [transition-timing-function:var(--ease)]" style={{ width: `${progressPct}%` }} />
           </div>
           <p className="font-technical text-[11px] font-semibold text-muted-2">
             Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}

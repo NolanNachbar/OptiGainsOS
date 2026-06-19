@@ -219,9 +219,31 @@ export default function ProgramDetail() {
     ? `Cycle ${currentCycle}, Day ${currentDayIndex}`
     : null;
 
+  const primaryAction = !enrollment
+    ? { label: user ? "Start Program" : "Sign in to Start", onClick: () => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } }) }
+    : isEnrolled && currentWorkout
+    ? { label: "Start Next Workout", onClick: handleStartWorkout }
+    : enrollment?.status === "paused"
+    ? { label: "Resume", onClick: handleResume }
+    : null;
+
   return (
     <div className="p-4 md:p-6 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+      {/* Sticky thumb-zone CTA — the header action scrolls off on a tall mobile
+          page, so mirror it as a fixed bottom-edge button (mobile only) clearing
+          the dock + safe-area inset. */}
+      {primaryAction && (
+        <div
+          className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pt-3 glass-elevated"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+        >
+          <Button variant="volt" size="lg" className="w-full" onClick={primaryAction.onClick}>
+            <Play className="w-4 h-4 mr-2" />
+            {primaryAction.label}
+          </Button>
+        </div>
+      )}
+      <div className="max-w-4xl mx-auto pb-24 md:pb-0">
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
@@ -242,8 +264,11 @@ export default function ProgramDetail() {
                       {GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}
                     </Badge>
                   )}
-                  {enrollment?.status && (
-                    <Badge variant="outline" className="text-ink-muted">
+                  {/* 'active' is the common case and is already implied by the
+                      coral Start CTA + position line; only surface the status
+                      badge when it is an exception (paused/completed). */}
+                  {enrollment?.status && enrollment.status !== "active" && (
+                    <Badge variant="outline" className="text-ink-muted capitalize">
                       {enrollment.status}
                     </Badge>
                   )}
@@ -361,74 +386,78 @@ export default function ProgramDetail() {
                   </Button>
                 )}
 
-                {/* Secondary / management controls — keep at most two demoted controls
-                    inline; route power-user (Edit/Export) and destructive (Delete)
-                    actions behind a "Manage" overflow toggle. */}
+                {/* Secondary / management controls — the default header carries
+                    only the coral CTA + a single "Manage" toggle. Every demoted
+                    control (Pause/Cancel status actions, owner Edit/Export, and
+                    destructive Delete) lives inside the overflow so the resting
+                    header reads as one action, not a wall of grey buttons. */}
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
                   <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      {isEnrolled && (
-                        <Button variant="dim" size="lg" className="w-full min-w-0" onClick={handlePause}>
-                          <Pause className="w-4 h-4 mr-1.5" />
-                          Pause
-                        </Button>
-                      )}
-                      {(isEnrolled || enrollment?.status === "paused") && (
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="w-full min-w-0"
-                          onClick={handleRestart}
-                        >
-                          <Ban className="w-4 h-4 mr-1.5" />
-                          Cancel
-                        </Button>
-                      )}
-                      {isOwner && (
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="w-full min-w-0"
-                          onClick={() => setShowManageActions((v) => !v)}
-                          aria-expanded={showManageActions}
-                        >
-                          Manage
-                          <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
-                        </Button>
-                      )}
-                    </div>
-                    {isOwner && showManageActions && (
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="w-full min-w-0"
-                          onClick={() => navigate(`/program-builder?edit=${program.id}`)}
-                        >
-                          <Edit className="w-4 h-4 mr-1.5" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="w-full min-w-0"
-                          onClick={() => {
-                            exportProgramAsJson(program);
-                            toast.success("Program exported");
-                          }}
-                        >
-                          <Download className="w-4 h-4 mr-1.5" />
-                          Export
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="lg"
-                          className="w-full min-w-0"
-                          onClick={handleDelete}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1.5" />
-                          Delete
-                        </Button>
+                    <Button
+                      variant="dim"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setShowManageActions((v) => !v)}
+                      aria-expanded={showManageActions}
+                    >
+                      Manage
+                      <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
+                    </Button>
+                    {showManageActions && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {isEnrolled && (
+                          <Button variant="dim" size="lg" className="w-full min-w-0" onClick={handlePause}>
+                            <Pause className="w-4 h-4 mr-1.5" />
+                            Pause
+                          </Button>
+                        )}
+                        {(isEnrolled || enrollment?.status === "paused") && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={handleRestart}
+                          >
+                            <Ban className="w-4 h-4 mr-1.5" />
+                            Cancel
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={() => navigate(`/program-builder?edit=${program.id}`)}
+                          >
+                            <Edit className="w-4 h-4 mr-1.5" />
+                            Edit
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={() => {
+                              exportProgramAsJson(program);
+                              toast.success("Program exported");
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-1.5" />
+                            Export
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="destructive"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={handleDelete}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5" />
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -453,7 +482,7 @@ export default function ProgramDetail() {
 
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (
-          <Card className="mb-4 border-[0.5px] !border-[rgba(var(--warn-rgb)/0.30)]">
+          <Card className="mb-4 border-[0.5px] border-warn/30">
             <CardContent className="pt-3 pb-3">
               {recoveryWarnings.map((w) => (
                 <div key={w.muscle} className="flex items-start gap-2 text-sm text-ink-muted">
@@ -540,7 +569,7 @@ export default function ProgramDetail() {
                       <div>
                         <p className="font-medium text-sm text-ink">{name}</p>
                         <p className="font-technical text-xs text-ink-muted">
-                          {state.sessions_at_current_weight || 0} sessions at current weight
+                          {state.sessions_at_current_weight || 0} session{(state.sessions_at_current_weight || 0) === 1 ? "" : "s"} at current weight
                           {effortVal != null && (
                             <> &middot; Avg RIR {effortVal.toFixed(1)}</>
                           )}

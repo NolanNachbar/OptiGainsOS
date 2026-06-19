@@ -28,9 +28,13 @@
   --color-border-soft: rgba(255, 255, 255, 0.08);
   /* The single "empty track" material — the unfilled portion of every
      progress / segment / ring track (readiness + macro bars, NumberPicker
-     ticks, calorie-ring stroke). One alpha for one material; surfaces that
-     previously hardcoded bg-white/[0.08] or stroke rgba(255,255,255,0.09)
-     reference this token instead. */
+     ticks, calorie-ring stroke) AND the base fill of every skeleton /
+     placeholder block. One alpha for one material; surfaces that previously
+     hardcoded bg-white/[0.08] or stroke rgba(255,255,255,0.09) reference this
+     token instead. CANONICAL: skeletons and progress tracks use `bg-track`,
+     NEVER `bg-charcoal-elevated` (a raised surface, not an empty track — using
+     it makes a placeholder read as real content). Pair with .pulse-loop for
+     the loading shimmer. */
   --color-track:       rgba(255, 255, 255, 0.08);
 
   /* ── Ink ────────────────────────────────────────────────────────────── */
@@ -84,7 +88,14 @@
   --glass-edge:        rgba(255, 255, 255, 0.10);
   --glass-edge-strong: rgba(255, 255, 255, 0.13);
   --glass-specular:    rgba(255, 255, 255, 0.12);
-  --dock-tint:         rgba(120, 120, 128, 0.18);
+  /* Floating-chrome tint (dock, sticky headers, dropdowns, chart tooltips —
+     everything on .glass-elevated). Raised from 0.18 → 0.55 because at the
+     prior alpha page content read clearly THROUGH the floating dock (Fuel
+     weight history, RecoveryDetail axis) — chrome must de-emphasize what's
+     beneath it, not leave it half-legible. Paired with a stronger blur on
+     .glass-elevated. Still translucent (the liquid-glass identity), just
+     opaque enough to win over busy content. */
+  --dock-tint:         rgba(28, 32, 41, 0.55);
   /* Sheet/dialog material — heavier & near-opaque so busy page content
      never bleeds through behind a form (dock-tint is too transparent).
      Raised to 0.98 so bright/coral page content can't register through
@@ -93,6 +104,13 @@
   --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
 
+  /* THE one easing. RULE: every transition-colors / transition-transform /
+     transition-all (and any bespoke `transition:`) MUST carry an explicit
+     duration in the 180–320ms band AND this curve, e.g.
+       transition-colors duration-200 [transition-timing-function:var(--ease)]
+     Tailwind's default transitions ship a 150ms cubic-bezier(.4,0,.2,1) that is
+     OFF-system on both count and curve — always pin duration + var(--ease).
+     (Repeating ambient loops use --loop-dur instead; see below.) */
   --ease: cubic-bezier(.2, .7, .3, 1);
 
   /* Loop duration for ambient, continuously-repeating motion (scan sweep,
@@ -168,7 +186,9 @@ html.light {
   --glass-edge:        rgba(18, 24, 34, 0.09);
   --glass-edge-strong: rgba(18, 24, 34, 0.12);
   --glass-specular:    rgba(255, 255, 255, 0.85);
-  --dock-tint:         rgba(255, 255, 255, 0.66);
+  /* Light-theme floating-chrome tint — raised toward opaque for the same
+     content-bleed reason as :root (see above). */
+  --dock-tint:         rgba(255, 255, 255, 0.86);
   --sheet-bg:          rgba(255, 255, 255, 0.98);
   --shadow-1: 0 10px 28px rgba(22, 28, 40, 0.10);
   --shadow-2: 0 8px 24px rgba(22, 28, 40, 0.14);
@@ -320,8 +340,11 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   /* Liquid-glass chrome — dock, sidebar, sheets, floating controls. */
   .glass-elevated {
     background: var(--dock-tint);
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    /* Blur raised 14px → 20px so content beneath the dock / sticky headers /
+       dropdowns is frosted into the background instead of staying readable
+       through the chrome (SYS dock-material finding). */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 0.5px solid var(--glass-edge-strong);
     box-shadow: inset 1.5px 1.5px 1px var(--glass-specular), var(--shadow-2);
   }
@@ -423,11 +446,40 @@ svg.rbh path:hover, svg.rbh polygon:hover,
      the dedicated --loop-dur token (NOT the 180–320ms entrance band, which
      strobes when repeated), alternating so it sweeps down then back. */
   .scan-sweep { animation: scanSweep var(--loop-dur) var(--ease) infinite alternate; }
+
+  /* Tokened spinner — the system replacement for Tailwind's `animate-spin`
+     (which runs a raw `linear` curve detached from our motion language). The
+     rotation itself stays linear (a spinner that eases per turn stutters), but
+     the loop is timed off the dedicated --loop-dur token so every spinner in
+     the app shares one cadence. LoadingSpinner consumes this; WeighInModal,
+     ResetPassword, MealTemplates, RecipeBuilder spinners should too. */
+  .spin-loop { animation: spinLoop var(--loop-dur) linear infinite; }
+
+  /* Tokened pulse/shimmer — the system replacement for Tailwind's
+     `animate-pulse` (off-system 2s cubic-bezier(.4,0,.6,1), appears ~31× app-
+     wide). A breathing opacity on our single easing within the ambient
+     --loop-dur cadence; skeleton fills and placeholder sweeps swap to this so
+     loading states share the product's one motion language. Pairs with
+     bg-track as the empty-track material underneath. */
+  .pulse-loop { animation: pulseLoop var(--loop-dur) var(--ease) infinite alternate; }
 }
 
 @keyframes restUrgent {
   from { opacity: 1; }
   to   { opacity: .55; }
+}
+
+/* One full turn. Linear so the spinner reads as steady rotation, not an eased
+   stutter; cadence comes from --loop-dur on the .spin-loop utility. */
+@keyframes spinLoop {
+  to { transform: rotate(360deg); }
+}
+
+/* Breathing opacity for skeletons/placeholders — calmer than Tailwind's
+   `animate-pulse` and on our single easing via .pulse-loop. */
+@keyframes pulseLoop {
+  from { opacity: 1; }
+  to   { opacity: .45; }
 }
 
 /* The scan line travels across the ~160px scan window (h-40). Translating it
@@ -470,7 +522,9 @@ html.light body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .glass-interactive, .cta-coral { transition: none; }
-  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise, .rest-urgent, .scan-sweep { animation: none; }
+  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise, .rest-urgent, .scan-sweep, .pulse-loop { animation: none; }
+  /* Spinner keeps turning even under reduced-motion: it's a load indicator, not
+     decorative motion, so silencing it would strand users on a frozen glyph. */
 }
 
 /* Sonner toasts — og-toast. Themed to neutral glass surfaces so they obey the
@@ -505,10 +559,13 @@ html.light body::before {
   color: var(--text-secondary);
 }
 /* Success / default icon reads as neutral glass — green is reserved for the
-   biometric spectrum, so Sonner's saturated check is desaturated to secondary
-   text. Only the error state below earns the coral action tint. */
+   biometric spectrum, so Sonner's saturated check is desaturated rather than
+   colored. Tinted to PRIMARY (not secondary): at secondary opacity the check
+   was technically present but visually invisible — neither legible nor absent,
+   the worst of both. Primary makes it a clear, legible neutral glyph. Only the
+   error state below swaps in the coral action tint. */
 [data-sonner-toast].og-toast [data-icon] {
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 /* Error / destructive is the only action accent — coral, never biometric red. */
 [data-sonner-toast].og-toast.og-toast--error {

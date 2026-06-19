@@ -13,9 +13,9 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   const [exerciseName, setExerciseName] = useState("");
 
   // Empty workout: the add-exercise input is the page's sole primary action, so
-  // it owns the only coral fill and gets anchored into the thumb zone (just
-  // above the bottom action bar). Once exercises exist, Finish becomes primary,
-  // so Add steps down to a neutral outline and the form returns to inline flow.
+  // it owns the only coral fill (the Add button goes `volt`). Once exercises
+  // exist, Finish becomes primary, so Add steps down to a neutral outline. The
+  // form always flows inline — coral expresses primacy, not a fixed position.
   const isEmptyState = !hasExercises;
 
   // Merge DB names with any extra names from history, deduped
@@ -50,7 +50,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   }
 
   const form = (
-    <div className="glass rounded-2xl border border-dashed border-charcoal-border px-4 pt-4 pb-4 lg:mb-0">
+    <div className="glass rounded-2xl px-4 pt-4 pb-4 lg:mb-0 rise-in">
       {/* Empty-state prompt folded in: the input sits directly below it, so the
           "first exercise" call-to-action and its action are one unit (no
           split-away top card). */}
@@ -95,24 +95,11 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
     </div>
   );
 
-  // Empty workout on mobile: dock the prompt + add-exercise input together into
-  // the thumb zone, resting just above the bottom action bar (dock-clearance +
-  // the action bar's own height). The folded-in prompt means the whole
-  // empty-state lives in one docked unit — no separate top-of-page card. On
-  // desktop and once exercises exist it flows inline.
-  if (isEmptyState) {
-    return (
-      <>
-        <div
-          className="lg:hidden fixed left-0 right-0 z-[9997] px-4 rise-in"
-          style={{ bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom) + 60px)' }}
-        >
-          {form}
-        </div>
-        <div className="hidden lg:block">{form}</div>
-      </>
-    );
-  }
-
+  // The form (empty-state prompt folded in when there are no exercises yet)
+  // always flows inline under the COACH card so the first viewport is one
+  // coherent stack — no fixed→inline position swap, just a single coordinated
+  // rise entrance. The bottom action bar in WorkoutLoggingHeader owns the thumb
+  // zone; this input is the page's primary action via its coral fill, not its
+  // position.
   return form;
 }

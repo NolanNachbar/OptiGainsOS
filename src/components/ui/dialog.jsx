@@ -5,14 +5,36 @@ import { X } from "lucide-react";
 const DialogContext = React.createContext(null);
 
 const Dialog = ({ open, onOpenChange, children }) => {
+  // Scrim fade-in: the sheet rises over .30s (sheetRise) but the backdrop used to
+  // slam in opaque on the same frame, so the entrance read as two events. Drive the
+  // scrim opacity from a mount flag and transition it on the system easing so the
+  // backdrop fades in (.18s) while the sheet rises — one coordinated entrance.
+  // Kept inline (no keyframe) because dialog.jsx is the only shared file in scope.
+  const [scrimIn, setScrimIn] = React.useState(false);
+  React.useEffect(() => {
+    if (!open) {
+      setScrimIn(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => setScrimIn(true));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
   if (!open) return null;
 
   return createPortal(
     <DialogContext.Provider value={{ onOpenChange }}>
+      {/* z-[10000] root has no transform, so the fixed scrim below resolves its
+          containing block to the viewport (portaled to body) — true inset-0 at
+          390px with no ancestor transform creating a containing block. */}
       <div className="fixed inset-0 z-[10000]">
         {/* Full-screen scrim — covers the dock too (a modal owns the screen). */}
         <div
           className="fixed inset-0 bg-black/75"
+          style={{
+            opacity: scrimIn ? 1 : 0,
+            transition: 'opacity .18s var(--ease)',
+          }}
           onClick={() => onOpenChange(false)}
         />
         {/* Positioner: bottom sheet on mobile, centered dialog on desktop. */}
@@ -39,8 +61,11 @@ const DialogTrigger = ({ asChild, children, ...props }) => {
 // `sheetMinHeight` (system extension): on mobile the sheet is a bottom sheet, so a
 // content-sized short sheet would leave the lower viewport showing the page at full
 // brightness through the gap above the scrim. Default `min-h-[40dvh]` guarantees the
-// sheet (with --sheet-bg) covers a stable portion of the screen; pass "" to opt out.
-// Reset to `md:min-h-0` so the centered desktop dialog stays content-sized.
+// sheet (with --sheet-bg) covers a stable portion of the screen. Content-sparse
+// callers (QuickCapture, ConfirmDialog, MealTemplates apply/save, Career, Mind
+// AddBook) pass sheetMinHeight="" to opt out and let the sheet size to its content;
+// the empty string drops the floor cleanly, leaving just `md:min-h-0` so the
+// centered desktop dialog also stays content-sized.
 const DialogContent = React.forwardRef(({ className = "", hideClose = false, sheetMinHeight = "min-h-[40dvh]", children, ...props }, ref) => {
   const ctx = React.useContext(DialogContext);
   const hasCustomPadding = className.includes("p-0") || className.includes("px-") || className.includes("py-");
@@ -86,7 +111,7 @@ const DialogHeader = ({ className = "", ...props }) => (
 const DialogTitle = React.forwardRef(({ className = "", ...props }, ref) => (
   <h2
     ref={ref}
-    className={`type-display text-lg leading-none pr-12 ${className}`}
+    className={`type-display text-lg leading-none ${className}`}
     {...props}
   />
 ));

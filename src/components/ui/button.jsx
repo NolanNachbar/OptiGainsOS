@@ -31,7 +31,11 @@ const Button = React.forwardRef(({
   // Coral-tinted quiet affordance. Reserved for genuine secondary ACTIONS that
   // must still read coral (never for Cancel/Back/neutral). Opt in explicitly —
   // plain `ghost` is neutral glass so accidental coral decoration can't drift in.
-  const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15";
+  // Mirror the solid coral's inert disabled treatment so a disabled coralGhost
+  // (e.g. QuickCapture empty-state Save) stops reading as a live CTA: neutral
+  // charcoal-surface fill, faint ink, no coral tint at full opacity.
+  const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
+    "disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100 disabled:bg-none disabled:shadow-none";
 
   const variants = {
     /* design-system tiers */

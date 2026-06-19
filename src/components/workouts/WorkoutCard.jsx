@@ -67,9 +67,10 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     <div className={RISE[index % 3]}>
       <Link to={`/workout-detail?id=${workout.id}`} className="group relative overflow-hidden tile tile-interactive block">
         <div className="pb-2 pt-3 px-4 md:px-6">
-          {/* Reserved badge zone — always present so title baselines align
-              across cards regardless of focus/folder presence. */}
-          <div className="flex flex-wrap gap-1.5 pr-12 min-w-0 min-h-[28px]">
+          {/* Badge zone only reserves space when a badge actually exists, so
+              badge-less cards don't carry ~28px of dead air up top. */}
+          {(workout.folder || (workout.focus && workout.focus !== "strength")) && (
+          <div className="flex flex-wrap gap-1.5 pr-12 min-w-0 mb-1">
             {workout.focus && workout.focus !== "strength" && (
               <Badge
                 variant="outline"
@@ -88,6 +89,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               </Badge>
             )}
           </div>
+          )}
 
           {isOwner && (
               <div className="absolute right-2 top-2 z-10" ref={menuRef}>
@@ -134,8 +136,8 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
 
           {/* Reserved title + description zone keeps every card the same height
               whether or not a description exists. */}
-          <div className="min-h-[60px]">
-            <h3 className="text-base font-bold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
+          <div className="min-h-[44px]">
+            <h3 className="text-[17px] font-extrabold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
               {workout.title}
             </h3>
             {workout.description && (
@@ -151,13 +153,13 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <div className="flex">
             <div className="flex-1 flex flex-col">
               <span className="section-label">Duration</span>
-              <span className={`font-technical text-lg font-bold mt-0.5 ${validDuration ? "text-ink" : "text-ink-faint"}`}>
+              <span className={`font-technical text-base font-semibold mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "—"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
               <span className="section-label">Exercises</span>
-              <span className="font-technical text-lg font-bold text-ink mt-0.5">{workout.exercises?.length || 0}</span>
+              <span className="font-technical text-base font-semibold text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
         </div>

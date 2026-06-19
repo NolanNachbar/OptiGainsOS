@@ -170,36 +170,31 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
         )}
 
-        {/* Pose picker */}
-        <div className="section-label mb-2">Pose for this shot</div>
-        <PosePillRow
-          variant="solid"
-          value={pose}
-          onChange={setPose}
-          disabled={busy}
-          className="mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
-          options={POSES.map((p) => ({ value: p.key, label: p.label }))}
-        />
-        {/* One instructional voice: the per-shot pose cue is the single
-            instruction line; the static "same pose/lighting" reminder rides as a
-            muted tail rather than its own stacked subtitle above. */}
-        <p className="text-xs font-semibold text-secondary mb-4">
-          {POSES.find((p) => p.key === pose)?.cue}{" "}
-          <span className="text-muted-2">Same lighting and distance each time to track the trend.</span>
-        </p>
+        {/* Hidden file input — both the empty-state CTA and the coral FAB drive it. */}
+        <input ref={fileInputRef} type="file" accept="image/*,video/*"
+               className="hidden" onChange={handleFile} disabled={busy} />
 
-        {/* Upload — inline affordance is the neutral entry point; the coral
-            thumb-zone FAB is the single coral action on this page. */}
-        <label className="block">
-          <input ref={fileInputRef} type="file" accept="image/*,video/*"
-                 className="hidden" onChange={handleFile} disabled={busy} />
-          <Button asChild variant="ghost" size="lg" className="w-full" disabled={busy}>
-            <span className="flex items-center justify-center gap-2 cursor-pointer">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
-            </span>
-          </Button>
-        </label>
+        {/* Pose picker — wrapped in a glass control panel so it reads as a setup
+            panel for the shot, not a second tab bar trailing the nav strip. The
+            coral FAB is the sole upload trigger; this panel only configures pose. */}
+        <div className="glass px-4 pt-4 pb-4 mt-4 rise-in">
+          <div className="section-label mb-2">Pose for this shot</div>
+          <PosePillRow
+            variant="solid"
+            value={pose}
+            onChange={setPose}
+            disabled={busy}
+            className="mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
+            options={POSES.map((p) => ({ value: p.key, label: p.label }))}
+          />
+          {/* One instructional voice: the per-shot pose cue is the single
+              instruction line; the static "same pose/lighting" reminder rides as a
+              muted tail rather than its own stacked subtitle above. */}
+          <p className="text-xs font-semibold text-secondary">
+            {POSES.find((p) => p.key === pose)?.cue}{" "}
+            <span className="text-muted-2">Same lighting and distance each time to track the trend.</span>
+          </p>
+        </div>
 
         {error && (
           <div className="mt-3 flex items-start gap-1.5 text-xs text-bad">
@@ -218,7 +213,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">
-                  {latest.analysis.bodyfat_range} · confidence {latest.confidence ?? "—"} · {format(parseISO(latest.taken_at), 'MMM d, yyyy')}
+                  {latest.analysis.bodyfat_range} · <span className="font-technical">confidence {latest.confidence ?? "—"}/10</span> · {format(parseISO(latest.taken_at), 'MMM d, yyyy')}
                 </div>
               </div>
               {delta != null && (
@@ -241,8 +236,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               </div>
             )}
             {latest.analysis.vs_lean_goal && (
-              <p className="mt-1 text-xs font-semibold text-muted-2">
-                <span>At a leaner BF: </span>{latest.analysis.vs_lean_goal}
+              <p className="mt-1.5 text-[11px] font-semibold text-faint">
+                <span className="text-muted-2">At a leaner BF: </span>{latest.analysis.vs_lean_goal}
               </p>
             )}
             </div>
@@ -268,53 +263,60 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           <div className="mt-6 py-8 px-4 text-center glass-inset flex flex-col items-center">
             <Camera className="w-7 h-7 text-muted-2 mb-3" />
             <p className="text-sm font-semibold text-muted-2">No shots yet.</p>
-            <p className="text-xs font-semibold text-faint mt-1">Use the button above to upload your first photo.</p>
+            <p className="text-xs font-semibold text-faint mt-1 mb-4">Upload your first photo to start tracking.</p>
+            <Button variant="volt" size="lg" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
+            </Button>
           </div>
         ) : (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="section-label">History</div>
-              <div className="flex items-center gap-2">
+            <div className="section-label mb-2">History</div>
+
+            {/* Single inline control row above the grid: Filter (left) and Compare
+                (right) share one rail so they no longer stack into two separate
+                bands pushing the grid down. In compare mode this same rail hosts
+                the pick-state hint + exit. */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between gap-2">
                 {compareMode ? (
                   <>
                     <span className="text-[11px] font-semibold text-muted-2">
-                      {compareIds.length === 0 ? "Pick 2 photos" : compareIds.length === 1 ? "Pick 1 more" : ""}
+                      {compareIds.length === 0 ? "Pick 2 photos" : compareIds.length === 1 ? "Pick 1 more" : "Ready"}
                     </span>
-                    {compareIds.length === 2 && (
-                      <Button variant="ghost" size="sm" className="min-h-[44px] text-xs" onClick={() => setShowCompare(true)}>
-                        Compare
-                      </Button>
-                    )}
-                    <button onClick={exitCompare} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-2 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md">
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {compareIds.length === 2 && (
+                        <Button variant="ghost" size="sm" className="min-h-[44px] text-xs" onClick={() => setShowCompare(true)}>
+                          Compare
+                        </Button>
+                      )}
+                      <button onClick={exitCompare} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-2 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setCompareMode(true)}
-                    className="flex items-center gap-1.5 min-h-[44px] text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-3 py-1 rounded-md hover:bg-[var(--glass-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5" />
-                    Compare
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setFilterOpen((o) => !o)}
+                      aria-expanded={filterOpen}
+                      className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full text-[11px] font-bold border-[0.5px] border-charcoal-border bg-[var(--glass-inset-bg)] text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink active:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5 rotate-90" />
+                      Filter: <span className="text-ink">{filterPose ? POSE_LABEL[filterPose] : "All"}</span>
+                    </button>
+                    <button
+                      onClick={() => setCompareMode(true)}
+                      className="flex items-center gap-1.5 min-h-[44px] text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-3 rounded-md hover:bg-[var(--glass-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      Compare
+                    </button>
+                  </>
                 )}
               </div>
-            </div>
-
-            {/* Single Filter control — collapsed to one chip showing the active
-                filter so the duplicate full pill row never pushes the grid down;
-                the pose chips only unfurl on demand. */}
-            <div className="mb-3">
-              <button
-                type="button"
-                onClick={() => setFilterOpen((o) => !o)}
-                aria-expanded={filterOpen}
-                className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full text-[11px] font-bold border-[0.5px] border-charcoal-border bg-[var(--glass-inset-bg)] text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink active:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5 rotate-90" />
-                Filter: <span className="text-ink">{filterPose ? POSE_LABEL[filterPose] : "All"}</span>
-              </button>
-              {filterOpen && (
+              {!compareMode && filterOpen && (
                 <PosePillRow
                   variant="chip"
                   value={filterPose}
@@ -353,7 +355,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         className="absolute inset-0 z-10"
                         aria-label={isSelected ? "Deselect" : "Select for comparison"}
                       >
-                        <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-brand/30" : "hover:bg-[var(--glass-bg)]"}`} />
+                        {/* Selected = a neutral track-tinted wash + a 0.5px coral
+                            ring (data outline, not a coral fill). The coral check
+                            badge stays the single action mark. */}
+                        <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-track ring-[0.5px] ring-inset ring-brand" : "hover:bg-[var(--glass-bg)]"}`} />
                         {isSelected && (
                           <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
                             <Check className="w-3 h-3 text-[var(--color-action-dark)]" />
@@ -377,11 +382,11 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                     )}
 
                     {/* Card footer */}
-                    <div className="px-2 py-1 text-[10px] font-semibold text-muted-2">
+                    <div className="px-2 py-1 text-[11px] font-semibold text-muted-2">
                       {e.pose && <div className="truncate">{POSE_LABEL[e.pose] || e.pose}</div>}
-                      <div className="flex justify-between font-technical">
-                        <span>{format(parseISO(e.taken_at), 'MMM d, yyyy')}</span>
-                        {e.bodyfat_estimate != null && <span className="font-extrabold text-ink">{e.bodyfat_estimate}%</span>}
+                      <div className="flex items-baseline justify-between gap-1 font-technical">
+                        <span className="text-[11px]">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</span>
+                        {e.bodyfat_estimate != null && <span className="text-sm font-extrabold text-ink">{e.bodyfat_estimate}%</span>}
                       </div>
                     </div>
                   </div>
@@ -430,19 +435,25 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             const newer = compareEntries.length === 2 && parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
             const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
             const change = hasDelta ? newer.bodyfat_estimate - older.bodyfat_estimate : null;
+            // A delta across two different poses isn't a like-for-like BF change,
+            // so suppress the headline number and annotate instead of misleading.
+            const crossPose = newer.pose && older.pose && newer.pose !== older.pose;
             return (
               <DialogHeader>
                 <DialogTitle>Side by side</DialogTitle>
                 {hasDelta && (
-                  <>
-                    {/* Aggregate delta is the loudest datum in this sheet — sized
-                        above the per-photo figures. BF is a biometric so it rides
-                        the spectrum both ways: ok = leaner, warn = gain. */}
-                    <div className={`mt-1 font-technical text-xl font-extrabold ${change <= 0 ? "text-ok" : "text-warn"}`}>
+                  crossPose ? (
+                    <div className="mt-1 text-xs font-semibold text-muted-2">
+                      Cross-pose comparison — BF delta hidden. Match poses to read a trend.
+                    </div>
+                  ) : (
+                    /* Aggregate delta is the hero datum of this sheet — sized well
+                       above the per-photo figures. BF is a biometric so it rides
+                       the spectrum both ways: ok = leaner, warn = gain. */
+                    <div className={`hero-metric font-technical text-2xl mt-1 ${change <= 0 ? "text-ok" : "text-warn"}`}>
                       {change > 0 ? "+" : ""}{change.toFixed(1)}%
                     </div>
-                    <div className="section-label mt-0.5">since {format(parseISO(older.taken_at), 'MMM d, yyyy')}</div>
-                  </>
+                  )
                 )}
               </DialogHeader>
             );
@@ -464,7 +475,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   <div className="section-label">{POSE_LABEL[e.pose] || e.pose || "—"}</div>
                   <div className="font-technical text-xs text-faint">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</div>
                   {e.bodyfat_estimate != null && (
-                    <div className="font-technical text-lg font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
+                    <div className="font-technical text-base font-extrabold text-ink">{e.bodyfat_estimate}% <span className="text-xs font-semibold text-muted-2">est. BF</span></div>
                   )}
                   {e.analysis?.assessment && (
                     <p className="text-xs font-semibold text-secondary pt-1 line-clamp-2">{e.analysis.assessment}</p>
@@ -517,24 +528,48 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   : <img src={pending.previewUrl} alt="Selected shot to review" className="w-full object-contain" style={{ maxHeight: "48vh" }} />
                 }
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="section-label">Pose</span>
-                <span className="pill-value pill-value--sm font-semibold">{POSE_LABEL[pose]}</span>
+              {/* Pose is editable in place — a wrong pose set on the picker above
+                  is correctable here before analysis commits. */}
+              <div className="mt-3">
+                <div className="section-label mb-1.5">Pose</div>
+                <PosePillRow
+                  variant="solid"
+                  value={pose}
+                  onChange={setPose}
+                  disabled={busy}
+                  options={POSES.map((p) => ({ value: p.key, label: p.label }))}
+                />
               </div>
               {error && (
                 <div className="mt-3 flex items-start gap-1.5 text-xs text-bad">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {error}
                 </div>
               )}
+              {/* Analyze (volt) is the committed full-width action; Retake is a
+                  quieter inline ghost so the two no longer read as equal weight. */}
               <div className="mt-4 flex flex-col gap-2">
                 <Button variant="volt" size="lg" className="w-full" disabled={busy} onClick={confirmUpload}>
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {busy ? (status || "Working…") : "Analyze"}
                 </Button>
-                <Button variant="ghost" size="lg" className="w-full" disabled={busy} onClick={retakePending}>
-                  <Camera className="w-4 h-4" /> Retake
-                </Button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={retakePending}
+                  className="self-center inline-flex items-center gap-1.5 min-h-[44px] px-3 text-xs font-bold text-muted-2 hover:text-ink transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Retake
+                </button>
               </div>
+
+              {/* Processing overlay — covers the sheet body during upload/analysis
+                  so the staged shot can't be re-tapped while busy. */}
+              {busy && (
+                <div className="absolute inset-0 z-10 glass-inset rounded-lg flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="w-7 h-7 animate-spin text-brand" />
+                  <span className="text-xs font-semibold text-secondary">{status || "Working…"}</span>
+                </div>
+              )}
             </>
           )}
         </DialogContent>

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +26,19 @@ const APP_STATUSES = ["applied", "screening", "interview", "offer", "rejected"];
 // muted-glass chip. The count beside it carries the meaning; coral stays
 // reserved for the action (Add / Move), never for status garnish.
 const STATUS_CHIP = "glass-inset text-muted-2";
+
+// Native <input type=date> treatment. `color-scheme:dark` keeps the UA calendar
+// dropdown on the dark field; the global rule in index.css already mutes the
+// picker indicator toward --text-muted and routes the date text through our ink
+// voice (Manrope + tabular via the Input primitive). `is-empty` lets the unset
+// date read at placeholder weight. One shared const so every date field across
+// the Pipeline + Networking forms stays identical.
+const DATE_FIELD = "[color-scheme:dark]";
+const dateFieldClass = (value) => `${DATE_FIELD}${value ? "" : " is-empty"}`;
+
+// The page subtitle, surfaced both in the desktop header and the mobile-only
+// one-liner above the tabs — hoisted so the two never drift apart.
+const PAGE_SUBTITLE = "Track applications, networking, and job search momentum.";
 
 function TabQueryState({ isLoading, isError, onRetry }) {
   if (isLoading) {
@@ -71,7 +84,7 @@ function AppForm({ initial, onSave, onClose }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
-          <Input type="date" className="[color-scheme:dark]" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
+          <Input type="date" className={dateFieldClass(form.date_applied)} value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
@@ -94,7 +107,7 @@ function AppForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
-          <Input type="date" className="[color-scheme:dark]" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
+          <Input type="date" className={dateFieldClass(form.next_action_date)} value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
@@ -289,13 +302,15 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-            <Plus className="w-3.5 h-3.5" /> Add your first application
-          </Button>
+        <div className="min-h-[60dvh] flex flex-col items-center justify-center">
+          <div className="w-full py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+            <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
+            <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+              <Plus className="w-3.5 h-3.5" /> Add your first application
+            </Button>
+          </div>
         </div>
       )}
 
@@ -310,8 +325,11 @@ function PipelineTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="glass glass-interactive">
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" sheetMinHeight="">
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this role's status, notes, and next action." : "Log a role you applied to and track it through the pipeline."}</DialogDescription>
+          </DialogHeader>
           <AppForm
             initial={editing}
             onSave={(form) => save.mutate(form)}
@@ -350,11 +368,11 @@ function NetworkForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
-          <Input type="date" className="[color-scheme:dark]" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
+          <Input type="date" className={dateFieldClass(form.date)} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
-          <Input type="date" className="[color-scheme:dark]" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
+          <Input type="date" className={dateFieldClass(form.follow_up_date)} value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
         </div>
       </div>
       <div>
@@ -498,8 +516,11 @@ function NetworkingTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" sheetMinHeight="">
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this contact and when to follow up." : "Log a conversation and set a follow-up reminder."}</DialogDescription>
+          </DialogHeader>
           <NetworkForm
             initial={editing}
             onSave={(form) => save.mutate(form)}
@@ -574,7 +595,7 @@ export default function Career({ hideHeader }) {
               </div>
               <h1 className="type-display text-2xl">Career & Pipeline</h1>
             </div>
-            <p className="text-muted-2 font-semibold text-sm pl-11">Track applications, networking, and job search momentum.</p>
+            <p className="text-muted-2 font-semibold text-sm pl-11">{PAGE_SUBTITLE}</p>
           </header>
         )}
 
@@ -582,8 +603,8 @@ export default function Career({ hideHeader }) {
             phones but not this one-liner, so surface it above the tabs so the
             390px view still explains the section. */}
         {!hideHeader && (
-          <p className="text-xs text-muted-2 font-semibold mb-4 lg:hidden">
-            Track applications, networking, and job search momentum.
+          <p className="text-xs text-muted-2 font-semibold mb-3 lg:hidden">
+            {PAGE_SUBTITLE}
           </p>
         )}
 

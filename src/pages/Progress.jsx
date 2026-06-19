@@ -416,9 +416,11 @@ function MetabolismTab() {
             // hardcoded label: a sustained weight change *is* the energy balance.
             const trend = Number(state?.nutrition?.weight_trend_lbs_per_week);
             const known = state?.nutrition?.weight_trend_lbs_per_week != null && !Number.isNaN(trend);
+            // Energy-balance state uses the physiological spectrum (warn/info/teal)
+            // so the carb datum hue (text-carb / blue) stays reserved for carbs.
             const net = !known ? { label: "—", cls: "text-muted-2" }
               : trend > 0.15 ? { label: "Surplus", cls: "text-warn" }
-              : trend < -0.15 ? { label: "Deficit", cls: "text-carb" }
+              : trend < -0.15 ? { label: "Deficit", cls: "text-info" }
               : { label: "Balanced", cls: "text-teal" };
             return (
               <Card className="glass glass-interactive p-4">

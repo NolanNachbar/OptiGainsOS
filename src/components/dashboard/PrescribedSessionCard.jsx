@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Dumbbell, Activity, Waves, Zap, AlertTriangle, Check, Circle, ChevronDown,
+  Dumbbell, Activity, Waves, Zap, AlertTriangle, Check, Circle, ChevronDown, Plus,
 } from "lucide-react";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
@@ -71,7 +71,7 @@ function CardioDoneToggle({ done, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-colors ${
+      className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] active:scale-95 ${
         done ? "bg-leaf text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
@@ -89,6 +89,10 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // into the logger as a "PRE:" session note, which notes_parser.py reads to
   // steer future programming.
   const [preNote, setPreNote] = useState("");
+  // Pre-train note collapses behind a quiet disclosure so Begin Session sits
+  // immediately under the prescription summary (the textarea no longer pushes
+  // the primary action down two rows on every train day).
+  const [noteOpen, setNoteOpen] = useState(false);
   const { isDone, toggle } = useCardioCompletions(today);
   const { match: garminMatch } = useTodayGarminCardio(today);
   // No engine prescription yet — own the single off-script fallback so logging a
@@ -317,32 +321,45 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             the pre-train note into the logger (saved as a PRE: session note). */}
         {!isRest && !loggedToday && (
           <>
-            {strength.length > 0 && (
-              <div className="mt-3.5">
-                <label htmlFor="pre-train-note" className="section-label flex items-center gap-1.5 mb-1.5">
-                  <Check className="w-3 h-3" /> Pre-train check-in
-                </label>
-                <textarea
-                  id="pre-train-note"
-                  value={preNote}
-                  onChange={(e) => setPreNote(e.target.value)}
-                  rows={2}
-                  placeholder="Anything to flag before you train? sleep, soreness, energy…"
-                  className="w-full glass-inset px-3 py-2 text-[13px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
-                />
-              </div>
-            )}
             <Link
               to="/quick-workout"
               state={{
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
               }}
-              className={`${demoteCta ? "cta-ghost" : "cta-coral"} w-full ${strength.length > 0 ? "mt-2.5" : "mt-3.5"}`}
+              className={`${demoteCta ? "cta-ghost" : "cta-coral"} w-full mt-3.5`}
             >
               Begin Session
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
             </Link>
+            {strength.length > 0 && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setNoteOpen((o) => !o)}
+                  className="w-full flex items-center gap-1.5 section-label min-h-[44px] py-2 text-muted-2 hover:text-ink-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                  aria-expanded={noteOpen}
+                  aria-controls="pre-train-note"
+                >
+                  {preNote.trim() ? <Check className="w-3 h-3 text-leaf" /> : <Plus className="w-3 h-3" />}
+                  {preNote.trim() ? "Pre-train note added" : "Add a note"}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 ml-auto transition-transform duration-200 [transition-timing-function:var(--ease)] ${noteOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {noteOpen && (
+                  <textarea
+                    id="pre-train-note"
+                    value={preNote}
+                    onChange={(e) => setPreNote(e.target.value)}
+                    rows={2}
+                    autoFocus
+                    placeholder="Anything to flag before you train? sleep, soreness, energy…"
+                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-[13px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                  />
+                )}
+              </div>
+            )}
           </>
         )}
     </div>

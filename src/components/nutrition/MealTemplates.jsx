@@ -380,7 +380,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent sheetMinHeight="">
         <DialogHeader>
           <DialogTitle>Apply Template: {template.name}</DialogTitle>
         </DialogHeader>
@@ -388,16 +388,20 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
         <div className="space-y-4">
           <div>
             <Label className="section-label block mb-1">Date</Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 font-technical"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={applyMutation.isPending}
+                className="mt-1 pl-9 font-technical"
+              />
+            </div>
           </div>
 
           <div>
-            <Label className="section-label">Items to add ({template.items?.length || 0})</Label>
+            <p className="section-label">Items to add ({template.items?.length || 0})</p>
             {/* Template total summary */}
             <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
               <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
@@ -408,7 +412,10 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
                 <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
               </div>
             </div>
-            <div className="space-y-2 mt-2 max-h-64 overflow-y-auto">
+            {/* No inner scroll region on mobile — the whole sheet scrolls as one
+                surface; a long item list is gated behind md: so the desktop
+                dialog still caps its own height. */}
+            <div className="space-y-2 mt-2 md:max-h-64 md:overflow-y-auto">
               {(template.items || []).map((item, idx) => (
                 <div
                   key={idx}
@@ -424,7 +431,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-xs text-ink font-semibold tabular-nums">
-                      {item.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span>
+                      {Math.round(item.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span>
                     </div>
                     <div className="text-xs tabular-nums mt-0.5 flex gap-1.5 justify-end">
                       <span className="text-coral">P{Math.round(item.protein_grams || 0)}</span>
@@ -486,7 +493,10 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
           searchBrandedFoods(searchQuery, 5),
         ]);
         setSearchResults([...generic.slice(0, 4), ...branded.slice(0, 4)]);
-      } catch {} finally {
+      } catch {
+        setSearchResults([]);
+        toast.error("Food search failed. Check your connection and try again.");
+      } finally {
         setIsSearching(false);
       }
     }, 300);
@@ -588,75 +598,98 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
               {items.length === 0 && (
                 <p className="text-sm text-ink-muted text-center py-6">No items yet. Search above or add manually.</p>
               )}
-              {items.map((item, idx) => (
+              {items.map((item, idx) => {
+                const isOpen = expandedIndex === idx;
+                return (
                 <div key={idx} className="rounded-lg border border-charcoal-border overflow-hidden">
-                  {/* Row header — click to expand */}
+                  {/* Row header — press the row body to expand; the chevron is its
+                      own explicit 44px affordance with aria-expanded. */}
                   <div
-                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-charcoal-elevated/50 transition-colors"
-                    onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                    className="flex items-center gap-2 pl-3 py-2.5 cursor-pointer transition-[background,transform] duration-200 [transition-timing-function:var(--ease)] hover:bg-charcoal-elevated/50 active:bg-charcoal-elevated active:scale-[0.99]"
+                    onClick={() => setExpandedIndex(isOpen ? null : idx)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedIndex(isOpen ? null : idx); } }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
                       <p className="text-xs tabular-nums truncate flex gap-2">
-                        <span className="text-gold">{item.calories} cal</span>
-                        <span className="text-coral">P{item.protein_grams}g</span>
-                        <span className="text-carb">C{item.carbs_grams}g</span>
-                        <span className="text-fat">F{item.fats_grams}g</span>
+                        <span className="text-gold">{Math.round(item.calories || 0)} cal</span>
+                        <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
+                        <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
+                        <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
                       </p>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-ink-muted shrink-0 transition-transform ${expandedIndex === idx ? 'rotate-180' : ''}`} />
+                    <button
+                      type="button"
+                      aria-label={isOpen ? 'Collapse item' : 'Expand item'}
+                      aria-expanded={isOpen}
+                      onClick={(e) => { e.stopPropagation(); setExpandedIndex(isOpen ? null : idx); }}
+                      className="h-11 w-11 flex items-center justify-center shrink-0 text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 [transition-timing-function:var(--ease)] ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       aria-label="Remove item"
                       onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
-                      className="h-11 w-11 ml-1 border-0 bg-transparent shadow-none text-ink-muted hover:text-bad hover:bg-transparent shrink-0"
+                      className="h-11 w-11 border-0 bg-transparent shadow-none text-ink-muted hover:text-bad hover:bg-transparent shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
 
-                  {/* Expanded edit form */}
-                  {expandedIndex === idx && (
-                    <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface/50 space-y-2">
-                      <div>
-                        <Label className="text-xs text-ink-muted">Food Name</Label>
-                        <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-sm" />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-ink-muted">Serving</Label>
-                        <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-sm" placeholder="e.g. 100 g" />
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { field: 'calories', label: 'Cal' },
-                          { field: 'protein_grams', label: 'Pro' },
-                          { field: 'carbs_grams', label: 'Car' },
-                          { field: 'fats_grams', label: 'Fat' },
-                        ].map(({ field, label }) => (
-                          <div key={field}>
-                            <Label className="text-xs text-ink-muted">{label}</Label>
-                            <Input
-                              type="number"
-                              value={item[field]}
-                              onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
-                              className="mt-1 text-sm px-2"
-                              min={0}
-                            />
-                          </div>
-                        ))}
+                  {/* Expanded edit form — animates open via a grid-rows collapse on
+                      the single system easing instead of an instant mount. */}
+                  <div
+                    className="grid transition-[grid-template-rows,opacity] duration-200 [transition-timing-function:var(--ease)]"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface/50 space-y-2">
+                        <div>
+                          <Label className="text-xs text-ink-muted">Food Name</Label>
+                          <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-ink-muted">Serving</Label>
+                          <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-sm" placeholder="e.g. 100 g" />
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { field: 'calories', label: 'Cal' },
+                            { field: 'protein_grams', label: 'Pro' },
+                            { field: 'carbs_grams', label: 'Car' },
+                            { field: 'fats_grams', label: 'Fat' },
+                          ].map(({ field, label }) => (
+                            <div key={field}>
+                              <Label className="text-xs text-ink-muted">{label}</Label>
+                              <Input
+                                type="number"
+                                value={item[field]}
+                                onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
+                                className="mt-1 text-sm px-2"
+                                min={0}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Add manually */}
             <button
+              type="button"
               onClick={addManual}
-              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-charcoal-border transition-colors"
+              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-coral/40 transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               <Plus className="w-3.5 h-3.5" />
               Add manually
@@ -718,6 +751,12 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
   const toggle = (idx) =>
     setSelected((prev) => prev.map((v, i) => (i === idx ? !v : v)));
 
+  // One source of truth for the desktop list cap: the md: scroll region shows
+  // VISIBLE_ROWS rows before scrolling, and the "+N more" hint is derived from
+  // the same number so the count and the cap can never drift apart.
+  const VISIBLE_ROWS = 4;
+  const hiddenCount = entries.length - VISIBLE_ROWS;
+
   const selectedEntries = entries.filter((_, idx) => selected[idx]);
   const totals = getTemplateTotals(
     selectedEntries.map((e) => ({
@@ -771,7 +810,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent sheetMinHeight="">
         <DialogHeader>
           <DialogTitle>
             Save {isDay ? "Day" : `${mealType}`} as Template
@@ -796,7 +835,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="section-label">
+              <p className="text-sm text-ink font-semibold tabular-nums">
                 {selectedEntries.length} of {entries.length} item{entries.length !== 1 ? "s" : ""} to save
               </p>
             </div>
@@ -810,50 +849,62 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
                 <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
               </div>
             </div>
-            <div className="relative">
-              <div className="space-y-2 max-h-48 overflow-y-auto pb-3">
-                {entries.map((e, idx) => (
-                  <label
-                    key={idx}
-                    className="flex items-center gap-3 p-2.5 min-h-11 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg text-sm cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selected[idx]}
-                      onCheckedChange={() => toggle(idx)}
-                      aria-label={`Include ${e.food_name}`}
-                    />
-                    <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
-                    <span className="text-ink font-semibold tabular-nums shrink-0">{e.calories}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
-                  </label>
-                ))}
-              </div>
-              {entries.length > 4 && (
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b flex items-end justify-center"
-                  style={{ background: 'linear-gradient(to top, var(--sheet-bg), transparent)' }}
+            {/* The whole sheet scrolls as one surface on mobile; the inner cap
+                only kicks in on desktop (md:) where the centered dialog owns its
+                own height. No fade gradient — the "+N more" hint lives in its own
+                muted row below, derived from the same VISIBLE_ROWS cap. */}
+            <div className="space-y-2 md:max-h-48 md:overflow-y-auto">
+              {entries.map((e, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center gap-3 p-2.5 min-h-11 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg text-sm cursor-pointer"
                 >
-                  <span className="text-[10px] text-ink-muted font-semibold pb-0.5">+{entries.length - 4} more</span>
-                </div>
-              )}
+                  <Checkbox
+                    checked={selected[idx]}
+                    onCheckedChange={() => toggle(idx)}
+                    aria-label={`Include ${e.food_name}`}
+                  />
+                  <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
+                  <span className="text-ink font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                </label>
+              ))}
             </div>
+            {/* Only meaningful where the list is capped (md:); on mobile the
+                sheet shows every row, so the hint would be a lie. */}
+            {hiddenCount > 0 && (
+              <p className="hidden md:block text-xs text-ink-muted text-center tabular-nums pt-0.5">
+                +{hiddenCount} more below
+              </p>
+            )}
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={createMutation.isPending || !name.trim() || selectedEntries.length === 0}
-            variant="primary"
-            size="lg"
-            className="w-full"
-          >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Template"
-            )}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              onClick={handleSave}
+              disabled={createMutation.isPending || !name.trim() || selectedEntries.length === 0}
+              variant="primary"
+              size="lg"
+              className="w-full"
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Template"
+              )}
+            </Button>
+            <Button
+              onClick={() => onOpenChange(false)}
+              disabled={createMutation.isPending}
+              variant="ghost"
+              size="lg"
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

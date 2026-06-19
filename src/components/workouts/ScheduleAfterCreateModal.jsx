@@ -89,7 +89,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
-      <DialogContent className="max-w-2xl flex flex-col p-0 overflow-hidden">
+      <DialogContent sheetMinHeight="" className="max-w-lg flex flex-col p-0 overflow-hidden">
         <div className="px-6 pt-6 pb-4 shrink-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -109,23 +109,19 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
               <Calendar className="w-3.5 h-3.5" />
               Start Date
             </Label>
-            <div className="relative">
-              <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={format(new Date(), "yyyy-MM-dd")}
-                className="pl-9"
-              />
-            </div>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              min={format(new Date(), "yyyy-MM-dd")}
+            />
           </div>
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
             <div className="border border-charcoal-border rounded-lg p-4 bg-charcoal-surface">
-              <h3 className="text-sm font-semibold text-ink-muted mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-ink-muted" />
+              <h3 className="section-label mb-3 flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-ink-muted" />
                 Cycle 1 Schedule Preview
               </h3>
 
@@ -142,7 +138,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                       <span className="font-medium text-sm text-ink">{workout.title}</span>
                     </div>
                     <span className="text-sm text-ink-muted tabular-nums">
-                      {format(new Date(workout.date), "EEE, MMM d")}
+                      {format(parseISO(workout.date), "EEE, MMM d")}
                     </span>
                   </div>
                 ))}
@@ -156,7 +152,10 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
         </div>
 
-        <div className="shrink-0 border-t border-charcoal-borderSoft bg-charcoal-surface px-6 py-4">
+        <div
+          className="shrink-0 border-t border-charcoal-borderSoft bg-charcoal-surface px-6 py-4"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
           <div className="flex gap-3">
             <Button
               variant="outline"

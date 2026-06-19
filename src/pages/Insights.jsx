@@ -23,16 +23,14 @@ export default function Insights() {
 
   return (
     <div className="bg-charcoal min-h-screen text-ink">
-      <div className="max-w-3xl mx-auto px-4 py-4 space-y-3">
-        <div className="rise-in">
-          <DailyBriefCard today={today} />
-        </div>
+      <div className="max-w-3xl mx-auto px-4 py-4 space-y-3 pb-[var(--dock-clearance)]">
         {/* Mind lives in the Analyze section — keep it reachable on mobile
-            (sidebar links it on desktop). Demoted to a lighter list-row so it
-            reads as nav subordinate to the brief above it. */}
+            (sidebar links it on desktop). Hoisted ABOVE the brief so it stays in
+            the thumb zone instead of being buried under a long auto-expanding
+            brief and clipped by the floating dock. */}
         <Link
           to="/mind"
-          className="rise-in-2 tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
+          className="rise-in tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
         >
           <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
@@ -41,6 +39,9 @@ export default function Insights() {
           </div>
           <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
         </Link>
+        <div className="rise-in-2">
+          <DailyBriefCard today={today} />
+        </div>
       </div>
     </div>
   );

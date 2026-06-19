@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Scale, Brain } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Brain } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
-import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -41,11 +40,16 @@ const navigationItems = [
     ] },
   { title: "Fuel", url: "/fuel", icon: UtensilsCrossed,
     matches: ["/fuel", "/food-tracker", "/supplements", "/log"],
+    // Mirror Fuel's in-page SubTabs exactly: Nutrition / Body / Hydration.
+    // (The page reads ?tab=body and ?tab=hydration; the old "wellness" alias
+    // silently resolved to Body and there was no Hydration entry at all.)
     children: [
       { label: "Nutrition", url: "/fuel",
-        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") !== "wellness" },
-      { label: "Wellness", url: "/fuel?tab=wellness",
-        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "wellness" },
+        active: (l) => l.pathname.startsWith("/fuel") && !["body", "hydration"].includes(qp(l, "tab")) },
+      { label: "Body", url: "/fuel?tab=body",
+        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "body" },
+      { label: "Hydration", url: "/fuel?tab=hydration",
+        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
   { title: "Body", url: "/athlete-state", icon: HeartPulse,
     matches: ["/athlete-state", "/recovery", "/physique"],
@@ -62,7 +66,12 @@ const navigationItems = [
   // keeps a single entry point (the in-page Mind & Learning card on /insights),
   // so neither is promoted to a nav sub-tab here. /mind and /career still match
   // so the section stays highlighted when those routes are reached.
-  { title: "Analyze", url: "/insights", icon: BarChart3,
+  // Analyze is demoted out of the 5-slot dock (dock:false): per the IA audit
+  // both Body and Analyze are over-promoted review surfaces, and a 4-slot dock
+  // reads cleaner with less per-slot crowding. Analyze still owns its sidebar
+  // entry, route matching, and the mobile sub-tab strip — only the dock icon
+  // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile).
+  { title: "Analyze", url: "/insights", icon: BarChart3, dock: false,
     matches: ["/insights", "/brief-history", "/mind", "/career"],
     mobileStrip: true,
     children: [
@@ -99,9 +108,10 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const { profile } = useProfile();
   const [showCalculators, setShowCalculators] = useState(false);
-  const [showWeighIn, setShowWeighIn] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const mobileHeaderRef = useRef(null);
+  const stripScrollRef = useRef(null);
+  const [stripOverflows, setStripOverflows] = useState(false);
   const pstDays = useMemo(() => daysToPST(), []);
 
   useEffect(() => {
@@ -118,6 +128,22 @@ export default function Layout({ children, currentPageName }) {
     window.addEventListener("resize", updateHeaderHeight);
     return () => window.removeEventListener("resize", updateHeaderHeight);
   }, []);
+
+  // Gate the right-edge scroll-fade behind a real overflow check so it never
+  // renders a false "scrollable" affordance when the strip's pills already fit
+  // (e.g. on /today, which has no sub-tab pills — only the two utilities).
+  useEffect(() => {
+    const el = stripScrollRef.current;
+    if (!el) {
+      setStripOverflows(false);
+      return;
+    }
+    const measure = () => setStripOverflows(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [location.pathname, location.search]);
 
   const pageDisplayName = {
     Today: "Today",
@@ -158,13 +184,18 @@ export default function Layout({ children, currentPageName }) {
   const activeSection = navigationItems.find((item) => isNavActive(item, location.pathname));
   const hasSubTabs = activeSection?.mobileStrip && activeSection.children?.length;
 
-  // Layout-owned utilities (calculators / weigh-in / stream-note). These used to
-  // live only inside the dead FAB; they now sit in the mobile strip so they have
-  // a persistent, reachable home.
+  // The mobile dock carries only the primary sections (dock !== false). Demoted
+  // sections (Analyze) stay in the sidebar + mobile sub-tab strip but drop the
+  // dock slot, so the dock reads cleaner with fewer, larger thumb targets.
+  const dockItems = navigationItems.filter((item) => item.dock !== false);
+
+  // Layout-owned utilities (calculators / stream-note). These used to live only
+  // inside the dead FAB; they now sit in the mobile strip so they have a
+  // persistent, reachable home. Weigh-In was dropped here — it is already a
+  // thumb-zone Quick Action on /today, so a second global entry was redundant.
   const utilities = [
-    { label: "Calculators", icon: Calculator, onClick: () => setShowCalculators(true) },
-    { label: "Weigh In", icon: Scale, onClick: () => setShowWeighIn(true) },
-    { label: "Stream Note", icon: Brain, onClick: () => setShowNoteModal(true) },
+    { label: "Calc", icon: Calculator, onClick: () => setShowCalculators(true) },
+    { label: "Note", icon: Brain, onClick: () => setShowNoteModal(true) },
   ];
 
   return (
@@ -276,27 +307,28 @@ export default function Layout({ children, currentPageName }) {
             </Link>
           </header>
 
-          {/* Mobile sub-tab strip — mirrors the desktop sidebar children for the
-              active section (Body/Analyze sub-routes) AND always carries the
-              Calculators / Weigh-In / Stream-Note utilities (formerly orphaned
-              in the dead FAB) so they're reachable from every section, not just
-              the two with cross-route children. Horizontal-scrolling pill row in
-              the dock language; hidden on desktop where the sidebar lists these.
-              A trailing fade mask in the field color signals that the row scrolls
-              when the last utility would otherwise clip flush at the edge. */}
+          {/* Mobile utility / sub-tab strip — mirrors the desktop sidebar
+              children for the active section (Body/Analyze sub-routes) AND
+              carries the Calculators / Stream-Note utilities (formerly orphaned
+              in the dead FAB) so they're reachable from every section. Both the
+              sub-tab pills and the utilities use the same labeled-pill recipe so
+              the utilities read as named actions, not mystery glyphs. On routes
+              with no sub-tabs the utilities right-align (ml-auto) to keep the
+              compact h-11 band from reading as a half-empty toolbar. A trailing
+              fade is shown only when the row actually overflows. */}
           <div
             className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
             style={{ top: "var(--layout-header-height, 0px)" }}
           >
             <div className="relative">
-              <div className="flex items-center gap-1 px-[18px] h-12 overflow-x-auto no-scrollbar">
+              <div ref={stripScrollRef} className="flex items-center gap-1.5 px-[18px] h-11 overflow-x-auto no-scrollbar">
                 {hasSubTabs && activeSection.children.map((c) => {
                   const on = c.active(location);
                   return (
                     <Link
                       key={c.label}
                       to={c.url}
-                      className={`shrink-0 px-3 h-11 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                      className={`shrink-0 px-3 h-9 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
                         on
                           ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                           : "text-ink-muted hover:text-ink"
@@ -309,50 +341,61 @@ export default function Layout({ children, currentPageName }) {
                 {hasSubTabs && (
                   <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
                 )}
-                {utilities.map((u) => (
+                {utilities.map((u, i) => (
                   <button
                     key={u.label}
                     type="button"
                     onClick={u.onClick}
-                    aria-label={u.label}
-                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-full text-ink-muted hover:text-ink active:bg-track active:scale-95 transition-[color,background-color,transform] duration-150 [transition-timing-function:var(--ease)]"
+                    className={`shrink-0 px-3 h-9 inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase tracking-[0.06em] text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)] ${
+                      !hasSubTabs && i === 0 ? "ml-auto" : ""
+                    }`}
                   >
                     <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    {u.label}
                   </button>
                 ))}
               </div>
-              {/* Right-edge scroll-fade affordance — content clipped at the edge
-                  reads as scrollable. Non-interactive so taps pass through. */}
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 w-8"
-                style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
-                aria-hidden="true"
-              />
+              {/* Right-edge scroll-fade — only when the row truly overflows, so
+                  it never paints a false "scrollable" hint (e.g. on /today).
+                  Non-interactive so taps pass through. */}
+              {stripOverflows && (
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-0 w-8"
+                  style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+                  aria-hidden="true"
+                />
+              )}
             </div>
           </div>
 
-          {/* Main content */}
+          {/* Main content. Bottom padding is the shared --dock-clearance token
+              (+ a small gap + safe-area) rather than a magic 7rem, so the dock
+              offset is single-sourced with the sticky save-bar / footer
+              consumers (Profile save bar, ProgramBuilder footer). */}
           <main
             className="flex-1 flex flex-col min-h-0 lg:pb-0"
-            style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}
+            style={{ paddingBottom: "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
           >
             <div className="flex-1 min-h-0">{children}</div>
           </main>
         </div>
       </div>
 
-      {/* Mobile — the floating liquid-glass dock */}
+      {/* Mobile — the floating liquid-glass dock (4 primary sections; Analyze
+          is demoted to the sidebar/strip, so the grid auto-sizes to the dock
+          items rather than a hard-coded 5 columns). */}
       <nav
-        className="glass-elevated z-[9999] lg:hidden rounded-full grid grid-cols-5 px-[9px] py-2"
+        className="glass-elevated z-[9999] lg:hidden rounded-full grid px-[9px] py-2"
         style={{
           position: "fixed",
           left: 18,
           right: 18,
           bottom: "calc(12px + env(safe-area-inset-bottom))",
           transform: "translateZ(0)",
+          gridTemplateColumns: `repeat(${dockItems.length}, minmax(0, 1fr))`,
         }}
       >
-        {navigationItems.map((item) => {
+        {dockItems.map((item) => {
           const isActive = isNavActive(item, location.pathname);
           return (
             <Link
@@ -374,20 +417,20 @@ export default function Layout({ children, currentPageName }) {
       {/* The floating action button was removed: it rendered on zero real landing
           routes (pure dead weight) and a free-floating coral action competed with
           every page's native add action, breaking the "coral is THE single action
-          color" rule. Its only unique entry points — Calculators, Weigh-In and
-          Stream-Note — now live in the mobile sub-tab strip above. */}
-      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
+          color" rule. Its surviving entry points — Calculators and Stream-Note —
+          now live as labeled pills in the mobile utility strip above. (Weigh-In
+          was dropped: it is already a thumb-zone Quick Action on /today.) */}
       <CalculatorsModal
         isOpen={showCalculators}
         onClose={() => setShowCalculators(false)}
         weightUnit={profile?.weight_unit || "lbs"}
       />
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md text-ink flex flex-col">
+        <DialogContent className="max-w-md flex flex-col">
           <DialogHeader>
-            <DialogTitle className="text-ink">Stream Note to Second Brain</DialogTitle>
+            <DialogTitle>Stream to Second Brain</DialogTitle>
             <DialogDescription>
-              A quick thought, dropped straight into your Second Brain inbox.
+              A quick thought, dropped straight into your inbox.
             </DialogDescription>
           </DialogHeader>
           {/* Anchor the capture surface to the sheet bottom so the Capture action
@@ -396,7 +439,7 @@ export default function Layout({ children, currentPageName }) {
             <QuickCapture
               embedded
               domain="general"
-              placeholder="Stream a note to Second Brain..."
+              placeholder="What's on your mind?"
               onCapture={() => setShowNoteModal(false)}
             />
           </div>

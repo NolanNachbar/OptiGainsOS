@@ -58,7 +58,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
   const inputEl = (
     <div
       ref={triggerRef}
-      className="flex h-11 w-full items-center rounded-lg border border-white/10 bg-white/[0.05] pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] focus-within:border-[rgba(var(--hue-teal-rgb)/0.45)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_3px_rgba(var(--hue-teal-rgb)/0.10)] transition-[border-color,box-shadow] duration-150"
+      className="flex h-11 w-full items-center rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 pr-3 shadow-[inset_0_1px_0_var(--glass-specular)] focus-within:border-charcoal-border focus-within:shadow-[inset_0_1px_0_var(--glass-specular),0_0_0_3px_var(--glass-edge)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)]"
     >
       <input
         type="text"

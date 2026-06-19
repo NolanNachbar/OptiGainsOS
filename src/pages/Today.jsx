@@ -22,7 +22,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
 import TodayActions from "@/components/dashboard/TodayActions";
 import WeighInModal from "@/components/WeighInModal";
-import { StatRing, MetricTile, SectionLabel, MiniRing, SubTabs } from "@/components/ui/system";
+import { StatRing, MetricTile, SectionLabel, MiniRing, SegmentedControl } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
 import { Activity, AlertTriangle, ChevronRight, Scale, Apple, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
@@ -57,9 +57,15 @@ export default function Today() {
   // primary in the first viewport; the form's "Check In" only materializes once
   // the athlete opens it.
   const [checkinOpen, setCheckinOpen] = useState(false);
-  // One consolidated detail card with a 3-way segmented control (State /
-  // Brief / Muscle) replaces three stacked disclosure drawers.
-  const [detailTab, setDetailTab] = useState("state");
+  // One consolidated detail card with a 3-way segmented control (Brief /
+  // State / Muscle) replaces three stacked disclosure drawers. Defaults to
+  // "brief" so the Daily Brief headline is promoted highest (per IA) when the
+  // detail card is opened.
+  const [detailTab, setDetailTab] = useState("brief");
+  // The whole detail card is collapsed behind a single disclosure on mobile
+  // (default closed) so the primary surface ends near the 2-viewport mark; on
+  // desktop the right rail has room, so it renders open.
+  const [detailOpen, setDetailOpen] = useState(false);
   const weightUnit = profile?.weight_unit || "lb";
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
@@ -188,12 +194,15 @@ export default function Today() {
     };
   }, [state, prescription, intensity, band.label]);
 
-  // The consolidated detail card's segmented control. Muscle is offered even
-  // on error/empty so the tab set stays stable (the body renders the reason).
+  // The consolidated detail card's segmented control — Brief leads (the Daily
+  // Brief headline is the IA priority). Muscle is offered even on error/empty so
+  // the tab set stays stable (the body renders the reason). Rendered with the
+  // lighter inset SegmentedControl, NOT the global glass-elevated coral SubTabs
+  // strip, so this in-card switch doesn't mimic the page-level nav pills.
   const detailTabs = [
-    { id: "state", label: "State" },
-    { id: "brief", label: "Brief" },
-    { id: "muscle", label: "Muscle" },
+    { value: "brief", label: "Brief" },
+    { value: "state", label: "State" },
+    { value: "muscle", label: "Muscle" },
   ];
 
   // Hue-coded morning metrics — each datum owns one hue.
@@ -243,7 +252,7 @@ export default function Today() {
           to={activeSession.program_workout_id
             ? `/workouts/detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
             : `/workouts/detail?id=${activeSession.workout_id}`}
-          className="flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-lg bg-brand/10 border border-brand/20 text-brand text-sm font-semibold rise-in"
+          className="glass-brand flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-2xl text-brand text-sm font-semibold rise-in"
         >
           <span className="flex items-center gap-2">
             <Activity className="w-4 h-4 shrink-0" />
@@ -303,10 +312,10 @@ export default function Today() {
                   micro-label below the score stays 'READINESS'. */}
               <StatRing value={score} size={104} label="Readiness" color={band.color} />
               <div className="flex-1 min-w-0">
-                <h2 className="text-[17px] sm:text-xl font-extrabold" style={{ color: band.color }}>
+                <h2 className="type-display text-lg sm:text-xl" style={{ color: band.color }}>
                   {headline}
                 </h2>
-                <p className="font-technical text-[12.5px] sm:text-[13px] font-semibold text-muted-2 leading-relaxed mt-1 max-w-[52ch]">
+                <p className="font-technical text-[13px] font-semibold text-muted-2 leading-relaxed mt-1 max-w-[52ch]">
                   {detail}
                 </p>
               </div>
@@ -364,9 +373,46 @@ export default function Today() {
           <PrescribedSessionCard today={today} loggedToday={loggedToday} />
         </div>
 
-        {/* Fuel today — the stated #3 priority, so on MOBILE it renders right
-            after the session (DOM order). On desktop it jumps to the right rail
-            via explicit lg:col/row-start, so this DOM move is mobile-only. */}
+        {/* Thumb-zone quick actions — the two most-tapped daily logs (food +
+            weigh-in). Lifted directly under the session CTA (ABOVE the Fuel
+            rings) so food logging lands in the thumb zone of the first viewport
+            and never requires a scroll. On desktop it stays in the left column
+            (lg:row-start-4) below the session; the Fuel rail keeps the right
+            rail, so this DOM move is mobile-only. */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
+          <div className="glass px-4 pt-3 pb-3 rise-in">
+            <SectionLabel className="mb-2">Quick actions</SectionLabel>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Matched pair: the ACTION is the bold tile title; the metric (or
+                  nothing for food) is a quiet caption underneath. The meaningless
+                  "Track" filler is dropped. */}
+              <Link
+                to="/food-tracker?addFood=true"
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 py-3 min-h-[64px]"
+              >
+                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
+                <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
+                <span className="text-[10px] font-semibold text-muted-2 leading-none">Today&apos;s meals</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowWeighIn(true)}
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 py-3 min-h-[64px]"
+              >
+                <Scale className="w-[18px] h-[18px]" style={{ color: "var(--hue-violet)" }} />
+                <span className="text-[13px] font-extrabold text-ink leading-none">Weigh in</span>
+                <span className="font-technical text-[10px] font-semibold text-muted-2 leading-none">
+                  {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Last unknown"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Fuel today — the detail of the #3 priority. On MOBILE it renders after
+            the thumb-zone quick actions (DOM order) so the food-log tap lands
+            first. On desktop it jumps to the right rail via explicit
+            lg:col/row-start, so this DOM move is mobile-only. */}
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 space-y-3 rise-in-3">
           {/* Fuel today — hue-coded rings, one tap to the log */}
           <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
@@ -377,14 +423,18 @@ export default function Today() {
               </span>
             </div>
             <div className="flex items-center justify-around mt-2 px-1">
+              {/* Center value is the LIVE 7-day average (what the arc measures),
+                  with the target moved to the caption so the digit and the arc
+                  agree. Labels say "/ target · 7d avg" so the number is never
+                  mistaken for today's intake or for the goal itself. */}
               <MiniRing
-                label="kcal" hue="var(--hue-gold)" size={50}
-                value={compactK(calTarget)}
+                label={calTarget ? `/${compactK(calTarget)} · 7d` : "kcal · 7d"} hue="var(--hue-gold)" size={50}
+                value={compactK(avgCal)}
                 frac={calTarget && avgCal ? avgCal / calTarget : 0}
               />
               <MiniRing
-                label="protein" hue="var(--hue-coral)"
-                value={proteinTarget ? `${Math.round(proteinTarget)}` : "—"}
+                label={proteinTarget ? `/${Math.round(proteinTarget)}g · 7d` : "protein · 7d"} hue="var(--hue-coral)"
+                value={nutrition?.avg_protein_7d != null ? `${Math.round(nutrition.avg_protein_7d)}` : "—"}
                 frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
               />
               {/* lb/wk rides the stable gold fuel hue; the SIGN (+/−) carries
@@ -400,36 +450,6 @@ export default function Today() {
           </Link>
         </aside>
 
-        {/* Thumb-zone quick actions — the two most-tapped daily logs (food + weigh-in),
-            kept in the lower third near the dock. The retired Stream Note tile freed
-            this slot; the readiness check-in took its thumb position above. */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
-          <div className="glass px-4 pt-3 pb-3 rise-in">
-            <SectionLabel className="mb-2">Quick actions</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                to="/food-tracker?addFood=true"
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
-              >
-                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Log food</span>
-                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">Track</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowWeighIn(true)}
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1 py-2.5 min-h-[60px]"
-              >
-                <Scale className="w-[18px] h-[18px]" style={{ color: "var(--hue-violet)" }} />
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-muted-2">Weigh in</span>
-                <span className="font-technical text-[13px] font-extrabold text-ink leading-none">
-                  {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Log"}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Today's Actions — the coaching todo list ported from Dashboard. Self-hides
             when empty, so it only occupies the slot when there is something to do. */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-5 rise-in-3">
@@ -437,19 +457,45 @@ export default function Today() {
         </div>
 
         {/* Consolidated detail card — one header, one body. The three former
-            disclosure drawers (State / Brief / Muscle) collapse into a single
-            glass card switched by the SubTabs segmented control, so the page
-            ends on one card instead of three stacked toggles. */}
+            disclosure drawers (Brief / State / Muscle) collapse into a single
+            glass card switched by the lighter inset SegmentedControl. On MOBILE
+            the whole card sits behind a single disclosure (default closed) so the
+            primary surface ends near the 2-viewport mark; on desktop the body is
+            always shown. */}
         <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
           <div className="surface overflow-hidden">
-            <SubTabs
-              tabs={detailTabs}
-              active={detailTab}
-              onChange={setDetailTab}
-              sticky={false}
-              showOnDesktop
-              className="!rounded-t-[inherit]"
-            />
+            {/* Mobile-only disclosure trigger — ≥44px tap target. */}
+            <button
+              type="button"
+              onClick={() => setDetailOpen((o) => !o)}
+              aria-expanded={detailOpen}
+              className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 text-left"
+            >
+              <SectionLabel>Today&apos;s detail</SectionLabel>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-2">
+                Brief · state · muscle
+                <ChevronDown
+                  className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpen ? "rotate-180" : ""}`}
+                />
+              </span>
+            </button>
+            {/* Body: toggleable on mobile via detailOpen, always shown on desktop. */}
+            <div className={`${detailOpen ? "block" : "hidden"} lg:block`}>
+            {/* In-card switch uses the lighter inset SegmentedControl (NOT the
+                global glass-elevated coral SubTabs strip) so it doesn't mimic the
+                page-level nav pills. */}
+            <div className="px-4 pt-3 lg:pt-4">
+              <SegmentedControl
+                options={detailTabs}
+                value={detailTab}
+                onChange={setDetailTab}
+                size="md"
+                // Arbitrary child variant lifts each segment button to a ≥44px
+                // tap target without touching the shared primitive (used at its
+                // compact default elsewhere).
+                className="inline-flex [&_button]:min-h-[44px] [&_button]:px-4"
+              />
+            </div>
             <div key={detailTab} className="rise-in">
               {detailTab === "state" && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-4 py-3">
@@ -500,6 +546,7 @@ export default function Today() {
                   <p className="px-4 py-4 text-[12px] text-muted-2 font-semibold">No recent training load to map</p>
                 )
               )}
+            </div>
             </div>
           </div>
         </div>

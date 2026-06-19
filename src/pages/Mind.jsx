@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SubTabs } from "@/components/ui/system";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,17 +38,30 @@ const CAT_LABELS = { technical: "Technical", business: "Business", philosophy: "
 
 function StarRating({ value, onChange, readonly }) {
   return (
-    <div className={`flex ${readonly ? "gap-0.5" : ""}`}>
-      {[1, 2, 3, 4, 5].map(n => (
-        <button
-          key={n}
-          onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold w-11 h-11"} ${n <= (value || 0) ? "text-gold" : "text-ink-faint"}`}
-          disabled={readonly}
-        >
-          <Star className="w-4 h-4 fill-current" />
-        </button>
-      ))}
+    <div className={`flex items-center ${readonly ? "gap-0.5" : ""}`}>
+      {[1, 2, 3, 4, 5].map(n => {
+        const filled = n <= (value || 0);
+        return (
+          <button
+            key={n}
+            // Tap the current high star to clear back to unrated, so a mis-tap is
+            // recoverable without a separate control.
+            onClick={() => !readonly && onChange?.(n === value ? 0 : n)}
+            className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold w-11 h-11"} ${filled ? "text-gold" : "text-ink-faint"}`}
+            disabled={readonly}
+            aria-label={readonly ? undefined : `Rate ${n} star${n > 1 ? "s" : ""}`}
+          >
+            {/* Unrated stars read as hollow outlines so the editable control has a
+                visible empty cue; rated stars fill gold. */}
+            <Star className={`w-4 h-4 ${filled ? "fill-current" : "fill-none"}`} />
+          </button>
+        );
+      })}
+      {!readonly && (
+        <span className="ml-2 text-[10px] font-technical text-ink-faint">
+          {value ? `${value}/5` : "Tap to rate"}
+        </span>
+      )}
     </div>
   );
 }
@@ -156,7 +169,7 @@ function ReadingTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-technical tabular-nums text-xs font-semibold text-muted-2">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
+          <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
         <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
           <Plus className="w-3.5 h-3.5" /> Add Book
@@ -214,7 +227,10 @@ function ReadingTab() {
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this book's status, rating, or takeaways." : "Track a book with its status, rating, and key takeaways."}</DialogDescription>
+          </DialogHeader>
           <div className="space-y-2.5">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
@@ -250,7 +266,7 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
+              <Textarea size="default" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
@@ -660,11 +676,11 @@ function CaptureTab() {
         <h3 className="section-label mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
-        <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
+        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
       <div>
         <h3 className="section-label mb-3 flex items-center gap-2">
-          <History className="w-3 h-3" /> Recent Streams
+          <History className="w-3 h-3 text-violet" /> Recent Streams
         </h3>
         <div className="space-y-3">
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -681,8 +697,10 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <BookOpen className="w-7 h-7 text-faint mx-auto mb-2" />
+            // Compact empty state (py-6, no oversized icon) so a fresh Capture tab
+            // doesn't scroll into ~250px of dead space below the fold.
+            <div className="py-6 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <BookOpen className="w-6 h-6 text-faint mx-auto mb-1.5" />
               <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note above to start.</p>
             </div>
           ))}

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
@@ -49,6 +49,11 @@ const protectedRoutes = [
   { path: "/quick-workout", name: "QuickWorkout", component: QuickWorkout },
   { path: "/recovery", name: "Recovery", component: RecoveryDetail },
   { path: "/mind", name: "Mind", component: Mind },
+  // IA-ORPHAN: /career is routable but unreachable from any nav surface (no dock
+  // tab, no sub-nav entry). Routing decision owned here; placement decision lives
+  // in Layout's dock/IA — surface it under the Analyze/Insights sub-nav group (or
+  // a dedicated nav group) so it stops being dead-by-navigation. Kept registered
+  // so the chosen nav link resolves the moment Layout adds it.
   { path: "/career", name: "Career", component: Career },
   { path: "/brief-history", name: "BriefHistory", component: BriefHistory },
   { path: "/athlete-state", name: "AthleteState", component: AthleteState },
@@ -90,9 +95,19 @@ function AppToaster() {
       }
       closeButton
       toastOptions={{
-        // Thumb-zone mobile toasts also carry a persistent close button, so the
-        // reader needs longer than Sonner's default 4000ms to parse + act.
-        duration: 5000,
+        // Actionable / error toasts are the ones a user must read and respond
+        // to, so the global default lands on the longer 8000ms lifetime — a flat
+        // 5000ms auto-dismissed error/CTA toasts before a thumb could reach the
+        // bottom-sheet close button. The persistent close button (always-visible
+        // via .og-toast__close) lets the reader dismiss passive success early,
+        // so erring long is safe.
+        //
+        // SYSTEM GAP: Sonner 2.0.7 has no per-TYPE duration at the Toaster level
+        // (ToastOptions.duration is flat; only per-call toast.success(msg,{duration})
+        // overrides it). True passive-vs-actionable duration split therefore lives
+        // at call sites or a future toast() wrapper. Until that wrapper exists the
+        // single defensible global default is the longer, actionable one.
+        duration: 8000,
         classNames: {
           toast: 'og-toast',
           error: 'og-toast--error',
@@ -110,6 +125,21 @@ function RootRoute() {
   return <Navigate to="/login" replace />;
 }
 
+// Guards the sign-in form: an already-authenticated session has no business
+// re-seeing the form, so bounce it to where it was headed (returnTo, set by
+// ProtectedRoute / Login's own location.state convention) or the canonical home.
+// Mirrors RootRoute's loading/auth gate.
+function LoginRoute() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <LoadingScreen />;
+  if (user) {
+    const returnTo = location.state?.returnTo || '/today';
+    return <Navigate to={returnTo} replace />;
+  }
+  return <Login />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -121,13 +151,16 @@ function App() {
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>
                   <Route path="/" element={<RootRoute />} />
-                  <Route path="/login" element={<Login />} />
+                  <Route path="/login" element={<LoginRoute />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/app" element={<Navigate to="/today" replace />} />
                   {/* Dashboard retired — Today is the single canonical home. Its
                       two unique features (MorningCheckin readiness form + Today's
-                      Actions todo list) were ported into Today.jsx. */}
+                      Actions todo list) were ported into Today.jsx, and the old
+                      src/pages/Dashboard.jsx was deleted (it had no importer and
+                      was never lazy-loaded here, so it was dead weight). This
+                      redirect is the only thing /dashboard resolves to now. */}
                   <Route path="/dashboard" element={<Navigate to="/today" replace />} />
                   {/* LogHub + Supplements consolidated into Fuel's Body tab */}
                   <Route path="/log" element={<Navigate to="/fuel?tab=body" replace />} />

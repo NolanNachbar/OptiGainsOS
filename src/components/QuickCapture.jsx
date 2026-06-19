@@ -24,6 +24,10 @@ export default function QuickCapture({
   placeholder = "Capture a note...",
   onCapture,
   embedded = false,
+  // A page that OWNS a hue (e.g. Mind = violet) threads its hue token name so the
+  // free-write field's focus ring speaks the surface identity instead of borrowing
+  // the system-default teal. Forwarded straight to the Textarea primitive.
+  focusHue = "teal",
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -63,29 +67,28 @@ export default function QuickCapture({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         size="capture"
+        focusHue={focusHue}
         className="text-sm"
       />
-      <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t hairline">
-        {domain !== "general" ? (
-          <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest shrink-0">
-            {domain}
-          </span>
-        ) : (
-          // The ⌘/Ctrl+Enter shortcut only exists on a hardware keyboard — the
-          // phone (the primary surface) has no such keys, so gate the hint to md+.
-          <span className="hidden md:inline text-[10px] font-technical text-ink-faint shrink-0">
-            ⌘/Ctrl + Enter to capture
-          </span>
-        )}
+      {/* Footer stacks on mobile (button full-width below the field, in the thumb
+          zone) and becomes a row at md+ where the keyboard hint can sit beside it. */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-3 pt-3 border-t hairline">
+        {/* The ⌘/Ctrl+Enter shortcut only exists on a hardware keyboard — the
+            phone (the primary surface) has no such keys, so gate the hint to md+.
+            The redundant domain label is dropped: the section heading already
+            names the surface, so repeating "MIND" here was decoration. */}
+        <span className="hidden md:inline text-[10px] font-technical text-ink-faint shrink-0">
+          ⌘/Ctrl + Enter to capture
+        </span>
         <Button
           size="lg"
-          // Keep the disabled state visibly present (coral-ghost, not a fully
-          // dimmed button) on the de-facto landing state so the primary action
-          // still reads as the page's coral affordance before any text exists.
+          // The disabled coralGhost now renders inert (neutral charcoal fill,
+          // faint ink) via the shared sys-button fix, so an empty field no longer
+          // reads as a live CTA while still marking where the coral action lives.
           variant={hasContent ? "volt" : "coralGhost"}
-          // Full-width on the embedded mobile sheet so the primary action fills
-          // the thumb zone; auto-width on the page card next to its label/hint.
-          className={embedded ? "flex-1" : ""}
+          // Full-width on mobile (embedded sheet AND the page card) so the primary
+          // action fills the thumb zone; auto-width only beside the md+ hint row.
+          className={embedded ? "flex-1" : "w-full md:w-auto"}
           disabled={!hasContent || captureMutation.isPending}
           onClick={() => captureMutation.mutate()}
         >

@@ -701,8 +701,8 @@ export default function WorkoutDetail() {
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex items-center justify-center">
-        <Card className="w-full">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex items-center justify-center lg:items-center">
+        <Card className="w-full rise-in">
           <CardContent className="py-12 text-center">
             <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
               <Dumbbell className="w-5 h-5" />
@@ -711,7 +711,7 @@ export default function WorkoutDetail() {
             <p className="text-[13px] font-semibold text-ink-muted mb-6">
               This workout may have been deleted, or the link is no longer valid.
             </p>
-            <Button variant="ghost" size="lg" onClick={() => navigate("/workouts")}>
+            <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Workouts
             </Button>
@@ -819,7 +819,7 @@ export default function WorkoutDetail() {
                       onClick={handleStartLogging}
                       variant="volt"
                       size="lg"
-                      className="w-full"
+                      className="w-full hidden lg:flex"
                       data-tutorial="start-logging-btn"
                     >
                       <Dumbbell className="w-5 h-5 mr-2" />
@@ -965,7 +965,7 @@ export default function WorkoutDetail() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-carb bg-carb/10 border border-carb/20 rounded-full px-2.5 py-1">Cardio</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1">Cardio</span>
                   </div>
                 ))}
               </div>

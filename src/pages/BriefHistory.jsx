@@ -61,11 +61,16 @@ function BriefEntry({ brief, index = 0 }) {
             <Bot className="w-4 h-4 text-teal shrink-0" />
             <span className="text-sm font-bold text-ink truncate">{date}</span>
           </div>
-          <ChevronDown className={`w-4 h-4 text-muted-2 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!open && (
+              <span className="section-label text-faint">Tap to view</span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)] ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+          </div>
         </div>
         {!open && (
           json.insight ? (
-            <p className="font-technical text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
+            <p className="text-sm font-semibold text-faint leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
           ) : (
             <p className="text-xs font-semibold text-faint pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
@@ -74,56 +79,67 @@ function BriefEntry({ brief, index = 0 }) {
         )}
       </button>
 
-      {open && (
-        <>
-          {json.insight && (
-            <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
-              <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
-              <p className="font-technical text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
-            </div>
-          )}
+      {/* Body reveal: grid-rows 0fr→1fr collapses height with no magic max-height,
+          paired with opacity + an 8px rise to match the riseIn entrance and the
+          chevron rotation — all on the single system easing in the 180-320ms band. */}
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-[260ms] ease-[cubic-bezier(.2,.7,.3,1)]"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr", opacity: open ? 1 : 0 }}
+      >
+        <div className="overflow-hidden">
+          <div
+            className="transition-transform duration-[260ms] ease-[cubic-bezier(.2,.7,.3,1)]"
+            style={{ transform: open ? "none" : "translateY(8px)" }}
+          >
+            {json.insight && (
+              <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
+                <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+                <p className="text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
+              </div>
+            )}
 
-          <div className="px-5 py-4 space-y-4">
-            {COACHES.filter(c => json[c.key]).map(coach => (
-              <div key={coach.key} className="space-y-1.5">
-                <div>
-                  <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
+            <div className="px-5 py-4 space-y-4">
+              {COACHES.filter(c => json[c.key]).map(coach => (
+                <div key={coach.key} className="space-y-1.5">
+                  <div>
+                    <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
+                  </div>
+                  <p className="text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
                 </div>
-                <p className="font-technical text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
-              </div>
-            ))}
+              ))}
 
-            {json.today_actions?.length > 0 && (
-              <div>
-                <p className="section-label mb-2">Actions</p>
-                <ul className="space-y-1">
-                  {json.today_actions.map((action, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm font-semibold text-secondary">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-teal/60 shrink-0" />
-                      {action}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              {json.today_actions?.length > 0 && (
+                <div>
+                  <p className="section-label mb-2">Actions</p>
+                  <ul className="space-y-1">
+                    {json.today_actions.map((action, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm font-semibold text-secondary">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-teal/60 shrink-0" />
+                        {action}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-            {!hasContent && (
-              <p className="text-xs font-semibold text-faint">
-                {NO_CONTENT_COPY}
-              </p>
-            )}
+              {!hasContent && (
+                <p className="text-xs font-semibold text-faint">
+                  {NO_CONTENT_COPY}
+                </p>
+              )}
 
-            {approxCost && import.meta.env.DEV && (
-              <div className="flex items-center gap-1.5 pt-1 border-t hairline">
-                <Coins className="w-3 h-3 text-faint shrink-0" />
-                <span className="text-xs font-semibold text-faint">
-                  Est. cost <span className="font-technical">{approxCost}</span>
-                </span>
-              </div>
-            )}
+              {approxCost && import.meta.env.DEV && (
+                <div className="flex items-center gap-1.5 pt-1 border-t hairline">
+                  <Coins className="w-3 h-3 text-faint shrink-0" />
+                  <span className="text-xs font-semibold text-faint">
+                    Est. cost <span className="font-technical">{approxCost}</span>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -195,18 +211,24 @@ export default function BriefHistory() {
           </div>
         ) : (
           <>
-            {briefs.slice(0, visibleCount).map((brief, i, arr) => {
-              const group = dateGroup(brief.date);
-              const showHeader = i === 0 || dateGroup(arr[i - 1].date) !== group;
-              return (
-                <div key={brief.id}>
-                  {showHeader && (
-                    <p className={`section-label mb-3 ${i === 0 ? "" : "mt-6"}`}>{group}</p>
-                  )}
-                  <BriefEntry brief={brief} index={i} />
-                </div>
-              );
-            })}
+            {(() => {
+              const shown = briefs.slice(0, visibleCount);
+              // Only label time-buckets once a second bucket actually appears —
+              // a lone "This week" header is noise when every brief is this week.
+              const multiGroup = new Set(shown.map(b => dateGroup(b.date))).size > 1;
+              return shown.map((brief, i, arr) => {
+                const group = dateGroup(brief.date);
+                const showHeader = multiGroup && (i === 0 || dateGroup(arr[i - 1].date) !== group);
+                return (
+                  <div key={brief.id}>
+                    {showHeader && (
+                      <p className={`section-label mb-4 ${i === 0 ? "" : "mt-6"}`}>{group}</p>
+                    )}
+                    <BriefEntry brief={brief} index={i} />
+                  </div>
+                );
+              });
+            })()}
             {briefs.length > visibleCount && (
               <Button
                 variant="outline"

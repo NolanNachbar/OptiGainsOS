@@ -41,21 +41,20 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-4 gap-2 mb-6">
+      {/* items-stretch lets the three plain stat cards match the Change card's
+          height without the old hard-coded &nbsp; spacer rows reclaiming ~16px each. */}
+      <div className="grid grid-cols-4 gap-2 mb-6 items-stretch">
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{currentWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
@@ -63,8 +62,8 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             {weightChange !== 0 && <span className="text-[12px]" aria-hidden="true">{weightChange > 0 ? '▲' : '▼'}</span>}
             <span>{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}</span>
             <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
+            <span className="text-[12px] text-muted-2 font-semibold ml-0.5">({percentChange > 0 ? '+' : ''}{percentChange}%)</span>
           </div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5">{percentChange > 0 ? '+' : ''}{percentChange}%</div>
         </div>
       </div>
 
@@ -79,6 +78,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
               tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
               axisLine={false}
               tickLine={false}
+              minTickGap={24}
             />
             <YAxis
               stroke="var(--color-track)"

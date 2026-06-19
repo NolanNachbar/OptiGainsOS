@@ -99,7 +99,7 @@ export default function WorkoutLoggingHeader({
       <Button
         variant="ghost"
         onClick={() => onAddRestTime?.(30)}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold font-technical"
+        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold"
       >
         +30s
       </Button>
@@ -128,10 +128,13 @@ export default function WorkoutLoggingHeader({
       <Button
         onClick={onFinish}
         disabled={isSaving || !canFinish}
-        // Empty workout → Finish is inert, so it reads as neutral dim glass
-        // (NOT a dimmed coral CTA). That leaves the live Add input as the only
-        // coral action on the page. Once there's something to log it earns coral.
-        variant={canFinish ? "volt" : "dim"}
+        // Finish earns coral only when it's the live next action. Two cases drop
+        // it to neutral glass: (1) an empty workout (Finish is inert — the live
+        // Add input owns the only coral); (2) an ACTIVE rest countdown — mid-rest
+        // the athlete is resting, not finishing, so a bright coral Finish would
+        // be the brightest pixel competing with the live rest timer. It re-earns
+        // coral once rest ends.
+        variant={canFinish && !restRunning ? "volt" : "dim"}
         className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-5 lg:px-4 flex-1 lg:flex-none"
         data-tutorial="finish-workout-btn"
       >
@@ -204,15 +207,16 @@ export default function WorkoutLoggingHeader({
         <div className="max-w-4xl mx-auto px-3 py-2.5 flex flex-col gap-2">
           {restRunning ? (
             <>
-              {/* Rest: countdown + depleting track on one calm row, the +30s /
-                  Skip controls on their own thin secondary row below — so the
-                  thumb-zone bar is never a crammed 5-element line. */}
+              {/* Rest row: countdown + depleting track + its own +30s / Skip
+                  controls live together on one line — the rest timer owns its
+                  controls. Cancel / Finish drop to the action row below so the
+                  two concerns never crowd into one crammed 5-element line. */}
               <div className="flex items-center gap-2 min-w-0">
                 {restCountdown}
                 <div className="flex-1 min-w-0">{restProgressTrack}</div>
-              </div>
-              <div className="flex items-center justify-between gap-2">
                 {restControls(false)}
+              </div>
+              <div className="flex items-center justify-end gap-2">
                 {actionCluster}
               </div>
             </>

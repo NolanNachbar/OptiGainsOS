@@ -14,7 +14,7 @@ const GOAL_LABELS = {
 
 const MAX_TAGS = 3;
 
-export default function ProgramCard({ program, enrollment, index = 0 }) {
+export default function ProgramCard({ program, enrollment, index = 0, inActiveTab }) {
   const isActive = enrollment?.status === "active";
   const cycleLength = program.cycle_length || program.days_per_week || 7;
   const numCycles = program.num_cycles || program.duration_weeks || 4;
@@ -36,10 +36,16 @@ export default function ProgramCard({ program, enrollment, index = 0 }) {
   const visibleTags = tags.slice(0, MAX_TAGS);
   const overflowTags = tags.length - visibleTags.length;
 
+  // The in-flight program already declares itself via the 'C·D' position chip
+  // on the progress line, so the separate 'Active' badge is redundant there
+  // (and inside the Active tab, where every card is active). Show it only when
+  // there's no position chip and the parent hasn't flagged the active context.
+  const showActiveBadge = isActive && !positionLabel && inActiveTab !== true;
+
   return (
     <div className={RISE[index % 3]}>
       <Link to={`/program/${program.id}`}>
-        <div className="group relative overflow-hidden glass glass-interactive cursor-pointer transition-transform active:scale-[0.985] active:bg-white/[0.07]">
+        <div className="group relative overflow-hidden glass glass-interactive cursor-pointer transition-transform active:scale-[0.985] active:shadow-[inset_0_1px_0_var(--glass-specular)]">
           {/* Trailing affordance — coral-free directional cue. */}
           <ChevronRight
             className="pointer-events-none absolute top-4 right-4 h-5 w-5 text-ink-muted transition-transform group-hover:translate-x-0.5"
@@ -48,12 +54,12 @@ export default function ProgramCard({ program, enrollment, index = 0 }) {
           {/* Single content padding wrapper — no ad-hoc per-block padding. */}
           <div className="p-5 pr-12 space-y-3">
             {/* Badges — one chip vocabulary (outline). */}
-            {(showGoalBadge || isActive) && (
+            {(showGoalBadge || showActiveBadge) && (
               <div className="flex flex-wrap items-center gap-1.5">
                 {showGoalBadge && (
                   <Badge variant="outline">{GOAL_LABELS[goalLabel] || goalLabel}</Badge>
                 )}
-                {isActive && (
+                {showActiveBadge && (
                   <Badge variant="outline" className="ml-auto">Active</Badge>
                 )}
               </div>
@@ -80,11 +86,12 @@ export default function ProgramCard({ program, enrollment, index = 0 }) {
                   />
                 </div>
                 <div className="flex items-center gap-3 font-technical text-xs text-ink-muted">
-                  <span className="text-ink font-bold">{progressPercent}%</span>
-                  <span>{completedCount} / {totalWorkouts} sessions</span>
+                  {/* One progress figure — the concrete fraction, not fraction +
+                      percent (the bar already carries the proportion visually). */}
+                  <span><span className="text-ink font-bold">{completedCount}</span> / {totalWorkouts} sessions</span>
                   {/* Position is only meaningful for the in-flight program. */}
                   {isActive && positionLabel && (
-                    <span className="ml-auto text-ink-muted">{positionLabel}</span>
+                    <span className="ml-auto text-ink">{positionLabel}</span>
                   )}
                 </div>
               </>

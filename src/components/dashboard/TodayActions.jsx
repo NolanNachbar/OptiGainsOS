@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SectionLabel } from "@/components/ui/system";
 import { ListChecks, Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
@@ -119,44 +119,43 @@ export default function TodayActions({ today, briefActions = [], isError = false
   const total = todos.length;
 
   if (isError) return (
-    <Card className="glass glass-interactive">
-      <CardContent className="px-5 py-4 text-sm text-bad">Could not load today's actions</CardContent>
-    </Card>
+    <div className="glass glass-interactive px-4 pt-3 pb-3 text-sm text-bad">Could not load today's actions</div>
   );
 
   if (total === 0 && !adding) return null;
 
   return (
-    <Card className="glass glass-interactive">
-      <CardHeader className="pb-2 pt-4 px-5">
-        <div className="flex items-center justify-between">
-          <CardTitle className="section-label flex items-center gap-2">
-            <ListChecks className="w-4 h-4 text-leaf" />
-            Today's Actions
-            {total > 0 && (
-              <span className="font-technical text-[10px] text-muted-2 ml-1.5 font-bold">{completed}/{total}</span>
-            )}
-          </CardTitle>
+    <div className="glass glass-interactive px-4 pt-3 pb-3">
+      <SectionLabel
+        right={
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setAdding(v => !v)}
-            className="min-h-[44px] min-w-[44px] p-0 -my-2"
+            className="min-h-[44px] min-w-[44px] p-0 -my-2 border-0 bg-transparent shadow-none"
             aria-label="Add action"
           >
             <Plus className="w-4 h-4" />
           </Button>
+        }
+      >
+        <span className="flex items-center gap-2">
+          <ListChecks className="w-4 h-4 text-leaf" />
+          Today's Actions
+          {total > 0 && (
+            <span className="font-technical text-[10px] text-muted-2 font-bold">{completed}/{total}</span>
+          )}
+        </span>
+      </SectionLabel>
+      {total > 0 && (
+        <div className="h-1 bg-track rounded-full mt-2.5">
+          <div
+            className="h-full bg-leaf rounded-full transition-all duration-500 [transition-timing-function:var(--ease)]"
+            style={{ width: `${(completed / total) * 100}%` }}
+          />
         </div>
-        {total > 0 && (
-          <div className="h-[2px] bg-track rounded-full mt-2.5">
-            <div
-              className="h-full bg-leaf rounded-full transition-all duration-500"
-              style={{ width: `${(completed / total) * 100}%` }}
-            />
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="px-5 pb-4 pt-1.5">
+      )}
+      <div className="mt-2.5">
         <div className="space-y-1">
           {todos.map(todo => (
             <div
@@ -205,7 +204,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             />
             <Button
               size="sm"
-              variant="volt"
+              variant="dim"
               className="h-9 px-4 font-bold text-xs uppercase tracking-wider"
               disabled={!newText.trim() || addMutation.isPending}
               onClick={() => addMutation.mutate()}
@@ -214,7 +213,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

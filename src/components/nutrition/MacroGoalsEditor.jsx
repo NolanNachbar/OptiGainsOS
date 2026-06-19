@@ -53,6 +53,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_protein_goal,
       bar: 'bg-coral',
       text: 'text-coral',
+      thumb: 'var(--hue-coral)',
       onSlide: handleProteinSlider,
       max: Math.max(proteinPct, 100 - carbsPct),
     },
@@ -62,6 +63,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_carbs_goal,
       bar: 'bg-carb',
       text: 'text-carb',
+      thumb: 'var(--hue-blue)',
       onSlide: handleCarbsSlider,
       max: Math.max(carbsPct, 100 - proteinPct),
     },
@@ -71,6 +73,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_fats_goal,
       bar: 'bg-fat',
       text: 'text-fat',
+      thumb: 'var(--hue-yellow)',
       onSlide: null,
     },
   ];
@@ -81,8 +84,10 @@ export function MacroGoalsEditor({ values, onChange }) {
           for thumb sizing. Mobile law requires a >=44px touch zone with a
           finger-sized thumb. The range track stays 1.5px (visual), the wrapper
           above provides the 44px hit area, and these rules size the draggable
-          thumb to 24px in the coral action hue. Scoped to .og-macro-range so it
-          can't leak onto other ranges. */}
+          thumb to 24px. The thumb hue is DATA, not decoration: each slider passes
+          its datum hue via the --thumb custom property (protein=coral, carbs=blue)
+          rather than always painting the coral action color. Falls back to coral
+          if unset. Scoped to .og-macro-range so it can't leak onto other ranges. */}
       <style>{`
         .og-macro-range::-webkit-slider-thumb {
           -webkit-appearance: none;
@@ -90,7 +95,7 @@ export function MacroGoalsEditor({ values, onChange }) {
           width: 24px;
           height: 24px;
           border-radius: 9999px;
-          background: var(--color-brand);
+          background: var(--thumb, var(--color-brand));
           border: 2px solid var(--color-bg);
           box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
           cursor: pointer;
@@ -99,7 +104,7 @@ export function MacroGoalsEditor({ values, onChange }) {
           width: 24px;
           height: 24px;
           border-radius: 9999px;
-          background: var(--color-brand);
+          background: var(--thumb, var(--color-brand));
           border: 2px solid var(--color-bg);
           box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
           cursor: pointer;
@@ -117,16 +122,17 @@ export function MacroGoalsEditor({ values, onChange }) {
         />
       </div>
 
-      {/* Stacked colour bar */}
-      <div className="h-2.5 w-full rounded-full overflow-hidden flex">
-        <div className="bg-coral h-full transition-all duration-150" style={{ width: `${proteinPct}%` }} />
-        <div className="bg-carb h-full transition-all duration-150" style={{ width: `${carbsPct}%` }} />
-        <div className="bg-fat h-full transition-all duration-150" style={{ width: `${fatPct}%` }} />
+      {/* Stacked colour bar — segment fills animate width only, on the system
+          easing within the 180–320ms band (transition-all/150 was off-system). */}
+      <div className="h-2.5 w-full rounded-full overflow-hidden flex bg-track">
+        <div className="bg-coral h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${proteinPct}%` }} />
+        <div className="bg-carb h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${carbsPct}%` }} />
+        <div className="bg-fat h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${fatPct}%` }} />
       </div>
 
       {/* Sliders */}
       <div className="space-y-4">
-        {macros.map(({ label, pct, g, bar, text, onSlide, max }) => (
+        {macros.map(({ label, pct, g, bar, text, thumb, onSlide, max }) => (
           <div key={label}>
             <div className="flex items-center justify-between mb-1.5">
               <span className={`text-sm font-semibold ${text}`}>{label}</span>
@@ -144,12 +150,13 @@ export function MacroGoalsEditor({ values, onChange }) {
                   max={max}
                   value={pct}
                   onChange={(e) => onSlide(parseInt(e.target.value))}
-                  className="og-macro-range w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-charcoal-elevated"
+                  style={{ '--thumb': thumb }}
+                  className="og-macro-range w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-track"
                 />
               </div>
             ) : (
-              <div className="h-1.5 w-full rounded-full bg-charcoal-elevated overflow-hidden">
-                <div className={`${bar} h-full rounded-full transition-all duration-150`} style={{ width: `${pct}%` }} />
+              <div className="h-1.5 w-full rounded-full bg-track overflow-hidden">
+                <div className={`${bar} h-full rounded-full transition-[width] duration-200 ease-[var(--ease)]`} style={{ width: `${pct}%` }} />
               </div>
             )}
           </div>
