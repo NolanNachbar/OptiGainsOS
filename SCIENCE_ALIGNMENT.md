@@ -125,7 +125,12 @@ deloads. Landmarks/thresholds are learnable priors, not laws.
   state-parameter estimation, as Science.md originally specified) or stop presenting its
   output as learned.
 
-### E6 [low / doc]: Frequency table is stale; code is already correct
+### [DONE] E6 [low / doc]: Frequency table is stale; code is already correct
+- *Done:* No code change (the allocator already derives frequency from set target ÷
+  per-session cap with a learned override). The fixed per-muscle peak-frequency table is
+  already ABSENT from `Science-Unified.md` — the merge removed it (changelog C3; see lines
+  ~53, ~214 "the per-muscle peak-frequency table is omitted entirely", ~1265). Nothing to
+  remove; satisfied by the unified spec.
 - *Current:* code DERIVES frequency from set target ÷ per-session cap with a learned
   override (`allocator.frequency_targets` 157-182; bandit in learners.py 117-143). This
   already matches the evidence (frequency is a volume-distribution lever, not a driver).
