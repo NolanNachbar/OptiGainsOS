@@ -55,7 +55,6 @@ const SURFACES = [
   { id: 'today-quick-note', type: 'overlay', route: '/today', reach: 'Today → Note Capture tile', states: ['empty'] },
   { id: 'add-food-dialog', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Add Food', states: ['search', 'results'] },
   { id: 'barcode-scanner-modal', type: 'overlay', route: '/food-tracker', reach: 'Add Food → Barcode (camera idle in headless)', states: ['idle'] },
-  { id: 'diet-phase-modal', type: 'overlay', route: '/fuel', reach: 'Fuel → Diet Phase card → New Phase', states: ['form'] },
   { id: 'week-plan-dialog', type: 'overlay', route: '/fuel', reach: 'Fuel → Review Weekly Plan', states: ['plan'] },
   { id: 'meal-template-apply', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → Apply', states: ['confirm'] },
   { id: 'meal-template-edit', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → edit', states: ['form'] },
@@ -64,9 +63,8 @@ const SURFACES = [
   { id: 'recipe-log', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Recipes → Log', states: ['form'] },
   { id: 'stats-setup-modal', type: 'overlay', route: '/food-tracker', reach: 'TDEE / Setup Stats (probe trigger)', states: ['form'] },
   { id: 'program-duration-modal', type: 'overlay', route: '/program-builder', reach: 'Program create flow → duration', states: ['form'] },
-  { id: 'schedule-after-create-modal', type: 'overlay', route: '/create-workout', reach: 'after save → Schedule This?', states: ['form'] },
-  { id: 'custom-split-selector', type: 'overlay', route: '/weekly-schedule', reach: 'Schedule → Custom Split / Assign', states: ['selection'] },
-  { id: 'confirm-dialog-generic', type: 'overlay', route: '/mind', reach: 'any delete (Mind/Career/templates) → confirm', states: ['default', 'danger'] },
+  { id: 'schedule-after-create-modal', type: 'overlay', route: '/program-builder', reach: 'after completing Program Builder → Schedule This? (only mounted in ProgramBuilder)', states: ['form'] },
+  { id: 'confirm-dialog-generic', type: 'overlay', route: '/fuel?tab=wellness', reach: 'weight history → delete entry → confirm (danger variant)', states: ['danger'] },
   { id: 'mind-add-dialog', type: 'overlay', route: '/mind', reach: 'Mind → Add Book/Skill', states: ['form'] },
   { id: 'career-form-dialog', type: 'overlay', route: '/career', reach: 'Career → New/Edit application', states: ['form'] },
   { id: 'pst-test-logger', type: 'overlay', route: '/athlete-state', reach: 'PST card → Log Test (probe Mind/AthleteState)', states: ['form'] },
@@ -253,7 +251,15 @@ Partition:
   { label: 'synth', phase: 'Synthesize', schema: FIXPLAN_SCHEMA, model: 'opus' }
 )
 
-// ── STEP E — FIX (systemic serial on main tree; per-surface in worktrees) ───
+// ── STEP E — FIX (ALL serial on the MAIN working tree; no worktrees) ────────
+// Worktree isolation branched from a stale ancestor in round 1, so fixes were made
+// against old code and had to be discarded. Apply directly on the current main tree,
+// serially (the tree is shared; serial = zero race). build is the per-fix gate; lint
+// is project-wide and has PRE-EXISTING debt unrelated to this audit, so do not gate on it.
+const FIX_RULES = `Edit ONLY the files in your list, on the current working tree. Use existing tokens +
+src/components/ui/* primitives; extend the system only for a genuine gap, and document it. After editing run
+\`npm run build\` — it MUST pass. Do NOT run \`npm run lint\` (the project has pre-existing lint debt unrelated
+to this audit; do not try to fix it). Do NOT run ANY git commands.`
 phase('Fix')
 const systemic = []
 for (const fix of ((plan && plan.systemic) || [])) {
@@ -261,22 +267,22 @@ for (const fix of ((plan && plan.systemic) || [])) {
     `STEP E — SYSTEMIC FIX "${fix.title}" (id ${fix.id}). Shared files: ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
-Use existing tokens + src/components/ui/* primitives; only extend the system for a genuine gap, and document it.
-Then run \`npm run build\` and \`npm run lint\` — both MUST pass clean. Do NOT run any git commands.`,
+${FIX_RULES}`,
     { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
   )
   if (r) systemic.push(r)
 }
-const perSurface = (await parallel(((plan && plan.perSurface) || []).map((fix) => () =>
-  agent(
-    `STEP E — PER-SURFACE FIX for "${fix.surface}". Files (disjoint from other fixes): ${fix.files.join(', ')}.
+const perSurface = []
+for (const fix of ((plan && plan.perSurface) || [])) {
+  const r = await agent(
+    `STEP E — PER-SURFACE FIX for "${fix.surface}". Files: ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
-Use existing tokens + src/components/ui/* primitives. Run \`npm run build\` and \`npm run lint\` — both MUST pass
-clean before finishing. Do NOT run any git commands (the harness owns the worktree).`,
-    { label: `fix:${fix.surface}`, phase: 'Fix', isolation: 'worktree', schema: FIXRESULT_SCHEMA }
+${FIX_RULES}`,
+    { label: `fix:${fix.surface}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
   )
-))).filter(Boolean)
+  if (r) perSurface.push(r)
+}
 
 return {
   round,

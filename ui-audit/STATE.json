@@ -1,77 +1,741 @@
 {
-  "round": 1,
+  "round": 2,
   "clean_sweeps": 0,
   "baseUrl": "http://localhost:5173",
-  "history": [],
+  "history": [
+    {
+      "round": 1,
+      "counts": {
+        "blockers": 12,
+        "majors": 119,
+        "minors": 218
+      },
+      "cleanSweep": false,
+      "surfacesAudited": 53,
+      "fixes": "14 systemic fixes applied to main tree + committed (0cb3a9f1: tokens, primitives, dialogs/scrim, FAB, Layout IA, QuickCapture). 16 per-surface worktree fixes DISCARDED (workflow based worktrees on stale ancestor 15b6b3b4 = 66 files behind main; merging would regress branch). Per-surface fixes will be redone in round 2 on the main tree (runner STEP E changed: no worktrees, serial on main, build-gated, lint not gated).",
+      "notableFindings": [
+        "FAB suppressed on /today (the home surface) -> no floating quick-action entry; only renders on /weekly-schedule",
+        "ConfirmDialog danger button rendered dark/neutral not coral (fixed systemically)",
+        "physique-compare Compare button occluded by sticky pose-filter bar (z-index)",
+        "/program/:id invalid id renders blank (no not-found state) unlike /workout-detail",
+        "dead/orphaned components removed from inventory: DietPhaseCard, CustomSplitSelector (never rendered)"
+      ],
+      "preExistingIssues": "npm run lint has ~70 pre-existing errors in utils/*.js, Workouts.jsx, vite.config.js (Node globals) on committed main - NOT introduced by audit; build passes clean. ui-audit/ now eslint-ignored.",
+      "coverageGapCount": 33,
+      "coverageGapSurfaces": [
+        "today",
+        "dashboard",
+        "login",
+        "reset-password",
+        "train-schedule",
+        "train-library",
+        "train-programs",
+        "train-activity",
+        "fuel-nutrition",
+        "fuel-wellness",
+        "food-tracker",
+        "athlete-state",
+        "recovery",
+        "physique",
+        "insights",
+        "brief-history",
+        "mind",
+        "fab-menu / weigh-in-modal / calculators-modal / stream-note-modal",
+        "program-detail (not-enrolled)",
+        "program-detail (not-found)",
+        "quick-workout (prescribed)",
+        "weekly-schedule (empty)",
+        "diet-phase-modal",
+        "recipe-log",
+        "barcode-scanner-modal",
+        "schedule-after-create-modal",
+        "custom-split-selector",
+        "confirm-dialog-generic",
+        "mind-add-dialog / career-form-dialog persistence",
+        "physique-upload-modal",
+        "rest-timer-bar",
+        "workout-share-modal",
+        "sonner-toast"
+      ]
+    }
+  ],
   "coverageGaps": [],
-  "notes": "browse is a single shared Chromium daemon; capture is serialized. Session already authenticated. login creds passed via workflow args at launch, never persisted here.",
+  "notes": "Round 2: per-surface fixes now apply on the main working tree (no worktrees). browse = single shared daemon (serial capture). Session pre-authenticated. login passed via workflow args, never persisted.",
   "surfaces": [
-    {"id":"login","type":"page","route":"/login","reach":"requires logout first; direct nav while authed redirects to /dashboard","states":["empty","error"]},
-    {"id":"forgot-password","type":"page","route":"/forgot-password","reach":"from /login → 'Forgot password' link (needs logout)","states":["empty","email-sent"]},
-    {"id":"reset-password","type":"page","route":"/reset-password","reach":"via email recovery link (needs token)","states":["empty"]},
-    {"id":"dashboard","type":"page","route":"/dashboard","reach":"default landing after login (Today nav)","states":["loading","populated","empty"]},
-    {"id":"train-schedule","type":"page","route":"/train?tab=schedule","reach":"Train dock → Schedule sub-tab","states":["loading","populated","empty"]},
-    {"id":"train-library","type":"page","route":"/train?tab=library","reach":"Train dock → Library sub-tab","states":["loading","populated","empty"]},
-    {"id":"train-programs","type":"page","route":"/train?tab=programs","reach":"Train dock → Programs sub-tab","states":["loading","populated","empty"]},
-    {"id":"train-activity","type":"page","route":"/train?tab=activity-log","reach":"Train dock → Activity sub-tab","states":["loading","populated","empty"]},
-    {"id":"fuel-nutrition","type":"page","route":"/fuel","reach":"Fuel dock → Nutrition sub-tab","states":["loading","populated","empty"]},
-    {"id":"fuel-body","type":"page","route":"/fuel?tab=body","reach":"Fuel dock → Body sub-tab","states":["loading","populated","empty"]},
-    {"id":"fuel-hydration","type":"page","route":"/fuel?tab=hydration","reach":"Fuel dock → Hydration sub-tab","states":["loading","populated","empty"]},
-    {"id":"athlete-state","type":"page","route":"/athlete-state","reach":"Body dock → State sub-tab","states":["loading","populated"]},
-    {"id":"recovery","type":"page","route":"/recovery","reach":"Body dock → Recovery sub-tab","states":["loading","populated"]},
-    {"id":"physique","type":"page","route":"/physique","reach":"Body dock → Physique sub-tab","states":["loading","populated","empty"]},
-    {"id":"insights","type":"page","route":"/insights","reach":"Analyze dock → Daily Brief","states":["loading","populated","empty"]},
-    {"id":"brief-history","type":"page","route":"/brief-history","reach":"Analyze dock → Brief History sub-tab","states":["loading","populated","empty"]},
-    {"id":"mind","type":"page","route":"/mind","reach":"Analyze dock → Mind sub-tab","states":["loading","populated","empty"]},
-    {"id":"career","type":"page","route":"/career","reach":"direct URL (unlinked in current IA)","states":["loading","populated","empty"]},
-    {"id":"profile","type":"page","route":"/profile","reach":"header avatar tap","states":["loading","hub-view","edit-identity","edit-body","edit-settings"]},
-    {"id":"weekly-schedule","type":"page","route":"/weekly-schedule","reach":"Train → Schedule 'Edit week' / header Schedule","states":["loading","populated","empty"]},
-    {"id":"program-detail","type":"page","route":"/program/:id","reach":"Train → Programs → tap a program card (needs a real id)","states":["loading","populated","enrolled","no-enrollment"]},
-    {"id":"program-builder","type":"page","route":"/program-builder","reach":"Train → Library → 'Create Program'","states":["step-1-details","step-2-cycle","step-3-progression","step-4-confirm"]},
-    {"id":"create-workout","type":"page","route":"/create-workout","reach":"FAB → 'Create Workout'","states":["populated","empty"]},
-    {"id":"food-tracker","type":"page","route":"/food-tracker","reach":"FAB → 'Log Food' or Today 'Log food' tile","states":["loading","populated","empty"]},
-    {"id":"quick-workout","type":"page","route":"/quick-workout","reach":"FAB → 'Quick Workout' or Dashboard 'Begin Session'","states":["logging","summary"]},
-    {"id":"workout-detail","type":"page","route":"/workout-detail","reach":"Dashboard 'Start Workout' (needs id/source params)","states":["logging","summary","sharing"]},
-
-    {"id":"weigh-in-modal","type":"overlay","route":"/dashboard","reach":"FAB → 'Weigh In' or Today 'Weigh in' tile","states":["empty","submitting"]},
-    {"id":"calculators-modal","type":"overlay","route":"/dashboard","reach":"FAB → 'Calculators'","states":["1rm","working-weight","plates"]},
-    {"id":"stream-note-modal","type":"overlay","route":"/dashboard","reach":"FAB → 'Stream Note'","states":["empty","submitting"]},
-    {"id":"add-food-dialog","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'Add Food'","states":["search","generic-results","branded-results","custom-foods"]},
-    {"id":"save-meal-template-dialog","type":"overlay","route":"/food-tracker","reach":"select meal items → 'Save as Template'","states":["empty","naming"]},
-    {"id":"meal-templates-sidebar","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'Templates' tab (mobile)","states":["collapsed","expanded","loading"]},
-    {"id":"recipe-builder-panel","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'New Recipe'","states":["empty","populated"]},
-    {"id":"stats-setup-modal","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'Setup Stats' (or first visit)","states":["empty","form"]},
-    {"id":"barcode-scanner-modal","type":"overlay","route":"/food-tracker","reach":"Add Food → camera/barcode icon","states":["ready","scanning","result"]},
-    {"id":"new-meal-dialog","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'New Meal'","states":["form","submitting"]},
-    {"id":"macro-goals-modal","type":"overlay","route":"/fuel","reach":"Nutrition card → 'Edit Goals'","states":["empty","editing"]},
-    {"id":"week-plan-dialog","type":"overlay","route":"/fuel","reach":"Fuel → Nutrition → 'Week plan'","states":["loading","carb-cycle","shopping-list"]},
-    {"id":"meal-ideas-panel","type":"overlay","route":"/food-tracker","reach":"Food Tracker → 'Meal Ideas'","states":["loading","populated"]},
-    {"id":"quick-capture-modal","type":"overlay","route":"/fuel?tab=body","reach":"Fuel → Body → 'Stream Note' disclosure","states":["empty","capturing"]},
-    {"id":"workout-detail-share-modal","type":"overlay","route":"/workout-detail","reach":"workout logging → 'Share' after completion","states":["copy-link","share-options"]},
-    {"id":"rest-timer-overlay","type":"overlay","route":"/quick-workout","reach":"during set logging → rest timer after a set","states":["countdown","paused"]},
-    {"id":"program-duration-modal","type":"overlay","route":"/program-builder","reach":"Program Builder step 2 → duration selector","states":["form"]},
-    {"id":"schedule-after-create-modal","type":"overlay","route":"/create-workout","reach":"after saving workout → 'Schedule This?'","states":["form","confirmation"]},
-    {"id":"custom-split-selector-dialog","type":"overlay","route":"/weekly-schedule","reach":"Schedule → 'Custom Split' / 'Assign'","states":["selection","loading"]},
-    {"id":"program-enroll-dialog","type":"overlay","route":"/program/:id","reach":"Program detail → 'Enroll' / 'Start'","states":["form","start-weight"]},
-    {"id":"program-restart-dialog","type":"overlay","route":"/program/:id","reach":"Program detail → 'Restart'","states":["confirmation"]},
-    {"id":"program-delete-dialog","type":"overlay","route":"/program/:id","reach":"Program detail → 'Delete'","states":["confirmation"]},
-    {"id":"program-workout-detail-modal","type":"overlay","route":"/program/:id","reach":"Program detail → tap a workout tile","states":["exercises-list"]},
-    {"id":"all-cycles-modal","type":"overlay","route":"/program/:id","reach":"Program detail → 'Show All Cycles'","states":["list"]},
-    {"id":"all-progression-modal","type":"overlay","route":"/program/:id","reach":"Program detail → 'Show All Progression'","states":["list"]},
-    {"id":"confirm-pause-dialog","type":"overlay","route":"/program/:id","reach":"Program detail → 'Pause'","states":["confirmation"]},
-    {"id":"format-guide-dialog","type":"overlay","route":"/train?tab=library","reach":"Library → import format info (?) icon","states":["guide"]},
-    {"id":"workout-logging-confirm-dialog","type":"overlay","route":"/workout-detail","reach":"mid-workout → 'Back' triggers unsaved-changes confirm","states":["confirmation"]},
-    {"id":"mind-add-reading-dialog","type":"overlay","route":"/mind","reach":"Mind → 'Add Reading' (+)","states":["form","submitting"]},
-    {"id":"mind-edit-reading-dialog","type":"overlay","route":"/mind","reach":"Mind item → edit (pencil)","states":["form"]},
-    {"id":"mind-delete-confirm-dialog","type":"overlay","route":"/mind","reach":"Mind item → delete (trash)","states":["confirmation"]},
-    {"id":"career-add-app-dialog","type":"overlay","route":"/career","reach":"Career → 'Add Application' (+)","states":["form","submitting"]},
-    {"id":"career-edit-app-dialog","type":"overlay","route":"/career","reach":"Career item → edit (pencil)","states":["form"]},
-    {"id":"career-delete-confirm-dialog","type":"overlay","route":"/career","reach":"Career item → delete (trash)","states":["confirmation"]},
-    {"id":"physique-upload-modal","type":"overlay","route":"/physique","reach":"Physique → camera / 'Take Photo'","states":["ready","uploading","pose-select"]},
-    {"id":"physique-compare-modal","type":"overlay","route":"/physique","reach":"Physique → select 2+ photos → 'Compare'","states":["side-by-side"]},
-    {"id":"physique-pose-edit-modal","type":"overlay","route":"/physique","reach":"Physique entry → tap to edit pose","states":["pose-selection"]},
-    {"id":"profile-section-modal-mobile","type":"overlay","route":"/profile","reach":"Profile hub → section nav button","states":["identity-edit","body-edit","settings"]},
-    {"id":"profile-delete-confirm-dialog","type":"overlay","route":"/profile","reach":"Profile → Settings → 'Delete Account'","states":["initial","confirmed"]},
-    {"id":"sonner-toast","type":"overlay","route":"/dashboard","reach":"global → trigger any mutation (e.g. weigh-in save)","states":["success","error"]}
+    {
+      "id": "login",
+      "type": "page",
+      "route": "/login",
+      "reach": "requires logout first; direct nav while authed redirects to /dashboard",
+      "states": [
+        "empty",
+        "error"
+      ]
+    },
+    {
+      "id": "forgot-password",
+      "type": "page",
+      "route": "/forgot-password",
+      "reach": "from /login → 'Forgot password' link (needs logout)",
+      "states": [
+        "empty",
+        "email-sent"
+      ]
+    },
+    {
+      "id": "reset-password",
+      "type": "page",
+      "route": "/reset-password",
+      "reach": "via email recovery link (needs token)",
+      "states": [
+        "empty"
+      ]
+    },
+    {
+      "id": "dashboard",
+      "type": "page",
+      "route": "/dashboard",
+      "reach": "default landing after login (Today nav)",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "train-schedule",
+      "type": "page",
+      "route": "/train?tab=schedule",
+      "reach": "Train dock → Schedule sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "train-library",
+      "type": "page",
+      "route": "/train?tab=library",
+      "reach": "Train dock → Library sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "train-programs",
+      "type": "page",
+      "route": "/train?tab=programs",
+      "reach": "Train dock → Programs sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "train-activity",
+      "type": "page",
+      "route": "/train?tab=activity-log",
+      "reach": "Train dock → Activity sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "fuel-nutrition",
+      "type": "page",
+      "route": "/fuel",
+      "reach": "Fuel dock → Nutrition sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "fuel-body",
+      "type": "page",
+      "route": "/fuel?tab=body",
+      "reach": "Fuel dock → Body sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "fuel-hydration",
+      "type": "page",
+      "route": "/fuel?tab=hydration",
+      "reach": "Fuel dock → Hydration sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "athlete-state",
+      "type": "page",
+      "route": "/athlete-state",
+      "reach": "Body dock → State sub-tab",
+      "states": [
+        "loading",
+        "populated"
+      ]
+    },
+    {
+      "id": "recovery",
+      "type": "page",
+      "route": "/recovery",
+      "reach": "Body dock → Recovery sub-tab",
+      "states": [
+        "loading",
+        "populated"
+      ]
+    },
+    {
+      "id": "physique",
+      "type": "page",
+      "route": "/physique",
+      "reach": "Body dock → Physique sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "insights",
+      "type": "page",
+      "route": "/insights",
+      "reach": "Analyze dock → Daily Brief",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "brief-history",
+      "type": "page",
+      "route": "/brief-history",
+      "reach": "Analyze dock → Brief History sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "mind",
+      "type": "page",
+      "route": "/mind",
+      "reach": "Analyze dock → Mind sub-tab",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "career",
+      "type": "page",
+      "route": "/career",
+      "reach": "direct URL (unlinked in current IA)",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "profile",
+      "type": "page",
+      "route": "/profile",
+      "reach": "header avatar tap",
+      "states": [
+        "loading",
+        "hub-view",
+        "edit-identity",
+        "edit-body",
+        "edit-settings"
+      ]
+    },
+    {
+      "id": "weekly-schedule",
+      "type": "page",
+      "route": "/weekly-schedule",
+      "reach": "Train → Schedule 'Edit week' / header Schedule",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "program-detail",
+      "type": "page",
+      "route": "/program/:id",
+      "reach": "Train → Programs → tap a program card (needs a real id)",
+      "states": [
+        "loading",
+        "populated",
+        "enrolled",
+        "no-enrollment"
+      ]
+    },
+    {
+      "id": "program-builder",
+      "type": "page",
+      "route": "/program-builder",
+      "reach": "Train → Library → 'Create Program'",
+      "states": [
+        "step-1-details",
+        "step-2-cycle",
+        "step-3-progression",
+        "step-4-confirm"
+      ]
+    },
+    {
+      "id": "create-workout",
+      "type": "page",
+      "route": "/create-workout",
+      "reach": "FAB → 'Create Workout'",
+      "states": [
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "food-tracker",
+      "type": "page",
+      "route": "/food-tracker",
+      "reach": "FAB → 'Log Food' or Today 'Log food' tile",
+      "states": [
+        "loading",
+        "populated",
+        "empty"
+      ]
+    },
+    {
+      "id": "quick-workout",
+      "type": "page",
+      "route": "/quick-workout",
+      "reach": "FAB → 'Quick Workout' or Dashboard 'Begin Session'",
+      "states": [
+        "logging",
+        "summary"
+      ]
+    },
+    {
+      "id": "workout-detail",
+      "type": "page",
+      "route": "/workout-detail",
+      "reach": "Dashboard 'Start Workout' (needs id/source params)",
+      "states": [
+        "logging",
+        "summary",
+        "sharing"
+      ]
+    },
+    {
+      "id": "weigh-in-modal",
+      "type": "overlay",
+      "route": "/dashboard",
+      "reach": "FAB → 'Weigh In' or Today 'Weigh in' tile",
+      "states": [
+        "empty",
+        "submitting"
+      ]
+    },
+    {
+      "id": "calculators-modal",
+      "type": "overlay",
+      "route": "/dashboard",
+      "reach": "FAB → 'Calculators'",
+      "states": [
+        "1rm",
+        "working-weight",
+        "plates"
+      ]
+    },
+    {
+      "id": "stream-note-modal",
+      "type": "overlay",
+      "route": "/dashboard",
+      "reach": "FAB → 'Stream Note'",
+      "states": [
+        "empty",
+        "submitting"
+      ]
+    },
+    {
+      "id": "add-food-dialog",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'Add Food'",
+      "states": [
+        "search",
+        "generic-results",
+        "branded-results",
+        "custom-foods"
+      ]
+    },
+    {
+      "id": "save-meal-template-dialog",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "select meal items → 'Save as Template'",
+      "states": [
+        "empty",
+        "naming"
+      ]
+    },
+    {
+      "id": "meal-templates-sidebar",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'Templates' tab (mobile)",
+      "states": [
+        "collapsed",
+        "expanded",
+        "loading"
+      ]
+    },
+    {
+      "id": "recipe-builder-panel",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'New Recipe'",
+      "states": [
+        "empty",
+        "populated"
+      ]
+    },
+    {
+      "id": "stats-setup-modal",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'Setup Stats' (or first visit)",
+      "states": [
+        "empty",
+        "form"
+      ]
+    },
+    {
+      "id": "barcode-scanner-modal",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Add Food → camera/barcode icon",
+      "states": [
+        "ready",
+        "scanning",
+        "result"
+      ]
+    },
+    {
+      "id": "new-meal-dialog",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'New Meal'",
+      "states": [
+        "form",
+        "submitting"
+      ]
+    },
+    {
+      "id": "macro-goals-modal",
+      "type": "overlay",
+      "route": "/fuel",
+      "reach": "Nutrition card → 'Edit Goals'",
+      "states": [
+        "empty",
+        "editing"
+      ]
+    },
+    {
+      "id": "week-plan-dialog",
+      "type": "overlay",
+      "route": "/fuel",
+      "reach": "Fuel → Nutrition → 'Week plan'",
+      "states": [
+        "loading",
+        "carb-cycle",
+        "shopping-list"
+      ]
+    },
+    {
+      "id": "meal-ideas-panel",
+      "type": "overlay",
+      "route": "/food-tracker",
+      "reach": "Food Tracker → 'Meal Ideas'",
+      "states": [
+        "loading",
+        "populated"
+      ]
+    },
+    {
+      "id": "quick-capture-modal",
+      "type": "overlay",
+      "route": "/fuel?tab=body",
+      "reach": "Fuel → Body → 'Stream Note' disclosure",
+      "states": [
+        "empty",
+        "capturing"
+      ]
+    },
+    {
+      "id": "workout-detail-share-modal",
+      "type": "overlay",
+      "route": "/workout-detail",
+      "reach": "workout logging → 'Share' after completion",
+      "states": [
+        "copy-link",
+        "share-options"
+      ]
+    },
+    {
+      "id": "rest-timer-overlay",
+      "type": "overlay",
+      "route": "/quick-workout",
+      "reach": "during set logging → rest timer after a set",
+      "states": [
+        "countdown",
+        "paused"
+      ]
+    },
+    {
+      "id": "program-duration-modal",
+      "type": "overlay",
+      "route": "/program-builder",
+      "reach": "Program Builder step 2 → duration selector",
+      "states": [
+        "form"
+      ]
+    },
+    {
+      "id": "schedule-after-create-modal",
+      "type": "overlay",
+      "route": "/create-workout",
+      "reach": "after saving workout → 'Schedule This?'",
+      "states": [
+        "form",
+        "confirmation"
+      ]
+    },
+    {
+      "id": "custom-split-selector-dialog",
+      "type": "overlay",
+      "route": "/weekly-schedule",
+      "reach": "Schedule → 'Custom Split' / 'Assign'",
+      "states": [
+        "selection",
+        "loading"
+      ]
+    },
+    {
+      "id": "program-enroll-dialog",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Enroll' / 'Start'",
+      "states": [
+        "form",
+        "start-weight"
+      ]
+    },
+    {
+      "id": "program-restart-dialog",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Restart'",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "program-delete-dialog",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Delete'",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "program-workout-detail-modal",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → tap a workout tile",
+      "states": [
+        "exercises-list"
+      ]
+    },
+    {
+      "id": "all-cycles-modal",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Show All Cycles'",
+      "states": [
+        "list"
+      ]
+    },
+    {
+      "id": "all-progression-modal",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Show All Progression'",
+      "states": [
+        "list"
+      ]
+    },
+    {
+      "id": "confirm-pause-dialog",
+      "type": "overlay",
+      "route": "/program/:id",
+      "reach": "Program detail → 'Pause'",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "format-guide-dialog",
+      "type": "overlay",
+      "route": "/train?tab=library",
+      "reach": "Library → import format info (?) icon",
+      "states": [
+        "guide"
+      ]
+    },
+    {
+      "id": "workout-logging-confirm-dialog",
+      "type": "overlay",
+      "route": "/workout-detail",
+      "reach": "mid-workout → 'Back' triggers unsaved-changes confirm",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "mind-add-reading-dialog",
+      "type": "overlay",
+      "route": "/mind",
+      "reach": "Mind → 'Add Reading' (+)",
+      "states": [
+        "form",
+        "submitting"
+      ]
+    },
+    {
+      "id": "mind-edit-reading-dialog",
+      "type": "overlay",
+      "route": "/mind",
+      "reach": "Mind item → edit (pencil)",
+      "states": [
+        "form"
+      ]
+    },
+    {
+      "id": "mind-delete-confirm-dialog",
+      "type": "overlay",
+      "route": "/mind",
+      "reach": "Mind item → delete (trash)",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "career-add-app-dialog",
+      "type": "overlay",
+      "route": "/career",
+      "reach": "Career → 'Add Application' (+)",
+      "states": [
+        "form",
+        "submitting"
+      ]
+    },
+    {
+      "id": "career-edit-app-dialog",
+      "type": "overlay",
+      "route": "/career",
+      "reach": "Career item → edit (pencil)",
+      "states": [
+        "form"
+      ]
+    },
+    {
+      "id": "career-delete-confirm-dialog",
+      "type": "overlay",
+      "route": "/career",
+      "reach": "Career item → delete (trash)",
+      "states": [
+        "confirmation"
+      ]
+    },
+    {
+      "id": "physique-upload-modal",
+      "type": "overlay",
+      "route": "/physique",
+      "reach": "Physique → camera / 'Take Photo'",
+      "states": [
+        "ready",
+        "uploading",
+        "pose-select"
+      ]
+    },
+    {
+      "id": "physique-compare-modal",
+      "type": "overlay",
+      "route": "/physique",
+      "reach": "Physique → select 2+ photos → 'Compare'",
+      "states": [
+        "side-by-side"
+      ]
+    },
+    {
+      "id": "physique-pose-edit-modal",
+      "type": "overlay",
+      "route": "/physique",
+      "reach": "Physique entry → tap to edit pose",
+      "states": [
+        "pose-selection"
+      ]
+    },
+    {
+      "id": "profile-section-modal-mobile",
+      "type": "overlay",
+      "route": "/profile",
+      "reach": "Profile hub → section nav button",
+      "states": [
+        "identity-edit",
+        "body-edit",
+        "settings"
+      ]
+    },
+    {
+      "id": "profile-delete-confirm-dialog",
+      "type": "overlay",
+      "route": "/profile",
+      "reach": "Profile → Settings → 'Delete Account'",
+      "states": [
+        "initial",
+        "confirmed"
+      ]
+    },
+    {
+      "id": "sonner-toast",
+      "type": "overlay",
+      "route": "/dashboard",
+      "reach": "global → trigger any mutation (e.g. weigh-in save)",
+      "states": [
+        "success",
+        "error"
+      ]
+    }
   ]
 }
