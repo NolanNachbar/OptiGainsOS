@@ -600,7 +600,7 @@ export default function WeeklySchedule() {
 
         {/* Persistent primary action — the selected day always has a clear next
             step even when the inline program card doesn't render its own CTA. */}
-        {isToday && !hasInlineProgramCta && (
+        {isToday && !hasInlineProgramCta && hasAnything && (
           selectedLog ? (
             <button
               className="cta-ghost w-full mt-3 rise-in-3"

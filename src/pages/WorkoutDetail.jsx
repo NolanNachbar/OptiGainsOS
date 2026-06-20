@@ -882,8 +882,8 @@ export default function WorkoutDetail() {
                 )}
               </div>
 
-              {/* Right: muscle figure sidebar */}
-              {workout.exercises?.length > 0 && (() => {
+              {/* Right: muscle figure sidebar — hidden while logging so set inputs sit at the top */}
+              {!isLogging && workout.exercises?.length > 0 && (() => {
                 const bodyData = getWorkoutBodyData(workout.exercises);
                 return bodyData.length > 0 ? (
                   <div className="flex flex-col items-center mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
