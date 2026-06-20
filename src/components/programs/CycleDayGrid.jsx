@@ -9,10 +9,21 @@ import { addDays, format, parseISO } from "date-fns";
  * Edit mode: single row of day slots as droppable targets (ProgramBuilder).
  * View mode: numCycles rows × cycleLength columns with progress tracking (ProgramDetail).
  */
+
+/**
+ * Strip the trailing volume-coefficient suffix (e.g. "Push — 0.85 Volume") so the
+ * 4-col 390px grid shows a clean primary workout name. The full label is preserved
+ * for the detail sheet.
+ */
+function cleanWorkoutTitle(title) {
+  if (!title) return title;
+  return title.replace(/\s*[—–-]\s*[\d.]+\s*volume\s*$/i, "").trim();
+}
 export default function CycleDayGrid({
   workouts = [],
   cycleLength,
   numCycles = 1,
+  startCycle = 1, // 1-based cycle to begin rendering from (collapsed views can window to the current cycle)
   enrollment,
   compact = false,
   onCellClick,
@@ -59,8 +70,11 @@ export default function CycleDayGrid({
   // View mode: show all cycles
   return (
     <div className="space-y-4">
-      {Array.from({ length: numCycles }, (_, cycleIdx) => {
-        const cycle = cycleIdx + 1;
+      {Array.from({ length: numCycles }, (_, i) => {
+        // Absolute (1-based) cycle number, so collapsed views can window to the
+        // current cycle while calendar-date math stays anchored to cycle 1.
+        const cycle = startCycle + i;
+        const cycleIdx = cycle - 1;
         const daySlots = Array.from({ length: cycleLength }, (_, i) => i + 1);
         const rows = [];
         for (let i = 0; i < daySlots.length; i += colsPerRow) {
@@ -72,10 +86,10 @@ export default function CycleDayGrid({
             {!compact && (
               <div className="flex items-center gap-2 mb-2">
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-charcoal-border ${
                     cycle === currentCycle
-                      ? "bg-brand/15 text-brandTint"
-                      : "bg-white/[0.06] text-ink-muted border border-white/10"
+                      ? "bg-charcoal-surface2 text-ink"
+                      : "bg-track text-ink-muted"
                   }`}
                 >
                   Cycle {cycle}
@@ -102,22 +116,25 @@ export default function CycleDayGrid({
                     ? addDays(startDate, (cycleIdx * cycleLength) + dayIndex - 1)
                     : null;
 
-                  let cellClasses = "rounded-lg border-[0.5px] p-2 text-left transition-all duration-200 min-h-[60px] min-w-0 overflow-hidden ";
+                  let cellClasses = "rounded-lg border-[0.5px] p-2 text-left transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] min-h-[60px] min-w-0 overflow-hidden ";
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
-                    cellClasses += " border-brand ring-2 ring-brand/30 bg-brand/[5%]";
+                    // Non-coral "you are here" treatment — coral is reserved for
+                    // the Start CTA. A brighter ink hairline + inset specular lift
+                    // distinguishes the current cell without poaching the action hue.
+                    cellClasses += " glass-inset border-ink/30 shadow-[inset_0_1px_0_var(--glass-specular)]";
                   } else if (isPast) {
-                    cellClasses += " border-white/[0.06] bg-white/[0.02] opacity-60";
+                    cellClasses += " border-charcoal-border bg-charcoal-surface opacity-60";
                   } else {
-                    cellClasses += " glass-inset border-white/[0.06] hover:bg-white/[0.06]";
+                    cellClasses += " glass-inset border-charcoal-border hover:bg-charcoal-surface2";
                   }
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
                     ? "text-xs font-medium line-clamp-2 leading-tight text-leaf"
                     : isCurrent
-                    ? "text-xs font-medium line-clamp-2 leading-tight text-brand"
+                    ? "text-xs font-semibold line-clamp-2 leading-tight text-ink"
                     : "text-xs font-medium line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
@@ -147,13 +164,13 @@ export default function CycleDayGrid({
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-ink-muted">Day {dayIndex}</p>
                           <span className={labelClass}>
-                            {workout?.title || "Rest"}
+                            {cleanWorkoutTitle(workout?.title) || "Rest"}
                           </span>
                         </div>
                         {isCompleted ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-leaf flex-shrink-0" />
                         ) : isCurrent ? (
-                          <PlayCircle className="w-3.5 h-3.5 text-brand flex-shrink-0 animate-pulse" />
+                          <PlayCircle className="w-3.5 h-3.5 text-ink flex-shrink-0" />
                         ) : workout ? (
                           <Circle className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
                         ) : null}
@@ -233,12 +250,10 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
     <div
       ref={setNodeRef}
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
-      className={`rounded-xl border-2 border-dashed p-3 min-h-[100px] min-w-0 overflow-hidden transition-all duration-200 cursor-pointer ${
+      className={`glass-inset rounded-xl border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-[border-color,background] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
         isOver
-          ? "border-brand bg-brand/[5%] scale-[1.02]"
-          : hasWorkout
-          ? "border-solid border-white/10 bg-white/[0.04] hover:border-brand/30"
-          : "border-white/10 bg-white/[0.02] hover:border-brand/30 hover:bg-white/[0.04]"
+          ? "border-brand bg-brand/5"
+          : "border-charcoal-border hover:border-brand/40"
       }`}
     >
       <div className="flex items-center justify-between mb-1">

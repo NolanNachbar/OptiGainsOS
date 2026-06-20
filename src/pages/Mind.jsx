@@ -5,10 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SubTabs } from "@/components/ui/system";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,39 +22,46 @@ import { toast } from "sonner";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_LABELS = { reading: "Reading", finished: "Finished", paused: "Paused", "want-to-read": "Want to Read" };
+// One neutral chip for every enum value — color is data, not garnish, and these
+// taxonomic labels (status / category / medium) are not biometrics, so they get
+// no hue. The single exception is the emphasized "reading" state, which earns
+// Mind's owned violet accent so the active book stands out from the rest.
+const CHIP_NEUTRAL = "bg-charcoal-surface2 text-muted-2 border-charcoal-border";
+const CHIP_VIOLET = "bg-violet/10 text-violet border-violet/20";
 const STATUS_COLORS = {
-  reading: "bg-violet/10 text-violet border-violet/20",
-  finished: "bg-leaf/10 text-leaf border-leaf/20",
-  paused: "bg-warn/10 text-warn border-warn/20",
-  "want-to-read": "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
+  reading: CHIP_VIOLET,
+  finished: CHIP_NEUTRAL,
+  paused: CHIP_NEUTRAL,
+  "want-to-read": CHIP_NEUTRAL,
 };
-const CAT_COLORS = {
-  technical: "bg-carb/10 text-carb border-carb/20",
-  business: "bg-gold/10 text-gold border-gold/20",
-  philosophy: "bg-violet/10 text-violet border-violet/20",
-  other: "bg-charcoal-surface2 text-muted-2 border-charcoal-border",
-};
-const MEDIUM_COLORS = {
-  video: "bg-carb/10 text-carb border-carb/20",
-  book: "bg-violet/10 text-violet border-violet/20",
-  project: "bg-leaf/10 text-leaf border-leaf/20",
-  course: "bg-gold/10 text-gold border-gold/20",
-  article: "bg-teal/10 text-teal border-teal/20",
-};
+const CAT_LABELS = { technical: "Technical", business: "Business", philosophy: "Philosophy", other: "Other" };
 
 function StarRating({ value, onChange, readonly }) {
   return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(n => (
-        <button
-          key={n}
-          onClick={() => !readonly && onChange?.(n)}
-          className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-violet min-w-11 min-h-11 -m-2.5"} ${n <= (value || 0) ? "text-violet" : "text-ink-faint"}`}
-          disabled={readonly}
-        >
-          <Star className="w-4 h-4 fill-current" />
-        </button>
-      ))}
+    <div className={`flex items-center ${readonly ? "gap-0.5" : ""}`}>
+      {[1, 2, 3, 4, 5].map(n => {
+        const filled = n <= (value || 0);
+        return (
+          <button
+            key={n}
+            // Tap the current high star to clear back to unrated, so a mis-tap is
+            // recoverable without a separate control.
+            onClick={() => !readonly && onChange?.(n === value ? 0 : n)}
+            className={`transition-colors inline-flex items-center justify-center rounded-full ${readonly ? "cursor-default" : "cursor-pointer w-11 h-11 hover:text-gold active:text-gold active:scale-95 focus-visible:ring-2 focus-visible:ring-gold/40"} ${filled ? "text-gold" : "text-ink-faint"}`}
+            disabled={readonly}
+            aria-label={readonly ? undefined : `Rate ${n} star${n > 1 ? "s" : ""}`}
+          >
+            {/* Unrated stars read as hollow outlines so the editable control has a
+                visible empty cue; rated stars fill gold. */}
+            <Star className={`w-4 h-4 ${filled ? "fill-current" : "fill-none"}`} />
+          </button>
+        );
+      })}
+      {!readonly && (
+        <span className="ml-2 text-xs font-technical text-ink-faint">
+          {value ? `${value}/5` : "Tap to rate"}
+        </span>
+      )}
     </div>
   );
 }
@@ -161,11 +169,15 @@ function ReadingTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-technical text-xs font-semibold text-muted-2">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
+          <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
-        <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> Add Book
-        </Button>
+        {/* While empty, the ghost "Add your first book" CTA owns the single coral
+            primary — suppress the header button so we don't show two add actions. */}
+        {books.length > 0 && (
+          <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> Add Book
+          </Button>
+        )}
       </div>
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -218,9 +230,12 @@ function ReadingTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this book's status, rating, or takeaways." : "Track a book with its status, rating, and key takeaways."}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2.5">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
               <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" />
@@ -235,7 +250,7 @@ function ReadingTab() {
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {["technical","business","philosophy","other"].map(c => <SelectItem key={c} value={c}>{CAT_LABELS[c]}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -255,7 +270,7 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
-              <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
+              <Textarea size="default" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
@@ -294,7 +309,7 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
           {STATUS_LABELS[book.status]}
         </button>
         {book.category && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CAT_COLORS[book.category] || CAT_COLORS.other}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
             {book.category}
           </span>
         )}
@@ -435,7 +450,7 @@ function StudyTab() {
                   <div className="flex items-center gap-1 font-technical text-[10px] font-semibold text-muted-2">
                     <Timer className="w-3 h-3" />{log.duration_min} min
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border-[0.5px] ${MEDIUM_COLORS[log.medium] || ""}`}>{log.medium}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
@@ -578,7 +593,7 @@ function SkillsTab() {
                 ) : (
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{daysSince}d ago</span>
                 )}
-                <Button size="sm" variant="ghost" className="h-6 text-[10px] text-brand hover:bg-brand/10 px-2" onClick={() => practiced.mutate(skill.id)}>
+                <Button size="sm" variant="coralGhost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Practiced
                 </Button>
               </div>
@@ -660,37 +675,43 @@ function CaptureTab() {
   });
 
   return (
+    // Wrapper sizes to content (space-y, no forced min-height) so the dock sits
+    // directly below content on a sparse Capture tab. QuickCapture renders last so
+    // the primary input lands lower, nearer the thumb zone on mobile.
     <div className="space-y-5">
       <div>
         <h3 className="section-label mb-3 flex items-center gap-2">
-          <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
-        </h3>
-        <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
-      </div>
-      <div>
-        <h3 className="section-label mb-3 flex items-center gap-2">
-          <History className="w-3 h-3" /> Recent Streams
+          <History className="w-3 h-3 text-violet" /> Recent Streams
         </h3>
         <div className="space-y-3">
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-violet font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet/10">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-technical text-[10px] font-semibold text-muted-2 tabular-nums">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Synced</span>}
+                {log.processed && (
+                  <span className="font-technical text-[10px] font-semibold text-muted-2">Synced</span>
+                )}
               </div>
-              <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
+              <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2 mb-1">Drop your first note above to start the stream.</p>
-              <p className="text-xs font-semibold text-faint">Capture a thought, then organize it under Reading, Study, or Skills.</p>
+            // Compact empty state (py-6, no oversized icon) so a fresh Capture tab
+            // doesn't scroll into ~250px of dead space below the fold.
+            <div className="py-6 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+              <BookOpen className="w-6 h-6 text-faint mx-auto mb-1.5" />
+              <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note below to start.</p>
             </div>
           ))}
         </div>
+      </div>
+      <div>
+        <h3 className="section-label mb-3 flex items-center gap-2">
+          <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
+        </h3>
+        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
     </div>
   );
@@ -706,8 +727,18 @@ const MIND_TABS = [
 
 export default function Mind({ hideHeader }) {
   const [activeTab, setActiveTab] = useState("capture");
+  const activeMeta = MIND_TABS.find(t => t.id === activeTab);
   return (
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
+      {/* System gap: a ~140ms opacity-only crossfade for tab switches. The shared
+          --ease keyframes (riseIn) carry an 8px rise over 280ms, which is too
+          heavy to re-fire on every tab tap; this scoped fade stays on the system
+          easing within the 180–320ms band's lower edge. Honors reduced-motion. */}
+      <style>{`
+        @keyframes mindTabFade { from { opacity: 0; } to { opacity: 1; } }
+        .mind-tab-fade { animation: mindTabFade .14s var(--ease) both; }
+        @media (prefers-reduced-motion: reduce) { .mind-tab-fade { animation: none; } }
+      `}</style>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6 rise-in hidden lg:block">
@@ -726,12 +757,26 @@ export default function Mind({ hideHeader }) {
           onChange={setActiveTab}
           sticky={false}
           showOnDesktop
-          className={`mb-6 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
+          className={`mb-4 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
         />
-        {activeTab === "capture" && <CaptureTab />}
-        {activeTab === "reading" && <ReadingTab />}
-        {activeTab === "study" && <StudyTab />}
-        {activeTab === "skills" && <SkillsTab />}
+
+        {/* Mobile identity: the desktop header is suppressed on small screens, so
+            the active context carries Mind's violet Brain glyph here to keep the
+            domain legible without a duplicate title row. Desktop owns it above. */}
+        {activeMeta && (
+          <div className="lg:hidden flex items-center gap-2 mb-4">
+            <Brain className="w-3.5 h-3.5 text-violet shrink-0" />
+            <span className="section-label !text-violet">{activeMeta.label}</span>
+          </div>
+        )}
+
+        {/* Keyed on activeTab so each switch replays the subtle opacity fade. */}
+        <div key={activeTab} className="mind-tab-fade">
+          {activeTab === "capture" && <CaptureTab />}
+          {activeTab === "reading" && <ReadingTab />}
+          {activeTab === "study" && <StudyTab />}
+          {activeTab === "skills" && <SkillsTab />}
+        </div>
       </div>
     </div>
   );

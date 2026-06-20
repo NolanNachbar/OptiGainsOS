@@ -15,7 +15,9 @@ import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK
 import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
 import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
+import { ProfileStatsCard } from "@/components/ui/system";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
@@ -35,6 +37,16 @@ function SectionHeader({ icon: Icon, title }) {
 function SectionDivider() {
   return <div className="border-t border-charcoal-border my-6" />;
 }
+
+// IANA timezone list, computed once at module load (hundreds of values — never
+// recompute per render). Fed to the searchable Combobox in the Preferences tab.
+const TIMEZONES = (() => {
+  try {
+    return Intl.supportedValuesOf('timeZone');
+  } catch {
+    return [Intl.DateTimeFormat().resolvedOptions().timeZone];
+  }
+})();
 
 // Compact volume formatter: >=1e6 rolls to one-decimal M (1.3M), >=1000 to k, else raw.
 function formatVol(n) {
@@ -192,10 +204,33 @@ export default function Profile({ hideHeader }) {
     return JSON.stringify(normalizeFormData(formData)) !== JSON.stringify(normalizeFormData(savedFormDataRef.current));
   }, [formData]);
 
-  // The save bar must never appear on the mobile hub list (no editable fields on
-  // screen). It is only meaningful when an editable section is actually open, or
-  // on desktop where editable fields are always visible alongside it.
-  const showSaveBar = isDirty && (activeSection !== null || hideHeader);
+  // Single source of section visibility. On the mobile hub (no section chosen,
+  // standalone page) nothing is "resolved" — the hub list renders instead. On
+  // desktop a null selection defaults to Identity. Embedded (hideHeader) always
+  // resolves to the body fields. Each section block reads this one value via
+  // `sectionClass(id)` rather than its own bespoke ternary.
+  const onMobileHub = activeSection === null && !hideHeader;
+  const resolvedSection = hideHeader ? 'body' : (activeSection ?? 'identity');
+  // A given section block is shown when it matches resolvedSection AND we're not
+  // on the mobile hub. On desktop the hub never appears (md:block reveals the
+  // default section), so `md:block` is layered on for the null-selection case.
+  const sectionClass = (id) => {
+    if (onMobileHub) return id === resolvedSection ? 'hidden md:block' : 'hidden';
+    return id === resolvedSection ? '' : 'hidden';
+  };
+
+  // The save bar must never appear on the mobile hub list or the Settings
+  // section (neither mounts an editable field). It is only meaningful when an
+  // editable section ('identity' / 'body') is actually open, or when embedded
+  // via hideHeader where the body fields are always mounted. The explicit
+  // `!onMobileHub` guard keeps the coral bar off a fresh hub load even before
+  // the dirty baseline settles.
+  const editableSectionOpen =
+    !onMobileHub && ((resolvedSection === 'identity' || resolvedSection === 'body') || hideHeader);
+  // Render only after the dirty baseline has been synced (baselineSyncedRef is
+  // gated inside `isDirty`, which returns false until then) AND a real field
+  // change has flipped isDirty — never on the initial settle.
+  const showSaveBar = isDirty && editableSectionOpen;
 
   const updateProfileMutation = useMutation({
     mutationFn: async ({ profileData, weightToLog }) => {
@@ -295,34 +330,15 @@ export default function Profile({ hideHeader }) {
               }}
             >
               {/* Avatar card */}
-              <div className="glass p-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
-                  <span className="text-brand text-2xl font-bold">
-                    {initials}
-                  </span>
-                </div>
-                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.email}
-                </p>
-                {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {formatVol(profileStats.totalVolumeLbs)}
-                      </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ProfileStatsCard
+                initials={initials}
+                name={formData.display_name || user.email}
+                stats={profileStats ? [
+                  { value: profileStats.totalWorkouts, label: "Workouts" },
+                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                  { value: profileStats.streak, label: "Streak" },
+                ] : null}
+              />
 
               {/* Section nav */}
               <nav className="glass-inset p-2 flex flex-col gap-0.5">
@@ -342,44 +358,46 @@ export default function Profile({ hideHeader }) {
                   </button>
                 ))}
               </nav>
+
+              {/* Sidebar footer — Sign Out (moved out of the Danger Zone; it is a
+                  neutral session action, not a destructive one). */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try { await signOut(); toast.success('Signed out successfully'); }
+                  catch { toast.error('Failed to sign out'); }
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                Sign Out
+              </button>
             </div>
           </aside>
           )}
 
           {/* RIGHT CONTENT */}
           <div>
-            {/* Mobile: hub view (profile card + nav list) */}
-            <div className={activeSection !== null || hideHeader ? 'hidden' : 'md:hidden mb-4'}>
+            {/* Mobile: hub view (profile card + nav list). Content flows
+                naturally from the top (stats card → nav list → Sign Out) so the
+                hierarchy stays tight instead of stranding Sign Out at the
+                viewport bottom with a dead void above it. */}
+            <div
+              className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col'}`}
+            >
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title on mobile, so a second one would stack redundantly. */}
-              <div className="glass p-5 text-center mb-3">
-                <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
-                  <span className="text-brand text-2xl font-bold">
-                    {initials}
-                  </span>
-                </div>
-                <p className="text-ink font-semibold mt-3 text-sm leading-tight">
-                  {formData.display_name || user.email}
-                </p>
-                {profileStats && (
-                  <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.totalWorkouts}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Workouts</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">
-                        {formatVol(profileStats.totalVolumeLbs)}
-                      </p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Vol ({formData.weight_unit || 'lbs'})</p>
-                    </div>
-                    <div>
-                      <p className="text-ink font-bold text-lg leading-tight font-technical">{profileStats.streak}</p>
-                      <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">Streak</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ProfileStatsCard
+                padding="p-5"
+                className="mb-3"
+                initials={initials}
+                name={formData.display_name || user.email}
+                stats={profileStats ? [
+                  { value: profileStats.totalWorkouts, label: "Workouts" },
+                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                  { value: profileStats.streak, label: "Streak" },
+                ] : null}
+              />
               <div className="glass-inset overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
@@ -396,6 +414,20 @@ export default function Profile({ hideHeader }) {
                   </button>
                 ))}
               </div>
+
+              {/* Quick action — Sign Out follows the nav list directly so the hub
+                  reads as one tight stack. */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try { await signOut(); toast.success('Signed out successfully'); }
+                  catch { toast.error('Failed to sign out'); }
+                }}
+                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
             </div>
 
             {/* Mobile: back navigation when inside a section */}
@@ -409,7 +441,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="type-display text-[22px] text-ink">
+                <h1 className="type-display text-2xl text-ink">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>
@@ -418,14 +450,13 @@ export default function Profile({ hideHeader }) {
             {/* Desktop section heading */}
             {!hideHeader && (
               <div className="hidden md:block mb-6">
-                <h1 className="type-display text-[22px] text-ink">
-                  {NAV.find(n => n.id === (activeSection ?? 'identity'))?.label}
+                <h1 className="type-display text-2xl text-ink">
+                  {NAV.find(n => n.id === resolvedSection)?.label}
                 </h1>
                 <p className="text-[13px] text-ink-muted mt-0.5">
-                  {(activeSection ?? 'identity') === 'identity' ? 'Your account details' :
-                  (activeSection ?? 'identity') === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
-                  (activeSection ?? 'identity') === 'fitness'  ? 'Training preferences and fitness profile' :
-                                                                  'Notifications, integrations, and account actions'}
+                  {resolvedSection === 'identity' ? 'Your account details' :
+                  resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
+                                                    'Notifications, integrations, and account actions'}
                 </p>
               </div>
             )}
@@ -433,7 +464,7 @@ export default function Profile({ hideHeader }) {
         <form onSubmit={handleSubmit}>
 
           {/* ── IDENTITY SECTION ── */}
-          <div className={activeSection === 'identity' ? '' : activeSection === null && !hideHeader ? 'hidden md:block' : 'hidden'}>
+          <div className={sectionClass('identity')}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -453,7 +484,7 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" value={user.email} disabled className="mt-1" />
-                      <p className="text-sm text-ink-muted mt-1">This is your login email and cannot be changed</p>
+                      <p className="text-xs text-ink-muted mt-1">This is your login email and cannot be changed</p>
                     </div>
                   </div>
 
@@ -462,7 +493,7 @@ export default function Profile({ hideHeader }) {
           </div>
 
           {/* ── BODY & NUTRITION SECTION ── */}
-          <div className={activeSection === 'body' ? '' : 'hidden'}>
+          <div className={sectionClass('body')}>
               <Card className="mb-6">
                 <CardContent className="pt-6">
 
@@ -506,37 +537,41 @@ export default function Profile({ hideHeader }) {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
-                        <div className="flex gap-1 bg-charcoal-elevated rounded-lg p-0.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.height_unit === 'cm' && formData.height_cm) {
-                                const totalInches = Math.round(formData.height_cm / 2.54);
-                                setHeightFeet(Math.floor(totalInches / 12).toString());
-                                setHeightInches((totalInches % 12).toString());
-                                setFormData({ ...formData, height_unit: 'in', height_cm: totalInches });
-                              } else {
-                                setFormData({ ...formData, height_unit: 'in' });
-                              }
-                            }}
-                            className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'in' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
-                            }`}
-                          >ft/in</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.height_unit === 'in' && formData.height_cm) {
-                                const cm = Math.round(formData.height_cm * 2.54);
-                                setFormData({ ...formData, height_unit: 'cm', height_cm: cm });
-                              } else {
-                                setFormData({ ...formData, height_unit: 'cm' });
-                              }
-                            }}
-                            className={`px-3 py-1 rounded-md text-sm transition-all ${
-                              formData.height_unit === 'cm' ? 'glass-inset text-brand font-medium' : 'text-ink-muted'
-                            }`}
-                          >cm</button>
+                        {/* Unit selection is passive metadata, not an action, so the
+                            selected pill stays NEUTRAL (glass-inset + ink) — coral is
+                            reserved for the single action color. The shared Tabs
+                            `segment` variant only paints a brand-tinted active pill, so
+                            this neutral segmented control is built inline from the same
+                            visual tokens (a genuine gap: Tabs has no neutral segment). */}
+                        <div className="flex gap-1 glass-inset p-0.5" role="group" aria-label="Height unit">
+                          {[
+                            { id: 'in', label: 'ft/in' },
+                            { id: 'cm', label: 'cm' },
+                          ].map(({ id, label }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              aria-pressed={formData.height_unit === id}
+                              onClick={() => {
+                                if (id === 'in' && formData.height_unit === 'cm' && formData.height_cm) {
+                                  const totalInches = Math.round(formData.height_cm / 2.54);
+                                  setHeightFeet(Math.floor(totalInches / 12).toString());
+                                  setHeightInches((totalInches % 12).toString());
+                                  setFormData({ ...formData, height_unit: 'in', height_cm: totalInches });
+                                } else if (id === 'cm' && formData.height_unit === 'in' && formData.height_cm) {
+                                  const cm = Math.round(formData.height_cm * 2.54);
+                                  setFormData({ ...formData, height_unit: 'cm', height_cm: cm });
+                                } else {
+                                  setFormData({ ...formData, height_unit: id });
+                                }
+                              }}
+                              className={`min-h-[44px] px-3.5 rounded-md text-sm transition-[color,background-color] duration-200 ease-[var(--ease)] ${
+                                formData.height_unit === id
+                                  ? 'bg-[var(--glass-bg)] text-ink font-semibold shadow-[inset_0_1px_0_var(--glass-specular)]'
+                                  : 'text-ink-muted hover:text-ink'
+                              }`}
+                            >{label}</button>
+                          ))}
                         </div>
                       </div>
                       {formData.height_unit === 'in' ? (
@@ -629,9 +664,11 @@ export default function Profile({ hideHeader }) {
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
                             <div className="text-2xl font-bold text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            tdee.method === 'adaptive' ? 'bg-leaf/10 text-leaf' : 'glass-inset text-ink-muted'
-                          }`}>
+                          {/* Metadata tag, not data: keep BOTH states neutral
+                              (glass-inset + muted ink) so no leaf/biometric hue is
+                              spent on a source label. The gold lives on the TDEE
+                              number, which is the datum that owns the hue. */}
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium glass-inset text-ink-muted">
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
                         </div>
@@ -715,7 +752,7 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-ink-muted mt-1">Used when logging workout weights</p>
+                      <p className="text-xs text-ink-muted mt-1">Used when logging workout weights</p>
                     </div>
 
                     <div>
@@ -737,27 +774,23 @@ export default function Profile({ hideHeader }) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-ink-muted mt-1">Nutrition coach suggests adjustments on this day</p>
+                      <p className="text-xs text-ink-muted mt-1">Nutrition coach suggests adjustments on this day</p>
                     </div>
 
                     <div>
                       <Label htmlFor="timezone">Timezone</Label>
-                      <Select
-                        value={formData.timezone}
-                        onValueChange={(value) => setFormData({ ...formData, timezone: value })}
-                      >
-                        <SelectTrigger id="timezone" className="mt-1">
-                          <SelectValue placeholder="Select timezone">
-                            {formData.timezone?.replace(/_/g, ' ')}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Intl.supportedValuesOf('timeZone').map(tz => (
-                            <SelectItem key={tz} value={tz}>{tz.replace(/_/g, ' ')}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-ink-muted mt-1">Used to determine today's date for your schedule</p>
+                      {/* Hundreds of IANA zones — a flat <Select> is unusable on a
+                          phone. The shared Combobox (items mode) gives typeahead
+                          filtering so users type "den" → America/Denver. */}
+                      <div className="mt-1">
+                        <Combobox
+                          items={TIMEZONES}
+                          value={formData.timezone}
+                          onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                          placeholder="Search timezone…"
+                        />
+                      </div>
+                      <p className="text-xs text-ink-muted mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
 
@@ -770,7 +803,7 @@ export default function Profile({ hideHeader }) {
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
-        <div className={activeSection === 'settings' ? '' : hideHeader && activeSection === null ? '' : 'hidden'}>
+        <div className={sectionClass('settings')}>
           <Card className="mb-4">
             <CardContent className="pt-6">
               <SectionHeader icon={Bell} title="Notifications" />
@@ -811,28 +844,9 @@ export default function Profile({ hideHeader }) {
                 <h3 className="text-sm font-semibold text-bad">Danger Zone</h3>
               </div>
 
-              <SectionDivider />
-
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium text-ink">Sign Out</p>
-                  <p className="text-sm text-ink-muted">Sign out of your account</p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-bad/20 text-bad hover:bg-bad/10 hover:text-bad"
-                  onClick={async () => {
-                    try { await signOut(); toast.success('Signed out successfully'); }
-                    catch { toast.error('Failed to sign out'); }
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-
-              <SectionDivider />
-
+              {/* Sign Out is NOT a danger action — it lives in the mobile thumb-zone
+                  hub and the desktop sidebar footer. The Danger Zone holds only the
+                  irreversible Delete Account control. */}
               {!showDeleteConfirm ? (
                 <div className="flex items-center justify-between">
                   <div>
@@ -891,20 +905,28 @@ export default function Profile({ hideHeader }) {
 
       </div>{/* end max-w-6xl */}
 
-      {/* Sticky Save Bar — anchored above the floating mobile dock (7rem clearance,
-          matching Layout's content padding) so it never renders under the dock. */}
+      {/* Sticky Save Bar — on mobile it docks flush directly above the floating
+          liquid-glass dock (dock = ~52px tall, 12px from the bottom inset) and
+          shares the dock's glass-elevated chrome so the two read as one unit; no
+          detached gap. On desktop it pins to the bottom edge. */}
       <div
-        className={`fixed bottom-[calc(7rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface border-t border-charcoal-border transition-transform duration-300 ease-out ${
-          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+7rem+env(safe-area-inset-bottom,0px))]'
+        className={`fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] glass-elevated md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-transform duration-300 ease-out ${
+          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+72px+env(safe-area-inset-bottom,0px))] md:translate-y-full'
         }`}
+        style={{ transitionTimingFunction: 'var(--ease)' }}
       >
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <p className="hidden sm:block text-sm text-ink-muted">You have unsaved changes</p>
-          <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
-            <Button type="button" size="lg" variant="dim" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Compact status label — muted ink. Hidden on mobile (<sm) where the
+              two thumb-zone buttons need the full bar width; on desktop it shows
+              and pushes the actions to the right edge. */}
+          <p className="hidden sm:block text-sm text-ink-muted whitespace-nowrap">Unsaved changes</p>
+          {/* Cancel / Save span the bar width on mobile (flex-1) so both land in
+              the thumb zone; on desktop they shrink to their content. */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <Button type="button" size="lg" variant="dim" className="flex-1 sm:flex-none" disabled={updateProfileMutation.isPending} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" size="lg" variant="primary" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
+            <Button type="button" size="lg" variant="primary" className="flex-1 sm:flex-none" disabled={updateProfileMutation.isPending} onClick={handleSubmit}>
               {updateProfileMutation.isPending ? (
                 <><LoadingSpinner size="small" className="mr-2" />Saving…</>
               ) : (

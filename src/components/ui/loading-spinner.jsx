@@ -8,7 +8,7 @@ export function LoadingSpinner({ size = 'default', className = '' }) {
 
   return (
     <div
-      className={`animate-spin rounded-full border-b-2 border-brand ${sizeClasses[size]} ${className}`}
+      className={`spin-loop rounded-full border-b-2 border-brand ${sizeClasses[size]} ${className}`}
     />
   );
 }
@@ -22,5 +22,5 @@ export function LoadingScreen() {
 }
 
 export function LoadingSpinnerInline() {
-  return <LoadingSpinner size="small" className="border-white" />;
+  return <LoadingSpinner size="small" className="border-ink" />;
 }

@@ -32,6 +32,7 @@ import {
   Pause,
   RotateCcw,
   Trash2,
+  Ban,
   Edit,
   Share2,
   Download,
@@ -76,14 +77,15 @@ export default function ProgramDetail() {
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showAllProgression, setShowAllProgression] = useState(false);
   const [showManageActions, setShowManageActions] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
 
   if (programLoading || enrollmentLoading) return <LoadingScreen />;
   if (!program) {
     return (
-      <div className="min-h-screen bg-charcoal p-4 md:p-6">
-        <div className="max-w-md mx-auto mt-12">
-          <div className="surface p-8 text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center mb-4">
+      <div className="p-4 md:p-6">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="surface p-8 text-center flex flex-col items-center rise-in">
+            <div className="w-12 h-12 rounded-full glass-inset flex items-center justify-center mb-4">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
             </div>
             <h2 className="text-lg font-bold text-ink mb-1">Program not found</h2>
@@ -91,7 +93,7 @@ export default function ProgramDetail() {
               This program may have been deleted or the link is no longer valid.
             </p>
             <Link to="/workouts">
-              <Button variant="outline" size="lg">Back to Workouts</Button>
+              <Button variant="volt" size="lg">Back to Workouts</Button>
             </Link>
           </div>
         </div>
@@ -217,13 +219,35 @@ export default function ProgramDetail() {
     ? `Cycle ${currentCycle}, Day ${currentDayIndex}`
     : null;
 
+  const primaryAction = !enrollment
+    ? { label: user ? "Start Program" : "Sign in to Start", onClick: () => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } }) }
+    : isEnrolled && currentWorkout
+    ? { label: "Start Next Workout", onClick: handleStartWorkout }
+    : enrollment?.status === "paused"
+    ? { label: "Resume", onClick: handleResume }
+    : null;
+
   return (
-    <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 transition-colors duration-300">
+      {/* Sticky thumb-zone CTA — the header action scrolls off on a tall mobile
+          page, so mirror it as a fixed bottom-edge button (mobile only) clearing
+          the dock + safe-area inset. */}
+      {primaryAction && (
+        <div
+          className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pt-3 glass-elevated"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+        >
+          <Button variant="volt" size="lg" className="w-full" onClick={primaryAction.onClick}>
+            <Play className="w-4 h-4 mr-2" />
+            {primaryAction.label}
+          </Button>
+        </div>
+      )}
+      <div className="max-w-4xl mx-auto pb-24 md:pb-0">
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors"
+          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors min-h-[44px] -my-2.5 py-2.5"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Workouts
@@ -240,17 +264,11 @@ export default function ProgramDetail() {
                       {GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}
                     </Badge>
                   )}
-                  {enrollment?.status && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        enrollment.status === "active"
-                          ? "bg-teal/10 text-teal border-teal/25"
-                          : enrollment.status === "completed"
-                          ? "bg-leaf/10 text-leaf border-leaf/20"
-                          : "bg-white/[0.06] text-ink-muted border-white/10"
-                      }
-                    >
+                  {/* 'active' is the common case and is already implied by the
+                      coral Start CTA + position line; only surface the status
+                      badge when it is an exception (paused/completed). */}
+                  {enrollment?.status && enrollment.status !== "active" && (
+                    <Badge variant="outline" className="text-ink-muted capitalize">
                       {enrollment.status}
                     </Badge>
                   )}
@@ -258,19 +276,66 @@ export default function ProgramDetail() {
                 <h1 className="type-display text-2xl mb-1">
                   {program.title || program.name}
                 </h1>
+                {/* Position + progress — the single most important status for an
+                    enrolled athlete. Promoted directly under the title with
+                    tabular numerals so it is read before any secondary metadata. */}
+                {enrollment && positionLabel && (
+                  <>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="font-technical text-base font-extrabold text-ink">
+                        {positionLabel}
+                      </span>
+                      <span className="font-technical text-sm text-ink-muted">
+                        {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
+                      </span>
+                    </div>
+                    {/* Progress track sits directly under the position/count line —
+                        no border-t divider — keeping the completion datum with its
+                        numbers. Fill uses bg-brand (the action hue); leaf is
+                        reserved for biometric readiness, not a completion metric. */}
+                    <div className="h-1.5 bg-track rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-brand rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </>
+                )}
                 {program.description && (
-                  <p className="text-ink-muted text-sm">{program.description}</p>
+                  <>
+                    <p className={`text-ink-muted text-sm ${showDescription ? "" : "line-clamp-2"}`}>
+                      {program.description}
+                    </p>
+                    {program.description.length > 90 && (
+                      <button
+                        onClick={() => setShowDescription((v) => !v)}
+                        className="mt-0.5 min-h-[44px] -my-2.5 inline-flex items-center text-xs font-medium text-ink-muted hover:text-ink transition-colors"
+                        aria-expanded={showDescription}
+                      >
+                        {showDescription ? "Less" : "More"}
+                      </button>
+                    )}
+                  </>
                 )}
 
+                {/* Meta row. When enrolled, the promoted position line above already
+                    states the cycle/day cadence, so the duration/frequency chips are
+                    suppressed to keep Schedule near the first fold; only the unique
+                    training-day count remains. Unenrolled visitors still get the full
+                    cadence summary. */}
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-ink-muted" />
-                    {durationLabel}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Repeat className="w-4 h-4 text-ink-muted" />
-                    {frequencyLabel}
-                  </div>
+                  {!enrollment && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4 text-ink-muted" />
+                        {durationLabel}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Repeat className="w-4 h-4 text-ink-muted" />
+                        {frequencyLabel}
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center gap-1">
                     <Dumbbell className="w-4 h-4 text-ink-muted" />
                     {workouts.filter((w) => w.exercises?.length > 0).length} training days
@@ -333,107 +398,90 @@ export default function ProgramDetail() {
                   </Button>
                 )}
 
-                {/* Secondary / management controls — keep at most two demoted controls
-                    inline; route power-user (Edit/Export) and destructive (Delete)
-                    actions behind a "Manage" overflow toggle. */}
+                {/* Secondary / management controls — the default header carries
+                    only the coral CTA + a single "Manage" toggle. Every demoted
+                    control (Pause/Cancel status actions, owner Edit/Export, and
+                    destructive Delete) lives inside the overflow so the resting
+                    header reads as one action, not a wall of grey buttons. */}
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
                   <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-2">
-                      {isEnrolled && (
-                        <Button variant="dim" size="lg" className="flex-1 min-w-[44px]" onClick={handlePause}>
-                          <Pause className="w-4 h-4 mr-1.5" />
-                          Pause
-                        </Button>
-                      )}
-                      {(isEnrolled || enrollment?.status === "paused") && (
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="flex-1 min-w-[44px]"
-                          onClick={handleRestart}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1.5" />
-                          Cancel
-                        </Button>
-                      )}
-                      {isOwner && (
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="flex-1 min-w-[44px]"
-                          onClick={() => setShowManageActions((v) => !v)}
-                          aria-expanded={showManageActions}
-                        >
-                          Manage
-                          <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
-                        </Button>
-                      )}
-                    </div>
-                    {isOwner && showManageActions && (
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="flex-1 min-w-[44px]"
-                          onClick={() => navigate(`/program-builder?edit=${program.id}`)}
-                        >
-                          <Edit className="w-4 h-4 mr-1.5" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="dim"
-                          size="lg"
-                          className="flex-1 min-w-[44px]"
-                          onClick={() => {
-                            exportProgramAsJson(program);
-                            toast.success("Program exported");
-                          }}
-                        >
-                          <Download className="w-4 h-4 mr-1.5" />
-                          Export
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="lg"
-                          className="flex-1 min-w-[44px]"
-                          onClick={handleDelete}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1.5" />
-                          Delete
-                        </Button>
+                    <Button
+                      variant="dim"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setShowManageActions((v) => !v)}
+                      aria-expanded={showManageActions}
+                    >
+                      Manage
+                      <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
+                    </Button>
+                    {showManageActions && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {isEnrolled && (
+                          <Button variant="dim" size="lg" className="w-full min-w-0" onClick={handlePause}>
+                            <Pause className="w-4 h-4 mr-1.5" />
+                            Pause
+                          </Button>
+                        )}
+                        {(isEnrolled || enrollment?.status === "paused") && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={handleRestart}
+                          >
+                            <Ban className="w-4 h-4 mr-1.5" />
+                            Cancel
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={() => navigate(`/program-builder?edit=${program.id}`)}
+                          >
+                            <Edit className="w-4 h-4 mr-1.5" />
+                            Edit
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="dim"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={() => {
+                              exportProgramAsJson(program);
+                              toast.success("Program exported");
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-1.5" />
+                            Export
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Button
+                            variant="destructive"
+                            size="lg"
+                            className="w-full min-w-0"
+                            onClick={handleDelete}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5" />
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Progress bar */}
-            {enrollment && (
-              <div className="mt-4 pt-4 border-t hairline">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="font-technical text-ink-muted">
-                    {positionLabel && (
-                      <span className="font-semibold mr-2">{positionLabel}</span>
-                    )}
-                    {completedCount} / {totalWorkouts} workouts
-                  </span>
-                  <span className="font-technical font-extrabold text-leaf">{progressPercent}%</span>
-                </div>
-                <div className="h-1.5 bg-[var(--color-border-soft)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-leaf rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (
-          <Card className="mb-4 border-[0.5px] !border-[rgba(var(--warn-rgb)/0.30)]">
+          <Card className="mb-4 border-[0.5px] border-warn/30">
             <CardContent className="pt-3 pb-3">
               {recoveryWarnings.map((w) => (
                 <div key={w.muscle} className="flex items-start gap-2 text-sm text-ink-muted">
@@ -451,21 +499,25 @@ export default function ProgramDetail() {
             <CardTitle className="text-lg text-ink">Schedule</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Collapsed default: window to the single current cycle so the fold
+                lands on current-cycle schedule + progression within ~2 viewports.
+                Expanded reveals every cycle from the start via the toggle. */}
             <CycleDayGrid
               workouts={workouts}
               cycleLength={cycleLength}
-              numCycles={showAllCycles ? numCycles : Math.min(2, numCycles)}
+              startCycle={showAllCycles ? 1 : currentCycle}
+              numCycles={showAllCycles ? numCycles : 1}
               enrollment={enrollment}
               onCellClick={(workout) => {
                 if (workout) setShowWorkoutDetail(workout);
               }}
             />
-            {numCycles > 2 && (
+            {numCycles > 1 && (
               <button
                 onClick={() => setShowAllCycles((v) => !v)}
                 className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
               >
-                {showAllCycles ? "Show fewer cycles" : `Show all ${numCycles} cycles`}
+                {showAllCycles ? "Show current cycle only" : `Show all ${numCycles} cycles`}
                 <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
               </button>
             )}
@@ -516,7 +568,7 @@ export default function ProgramDetail() {
                       <div>
                         <p className="font-medium text-sm text-ink">{name}</p>
                         <p className="font-technical text-xs text-ink-muted">
-                          {state.sessions_at_current_weight || 0} sessions at current weight
+                          {state.sessions_at_current_weight || 0} session{(state.sessions_at_current_weight || 0) === 1 ? "" : "s"} at current weight
                           {effortVal != null && (
                             <> &middot; Avg RIR {effortVal.toFixed(1)}</>
                           )}
@@ -524,7 +576,7 @@ export default function ProgramDetail() {
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '—'} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '—'} <small className="text-[10px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.stalled ? (
                           <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
@@ -578,7 +630,10 @@ export default function ProgramDetail() {
               <DialogTitle>{showWorkoutDetail?.title}</DialogTitle>
             </DialogHeader>
             {showWorkoutDetail && (
-              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+              <div
+                className="overflow-y-auto flex-1 px-6 py-4 space-y-3"
+                style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+              >
                 <div className="flex gap-2 text-sm text-ink-muted">
                   <span>Day {showWorkoutDetail.day_index || showWorkoutDetail.day_number}</span>
                   {showWorkoutDetail.type && (
@@ -614,7 +669,7 @@ export default function ProgramDetail() {
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[9.5px] font-semibold text-ink-muted">lbs</small></p>
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[10px] font-semibold text-ink-muted">lbs</small></p>
                             <p className="font-technical text-xs text-ink-muted mt-0.5">
                               Min: {targets.dailyMin} lbs
                             </p>
@@ -695,7 +750,10 @@ export default function ProgramDetail() {
               ))}
               </div>
             </div>
-            <div className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0">
+            <div
+              className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+            >
               <Button variant="outline" className="flex-1" onClick={() => setShowEnrollDialog(false)}>
                 Cancel
               </Button>

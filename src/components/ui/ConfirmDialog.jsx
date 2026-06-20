@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
@@ -21,39 +21,49 @@ export function ConfirmDialog({
     onConfirm();
   };
 
-  const confirmButtonClass = variant === "danger"
-    ? "bg-bad/10 hover:bg-bad/10 text-bad border border-bad/20"
-    : "";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md" hideClose sheetMinHeight="">
+        <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             {variant === "danger" && (
-              <div className="p-2 rounded-full bg-bad/10">
+              <div className="p-2 rounded-full bg-bad/12">
                 <AlertTriangle className="w-5 h-5 text-bad" />
               </div>
             )}
             <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <p className="text-[13px] text-ink-muted mt-2">
+        <DialogDescription className="mt-2">
           {description}
-        </p>
-        <div className="flex gap-3 mt-6">
+        </DialogDescription>
+        {/* Coral is THE action hue; destructive confirms route to the `bad`
+            `destructive` variant so a delete never masquerades as a coral CTA.
+            Stacked + full-width across the full bottom-sheet range (thumb zone),
+            reverting to an inline row only from md: up (centered desktop dialog)
+            so the layout holds for the whole sheet breakpoint.
+            DOM order is Cancel-then-confirm, so flex-col-reverse renders Cancel
+            visually LAST (closest to the resting thumb) and the confirm button
+            ABOVE it. For NON-danger this puts the coral CTA in the thumb zone.
+            For DANGER it is a mobile-safety inversion fix: Cancel must be the
+            closest tap target and the destructive button must sit above it, so
+            both branches use flex-col-reverse (the prior `flex-col` rendered
+            Delete last/lowest — the exact opposite of the intended ordering). */}
+        <div className="flex flex-col-reverse md:flex-row gap-3 mt-6">
           <Button
-            variant="outline"
+            variant="ghost"
+            size="lg"
             onClick={() => onOpenChange(false)}
-            className="flex-1"
+            className="w-full md:flex-1"
             disabled={loading}
           >
             {cancelText}
           </Button>
           <Button
-            variant={variant === "danger" ? "dim" : "volt"}
+            variant={variant === "danger" ? "destructive" : "volt"}
+            size="lg"
             onClick={handleConfirm}
-            className={`flex-1 ${confirmButtonClass}`}
+            className="w-full md:flex-1"
             disabled={loading}
           >
             {loading ? "Processing..." : confirmText}

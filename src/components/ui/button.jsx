@@ -8,30 +8,71 @@ const Button = React.forwardRef(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
+  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
   // Coral is THE action color: solid-action variants share the og-cta
   // gradient; everything secondary is frosted-glass ghost material.
+  // Disabled coral must stop reading as a live CTA: drop the gradient, neon
+  // shadow + specular and fall back to a neutral charcoal-surface fill with
+  // faint ink so the disabled state is unmistakably inert.
+  // The coral glow is declared ONCE via the inline tokened box-shadow (drop +
+  // inset specular). Do NOT re-add `shadow-neon` here: it carries the same
+  // 0_8px_22px brand glow, and stacking it under the inline declaration doubled
+  // the halo into a soft bleed on large CTAs (e.g. CreateWorkout Save, lg).
   const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
     "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
-    "shadow-neon [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]";
-  const glassGhost = "bg-white/[0.06] text-ink border border-white/10 rounded-xl " +
-    "[box-shadow:inset_0_1px_0_rgba(255,255,255,0.09)] hover:bg-white/[0.09]";
+    "[box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)] " +
+    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100";
+  // Token-driven glass so every secondary control re-tunes under html.light.
+  // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
+  // instead of raw white-alpha (which only reads on the dark field).
+  const glassGhost = "bg-[var(--glass-bg)] text-ink border border-charcoal-border rounded-xl " +
+    "[box-shadow:inset_0_1px_0_var(--glass-specular)] hover:bg-[var(--glass-edge)]";
+  // Coral-tinted quiet affordance. Reserved for genuine secondary ACTIONS that
+  // must still read coral (never for Cancel/Back/neutral). Opt in explicitly —
+  // plain `ghost` is neutral glass so accidental coral decoration can't drift in.
+  // Mirror the solid coral's inert disabled treatment so a disabled coralGhost
+  // (e.g. QuickCapture empty-state Save) stops reading as a live CTA: neutral
+  // charcoal-surface fill, faint ink, no coral tint at full opacity.
+  // Disabled coralGhost keeps a faint brand/20 border (instead of going fully
+  // neutral) so an empty-state CTA's location stays legible — the user can see
+  // WHERE the action will appear once it's enabled, rather than the affordance
+  // vanishing into the charcoal surface.
+  const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
+    "disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100 disabled:bg-none disabled:shadow-none disabled:border-brand/20";
+
+  // Destructive — `bad` is the canonical destructive token (blessed in
+  // index.css, SYS-02). RESTING prominence is raised to coral-weight so a
+  // delete out-weights the neutral glassGhost it sits beside in ConfirmDialog
+  // instead of reading as a near-equal twin: bg-bad/18 fill + border-bad/70
+  // edge by DEFAULT (not hover-only). Shared by CreateWorkout / ConfirmDialog /
+  // RecipeBuilder via this one variant.
+  const destructive = "bg-bad/18 text-bad border border-bad/70 rounded-xl font-bold " +
+    "hover:bg-bad/24 hover:border-bad";
+
+  // Plain/icon variant — chrome-free affordance (border-0, transparent fill,
+  // no shadow baked in) so icon-only controls (TodayActions add, AddExerciseForm
+  // close) stop bending a glass variant with `border-0 bg-transparent
+  // shadow-none` override stacks. Inherits ink-muted voice; pair with size="icon"
+  // (or a 44px className) for tap-target compliance.
+  const plain = "border-0 bg-transparent shadow-none text-ink-muted rounded-xl hover:text-ink";
 
   const variants = {
     /* design-system tiers */
-    volt:        coral,
-    energy:      coral,
+    volt:        coral,   // canonical coral action variant
+    energy:      coral,   // DEPRECATED alias of `volt`; migrate callers to volt
     dark:        glassGhost,
-    ghost:       "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15",
-    dim:         "bg-transparent text-ink-muted border border-white/10 rounded-xl hover:bg-white/[0.06] hover:text-ink",
+    ghost:       glassGhost,
+    coralGhost:  coralGhost,
+    dim:         "bg-transparent text-ink-muted border border-charcoal-border rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
+    plain:       plain,   // chrome-free icon/affordance — no override stacks
     /* utility / legacy variants */
     default:     glassGhost,
-    primary:     coral,
+    primary:     coral,   // LEGACY alias of `volt`; migrate callers to volt
     ai:          glassGhost,
-    destructive: "bg-transparent text-bad border border-bad/35 rounded-xl hover:bg-bad/10 hover:border-bad/60",
-    outline:     "border border-white/10 bg-transparent text-ink-muted rounded-xl hover:bg-white/[0.06] hover:text-ink",
-    secondary:   "bg-white/[0.06] text-ink-muted rounded-xl hover:bg-white/[0.09] hover:text-ink",
+    destructive: destructive,
+    outline:     "border border-charcoal-border bg-transparent text-ink-muted rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
+    secondary:   "bg-[var(--glass-bg)] text-ink-muted rounded-xl hover:bg-[var(--glass-edge)] hover:text-ink",
     link:        "text-brand underline-offset-4 hover:underline",
   };
 

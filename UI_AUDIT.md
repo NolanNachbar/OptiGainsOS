@@ -1,89 +1,53 @@
 # OptiGains — Mobile-First UI Audit (consolidated)
 
-Goal: make the app look and feel like MacroFactor/Whoop shipped it, **mobile-first (390px)**.
-Method: an `ultracode` convergence loop — multi-agent capture → blind design-eye audit →
-worktree/per-file fixes → re-capture → re-audit, until two clean sweeps. Driven through the
-gstack headless browser at 390px against the real account.
+Goal: make the app look and feel like MacroFactor / Whoop shipped it, **mobile-first (390px)**,
+enforcing the existing **VAPOR × MACRO** system (`src/index.css`, `tailwind.config.js`) — not
+reinventing it. Ran as a 6-round ultracode convergence loop driven by `/loop` (one round per
+firing) + the Workflow orchestrator (`ui-audit/round-runner.workflow.js`).
 
-Branch: `ui-audit-mobile-first`. Standard enforced: the **VAPOR × MACRO** system already in
-`src/index.css` + `tailwind.config.js` (not reinvented). See `ui-audit/AUDIT_RUBRIC.md` and
-`SURFACE_INVENTORY.md`.
+See **LAUNCH_READINESS.md** for the burn-down, residual-risk list, and next steps.
+See **SURFACE_INVENTORY.md** for the full surface map and coverage gaps.
 
-## Coverage
-- **25 pages** + **23 overlays** inventoried (`SURFACE_INVENTORY.md`); ~30 surfaces screenshotted
-  per round at 390px under `ui-audit/round-N/`.
-- Coverage gaps (logged, deliberate): camera-dependent surfaces (BarcodeScanner, Physique
-  capture) can't be granted a camera in headless — audited as chrome/idle state from code only.
+## How it ran
+- **Per round:** serial `/browse` capture at 390px+1280px (single shared Chromium daemon →
+  capture must be serial) → ~50 parallel opus agnostic audits (blind per surface, 8-point
+  rubric) → synthesize/dedupe into systemic vs per-surface → apply fixes serially on the main
+  working tree (build-gated) → commit → re-capture next round to confirm fixes and catch
+  regressions.
+- **Each round agnostic** to prior rounds (per the brief), so findings re-litigate; the loop
+  converges on app quality, exiting at the 6-round backstop rather than a zero-finding score.
 
-## Burn-down (findings per sweep)
-| Sweep | Total | Blocker | Major | Minor | Notes |
-|------:|------:|--------:|------:|------:|-------|
-| R1 | 236 | 13 | 111 | 112 | baseline |
-| R2 | 65 | 2 | 31 | 32 | after systemic + per-page round 1 |
-| R3 | 43 | 1 | 22 | 20 | |
-| R4 | 6 | 0 | 4 | 2 | |
-| R5 | **0** | 0 | 0 | 0 | first clean sweep |
-| R6 | 2 | 0 | 2 | 0 | 1 real (Dashboard, fixed) + 1 false-positive (capture artifact) |
-| R7 | 3 | 0 | 3 | 0 | touch-target stragglers (fixed) |
-| R8 | **0** | 0 | 0 | 0 | clean confirming sweep |
-| R9 | 1 | 0 | 1 | 0 | coral close-button (fixed + class swept) |
+## 8-point audit rubric (applied every surface)
+1. Design-system drift  2. Mobile fitness (≥44px targets, thumb zone, bottom sheets, safe areas,
+no h-scroll, no dock/notch clip)  3. Visual consistency  4. Hierarchy & clarity  5. Vertical
+density at 390px  6. Belonging & placement  7. AI-slop / unfinished  8. Motion & feedback.
 
-13 blockers and 111 majors at R1 → 0 blockers from R5 onward. The long tail (R6–R9) was
-progressively finer polish surfaced only after the larger issues cleared.
+## What changed (themes, by area)
+- **Tokens & primitives (systemic):** bad-vs-brand hue split + carb token in `index.css` /
+  `ui/system/primitives`; aligned button, input, textarea, combobox, tabs, badge to the system;
+  dialog/sheet scrim + ConfirmDialog danger-coral; toaster restyle; card radius normalization.
+- **Information architecture:** removed the orphaned floating action button (it rendered on no
+  real landing route and a free-floating coral action violated the single-action-color rule);
+  its Weigh-In / Stream-Note utilities moved to the mobile sub-tab strip / thumb zone.
+- **Per-surface:** density, hierarchy, coral-discipline, and touch-target fixes across Today,
+  Fuel/FoodTracker, Train hub + Workouts, Programs, AthleteState/PST, Recovery, Physique,
+  Insights/BriefHistory, Mind, Career, auth pages, CreateWorkout/ProgramBuilder, live workout
+  logging, and the modal set (WeighIn, Calculators, MealTemplates, WeeklyPlan, MacroGoals, …).
 
-## Independent gate: /design-review (objective measurement)
-The `/design-review` lens (run at 390px, audit core only — no auto-fix loop) graded the app
-**Design A- / AI-Slop A**: Manrope-only typography, zero horizontal scroll on any surface, no
-AI-slop patterns, coral as the single action color, controlled density, no real console errors.
-Its one systematic catch was a class of **sub-44px touch targets** that vision-based agents
-could not measure (~47 controls across 17 files). All were raised to ≥44px using `min-h`/`min-w`
-(beats the `size=` `h-9`/`h-8` Tailwind class conflict), `size="lg"`, or 44px tap-zone wrappers.
+## Notable bugs found (detail in LAUNCH_READINESS.md)
+- **Program create → HTTP 400** (`programs.cycle_length` missing) — DB migration needed (backend).
+- **Invalid `/program/:id` → infinite spinner** (no not-found state) — recurring.
+- **`/physique` crash** (`reading 'pose' of undefined`) — introduced R5, **fixed R6**, verified.
+- **Mobile toast occluded behind dialog scrim at 390px** — z-index/portal fix needed.
+- Dead/unimplemented: `DietPhaseCard`, `CustomSplitSelector`, `workout-share-modal`.
 
-Final objective sweep (390px, authed): **0 horizontal scroll** on all 20 surfaces; **every
-interactive control ≥44px**. Sole residual: combobox *inner inputs* render 42px inside their
-44px tappable wrapper (the control's tap target is 44px) — a 2px structural artifact, not a
-reachability defect.
+## Fix commits (branch `ui-audit-mobile-first`, not pushed)
+`0cb3a9f1` R1 systemic · `90471a6a` R2 per-surface · `4282e086` R3 · `f4b8c5e2` R4 ·
+`08dec3e7` R5 · `ce59cb4b` R6 (+ STATE/prep commits `83c27f87`, `b6ce8aeb`, `569af481`,
+`44f5c708`). ~180 fixes total; 68 files changed (+6410 / −4052). Build green every round;
+project lint debt is pre-existing (not introduced).
 
-## Systemic fixes (one change → many surfaces)
-These were done on the main thread first because they touch shared primitives.
-
-1. **Bottom-sheet dialogs** (`ui/dialog.jsx` + new `.glass-sheet` material in `index.css`).
-   Every modal was a centered desktop dialog on mobile; now it's a bottom sheet (drag handle,
-   slide-up, opaque material so busy pages don't bleed through). Fixed ~34 findings across ~15
-   overlay surfaces in one change.
-2. **Dock / FAB clearance** (`Layout.jsx`, `ui/FloatingActionButton.jsx`). Raised content
-   clearance to 7rem so the last card never clips under the floating dock; FAB suppressed on
-   dense log/list + read-only pages where it overlapped data, aligned to the dock inset.
-3. **Touch targets** (`ui/input.jsx` 44px, `ui/button.jsx` lg 44px, `ui/combobox.jsx` 44px,
-   `ui/dialog.jsx` close-X 44px) + per-call height overrides removed across forms.
-4. **SubTabs** (`ui/system/SubTabs.jsx`): never truncate nav labels — natural-width scroll with
-   the active tab auto-centered, icons hidden on phones so short labels fit.
-5. **Coral discipline**: coral demoted to the single action color per viewport everywhere
-   (per-card "View Details", "History" chips, duplicate CTAs → neutral glass).
-6. **Duplicate mobile headers**: pages rendering their own title header (duplicating the global
-   Layout header) made desktop-only.
-
-## Representative per-surface fixes
-- **Today**: session title wraps (no truncation); lb/wk ring shows a real fraction + correct hue;
-  STATE/Muscle-load collapsed behind disclosures.
-- **Dashboard**: removed duplicate header; one coral primary; soreness grid 3-col (no truncation);
-  `loggedToday` wired so the prescribed card shows the done-state instead of nagging.
-- **ProgramDetail**: 5984px → ~2100px (action buttons grouped, repeated stall copy de-duplicated).
-- **Fuel/FoodTracker**: row action buttons no longer overlap macro values; quick-action tiles
-  on system glass; single coral "Add Food".
-- **ProgramBuilder**: dropped `min-h-screen`; Back/Next is a sticky footer above the dock.
-- **WeeklySchedule**: removed `font-technical` from prose (word-spacing collapse).
-- **PreSessionInsightCard**: fixed a `0`-literal render + dead action when suggestedWeight=0.
-- **Profile**: defensive dirty-state baseline so a fresh load is never falsely "unsaved".
-
-## Quality gates
-- `npm run build`: clean every round.
-- `npm run lint`: the audit introduced **zero net-new errors**; the small pre-existing repo lint
-  baseline (unused vars / exhaustive-deps in untouched code) is unchanged (and reduced by a few
-  via dead-code removal in Profile/PhysiqueTracker).
-
-## Capture-method note
-`browse screenshot` defaults to full-page, which can render an off-screen `position:fixed` sticky
-bar at the image's bottom edge even when it's not in the 844px viewport. This caused two
-false-positive "save bar showing" flags (Profile); verified hidden via live DOM probe and a
-viewport-only re-capture. Audit prompts were updated to ignore this artifact.
+## Artifacts
+- `ui-audit/STATE.json` — round-by-round history (counts, fixes, coverage gaps, notes).
+- `ui-audit/round-N/<surface>/*.png` — captured screenshots per round (gitignored, local).
+- `ui-audit/round-runner.workflow.js` — the per-round orchestration script.

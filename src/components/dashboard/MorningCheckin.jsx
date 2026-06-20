@@ -16,7 +16,9 @@ const MUSCLE_GROUPS = [
 
 const SORENESS_LABELS = ["None", "Mild", "Moderate", "Severe"];
 const SORENESS_COLORS = [
-  "bg-white/[0.05] text-muted-2 border-white/10",
+  // "None" — neutral glass-inset (not a biometric reading), soft hairline edge.
+  "glass-inset text-muted-2 hairline",
+  // Levels 1-3 ride the physiological spectrum (soreness is a biometric).
   "bg-fat/[0.12] text-fat border-fat/30",
   "bg-warn/[0.12] text-warn border-warn/30",
   "bg-bad/[0.12] text-bad border-bad/30",
@@ -46,7 +48,7 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
           <div
             key={i}
             className={`h-0.5 w-2 rounded-full transition-colors ${
-              i < value ? "bg-teal" : "bg-white/[0.08]"
+              i < value ? "bg-teal" : "bg-track"
             }`}
           />
         ))}
@@ -55,7 +57,7 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
   );
 }
 
-export default function MorningCheckin({ today, existingCheckin, onComplete }) {
+export default function MorningCheckin({ today, existingCheckin, onComplete, coralCta = true }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -136,13 +138,16 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
         <div className="px-4 py-3 border-b hairline flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-leaf" />
-            <span className="section-label !text-ink">Daily Readiness</span>
+            {/* Retitled off 'Daily Readiness' so it never collides with the
+                Today ring's 'READINESS' micro-label — this is the SUBJECTIVE
+                self-report, distinct from the objective readiness score. */}
+            <span className="section-label !text-ink">Subjective check-in</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => queryClient.setQueryData(["dailyReadiness", todayStr, user?.id], null)}
-            className="h-6 text-[10px] uppercase tracking-wider"
+            className="min-h-[44px] -my-2.5 text-[10px] uppercase tracking-wider"
           >
             Update
           </Button>
@@ -191,7 +196,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
       {/* Energy + Mood */}
       <div className="flex justify-around mb-5">
         <NumberPicker label="Energy" value={energy} onChange={setEnergy} />
-        <div className="w-px bg-white/[0.08]" />
+        <div className="w-px border-l hairline" />
         <NumberPicker label="Mood" value={mood} onChange={setMood} />
       </div>
 
@@ -203,7 +208,8 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
             <button
               key={group}
               onClick={() => cycleSoreness(group)}
-              className={`text-xs font-bold min-h-[44px] flex flex-col items-center justify-center px-1 rounded-lg border-[0.5px] transition-all ${SORENESS_COLORS[soreness[group]]}`}
+              style={{ transition: "background-color .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease)" }}
+              className={`text-xs font-bold min-h-[44px] flex flex-col items-center justify-center px-1 rounded-lg border-[0.5px] ${SORENESS_COLORS[soreness[group]]}`}
             >
               <span className="block truncate">{group}</span>
               <span className="block text-[10px] opacity-70 mt-0.5">{SORENESS_LABELS[soreness[group]]}</span>
@@ -221,8 +227,11 @@ export default function MorningCheckin({ today, existingCheckin, onComplete }) {
         className="mb-3 text-sm resize-none"
       />
 
+      {/* CORAL DISCIPLINE — standalone the check-in owns the coral primary, but
+          when embedded under Today's coral "Begin Session" the host passes
+          coralCta={false} so this renders neutral (ghost) and coral stays single. */}
       <Button
-        variant="volt"
+        variant={coralCta ? "volt" : "ghost"}
         size="lg"
         className="w-full"
         onClick={() => mutation.mutate()}

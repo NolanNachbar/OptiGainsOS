@@ -22,14 +22,27 @@ import {
   Star,
   Play,
   Loader2,
-  Calendar,
   Pencil,
   Search,
   ChevronDown,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { toast } from "sonner";
+
+// Sum macros across a template/entry item list. Module-scoped so the apply +
+// save dialogs (separate components) share one source of truth.
+const getTemplateTotals = (items = []) =>
+  items.reduce(
+    (acc, item) => ({
+      calories: acc.calories + (item.calories || 0),
+      protein: acc.protein + (item.protein_grams || 0),
+      carbs: acc.carbs + (item.carbs_grams || 0),
+      fats: acc.fats + (item.fats_grams || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  );
 
 export default function MealTemplates({ compact = false }) {
   const { user } = useAuth();
@@ -94,17 +107,6 @@ export default function MealTemplates({ compact = false }) {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  const getTemplateTotals = (items) =>
-    items.reduce(
-      (acc, item) => ({
-        calories: acc.calories + (item.calories || 0),
-        protein: acc.protein + (item.protein_grams || 0),
-        carbs: acc.carbs + (item.carbs_grams || 0),
-        fats: acc.fats + (item.fats_grams || 0),
-      }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
-    );
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -140,34 +142,40 @@ export default function MealTemplates({ compact = false }) {
                   <div className="min-w-0">
                     <span className="text-sm font-semibold text-ink truncate block">{template.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {template.is_favorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 shrink-0" />}
-                      <span className="text-xs text-ink-muted text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
+                      {template.is_favorite && <Star className="w-3 h-3 text-gold fill-gold shrink-0" />}
+                      <span className="text-xs text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => toggleFavoriteMutation.mutate({ id: template.id, is_favorite: !template.is_favorite })}
-                      className={`p-1.5 transition-colors ${template.is_favorite ? 'text-yellow-500 hover:text-warn' : 'text-ink-muted hover:text-yellow-500'}`}
-                      title={template.is_favorite ? 'Unstar' : 'Star'}
+                      aria-label={template.is_favorite ? 'Unstar' : 'Star'}
+                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-gold hover:text-gold' : 'text-ink-muted hover:text-gold'}`}
                     >
-                      <Star className="w-3 h-3" fill={template.is_favorite ? 'currentColor' : 'none'} />
-                    </button>
-                    <button
+                      <Star className="w-4 h-4" fill={template.is_favorite ? 'currentColor' : 'none'} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleEdit(template)}
-                      className="p-1.5 text-ink-muted hover:text-ink-muted transition-colors"
+                      aria-label="Edit template"
+                      className="h-11 w-11 border-0 bg-transparent shadow-none text-ink-muted hover:text-ink hover:bg-transparent transition-colors"
                     >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="primary"
                       onClick={() => handleApply(template)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-ink text-xs font-bold transition-colors"
+                      className="h-11 px-3 text-xs"
                     >
-                      <Play className="w-2.5 h-2.5" />Apply
-                    </button>
+                      <Play className="w-3 h-3" />Apply
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-3 text-xs font-mono">
-                  <span className="text-ink font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <div className="flex gap-3 text-xs tabular-nums">
+                  <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral">P{Math.round(totals.protein)}g</span>
                   <span className="text-carb">C{Math.round(totals.carbs)}g</span>
                   <span className="text-fat">F{Math.round(totals.fats)}g</span>
@@ -208,8 +216,8 @@ export default function MealTemplates({ compact = false }) {
                       }
                       className={
                         template.is_favorite
-                          ? "text-yellow-500 hover:text-yellow-600"
-                          : "text-ink-muted hover:text-yellow-500"
+                          ? "text-gold hover:text-gold"
+                          : "text-ink-muted hover:text-gold"
                       }
                     >
                       <Star
@@ -225,25 +233,25 @@ export default function MealTemplates({ compact = false }) {
                   </div>
                   <div className="flex gap-4 text-sm mb-4">
                     <div className="text-center">
-                      <div className="font-bold text-ink">
+                      <div className="font-bold text-gold tabular-nums">
                         {Math.round(totals.calories)}
                       </div>
                       <div className="text-xs text-ink-muted">Cal</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-coral">
+                      <div className="font-bold text-coral tabular-nums">
                         {Math.round(totals.protein)}g
                       </div>
                       <div className="text-xs text-ink-muted">Protein</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-green-600">
+                      <div className="font-bold text-carb tabular-nums">
                         {Math.round(totals.carbs)}g
                       </div>
                       <div className="text-xs text-ink-muted">Carbs</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-yellow-600">
+                      <div className="font-bold text-fat tabular-nums">
                         {Math.round(totals.fats)}g
                       </div>
                       <div className="text-xs text-ink-muted">Fats</div>
@@ -367,62 +375,101 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
     onError: () => toast.error("Failed to apply template"),
   });
 
+  const totals = getTemplateTotals(template.items || []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent sheetMinHeight="">
         <DialogHeader>
           <DialogTitle>Apply Template: {template.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label>Date</Label>
+            <Label className="section-label block mb-1">Date</Label>
+            {/* Native date inputs render their own calendar indicator; the extra
+                lucide glyph + pl-9 produced two calendar marks, so we rely on the
+                native indicator alone. */}
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1"
+              disabled={applyMutation.isPending}
+              className="mt-1 font-technical"
             />
           </div>
 
           <div>
-            <Label>Items to add ({template.items?.length || 0})</Label>
-            <div className="space-y-2 mt-2 max-h-64 overflow-y-auto">
+            <p className="section-label">Items to add ({template.items?.length || 0})</p>
+            {/* Template total summary */}
+            <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
+              <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
+              <div className="flex gap-3 text-xs tabular-nums">
+                <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
+                <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
+                <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
+              </div>
+            </div>
+            {/* No inner scroll region on mobile — the whole sheet scrolls as one
+                surface; a long item list is gated behind md: so the desktop
+                dialog still caps its own height. */}
+            <div className="space-y-2 mt-2 md:max-h-64 md:overflow-y-auto">
               {(template.items || []).map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-charcoal-surface rounded-lg"
+                  className="flex items-center justify-between gap-3 p-3 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg"
                 >
-                  <div>
-                    <div className="font-medium text-sm text-ink">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm text-ink truncate">
                       {item.food_name}
                     </div>
                     <div className="text-xs text-ink-muted capitalize">
                       {item.meal_type || template.meal_type}
                     </div>
                   </div>
-                  <div className="text-xs text-ink-muted">
-                    {item.calories} cal
+                  <div className="text-right shrink-0">
+                    <div className="text-xs text-gold font-semibold tabular-nums">
+                      {Math.round(item.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span>
+                    </div>
+                    <div className="text-xs tabular-nums mt-0.5 flex gap-1.5 justify-end">
+                      <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
+                      <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
+                      <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <Button
-            onClick={() => applyMutation.mutate()}
-            disabled={applyMutation.isPending}
-            className="w-full bg-brand"
-          >
-            {applyMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Applying...
-              </>
-            ) : (
-              "Apply to Food Log"
-            )}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              onClick={() => applyMutation.mutate()}
+              disabled={applyMutation.isPending}
+              variant="primary"
+              size="lg"
+              className="w-full"
+            >
+              {applyMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                "Apply to Food Log"
+              )}
+            </Button>
+            <Button
+              onClick={() => onOpenChange(false)}
+              disabled={applyMutation.isPending}
+              variant="ghost"
+              size="lg"
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -456,7 +503,10 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
           searchBrandedFoods(searchQuery, 5),
         ]);
         setSearchResults([...generic.slice(0, 4), ...branded.slice(0, 4)]);
-      } catch {} finally {
+      } catch {
+        setSearchResults([]);
+        toast.error("Food search failed. Check your connection and try again.");
+      } finally {
         setIsSearching(false);
       }
     }, 300);
@@ -499,19 +549,24 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
     onSave({ name: name.trim(), items });
   };
 
+  // Running totals so a template named for a calorie target shows its current
+  // sum live as items are edited/added/removed. Reuses the shared summer.
+  const editTotals = getTemplateTotals(items);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden max-h-[90vh]">
+        <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-5 pb-4 border-b border-charcoal-border shrink-0">
             <DialogHeader>
               <DialogTitle>Edit Template</DialogTitle>
             </DialogHeader>
+            <Label className="section-label mt-3 block">Template Name</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-3"
+              className="mt-1"
               placeholder="Template name"
             />
           </div>
@@ -532,16 +587,19 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                 />
               </div>
               {searchResults.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-charcoal-surface border border-charcoal-border rounded-lg max-h-52 overflow-y-auto">
+                <div className="mt-2 glass-sheet border border-charcoal-border/50 rounded-lg overflow-hidden">
                   {searchResults.map((food) => (
                     <button
                       key={food.fdcId}
                       onClick={() => addFromSearch(food)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-charcoal-surface hover:bg-charcoal-elevated transition-colors border-b border-charcoal-border/60 last:border-0"
+                      className="w-full text-left px-4 py-3 min-h-11 hover:bg-charcoal-elevated/60 active:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)] border-b border-charcoal-border/50 last:border-0"
                     >
                       <p className="text-sm font-medium text-ink truncate">{food.description}</p>
-                      <p className="text-xs text-ink-muted font-mono">
-                        {Math.round(food.calories * (food.servingSize || 100) / 100)} cal · P{Math.round(food.protein * (food.servingSize || 100) / 100)}g · C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g · F{Math.round(food.fats * (food.servingSize || 100) / 100)}g
+                      <p className="text-xs tabular-nums flex gap-2">
+                        <span className="text-gold">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
+                        <span className="text-coral">P{Math.round(food.protein * (food.servingSize || 100) / 100)}g</span>
+                        <span className="text-carb">C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g</span>
+                        <span className="text-fat">F{Math.round(food.fats * (food.servingSize || 100) / 100)}g</span>
                       </p>
                     </button>
                   ))}
@@ -549,71 +607,118 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
               )}
             </div>
 
+            {/* Running total — sticks to the top of the scroll region so the
+                sum stays visible while editing a long item list. Each datum
+                owns its hue: calories=gold, P=coral, C=carb, F=fat. */}
+            {items.length > 0 && (
+              <div className="sticky top-0 z-10 -mx-6 px-6 py-2 glass-sheet border-b border-charcoal-border/50 flex items-center justify-between gap-3">
+                <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
+                <div className="flex gap-3 text-xs tabular-nums">
+                  <span className="text-gold font-bold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                  <span className="text-coral font-semibold">P{Math.round(editTotals.protein)}g</span>
+                  <span className="text-carb font-semibold">C{Math.round(editTotals.carbs)}g</span>
+                  <span className="text-fat font-semibold">F{Math.round(editTotals.fats)}g</span>
+                </div>
+              </div>
+            )}
+
             {/* Items */}
             <div className="space-y-2">
               {items.length === 0 && (
                 <p className="text-sm text-ink-muted text-center py-6">No items yet. Search above or add manually.</p>
               )}
-              {items.map((item, idx) => (
+              {items.map((item, idx) => {
+                const isOpen = expandedIndex === idx;
+                return (
                 <div key={idx} className="rounded-lg border border-charcoal-border overflow-hidden">
-                  {/* Row header — click to expand */}
+                  {/* Row header — press the row body to expand; the chevron is its
+                      own explicit 44px affordance with aria-expanded. */}
                   <div
-                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-charcoal-surface hover:bg-charcoal-elevated/50 transition-colors"
-                    onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                    className="flex items-center gap-2 pl-3 py-2.5 cursor-pointer transition-[background,transform] duration-200 [transition-timing-function:var(--ease)] hover:bg-charcoal-elevated/50 active:bg-charcoal-elevated active:scale-[0.99]"
+                    onClick={() => setExpandedIndex(isOpen ? null : idx)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedIndex(isOpen ? null : idx); } }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
-                      <p className="text-xs font-mono text-ink-muted">{item.calories} cal · P{item.protein_grams}g · C{item.carbs_grams}g · F{item.fats_grams}g</p>
+                      <p className="text-xs tabular-nums truncate flex gap-2">
+                        <span className="text-gold">{Math.round(item.calories || 0)} cal</span>
+                        <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
+                        <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
+                        <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
+                      </p>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-ink-muted shrink-0 transition-transform ${expandedIndex === idx ? 'rotate-180' : ''}`} />
                     <button
-                      onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
-                      className="p-1 text-ink-muted hover:text-bad transition-colors shrink-0"
+                      type="button"
+                      aria-label={isOpen ? 'Collapse item' : 'Expand item'}
+                      aria-expanded={isOpen}
+                      onClick={(e) => { e.stopPropagation(); setExpandedIndex(isOpen ? null : idx); }}
+                      className="h-11 w-11 flex items-center justify-center shrink-0 text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 [transition-timing-function:var(--ease)] ${isOpen ? 'rotate-180' : ''}`} />
                     </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove item"
+                      onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
+                      className="h-11 w-11 border-0 bg-transparent shadow-none text-ink-muted hover:text-bad hover:bg-transparent shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
 
-                  {/* Expanded edit form */}
-                  {expandedIndex === idx && (
-                    <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface bg-charcoal-surface/50 space-y-2">
-                      <div>
-                        <Label className="text-xs text-ink-muted">Food Name</Label>
-                        <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 h-8 text-sm" />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-ink-muted">Serving</Label>
-                        <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 h-8 text-sm" placeholder="e.g. 100 g" />
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { field: 'calories', label: 'Cal' },
-                          { field: 'protein_grams', label: 'Pro' },
-                          { field: 'carbs_grams', label: 'Car' },
-                          { field: 'fats_grams', label: 'Fat' },
-                        ].map(({ field, label }) => (
-                          <div key={field}>
-                            <Label className="text-xs text-ink-muted">{label}</Label>
-                            <Input
-                              type="number"
-                              value={item[field]}
-                              onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
-                              className="mt-1 h-8 text-sm"
-                              min={0}
-                            />
-                          </div>
-                        ))}
+                  {/* Expanded edit form — animates open via a grid-rows collapse on
+                      the single system easing instead of an instant mount. */}
+                  <div
+                    className="grid transition-[grid-template-rows,opacity] duration-200 [transition-timing-function:var(--ease)]"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface/50 space-y-2">
+                        <div>
+                          <Label className="text-xs text-ink-muted">Food Name</Label>
+                          <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-ink-muted">Serving</Label>
+                          <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-sm" placeholder="e.g. 100 g" />
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { field: 'calories', label: 'Cal', hue: 'text-gold' },
+                            { field: 'protein_grams', label: 'P', hue: 'text-coral' },
+                            { field: 'carbs_grams', label: 'C', hue: 'text-carb' },
+                            { field: 'fats_grams', label: 'F', hue: 'text-fat' },
+                          ].map(({ field, label, hue }) => (
+                            <div key={field}>
+                              <Label className={`text-xs font-semibold ${hue}`}>{label}</Label>
+                              <Input
+                                type="number"
+                                value={item[field]}
+                                onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
+                                className="mt-1 text-sm px-2"
+                                min={0}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Add manually */}
             <button
+              type="button"
               onClick={addManual}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-ink-muted hover:text-violet-600 border border-dashed border-charcoal-border rounded-lg hover:border-violet-400 transition-colors"
+              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-coral/40 transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               <Plus className="w-3.5 h-3.5" />
               Add manually
@@ -621,18 +726,26 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-charcoal-border bg-charcoal shrink-0 space-y-2">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold">
+          <div
+            className="px-6 py-4 border-t border-charcoal-border bg-charcoal-surface/80 shrink-0 space-y-2"
+            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          >
+            <Button onClick={handleSave} disabled={isSaving} variant="primary" size="lg" className="w-full">
               {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
             </Button>
-            <Button
-              onClick={() => setShowDeleteConfirm(true)}
-              variant="ghost"
-              className="w-full text-bad hover:text-bad hover:bg-bad/10"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Template
-            </Button>
+            {/* Destructive action demoted to a quiet, right-aligned text control
+                so the coral Save owns the thumb zone and Delete isn't adjacent. */}
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="dim"
+                size="sm"
+                className="border-0 text-ink-muted hover:text-bad"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Delete Template
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -655,7 +768,33 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
 export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, userId }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  // Per-item curation: every entry starts selected; the user can uncheck rows
+  // so a day-as-template doesn't have to capture everything they logged.
+  const [selected, setSelected] = useState(() => entries.map(() => true));
   const isDay = !mealType;
+
+  useEffect(() => {
+    setSelected(entries.map(() => true));
+  }, [entries]);
+
+  const toggle = (idx) =>
+    setSelected((prev) => prev.map((v, i) => (i === idx ? !v : v)));
+
+  // One source of truth for the desktop list cap: the md: scroll region shows
+  // VISIBLE_ROWS rows before scrolling, and the "+N more" hint is derived from
+  // the same number so the count and the cap can never drift apart.
+  const VISIBLE_ROWS = 4;
+  const hiddenCount = entries.length - VISIBLE_ROWS;
+
+  const selectedEntries = entries.filter((_, idx) => selected[idx]);
+  const totals = getTemplateTotals(
+    selectedEntries.map((e) => ({
+      calories: e.calories,
+      protein_grams: e.protein_grams,
+      carbs_grams: e.carbs_grams,
+      fats_grams: e.fats_grams,
+    }))
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => db.entities.MealTemplate.create(data),
@@ -673,8 +812,12 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
       toast.error("Please enter a template name");
       return;
     }
+    if (selectedEntries.length === 0) {
+      toast.error("Select at least one item");
+      return;
+    }
 
-    const items = entries.map((e) => ({
+    const items = selectedEntries.map((e) => ({
       food_name: e.food_name,
       serving_size: e.serving_size,
       calories: e.calories,
@@ -696,46 +839,82 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            Save {isDay ? "Day" : `${mealType}`} as Template
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-lg flex flex-col p-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-5 pb-4 border-b border-charcoal-border shrink-0">
+          <DialogHeader className="mb-0">
+            <DialogTitle>
+              Save {isDay ? "Day" : `${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`} as Template
+            </DialogTitle>
+          </DialogHeader>
+          <Label className="section-label mt-3 block">Template Name</Label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={
+              isDay
+                ? "e.g., Weekday Eating"
+                : `e.g., ${mealType ? mealType.charAt(0).toUpperCase() + mealType.slice(1) : "Meal"} Favorites`
+            }
+            className="mt-1"
+            autoFocus
+          />
+        </div>
 
-        <div className="space-y-4">
-          <div>
-            <Label>Template Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={
-                isDay
-                  ? "e.g., Weekday Eating"
-                  : `e.g., ${mealType ? mealType.charAt(0).toUpperCase() + mealType.slice(1) : "Meal"} Favorites`
-              }
-              className="mt-1"
-              autoFocus
-            />
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <p className="text-sm text-ink font-semibold tabular-nums">
+            {selectedEntries.length} of {entries.length} item{entries.length !== 1 ? "s" : ""} to save
+          </p>
+          {/* Selected total summary */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg glass-inset">
+            <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
+            <div className="flex gap-3 text-xs tabular-nums">
+              <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+              <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
+              <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
+              <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
+            </div>
           </div>
-
-          <div className="text-sm text-ink-muted">
-            {entries.length} item{entries.length !== 1 ? "s" : ""} will be saved
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          {/* Row cap on BOTH breakpoints — a long day-as-template would otherwise
+              push the count + total off-screen. The list scrolls within this cap
+              (40dvh on mobile, 48 on desktop) and the "+N more" hint below is
+              derived from the same VISIBLE_ROWS so count and cap never drift. */}
+          <div className="space-y-2 max-h-[40dvh] overflow-y-auto md:max-h-48">
             {entries.map((e, idx) => (
-              <div key={idx} className="flex justify-between p-2 bg-charcoal-surface rounded text-sm">
-                <span className="text-ink">{e.food_name}</span>
-                <span className="text-ink-muted">{e.calories} cal</span>
-              </div>
+              <label
+                key={idx}
+                className="flex items-center gap-3 p-2.5 min-h-11 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg text-sm cursor-pointer"
+              >
+                <Checkbox
+                  checked={selected[idx]}
+                  onCheckedChange={() => toggle(idx)}
+                  variant="neutral"
+                  aria-label={`Include ${e.food_name}`}
+                />
+                <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
+                <span className="text-gold font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+              </label>
             ))}
           </div>
+          {hiddenCount > 0 && (
+            <p className="text-xs text-ink-muted text-center tabular-nums pt-0.5">
+              +{hiddenCount} more below
+            </p>
+          )}
+        </div>
 
+        {/* Footer — pinned, non-scrolling, owns the thumb zone */}
+        <div
+          className="px-6 py-4 border-t border-charcoal-border bg-charcoal-surface/80 shrink-0 space-y-2"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
           <Button
             onClick={handleSave}
-            disabled={createMutation.isPending || !name.trim()}
-            className="w-full bg-brand"
+            disabled={createMutation.isPending || !name.trim() || selectedEntries.length === 0}
+            variant="primary"
+            size="lg"
+            className="w-full"
           >
             {createMutation.isPending ? (
               <>
@@ -745,6 +924,15 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
             ) : (
               "Save Template"
             )}
+          </Button>
+          <Button
+            onClick={() => onOpenChange(false)}
+            disabled={createMutation.isPending}
+            variant="ghost"
+            size="lg"
+            className="w-full"
+          >
+            Cancel
           </Button>
         </div>
       </DialogContent>

@@ -51,7 +51,7 @@ export default function PhaseRecommendationCard() {
         <span className={`font-technical text-[10px] font-bold ml-auto ${confColor}`}>{rec.confidence} confidence</span>
       </div>
 
-      <div className="text-lg font-extrabold text-ink">
+      <div className="type-display text-lg">
         {applied || samePhase ? "Phase: " : "Recommended: "}
         <span className="text-gold uppercase">{rec.phase}</span>
         {currentPhase && currentPhase !== rec.phase && !applied && (
@@ -73,10 +73,10 @@ export default function PhaseRecommendationCard() {
 
       {!applied && !samePhase && (
         <div className="mt-3 flex gap-2">
-          <Button variant="volt" size="sm" className="h-8 px-3 text-xs" onClick={accept} disabled={busy}>
+          <Button variant="volt" size="sm" className="min-h-[44px] px-3 text-xs" onClick={accept} disabled={busy}>
             <Check className="w-3.5 h-3.5 mr-1" /> Accept ({rec.phase})
           </Button>
-          <Button variant="dim" size="sm" className="h-8 px-3 text-xs" onClick={() => setDismissed(true)}>
+          <Button variant="dim" size="sm" className="min-h-[44px] px-3 text-xs" onClick={() => setDismissed(true)}>
             <X className="w-3.5 h-3.5 mr-1" /> Keep {currentPhase || "current"}
           </Button>
         </div>

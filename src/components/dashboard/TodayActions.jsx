@@ -2,19 +2,22 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SectionLabel } from "@/components/ui/system";
 import { ListChecks, Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
+// Passive AI-source glyph hues. Coral is THE action color and is barred here
+// (a passive datum glyph must never wear it). Each domain maps to a non-action
+// data hue; text-faint is the fallback for unknown domains.
 const DOMAIN_COLORS = {
-  training:  "text-coral",
+  training:  "text-teal",
   nutrition: "text-gold",
-  career:    "text-gold",
+  career:    "text-leaf",
   mind:      "text-violet",
-  recovery:  "text-teal",
+  recovery:  "text-carb",
   admin:     "text-muted-2",
 };
 
@@ -119,44 +122,42 @@ export default function TodayActions({ today, briefActions = [], isError = false
   const total = todos.length;
 
   if (isError) return (
-    <Card className="glass glass-interactive">
-      <CardContent className="px-5 py-4 text-sm text-bad">Could not load today's actions</CardContent>
-    </Card>
+    <div className="glass glass-interactive px-4 pt-3 pb-3 text-sm text-bad">Could not load today's actions</div>
   );
 
   if (total === 0 && !adding) return null;
 
   return (
-    <Card className="glass glass-interactive">
-      <CardHeader className="pb-2 pt-4 px-5">
-        <div className="flex items-center justify-between">
-          <CardTitle className="section-label flex items-center gap-2">
-            <ListChecks className="w-4 h-4 text-leaf" />
-            Today's Actions
-            {total > 0 && (
-              <span className="font-technical text-[10px] text-muted-2 ml-1.5 font-bold">{completed}/{total}</span>
-            )}
-          </CardTitle>
+    <div className="glass glass-interactive px-4 pt-3 pb-3">
+      <SectionLabel
+        right={
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
             onClick={() => setAdding(v => !v)}
-            className="min-h-[44px] min-w-[44px] p-0 -my-2"
+            className="h-11 w-11 p-0 -my-2 active:scale-95 duration-200 [transition-timing-function:var(--ease)]"
             aria-label="Add action"
           >
             <Plus className="w-4 h-4" />
           </Button>
+        }
+      >
+        <span className="flex items-center gap-2">
+          <ListChecks className="w-4 h-4 text-leaf" />
+          Today's Actions
+          {total > 0 && (
+            <span className="font-technical text-[10px] text-muted-2 font-bold">{completed}/{total}</span>
+          )}
+        </span>
+      </SectionLabel>
+      {total > 0 && (
+        <div className="h-1 bg-track rounded-full mt-2.5">
+          <div
+            className="h-full bg-leaf rounded-full transition-all duration-500 [transition-timing-function:var(--ease)]"
+            style={{ width: `${(completed / total) * 100}%` }}
+          />
         </div>
-        {total > 0 && (
-          <div className="h-[2px] bg-white/[0.08] rounded-full mt-2.5">
-            <div
-              className="h-full bg-leaf rounded-full transition-all duration-500"
-              style={{ width: `${(completed / total) * 100}%` }}
-            />
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="px-5 pb-4 pt-1.5">
+      )}
+      <div className="mt-2.5">
         <div className="space-y-1">
           {todos.map(todo => (
             <div
@@ -165,7 +166,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             >
               <button
                 onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
-                className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors"
+                className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label={todo.completed ? "Mark incomplete" : "Mark complete"}
               >
                 {todo.completed
@@ -177,11 +178,11 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 {todo.text}
               </span>
               {todo.source === "ai_generated" && (
-                <Bot className={`w-3.5 h-3.5 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
+                <Bot className={`w-4 h-4 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
               )}
               <button
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors"
+                className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label="Delete action"
               >
                 <X className="w-3.5 h-3.5" />
@@ -191,7 +192,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         </div>
  
         {adding && (
-          <div className="flex gap-2 mt-4 pt-4 border-t hairline">
+          <div className="rise-in flex gap-2 mt-4 pt-4 border-t hairline">
             <Input
               autoFocus
               value={newText}
@@ -201,12 +202,12 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 if (e.key === "Escape") { setAdding(false); setNewText(""); }
               }}
               placeholder="Add a task..."
-              className="h-9 text-sm flex-1"
+              className="text-sm flex-1"
             />
             <Button
               size="sm"
-              variant="volt"
-              className="h-9 px-4 font-bold text-xs uppercase tracking-wider"
+              variant="dim"
+              className="h-11 px-4 font-bold text-xs uppercase tracking-wider"
               disabled={!newText.trim() || addMutation.isPending}
               onClick={() => addMutation.mutate()}
             >
@@ -214,7 +215,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

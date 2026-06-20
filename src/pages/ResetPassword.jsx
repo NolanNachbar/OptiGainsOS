@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Lock } from 'lucide-react';
-import Logo from '@/components/Logo';
+import { Lock, ArrowLeft } from 'lucide-react';
+import { AuthShell, AuthHeader } from '@/pages/Login';
 import { toast } from 'sonner';
 import { passwordSchema } from '@/lib/validation';
 
@@ -19,11 +18,21 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) setHasSession(true);
+    // Only a genuine PASSWORD_RECOVERY event unlocks the editable form. A plain
+    // signed-in session must NOT expose the password reset fields.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setHasSession(true);
       else if (event !== 'INITIAL_SESSION') setHasSession(false);
     });
-    return () => subscription.unsubscribe();
+    // Fallback: a tokenless visit never fires PASSWORD_RECOVERY, so flip to the
+    // invalid-link state after a short grace period instead of spinning forever.
+    const timeout = setTimeout(() => {
+      setHasSession((prev) => (prev === null ? false : prev));
+    }, 2500);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -66,108 +75,93 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
-            'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
-        }}
-      />
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <Logo className="w-14 h-14 mx-auto mb-4" />
-          <h1 className="type-display text-[24px] text-ink">
-            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
-          </h1>
-          <p className="text-[11.5px] font-semibold mt-1.5 text-muted-2">Set your new password</p>
-        </div>
+    <AuthShell>
+      <AuthHeader subtitle={hasSession === false ? undefined : 'Set a new password'} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-ink text-center">Reset Password</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasSession === null ? (
-              <div className="flex justify-center py-6">
-                <LoadingSpinner size="small" />
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2 flex flex-col justify-center">
+        {hasSession === null ? (
+          <div className="flex flex-col items-center py-6">
+            <LoadingSpinner size="default" />
+            <p className="text-ink-muted text-[13px] mt-3">Verifying your reset link…</p>
+          </div>
+        ) : !hasSession ? (
+          <div className="text-center space-y-4 rise-in">
+            <p className="text-ink-muted text-[13px]">
+              This reset link is invalid or expired.
+            </p>
+            <Button asChild variant="volt" size="lg" className="w-full">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="password" className="text-ink mb-1 block">New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                />
               </div>
-            ) : !hasSession ? (
-              <div className="text-center space-y-4">
-                <p className="text-ink-muted">
-                  This reset link is invalid or expired.
-                </p>
-                <Button asChild variant="volt" className="w-full font-bold">
-                  <Link to="/forgot-password">Request a new link</Link>
-                </Button>
-              </div>
-            ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="password" className="text-ink">New Password</Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter new password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                    minLength={8}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="confirmPassword" className="text-ink">Confirm Password</Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                    minLength={8}
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                variant="volt"
-                size="lg"
-                className="w-full font-bold"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <LoadingSpinner size="small" className="mr-2" />
-                    Updating password...
-                  </>
-                ) : (
-                  'Reset Password'
-                )}
-              </Button>
-            </form>
-            )}
-
-            <div className="mt-6 text-center">
-              <p className="text-ink-muted">
-                Remember your password?{' '}
-                <Link to="/login" className="text-secondary hover:text-ink transition-colors font-medium inline-flex items-center py-3 px-2 -my-3 -mx-2">
-                  Sign in
-                </Link>
-              </p>
             </div>
-          </CardContent>
-        </Card>
+
+            <div>
+              <Label htmlFor="confirmPassword" className="text-ink mb-1 block">Confirm Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              variant="volt"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <LoadingSpinner size="small" className="mr-2" />
+                  Updating password…
+                </>
+              ) : (
+                'Reset Password'
+              )}
+            </Button>
+          </form>
+        )}
+
+        {hasSession !== null && (
+          <div className="flex items-center justify-center mt-3 px-0.5">
+            <Link
+              to="/login"
+              className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to sign in
+            </Link>
+          </div>
+        )}
       </div>
-    </div>
+    </AuthShell>
   );
 }

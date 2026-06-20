@@ -5,10 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,13 +22,23 @@ import { toast } from "sonner";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const APP_STATUSES = ["applied", "screening", "interview", "offer", "rejected"];
-const STATUS_COLORS = {
-  applied:    "bg-carb/10 text-carb border-carb/20",
-  screening:  "bg-violet/10 text-violet border-violet/20",
-  interview:  "bg-gold/10 text-gold border-gold/20",
-  offer:      "bg-leaf/10 text-leaf border-leaf/20",
-  rejected:   "bg-bad/10 text-bad border-bad/20",
-};
+// Pipeline status is a label, not a biometric — render every stage as a neutral
+// muted-glass chip. The count beside it carries the meaning; coral stays
+// reserved for the action (Add / Move), never for status garnish.
+const STATUS_CHIP = "glass-inset text-muted-2";
+
+// Native <input type=date> treatment. `color-scheme:dark` keeps the UA calendar
+// dropdown on the dark field; the global rule in index.css already mutes the
+// picker indicator toward --text-muted and routes the date text through our ink
+// voice (Manrope + tabular via the Input primitive). `is-empty` lets the unset
+// date read at placeholder weight. One shared const so every date field across
+// the Pipeline + Networking forms stays identical.
+const DATE_FIELD = "[color-scheme:dark]";
+const dateFieldClass = (value) => `${DATE_FIELD}${value ? "" : " is-empty"}`;
+
+// The page subtitle, surfaced both in the desktop header and the mobile-only
+// one-liner above the tabs — hoisted so the two never drift apart.
+const PAGE_SUBTITLE = "Track applications, networking, and job search momentum.";
 
 function TabQueryState({ isLoading, isError, onRetry }) {
   if (isLoading) {
@@ -62,23 +73,23 @@ function AppForm({ initial, onSave, onClose }) {
   });
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
-          <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
-        </div>
-        <div className="col-span-2">
-          <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
-          <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
-        </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
+        <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company name" />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
+        <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
-          <Input type="date" value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} className="text-sm" />
+          <Input type="date" className={dateFieldClass(form.date_applied)} value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Status</Label>
           <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-            <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
             </SelectContent>
@@ -87,20 +98,20 @@ function AppForm({ initial, onSave, onClose }) {
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
+        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
-          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up with recruiter" />
+          <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up" />
         </div>
-        <div className="col-span-2">
+        <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action date</Label>
-          <Input type="date" value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} className="text-sm" />
+          <Input type="date" className={dateFieldClass(form.next_action_date)} value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
         <Button variant="volt" size="lg" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
@@ -190,65 +201,88 @@ function PipelineTab() {
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
 
-      {/* Kanban columns */}
-      {!isLoading && !isError && apps.length > 0 && (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {ACTIVE_STATUSES.map(status => {
-          const col = apps.filter(a => a.status === status);
-          return (
-            <div key={status} className="space-y-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border-[0.5px] ${STATUS_COLORS[status]}`}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </span>
-                <span className="font-technical text-xs font-semibold text-muted-2">{col.length}</span>
+      {/* Pipeline — stacked single-column list grouped by status on mobile,
+          kanban columns at md+. Both share the same card via renderCard. */}
+      {!isLoading && !isError && apps.length > 0 && (() => {
+        const renderCard = (app, status) => (
+          <div key={app.id} className="p-4 glass glass-interactive group text-left">
+            <div className="flex items-start justify-between gap-1 mb-1">
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold text-ink truncate">{app.company}</p>
+                <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
               </div>
-              {col.map(app => (
-                <div key={app.id} className="p-3 glass glass-interactive group text-left">
-                  <div className="flex items-start justify-between gap-1 mb-1">
-                    <div className="min-w-0">
-                      <p className="text-xs font-extrabold text-ink truncate">{app.company}</p>
-                      <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
-                    </div>
-                    <div className="flex flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setEditing(app); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => setConfirmDelete(app.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  {app.date_applied && (
-                    <p className="font-technical text-xs font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
-                  )}
-                  <div className="flex gap-1">
-                    {STATUS_NEXT[status] && (
-                      <button
-                        onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                        className="text-xs font-bold flex items-center gap-0.5 px-1.5 -mx-1.5 py-2.5 -my-1 text-muted-2 hover:text-gold transition-colors"
-                      >
-                        <ArrowRight className="w-3 h-3" /> Move
-                      </button>
-                    )}
-                    <button
-                      onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
-                      aria-label="Reject"
-                      className="px-2.5 -mr-1 py-2.5 -my-1 text-muted-2 hover:text-bad transition-colors ml-auto"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  {app.next_action && (
-                    <p className="text-xs font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
-                  )}
-                </div>
-              ))}
+              <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+                <button onClick={() => { setEditing(app); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setConfirmDelete(app.id)} aria-label="Delete" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          );
-        })}
-      </div>
-      )}
+            {app.date_applied && (
+              <p className="font-technical text-xs font-semibold text-muted-2 mb-2">{format(parseISO(app.date_applied), "MMM d")}</p>
+            )}
+            <div className="flex gap-1 -mx-1.5">
+              {STATUS_NEXT[status] && (
+                <button
+                  onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
+                  className="text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] px-2.5 text-muted-2 hover:text-gold transition-colors"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" /> Move
+                </button>
+              )}
+              <button
+                onClick={() => advance.mutate({ id: app.id, status: "rejected" })}
+                aria-label="Reject"
+                className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad transition-colors ml-auto"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {app.next_action && (
+              <p className="text-xs font-semibold text-muted-2 mt-1.5 pt-1.5 border-t hairline truncate">{app.next_action}</p>
+            )}
+          </div>
+        );
+        const statusHeader = (status, count) => (
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_CHIP}`}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </span>
+            <span className="font-technical text-xs font-semibold text-ink">{count}</span>
+          </div>
+        );
+        return (
+          <>
+            {/* Mobile: stacked list, status chip as section header */}
+            <div className="space-y-5 md:hidden">
+              {ACTIVE_STATUSES.map(status => {
+                const col = apps.filter(a => a.status === status);
+                if (col.length === 0) return null;
+                return (
+                  <div key={status}>
+                    {statusHeader(status, col.length)}
+                    <div className="space-y-2">{col.map(app => renderCard(app, status))}</div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop: kanban columns */}
+            <div className="hidden md:grid md:grid-cols-4 gap-3">
+              {ACTIVE_STATUSES.map(status => {
+                const col = apps.filter(a => a.status === status);
+                return (
+                  <div key={status} className="space-y-2">
+                    {statusHeader(status, col.length)}
+                    {col.map(app => renderCard(app, status))}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
 
       {rejected.length > 0 && (
         <div>
@@ -258,7 +292,7 @@ function PipelineTab() {
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-xs font-semibold text-muted-2">{app.role}</span>
-                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
+                <button onClick={() => setConfirmDelete(app.id)} aria-label="Delete" className="ml-auto -mr-2.5 flex items-center justify-center min-h-[44px] min-w-[44px] opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -268,13 +302,15 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-            <Plus className="w-3.5 h-3.5" /> Add your first application
-          </Button>
+        <div className="mt-8">
+          <div className="w-full py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
+            <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
+            <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+              <Plus className="w-3.5 h-3.5" /> Add your first application
+            </Button>
+          </div>
         </div>
       )}
 
@@ -289,8 +325,11 @@ function PipelineTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this role's status, notes, and next action." : "Log a role you applied to and track it through the pipeline."}</DialogDescription>
+          </DialogHeader>
           <AppForm
             initial={editing}
             onSave={(form) => save.mutate(form)}
@@ -314,11 +353,11 @@ function NetworkForm({ initial, onSave, onClose }) {
   });
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
-          <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
-        </div>
+      <div>
+        <Label className="text-xs text-muted-2 mb-1.5 block">Person</Label>
+        <Input value={form.person_name} onChange={e => setForm(p => ({ ...p, person_name: e.target.value }))} placeholder="Name" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Company</Label>
           <Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Company" />
@@ -329,19 +368,19 @@ function NetworkForm({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Date</Label>
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="text-sm" />
+          <Input type="date" className={dateFieldClass(form.date)} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
         </div>
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Follow-up by</Label>
-          <Input type="date" value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} className="text-sm" />
+          <Input type="date" className={dateFieldClass(form.follow_up_date)} value={form.follow_up_date} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} />
         </div>
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
+        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
         <Button variant="volt" size="lg" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
@@ -436,11 +475,11 @@ function NetworkingTab() {
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
                 </div>
-                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
+                <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setConfirmDelete(contact.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
+                  <button onClick={() => setConfirmDelete(contact.id)} aria-label="Delete" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -477,8 +516,11 @@ function NetworkingTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="glass glass-interactive max-w-sm">
-          <DialogHeader><DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" sheetMinHeight="">
+          <DialogHeader>
+            <DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this contact and when to follow up." : "Log a conversation and set a follow-up reminder."}</DialogDescription>
+          </DialogHeader>
           <NetworkForm
             initial={editing}
             onSave={(form) => save.mutate(form)}
@@ -507,7 +549,7 @@ function CaptureTab() {
     <div className="space-y-6">
       <div>
         <h2 className="section-label mb-4 flex items-center gap-2">
-          <UserPlus className="w-3 h-3 text-gold" /> New Pipeline Event
+          <UserPlus className="w-3 h-3" /> New Pipeline Event
         </h2>
         <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
         <p className="text-xs font-semibold text-muted-2 mt-2 italic">Captured events sync to your pipeline.</p>
@@ -521,10 +563,10 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="glass p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-technical text-[10px] text-gold font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gold/10">
+                <span className="section-label font-technical text-muted-2 px-2 py-0.5 rounded-sm glass-inset">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-[10px] text-leaf font-bold uppercase tracking-wider">Processed</span>}
+                {log.processed && <span className="section-label text-leaf">Processed</span>}
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
@@ -553,11 +595,14 @@ export default function Career({ hideHeader }) {
               </div>
               <h1 className="type-display text-2xl">Career & Pipeline</h1>
             </div>
-            <p className="text-muted-2 font-semibold text-sm pl-11">Track applications, networking, and job search momentum.</p>
+            <p className="text-muted-2 font-semibold text-sm pl-11">{PAGE_SUBTITLE}</p>
           </header>
         )}
 
-        <Tabs defaultValue="pipeline">
+        {/* Mobile subtitle lives in the Layout chrome (SYS-05 pageSubtitle
+            override) — printing it again here stacked a redundant restated
+            one-liner under the dock-supplied title, so it's dropped. */}
+        <Tabs defaultValue="pipeline" className="rise-in">
           <TabsList className="mb-6">
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="networking">Networking</TabsTrigger>

@@ -65,6 +65,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   const today = getTodayString(profile?.timezone);
   const [showShopping, setShowShopping] = useState(false);
   const [openDay, setOpenDay] = useState(null);
+  const [showRationale, setShowRationale] = useState(false);
 
   // ONE source of truth for today's targets — the same hook the daily log rings
   // use (engine recovery-gated target → profile goal). Days the engine hasn't
@@ -214,22 +215,27 @@ export default function WeeklyPlanCard({ bare = false }) {
   const openDayData = openDay ? week.find((d) => d.date === openDay) : null;
   const creamiFoods = openDayData ? openDayData.rows.filter((r) => r.creami).map((r) => r.food_name) : [];
 
+  // In `bare` (sheet) mode we drop overflow-hidden so the Approve CTA's sticky
+  // footer can pin to the scrolling DialogContent. The rounded-corner clip it
+  // provides is only needed for the standalone glass card.
   return (
-    <div className={`${bare ? "" : "glass rounded-2xl"} overflow-hidden`}>
+    <div className={bare ? "" : "glass rounded-2xl overflow-hidden"}>
       {/* ── Header: what plan, what target ── */}
-      <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+      {/* pr-14 clears the DialogContent close X (absolute right-2 top-2, 44px)
+          so the calorie figure never sits under it when rendered as a sheet. */}
+      <div className="px-5 pt-4 pb-3 pr-14 flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-brand" />
-            <span className="text-[10px] uppercase tracking-[0.18em] text-brand font-bold">This Week's Plan</span>
+            <Cpu className="w-4 h-4 text-ink-muted" />
+            <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-bold">This Week's Plan</span>
             {isSunday && (
-              <span className="text-[9px] uppercase tracking-wider text-ok bg-ok/10 px-1.5 py-0.5 rounded-full font-bold">Sunday — plan ready</span>
+              <span className="text-[9px] uppercase tracking-wider text-ink-muted bg-charcoal-surface px-1.5 py-0.5 rounded-full font-bold">Sunday — plan ready</span>
             )}
           </div>
           <h3 className="text-lg font-bold text-ink leading-tight mt-1">{planLabel}</h3>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-2xl font-technical text-ink leading-none">
+          <div className="text-2xl font-technical text-gold leading-none">
             {calTarget ? Math.round(calTarget).toLocaleString() : "—"}
           </div>
           <div className="text-[9px] uppercase tracking-widest text-ink-muted font-bold mt-1">
@@ -242,11 +248,24 @@ export default function WeeklyPlanCard({ bare = false }) {
       {engineSet && rec && (
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-brand shrink-0" />
+            <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
             <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Recovery-Gated Deficit</span>
-            <span className="ml-auto font-technical text-sm text-brand">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
+            {/* This % is the PLANNED deficit magnitude — a derived ratio, not a
+                kcal figure, so it must NOT borrow the gold kcal hue (that hue is
+                owned by the calorie datum). Render it neutral (font-technical +
+                secondary ink). text-warn stays reserved for the gate chips below,
+                which are the actual recovery alarms. */}
+            <span className="ml-auto font-technical text-sm text-ink-secondary">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
           </div>
-          <p className="text-xs text-ink-secondary leading-relaxed">{rec.rationale}</p>
+          <p className={`text-xs text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
+          {rec.rationale && rec.rationale.length > 90 && (
+            <button
+              onClick={() => setShowRationale((s) => !s)}
+              className="glass-interactive mt-1 min-h-[44px] inline-flex items-center px-2 -mx-2 text-[10px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.98]"
+            >
+              {showRationale ? "Less" : "Why?"}
+            </button>
+          )}
           {(rec.gates || []).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {rec.gates.map((g) => (
@@ -269,29 +288,35 @@ export default function WeeklyPlanCard({ bare = false }) {
               <button
                 key={d.date}
                 onClick={() => setOpenDay(isOpen ? null : d.date)}
-                className={`rounded-lg px-1.5 py-2 text-center border transition-colors ${
-                  isOpen ? "border-brand bg-brand/[10%]"
-                  : isToday ? "border-brand/40 bg-brand/[6%]"
-                  : "border-charcoal-border bg-charcoal-surface/40 hover:border-white/[0.18]"
+                className={`glass-interactive rounded-lg px-1.5 py-3 text-center border active:scale-[0.97] active:bg-brand/15 ${
+                  isOpen ? "border-brand bg-brand/10"
+                  : isToday ? "border-brand/40 bg-brand/5"
+                  : "border-charcoal-border bg-charcoal-surface/40"
                 }`}
               >
-                <div className="text-[9px] uppercase tracking-wider text-ink-muted font-bold">{format(parseISO(d.date), "EEEEE")}</div>
-                <div className="flex justify-center my-1">
+                <div className="text-[11px] uppercase tracking-wider text-ink-muted font-bold leading-none">{format(parseISO(d.date), "EEEEE")}</div>
+                <div className="flex justify-center my-1.5">
                   {d.trainingDay
-                    ? <Dumbbell className="w-3 h-3 text-brand" />
+                    ? <Dumbbell className="w-3 h-3 text-viz-1" />
                     : <Moon className="w-3 h-3 text-ink-faint" />}
                 </div>
-                <div className="font-technical text-[11px] text-ink leading-none">{d.totals.calories || "—"}</div>
-                <div className="text-[8px] text-ink-faint font-technical leading-none mt-0.5">
-                  {d.rows.length ? `${Math.round(d.totals.carbs)}c` : "eaten"}
-                </div>
+                {/* One datum per cell: the gold kcal figure (carb grams live in the
+                    day-detail panel). Eaten-out days keep the gold figure and swap
+                    only the sub-line to a muted tag, so the gold/viz-3 hue mapping
+                    stays uniform across all 7 cells. */}
+                <div className="font-technical text-xs text-gold leading-none">{d.totals.calories || "—"}</div>
+                {!d.rows.length && (
+                  <div className="text-[9px] uppercase tracking-wider font-bold text-ink-faint leading-none mt-1">logged</div>
+                )}
               </button>
             );
           })}
         </div>
-        <div className="flex items-center justify-between mt-2 text-[10px] text-ink-muted">
-          <span className="flex items-center gap-1"><Dumbbell className="w-3 h-3 text-brand" /> {trainCount} lift · <Moon className="w-3 h-3" /> {7 - trainCount} rest</span>
-          <span className="font-technical">
+        <div className="flex items-center justify-between mt-2 text-[10px]">
+          <span className="flex items-center gap-1 text-ink-muted"><Dumbbell className="w-3 h-3 text-viz-1" /> {trainCount} lift · <Moon className="w-3 h-3 text-ink-faint" /> {7 - trainCount} rest</span>
+          {/* Carb-cycle range is the headline datum of the strip — promote it to
+              font-technical + secondary ink; the lift/rest tally stays muted. */}
+          <span className="font-technical text-ink-secondary">
             carb cycle {restDay && trainDay ? `${Math.round(restDay.totals.carbs)}–${Math.round(trainDay.totals.carbs)}g` : trainDay ? `${Math.round(trainDay.totals.carbs)}g` : "—"}
           </span>
         </div>
@@ -299,13 +324,13 @@ export default function WeeklyPlanCard({ bare = false }) {
 
       {/* ── Day detail: the actual foods, portions, and budget math for one day ── */}
       {openDayData && (
-        <div className="mx-5 mt-3 glass-inset">
+        <div className="mx-5 mt-3 glass-inset rise-in">
           <div className="flex items-center justify-between px-3.5 py-2.5 border-b hairline">
             <span className="text-xs font-bold text-ink">
               {format(parseISO(openDayData.date), "EEEE, MMM d")}
               <span className="ml-1.5 text-[10px] font-semibold text-ink-muted">{openDayData.trainingDay ? "lift day" : "rest day"}</span>
             </span>
-            <span className="font-technical text-[10.5px] text-ink-muted">
+            <span className="font-technical text-[10px] text-ink-muted">
               target {Math.round(openDayData.target).toLocaleString()}
               {openDayData.eatenCal > 0 && ` · eaten ${Math.round(openDayData.eatenCal).toLocaleString()}`}
               {` · plan fills ${openDayData.totals.calories.toLocaleString()}`}
@@ -320,7 +345,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             <>
               {MEAL_ORDER.filter((m) => openDayData.rows.some((r) => r.meal_type === m)).map((m) => (
                 <div key={m} className="px-3.5 py-2 border-b hairline last:border-b-0">
-                  <div className="text-[9px] uppercase tracking-widest text-ink-faint font-bold mb-1">{MEAL_LABEL[m]}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-ink-faint font-bold mb-1">{MEAL_LABEL[m]}</div>
                   {openDayData.rows.filter((r) => r.meal_type === m).map((r) => (
                     <div key={r.food_name} className="flex items-center gap-2 py-0.5 text-xs">
                       <span className="text-ink font-semibold flex-1 truncate">{r.food_name}</span>
@@ -378,9 +403,9 @@ export default function WeeklyPlanCard({ bare = false }) {
       {/* ── Grocery list: checkable while shopping, persists for the week ── */}
       <button
         onClick={() => setShowShopping((s) => !s)}
-        className="w-full px-5 py-3 mt-3 flex items-center gap-2 text-xs text-ink-secondary hover:text-ink transition-colors border-t hairline"
+        className="glass-interactive w-full px-5 py-3 mt-3 flex items-center gap-2 text-xs text-ink-secondary hover:text-ink active:scale-[0.99] border-t hairline"
       >
-        <ShoppingCart className="w-3.5 h-3.5 text-gold" />
+        <ShoppingCart className="w-3.5 h-3.5 text-ink-muted" />
         <span className="font-bold">Grocery list</span>
         <span className="font-technical text-ink-muted">
           {checkedCount > 0 ? `${checkedCount}/${shopping.items.length} · ` : ""}~${shopping.totalCost.toFixed(0)} / wk
@@ -388,18 +413,24 @@ export default function WeeklyPlanCard({ bare = false }) {
         {showShopping ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
       </button>
       {showShopping && (
-        <div className="px-5 pb-3 -mt-1">
-          <div className="glass-inset divide-y divide-[var(--color-border-soft)]">
+        <div className="px-5 pb-3 -mt-1 rise-in">
+          <div className="glass-inset divide-y divide-charcoal-borderSoft">
             {shopping.items.map((it) => {
               const done = !!checked[it.food];
               return (
                 <button
                   key={it.food}
                   onClick={() => toggleChecked(it.food)}
-                  className="w-full flex items-center gap-3 px-3.5 py-2 text-xs text-left hover:bg-white/[0.03] transition-colors"
+                  className="glass-interactive w-full flex items-center gap-3 min-h-[44px] px-3.5 py-3 text-xs text-left hover:bg-charcoal-surface active:scale-[0.99]"
                 >
-                  <span className={`shrink-0 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-leaf/60 bg-leaf/15 text-leaf" : "border-white/[0.18] text-transparent"}`}>
-                    <Check className="w-2.5 h-2.5" />
+                  {/* Done is a neutral checklist state, NOT a biometric reading —
+                      the ok/warn/bad/info spectrum (and leaf) is reserved for
+                      physiological data. A neutral ink check on the empty-track
+                      ring + the label's existing strikethrough carries "done"
+                      without borrowing a data hue. (ink-* tokens carry baked
+                      alpha, so /xx modifiers don't apply — use the solid token.) */}
+                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-track bg-track text-ink-faint" : "border-track text-transparent"}`}>
+                    <Check className="w-3 h-3" />
                   </span>
                   <span className={`font-semibold flex-1 truncate ${done ? "text-ink-faint line-through" : "text-ink"}`}>{it.food}</span>
                   <span className={`font-technical whitespace-nowrap ${done ? "text-ink-faint" : "text-ink-muted"}`}>
@@ -413,12 +444,17 @@ export default function WeeklyPlanCard({ bare = false }) {
         </div>
       )}
 
-      {/* ── Approve — primary action of the week view ── */}
-      <div className="px-5 pb-4 pt-1">
+      {/* ── Approve — primary action of the week view ──
+          Pinned to a sticky footer so it stays in the thumb zone instead of
+          living ~2000px down the scroll. Backed by the glass-sheet recipe (the
+          near-opaque --sheet-bg + blur) so scrolled content can't bleed through
+          behind the CTA — bg-[var(--color-bg)]/95 silently dropped its alpha
+          (Tailwind can't inject /95 into a raw var()), leaving no real backing. */}
+      <div className="sticky bottom-0 px-5 pb-4 pt-3 glass-sheet border-t hairline">
         <button
           onClick={() => approve.mutate()}
           disabled={approve.isPending || allRows.length === 0}
-          className="cta-coral w-full disabled:opacity-60"
+          className="cta-coral w-full disabled:opacity-60 active:scale-[0.98]"
         >
           {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
         </button>

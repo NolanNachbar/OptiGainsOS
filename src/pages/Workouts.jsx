@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
-import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, PersonStanding, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
+import { TabCount } from "@/components/ui/system";
+import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { parseISO } from "date-fns";
 
@@ -33,6 +34,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [libraryVisible, setLibraryVisible] = useState(5);
+  const [programView, setProgramView] = useState("active");
   const queryClient = useQueryClient();
 
   const { data: workouts = [], isLoading: workoutsLoading, error: workoutsError } = useQuery({
@@ -244,18 +246,27 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     workouts.map(w => w.folder).filter(Boolean)
   )].sort();
 
-  const filteredWorkouts = workouts.filter(workout => {
-    // Type/category filter
-    if (filter !== "all" && workout.focus !== filter) return false;
+  const isQaSeed = (w) => /qa\s*test\s*workout/i.test(w.title || "");
 
-    // Folder filter
-    if (folderFilter !== "all") {
-      if (folderFilter === "unfiled") return !workout.folder;
-      if (workout.folder !== folderFilter) return false;
-    }
+  const filteredWorkouts = workouts
+    .filter(workout => {
+      // Type/category filter
+      if (filter !== "all" && workout.focus !== filter) return false;
 
-    return true;
-  });
+      // Folder filter
+      if (folderFilter !== "all") {
+        if (folderFilter === "unfiled") return !workout.folder;
+        if (workout.folder !== folderFilter) return false;
+      }
+
+      return true;
+    })
+    // Demote the QA Test Workout seed to the bottom of the library so it never
+    // crowds the top of the list.
+    .sort((a, b) => (isQaSeed(a) ? 1 : 0) - (isQaSeed(b) ? 1 : 0));
+
+  const visibleWorkouts = filteredWorkouts.slice(0, libraryVisible);
+  const remainingWorkouts = filteredWorkouts.length - libraryVisible;
 
   if (!user) {
     navigate('/login');
@@ -295,9 +306,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 <Activity className="w-4 h-4 mr-2" />
                 Activity Log
                 {(workoutLogs.length + cardioSessions.length) > 0 && (
-                  <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {workoutLogs.length + cardioSessions.length}
-                  </span>
+                  <TabCount>{workoutLogs.length + cardioSessions.length}</TabCount>
                 )}
               </TabsTrigger>
               <TabsTrigger value="library">
@@ -312,49 +321,46 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           )}
 
           <TabsContent value="library">
-        <div className="glass mb-6 overflow-hidden">
-          <div className="px-4 pt-4 pb-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-ink shrink-0">Saved Workouts</h2>
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Filters button */}
-                <button
-                  onClick={() => setFilterOpen(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 min-h-11 rounded-full text-xs font-bold transition-all ${
-                    filter !== 'all' || folderFilter !== 'all'
-                      ? 'bg-brand text-[var(--color-action-dark)]'
-                      : 'glass-inset text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Filters
-                  {(filter !== 'all' || folderFilter !== 'all') && (
-                    <span className="bg-[var(--color-action-dark)]/20 text-[var(--color-action-dark)] text-xs font-bold px-1 rounded-full leading-none py-0.5">
-                      {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
-                    </span>
-                  )}
-                </button>
+        <div className="mb-6">
+          <div className="pb-2">
+            <div className="flex items-center gap-2">
+              {/* Filters — Button to match Import; coral-tinted only when active */}
+              <Button
+                variant={filter !== 'all' || folderFilter !== 'all' ? 'coralGhost' : 'dim'}
+                size="lg"
+                className="px-3"
+                onClick={() => setFilterOpen(v => !v)}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Filters
+                {(filter !== 'all' || folderFilter !== 'all') && (
+                  <span className="bg-brand/20 text-brand text-[11px] font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
+                    {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+              <div className="ml-auto flex items-center gap-1">
                 <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
-                  <Upload className="w-3.5 h-3.5 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Import</span>
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  Import
                 </Button>
-                <Button variant="dim" size="lg" className="w-11 px-0" onClick={() => setShowFormatGuide(true)} title="Import format guide">
+                <Button variant="ghost" size="icon" className="h-11 w-11 text-ink-muted hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import file format guide" title="Import file format guide">
                   <HelpCircle className="w-4 h-4" />
                 </Button>
-                <input
-                  id="import-workout-input"
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={handleImportFile}
-                />
               </div>
+              <input
+                id="import-workout-input"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImportFile}
+              />
             </div>
           </div>
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="px-4 pb-4 border-t hairline pt-3 space-y-3">
+            <div className="pb-4 border-t hairline pt-3 space-y-3">
               <div>
                 <p className="section-label mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -367,9 +373,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
                         filter === f.value
-                          ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                          ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                           : 'glass-inset text-ink-muted hover:text-ink'
                       }`}
                     >
@@ -401,13 +407,13 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-2 py-1 rounded-full text-xs font-semibold border border-brand/30 glass-inset text-ink outline-none w-28"
+                              className="px-3 h-11 rounded-full text-xs font-semibold border border-brand/30 glass-inset text-ink outline-none w-28"
                             />
-                            <button type="submit" className="p-1 text-leaf hover:text-leaf">
-                              <Check className="w-3.5 h-3.5" />
+                            <button type="submit" aria-label="Save folder name" className="h-11 w-11 flex items-center justify-center rounded-full text-leaf hover:text-leaf active:scale-[0.97]">
+                              <Check className="w-4 h-4" />
                             </button>
-                            <button type="button" onClick={() => setRenamingFolder(null)} className="p-1 text-ink-muted hover:text-ink-muted">
-                              <X className="w-3.5 h-3.5" />
+                            <button type="button" onClick={() => setRenamingFolder(null)} aria-label="Cancel rename" className="h-11 w-11 flex items-center justify-center rounded-full text-ink-muted hover:text-ink active:scale-[0.97]">
+                              <X className="w-4 h-4" />
                             </button>
                           </form>
                         );
@@ -416,9 +422,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                         <div key={f} className="flex items-center gap-0.5 group">
                           <button
                             onClick={() => setFolderFilter(f)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                            className={`flex items-center gap-1 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
                               folderFilter === f
-                                ? 'bg-brand text-[var(--color-action-dark)] font-bold'
+                                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                                 : 'glass-inset text-ink-muted hover:text-ink'
                             }`}
                           >
@@ -428,10 +434,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                           {f !== 'all' && f !== 'unfiled' && (
                             <button
                               onClick={() => { setRenamingFolder(f); setRenameValue(f); }}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-ink-muted hover:text-brand transition-opacity"
+                              className="h-11 w-11 flex items-center justify-center rounded-full text-ink-muted hover:text-brand transition-colors active:scale-[0.97] md:opacity-0 md:group-hover:opacity-100"
+                              aria-label={`Rename folder ${f}`}
                               title="Rename folder"
                             >
-                              <Pencil className="w-3 h-3" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
@@ -442,33 +449,34 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               )}
             </div>
           )}
-          <div className="px-4 pb-6">
-            <div className="pr-2">
+          <div className="pb-[calc(var(--dock-clearance)+72px)] md:pb-6">
+            <div>
               {workoutsLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-28 rounded-xl animate-pulse bg-charcoal-elevated" />
+                    <div key={i} className="h-28 rounded-xl tile pulse-loop" />
                   ))}
                 </div>
               ) : filteredWorkouts.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredWorkouts.slice(0, libraryVisible).map((workout) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                    {visibleWorkouts.map((workout, i) => (
                       <WorkoutCard
                         key={workout.id}
                         workout={workout}
                         userId={user.id}
+                        index={i}
                         onEdit={handleEdit}
                         onClone={handleClone}
                         onDelete={handleDelete}
                       />
                     ))}
                   </div>
-                  {filteredWorkouts.length > libraryVisible && (
+                  {remainingWorkouts > 0 && (
                     <div className="flex justify-center mt-6">
-                      <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setLibraryVisible(v => v + 8)}>
-                        Show more
-                        <span className="ml-1.5 text-ink-faint">{filteredWorkouts.length - libraryVisible}</span>
+                      <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setLibraryVisible(v => v + 8)}>
+                        Show <span className="font-technical mx-1">{Math.min(8, remainingWorkouts)}</span> more
+                        <span className="ml-1.5 text-ink-faint font-technical">· {remainingWorkouts} left</span>
                       </Button>
                     </div>
                   )}
@@ -513,98 +521,118 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               className="hidden"
               onChange={handleImportProgram}
             />
-            <Tabs defaultValue="active" className="w-full">
-              <div className="flex items-center justify-between gap-2 mb-6">
-                <TabsList>
-                  <TabsTrigger value="active">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Active
-                    {activeEnrollments.length > 0 && (
-                      <span className="ml-1.5 bg-brand/10 text-brand text-xs font-bold px-1.5 py-0.5 rounded-full">
-                        {activeEnrollments.length}
-                      </span>
+            {/* Single nav row: segmented filter pills + a compact Create action,
+                replacing the old nested Tabs + floating coral bar (3 stacked
+                nav rows collapsed to 1). */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex gap-2 min-w-0 overflow-x-auto">
+                {[
+                  { value: 'active', label: 'Active', icon: TrendingUp, count: activeEnrollments.length },
+                  { value: 'my-programs', label: 'My Programs', icon: BookOpen, count: null },
+                ].map(({ value, label, icon: Icon, count }) => (
+                  <button
+                    key={value}
+                    onClick={() => setProgramView(value)}
+                    aria-pressed={programView === value}
+                    className={`flex items-center gap-1.5 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
+                      programView === value
+                        ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
+                        : 'glass-inset text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                    {count > 0 && (
+                      <span className="font-technical text-[11px] opacity-70">{count}</span>
                     )}
-                  </TabsTrigger>
-                  <TabsTrigger value="my-programs">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    My Programs
-                  </TabsTrigger>
-                </TabsList>
-                <Link to="/program-builder" className="shrink-0">
-                  <Button variant="primary" size="lg">
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Create Program</span>
-                    <span className="sm:hidden">Create</span>
-                  </Button>
-                </Link>
+                  </button>
+                ))}
               </div>
+              {/* Compact coral create — sits in the nav row, not floating. */}
+              <Link to="/program-builder" className="ml-auto shrink-0">
+                <Button variant="primary" size="icon" className="h-11 w-11 rounded-full" aria-label="Create program">
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </Link>
+            </div>
 
-              <TabsContent value="active">
-                {enrollmentsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map(i => (
-                      <div key={i} className="h-40 rounded-xl animate-pulse bg-charcoal-elevated" />
-                    ))}
-                  </div>
-                ) : activeEnrollments.length === 0 ? (
-                  <ProgramsEmptyState
-                    icon={TrendingUp}
-                    title="No active programs"
-                    subtitle="Start a program to track your progress with auto-progression"
-                  />
-                ) : (
-                  <div className="space-y-6">
+            {programView === 'active' && (
+              enrollmentsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="h-40 rounded-xl tile pulse-loop" />
+                  ))}
+                </div>
+              ) : activeEnrollments.length === 0 && pastEnrollments.length === 0 ? (
+                <ProgramsEmptyState
+                  icon={TrendingUp}
+                  title="No active programs"
+                  subtitle="Start a program to track your progress with auto-progression"
+                />
+              ) : (
+                <div className="space-y-6 pb-[var(--dock-clearance)] md:pb-6">
+                  {activeEnrollments.length === 0 ? (
+                    <ProgramsEmptyState
+                      icon={TrendingUp}
+                      title="No active programs"
+                      subtitle="Start a program to track your progress with auto-progression"
+                    />
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {activeEnrollments.map((enrollment) => (
+                      {activeEnrollments.map((enrollment, i) => (
                         <ProgramCard
                           key={enrollment.id}
                           program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
                           enrollment={enrollment}
+                          index={i}
                         />
                       ))}
                     </div>
-                    {pastEnrollments.length > 0 && (
-                      <div>
-                        <h3 className="section-label mb-3">
-                          Past Programs
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {pastEnrollments.map((enrollment) => (
-                            <ProgramCard
-                              key={enrollment.id}
-                              program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
-                              enrollment={enrollment}
-                            />
-                          ))}
-                        </div>
+                  )}
+                  {/* Past Programs is its own section, no longer nested inside
+                      the active-cards branch. */}
+                  {pastEnrollments.length > 0 && (
+                    <div>
+                      <h3 className="section-label mb-3">
+                        Past Programs
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pastEnrollments.map((enrollment, i) => (
+                          <ProgramCard
+                            key={enrollment.id}
+                            program={enrollment.program || { id: enrollment.program_id, title: "Program" }}
+                            enrollment={enrollment}
+                            index={i}
+                          />
+                        ))}
                       </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
+                    </div>
+                  )}
+                </div>
+              )
+            )}
 
-              <TabsContent value="my-programs">
-                {programsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map(i => (
-                      <div key={i} className="h-40 rounded-xl animate-pulse bg-charcoal-elevated" />
-                    ))}
-                  </div>
-                ) : programs.length === 0 ? (
-                  <ProgramsEmptyState
-                    icon={BookOpen}
-                    title="No programs yet"
-                    subtitle="Create a multi-week program with exercises, progression rules, and more"
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {programs.map((program) => (
-                      <ProgramCard key={program.id} program={program} />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+            {programView === 'my-programs' && (
+              programsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="h-40 rounded-xl tile pulse-loop" />
+                  ))}
+                </div>
+              ) : programs.length === 0 ? (
+                <ProgramsEmptyState
+                  icon={BookOpen}
+                  title="No programs yet"
+                  subtitle="Create a multi-week program with exercises, progression rules, and more"
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-[var(--dock-clearance)] md:pb-6">
+                  {programs.map((program, i) => (
+                    <ProgramCard key={program.id} program={program} index={i} />
+                  ))}
+                </div>
+              )
+            )}
           </TabsContent>
 
           <TabsContent value="activity-log">
@@ -759,31 +787,61 @@ function groupByDay(entries) {
   return Array.from(groups.entries()).map(([label, entries]) => ({ label, entries }));
 }
 
-// ─── Stat block ──────────────────────────────────────────────────────────────
-
-function StatBlock({ label, value, bordered }) {
-  return (
-    <div className={`flex-1 flex flex-col ${bordered ? 'border-l hairline pl-4' : ''}`}>
-      <span className="section-label">{label}</span>
-      <span className="font-technical font-bold text-[17px] text-ink mt-1 whitespace-nowrap">{value ?? '—'}</span>
-    </div>
-  );
-}
-
 // ─── Entry cards ─────────────────────────────────────────────────────────────
 
 function StrengthEntryCard({ entry }) {
-  return (
-    <div
-      className="group relative overflow-hidden tile tile-interactive p-4"
-    >
-      <h4 className="text-[15px] font-semibold text-ink mb-3">{entry.title}</h4>
-      <div className="flex">
-        <StatBlock label="Exercises" value={entry.exerciseCount} />
-        {entry.sets > 0 && <StatBlock label="Sets" value={entry.sets} bordered />}
-        {entry.volume && <StatBlock label="Volume" value={`${Math.round(entry.volume).toLocaleString()} lbs`} bordered />}
-        {entry.duration && <StatBlock label="Duration" value={entry.duration} bordered />}
+  // Mirror CardioEntryCard geometry: a 36px teal icon-chip header + a
+  // position-driven stat grid (4-up) sharing the same gap/padding/divider
+  // modulo, so strength and cardio rows read as one family.
+  const cells = [{ label: 'Exercises', value: entry.exerciseCount }];
+  if (entry.sets > 0) cells.push({ label: 'Sets', value: entry.sets });
+  if (entry.volume) cells.push({ label: 'Volume', value: Math.round(entry.volume).toLocaleString(), suffix: 'lbs' });
+  if (entry.duration) cells.push({ label: 'Duration', value: entry.duration });
+
+  const body = (
+    <>
+      <div className="flex items-start p-4 pb-2 gap-3">
+        <div className="w-9 h-9 rounded-full bg-teal/15 flex items-center justify-center shrink-0 text-teal">
+          <Dumbbell className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
+        </div>
       </div>
+      {/* 2-up on phones, 4-up from sm. Dividers derive from responsive column
+          count: every cell carries a left hairline, then row-starts strip it
+          per breakpoint (1st of each 2-col row on mobile, each 4-col row on sm). */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 px-4 pb-4">
+        {cells.map((cell) => (
+          <div
+            key={cell.label}
+            className="flex flex-col border-l hairline pl-4 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-4 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
+          >
+            <span className="section-label text-ink-faint">{cell.label}</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="font-technical font-bold text-[17px] text-ink whitespace-nowrap">{cell.value}</span>
+              {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+  // Only link when the source workout still exists; otherwise render a static,
+  // de-emphasised tile so it doesn't read as a tappable button.
+  if (entry.workoutId) {
+    return (
+      <Link
+        to={`/workout-detail?id=${entry.workoutId}`}
+        className="block relative overflow-hidden tile tile-interactive transition-transform active:scale-[0.99]"
+      >
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <div className="relative overflow-hidden tile">
+      {body}
     </div>
   );
 }
@@ -791,7 +849,7 @@ function StrengthEntryCard({ entry }) {
 function ActivityTypeIcon({ type, className = "w-4 h-4" }) {
   const props = { className };
   switch (type) {
-    case 'running':    return <PersonStanding {...props} />;
+    case 'running':    return <Footprints {...props} />;
     case 'swimming':   return <Waves {...props} />;
     case 'cycling':    return <Bike {...props} />;
     case 'walking':    return <Footprints {...props} />;
@@ -811,9 +869,18 @@ function CardioEntryCard({ entry }) {
   const duration = fmtDuration(entry.movingTime);
   const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
+  // Build only the cells we have, then drive dividers off grid position so a
+  // 3-col grid never leaves orphaned left hairlines on wrapped rows.
+  const cells = [];
+  if (distance) cells.push({ label: 'Distance', value: distance });
+  if (duration) cells.push({ label: 'Time', value: duration });
+  if (pace) cells.push({ label: 'Pace', value: pace });
+  if (entry.avgHeartrate) cells.push({ label: 'Avg HR', value: Math.round(entry.avgHeartrate), suffix: 'bpm' });
+  if (entry.aerobicEffect != null) cells.push({ label: 'Aerobic Effect', value: Number(entry.aerobicEffect).toFixed(1) });
+
   return (
-    <div className="tile tile-interactive">
-      <div className="flex items-start p-4 pb-3 gap-3">
+    <div className="tile">
+      <div className="flex items-start p-4 pb-2 gap-3">
         <div className="w-9 h-9 rounded-full bg-carb/15 flex items-center justify-center shrink-0 text-carb">
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
         </div>
@@ -823,26 +890,22 @@ function CardioEntryCard({ entry }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap px-4 pb-4 gap-y-2">
-        {distance && <StatBlock label="Distance" value={distance} />}
-        {duration && <StatBlock label="Time" value={duration} bordered={!!distance} />}
-        {pace && <StatBlock label="Pace" value={pace} bordered />}
-        {entry.avgHeartrate && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace) ? 'border-l hairline pl-4' : ''}`}>
-            <span className="section-label">Avg HR</span>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-technical font-bold text-[17px] text-ink">{Math.round(entry.avgHeartrate)}</span>
-              <span className="text-[10px] text-ink-faint uppercase">bpm</span>
+      {cells.length > 0 && (
+        <div className="grid grid-cols-3 gap-y-3 px-4 pb-4">
+          {cells.map((cell, i) => (
+            <div
+              key={cell.label}
+              className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
+            >
+              <span className="section-label text-ink-faint">{cell.label}</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="font-technical font-bold text-[17px] text-ink">{cell.value}</span>
+                {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
+              </div>
             </div>
-          </div>
-        )}
-        {entry.aerobicEffect != null && (
-          <div className={`flex-1 flex flex-col ${(distance || duration || pace || entry.avgHeartrate) ? 'border-l hairline pl-4' : ''}`}>
-            <span className="section-label">Aerobic Effect</span>
-            <span className="font-technical font-bold text-[17px] text-ink mt-1">{Number(entry.aerobicEffect).toFixed(1)}</span>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -851,14 +914,14 @@ function CardioEntryCard({ entry }) {
 
 function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="h-20 rounded-xl animate-pulse bg-charcoal-elevated" />
+        <div className="h-20 rounded-[20px] tile pulse-loop" />
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-28 rounded-xl animate-pulse bg-charcoal-elevated" />
+          <div key={i} className="h-28 rounded-xl tile pulse-loop" />
         ))}
       </div>
     );
@@ -889,6 +952,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
     return {
       type: 'strength',
       id: log.id,
+      workoutId: log.workout_id || null,
       date: log.log_date ? parseISO(log.log_date) : new Date(log.created_at),
       title: workout?.title || 'Workout',
       exerciseCount: logExercises.length,
@@ -937,38 +1001,45 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
 
   return (
     <>
-      {/* Weekly Summary */}
-      <div className="grid grid-cols-4 gap-0 p-4 surface mb-6 divide-x divide-[var(--color-border)]">
-        <div className="flex flex-col pr-4">
-          <span className="section-label mb-1.5">This Week</span>
-          <span className="font-technical font-extrabold text-xl text-teal">{thisWeek.length}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col px-4">
-          <span className="section-label mb-1.5">Strength</span>
-          <span className="font-technical font-bold text-xl text-teal">{weekStrength}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col px-4">
-          <span className="section-label mb-1.5">Cardio</span>
-          <span className="font-technical font-bold text-xl text-carb">{weekCardio}<span className="text-[11px] font-semibold text-ink-faint ml-1">sess</span></span>
-        </div>
-        <div className="flex flex-col pl-4">
-          <span className="section-label mb-1.5">Distance</span>
-          <span className="font-technical font-bold text-xl text-carb">
-            {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[11px] font-semibold text-ink-faint ml-1">mi</span>
+      {/* Weekly Summary — elevated above the tile feed so it reads as a header,
+          not just another entry. */}
+      <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-[20px] mb-4">
+        {/* Hero: This Week */}
+        <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
+          <span className="section-label mb-1">This Week</span>
+          <span className="hero-metric text-[34px] text-ink">
+            {thisWeek.length}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">sess</span>
           </span>
+        </div>
+        {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
+        <div className="flex-1 grid grid-cols-3 gap-3">
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Strength</span>
+            <span className="font-technical font-bold text-[17px] text-ink">{weekStrength}</span>
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Cardio</span>
+            <span className="font-technical font-bold text-[17px] text-carb">{weekCardio}</span>
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="section-label mb-0.5">Distance</span>
+            <span className="font-technical font-bold text-[17px] text-carb">
+              {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">mi</span>
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Filter pills */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-4">
         {[['all', 'All'], ['strength', 'Strength'], ['cardio', 'Cardio']].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setFilter(val)}
             className={[
-              'px-3.5 py-1.5 min-h-[44px] rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] transition-all',
+              'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97]',
               filter === val
-                ? 'bg-brand text-[var(--color-action-dark)]'
+                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                 : 'glass-inset text-ink-muted hover:text-ink',
             ].join(' ')}
           >
@@ -991,11 +1062,15 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {grouped.map(({ label, entries }, i) => (
-            <section key={label} className={i > 0 ? 'border-t hairline pt-6' : ''}>
-              <h3 className="section-label mb-3">{label}</h3>
-              <div className="space-y-3">
+            // Stagger the first few day groups so the feed cascades in on
+            // var(--ease) rather than landing all at once.
+            <section key={label} className={`${['rise-in', 'rise-in-2', 'rise-in-3'][Math.min(i, 2)]} ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
+              {/* Day header — its own tier (brighter) so it reads above the
+                  in-card stat captions that share .section-label. */}
+              <h3 className="section-label text-ink-secondary mb-2.5">{label}</h3>
+              <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
                     <StrengthEntryCard key={entry.id} entry={entry} />
@@ -1011,9 +1086,9 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           ))}
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setVisibleCount(v => v + 12)}>
+              <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setVisibleCount(v => v + 8)}>
                 Load more
-                <span className="ml-1.5 text-ink-faint">{allEntries.length - visibleCount}</span>
+                <span className="ml-1.5 text-ink-faint font-technical">{allEntries.length - visibleCount}</span>
               </Button>
             </div>
           )}

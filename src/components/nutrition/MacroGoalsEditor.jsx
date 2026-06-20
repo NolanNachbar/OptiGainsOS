@@ -53,6 +53,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_protein_goal,
       bar: 'bg-coral',
       text: 'text-coral',
+      thumb: 'var(--hue-coral)',
       onSlide: handleProteinSlider,
       max: Math.max(proteinPct, 100 - carbsPct),
     },
@@ -62,6 +63,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_carbs_goal,
       bar: 'bg-carb',
       text: 'text-carb',
+      thumb: 'var(--hue-blue)',
       onSlide: handleCarbsSlider,
       max: Math.max(carbsPct, 100 - proteinPct),
     },
@@ -71,55 +73,99 @@ export function MacroGoalsEditor({ values, onChange }) {
       g: values.daily_fats_goal,
       bar: 'bg-fat',
       text: 'text-fat',
+      thumb: 'var(--hue-yellow)',
       onSlide: null,
     },
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Calories */}
+    <div className="space-y-4">
+      {/* System extension (genuine gap): native <input type=range> has no token
+          for thumb sizing. Mobile law requires a >=44px touch zone with a
+          finger-sized thumb. The range track stays 1.5px (visual), the wrapper
+          above provides the 44px hit area, and these rules size the draggable
+          thumb to 24px. The thumb hue is DATA, not decoration: each slider passes
+          its datum hue via the --thumb custom property (protein=coral, carbs=blue)
+          rather than always painting the coral action color. Falls back to coral
+          if unset. Scoped to .og-macro-range so it can't leak onto other ranges. */}
+      <style>{`
+        .og-macro-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: var(--thumb, var(--color-brand));
+          border: 2px solid var(--color-bg);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+          cursor: pointer;
+        }
+        .og-macro-range::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: var(--thumb, var(--color-brand));
+          border: 2px solid var(--color-bg);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+          cursor: pointer;
+        }
+      `}</style>
+      {/* Calories — this input IS the FoodTracker phase-card hero number (the
+          big gold kcal/day figure). Labelled "Calorie target" + a caption that
+          names the tie so the editor reads as driving the hero, not a sibling
+          field. kcal owns GOLD (SYS-09d): the unit cue carries the gold hue. */}
       <div>
-        <Label>Daily Calories</Label>
+        <div className="flex items-baseline justify-between gap-2">
+          <Label htmlFor="macro-calorie-target">Calorie target</Label>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-gold/80">kcal/day</span>
+        </div>
         <Input
+          id="macro-calorie-target"
           type="number"
+          inputMode="numeric"
           value={values.daily_calorie_goal}
           onChange={(e) => handleCaloriesChange(e.target.value)}
           min="0"
-          className="mt-1"
+          className="mt-1 font-technical text-gold"
         />
+        <p className="mt-1 text-[11px] text-ink-faint">Drives the daily calorie goal shown on Fuel.</p>
       </div>
 
-      {/* Stacked colour bar */}
-      <div className="h-2.5 w-full rounded-full overflow-hidden flex">
-        <div className="bg-coral h-full transition-all duration-150" style={{ width: `${proteinPct}%` }} />
-        <div className="bg-carb h-full transition-all duration-150" style={{ width: `${carbsPct}%` }} />
-        <div className="bg-fat h-full transition-all duration-150" style={{ width: `${fatPct}%` }} />
+      {/* Stacked colour bar — segment fills animate width only, on the system
+          easing within the 180–320ms band (transition-all/150 was off-system). */}
+      <div className="h-2.5 w-full rounded-full overflow-hidden flex bg-track">
+        <div className="bg-coral h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${proteinPct}%` }} />
+        <div className="bg-carb h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${carbsPct}%` }} />
+        <div className="bg-fat h-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${fatPct}%` }} />
       </div>
 
       {/* Sliders */}
       <div className="space-y-4">
-        {macros.map(({ label, pct, g, bar, text, onSlide, max }) => (
+        {macros.map(({ label, pct, g, bar, text, thumb, onSlide, max }) => (
           <div key={label}>
             <div className="flex items-center justify-between mb-1.5">
               <span className={`text-sm font-semibold ${text}`}>{label}</span>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-ink-muted text-xs">{pct}%</span>
-                <span className={`font-bold tabular-nums ${text}`}>{g}g</span>
+                <span className="text-ink-muted text-xs font-technical">{pct}%</span>
+                <span className={`font-bold font-technical ${text}`}>{g}g</span>
                 {!onSlide && <span className="text-[10px] text-ink-muted uppercase tracking-wider">auto</span>}
               </div>
             </div>
             {onSlide ? (
-              <input
-                type="range"
-                min={0}
-                max={max}
-                value={pct}
-                onChange={(e) => onSlide(parseInt(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-charcoal-elevated"
-              />
+              <div className="flex items-center min-h-[44px]">
+                <input
+                  type="range"
+                  min={0}
+                  max={max}
+                  value={pct}
+                  onChange={(e) => onSlide(parseInt(e.target.value))}
+                  style={{ '--thumb': thumb }}
+                  className="og-macro-range w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand bg-track"
+                />
+              </div>
             ) : (
-              <div className="h-1.5 w-full rounded-full bg-charcoal-elevated overflow-hidden">
-                <div className={`${bar} h-full rounded-full transition-all duration-150`} style={{ width: `${pct}%` }} />
+              <div className="h-1.5 w-full rounded-full bg-track overflow-hidden">
+                <div className={`${bar} h-full rounded-full transition-[width] duration-200 ease-[var(--ease)]`} style={{ width: `${pct}%` }} />
               </div>
             )}
           </div>

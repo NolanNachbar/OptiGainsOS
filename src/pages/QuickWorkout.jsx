@@ -8,10 +8,11 @@ import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { Dumbbell, Pencil, Check, Cpu } from "lucide-react";
+import { Dumbbell, Pencil, Check, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
@@ -81,6 +82,13 @@ export default function QuickWorkout() {
   // or run/cardio keywords in the (editable) title.
   const isRunCardio =
     prescribed?.modality === "run" || /run|cardio|interval/i.test(workoutTitle);
+  // The Layout chrome already prints "Quick Workout" + today's date on mobile,
+  // so a default-titled session needs no second body title (that was the
+  // top-of-page duplicate). Only render the mobile body title when the session
+  // is customized — a prescribed session or a user-edited title — so the rename
+  // affordance is still reachable when the title actually carries information.
+  const defaultTitle = `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`;
+  const isCustomTitle = !!prescribed || workoutTitle !== defaultTitle;
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
@@ -92,11 +100,23 @@ export default function QuickWorkout() {
   const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
 
+  // Rest timer — mirrors WorkoutDetail: an absolute end timestamp ticked every
+  // 500ms so it stays accurate across backgrounding. Without this, the rest
+  // surface in WorkoutLoggingHeader stays dead on /quick-workout.
+  const [restTimer, setRestTimer] = useState(null);
+  const [restDuration, setRestDuration] = useState(90);
+  const restTimerRef = useRef(null);
+  const restTimerEndRef = useRef(null);
+
   const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
 
   const { profile } = useProfile();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
+  // On the empty canvas the insight starts as a compact coach chip; tapping it
+  // expands to the full PreSessionInsightCard (accept/dismiss) rather than
+  // blind-accepting the suggestion.
+  const [insightExpanded, setInsightExpanded] = useState(false);
   // exercise name → suggested weight from accepted pre-session insight
   const [insightSuggestions, setInsightSuggestions] = useState({});
 
@@ -203,6 +223,36 @@ export default function QuickWorkout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises]);
 
+  // Rest timer tick — single interval, absolute end timestamp (mirrors WorkoutDetail).
+  useEffect(() => {
+    const tick = () => {
+      if (restTimerEndRef.current === null) return;
+      const remaining = Math.max(0, Math.ceil((restTimerEndRef.current - Date.now()) / 1000));
+      setRestTimer(remaining);
+      if (remaining <= 0) restTimerEndRef.current = null;
+    };
+    restTimerRef.current = setInterval(tick, 500);
+    return () => clearInterval(restTimerRef.current);
+  }, []);
+
+  const startRestTimer = (duration) => {
+    setRestDuration(duration);
+    restTimerEndRef.current = Date.now() + duration * 1000;
+    setRestTimer(duration);
+  };
+
+  const skipRestTimer = () => {
+    restTimerEndRef.current = null;
+    setRestTimer(null);
+  };
+
+  const addRestTime = (seconds) => {
+    if (restTimerEndRef.current !== null) {
+      restTimerEndRef.current += seconds * 1000;
+      setRestDuration((prev) => prev + seconds);
+    }
+  };
+
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
@@ -287,9 +337,15 @@ export default function QuickWorkout() {
         }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending}
+        startTime={startTime}
+        canFinish={exercises.length > 0}
+        restTimer={restTimer}
+        restDuration={restDuration}
+        onSkipRest={skipRestTimer}
+        onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-40 lg:pb-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--dock-clearance)+24px+env(safe-area-inset-bottom))] lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -326,40 +382,119 @@ export default function QuickWorkout() {
           )}
         </div>
 
+        {/* Mobile session title / rename — the desktop block above (the
+            IntersectionObserver target) is hidden on phones. The Layout chrome
+            already prints "Quick Workout" + today's date, so a DEFAULT-titled
+            session shows no duplicate body title — only a quiet "Rename
+            session" affordance so the user can still customize it. A customized
+            or prescribed session shows the real title (which the chrome can't
+            convey) with the same 44px Pencil/Check toggle. */}
+        {editingTitle ? (
+          <div className="mb-6 lg:hidden">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
+              <Input
+                autoFocus
+                value={workoutTitle}
+                onChange={(e) => setWorkoutTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
+                className="type-display text-xl min-h-[44px] flex-1"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Save workout title"
+                onClick={() => setEditingTitle(false)}
+                className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
+              >
+                <Check className="w-4 h-4 text-teal" />
+              </Button>
+            </div>
+          </div>
+        ) : isCustomTitle ? (
+          <div className="mb-6 lg:hidden">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-ink-muted shrink-0" />
+              <h1 className="type-display text-xl flex-1 min-w-0 truncate">{workoutTitle}</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Edit workout title"
+                onClick={() => setEditingTitle(true)}
+                className="min-h-[44px] min-w-[44px] shrink-0 text-ink-muted hover:text-ink"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+            {prescribed && (
+              <p className="text-xs font-semibold text-ink-muted mt-1">
+                Logging the engine's prescribed session — targets pre-filled
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="mb-3 lg:hidden flex items-center gap-2 min-w-0">
+            <p className="text-sm font-semibold text-ink-faint flex-1 min-w-0 truncate">{workoutTitle}</p>
+            <button
+              type="button"
+              aria-label="Rename session"
+              onClick={() => setEditingTitle(true)}
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 shrink-0 text-ink-faint hover:text-ink touch-manipulation"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {isRunCardio && <VdotZonesCard className="mb-6" />}
 
         {/* Engine prescription banner */}
         {prescribed && (
           <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-md bg-teal/15 text-teal flex items-center justify-center flex-shrink-0 not-italic">
-              <Cpu className="w-3.5 h-3.5" />
-            </i>
+            <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
+              <Brain className="w-3.5 h-3.5 text-teal" />
+            </div>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">
               Loaded from <span className="text-ink font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
             </span>
           </div>
         )}
 
-        {/* Pre-session insight card (Phase 2+) — suppressed when the engine has
-            already prescribed loads, to avoid two coaches contradicting. */}
+        {/* Pre-session insight (Phase 2+) — suppressed when the engine has
+            already prescribed loads, to avoid two coaches contradicting. On the
+            empty canvas it's a compact single-line teal coach chip so the first
+            viewport stays one coherent stack; once exercises exist it expands to
+            the full insight card with its accept/dismiss actions. */}
         {!prescribed && preSessionInsight && (
-          <PreSessionInsightCard
-            insight={preSessionInsight}
-            onAccept={handleInsightAccept}
-            onDismiss={() => setInsightDismissed(true)}
-          />
+          exercises.length === 0 && !insightExpanded ? (
+            <button
+              type="button"
+              onClick={() => setInsightExpanded(true)}
+              className="w-full mb-4 glass px-3.5 py-3 rounded-xl flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px]"
+            >
+              <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Brain className="w-3.5 h-3.5 text-teal" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[10px] text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
+                <span className="block text-[12.5px] font-semibold text-ink-muted leading-relaxed">
+                  {preSessionInsight.message}
+                </span>
+              </span>
+            </button>
+          ) : (
+            <PreSessionInsightCard
+              insight={preSessionInsight}
+              onAccept={handleInsightAccept}
+              onDismiss={() => { setInsightDismissed(true); setInsightExpanded(false); }}
+            />
+          )
         )}
 
-        {/* Empty state — passive prompt; AddExerciseForm below provides the action */}
-        {exercises.length === 0 && (
-          <div className="glass rounded-xl px-4 py-8 mb-4 flex flex-col items-center text-center">
-            <Dumbbell className="w-7 h-7 text-faint mb-3" />
-            <p className="text-sm font-bold text-ink">No exercises yet</p>
-            <p className="text-xs font-semibold text-secondary mt-1 max-w-[260px]">
-              Add your first exercise below to start logging this session.
-            </p>
-          </div>
-        )}
+        {/* Empty-state prompt is folded INTO the docked AddExerciseForm (it
+            renders its own header in the thumb zone), so there is no longer a
+            standalone top-of-page card split away from the bottom action. */}
 
         {/* Exercise List */}
         <div className="space-y-4">
@@ -383,6 +518,7 @@ export default function QuickWorkout() {
                 workoutLogs={allWorkoutLogs}
                 coachingPhase={coachingPhase}
                 onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
+                onStartRestTimer={startRestTimer}
               />
             );
           })}
@@ -392,18 +528,19 @@ export default function QuickWorkout() {
             onAdd={addExercise}
             showCloseButton={exercises.length > 0}
             exerciseNames={allHistoryExerciseNames}
+            hasExercises={exercises.length > 0}
           />
 
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (
             <div className="glass px-4 py-3 rounded-xl space-y-1.5">
               <p className="section-label">Session notes</p>
-              <textarea
+              <Textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 placeholder="PRE: how you felt going in. POST: anything hard, easy, or painful."
-                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:text-faint resize-none outline-none min-h-[64px]"
                 rows={3}
+                className="border-0 bg-transparent shadow-none px-0 focus-visible:shadow-none focus-visible:border-0"
               />
             </div>
           )}
@@ -417,9 +554,9 @@ export default function QuickWorkout() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-ink-muted ">
+          <DialogDescription>
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </p>
+          </DialogDescription>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" size="lg" className="flex-1" onClick={handleDismissResume}>
               Start Fresh

@@ -26,6 +26,16 @@
   --color-elevated:    #1C222C;
   --color-border:      rgba(255, 255, 255, 0.10);
   --color-border-soft: rgba(255, 255, 255, 0.08);
+  /* The single "empty track" material — the unfilled portion of every
+     progress / segment / ring track (readiness + macro bars, NumberPicker
+     ticks, calorie-ring stroke) AND the base fill of every skeleton /
+     placeholder block. One alpha for one material; surfaces that previously
+     hardcoded bg-white/[0.08] or stroke rgba(255,255,255,0.09) reference this
+     token instead. CANONICAL: skeletons and progress tracks use `bg-track`,
+     NEVER `bg-charcoal-elevated` (a raised surface, not an empty track — using
+     it makes a placeholder read as real content). Pair with .pulse-loop for
+     the loading shimmer. */
+  --color-track:       rgba(255, 255, 255, 0.08);
 
   /* ── Ink ────────────────────────────────────────────────────────────── */
   --text-primary:   #F2F4F7;
@@ -54,10 +64,50 @@
   /* ── Physiological spectrum (biometrics ONLY) ───────────────────────── */
   --ok:   #7BC96F;  --ok-rgb:   123 201 111;
   --warn: #E2A23C;  --warn-rgb: 226 162 60;
-  --bad:  #EF7368;  --bad-rgb:  239 115 104;
+  /* Destructive red — a deeper, cooler true-red, deliberately distinct from
+     coral (--color-brand #EF7368). Coral is the single ACTION color; this is
+     the physiological-spectrum "bad" / destructive hue. They must never be the
+     same RGB, or a red destructive control becomes impossible to express
+     (button destructive, badge red, ConfirmDialog, "bad" biometric readouts).
+     CANONICAL DESTRUCTIVE TOKEN (SYS-02): `bad` is formally blessed as the one
+     destructive-action hue, NOT a drift instance of the biometric spectrum. A
+     destructive control (Button variant="destructive", ConfirmDialog danger
+     confirm, RecipeBuilder delete) carries a RESTING coral-weight presence —
+     bg-bad/18 fill + border-bad/70 edge by default (not hover-only) — so it
+     out-weights the neutral glassGhost it sits beside instead of reading as a
+     near-equal twin. This is the single allowed non-coral action hue; it stays
+     reserved for genuine destruction. */
+  --bad:  #E5484D;  --bad-rgb:  229 72 77;
   --info: #5BA8F5;  --info-rgb: 91 168 245;
+  /* ── CANONICAL COLOR LAW (SYS-09) — the one rule behind the drift ──────────
+     Most spectrum-misuse defects collapse to a single under-enforced rule:
+     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and coral is
+     the ONLY action color. Keep this greppable so future drift is obvious.
+
+     (a) ok / warn / bad / info spectrum is reserved for BIOMETRIC readouts ONLY
+         — readiness, HRV, RHR, sleep, ACWR, fatigue/recovery balance, body
+         battery. ACWR and readiness ARE biometrics, so they MAY use the
+         spectrum (e.g. ACWR sweet-spot=ok, high=warn, danger=bad). It is DRIFT
+         to color non-biometric chrome with the spectrum: status banners,
+         net-energy/surplus readouts, grocery/leaf "have-it" ticks, leaf
+         progress bars, generic ok/info progress fills. Those are data or
+         neutral chrome — use the datum's own hue or neutral glass, never the
+         physiological spectrum.
+     (b) DESTRUCTIVE UI uses the blessed `bad` token (SYS-02) — NOT coral, and
+         NOT a drift instance of the biometric spectrum. `bad` is the single
+         allowed non-coral action hue and is reserved for genuine destruction.
+     (c) FORM-VALIDATION / ATTENTION (required-field nudges, "please fix",
+         soft warnings, empty-state prompts) is NOT biometric: render it as
+         neutral glass + ink hierarchy (text-strong / text-muted / text-faint),
+         putting coral ONLY on the actual action (the submit/confirm control).
+         A warn-yellow validation banner = DRIFT (it poaches the spectrum).
+     (d) EACH DATUM OWNS ONE HUE — color is data, not garnish. Macros are
+         fixed: kcal owns GOLD (--hue-gold), Protein = CORAL (--hue-coral),
+         Carbs = BLUE/carb (--hue-blue), Fat = YELLOW (--hue-yellow). Never
+         recolor a macro to fit a layout; never reuse coral as decoration. A
+         second action color, or a datum wearing a borrowed hue, is DRIFT. */
   --color-positive: #5EDCD2;
-  --color-danger:   #EF7368;
+  --color-danger:   #E5484D;
   --color-cardio:   #5BA8F5;
 
   /* ── Data-viz series ────────────────────────────────────────────────── */
@@ -73,14 +123,55 @@
   --glass-edge:        rgba(255, 255, 255, 0.10);
   --glass-edge-strong: rgba(255, 255, 255, 0.13);
   --glass-specular:    rgba(255, 255, 255, 0.12);
-  --dock-tint:         rgba(120, 120, 128, 0.18);
+  /* Floating-chrome tint (dock, sticky headers, dropdowns, chart tooltips —
+     everything on .glass-elevated). Raised from 0.18 → 0.55 because at the
+     prior alpha page content read clearly THROUGH the floating dock (Fuel
+     weight history, RecoveryDetail axis) — chrome must de-emphasize what's
+     beneath it, not leave it half-legible. Paired with a stronger blur on
+     .glass-elevated. Still translucent (the liquid-glass identity), just
+     opaque enough to win over busy content. */
+  --dock-tint:         rgba(28, 32, 41, 0.55);
   /* Sheet/dialog material — heavier & near-opaque so busy page content
-     never bleeds through behind a form (dock-tint is too transparent). */
-  --sheet-bg:          rgba(20, 24, 31, 0.96);
+     never bleeds through behind a form (dock-tint is too transparent).
+     Raised to 0.98 so bright/coral page content can't register through
+     the translucent sheet (SYS-07). */
+  --sheet-bg:          rgba(20, 24, 31, 0.98);
   --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
 
+  /* THE one easing. RULE: every transition-colors / transition-transform /
+     transition-all (and any bespoke `transition:`) MUST carry an explicit
+     duration in the 180–320ms band AND this curve, e.g.
+       transition-colors duration-200 [transition-timing-function:var(--ease)]
+     Tailwind's default transitions ship a 150ms cubic-bezier(.4,0,.2,1) that is
+     OFF-system on both count and curve — always pin duration + var(--ease).
+     (Repeating ambient loops use --loop-dur instead; see below.) */
   --ease: cubic-bezier(.2, .7, .3, 1);
+
+  /* Loop duration for ambient, continuously-repeating motion (scan sweep,
+     etc.). Deliberately OUTSIDE the 180–320ms entrance band: a repeating
+     traveling line at entrance speed strobes, so a calm ~1.6s-per-pass loop
+     reads as "alive" rather than "flashing". Not for one-shot entrances. */
+  --loop-dur: 1.6s;
+
+  /* ── Layout chrome metrics ──────────────────────────────────────────── */
+  /* Default header height = 0. Layout overrides this to the real mobile
+     header height on mount; routes without a Layout (Login / auth) keep 0 so
+     header-anchored offsets (toasts, sticky headers) collapse cleanly instead
+     of leaving a dead 64px gap. */
+  --layout-header-height: 0px;
+  /* Clearance above the floating mobile dock (≈56px tall, 12px from the
+     bottom inset). Bottom-anchored overlays (toasts in the thumb zone) add
+     this so nothing is clipped under the dock. */
+  --dock-clearance: 80px;
+  /* Full painted footprint of the floating dock measured from the bottom
+     viewport edge: the 12px bottom gap + the ≈56px dock body + a 12px
+     breathing gap above it = ~80px. Bottom-anchored OVERLAYS that must sit
+     fully ABOVE the dock (e.g. the bottom-center toast pill, whose ~50px body
+     was landing on top of the dock when offset by --dock-clearance alone, which
+     measures clearance for in-flow content not floated chrome) reference this so
+     their bottom edge clears the entire dock instead of overlapping it. */
+  --dock-total-height: calc(12px + 56px + 12px);
 
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: 'Manrope', system-ui, sans-serif;
@@ -94,6 +185,7 @@ html.light {
   --color-elevated:    #FFFFFF;
   --color-border:      rgba(18, 24, 34, 0.10);
   --color-border-soft: rgba(18, 24, 34, 0.07);
+  --color-track:       rgba(18, 24, 34, 0.08);
 
   --text-primary:   #171B22;
   --text-secondary: rgba(23, 27, 34, 0.74);
@@ -118,10 +210,12 @@ html.light {
 
   --ok:   #4D9A41;  --ok-rgb:   77 154 65;
   --warn: #C07F2A;  --warn-rgb: 192 127 42;
-  --bad:  #E05348;  --bad-rgb:  224 83 72;
+  /* Destructive red — deeper, cooler true-red distinct from coral
+     (--color-brand #E05348) in the light theme. See :root for rationale. */
+  --bad:  #CE2C31;  --bad-rgb:  206 44 49;
   --info: #2F6FD0;  --info-rgb: 47 111 208;
   --color-positive: #14A89D;
-  --color-danger:   #E05348;
+  --color-danger:   #CE2C31;
   --color-cardio:   #2F6FD0;
 
   --viz-1: #14A89D;
@@ -135,8 +229,10 @@ html.light {
   --glass-edge:        rgba(18, 24, 34, 0.09);
   --glass-edge-strong: rgba(18, 24, 34, 0.12);
   --glass-specular:    rgba(255, 255, 255, 0.85);
-  --dock-tint:         rgba(255, 255, 255, 0.66);
-  --sheet-bg:          rgba(255, 255, 255, 0.97);
+  /* Light-theme floating-chrome tint — raised toward opaque for the same
+     content-bleed reason as :root (see above). */
+  --dock-tint:         rgba(255, 255, 255, 0.86);
+  --sheet-bg:          rgba(255, 255, 255, 0.98);
   --shadow-1: 0 10px 28px rgba(22, 28, 40, 0.10);
   --shadow-2: 0 8px 24px rgba(22, 28, 40, 0.14);
 }
@@ -185,6 +281,22 @@ html.light ::-webkit-scrollbar-thumb { background: rgba(18, 24, 34, 0.18); }
 input[type=number] { -moz-appearance: textfield; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Native date inputs paint a bright UA calendar glyph that fights the dark
+   field. Mute + invert it so the picker affordance reads as faint ink on the
+   glass surface (shared across Progress + Career date inputs). */
+input[type=date]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+  cursor: pointer;
+}
+html.light input[type=date]::-webkit-calendar-picker-indicator {
+  filter: opacity(0.5);
+}
+/* Date field text inherits our ink voice; the placeholder mask reads faint so
+   an unset date matches our text-input placeholder weight. */
+input[type=date]::-webkit-datetime-edit { color: var(--text-primary); }
+input[type=date]::-webkit-datetime-edit-text,
+input[type=date].is-empty::-webkit-datetime-edit { color: var(--text-faint); }
 
 /* Body Highlighter SVG overrides — the little anatomy figure */
 svg.rbh, .rbh { background-color: transparent !important; }
@@ -268,11 +380,25 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
+  /* Row-stripe — the og-row-stripe. A faint inset FILL for a row inside a
+     list/table that must read as a distinct state (e.g. a planned, not-yet-
+     eaten food row) without imposing glass-inset's 13px radius on a full-bleed
+     row that already owns the card's square interior corners. Same material as
+     glass-inset, radius inherited from the row. Reserve for state, never as a
+     decorative zebra. */
+  .row-stripe {
+    background: var(--glass-inset-bg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
   /* Liquid-glass chrome — dock, sidebar, sheets, floating controls. */
   .glass-elevated {
     background: var(--dock-tint);
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    /* Blur raised 14px → 20px so content beneath the dock / sticky headers /
+       dropdowns is frosted into the background instead of staying readable
+       through the chrome (SYS dock-material finding). */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 0.5px solid var(--glass-edge-strong);
     box-shadow: inset 1.5px 1.5px 1px var(--glass-specular), var(--shadow-2);
   }
@@ -335,6 +461,9 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
   }
   html.light .pill-value { background: rgba(18, 24, 34, 0.05); }
+  /* Compact variant for dense row lists — snaps to the type scale (text-xs)
+     so callers drop the repeated arbitrary text-[11.5px]/text-[11px] sizing. */
+  .pill-value--sm { font-size: 12px; padding: 4px 8px; }
 
   /* Deadline chip — og-chip (gold). */
   .chip-gold {
@@ -359,6 +488,63 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
   /* Bottom-sheet entrance — slides up from the bottom edge on mobile. */
   .sheet-rise { animation: sheetRise .30s var(--ease) both; }
+
+  /* Rest-timer urgency — system-tokened pulse on our single easing. At .30s per
+     half-cycle this read as a hard ~0.6s STROBE (anxious, not urgent) and dipped
+     to .55 opacity, near a flash. Slowed to ~1.0s per half-cycle (a calm, legible
+     urgency breath, well clear of the seizure-risk strobe band) with a higher .7
+     opacity floor so it signals urgency without flickering. Replaces Tailwind's
+     off-system 2s `animate-pulse` for the rest countdown. */
+  .rest-urgent { animation: restUrgent 1s var(--ease) infinite alternate; }
+
+  /* Barcode scan sweep — the line that travels the scan window to read as a
+     live, active scanner. A genuine system gap: no other surface needs a
+     vertical traveling line. On the single system easing, ~1.6s per pass via
+     the dedicated --loop-dur token (NOT the 180–320ms entrance band, which
+     strobes when repeated), alternating so it sweeps down then back. */
+  .scan-sweep { animation: scanSweep var(--loop-dur) var(--ease) infinite alternate; }
+
+  /* Tokened spinner — the system replacement for Tailwind's `animate-spin`
+     (which runs a raw `linear` curve detached from our motion language). The
+     rotation itself stays linear (a spinner that eases per turn stutters), but
+     the loop is timed off the dedicated --loop-dur token so every spinner in
+     the app shares one cadence. LoadingSpinner consumes this; WeighInModal,
+     ResetPassword, MealTemplates, RecipeBuilder spinners should too. */
+  .spin-loop { animation: spinLoop var(--loop-dur) linear infinite; }
+
+  /* Tokened pulse/shimmer — the system replacement for Tailwind's
+     `animate-pulse` (off-system 2s cubic-bezier(.4,0,.6,1), appears ~31× app-
+     wide). A breathing opacity on our single easing within the ambient
+     --loop-dur cadence; skeleton fills and placeholder sweeps swap to this so
+     loading states share the product's one motion language. Pairs with
+     bg-track as the empty-track material underneath. */
+  .pulse-loop { animation: pulseLoop var(--loop-dur) var(--ease) infinite alternate; }
+}
+
+@keyframes restUrgent {
+  from { opacity: 1; }
+  to   { opacity: .7; }
+}
+
+/* One full turn. Linear so the spinner reads as steady rotation, not an eased
+   stutter; cadence comes from --loop-dur on the .spin-loop utility. */
+@keyframes spinLoop {
+  to { transform: rotate(360deg); }
+}
+
+/* Breathing opacity for skeletons/placeholders — calmer than Tailwind's
+   `animate-pulse` and on our single easing via .pulse-loop. */
+@keyframes pulseLoop {
+  from { opacity: 1; }
+  to   { opacity: .45; }
+}
+
+/* The scan line travels across the ~160px scan window (h-40). Translating it
+   from the top edge to the bottom edge communicates "scanning" via motion
+   rather than borrowing the coral action hue. */
+@keyframes scanSweep {
+  from { transform: translateY(-72px); }
+  to   { transform: translateY(72px); }
 }
 
 @keyframes sheetRise {
@@ -393,5 +579,137 @@ html.light body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .glass-interactive, .cta-coral { transition: none; }
-  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise { animation: none; }
+  .rise-in, .rise-in-2, .rise-in-3, .sheet-rise, .rest-urgent, .scan-sweep, .pulse-loop { animation: none; }
+  /* Spinner keeps turning even under reduced-motion: it's a load indicator, not
+     decorative motion, so silencing it would strand users on a frozen glyph. */
+}
+
+/* Sonner toasts — og-toast. Themed to neutral glass surfaces so they obey the
+   Vapor × Macro system: Manrope + tabular numerals, 0.5px hairline edges, one
+   easing, 8px rise entrance. richColors is OFF — Sonner's saturated success
+   green / info blue / warning yellow would poach the biometric-only spectrum,
+   so success/info read as restrained neutral glass and only error/destructive
+   borrows coral (--color-brand), the single action color. Tokens are theme-
+   aware (re-tune on html.light) so one rule covers both themes. */
+[data-sonner-toaster],
+[data-sonner-toast] {
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+[data-sonner-toast].og-toast {
+  background: var(--color-elevated);
+  border: 0.5px solid var(--color-border);
+  color: var(--text-primary);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
+  /* Re-time Sonner's own enter/exit slide to the single system easing within
+     the 180–320ms band. Sonner v2 drives the actual mount translate via its
+     --y / --lift vars (its own slide), so we override the timing curve rather
+     than redefining a separate rise — fighting --y is fragile. */
+  transition:
+    transform 260ms var(--ease),
+    opacity 260ms var(--ease),
+    height 260ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+[data-sonner-toast].og-toast [data-description] {
+  color: var(--text-secondary);
+}
+/* Success / default icon reads as neutral glass — green is reserved for the
+   biometric spectrum, so Sonner's saturated check is desaturated rather than
+   colored. Tinted to SECONDARY so the COPY leads: at primary the neutral check
+   out-shouted the message it was decorating (a checkmark is confirmation, not
+   the payload). Secondary keeps it a legible-but-quiet supporting glyph and lets
+   the text carry the toast. Only the error state below swaps in the coral action
+   tint, where the icon SHOULD draw the eye. */
+[data-sonner-toast].og-toast [data-icon] {
+  color: var(--text-secondary);
+}
+/* Error / destructive is the only action accent — coral, never biometric red. */
+[data-sonner-toast].og-toast.og-toast--error {
+  border-color: rgba(var(--color-brand-rgb) / 0.45);
+}
+[data-sonner-toast].og-toast.og-toast--error [data-icon] {
+  color: var(--color-brand);
+}
+/* Close button ≥ 44px tap target, neutral glass. Pinned INSIDE the toast at
+   the top-right corner. Sonner v2 (^2.0.7) renders the X via [data-close-button]
+   and parks it half-outside the top-LEFT edge (defaults: left:0; right:unset;
+   transform:translate(-35%,-35%); 20px box). We override the position vars AND
+   target [data-close-button] directly (combined with the .og-toast__close class
+   for specificity) so the 44px box, pinned-right inset, and radius win over
+   Sonner's own [data-styled='true'] [data-close-button] rule. opacity:1
+   forces it always-visible for BOTH success and error states (Sonner only
+   reveals it on hover by default — the success/error asymmetry was a visibility
+   artifact; opacity:1 makes the two symmetric). */
+[data-sonner-toast].og-toast {
+  --toast-close-button-start: unset;
+  --toast-close-button-end: 6px;
+  --toast-close-button-transform: none;
+}
+[data-sonner-toast].og-toast .og-toast__close[data-close-button] {
+  left: unset;
+  right: 2px;
+  top: 2px;
+  transform: none;
+  /* Keep the full 44px TAP target so the thumb has a forgiving hit area, but
+     the painted chip itself is only ~28px (via ::before) so a quiet X glyph no
+     longer visually dominates a short single-line message on a ~356px pill. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  /* Resting contrast is MUTED on passive toasts: the always-visible X is a
+     convenience on a read-and-forget success pill, not the point of it, so it
+     should not compete with the copy. It still reads (and the 44px hit area is
+     unchanged), but quietly. The actionable error state below raises it back to
+     --text-secondary, where dismissing is a likelier next action. Both states
+     brighten to --text-primary on hover. */
+  color: var(--text-muted);
+  opacity: 1 !important;
+  transition: color 200ms var(--ease);
+}
+/* Error / CTA toasts are actionable, so their close affordance rests at the
+   more present --text-secondary instead of the muted passive level. */
+[data-sonner-toast].og-toast.og-toast--error .og-toast__close[data-close-button] {
+  color: var(--text-secondary);
+}
+/* The visible chip: ~28px low-weight glass disc centered inside the 44px hit
+   area. Sits behind the X glyph (negative z) so the icon still reads on top. */
+[data-sonner-toast].og-toast .og-toast__close[data-close-button]::before {
+  content: "";
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--color-surface-2);
+  border: 0.5px solid var(--color-border);
+  z-index: -1;
+  transition: background 200ms var(--ease), border-color 200ms var(--ease);
+}
+[data-sonner-toast].og-toast:hover .og-toast__close[data-close-button]:hover {
+  color: var(--text-primary);
+}
+[data-sonner-toast].og-toast:hover .og-toast__close[data-close-button]:hover::before {
+  background: var(--color-elevated);
+  border-color: var(--color-border);
+}
+/* Contained centered pill. Under 600px Sonner forces the toaster to width:100%
+   with the mobile offsets + transform:none (edge-to-edge). Cap the width and
+   re-center so the toast reads as a contained pill with symmetric gutters
+   instead of spanning the full viewport. Above 600px Sonner's own --width:356px
+   + translateX(-50%) already centers it, so this only reshapes mobile. */
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-x-position='center'] {
+    left: 50%;
+    right: auto;
+    width: min(356px, calc(100% - 32px));
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast].og-toast { transition: none; }
 }

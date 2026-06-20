@@ -18,12 +18,18 @@ import { toast } from "sonner";
 
 const CARDIO_TYPES = new Set(['cardio', 'hiit']);
 
+// Step types carry no owned hue: a cardio step's type is a structural label,
+// not a biometric datum, so the physiological spectrum doesn't apply and a
+// per-type decorative hue would be DRIFT. The earlier `border`/`text` fields
+// all resolved to the same neutral hairline (dead differentiation API), so
+// they're dropped — every step card gets one neutral left rule (see
+// CardioStepCard) and the type reads from its label, not a color.
 const STEP_TYPES = [
-  { value: 'warmup',   label: 'Warmup',   border: 'border-l-carb/60',   text: 'text-carb' },
-  { value: 'active',   label: 'Active',   border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'recovery', label: 'Recovery', border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'rest',     label: 'Rest',     border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'cooldown', label: 'Cooldown', border: 'border-l-charcoal-borderSoft', text: 'text-ink-muted' },
+  { value: 'warmup',   label: 'Warmup'   },
+  { value: 'active',   label: 'Active'   },
+  { value: 'recovery', label: 'Recovery' },
+  { value: 'rest',     label: 'Rest'     },
+  { value: 'cooldown', label: 'Cooldown' },
 ];
 
 const TARGET_TYPES = [
@@ -72,6 +78,9 @@ export default function CreateWorkout() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [isLoading, setIsLoading] = useState(!!editId);
+  // Description is an optional, rarely-used field — keep it folded behind a
+  // single-row disclosure so the dense form stays short on a 390px viewport.
+  const [showDescription, setShowDescription] = useState(false);
   const [workout, setWorkout] = useState({
     title: "",
     description: "",
@@ -116,6 +125,7 @@ export default function CreateWorkout() {
         if (workouts.length > 0) {
           const existingWorkout = workouts[0];
           if (isMounted.current) {
+            if (existingWorkout.description) setShowDescription(true);
             setWorkout({
               title: existingWorkout.title || "",
               description: existingWorkout.description || "",
@@ -238,17 +248,21 @@ export default function CreateWorkout() {
   return (
     <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6 hidden lg:block">
-          <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
-          <p className="text-ink-muted text-sm mt-0.5">
+        {/* Title is desktop-only — the shared Layout chrome already prints the
+            page name on mobile (single title per viewport). The subtitle is
+            surfaced on every viewport so the 390px primary view still explains
+            what the page does. */}
+        <div className="mb-3 lg:mb-6">
+          <h1 className="text-2xl font-bold text-ink hidden lg:block">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
+          <p className="text-ink-muted text-sm lg:mt-0.5">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="mb-6">
+          <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div>
                 <Label htmlFor="title">Workout Title *</Label>
                 <Input
@@ -261,17 +275,36 @@ export default function CreateWorkout() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={workout.description}
-                  onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
-                  placeholder="Describe your workout…"
-                  rows={2}
-                  className="mt-1"
-                />
-              </div>
+              {showDescription ? (
+                <div className="rise-in">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    autoFocus={!workout.description}
+                    value={workout.description}
+                    onChange={(e) => setWorkout({ ...workout, description: e.target.value })}
+                    placeholder="Describe your workout…"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+              ) : (
+                /* Disclosure, not a data field: a quiet inline toggle (auto
+                   width, no glass fill/edge/border) so it reads as a link-style
+                   affordance that reveals an optional field — never as another
+                   empty input competing with the real Inputs above/below. Stays
+                   neutral ink-muted (not coral) so it doesn't drift into a
+                   second action color beside the Save CTA. Keeps Plus + 44px. */
+                <Button
+                  type="button"
+                  variant="dim"
+                  onClick={() => setShowDescription(true)}
+                  className="justify-start min-h-[44px] border-0 bg-transparent hover:bg-transparent px-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add description
+                </Button>
+              )}
 
               <div>
                 <Label htmlFor="folder">Folder</Label>
@@ -288,7 +321,7 @@ export default function CreateWorkout() {
                 </Combobox>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <Label htmlFor="type">Workout Type *</Label>
                   <Select value={workout.focus} onValueChange={handleTypeChange}>
@@ -317,9 +350,9 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>{isCardio ? 'Steps' : 'Exercises'}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               {workout.exercises.map((exercise, index) => {
                 if (!isCardio) {
                   return (
@@ -360,13 +393,17 @@ export default function CreateWorkout() {
                 );
               })}
 
+              {/* Add-row buttons all share size=lg (h-11 = 44px tap target, so
+                  no redundant min-h-[44px]) + variant=outline. border-dashed is
+                  reserved for the nested insert inside a repeat block, so a
+                  top-level "add" never visually rhymes with a nested one. */}
               {isCardio ? (
                 <div className="flex gap-2">
-                  <Button type="button" onClick={addExercise} variant="outline" className="flex-1 min-h-[44px]">
+                  <Button type="button" onClick={addExercise} variant="outline" size="lg" className="flex-1">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Step
                   </Button>
-                  <Button type="button" onClick={addRepeatBlock} variant="outline" className="flex-1 min-h-[44px]">
+                  <Button type="button" onClick={addRepeatBlock} variant="outline" size="lg" className="flex-1">
                     <Repeat2 className="w-4 h-4 mr-2" />
                     Add Repeat
                   </Button>
@@ -380,8 +417,21 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] md:static z-[9000] -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated rounded-2xl md:rounded-none md:bg-transparent md:shadow-none md:border-0 md:[backdrop-filter:none]">
-            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
+          {/* Action row. This form runs ~1168px (well past one phone viewport),
+              so on mobile the coral Save must not live only at the bottom of the
+              scroll: below lg the row is `sticky bottom-0`, pinned just above the
+              dock (--dock-clearance) with a safe-area inset, so it stays in the
+              thumb zone while the user scrolls the long form. A glass-sheet lid +
+              hairline top edge separates it from the content scrolling beneath.
+              At lg it returns to static flow (no dock, plenty of width), sitting
+              at the natural end of the form. The negative inline margins let the
+              sticky bar bleed to the page gutters on mobile while the lg:static
+              state resets them. */}
+          <div
+            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(var(--dock-clearance)+env(safe-area-inset-bottom))] pt-3
+                       lg:static lg:z-auto lg:mx-0 lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:[backdrop-filter:none]"
+          >
+            <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
             <Button type="submit" variant="volt" size="lg" className="flex-[2]">
@@ -397,12 +447,12 @@ export default function CreateWorkout() {
 
 function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, onRemove, onChange }) {
   return (
-    <div className="glass-inset p-4">
+    <div className="glass-inset p-4 rise-in">
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
-              <Trash2 className="w-4 h-4 text-bad" />
+            <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0 text-ink-muted hover:text-ink">
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>
@@ -421,7 +471,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               </ComboboxContent>
             </Combobox>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div>
               <Label>Sets</Label>
               <Input
@@ -469,7 +519,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
 
 function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep, onRemoveStep, onChangeStep }) {
   return (
-    <div className="glass-inset overflow-hidden">
+    <div className="glass-inset overflow-hidden rise-in">
       {/* Repeat header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-charcoal-borderSoft">
         <Repeat2 className="w-4 h-4 text-ink-muted shrink-0" />
@@ -481,7 +531,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
             max="99"
-            className="w-16 min-h-[44px] text-sm text-center font-technical"
+            className="w-16 min-h-[44px] text-sm text-center"
           />
           <span className="text-sm text-ink-muted">×</span>
         </div>
@@ -489,8 +539,8 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
-            <Trash2 className="w-3.5 h-3.5 text-bad" />
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0 text-ink-muted hover:text-ink">
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
       </div>
@@ -508,11 +558,15 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             nested
           />
         ))}
+        {/* Nested-insert affordance: same size=lg/outline as top-level adds,
+            but border-dashed (reserved here) signals it inserts INTO the
+            repeat block rather than appending a top-level step. */}
         <Button
           type="button"
           onClick={onAddStep}
           variant="outline"
-          className="w-full min-h-[44px] border-dashed border-charcoal-border"
+          size="lg"
+          className="w-full border-dashed border-charcoal-border"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Step to Repeat
@@ -523,26 +577,22 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
 }
 
 function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = false }) {
-  const meta = STEP_TYPES.find(s => s.value === step.step_type) || STEP_TYPES[1];
-
-  const card = `glass-inset p-4 border-l-[3px] ${meta.border}`;
-
   return (
-    <div className={card}>
+    <div className="glass-inset p-4 border-l-[3px] border-l-charcoal-border rise-in">
         <div className="flex justify-between items-start mb-4">
-          <span className={`text-xs font-bold uppercase tracking-[0.06em] ${meta.text}`}>
+          <span className="text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="dim" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
-              <Trash2 className="w-4 h-4 text-bad" />
+            <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0 text-ink-muted hover:text-ink">
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>
 
         <div className="grid gap-4">
           {/* Name + Step type */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Step Name</Label>
               <Input

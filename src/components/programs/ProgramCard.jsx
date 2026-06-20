@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
+
+const RISE = ["rise-in", "rise-in-2", "rise-in-3"];
 
 const GOAL_LABELS = {
   muscle_gain: "Muscle Gain",
@@ -10,8 +12,17 @@ const GOAL_LABELS = {
   general: "General Fitness",
 };
 
+const MAX_TAGS = 3;
 
-export default function ProgramCard({ program, enrollment }) {
+// Tags arrive as raw lowercase kebab strings (e.g. 'upper-body'). Humanize them
+// into Title Case so they read as labels, consistent with GOAL_LABELS.
+const humanizeTag = (tag) =>
+  String(tag)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+export default function ProgramCard({ program, enrollment, index = 0, inActiveTab }) {
+  const isActive = enrollment?.status === "active";
   const cycleLength = program.cycle_length || program.days_per_week || 7;
   const numCycles = program.num_cycles || program.duration_weeks || 4;
   const completedCount = enrollment?.completed_workouts?.length || 0;
@@ -24,61 +35,75 @@ export default function ProgramCard({ program, enrollment }) {
     ? `C${enrollment.current_cycle || enrollment.current_week || 1} · D${enrollment.current_day_index || enrollment.current_day || 1}`
     : null;
 
+  // Drop the redundant goal badge when tags already convey the program's focus.
+  const tags = program.tags || [];
+  const hasTags = tags.length > 0;
+  const goalLabel = program.focus || program.goal;
+  const showGoalBadge = goalLabel && !hasTags;
+  const visibleTags = tags.slice(0, MAX_TAGS);
+  const overflowTags = tags.length - visibleTags.length;
+
+  // The in-flight program already declares itself via the 'C·D' position chip
+  // on the progress line, so the separate 'Active' badge is redundant there
+  // (and inside the Active tab, where every card is active). Show it only when
+  // there's no position chip and the parent hasn't flagged the active context.
+  const showActiveBadge = isActive && !positionLabel && inActiveTab !== true;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className={RISE[index % 3]}>
       <Link to={`/program/${program.id}`}>
-        <div className="group relative overflow-hidden glass glass-interactive cursor-pointer">
-          <div className="px-5 pt-4 pb-2">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {(program.focus || program.goal) && (
-                <Badge variant="outline">{GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}</Badge>
-              )}
-              {enrollment?.status === 'active' && (
-                <Badge variant="outline" className="ml-auto bg-teal/10 text-teal border-teal/25">Active</Badge>
+        <div className="group relative overflow-hidden glass glass-interactive cursor-pointer transition-transform active:scale-[0.985] active:shadow-[inset_0_1px_0_var(--glass-specular)]">
+          {/* Trailing affordance — coral-free directional cue. */}
+          <ChevronRight
+            className="pointer-events-none absolute top-4 right-4 h-5 w-5 text-ink-muted transition-transform group-hover:translate-x-0.5"
+            aria-hidden="true"
+          />
+          {/* Single content padding wrapper — no ad-hoc per-block padding. */}
+          <div className="p-5 pr-12 space-y-3">
+            {/* Badges — one chip vocabulary (outline). */}
+            {(showGoalBadge || showActiveBadge) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {showGoalBadge && (
+                  <Badge variant="outline">{GOAL_LABELS[goalLabel] || goalLabel}</Badge>
+                )}
+                {showActiveBadge && (
+                  <Badge variant="outline" className="ml-auto">Active</Badge>
+                )}
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-base font-bold text-ink mb-1">
+                {program.title || program.name}
+              </h3>
+              {program.description && (
+                <p className="text-xs text-ink-muted line-clamp-2">{program.description}</p>
               )}
             </div>
 
-            <h3 className="text-base font-bold text-ink mb-1">
-              {program.title || program.name}
-            </h3>
-            {program.description && (
-              <p className="text-xs text-ink-muted line-clamp-2 mb-3">{program.description}</p>
-            )}
-
-            {/* Progress bar */}
-            {enrollment && (
-              <div className="h-1 bg-[var(--color-border-soft)] rounded-full overflow-hidden mb-3">
-                <div
-                  className="h-full bg-leaf rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="flex px-5 pb-4">
             {enrollment ? (
               <>
-                <div className="flex-1 flex flex-col">
-                  <span className="section-label">Progress</span>
-                  <span className="font-technical text-lg font-bold text-leaf mt-0.5">{progressPercent}%</span>
+                {/* Compact progress line — bar + one figure, no PROGRESS/SESSIONS
+                    duplication. Active keeps the live viz hue; past programs
+                    drop to a muted track so the active card holds primacy. */}
+                <div className="h-1 bg-track rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${isActive ? "bg-viz-1" : "bg-ink-faint/40"}`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-                <div className="flex-1 flex flex-col border-l hairline pl-4">
-                  <span className="section-label">{positionLabel ? 'Position' : 'Cycle'}</span>
-                  <span className="font-technical text-lg font-bold text-ink mt-0.5 whitespace-nowrap">{positionLabel || `${frequencyLabel}`}</span>
-                </div>
-                <div className="flex-1 flex flex-col border-l hairline pl-4">
-                  <span className="section-label">Sessions</span>
-                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{completedCount} / {totalWorkouts}</span>
+                <div className="flex items-center gap-3 font-technical text-xs text-ink-muted">
+                  {/* One progress figure — the concrete fraction, not fraction +
+                      percent (the bar already carries the proportion visually). */}
+                  <span><span className="text-ink font-bold">{completedCount}</span> / {totalWorkouts} sessions</span>
+                  {/* Position is only meaningful for the in-flight program. */}
+                  {isActive && positionLabel && (
+                    <span className="ml-auto text-ink">{positionLabel}</span>
+                  )}
                 </div>
               </>
             ) : (
-              <>
+              <div className="flex">
                 <div className="flex-1 flex flex-col">
                   <span className="section-label">Cycle</span>
                   <span className="font-technical text-lg font-bold text-ink mt-0.5">{durationLabel}</span>
@@ -87,20 +112,25 @@ export default function ProgramCard({ program, enrollment }) {
                   <span className="section-label">Length</span>
                   <span className="font-technical text-lg font-bold text-ink mt-0.5">{frequencyLabel}</span>
                 </div>
-              </>
+              </div>
+            )}
+
+            {/* Tags — capped at MAX_TAGS + overflow count, one chip vocabulary. */}
+            {hasTags && (
+              <div className="flex flex-wrap gap-1">
+                {visibleTags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-xs">{humanizeTag(tag)}</Badge>
+                ))}
+                {/* Overflow is a count, not an action — render it as quiet faint
+                    ink with no chip border so it reads as '+N more', not a tag. */}
+                {overflowTags > 0 && (
+                  <span className="self-center px-1 text-xs font-technical text-ink-faint">+{overflowTags}</span>
+                )}
+              </div>
             )}
           </div>
-
-          {/* Tags */}
-          {program.tags?.length > 0 && (
-            <div className="flex flex-wrap gap-1 px-5 pb-4">
-              {program.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-              ))}
-            </div>
-          )}
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }

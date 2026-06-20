@@ -1,26 +1,30 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Brain } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
-import WeighInModal from "@/components/WeighInModal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
 
 // Decision-first IA: Today (the home) → Train → Fuel → Body → Analyze.
 // Each top-level section owns a set of sub-routes; `matches` drives active state.
 // `children` are the section's sub-tabs, surfaced in the desktop sidebar as an
 // indented column under the active section (deep-linked via path or ?tab=).
+//
+// `mobileStrip` opts a section into the Layout-level mobile sub-tab strip (a
+// horizontal pill row under the mobile header that mirrors the desktop sidebar
+// children). Only set it on sections whose children are *separate routes* with
+// no in-page tab strip of their own (Body, Analyze). Train and Fuel render
+// their own in-page <SubTabs>, so a Layout strip there would duplicate.
 const qp = (loc, key, dflt = "") => new URLSearchParams(loc.search).get(key) || dflt;
 
 const navigationItems = [
   { title: "Today", url: "/today", icon: Activity,
-    matches: ["/today", "/dashboard"] },
+    matches: ["/today"] },
   { title: "Train", url: "/train", icon: Dumbbell,
     matches: ["/train", "/workouts", "/program-builder", "/create-workout",
               "/quick-workout", "/weekly-schedule", "/schedule", "/workout-detail", "/program/"],
@@ -36,14 +40,20 @@ const navigationItems = [
     ] },
   { title: "Fuel", url: "/fuel", icon: UtensilsCrossed,
     matches: ["/fuel", "/food-tracker", "/supplements", "/log"],
+    // Mirror Fuel's in-page SubTabs exactly: Nutrition / Body / Hydration.
+    // (The page reads ?tab=body and ?tab=hydration; the old "wellness" alias
+    // silently resolved to Body and there was no Hydration entry at all.)
     children: [
       { label: "Nutrition", url: "/fuel",
-        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") !== "wellness" },
-      { label: "Wellness", url: "/fuel?tab=wellness",
-        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "wellness" },
+        active: (l) => l.pathname.startsWith("/fuel") && !["body", "hydration"].includes(qp(l, "tab")) },
+      { label: "Body", url: "/fuel?tab=body",
+        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "body" },
+      { label: "Hydration", url: "/fuel?tab=hydration",
+        active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
   { title: "Body", url: "/athlete-state", icon: HeartPulse,
     matches: ["/athlete-state", "/recovery", "/physique"],
+    mobileStrip: true,
     children: [
       { label: "State", url: "/athlete-state",
         active: (l) => l.pathname.startsWith("/athlete-state") },
@@ -52,15 +62,27 @@ const navigationItems = [
       { label: "Physique", url: "/physique",
         active: (l) => l.pathname.startsWith("/physique") },
     ] },
-  { title: "Analyze", url: "/insights", icon: BarChart3,
-    matches: ["/insights", "/brief-history", "/mind", "/career"],
+  // Analyze reads as Brief + History only. Career was cut from the IA (no nav
+  // surface, App.jsx keeps the bare /career route registered but unlinked); Mind
+  // keeps a single entry point (the in-page Mind & Learning card on /insights),
+  // so neither is promoted to a nav sub-tab here. /mind still matches so the
+  // section stays highlighted when that route is reached. /career is deliberately
+  // NOT matched: it was hijacking the Analyze sub-tab strip + dock highlight for
+  // a route that is not a genuine Analyze child. As an IA orphan it now resolves
+  // to no activeSection (no strip, no dock highlight) until it earns its own home.
+  // Analyze is demoted out of the 5-slot dock (dock:false): per the IA audit
+  // both Body and Analyze are over-promoted review surfaces, and a 4-slot dock
+  // reads cleaner with less per-slot crowding. Analyze still owns its sidebar
+  // entry, route matching, and the mobile sub-tab strip — only the dock icon
+  // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile).
+  { title: "Analyze", url: "/insights", icon: BarChart3, dock: false,
+    matches: ["/insights", "/brief-history", "/mind"],
+    mobileStrip: true,
     children: [
       { label: "Daily Brief", url: "/insights",
         active: (l) => l.pathname.startsWith("/insights") },
       { label: "Brief History", url: "/brief-history",
         active: (l) => l.pathname.startsWith("/brief-history") },
-      { label: "Mind", url: "/mind",
-        active: (l) => l.pathname.startsWith("/mind") },
     ] },
 ];
 
@@ -90,9 +112,10 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const { profile } = useProfile();
   const [showCalculators, setShowCalculators] = useState(false);
-  const [showWeighIn, setShowWeighIn] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const mobileHeaderRef = useRef(null);
+  const stripScrollRef = useRef(null);
+  const [stripOverflows, setStripOverflows] = useState(false);
   const pstDays = useMemo(() => daysToPST(), []);
 
   useEffect(() => {
@@ -110,9 +133,24 @@ export default function Layout({ children, currentPageName }) {
     return () => window.removeEventListener("resize", updateHeaderHeight);
   }, []);
 
+  // Gate the right-edge scroll-fade behind a real overflow check so it never
+  // renders a false "scrollable" affordance when the strip's pills already fit
+  // (e.g. on /today, which has no sub-tab pills — only the two utilities).
+  useEffect(() => {
+    const el = stripScrollRef.current;
+    if (!el) {
+      setStripOverflows(false);
+      return;
+    }
+    const measure = () => setStripOverflows(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [location.pathname, location.search]);
+
   const pageDisplayName = {
     Today: "Today",
-    Dashboard: "Today",
     Fuel: "Fuel",
     Train: "Train",
     Insights: "Analyze",
@@ -131,8 +169,49 @@ export default function Layout({ children, currentPageName }) {
     ProgramBuilder: "Program Builder",
     AthleteState: "Body",
     Recovery: "Recovery",
-    BriefHistory: "Briefs",
+    BriefHistory: "Brief History",
   }[currentPageName] || currentPageName || "Home";
+
+  // Per-page contextual subtitle for the mobile header. Defaults to today's
+  // date; a page can override (or `null` to suppress) when the date is
+  // misleading — e.g. a history list isn't "today".
+  const pageSubtitle = {
+    BriefHistory: "Last 30 AI-generated daily briefs",
+    // Career is an IA orphan with its own in-page header; suppress the default
+    // date subtitle so a misleading "today's date" doesn't print under its title.
+    Career: null,
+  };
+  const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
+    ? pageSubtitle[currentPageName]
+    : format(new Date(), "EEEE, MMMM d");
+
+  // The active top-level section. Its cross-route children populate the mobile
+  // sub-tab strip when the section opts in (mobileStrip:true); sections with an
+  // in-page <SubTabs> (Train/Fuel) or none (Today) show no pills.
+  const activeSection = navigationItems.find((item) => isNavActive(item, location.pathname));
+  // Render the sub-tab strip only when there's a genuine active section that opts
+  // into the strip AND the current route is a real child of it (one of the
+  // children's `active` predicates fires). This stops an IA orphan that merely
+  // shares a `matches` prefix — or a section route with no matching child tab —
+  // from painting an empty/half-active pill row.
+  const hasSubTabs = !!(
+    activeSection?.mobileStrip &&
+    activeSection.children?.some((c) => c.active(location))
+  );
+
+  // The mobile dock carries only the primary sections (dock !== false). Demoted
+  // sections (Analyze) stay in the sidebar + mobile sub-tab strip but drop the
+  // dock slot, so the dock reads cleaner with fewer, larger thumb targets.
+  const dockItems = navigationItems.filter((item) => item.dock !== false);
+
+  // Layout-owned utilities (calculators / stream-note). These used to live only
+  // inside the dead FAB; they now sit in the mobile strip so they have a
+  // persistent, reachable home. Weigh-In was dropped here — it is already a
+  // thumb-zone Quick Action on /today, so a second global entry was redundant.
+  const utilities = [
+    { label: "Calc", icon: Calculator, onClick: () => setShowCalculators(true) },
+    { label: "Note", icon: Brain, onClick: () => setShowNoteModal(true) },
+  ];
 
   return (
     <>
@@ -226,9 +305,11 @@ export default function Layout({ children, currentPageName }) {
           >
             <div className="flex-1 min-w-0">
               <h1 className="type-display text-[22px] truncate">{pageDisplayName}</h1>
-              <div className="text-[12px] font-semibold text-muted-2 whitespace-nowrap">
-                {format(new Date(), "EEEE, MMMM d")}
-              </div>
+              {mobileSubtitle && (
+                <div className="text-[12px] font-semibold text-muted-2 truncate">
+                  {mobileSubtitle}
+                </div>
+              )}
             </div>
             <span className="chip-gold">{pstDays} days · PST</span>
             <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
@@ -241,28 +322,99 @@ export default function Layout({ children, currentPageName }) {
             </Link>
           </header>
 
-          {/* Main content */}
+          {/* Mobile utility / sub-tab strip — mirrors the desktop sidebar
+              children for the active section (Body/Analyze sub-routes) AND
+              carries the Calculators / Stream-Note utilities (formerly orphaned
+              in the dead FAB) so they're reachable from every section. Both the
+              sub-tab pills and the utilities use the same labeled-pill recipe so
+              the utilities read as named actions, not mystery glyphs. On routes
+              with no sub-tabs the utilities right-align (ml-auto) to keep the
+              compact h-11 band from reading as a half-empty toolbar. A trailing
+              fade is shown only when the row actually overflows. */}
+          <div
+            className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
+            style={{ top: "var(--layout-header-height, 0px)" }}
+          >
+            <div className="relative">
+              <div ref={stripScrollRef} className="flex items-center gap-1.5 px-[18px] h-11 overflow-x-auto no-scrollbar">
+                {hasSubTabs && activeSection.children.map((c) => {
+                  const on = c.active(location);
+                  return (
+                    <Link
+                      key={c.label}
+                      to={c.url}
+                      className={`shrink-0 px-3 h-9 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                        on
+                          ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {c.label}
+                    </Link>
+                  );
+                })}
+                {hasSubTabs && (
+                  <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
+                )}
+                {/* tracking dropped + px tightened so Calc + Note both fit at
+                    390px without clipping 'Note'->'NO' or forcing a horizontal
+                    scroll (the strip is overflow-x-auto, but the utilities must
+                    read whole, not half-cropped). */}
+                {utilities.map((u, i) => (
+                  <button
+                    key={u.label}
+                    type="button"
+                    onClick={u.onClick}
+                    className={`shrink-0 px-2.5 h-9 inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)] ${
+                      !hasSubTabs && i === 0 ? "ml-auto" : ""
+                    }`}
+                  >
+                    <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    {u.label}
+                  </button>
+                ))}
+              </div>
+              {/* Right-edge scroll-fade — only when the row truly overflows, so
+                  it never paints a false "scrollable" hint (e.g. on /today).
+                  Non-interactive so taps pass through. */}
+              {stripOverflows && (
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-0 w-8"
+                  style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Main content. Bottom padding is the shared --dock-clearance token
+              (+ a small gap + safe-area) rather than a magic 7rem, so the dock
+              offset is single-sourced with the sticky save-bar / footer
+              consumers (Profile save bar, ProgramBuilder footer). */}
           <main
             className="flex-1 flex flex-col min-h-0 lg:pb-0"
-            style={{ paddingBottom: "calc(7rem + env(safe-area-inset-bottom))" }}
+            style={{ paddingBottom: "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
           >
             <div className="flex-1 min-h-0">{children}</div>
           </main>
         </div>
       </div>
 
-      {/* Mobile — the floating liquid-glass dock */}
+      {/* Mobile — the floating liquid-glass dock (4 primary sections; Analyze
+          is demoted to the sidebar/strip, so the grid auto-sizes to the dock
+          items rather than a hard-coded 5 columns). */}
       <nav
-        className="glass-elevated z-[9999] lg:hidden rounded-full grid grid-cols-5 px-[9px] py-2"
+        className="glass-elevated z-[9999] lg:hidden rounded-full grid px-[9px] py-2"
         style={{
           position: "fixed",
           left: 18,
           right: 18,
           bottom: "calc(12px + env(safe-area-inset-bottom))",
           transform: "translateZ(0)",
+          gridTemplateColumns: `repeat(${dockItems.length}, minmax(0, 1fr))`,
         }}
       >
-        {navigationItems.map((item) => {
+        {dockItems.map((item) => {
           const isActive = isNavActive(item, location.pathname);
           return (
             <Link
@@ -281,39 +433,38 @@ export default function Layout({ children, currentPageName }) {
         })}
       </nav>
 
-      {/* FAB is suppressed on form/builder pages and on dense log/list surfaces
-          where it would float over tabular data and a native add action already
-          exists (Fuel/FoodTracker, Train hub + lists, Career, Mind, ProgramDetail). */}
-      {!['/profile', '/onboarding', '/create-workout', '/quick-workout', '/program-builder',
-         '/fuel', '/food-tracker', '/train', '/workouts', '/career', '/mind', '/program/',
-         '/today', '/recovery', '/brief-history', '/workout-detail', '/insights',
-         '/dashboard', '/physique', '/athlete-state'
-        ].some(p => location.pathname.startsWith(p)) && (
-        <FloatingActionButton
-          onWeighIn={() => setShowWeighIn(true)}
-          onCalculators={() => setShowCalculators(true)}
-          onStreamNote={() => setShowNoteModal(true)}
-        />
-      )}
-
-      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
+      {/* The floating action button was removed: it rendered on zero real landing
+          routes (pure dead weight) and a free-floating coral action competed with
+          every page's native add action, breaking the "coral is THE single action
+          color" rule. Its surviving entry points — Calculators and Stream-Note —
+          now live as labeled pills in the mobile utility strip above. (Weigh-In
+          was dropped: it is already a thumb-zone Quick Action on /today.) */}
       <CalculatorsModal
         isOpen={showCalculators}
         onClose={() => setShowCalculators(false)}
         weightUnit={profile?.weight_unit || "lbs"}
       />
+      {/* sheetMinHeight="" opts this content-sparse capture sheet out of the
+          default min-h-[40dvh] floor — otherwise the floor left a dead gap above
+          the textarea. QuickCapture (embedded) already carries its own mt-auto so
+          the Capture action self-anchors to the sheet bottom (thumb zone); the old
+          mt-auto pt-2 wrapper was redundant. focusHue="violet" gives the capture
+          field the Second-Brain (sleep/mind) identity hue on focus. */}
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md glass-elevated text-ink">
+        <DialogContent className="max-w-md flex flex-col" sheetMinHeight="">
           <DialogHeader>
-            <DialogTitle className="text-ink">Stream Note to Second Brain</DialogTitle>
+            <DialogTitle>Stream to Second Brain</DialogTitle>
+            <DialogDescription>
+              A quick thought, dropped straight into your inbox.
+            </DialogDescription>
           </DialogHeader>
-          <div className="pt-2">
-            <QuickCapture
-              domain="general"
-              placeholder="Stream a note to Second Brain..."
-              onCapture={() => setShowNoteModal(false)}
-            />
-          </div>
+          <QuickCapture
+            embedded
+            domain="general"
+            placeholder="What's on your mind?"
+            focusHue="violet"
+            onCapture={() => setShowNoteModal(false)}
+          />
         </DialogContent>
       </Dialog>
     </>

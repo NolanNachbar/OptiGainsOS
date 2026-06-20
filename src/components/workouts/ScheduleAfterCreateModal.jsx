@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, CalendarCheck, SkipForward, BookOpen } from "lucide-react";
+import { Calendar, CalendarCheck, SkipForward, BookOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -89,11 +89,11 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
-      <DialogContent className="max-w-2xl flex flex-col p-0 overflow-hidden">
+      <DialogContent sheetMinHeight="" className="max-w-lg flex flex-col p-0 overflow-hidden">
         <div className="px-6 pt-6 pb-4 shrink-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-brand" />
+            <CalendarCheck className="w-5 h-5 text-ink-muted" />
             Schedule Your Program
           </DialogTitle>
         </DialogHeader>
@@ -119,9 +119,9 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
-            <div className="border rounded-lg p-4 bg-charcoal-surface">
-              <h3 className="text-sm font-semibold text-ink-muted mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-brand" />
+            <div className="border border-charcoal-border rounded-lg p-4 bg-charcoal-surface">
+              <h3 className="section-label mb-3 flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-ink-muted" />
                 Cycle 1 Schedule Preview
               </h3>
 
@@ -129,34 +129,37 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 {scheduledWorkouts.map((workout, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between bg-charcoal-surface border border-charcoal-border rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-charcoal-surface2 rounded-lg px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-brand/[5%] text-brand border-brand/20">
+                      <Badge variant="slate">
                         Day {workout.dayIndex}
                       </Badge>
                       <span className="font-medium text-sm text-ink">{workout.title}</span>
                     </div>
-                    <span className="text-xs text-ink-muted">
-                      {format(new Date(workout.date), "EEE, MMM d")}
+                    <span className="text-sm text-ink-muted tabular-nums">
+                      {format(parseISO(workout.date), "EEE, MMM d")}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 pt-3 border-t text-xs text-ink-muted space-y-1">
-                <p>Rest days automatically distributed between training days.</p>
-                <p>All {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
+              <div className="mt-3 pt-3 border-t border-charcoal-borderSoft text-xs text-ink-muted">
+                <p>Rest days are distributed automatically; all {program?.num_cycles || program?.duration_weeks || 4} cycles will appear on your schedule.</p>
               </div>
             </div>
           )}
 
         </div>
 
-        <div className="shrink-0 border-t bg-charcoal-surface  px-6 py-4">
+        <div
+          className="shrink-0 border-t border-charcoal-borderSoft bg-charcoal-surface px-6 py-4"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
           <div className="flex gap-3">
             <Button
               variant="outline"
+              size="lg"
               onClick={handleSkip}
               className="flex-1"
               disabled={isScheduling}
@@ -167,10 +170,15 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
             <Button
               onClick={handleSchedule}
               variant="primary"
-              className="flex-1 bg-brand"
+              size="lg"
+              className="flex-1"
               disabled={isScheduling}
             >
-              <CalendarCheck className="w-4 h-4 mr-1.5" />
+              {isScheduling ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <CalendarCheck className="w-4 h-4 mr-1.5" />
+              )}
               {isScheduling ? "Scheduling..." : "Schedule Program"}
             </Button>
           </div>

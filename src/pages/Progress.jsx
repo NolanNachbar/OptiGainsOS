@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import WeightProgressChart from "@/components/progress/WeightProgressChart";
 import {
   TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
-  TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Flame, Activity
+  TrendingDown, ArrowUpRight, ArrowDownRight, Flame, Activity, ChevronDown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
@@ -65,15 +65,30 @@ function WeightTab() {
 
   return (
     <div className="space-y-6">
-      {/* Quick log */}
+      {/* Trend first: the stats + chart land before the logger so the page
+          leads with insight, not data entry. */}
       <Card className="glass glass-interactive">
-        <CardContent className="pt-4 pb-5 px-5">
-          <h3 className="section-label mb-4">Log Weight</h3>
+        <CardContent className="pt-5 pb-5 px-5">
+          <WeightProgressChart data={sorted} weightUnit={weightUnit} className="h-64 md:h-72" />
+        </CardContent>
+      </Card>
+
+      {/* Quick log — collapsed into a disclosure so the trend stays above the
+          fold; expand to record a new entry. */}
+      <details className="glass glass-interactive group/log [&[open]>summary_.log-chevron]:rotate-180">
+        <summary className="flex items-center justify-between cursor-pointer list-none px-5 py-3.5 min-h-[44px]">
+          <span className="flex items-center gap-2">
+            <Plus className="w-4 h-4 text-muted-2" />
+            <span className="section-label !text-ink">Log Weight</span>
+          </span>
+          <ChevronDown className="log-chevron w-4 h-4 text-faint transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)]" />
+        </summary>
+        <div className="px-5 pb-5 pt-1">
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full" />
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full font-technical" />
               </div>
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
@@ -88,15 +103,8 @@ function WeightTab() {
               Log
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Chart */}
-      <Card className="glass glass-interactive">
-        <CardContent className="pt-5 pb-5 px-5">
-          <WeightProgressChart data={sorted} weightUnit={weightUnit} className="h-72" />
-        </CardContent>
-      </Card>
+        </div>
+      </details>
 
       {/* History */}
       {sorted.length > 0 && (() => {
@@ -114,9 +122,9 @@ function WeightTab() {
                 <div key={entry.id} className="flex items-center gap-4 px-4 py-2.5 glass-inset group">
                   <span className="font-technical text-xs font-semibold text-muted-2 w-20 shrink-0">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</span>
                   <span className="font-technical text-sm font-extrabold text-ink">{entry.weight} {weightUnit}</span>
-                  {diff !== null && (
-                    <span className={`font-technical text-xs font-bold flex items-center gap-0.5 ${diff > 0 ? "text-warn" : diff < 0 ? "text-ok" : "text-muted-2"}`}>
-                      {diff > 0 ? <ArrowUpRight className="w-3 h-3" /> : diff < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                  {diff !== null && diff !== 0 && (
+                    <span className="font-technical text-xs font-bold flex items-center gap-0.5 text-ink">
+                      {diff > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                       {diff > 0 ? "+" : ""}{diff.toFixed(1)}
                     </span>
                   )}
@@ -229,7 +237,7 @@ function MeasurementsTab() {
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36 font-technical" />
           </div>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map(f => (
@@ -306,7 +314,7 @@ function MeasurementsTab() {
               </thead>
               <tbody>
                 {history.map((row) => (
-                  <tr key={row.id} className="border-b hairline last:border-0 group hover:bg-white/[0.08]">
+                  <tr key={row.id} className="border-b hairline last:border-0 group hover:bg-track">
                     <td className="font-technical px-4 py-2.5 text-muted-2 whitespace-nowrap">{format(parseISO(row.date), "MMM d, yyyy")}</td>
                     {MEASUREMENT_FIELDS.map(f => (
                       <td key={f.key} className="px-3 py-2.5 text-right font-technical font-bold text-ink">{row[f.key] ?? "—"}</td>
@@ -385,7 +393,7 @@ function MetabolismTab() {
                 <Flame className="w-4 h-4 text-gold" />
                 <h3 className="section-label !text-ink">Expenditure Engine</h3>
               </div>
-              <Badge className={state?.nutrition ? "bg-teal/10 text-teal border-none" : "bg-white/[0.06] text-muted-2 border-none"}>
+              <Badge className={state?.nutrition ? "bg-teal/10 text-teal border-none" : "bg-track glass-inset text-muted-2 border-none"}>
                 {state?.nutrition ? "Active" : "No data"}
               </Badge>
            </div>
@@ -408,16 +416,20 @@ function MetabolismTab() {
             // hardcoded label: a sustained weight change *is* the energy balance.
             const trend = Number(state?.nutrition?.weight_trend_lbs_per_week);
             const known = state?.nutrition?.weight_trend_lbs_per_week != null && !Number.isNaN(trend);
-            const net = !known ? { label: "—", cls: "text-muted-2" }
-              : trend > 0.15 ? { label: "Surplus", cls: "text-warn" }
-              : trend < -0.15 ? { label: "Deficit", cls: "text-carb" }
-              : { label: "Balanced", cls: "text-teal" };
+            // Net Energy is a derived NUTRITION label, not a biometric readout —
+            // so it owns a single data hue (gold, carried by the dot below) and
+            // the value renders as neutral ink rather than poaching the
+            // physiological spectrum (warn/info/teal). See SYS-09(a) in index.css.
+            const net = !known ? { label: "—" }
+              : trend > 0.15 ? { label: "Surplus" }
+              : trend < -0.15 ? { label: "Deficit" }
+              : { label: "Balanced" };
             return (
               <Card className="glass glass-interactive p-4">
                 <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
                   <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-gold" /> Net Energy
                 </p>
-                <p className={`font-technical text-lg font-extrabold ${net.cls}`}>{net.label}</p>
+                <p className={`font-technical text-lg font-extrabold ${known ? "text-ink" : "text-muted-2"}`}>{net.label}</p>
               </Card>
             );
          })()}
@@ -441,11 +453,11 @@ export default function Progress() {
       {/* Subordinate to the parent Fuel SubTabs: a lighter, contained segmented
           control (glass-inset, no full-width underline strip) so the two nav
           levels read as a clear hierarchy rather than two equal-weight strips. */}
-      <TabsList className="mb-6 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
-        <TabsTrigger value="metabolism" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
-        <TabsTrigger value="weight" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
-        <TabsTrigger value="measurements" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
-        <TabsTrigger value="photos" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
+      <TabsList className="mb-3 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
+        <TabsTrigger value="metabolism" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
+        <TabsTrigger value="weight" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
+        <TabsTrigger value="measurements" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
+        <TabsTrigger value="photos" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
       </TabsList>
       <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
       <TabsContent value="weight"><WeightTab /></TabsContent>

@@ -7,13 +7,40 @@ import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 
-// LOGIN — quiet, ambient, one glass card (the design's front door).
+// ── Shared auth composition ────────────────────────────────────────────────
+// One ambient field + one header recipe for Login / ForgotPassword /
+// ResetPassword. Kept byte-identical across the three paired screens so the
+// front door reads as a single surface (single 24px wordmark, text-ink brand).
 const AMBIENT = {
   background:
     'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
     'radial-gradient(420px 360px at -15% 45%, rgba(155,140,255,0.10), transparent 70%),' +
     'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
 };
+
+export function AuthShell({ children }) {
+  return (
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+      <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
+      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function AuthHeader({ subtitle }) {
+  return (
+    <div className="text-center rise-in">
+      <h1 className="type-display text-[28px] sm:text-[24px] whitespace-nowrap text-ink">OPTIGAINS</h1>
+      {subtitle && (
+        <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,92 +54,84 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate through the inline #login-error path (role=alert, text-brand)
+    // instead of the native OS tooltip.
+    if (!email.trim() || !password) {
+      setErrorMsg('Enter your email and password');
+      return;
+    }
+
     setLoading(true);
 
     try {
       await signIn(email, password);
       setErrorMsg('');
-      toast.success('Welcome back!');
+      toast.success('Welcome back');
       navigate(returnTo, { replace: true });
     } catch (error) {
       setErrorMsg(error.message || 'Invalid email or password');
-      toast.error(error.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
+    <AuthShell>
+      <AuthHeader subtitle="Performance OS · private build" />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-5 relative z-10 w-full">
-        <div className="text-center rise-in">
-          <h1 className="type-display text-[26px] whitespace-nowrap text-ink">
-            OPTI<span style={{ color: 'var(--hue-teal)' }}>GAINS</span>
-          </h1>
-          <p className="text-[11.5px] font-semibold mt-1.5 tracking-[0.02em] text-muted-2">
-            Performance OS · private build
-          </p>
-        </div>
+      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="mb-2.5">
+            <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
+              autoComplete="email"
+              aria-invalid={!!errorMsg}
+              aria-describedby={errorMsg ? 'login-error' : undefined}
+            />
+          </div>
+          <div className="mb-2">
+            <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
+              autoComplete="current-password"
+              aria-invalid={!!errorMsg}
+              aria-describedby={errorMsg ? 'login-error' : undefined}
+            />
+          </div>
 
-        <div className="glass w-full max-w-sm mt-9 px-4 pt-[18px] pb-4 rise-in-2">
-          <form onSubmit={handleSubmit}>
-            <div className="mb-[9px]">
-              <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
-                className="!h-12 !rounded-xl"
-                autoComplete="email"
-                autoFocus
-                aria-invalid={!!errorMsg}
-                aria-describedby={errorMsg ? 'login-error' : undefined}
-                required
-              />
-            </div>
-            <div className="mb-[9px]">
-              <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
-                className="!h-12 !rounded-xl"
-                autoComplete="current-password"
-                aria-invalid={!!errorMsg}
-                aria-describedby={errorMsg ? 'login-error' : undefined}
-                required
-              />
-              {errorMsg && <p id="login-error" role="alert" className="text-bad text-sm mt-2">{errorMsg}</p>}
-            </div>
+          {errorMsg && <p id="login-error" role="alert" className="text-brand text-[13px] mb-2">{errorMsg}</p>}
 
-            <Button type="submit" variant="volt" size="lg" className="w-full mt-1" disabled={loading}>
-              {loading ? (
-                <>
-                  <LoadingSpinner size="small" className="mr-1" />
-                  Signing in…
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
+          <Button type="submit" variant="volt" size="lg" className="w-full mt-1 active:scale-[.99]" disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner size="small" className="mr-1" />
+                Signing in…
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </Button>
 
-            <div className="flex items-center justify-center mt-3 px-0.5">
-              <Link
-                to="/forgot-password"
-                className="text-[11.5px] font-bold text-muted-2 hover:text-ink transition-colors inline-flex items-center py-3 px-2 -my-3 -mx-2"
-              >
-                Forgot password
-              </Link>
-            </div>
-          </form>
-        </div>
+          <div className="flex items-center justify-center mt-3 px-0.5">
+            <Link
+              to="/forgot-password"
+              className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center min-h-[44px] px-2"
+            >
+              Forgot password
+            </Link>
+          </div>
+        </form>
       </div>
-    </div>
+    </AuthShell>
   );
 }
