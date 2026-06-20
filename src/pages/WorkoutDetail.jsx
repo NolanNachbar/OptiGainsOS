@@ -844,7 +844,7 @@ export default function WorkoutDetail() {
                 </div>
 
 
-                {!isLogging && (
+                {!isLogging && !resumeSession && (
                   <div className="space-y-3">
                     <Button
                       onClick={handleStartLogging}

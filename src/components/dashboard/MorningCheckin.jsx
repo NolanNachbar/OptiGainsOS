@@ -130,7 +130,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
 
   if (existingCheckin?.energy) {
     const soreGroups = Object.entries(existingCheckin.soreness_snapshot || {})
-      .filter(([_, level]) => level > 0)
+      .filter(([, level]) => level > 0)
       .sort((a, b) => b[1] - a[1]);
 
     return (

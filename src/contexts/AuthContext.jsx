@@ -13,24 +13,25 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Dev-only escape hatch. Never honored in production builds.
+    // Real login against the local Supabase stack as the seeded test athlete,
+    // so RLS, auth.uid() and real persistence all behave exactly like prod.
     const isBypass = import.meta.env.DEV &&
       (localStorage.getItem('bypass_auth') === 'true' || window.location.search.includes('bypass_auth=true'));
-    if (isBypass) {
-      localStorage.setItem('bypass_auth', 'true');
-      setUser({
-        id: '00000000-0000-0000-0000-000000000000',
-        email: 'mock.athlete@optigains.io',
-        user_metadata: { name: 'Mock Athlete' }
-      });
-      setLoading(false);
-      return;
-    }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const init = async () => {
+      if (isBypass) {
+        localStorage.setItem('bypass_auth', 'true');
+        const { error } = await supabase.auth.signInWithPassword({
+          email: 'athlete@local.test',
+          password: 'localpassword123',
+        });
+        if (error) console.error('[dev auto-login] failed — is the seeded test user present?', error.message);
+      }
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
+    init();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

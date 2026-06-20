@@ -222,7 +222,7 @@ export default function ExerciseCard({
                 {/* Original exercise targets (non-program) */}
                 {!isProgramMode && originalExercise && (
                   <p className="text-[10.5px] text-ink-muted mt-1 uppercase font-bold tracking-[0.06em]">
-                    Target <span className="font-technical text-ink">{originalExercise.sets || 3}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
+                    Target <span className="font-technical text-ink">{Array.isArray(originalExercise.sets) ? originalExercise.sets.length : (originalExercise.sets || 3)}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
                   </p>
                 )}
                 {/* Last performance data */}

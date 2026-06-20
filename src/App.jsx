@@ -221,6 +221,8 @@ function App() {
                       }
                     />
                   ))}
+                  {/* No unmatched path should white-screen — bounce to Today. */}
+                  <Route path="*" element={<Navigate to="/today" replace />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>
