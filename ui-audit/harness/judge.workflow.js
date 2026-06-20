@@ -15,7 +15,18 @@ export const meta = {
 log(`args type=${typeof args} keys=${args && typeof args === 'object' ? Object.keys(args).join(',') : 'n/a'}`);
 const parsedArgs = typeof args === 'string' ? JSON.parse(args) : (args || {});
 const root = parsedArgs.root;
-const journeys = (parsedArgs.journeys || []).filter((j) => j.shots && j.shots.length);
+let rawJourneys = parsedArgs.journeys;
+if (!rawJourneys && parsedArgs.journeysPath) {
+  const boot = await agent(
+    `Read the JSON file at ${parsedArgs.journeysPath}. Return its "journeys" array EXACTLY: each item has id, label, shots (string array), hardFail.`,
+    { label: 'bootstrap:read-journeys', phase: 'Judge',
+      schema: { type: 'object', properties: { journeys: { type: 'array', items: { type: 'object', properties: {
+        id: { type: 'string' }, label: { type: 'string' }, shots: { type: 'array', items: { type: 'string' } }, hardFail: {} },
+        required: ['id', 'shots'] } } }, required: ['journeys'] } },
+  );
+  rawJourneys = (boot && boot.journeys) || [];
+}
+const journeys = (rawJourneys || []).filter((j) => j.shots && j.shots.length);
 log(`judging ${journeys.length} journeys`);
 
 const FINDINGS = {
