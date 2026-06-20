@@ -429,11 +429,21 @@ export default function ExerciseCard({
               }`}>
                 {set.set_number}
               </span>
-              <span className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1">
+              <button
+                type="button"
+                disabled={!lastPerformance?.lastWeight}
+                onClick={() => {
+                  // Tap "last time" to copy it into this set (Hevy-style prefill).
+                  onUpdateSet(exerciseIndex, setIndex, 'weight', lastPerformance.lastWeight);
+                  onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
+                }}
+                aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
+                className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1 text-left disabled:cursor-default enabled:active:text-brand"
+              >
                 {lastPerformance?.lastWeight
                   ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
                   : '—'}
-              </span>
+              </button>
               <input
                 type="number"
                 aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
