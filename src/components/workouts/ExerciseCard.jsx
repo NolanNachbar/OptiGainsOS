@@ -10,6 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
+import { getLibraryNames } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
@@ -48,6 +49,7 @@ export default function ExerciseCard({
   const [coachingChip, setCoachingChip] = useState(null); // { message, suggestedWeight, type, targetSetIndex }
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [customExerciseName, setCustomExerciseName] = useState("");
+  const [libNames, setLibNames] = useState([]); // free-exercise-db names, lazy-loaded
   const menuRef = useRef(null);
   const nudgeTimerRef = useRef(null);
 
@@ -95,6 +97,13 @@ export default function ExerciseCard({
   useEffect(() => {
     return () => { if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current); };
   }, []);
+
+  // Lazy-load the full exercise library only when the swap dialog opens.
+  useEffect(() => {
+    if (showReplaceDialog && libNames.length === 0) {
+      getLibraryNames().then(setLibNames).catch(() => {});
+    }
+  }, [showReplaceDialog, libNames.length]);
 
   // Handle set completed
   const handleSetCompleted = (setIndex, completed) => {
@@ -609,7 +618,7 @@ export default function ExerciseCard({
               <Combobox
                 value={customExerciseName}
                 onValueChange={setCustomExerciseName}
-                items={allExerciseNames.length > 0 ? allExerciseNames : DB_NAMES}
+                items={(allExerciseNames.length || libNames.length) ? [...new Set([...allExerciseNames, ...libNames])] : DB_NAMES}
                 excludeValue={exercise.name}
                 placeholder="Enter exercise name…"
                 onKeyDown={(e) => {
