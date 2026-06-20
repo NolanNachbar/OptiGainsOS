@@ -79,7 +79,7 @@ export function MacroGoalsEditor({ values, onChange }) {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* System extension (genuine gap): native <input type=range> has no token
           for thumb sizing. Mobile law requires a >=44px touch zone with a
           finger-sized thumb. The range track stays 1.5px (visual), the wrapper
@@ -110,16 +110,25 @@ export function MacroGoalsEditor({ values, onChange }) {
           cursor: pointer;
         }
       `}</style>
-      {/* Calories */}
+      {/* Calories — this input IS the FoodTracker phase-card hero number (the
+          big gold kcal/day figure). Labelled "Calorie target" + a caption that
+          names the tie so the editor reads as driving the hero, not a sibling
+          field. kcal owns GOLD (SYS-09d): the unit cue carries the gold hue. */}
       <div>
-        <Label>Daily Calories</Label>
+        <div className="flex items-baseline justify-between gap-2">
+          <Label htmlFor="macro-calorie-target">Calorie target</Label>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-gold/80">kcal/day</span>
+        </div>
         <Input
+          id="macro-calorie-target"
           type="number"
+          inputMode="numeric"
           value={values.daily_calorie_goal}
           onChange={(e) => handleCaloriesChange(e.target.value)}
           min="0"
-          className="mt-1"
+          className="mt-1 font-technical text-gold"
         />
+        <p className="mt-1 text-[11px] text-ink-faint">Drives the daily calorie goal shown on Fuel.</p>
       </div>
 
       {/* Stacked colour bar — segment fills animate width only, on the system
@@ -137,8 +146,8 @@ export function MacroGoalsEditor({ values, onChange }) {
             <div className="flex items-center justify-between mb-1.5">
               <span className={`text-sm font-semibold ${text}`}>{label}</span>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-ink-muted text-xs">{pct}%</span>
-                <span className={`font-bold tabular-nums ${text}`}>{g}g</span>
+                <span className="text-ink-muted text-xs font-technical">{pct}%</span>
+                <span className={`font-bold font-technical ${text}`}>{g}g</span>
                 {!onSlide && <span className="text-[10px] text-ink-muted uppercase tracking-wider">auto</span>}
               </div>
             </div>

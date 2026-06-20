@@ -431,13 +431,20 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             while staying full-bleed on mobile (DialogContent is w-full there). */}
         <DialogContent className="max-w-2xl">
           {(() => {
-            const hasDelta = compareEntries[0]?.bodyfat_estimate != null && compareEntries[1]?.bodyfat_estimate != null;
-            const newer = compareEntries.length === 2 && parseISO(compareEntries[0].taken_at) > parseISO(compareEntries[1].taken_at) ? compareEntries[0] : compareEntries[1];
-            const older = newer === compareEntries[0] ? compareEntries[1] : compareEntries[0];
+            // Defensive guard: this block only has a meaningful comparison when
+            // exactly two entries are resolved. A partial/empty compare state
+            // (mid-selection, an id that hasn't resolved, or an exit transition
+            // while Radix keeps DialogContent mounted) must never reach the
+            // .pose / .taken_at access below. Degrade to nothing rendered.
+            if (compareEntries.length !== 2) return null;
+            const [a, b] = compareEntries;
+            const hasDelta = a?.bodyfat_estimate != null && b?.bodyfat_estimate != null;
+            const newer = parseISO(a?.taken_at) > parseISO(b?.taken_at) ? a : b;
+            const older = newer === a ? b : a;
             const change = hasDelta ? newer.bodyfat_estimate - older.bodyfat_estimate : null;
             // A delta across two different poses isn't a like-for-like BF change,
             // so suppress the headline number and annotate instead of misleading.
-            const crossPose = newer.pose && older.pose && newer.pose !== older.pose;
+            const crossPose = newer?.pose && older?.pose && newer.pose !== older.pose;
             return (
               <DialogHeader>
                 <DialogTitle>Side by side</DialogTitle>
@@ -463,7 +470,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               the height lower (~42vh) so both columns plus the per-photo readout
               fit a phone without scrolling. */}
           <div className="grid grid-cols-2 gap-3">
-            {compareEntries.map((e, i) => (
+            {compareEntries.length === 2 && compareEntries.map((e, i) => (
               <div key={e.id} className="rise-in" style={{ animationDelay: `${i * 0.04}s` }}>
                 {e.url && e.media_type === "photo"
                   ? <img src={e.url} alt={`Physique photo from ${format(parseISO(e.taken_at), 'MMM d, yyyy')}`} className="w-full rounded-lg object-contain" style={{ maxHeight: "42vh" }} />

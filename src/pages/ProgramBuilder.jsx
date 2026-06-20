@@ -466,10 +466,18 @@ export default function ProgramBuilder() {
               <p className="section-label">
                 Step {step + 1}/{STEPS.length}
               </p>
-              <p className="type-display text-[18px] text-ink mt-0.5 truncate">
+              <p className="type-display text-lg text-ink mt-0.5 truncate">
                 {STEPS[step]}
               </p>
             </div>
+            {/* Mobile wayfinding shares the action row instead of stacking its
+                own bar — the Layout header owns the top title, so a compact
+                "Step 1/4 · Details" eyebrow here is enough to orient. */}
+            <p className="section-label md:hidden min-w-0 truncate">
+              <span className="font-technical">Step {step + 1}/{STEPS.length}</span>
+              {" · "}
+              {STEPS[step]}
+            </p>
             <div className="flex items-center gap-2 shrink-0">
               {!editId && (
                 <>
@@ -501,18 +509,6 @@ export default function ProgramBuilder() {
               </Button>
             </div>
           </div>
-
-          {/* Mobile wayfinding — the desktop eyebrow+title block above is
-              hidden on mobile (the Layout header owns the top row), so without
-              this the primary viewport was four anonymous bars. A compact
-              "Step 1/4 · Details" label restores wayfinding without re-stacking
-              a full page title under the Layout header. Hidden on desktop where
-              the full title already shows. */}
-          <p className="section-label md:hidden mt-3">
-            <span className="font-technical">Step {step + 1}/{STEPS.length}</span>
-            {" · "}
-            {STEPS[step]}
-          </p>
 
           {/* Step indicator */}
           <div className="flex gap-1 mt-2 md:mt-3">
@@ -601,7 +597,9 @@ export default function ProgramBuilder() {
             so Description + Tags clear both this bar and the dock at 390px. On
             desktop it un-sticks and goes transparent. */}
         <div
-          className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex gap-3 glass-elevated md:bg-transparent md:shadow-none md:border-0"
+          className={`sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 md:bg-transparent md:shadow-none md:border-0 ${
+            step > 0 ? "glass-elevated" : ""
+          }`}
           style={{ bottom: "calc(var(--dock-clearance) + env(safe-area-inset-bottom))" }}
         >
           {step > 0 && (
@@ -634,6 +632,13 @@ export default function ProgramBuilder() {
                 ? "Update Program"
                 : "Create Program"}
             </Button>
+          )}
+          {/* Helper line for the disabled Next on step 0 — names WHY the coral
+              action is gated, so a greyed-out button isn't a dead end. */}
+          {step === 0 && !canProceed() && (
+            <p className="basis-full text-xs text-ink-muted">
+              Name your program to continue
+            </p>
           )}
         </div>
 
@@ -724,16 +729,13 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
         </div>
 
         {/* Cycle configuration — the load-bearing controls, surfaced directly
-            under the name so duration is decided before optional copy. Cycle
-            Length + Cycles share one row even on mobile (grid-cols-2) so the
-            two duration steppers + Next stay inside ~1.5 viewports; Goal drops
-            to its own full-width row on mobile, all three rejoin on desktop. */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            under the name so duration is decided before optional copy. Each
+            stepper gets a FULL-WIDTH row at 390px (grid-cols-1) so its
+            -/number/+ controls never cramp, pairing off to 2-up at sm+. Goal
+            keeps its own full-width row; all three rejoin 3-up on desktop. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
-            <Label className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              Cycle Length *
-            </Label>
+            <Label>Cycle Length *</Label>
             <NumberStepper
               value={program.cycle_length}
               onChange={(v) => update("cycle_length", v)}
@@ -741,7 +743,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={30}
               ariaLabel="cycle length"
             />
-            <p className="text-xs text-ink-faint mt-0.5">Days per cycle</p>
+            <p className="text-xs text-ink-muted mt-0.5">Days per cycle</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
@@ -755,11 +757,11 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={20}
               ariaLabel="number of cycles"
             />
-            <p className="text-xs text-ink-faint mt-0.5">Times repeated</p>
+            <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
           </div>
-          {/* Goal spans both mobile columns (own row) then rejoins the desktop
+          {/* Goal spans both columns (own row) then rejoins the desktop
               three-up row. */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="sm:col-span-2 md:col-span-1">
             <Label>Goal</Label>
             <Select
               value={program.goal}
@@ -946,10 +948,10 @@ function StepCycleDays({
       <AnimatePresence>
         {editingDay != null && editingWorkout && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.24, ease: [0.2, 0.7, 0.3, 1] }}
           >
             <InlineDayEditor
               dayIndex={editingDay}
@@ -1088,7 +1090,7 @@ function InlineDayEditor({
           <Select
             onValueChange={(targetDay) => onCopyDay(dayIndex, parseInt(targetDay))}
           >
-            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-xs">
+            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-[12.5px]">
               <Copy className="w-3 h-3 mr-1" />
               Copy to...
             </SelectTrigger>
@@ -1388,11 +1390,17 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
           </div>
 
           {projections.length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            // The strip already sits ON a glass-inset card, so the per-cycle
+            // chips drop their own glass (no inset-on-inset) and read as flat
+            // bg-track tiles with a hairline. The horizontal mask fades the
+            // edges so a scrollable overflow is legible without a scrollbar.
+            <div
+              className="flex gap-2 overflow-x-auto no-scrollbar pb-1 [mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)]"
+            >
               {projections.map((p) => (
                 <div
                   key={p.week}
-                  className="glass-inset flex-shrink-0 text-center px-4 py-2"
+                  className="flex-shrink-0 text-center px-4 py-2 rounded-md bg-track"
                 >
                   <p className="text-xs text-ink-muted">Cycle {p.week}</p>
                   <p className="font-technical text-sm font-bold text-ink mt-1">{p.weight} lbs</p>

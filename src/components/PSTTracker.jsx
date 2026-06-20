@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,18 @@ const PST_TARGETS = {
   pullups: { label: "Pull-ups",   unit: "reps", target: 20,  lower_is_better: false, competitive: 20  },
   run:     { label: "1.5mi Run",  unit: "sec",  target: 570, lower_is_better: true,  competitive: 540 },
 };
+
+// Shared section-header pattern (mirrors the SectionHeader in AthleteState):
+// hue-coded icon + section-label heading. Kept local since the AthleteState
+// copy is not exported; markup is intentionally identical so siblings match.
+function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className={`w-3.5 h-3.5 ${color}`} />
+      <h2 className="section-label !text-ink">{title}</h2>
+    </div>
+  );
+}
 
 function fmtTime(seconds) {
   if (!seconds) return "—";
@@ -44,21 +56,27 @@ function PSTBar({ event, value }) {
     pct = Math.min((value / cfg.target) * 100, 100);
   }
 
-  const display = (event === "swim" || event === "run") ? fmtTime(value) : `${value}`;
-  const targetDisplay = (event === "swim" || event === "run") ? fmtTime(cfg.target) : `${cfg.target}`;
-  const isGood = pct >= 100;
+  const isTimed = event === "swim" || event === "run";
+  const display = isTimed ? fmtTime(value) : `${value}`;
+  const targetDisplay = isTimed ? fmtTime(cfg.target) : `${cfg.target}`;
+  // PST scores are performance data, not biometrics — fill carries each event's
+  // own data hue (timed swim/run = carb-blue, rep events = endurance teal),
+  // leaving the ok/info physiological spectrum reserved for true biometrics.
+  const hue = isTimed
+    ? { text: "text-carb", bar: "bg-carb" }
+    : { text: "text-teal", bar: "bg-teal" };
 
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between text-xs mb-1">
         <span className="text-secondary font-bold">{cfg.label}</span>
-        <span className={`font-technical font-bold ${isGood ? "text-ok" : "text-info"}`}>
+        <span className={`font-technical font-bold ${hue.text}`}>
           {display} <span className="text-muted-2 font-semibold">/ target {targetDisplay}</span>
         </span>
       </div>
       <div className="h-1.5 bg-track rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-[width] duration-300 ease-[cubic-bezier(.2,.7,.3,1)] ${isGood ? "bg-ok" : "bg-info"}`}
+          className={`h-full rounded-full transition-[width] duration-300 ease-[cubic-bezier(.2,.7,.3,1)] ${hue.bar}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -87,7 +105,7 @@ function TimeField({ unit, value, onChange, disabled, max }) {
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-ink-faint tabular-nums"
+        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-faint tabular-nums"
       >
         {unit}
       </span>
@@ -153,11 +171,11 @@ export default function PSTTracker() {
   return (
     <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
-        <div className="flex items-center justify-between">
-          <CardTitle className="section-label !text-ink flex items-center gap-2 normal-case">
-            <Waves className="w-3.5 h-3.5 text-carb" />
-            PST Performance
-          </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          {/* Shared SectionHeader pattern (icon + section-label !text-ink),
+              matching the AthleteState sibling cards, with Log Test kept as a
+              trailing action. Waves carries the endurance hue (teal). */}
+          <SectionHeader icon={Waves} title="PST Performance" />
           <Button variant="ghost" size="sm" className="min-h-[44px] gap-1 text-xs px-4" onClick={() => setShowForm(true)}>
             <Plus className="w-3.5 h-3.5" /> Log Test
           </Button>
@@ -237,27 +255,34 @@ export default function PSTTracker() {
                 className={`[color-scheme:dark]${form.test_date ? "" : " is-empty"}`}
               />
             </div>
-            <div>
-              <label className="section-label mb-1 block">{PST_TARGETS.swim.label}</label>
-              <div className="flex gap-2">
-                <TimeField unit="min" value={form.swim_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_min: v }))} />
-                <TimeField unit="sec" max="59" value={form.swim_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_sec: v }))} />
+            {/* Timed cluster — swim + run share the min/sec entry shape. */}
+            <div className="space-y-3">
+              <div>
+                <label className="section-label mb-1 block">{PST_TARGETS.swim.label}</label>
+                <div className="flex gap-2">
+                  <TimeField unit="min" value={form.swim_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_min: v }))} />
+                  <TimeField unit="sec" max="59" value={form.swim_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_sec: v }))} />
+                </div>
+              </div>
+              <div>
+                <label className="section-label mb-1 block">{PST_TARGETS.run.label}</label>
+                <div className="flex gap-2">
+                  <TimeField unit="min" value={form.run_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_min: v }))} />
+                  <TimeField unit="sec" max="59" value={form.run_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_sec: v }))} />
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            {/* Hairline divider separates timed events from rep-count events. */}
+            <div className="border-t hairline" />
+            {/* Rep cluster — stacks full-width at 390px (44px-tall fields, no
+                cramped 3-up), settling into 3 columns from md up. */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
               {["pushups", "situps", "pullups"].map(field => (
                 <div key={field}>
                   <label className="section-label mb-1 block">{PST_TARGETS[field].label}</label>
                   <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" disabled={saveMutation.isPending} value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                 </div>
               ))}
-            </div>
-            <div>
-              <label className="section-label mb-1 block">{PST_TARGETS.run.label}</label>
-              <div className="flex gap-2">
-                <TimeField unit="min" value={form.run_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_min: v }))} />
-                <TimeField unit="sec" max="59" value={form.run_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_sec: v }))} />
-              </div>
             </div>
             <div>
               <label className="section-label mb-1 block">Notes</label>
@@ -269,14 +294,14 @@ export default function PSTTracker() {
                 they stay in the thumb zone without scrolling. -mx-6 cancels the
                 content px-6 so the bar spans the sheet edge to edge. */}
             <div
-              className="sticky bottom-0 -mx-6 mt-1 flex gap-3 border-t hairline px-6 pt-3 bg-[var(--sheet-bg)]"
+              className="sticky bottom-0 -mx-6 mt-1 flex gap-3 border-t hairline px-6 pt-3 glass-sheet"
               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
             >
               <Button variant="ghost" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => setShowForm(false)}>Cancel</Button>
               <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
                 {saveMutation.isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Saving…
+                    <Loader2 className="w-4 h-4 spin-loop" /> Saving…
                   </>
                 ) : "Save"}
               </Button>

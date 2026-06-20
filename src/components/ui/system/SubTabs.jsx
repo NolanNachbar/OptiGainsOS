@@ -36,9 +36,9 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
                 key={id}
                 ref={isActive ? activeRef : null}
                 onClick={() => onChange(id)}
-                className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   isActive
-                    ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                    ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]"
                     : "text-ink-muted hover:text-ink"
                 }`}
               >

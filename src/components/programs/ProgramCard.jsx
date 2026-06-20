@@ -14,6 +14,13 @@ const GOAL_LABELS = {
 
 const MAX_TAGS = 3;
 
+// Tags arrive as raw lowercase kebab strings (e.g. 'upper-body'). Humanize them
+// into Title Case so they read as labels, consistent with GOAL_LABELS.
+const humanizeTag = (tag) =>
+  String(tag)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function ProgramCard({ program, enrollment, index = 0, inActiveTab }) {
   const isActive = enrollment?.status === "active";
   const cycleLength = program.cycle_length || program.days_per_week || 7;
@@ -70,7 +77,7 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
                 {program.title || program.name}
               </h3>
               {program.description && (
-                <p className="text-xs text-ink-muted line-clamp-1">{program.description}</p>
+                <p className="text-xs text-ink-muted line-clamp-2">{program.description}</p>
               )}
             </div>
 
@@ -112,10 +119,12 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
             {hasTags && (
               <div className="flex flex-wrap gap-1">
                 {visibleTags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                  <Badge key={tag} variant="outline" className="text-xs">{humanizeTag(tag)}</Badge>
                 ))}
+                {/* Overflow is a count, not an action — render it as quiet faint
+                    ink with no chip border so it reads as '+N more', not a tag. */}
                 {overflowTags > 0 && (
-                  <Badge variant="outline" className="text-xs font-technical">+{overflowTags}</Badge>
+                  <span className="self-center px-1 text-xs font-technical text-ink-faint">+{overflowTags}</span>
                 )}
               </div>
             )}

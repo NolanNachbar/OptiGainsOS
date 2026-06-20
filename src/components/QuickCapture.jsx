@@ -60,7 +60,12 @@ export default function QuickCapture({
   };
 
   const body = (
-    <div className={embedded ? "relative flex flex-col mt-auto w-full" : "relative"}>
+    // SYS-05 dropped the Layout sheet's forced min-height, so the old
+    // `flex flex-col mt-auto` (which pushed this body to the bottom of that
+    // padded sheet) is now a no-op — drop it so the embedded wrapper carries
+    // no misleading layout intent. `w-full` stays so the field/button still
+    // span the sheet width.
+    <div className={embedded ? "relative w-full" : "relative"}>
       <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

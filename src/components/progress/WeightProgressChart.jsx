@@ -10,6 +10,16 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
   const trendedData = useMemo(() => calculateEWMA(sortedData, 0.1), [sortedData]);
 
+  // De-dupe X-axis ticks: one tick per distinct recorded_date, evenly sampled
+  // down to ~6 so dense logs don't stack identical 'MMM d' labels on the axis.
+  const xTicks = useMemo(() => {
+    const distinct = [...new Set(sortedData.map((d) => d.recorded_date))];
+    if (distinct.length <= 6) return distinct;
+    const step = (distinct.length - 1) / 5;
+    const sampled = Array.from({ length: 6 }, (_, i) => distinct[Math.round(i * step)]);
+    return [...new Set(sampled)];
+  }, [sortedData]);
+
   if (!data || data.length === 0) {
     return (
       <div className={`w-full ${className || 'h-80'} flex items-center justify-center glass-inset`}>
@@ -43,7 +53,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
     <div className="w-full">
       {/* items-stretch lets the three plain stat cards match the Change card's
           height without the old hard-coded &nbsp; spacer rows reclaiming ~16px each. */}
-      <div className="grid grid-cols-4 gap-2 mb-6 items-stretch">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 items-stretch">
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
@@ -62,8 +72,8 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             {weightChange !== 0 && <span className="text-[12px]" aria-hidden="true">{weightChange > 0 ? '▲' : '▼'}</span>}
             <span>{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}</span>
             <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
-            <span className="text-[12px] text-muted-2 font-semibold ml-0.5">({percentChange > 0 ? '+' : ''}{percentChange}%)</span>
           </div>
+          <div className="font-technical text-[10px] text-muted-2 font-semibold">({percentChange > 0 ? '+' : ''}{percentChange}%)</div>
         </div>
       </div>
 
@@ -73,6 +83,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <CartesianGrid strokeDasharray="0" stroke="var(--color-track)" strokeOpacity={1} />
             <XAxis
               dataKey="recorded_date"
+              ticks={xTicks}
               tickFormatter={(date) => format(parseISO(date), 'MMM d')}
               stroke="var(--color-track)"
               tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
@@ -92,7 +103,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="var(--text-faint)"
+              stroke="var(--text-muted)"
               strokeWidth={1}
               dot={false}
               activeDot={{ r: 3, fill: 'var(--text-muted)', strokeWidth: 0 }}
@@ -112,7 +123,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
       <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'var(--text-faint)' }} />
+          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'var(--text-muted)' }} />
           Raw
         </span>
         <span className="flex items-center gap-1.5">

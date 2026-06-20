@@ -58,7 +58,7 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <form key="form" onSubmit={handleSubmit} className="space-y-4 rise-in">
-            <p className="type-display text-[17px] text-ink text-center">Enter your email</p>
+            <p className="type-display text-[18px] text-ink text-center">Enter your email</p>
             <div>
               <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
               <div className="relative">
@@ -96,7 +96,7 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <div className="flex items-center justify-center mt-2 pt-1 border-t border-charcoal-borderSoft px-0.5">
+        <div className="flex items-center justify-center mt-3 pt-2 border-t border-charcoal-borderSoft px-0.5">
           <Link
             to="/login"
             className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"

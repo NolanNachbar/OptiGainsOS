@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, addWeeks, subWeeks, startOfWeek, isSameDay } from "date-fns";
-import { ChevronLeft, ChevronRight, ChevronDown, Dumbbell, Timer, Moon, Check, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Dumbbell, Timer, Moon, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
@@ -158,18 +158,18 @@ export default function WeeklySchedule() {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [showAllMuscles, setShowAllMuscles] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  // The completed-session card starts expanded when the selected day is today,
-  // so the day the user lands on immediately shows its logged exercises rather
-  // than a collapsed summary. Selecting another day re-derives this from
-  // whether THAT day is today (see selectDay below).
-  // selectedDay defaults to today, so the completed card opens on mount.
-  const [showCompleted, setShowCompleted] = useState(true);
+  // The completed-session card starts COLLAPSED on every day (today included):
+  // a 13-exercise log expanded by default buried the 'Log another session' CTA
+  // below the fold. The summary header (title + duration + count) leads; tap to
+  // expand the per-exercise breakdown. Selecting another day keeps it collapsed.
+  const [showCompleted, setShowCompleted] = useState(false);
 
-  // One entry point for picking a day so the completed-card default-expand stays
-  // tied to "is the tapped day today" without an effect chasing selectedDay.
+  // One entry point for picking a day. The completed card stays collapsed on
+  // day change so the next-action CTA stays reachable without scrolling past a
+  // long exercise list.
   const selectDay = (day) => {
     setSelectedDay(day);
-    setShowCompleted(isSameDay(day, new Date()));
+    setShowCompleted(false);
   };
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
 
@@ -278,7 +278,7 @@ export default function WeeklySchedule() {
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="font-technical text-[13px] font-extrabold text-ink">
+        <span className="font-technical text-sm font-extrabold text-ink">
           {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
@@ -301,8 +301,8 @@ export default function WeeklySchedule() {
           ))
         ) : logsError || enrollmentsError ? (
           <div className="py-4 flex flex-col items-center gap-2">
-            <p className="text-[12px] font-semibold text-muted-2">Could not load your schedule.</p>
-            <button onClick={() => refetchLogs()} className="cta-ghost text-[12px] px-4 py-1.5 min-h-[44px]">
+            <p className="text-xs font-semibold text-muted-2">Could not load your schedule.</p>
+            <button onClick={() => refetchLogs()} className="cta-ghost text-xs px-4 py-1.5 min-h-[44px]">
               Retry
             </button>
           </div>
@@ -316,6 +316,12 @@ export default function WeeklySchedule() {
           const detail = log
             ? getWorkoutSplitTitle(log, entries[0]?.title)
             : entries[0]?.title || "—";
+          // Suppress the day-type pill when it repeats the prior row's type so
+          // the dominant repeated value (e.g. TWO-A-DAY every day) stops reading
+          // as noise; the workout title then carries the row's identity.
+          const prevDay = i > 0 ? weekDays[i - 1] : null;
+          const prevType = prevDay ? dayType(getEntriesForDay(prevDay), getLogForDay(prevDay)) : null;
+          const showPill = type !== "REST" && type !== prevType;
 
           return (
             <button
@@ -324,18 +330,20 @@ export default function WeeklySchedule() {
               className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
             >
               <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
-                <span className={`block text-[11px] font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
+                <span className={`block text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
-                <span className={`block text-[15px] font-extrabold text-ink`}>
+                <span className={`block text-base font-extrabold text-ink`}>
                   {format(day, "d")}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <Chip bg={pill.bg} fg={pill.fg}>{pill.label}</Chip>
-                <div className="text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
+                <div className="text-xs font-semibold text-ink truncate">
                   {detail}
                 </div>
+                {showPill && (
+                  <Chip bg={pill.bg} fg={pill.fg} className="mt-0.5">{pill.label}</Chip>
+                )}
               </div>
               {/* Shared fixed-width trailing status slot so completed / up-next /
                   future rows align on one scan column instead of a ragged rail.
@@ -352,7 +360,7 @@ export default function WeeklySchedule() {
                     <ChevronRight className="w-3.5 h-3.5 text-ink" />
                   </span>
                 ) : log ? (
-                  <Check className="w-4 h-4 text-muted-2" />
+                  <CheckCircle2 className="w-4 h-4 text-secondary" />
                 ) : type !== "REST" ? (
                   <ChevronRight className="w-4 h-4 text-faint" />
                 ) : null}
@@ -392,16 +400,16 @@ export default function WeeklySchedule() {
                       <p className="section-label mb-1">
                         {isTwoADay ? `${dayEcho} AM — Completed` : `${dayEcho} — Completed`}
                       </p>
-                      <h3 className="type-display text-[15px] leading-tight truncate">
+                      <h3 className="type-display text-base leading-tight truncate">
                         {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
                       </h3>
-                      <p className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 tabular-nums">
+                      <p className="font-technical text-xs font-semibold text-muted-2 mt-0.5 tabular-nums">
                         {dur ? `${dur} · ` : ""}{exCount} {exCount === 1 ? "exercise" : "exercises"}
                       </p>
                     </div>
                     <span className="flex items-center gap-2 shrink-0">
                       <span className="w-6 h-6 rounded-full glass-inset flex items-center justify-center">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-ink" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-secondary" />
                       </span>
                       <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
                     </span>
@@ -417,7 +425,7 @@ export default function WeeklySchedule() {
                           <div>
                             {logLifts.map((ex, j) => (
                               <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
                                 <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
                               </div>
                             ))}
@@ -433,7 +441,7 @@ export default function WeeklySchedule() {
                           <div>
                             {logRuns.map((ex, j) => (
                               <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
                                 <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
                               </div>
                             ))}
@@ -455,7 +463,7 @@ export default function WeeklySchedule() {
                     <p className="section-label mb-1">
                       {isTwoADay ? `${dayEcho} AM — Strength` : `${dayEcho} — ${activeEnrollment?.program?.title || "Program"}`}
                     </p>
-                    <h3 className="type-display text-[15px] leading-tight">{entry.title}</h3>
+                    <h3 className="type-display text-base leading-tight">{entry.title}</h3>
                   </div>
                   {lifts.length > 0 && (
                     <div className="px-4 py-2">
@@ -466,7 +474,7 @@ export default function WeeklySchedule() {
                       <div>
                         {lifts.map((ex, j) => (
                           <div key={j} className="data-row justify-between">
-                            <span className="text-[13px] font-semibold text-ink truncate">{ex.name}</span>
+                            <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
                             <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatPrescribed(ex)}</span>
                           </div>
                         ))}
@@ -506,38 +514,37 @@ export default function WeeklySchedule() {
                       <span className="section-label !text-carb">{isTwoADay ? "PM — Run" : "Cardio"}</span>
                     </div>
                     {isTwoADay && (
-                      <p className="text-[11px] font-semibold text-muted-2 mb-3">
+                      <p className="text-xs font-semibold text-muted-2 mb-3">
                         ~6h separation from AM session
                       </p>
                     )}
-                    {!isTwoADay && <div className="mb-2" />}
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-2">
                       {runs.map((ex, j) => {
                         const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
                         const done = isCardioDone(name);
                         return (
                           <div key={j} className="flex items-center justify-between gap-3">
-                            <div className={done ? "opacity-50" : ""}>
-                              <div className="flex items-baseline gap-2">
-                                <span className={`text-[13px] font-semibold text-ink ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
-                                <span className="font-technical text-[12px] font-semibold text-muted-2 tabular-nums">{ex.duration_minutes} min</span>
-                              </div>
-                              {ex.notes && <p className="text-[11px] text-muted-2 mt-0.5">{ex.notes}</p>}
+                            <div className={`min-w-0 ${done ? "opacity-50" : ""}`}>
+                              <span className={`text-sm font-semibold text-ink ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
+                              {ex.notes && <p className="text-xs text-muted-2 mt-0.5">{ex.notes}</p>}
                             </div>
-                            <button
-                              onClick={() => toggleCardio(name)}
-                              aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
-                              aria-pressed={done}
-                              className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
-                            >
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
-                                done
-                                  ? "glass-inset text-ink"
-                                  : "border border-carb/40"
-                              }`}>
-                                {done && <CheckCircle2 className="w-4 h-4" />}
-                              </span>
-                            </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="pill-value pill-value--sm text-muted-2 tabular-nums">{ex.duration_minutes} min</span>
+                              <button
+                                onClick={() => toggleCardio(name)}
+                                aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
+                                aria-pressed={done}
+                                className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
+                              >
+                                <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
+                                  done
+                                    ? "glass-inset text-carb"
+                                    : "bg-track"
+                                }`}>
+                                  {done && <CheckCircle2 className="w-4 h-4" />}
+                                </span>
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -571,11 +578,18 @@ export default function WeeklySchedule() {
         )}
       </div>
 
+      {/* This Program — Weekly Volume + Program progress share one section label
+          so the two teal viz-1 bars read as members of one group ("this program"
+          analytics) rather than two instances of the same metric. */}
+      {(muscleVolume.length > 0 || activeEnrollment?.program) && (
+      <section aria-label="This program" className="rise-in-3">
+        <p className="section-label mb-2 px-1">This Program</p>
+        <div className="space-y-3">
       {/* Weekly volume — secondary analytics, collapsed by default so the
           selected-day session + action lead the page. Tap to expand the
           per-muscle set breakdown. */}
       {muscleVolume.length > 0 && (
-        <div className="glass px-4 py-3.5 mb-4 rise-in-3">
+        <div className="glass px-4 py-3.5">
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
@@ -583,7 +597,7 @@ export default function WeeklySchedule() {
           >
             <span className="section-label">Weekly Volume</span>
             <span className="flex items-center gap-2">
-              <span className="font-technical text-[11px] font-extrabold text-muted-2 tabular-nums">
+              <span className="font-technical text-xs font-extrabold text-muted-2 tabular-nums">
                 {totalWeeklySets} sets · {muscleVolume.length} muscles
               </span>
               <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showVolume ? "rotate-180" : ""}`} />
@@ -595,16 +609,16 @@ export default function WeeklySchedule() {
                 {visibleMuscleVolume.map(([muscle, sets]) => (
                   <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-semibold text-ink capitalize truncate">
+                      <span className="text-sm font-semibold text-ink capitalize truncate">
                         {muscle.replace(/_/g, " ")}
                       </span>
                       <span className="pill-value pill-value--sm text-muted-2 shrink-0">
-                        {sets} <span className="text-[11px] font-semibold">sets</span>
+                        {sets} <span className="text-xs font-semibold">sets</span>
                       </span>
                     </div>
                     <div className="h-1 bg-track rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-viz-1 rounded-full transition-all duration-200 [transition-timing-function:var(--ease)]"
+                        className="h-full bg-viz-1 rounded-full transition-[width] duration-200 ease-[var(--ease)]"
                         style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
                       />
                     </div>
@@ -627,7 +641,7 @@ export default function WeeklySchedule() {
 
       {/* Program progress */}
       {activeEnrollment?.program && (
-        <div className="glass px-4 py-3 rise-in-3">
+        <div className="glass px-4 py-3">
           <div className="flex items-center justify-between mb-1.5">
             <p className="section-label truncate flex-1 mr-2">
               {activeEnrollment.program.title}
@@ -635,13 +649,16 @@ export default function WeeklySchedule() {
             <span className="font-technical text-xs font-extrabold text-muted-2 shrink-0 tabular-nums">{progressPct}%</span>
           </div>
           <div className="h-1 bg-track rounded-full overflow-hidden mb-1.5">
-            <div className="h-full bg-viz-1 rounded-full transition-all duration-200 [transition-timing-function:var(--ease)]" style={{ width: `${progressPct}%` }} />
+            <div className="h-full bg-viz-1 rounded-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${progressPct}%` }} />
           </div>
-          <p className="font-technical text-[11px] font-semibold text-muted-2">
+          <p className="font-technical text-xs font-semibold text-muted-2">
             Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}
             {" · "}{completedCount} sessions logged
           </p>
         </div>
+      )}
+        </div>
+      </section>
       )}
     </div>
   );

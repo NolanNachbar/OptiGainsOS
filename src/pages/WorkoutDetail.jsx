@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
@@ -100,14 +100,14 @@ export default function WorkoutDetail() {
   // Exercise reactions (like/dislike per exercise)
 
   // Fetch enrollment data (program mode only)
-  const { data: enrollment, isError: enrollmentError } = useQuery({
+  const { data: enrollment, isError: enrollmentError, refetch: refetchEnrollment } = useQuery({
     queryKey: ['enrollment', enrollmentId],
     queryFn: () => db.entities.ProgramEnrollment.get(enrollmentId),
     enabled: isProgramSource && !!enrollmentId,
   });
 
   // Fetch program workout data (program mode only)
-  const { data: programWorkout, isError: programWorkoutError } = useQuery({
+  const { data: programWorkout, isError: programWorkoutError, refetch: refetchProgramWorkout } = useQuery({
     queryKey: ['programWorkout', programWorkoutId],
     queryFn: () => db.entities.ProgramWorkout.get(programWorkoutId),
     enabled: isProgramSource && !!programWorkoutId,
@@ -696,25 +696,56 @@ export default function WorkoutDetail() {
     setTimeout(() => setShowPostWorkoutDialog(true), 50);
   };
 
+  // A program workout that genuinely failed to load (network/server error) is
+  // retryable and distinct from a deleted/invalid workout link.
+  const programLoadError = isProgramSource
+    && (enrollmentError || programWorkoutError)
+    && !!enrollmentId && !!programWorkoutId;
   const loadFailed = workoutNotFound
     || (isProgramSource && (enrollmentError || programWorkoutError || !enrollmentId || !programWorkoutId));
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex items-center justify-center lg:items-center">
-        <Card className="w-full rise-in">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex flex-col items-center justify-start pt-12 lg:justify-center lg:pt-0">
+        <Card className="w-full max-w-md mx-auto rise-in">
           <CardContent className="py-12 text-center">
             <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
               <Dumbbell className="w-5 h-5" />
             </i>
-            <h2 className="type-display text-[22px] text-ink mb-2">Workout not found</h2>
-            <p className="text-[13px] font-semibold text-ink-muted mb-6">
-              This workout may have been deleted, or the link is no longer valid.
-            </p>
-            <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Workouts
-            </Button>
+            {programLoadError ? (
+              <>
+                <h2 className="type-display text-2xl text-ink mb-2">Couldn&apos;t load this workout</h2>
+                <p className="text-[13px] font-semibold text-ink-muted mb-6">
+                  Couldn&apos;t load this program workout — try again.
+                </p>
+                <div className="flex flex-col sm:flex-row sm:justify-center gap-3">
+                  <Button
+                    variant="volt"
+                    size="lg"
+                    className="w-full sm:w-auto"
+                    onClick={() => { refetchEnrollment(); refetchProgramWorkout(); }}
+                  >
+                    <RotateCw className="w-4 h-4 mr-2" />
+                    Try again
+                  </Button>
+                  <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Workouts
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="type-display text-2xl text-ink mb-2">Workout not found</h2>
+                <p className="text-[13px] font-semibold text-ink-muted mb-6">
+                  This workout may have been deleted, or the link is no longer valid.
+                </p>
+                <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Workouts
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -789,7 +820,7 @@ export default function WorkoutDetail() {
           <CardContent className="flex flex-col md:flex-row md:gap-8">
             <div className="flex-1 min-w-0">
               {/* Title + description */}
-              <CardTitle className="type-display text-[22px] mb-1">{workout.title}</CardTitle>
+              <CardTitle className="type-display text-2xl mb-1">{workout.title}</CardTitle>
               {workout.description && (
                 <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}

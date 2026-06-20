@@ -70,6 +70,26 @@ export default function RecoveryDetail() {
   }, [prescription, recoveryMetrics]);
   const acwrSource = prescription?.acwr != null ? "engine load model" : "step proxy";
 
+  // ACWR is a biometric, so the physiological spectrum is the correct hue here:
+  // ok in the 0.8–1.3 lowest-risk zone, warn while elevated (1.3–1.5), bad once
+  // it crosses the 1.5 overtraining ceiling. Drives both the number and the
+  // gauge pin so color stays a single source of truth.
+  const acwrSpectrum =
+    acwr == null ? null
+    : acwr > 1.5 ? "bad"
+    : acwr > 1.3 ? "warn"
+    : "ok";
+  const acwrColor =
+    acwrSpectrum == null ? "text-ink-muted"
+    : acwrSpectrum === "bad" ? "text-bad"
+    : acwrSpectrum === "warn" ? "text-warn"
+    : "text-ok";
+  const acwrPinVar =
+    acwrSpectrum == null ? "var(--text-faint)"
+    : acwrSpectrum === "bad" ? "var(--bad)"
+    : acwrSpectrum === "warn" ? "var(--warn)"
+    : "var(--ok)";
+
   // Prefer the engine's readiness score (athlete_state.recovery.score) so this
   // page matches AthleteState; fall back to the local formula only when the
   // engine hasn't computed today's state yet.
@@ -135,13 +155,13 @@ export default function RecoveryDetail() {
     <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
       <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <Card className="md:col-span-1 glass-interactive">
             <CardHeader className="pb-1 md:pb-2">
               <CardTitle className="section-label">Today's Readiness</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center py-2 md:py-4">
+              <div className="flex flex-col items-center py-1 md:py-3">
                 <div className={`hero-metric ${readinessColor} text-6xl mb-2`}>{score ?? "—"}</div>
                 <Badge className={`${readinessBg} ${readinessColor} text-sm px-4 py-1 rounded-full mb-3 md:mb-4`}>
                   {category.label}
@@ -172,18 +192,20 @@ export default function RecoveryDetail() {
               <CardTitle className="section-label">Training Load (ACWR)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center md:flex-row md:items-center gap-4 md:gap-6 py-1 md:py-2">
+              <div className="flex flex-col items-center md:flex-row md:items-center gap-3 md:gap-6 py-0.5 md:py-2">
                 <div className="text-center">
-                  {/* Demoted to text-4xl on mobile so Readiness (text-6xl) owns
-                      the single largest number on the page. */}
-                  <div className="hero-metric text-4xl md:text-5xl text-ink mb-1">{acwr ?? "—"}</div>
+                  {/* Readiness is the single page hero (hero-metric text-6xl), so
+                      ACWR drops hero-metric on mobile and reads as a font-technical
+                      stat (text-3xl); only at md+ does it scale back up. Color is
+                      the physiological spectrum since ACWR is a biometric. */}
+                  <div className={`font-technical text-3xl font-bold md:text-5xl md:font-extrabold ${acwrColor} mb-1`}>{acwr ?? "—"}</div>
                   <div className="section-label">Current Ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
                   {/* ACWR band gauge — neutral track, the 0.8–1.3 lowest-risk
-                      zone is a filled ink region (a 1.5px outline read as nearly
-                      invisible), ink pin shows current ratio. Spectrum (warn/bad)
-                      is reserved for the explicit out-of-range warning row below. */}
+                      zone is a filled ink reference region. The pin is the datum,
+                      so it carries the physiological spectrum (ok/warn/bad) — ACWR
+                      is a biometric, matching the number's color and the row below. */}
                   <div className="relative h-[10px] rounded-full bg-track">
                     <span
                       className="absolute inset-y-0 rounded-sm bg-ink/[0.10]"
@@ -191,9 +213,10 @@ export default function RecoveryDetail() {
                     />
                     {acwr != null && (
                       <span
-                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full bg-ink transition-[left] duration-300 ease-[var(--ease)]"
+                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full transition-[left] duration-300 ease-[var(--ease)]"
                         style={{
                           left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 2px)`,
+                          backgroundColor: acwrPinVar,
                           boxShadow: "0 0 0 3px var(--color-border)",
                         }}
                       />
@@ -208,14 +231,22 @@ export default function RecoveryDetail() {
                 </div>
               </div>
               <p
-                className="text-xs text-ink-muted mt-4 leading-relaxed"
+                className="text-xs text-ink-muted mt-3 leading-relaxed"
                 title={`Source: ${acwrSource}`}
               >
-                Compares your last 7 days of activity to your 28-day average; the shaded zone is lowest-risk.
+                7-day load vs your 28-day average; the shaded zone is lowest-risk.
               </p>
-              {acwr != null && acwr > 1.6 && (
-                <div className="mt-2 px-3 py-2 bg-bad/10 border border-bad/20 rounded-lg text-xs text-bad">
-                  High ACWR ({acwr.toFixed(2)}) — overtraining risk. Reduce volume.
+              {acwr != null && acwr > 1.3 && (
+                <div
+                  className={`mt-2 px-3 py-2 rounded-lg text-xs ${
+                    acwrSpectrum === "bad"
+                      ? "bg-bad/10 border border-bad/20 text-bad"
+                      : "bg-warn/10 border border-warn/20 text-warn"
+                  }`}
+                >
+                  {acwrSpectrum === "bad"
+                    ? `High ACWR (${acwr.toFixed(2)}) — overtraining risk. Reduce volume.`
+                    : `Elevated ACWR (${acwr.toFixed(2)}) — load climbing above the lowest-risk zone.`}
                 </div>
               )}
             </CardContent>
@@ -391,28 +422,32 @@ export default function RecoveryDetail() {
             tss_run/tss_cycling/tss_swim. Previously this showed a permanent
             row of zeros because garmin-sync never writes these fields. */}
         {['swim', 'cycling', 'run'].some((s) => Number(latest?.[`tss_${s}`]) > 0) && (
-          <div className="mb-6">
-            <h2 className="text-xl font-extrabold mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-carb" />
-              Endurance Stress (TSS)
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              {['Swim', 'Cycling', 'Run'].map(sport => {
-                const field = `tss_${sport.toLowerCase()}`;
-                const val = latest?.[field] ?? 0;
-                return (
-                  <Card key={sport} className="glass-interactive p-4">
-                    <div className="flex items-center justify-center gap-1.5 text-[9.5px] text-ink-muted uppercase tracking-[0.08em] font-bold mb-1">
-                      <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-carb" />
-                      {sport}
+          <Card className="mb-6 glass">
+            <CardHeader className="pb-1 md:pb-2">
+              <CardTitle className="section-label flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-carb" />
+                Endurance Stress (TSS)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {['Swim', 'Cycling', 'Run'].map(sport => {
+                  const field = `tss_${sport.toLowerCase()}`;
+                  const val = latest?.[field] ?? 0;
+                  return (
+                    <div key={sport} className="flex flex-col items-center">
+                      <div className="section-label mb-1 flex items-center justify-center gap-1.5">
+                        <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-carb" />
+                        {sport}
+                      </div>
+                      <div className="font-technical text-2xl font-extrabold text-ink">{val}</div>
+                      <div className="section-label mt-1">Today's Load</div>
                     </div>
-                    <div className="font-technical text-2xl font-extrabold text-ink">{val}</div>
-                    <div className="text-[10px] font-semibold text-ink-muted mt-1">Today's Load</div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
       </div>

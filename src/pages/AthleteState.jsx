@@ -476,9 +476,9 @@ function HypertrophySection({ data, landmarks }) {
                   <FatigueColor score={d.fatigue_score} />
                 </div>
               </div>
-              <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
+              <div className="h-1.5 bg-track rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${d.fatigue_score >= 0.75 ? "bg-bad" : d.fatigue_score >= 0.5 ? "bg-warn" : "bg-teal"}`}
+                  className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${d.fatigue_score >= 0.75 ? "bg-bad" : d.fatigue_score >= 0.5 ? "bg-warn" : "bg-teal"}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
                 />
               </div>
@@ -633,8 +633,8 @@ function EnduranceSection({ data }) {
             <span className="font-bold text-secondary">Aerobic Fitness</span>
             <span className="font-technical text-teal font-extrabold">{(data.aerobic_fitness_proxy * 100).toFixed(0)}%</span>
           </div>
-          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
-            <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${data.aerobic_fitness_proxy * 100}%` }} />
+          <div className="h-1.5 bg-track rounded-full overflow-hidden">
+            <div className="h-full bg-teal rounded-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${data.aerobic_fitness_proxy * 100}%` }} />
           </div>
           <p className="text-[10px] font-semibold text-muted-2 mt-1">
             Based on Garmin VO2max ({data.vo2max}). 0% = VO2max 30, 100% = VO2max 60.
@@ -713,9 +713,9 @@ function NutritionSection({ data, targets }) {
           </span>
         </div>
         {calPct != null && (
-          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
+          <div className="h-1.5 bg-track rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${calPct > 110 ? "bg-bad" : calPct >= 90 ? "bg-gold" : "bg-warn"}`}
+              className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${calPct > 110 ? "bg-bad" : calPct >= 90 ? "bg-gold" : "bg-warn"}`}
               style={{ width: `${Math.min(calPct, 100)}%` }}
             />
           </div>
@@ -732,9 +732,9 @@ function NutritionSection({ data, targets }) {
           </span>
         </div>
         {proteinPct != null && (
-          <div className="h-1.5 bg-charcoal-elevated rounded-full overflow-hidden">
+          <div className="h-1.5 bg-track rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${proteinPct >= 100 ? "bg-teal" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
+              className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${proteinPct >= 100 ? "bg-teal" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
               style={{ width: `${Math.min(proteinPct, 100)}%` }}
             />
           </div>
@@ -845,7 +845,7 @@ export default function AthleteState({ hideHeader = false }) {
 
   return (
     <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto pb-[var(--dock-clearance)] lg:pb-0">
         {!hideHeader && (
           <div className="mb-6 rise-in">
             {/* Title reconciled to the dock label ("Body"). On mobile the shared
@@ -853,7 +853,11 @@ export default function AthleteState({ hideHeader = false }) {
                 desktop-only to keep the title appearing exactly once; the
                 computed/last-updated caption is surfaced on every viewport. */}
             <h1 className="type-display text-[22px] hidden lg:block">Body</h1>
-            <p className="font-technical text-[13px] font-semibold text-muted-2 lg:mt-0.5">
+            {/* Desktop: full provenance caption (no shared header date to dup).
+                Mobile: Layout already prints today's date in the header, so the
+                page caption collapses to a single faint "Updated HH:MM" line to
+                avoid restating the date. */}
+            <p className="hidden lg:block font-technical text-[13px] font-semibold text-muted-2 lg:mt-0.5">
               Computed daily · {today}
               {state?.computed_at && (
                 <span className="ml-2 text-faint">
@@ -861,6 +865,11 @@ export default function AthleteState({ hideHeader = false }) {
                 </span>
               )}
             </p>
+            {state?.computed_at && (
+              <p className="lg:hidden font-technical text-[12px] font-semibold text-faint">
+                Updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            )}
           </div>
         )}
 
@@ -957,11 +966,16 @@ export default function AthleteState({ hideHeader = false }) {
             desktop via lg:block. Keeps the core answer within ~2 viewports. */}
         {!isLoading && !isError && state && (
         <>
+          {/* Thin section-label groups the two tap-to-expand accordions
+              (ChevronDown = disclose) so they read as one collapsible "Details"
+              zone, distinct from the ChevronRight nav links below (= navigate
+              away). Mobile-only, matching the lg:hidden accordions. */}
+          <div className="lg:hidden section-label mt-5 mb-1.5">Details</div>
           <button
             type="button"
             onClick={() => setDetailOpen((v) => !v)}
             aria-expanded={detailOpen}
-            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform"
+            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform"
           >
             <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <BarChart3 className="w-3.5 h-3.5" />

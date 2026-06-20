@@ -41,11 +41,15 @@ export function ConfirmDialog({
             `destructive` variant so a delete never masquerades as a coral CTA.
             Stacked + full-width across the full bottom-sheet range (thumb zone),
             reverting to an inline row only from md: up (centered desktop dialog)
-            so the layout holds for the whole sheet breakpoint. flex-col-reverse
-            (CTA visually first/lowest in the thumb zone) is gated to non-danger:
-            for danger we keep Cancel last/lowest so the destructive button is
-            not the closest tap target. */}
-        <div className={`flex ${variant === "danger" ? "flex-col" : "flex-col-reverse"} md:flex-row gap-3 mt-6`}>
+            so the layout holds for the whole sheet breakpoint.
+            DOM order is Cancel-then-confirm, so flex-col-reverse renders Cancel
+            visually LAST (closest to the resting thumb) and the confirm button
+            ABOVE it. For NON-danger this puts the coral CTA in the thumb zone.
+            For DANGER it is a mobile-safety inversion fix: Cancel must be the
+            closest tap target and the destructive button must sit above it, so
+            both branches use flex-col-reverse (the prior `flex-col` rendered
+            Delete last/lowest — the exact opposite of the intended ordering). */}
+        <div className="flex flex-col-reverse md:flex-row gap-3 mt-6">
           <Button
             variant="ghost"
             size="lg"

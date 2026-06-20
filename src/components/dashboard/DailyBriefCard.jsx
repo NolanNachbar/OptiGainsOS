@@ -22,10 +22,16 @@ const COACHES = [
   { key: "learning",     label: "Learning",     icon: BookOpen },
 ];
 
-/** Coach-persona tag — tiny uppercase teal chip (the an-coach <b>). */
-function CoachTag({ children }) {
+/** Coach-persona tag — tiny uppercase chip. Teal ONLY when the section is open
+ *  (the active datum); collapsed it rests as neutral ink so teal stays a state
+ *  signal, not a per-row decoration on five identical chips. */
+function CoachTag({ children, active = false }) {
   return (
-    <span className="text-[10px] font-extrabold tracking-wider uppercase text-teal bg-teal/10 rounded-sm px-2 py-1 whitespace-nowrap shrink-0">
+    <span
+      className={`text-[10px] font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+        active ? "text-teal bg-teal/10" : "text-secondary"
+      }`}
+    >
       {children}
     </span>
   );
@@ -40,19 +46,21 @@ function CoachSection({ coach, content, defaultOpen = false }) {
       <button
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between min-h-[44px] px-4 py-3 tile-interactive text-left"
+        className="w-full flex items-center gap-2.5 min-h-[44px] px-4 py-3 tile-interactive text-left"
       >
-        <div className="flex items-center gap-2.5">
-          {Icon && (
-            <span className="shrink-0 grid place-items-center w-7 h-7 rounded-lg bg-teal/10">
-              <Icon className="w-4 h-4 text-teal" aria-hidden="true" />
-            </span>
+        {Icon && (
+          <span className="shrink-0 grid place-items-center w-7 h-7 rounded-lg glass-inset">
+            <Icon className="w-4 h-4 text-secondary" aria-hidden="true" />
+          </span>
+        )}
+        <div className="flex-1 min-w-0">
+          <CoachTag active={open}>{coach.label}</CoachTag>
+          {!open && content && (
+            <p className="text-[12px] font-semibold text-muted-2 truncate mt-1">{content}</p>
           )}
-          <CoachTag>{coach.label}</CoachTag>
         </div>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-faint transition-transform ${open ? "rotate-180" : ""}`}
-          style={{ transitionDuration: "220ms", transitionTimingFunction: "var(--ease)" }}
+          className={`w-3.5 h-3.5 text-faint shrink-0 transition-transform duration-200 [transition-timing-function:var(--ease)] ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -66,7 +74,7 @@ function CoachSection({ coach, content, defaultOpen = false }) {
           }}
         >
           <div className="min-h-0">
-            <p className="font-technical tabular-nums px-4 pb-3 pt-0 text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{content}</p>
+            <p className="px-4 pb-3 pt-0 text-sm text-ink leading-[1.55] whitespace-pre-wrap">{content}</p>
           </div>
         </div>
       )}

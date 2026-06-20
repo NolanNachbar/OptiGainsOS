@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { Dumbbell, Pencil, Check, Cpu, Brain } from "lucide-react";
+import { Dumbbell, Pencil, Check, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
@@ -113,6 +113,10 @@ export default function QuickWorkout() {
   const { profile } = useProfile();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
+  // On the empty canvas the insight starts as a compact coach chip; tapping it
+  // expands to the full PreSessionInsightCard (accept/dismiss) rather than
+  // blind-accepting the suggestion.
+  const [insightExpanded, setInsightExpanded] = useState(false);
   // exercise name → suggested weight from accepted pre-session insight
   const [insightSuggestions, setInsightSuggestions] = useState({});
 
@@ -341,7 +345,7 @@ export default function QuickWorkout() {
         onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--dock-clearance)+72px+env(safe-area-inset-bottom))] lg:pb-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--dock-clearance)+24px+env(safe-area-inset-bottom))] lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -430,13 +434,13 @@ export default function QuickWorkout() {
             )}
           </div>
         ) : (
-          <div className="mb-3 lg:hidden flex items-center gap-1.5">
-            <p className="section-label">This session</p>
+          <div className="mb-3 lg:hidden flex items-center gap-2 min-w-0">
+            <p className="text-sm font-semibold text-ink-faint flex-1 min-w-0 truncate">{workoutTitle}</p>
             <button
               type="button"
               aria-label="Rename session"
               onClick={() => setEditingTitle(true)}
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 text-ink-faint hover:text-ink touch-manipulation"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 shrink-0 text-ink-faint hover:text-ink touch-manipulation"
             >
               <Pencil className="w-4 h-4" />
             </button>
@@ -449,7 +453,7 @@ export default function QuickWorkout() {
         {prescribed && (
           <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
             <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
-              <Cpu className="w-3.5 h-3.5 text-teal" />
+              <Brain className="w-3.5 h-3.5 text-teal" />
             </div>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">
               Loaded from <span className="text-ink font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
@@ -463,25 +467,27 @@ export default function QuickWorkout() {
             viewport stays one coherent stack; once exercises exist it expands to
             the full insight card with its accept/dismiss actions. */}
         {!prescribed && preSessionInsight && (
-          exercises.length === 0 ? (
+          exercises.length === 0 && !insightExpanded ? (
             <button
               type="button"
-              onClick={() => handleInsightAccept(preSessionInsight)}
-              className="w-full mb-4 glass px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-left rise-in touch-manipulation min-h-[44px]"
+              onClick={() => setInsightExpanded(true)}
+              className="w-full mb-4 glass px-3.5 py-3 rounded-xl flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px]"
             >
-              <span className="w-[22px] h-[22px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
-                <Brain className="w-3 h-3 text-teal" />
+              <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Brain className="w-3.5 h-3.5 text-teal" />
               </span>
-              <span className="text-[10px] text-teal uppercase tracking-[0.08em] font-bold shrink-0">Coach</span>
-              <span className="text-[12.5px] font-semibold text-ink-muted truncate flex-1 min-w-0">
-                {preSessionInsight.message}
+              <span className="flex-1 min-w-0">
+                <span className="block text-[10px] text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
+                <span className="block text-[12.5px] font-semibold text-ink-muted leading-relaxed">
+                  {preSessionInsight.message}
+                </span>
               </span>
             </button>
           ) : (
             <PreSessionInsightCard
               insight={preSessionInsight}
               onAccept={handleInsightAccept}
-              onDismiss={() => setInsightDismissed(true)}
+              onDismiss={() => { setInsightDismissed(true); setInsightExpanded(false); }}
             />
           )
         )}

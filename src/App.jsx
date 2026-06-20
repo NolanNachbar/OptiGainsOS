@@ -2,13 +2,33 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Layout from '@/components/Layout';
 import { LoadingScreen } from '@/components/ui/loading-spinner';
+
+// ── Per-type toast lifetimes ──────────────────────────────────────────────
+// Sonner 2.0.7 only exposes a FLAT default duration on <Toaster> (toastOptions
+// .duration is one number for every type; see the Toaster comment below). The
+// system wants a split: passive success/info are read-and-forget so they should
+// auto-dismiss quickly (~3s), while error/CTA toasts demand a response and keep
+// the longer 8s lifetime (the <Toaster> default). Rather than touch ~70 success
+// call sites, we patch the two PASSIVE variants of the imported toast singleton
+// once at module load to inject the short default — but ONLY when the caller did
+// not already pass an explicit duration, so any intentional override still wins.
+// error/warning/message/promise are left untouched and inherit the 8s default.
+const PASSIVE_TOAST_MS = 3000;
+['success', 'info'].forEach((variant) => {
+  const original = toast[variant].bind(toast);
+  toast[variant] = (message, data) =>
+    original(
+      message,
+      data?.duration == null ? { ...data, duration: PASSIVE_TOAST_MS } : data
+    );
+});
 
 
 const Login = lazy(() => import('./pages/Login'));
@@ -90,23 +110,30 @@ function AppToaster() {
       position={isMobile ? 'bottom-center' : 'top-center'}
       offset={
         isMobile
-          ? { bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }
+          ? // BLOCKER fix: --dock-clearance (80px) is the clearance budget for
+            // IN-FLOW content, measured from the dock's top edge — using it as a
+            // toast offset parked the ~50px pill body ON TOP of the floating dock.
+            // The toast is FLOATED chrome, so it must clear the dock's full
+            // footprint from the bottom edge: --dock-total-height (12px gap + 56px
+            // body + 12px breathing) plus the safe-area inset. This puts the pill's
+            // bottom edge ≥ ~96px, fully above the dock.
+            { bottom: 'calc(var(--dock-total-height, 80px) + 16px + env(safe-area-inset-bottom))' }
           : { top: 'calc(var(--layout-header-height, 0px) + env(safe-area-inset-top) + 12px)' }
       }
       closeButton
       toastOptions={{
-        // Actionable / error toasts are the ones a user must read and respond
-        // to, so the global default lands on the longer 8000ms lifetime — a flat
-        // 5000ms auto-dismissed error/CTA toasts before a thumb could reach the
-        // bottom-sheet close button. The persistent close button (always-visible
-        // via .og-toast__close) lets the reader dismiss passive success early,
-        // so erring long is safe.
+        // This flat default is the ACTIONABLE lifetime: error / CTA toasts are
+        // the ones a user must read and respond to, so they keep the longer
+        // 8000ms — a shorter window could auto-dismiss an error before a thumb
+        // reached the bottom-sheet close button. The persistent close button
+        // (always-visible via .og-toast__close) lets a reader dismiss early, so
+        // erring long is safe.
         //
-        // SYSTEM GAP: Sonner 2.0.7 has no per-TYPE duration at the Toaster level
-        // (ToastOptions.duration is flat; only per-call toast.success(msg,{duration})
-        // overrides it). True passive-vs-actionable duration split therefore lives
-        // at call sites or a future toast() wrapper. Until that wrapper exists the
-        // single defensible global default is the longer, actionable one.
+        // Sonner 2.0.7 has no per-TYPE duration at the Toaster level (this
+        // ToastOptions.duration is one flat number). The passive-vs-actionable
+        // split is delivered by the toast.success / toast.info singleton patch at
+        // the top of this file, which injects the short PASSIVE_TOAST_MS (~3s)
+        // default; everything else inherits this longer actionable default.
         duration: 8000,
         classNames: {
           toast: 'og-toast',

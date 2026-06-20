@@ -47,7 +47,7 @@ function StarRating({ value, onChange, readonly }) {
             // Tap the current high star to clear back to unrated, so a mis-tap is
             // recoverable without a separate control.
             onClick={() => !readonly && onChange?.(n === value ? 0 : n)}
-            className={`transition-colors inline-flex items-center justify-center ${readonly ? "cursor-default" : "cursor-pointer hover:text-gold w-11 h-11"} ${filled ? "text-gold" : "text-ink-faint"}`}
+            className={`transition-colors inline-flex items-center justify-center rounded-full ${readonly ? "cursor-default" : "cursor-pointer w-11 h-11 hover:text-gold active:text-gold active:scale-95 focus-visible:ring-2 focus-visible:ring-gold/40"} ${filled ? "text-gold" : "text-ink-faint"}`}
             disabled={readonly}
             aria-label={readonly ? undefined : `Rate ${n} star${n > 1 ? "s" : ""}`}
           >
@@ -58,7 +58,7 @@ function StarRating({ value, onChange, readonly }) {
         );
       })}
       {!readonly && (
-        <span className="ml-2 text-[10px] font-technical text-ink-faint">
+        <span className="ml-2 text-xs font-technical text-ink-faint">
           {value ? `${value}/5` : "Tap to rate"}
         </span>
       )}
@@ -171,9 +171,13 @@ function ReadingTab() {
         <div>
           <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
-        <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> Add Book
-        </Button>
+        {/* While empty, the ghost "Add your first book" CTA owns the single coral
+            primary — suppress the header button so we don't show two add actions. */}
+        {books.length > 0 && (
+          <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> Add Book
+          </Button>
+        )}
       </div>
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -270,7 +274,7 @@ function ReadingTab() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-[2]" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -671,13 +675,10 @@ function CaptureTab() {
   });
 
   return (
+    // Wrapper sizes to content (space-y, no forced min-height) so the dock sits
+    // directly below content on a sparse Capture tab. QuickCapture renders last so
+    // the primary input lands lower, nearer the thumb zone on mobile.
     <div className="space-y-5">
-      <div>
-        <h3 className="section-label mb-3 flex items-center gap-2">
-          <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
-        </h3>
-        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
-      </div>
       <div>
         <h3 className="section-label mb-3 flex items-center gap-2">
           <History className="w-3 h-3 text-violet" /> Recent Streams
@@ -701,10 +702,16 @@ function CaptureTab() {
             // doesn't scroll into ~250px of dead space below the fold.
             <div className="py-6 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
               <BookOpen className="w-6 h-6 text-faint mx-auto mb-1.5" />
-              <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note above to start.</p>
+              <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note below to start.</p>
             </div>
           ))}
         </div>
+      </div>
+      <div>
+        <h3 className="section-label mb-3 flex items-center gap-2">
+          <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
+        </h3>
+        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
     </div>
   );
@@ -720,8 +727,18 @@ const MIND_TABS = [
 
 export default function Mind({ hideHeader }) {
   const [activeTab, setActiveTab] = useState("capture");
+  const activeMeta = MIND_TABS.find(t => t.id === activeTab);
   return (
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
+      {/* System gap: a ~140ms opacity-only crossfade for tab switches. The shared
+          --ease keyframes (riseIn) carry an 8px rise over 280ms, which is too
+          heavy to re-fire on every tab tap; this scoped fade stays on the system
+          easing within the 180–320ms band's lower edge. Honors reduced-motion. */}
+      <style>{`
+        @keyframes mindTabFade { from { opacity: 0; } to { opacity: 1; } }
+        .mind-tab-fade { animation: mindTabFade .14s var(--ease) both; }
+        @media (prefers-reduced-motion: reduce) { .mind-tab-fade { animation: none; } }
+      `}</style>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <header className="mb-6 rise-in hidden lg:block">
@@ -734,19 +751,27 @@ export default function Mind({ hideHeader }) {
           </header>
         )}
 
-        {/* Mobile identity is owned by the Layout header — no duplicate row here. */}
-
         <SubTabs
           tabs={MIND_TABS}
           active={activeTab}
           onChange={setActiveTab}
           sticky={false}
           showOnDesktop
-          className={`mb-6 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
+          className={`mb-4 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
         />
-        {/* No key/rise-in per tab — the entrance is reserved for first mount so
-            switching tabs swaps content without re-animating every time. */}
-        <div>
+
+        {/* Mobile identity: the desktop header is suppressed on small screens, so
+            the active context carries Mind's violet Brain glyph here to keep the
+            domain legible without a duplicate title row. Desktop owns it above. */}
+        {activeMeta && (
+          <div className="lg:hidden flex items-center gap-2 mb-4">
+            <Brain className="w-3.5 h-3.5 text-violet shrink-0" />
+            <span className="section-label !text-violet">{activeMeta.label}</span>
+          </div>
+        )}
+
+        {/* Keyed on activeTab so each switch replays the subtle opacity fade. */}
+        <div key={activeTab} className="mind-tab-fade">
           {activeTab === "capture" && <CaptureTab />}
           {activeTab === "reading" && <ReadingTab />}
           {activeTab === "study" && <StudyTab />}

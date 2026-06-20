@@ -61,9 +61,9 @@ export default function WeighInModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader className="text-center">
-          <DialogTitle className="flex items-center justify-center gap-2">
+      <DialogContent className="max-w-md" sheetMinHeight="">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Scale className="w-5 h-5" /> Log Your Weight
           </DialogTitle>
         </DialogHeader>
@@ -73,7 +73,7 @@ export default function WeighInModal({ open, onOpenChange }) {
               Weight ({weightUnit})
             </label>
             <Input
-              type="number"
+              type="text"
               inputMode="decimal"
               step="0.1"
               enterKeyHint="done"
@@ -89,21 +89,12 @@ export default function WeighInModal({ open, onOpenChange }) {
               </p>
             )}
           </div>
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="dim"
-              size="lg"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+          <div>
             <Button
               type="submit"
-              variant="primary"
+              variant="volt"
               size="lg"
-              className="flex-1"
+              className="w-full"
               disabled={weighInMutation.isPending || !weight || parseFloat(weight) <= 0}
             >
               {weighInMutation.isPending ? (

@@ -84,7 +84,12 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, she
       }}
       {...props}
     >
-      {/* Mobile drag-handle affordance */}
+      {/* Mobile drag-handle pill — a DELIBERATE non-interactive signifier, not a
+          live drag-to-dismiss control. It marks the surface as a dismissible
+          bottom sheet (tap-scrim / Close-X / Cancel all dismiss); drag-to-dismiss
+          is intentionally not wired (a pointer-gesture dismiss is out of scope for
+          this shared primitive and would need its own swipe/threshold handling).
+          aria-hidden so AT users aren't offered a phantom affordance. */}
       <div className="md:hidden mx-auto -mt-2 mb-3 h-1 w-9 rounded-full bg-ink-muted/30" aria-hidden="true" />
       {ctx?.onOpenChange && !hideClose && (
         <button

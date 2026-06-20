@@ -111,7 +111,7 @@ function AppForm({ initial, onSave, onClose }) {
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
         <Button variant="volt" size="lg" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
@@ -292,7 +292,7 @@ function PipelineTab() {
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-xs font-semibold text-muted-2">{app.role}</span>
-                <button onClick={() => setConfirmDelete(app.id)} className="ml-auto p-2.5 -m-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
+                <button onClick={() => setConfirmDelete(app.id)} aria-label="Delete" className="ml-auto -mr-2.5 flex items-center justify-center min-h-[44px] min-w-[44px] opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -302,8 +302,8 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="min-h-[60dvh] flex flex-col items-center justify-center">
-          <div className="w-full py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+        <div className="mt-8">
+          <div className="w-full py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
             <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
             <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
@@ -325,7 +325,7 @@ function PipelineTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
-        <DialogContent className="max-w-sm" sheetMinHeight="">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle>
             <DialogDescription>{editing ? "Update this role's status, notes, and next action." : "Log a role you applied to and track it through the pipeline."}</DialogDescription>
@@ -380,7 +380,7 @@ function NetworkForm({ initial, onSave, onClose }) {
         <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
       <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
         <Button variant="volt" size="lg" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
       </div>
     </div>
@@ -475,11 +475,11 @@ function NetworkingTab() {
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
                 </div>
-                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} className="p-3.5 -m-2.5 text-muted-2 hover:text-ink">
+                <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+                  <button onClick={() => { setEditing(contact); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setConfirmDelete(contact.id)} className="p-3.5 -m-2.5 text-muted-2 hover:text-bad">
+                  <button onClick={() => setConfirmDelete(contact.id)} aria-label="Delete" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-bad">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -599,16 +599,10 @@ export default function Career({ hideHeader }) {
           </header>
         )}
 
-        {/* Mobile-only subtitle — the Layout chrome prints the "Career" title on
-            phones but not this one-liner, so surface it above the tabs so the
-            390px view still explains the section. */}
-        {!hideHeader && (
-          <p className="text-xs text-muted-2 font-semibold mb-3 lg:hidden">
-            {PAGE_SUBTITLE}
-          </p>
-        )}
-
-        <Tabs defaultValue="pipeline">
+        {/* Mobile subtitle lives in the Layout chrome (SYS-05 pageSubtitle
+            override) — printing it again here stacked a redundant restated
+            one-liner under the dock-supplied title, so it's dropped. */}
+        <Tabs defaultValue="pipeline" className="rise-in">
           <TabsList className="mb-6">
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="networking">Networking</TabsTrigger>

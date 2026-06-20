@@ -16,6 +16,16 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
   const triggerRef = useRef(null);
   const navigate = useNavigate();
 
+  // Rise-in only on the card's first mount. "Show 8 more" re-renders the whole
+  // list; cards keyed by workout.id keep their instance, so this ref stays true
+  // for them and they don't re-trigger the stagger — only the freshly revealed
+  // batch (new instances) animates in.
+  const firstMount = useRef(true);
+  const riseClass = firstMount.current ? RISE[index % 3] : "";
+  useEffect(() => {
+    firstMount.current = false;
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (openMenu && menuRef.current && !menuRef.current.contains(e.target)) {
@@ -64,7 +74,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     toast.success(`"${workout.title}" exported`);
   };
   return (
-    <div className={RISE[index % 3]}>
+    <div className={riseClass}>
       <Link to={`/workout-detail?id=${workout.id}`} className="group relative overflow-hidden tile tile-interactive block">
         <div className="pb-2 pt-3 px-4 md:px-6">
           {/* Badge zone only reserves space when a badge actually exists, so
@@ -153,13 +163,13 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           <div className="flex">
             <div className="flex-1 flex flex-col">
               <span className="section-label">Duration</span>
-              <span className={`font-technical text-base font-semibold mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
+              <span className={`font-technical font-bold text-[17px] mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "—"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
               <span className="section-label">Exercises</span>
-              <span className="font-technical text-base font-semibold text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
+              <span className="font-technical font-bold text-[17px] text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
         </div>

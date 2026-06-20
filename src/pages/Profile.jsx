@@ -15,6 +15,7 @@ import { DEFAULT_GOALS, WEIGHT_UNITS, ACTIVITY_LEVELS, SEX_OPTIONS, DAYS_OF_WEEK
 import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
 import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
 import { ProfileStatsCard } from "@/components/ui/system";
 import DataExport from "@/components/DataExport";
@@ -36,6 +37,16 @@ function SectionHeader({ icon: Icon, title }) {
 function SectionDivider() {
   return <div className="border-t border-charcoal-border my-6" />;
 }
+
+// IANA timezone list, computed once at module load (hundreds of values — never
+// recompute per render). Fed to the searchable Combobox in the Preferences tab.
+const TIMEZONES = (() => {
+  try {
+    return Intl.supportedValuesOf('timeZone');
+  } catch {
+    return [Intl.DateTimeFormat().resolvedOptions().timeZone];
+  }
+})();
 
 // Compact volume formatter: >=1e6 rolls to one-decimal M (1.3M), >=1000 to k, else raw.
 function formatVol(n) {
@@ -211,9 +222,14 @@ export default function Profile({ hideHeader }) {
   // The save bar must never appear on the mobile hub list or the Settings
   // section (neither mounts an editable field). It is only meaningful when an
   // editable section ('identity' / 'body') is actually open, or when embedded
-  // via hideHeader where the body fields are always mounted.
+  // via hideHeader where the body fields are always mounted. The explicit
+  // `!onMobileHub` guard keeps the coral bar off a fresh hub load even before
+  // the dirty baseline settles.
   const editableSectionOpen =
-    (!onMobileHub && (resolvedSection === 'identity' || resolvedSection === 'body')) || hideHeader;
+    !onMobileHub && ((resolvedSection === 'identity' || resolvedSection === 'body') || hideHeader);
+  // Render only after the dirty baseline has been synced (baselineSyncedRef is
+  // gated inside `isDirty`, which returns false until then) AND a real field
+  // change has flipped isDirty — never on the initial settle.
   const showSaveBar = isDirty && editableSectionOpen;
 
   const updateProfileMutation = useMutation({
@@ -362,18 +378,12 @@ export default function Profile({ hideHeader }) {
 
           {/* RIGHT CONTENT */}
           <div>
-            {/* Mobile: hub view (profile card + nav list). The whole hub is a
-                bounded flex column that fills the viewport between the chrome
-                header and the floating dock, so the ~500px dead void is gone:
-                Sign Out is pushed to the bottom (mt-auto) into the thumb zone and
-                the page never grows taller than one screen (no scroll). */}
+            {/* Mobile: hub view (profile card + nav list). Content flows
+                naturally from the top (stats card → nav list → Sign Out) so the
+                hierarchy stays tight instead of stranding Sign Out at the
+                viewport bottom with a dead void above it. */}
             <div
               className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col'}`}
-              style={
-                activeSection !== null || hideHeader
-                  ? undefined
-                  : { minHeight: 'calc(100dvh - var(--layout-header-height, 64px) - var(--dock-clearance, 80px) - 2rem)' }
-              }
             >
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title on mobile, so a second one would stack redundantly. */}
@@ -405,16 +415,15 @@ export default function Profile({ hideHeader }) {
                 ))}
               </div>
 
-              {/* Quick action — Sign Out is pinned to the bottom of the bounded
-                  hub (mt-auto) so it lands in the thumb zone instead of trailing
-                  the nav into a void. */}
+              {/* Quick action — Sign Out follows the nav list directly so the hub
+                  reads as one tight stack. */}
               <button
                 type="button"
                 onClick={async () => {
                   try { await signOut(); toast.success('Signed out successfully'); }
                   catch { toast.error('Failed to sign out'); }
                 }}
-                className="mt-auto mb-1 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -432,7 +441,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="type-display text-[22px] text-ink">
+                <h1 className="type-display text-2xl text-ink">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>
@@ -441,7 +450,7 @@ export default function Profile({ hideHeader }) {
             {/* Desktop section heading */}
             {!hideHeader && (
               <div className="hidden md:block mb-6">
-                <h1 className="type-display text-[22px] text-ink">
+                <h1 className="type-display text-2xl text-ink">
                   {NAV.find(n => n.id === resolvedSection)?.label}
                 </h1>
                 <p className="text-[13px] text-ink-muted mt-0.5">
@@ -556,7 +565,7 @@ export default function Profile({ hideHeader }) {
                                   setFormData({ ...formData, height_unit: id });
                                 }
                               }}
-                              className={`min-h-[36px] px-3.5 rounded-md text-sm transition-[color,background-color] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] ${
+                              className={`min-h-[44px] px-3.5 rounded-md text-sm transition-[color,background-color] duration-200 ease-[var(--ease)] ${
                                 formData.height_unit === id
                                   ? 'bg-[var(--glass-bg)] text-ink font-semibold shadow-[inset_0_1px_0_var(--glass-specular)]'
                                   : 'text-ink-muted hover:text-ink'
@@ -770,21 +779,17 @@ export default function Profile({ hideHeader }) {
 
                     <div>
                       <Label htmlFor="timezone">Timezone</Label>
-                      <Select
-                        value={formData.timezone}
-                        onValueChange={(value) => setFormData({ ...formData, timezone: value })}
-                      >
-                        <SelectTrigger id="timezone" className="mt-1">
-                          <SelectValue placeholder="Select timezone">
-                            {formData.timezone?.replace(/_/g, ' ')}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Intl.supportedValuesOf('timeZone').map(tz => (
-                            <SelectItem key={tz} value={tz}>{tz.replace(/_/g, ' ')}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {/* Hundreds of IANA zones — a flat <Select> is unusable on a
+                          phone. The shared Combobox (items mode) gives typeahead
+                          filtering so users type "den" → America/Denver. */}
+                      <div className="mt-1">
+                        <Combobox
+                          items={TIMEZONES}
+                          value={formData.timezone}
+                          onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                          placeholder="Search timezone…"
+                        />
+                      </div>
                       <p className="text-xs text-ink-muted mt-1">Used to determine today's date for your schedule</p>
                     </div>
                   </div>
@@ -911,10 +916,10 @@ export default function Profile({ hideHeader }) {
         style={{ transitionTimingFunction: 'var(--ease)' }}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          {/* Compact status label — muted ink, shown on every viewport. On mobile
-              it sits left of the thumb-zone buttons; on desktop it pushes the
-              actions to the right edge. */}
-          <p className="text-sm text-ink-muted whitespace-nowrap">Unsaved changes</p>
+          {/* Compact status label — muted ink. Hidden on mobile (<sm) where the
+              two thumb-zone buttons need the full bar width; on desktop it shows
+              and pushes the actions to the right edge. */}
+          <p className="hidden sm:block text-sm text-ink-muted whitespace-nowrap">Unsaved changes</p>
           {/* Cancel / Save span the bar width on mobile (flex-1) so both land in
               the thumb zone; on desktop they shrink to their content. */}
           <div className="flex items-center gap-2 flex-1 justify-end">

@@ -18,7 +18,7 @@ const calculateWeightForReps = (oneRM, targetReps) => {
   return Math.round(oneRM * ((37 - targetReps) / 36));
 };
 
-export default function OneRMCalculator({ onClose, weightUnit, embedded = false }) {
+export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedded = false }) {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
 
@@ -50,7 +50,7 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           </div>
         </CardHeader>
       )}
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="mb-1.5 block">Weight ({weightUnit})</Label>
@@ -85,26 +85,30 @@ export default function OneRMCalculator({ onClose, weightUnit, embedded = false 
           )}
 
           {oneRM && (
-            <div className="space-y-3 pt-2 rise-in">
-              <div className="text-center p-4 glass-inset">
-                <div className="text-sm text-ink-muted">Estimated 1 Rep Max</div>
-                <div className="hero-metric text-4xl text-ink">{oneRM} {weightUnit}</div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-ink-muted">Weight for target reps:</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {repRanges.map((targetReps) => (
-                    <div key={targetReps} className="text-center p-2 glass-inset">
-                      <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
-                      <div className="font-semibold text-ink font-technical">
-                        {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
-                      </div>
-                    </div>
-                  ))}
+            <Card className="surface border-none rise-in">
+              <CardContent className="pt-6 space-y-4">
+                <div className="text-center">
+                  <div className="text-sm text-ink-muted mb-1">Estimated 1 Rep Max</div>
+                  <div className="hero-metric text-4xl text-ink">
+                    {oneRM} <span className="text-2xl text-ink-muted">{weightUnit}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                <div className="space-y-2 pt-3 border-t hairline">
+                  <p className="section-label">Weight for target reps</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {repRanges.map((targetReps) => (
+                      <div key={targetReps} className="text-center p-2 glass-inset">
+                        <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
+                        <div className="font-semibold text-ink font-technical">
+                          {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <p className="text-xs text-ink-muted text-center">

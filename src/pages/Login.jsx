@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Shared auth composition ────────────────────────────────────────────────
@@ -23,7 +22,7 @@ export function AuthShell({ children }) {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
-      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pt-[8vh] pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
+      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
         {children}
       </div>
     </div>
@@ -85,21 +84,16 @@ export default function Login() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-2.5">
             <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
-                className="pl-10"
-                autoComplete="email"
-                aria-invalid={!!errorMsg}
-                aria-describedby={errorMsg ? 'login-error' : undefined}
-                required
-              />
-            </div>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
+              autoComplete="email"
+              aria-invalid={!!errorMsg}
+              aria-describedby={errorMsg ? 'login-error' : undefined}
+            />
           </div>
           <div className="mb-2">
             <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
@@ -112,10 +106,10 @@ export default function Login() {
               autoComplete="current-password"
               aria-invalid={!!errorMsg}
               aria-describedby={errorMsg ? 'login-error' : undefined}
-              required
             />
-            {errorMsg && <p id="login-error" role="alert" className="text-brand text-sm mt-2">{errorMsg}</p>}
           </div>
+
+          {errorMsg && <p id="login-error" role="alert" className="text-brand text-[13px] mb-2">{errorMsg}</p>}
 
           <Button type="submit" variant="volt" size="lg" className="w-full mt-1 active:scale-[.99]" disabled={loading}>
             {loading ? (

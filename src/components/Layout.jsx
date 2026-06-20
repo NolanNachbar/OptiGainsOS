@@ -62,17 +62,21 @@ const navigationItems = [
       { label: "Physique", url: "/physique",
         active: (l) => l.pathname.startsWith("/physique") },
     ] },
-  // Analyze reads as Brief + History only. Career was cut from the IA; Mind
+  // Analyze reads as Brief + History only. Career was cut from the IA (no nav
+  // surface, App.jsx keeps the bare /career route registered but unlinked); Mind
   // keeps a single entry point (the in-page Mind & Learning card on /insights),
-  // so neither is promoted to a nav sub-tab here. /mind and /career still match
-  // so the section stays highlighted when those routes are reached.
+  // so neither is promoted to a nav sub-tab here. /mind still matches so the
+  // section stays highlighted when that route is reached. /career is deliberately
+  // NOT matched: it was hijacking the Analyze sub-tab strip + dock highlight for
+  // a route that is not a genuine Analyze child. As an IA orphan it now resolves
+  // to no activeSection (no strip, no dock highlight) until it earns its own home.
   // Analyze is demoted out of the 5-slot dock (dock:false): per the IA audit
   // both Body and Analyze are over-promoted review surfaces, and a 4-slot dock
   // reads cleaner with less per-slot crowding. Analyze still owns its sidebar
   // entry, route matching, and the mobile sub-tab strip — only the dock icon
   // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile).
   { title: "Analyze", url: "/insights", icon: BarChart3, dock: false,
-    matches: ["/insights", "/brief-history", "/mind", "/career"],
+    matches: ["/insights", "/brief-history", "/mind"],
     mobileStrip: true,
     children: [
       { label: "Daily Brief", url: "/insights",
@@ -173,6 +177,9 @@ export default function Layout({ children, currentPageName }) {
   // misleading — e.g. a history list isn't "today".
   const pageSubtitle = {
     BriefHistory: "Last 30 AI-generated daily briefs",
+    // Career is an IA orphan with its own in-page header; suppress the default
+    // date subtitle so a misleading "today's date" doesn't print under its title.
+    Career: null,
   };
   const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
     ? pageSubtitle[currentPageName]
@@ -182,7 +189,15 @@ export default function Layout({ children, currentPageName }) {
   // sub-tab strip when the section opts in (mobileStrip:true); sections with an
   // in-page <SubTabs> (Train/Fuel) or none (Today) show no pills.
   const activeSection = navigationItems.find((item) => isNavActive(item, location.pathname));
-  const hasSubTabs = activeSection?.mobileStrip && activeSection.children?.length;
+  // Render the sub-tab strip only when there's a genuine active section that opts
+  // into the strip AND the current route is a real child of it (one of the
+  // children's `active` predicates fires). This stops an IA orphan that merely
+  // shares a `matches` prefix — or a section route with no matching child tab —
+  // from painting an empty/half-active pill row.
+  const hasSubTabs = !!(
+    activeSection?.mobileStrip &&
+    activeSection.children?.some((c) => c.active(location))
+  );
 
   // The mobile dock carries only the primary sections (dock !== false). Demoted
   // sections (Analyze) stay in the sidebar + mobile sub-tab strip but drop the
@@ -341,12 +356,16 @@ export default function Layout({ children, currentPageName }) {
                 {hasSubTabs && (
                   <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
                 )}
+                {/* tracking dropped + px tightened so Calc + Note both fit at
+                    390px without clipping 'Note'->'NO' or forcing a horizontal
+                    scroll (the strip is overflow-x-auto, but the utilities must
+                    read whole, not half-cropped). */}
                 {utilities.map((u, i) => (
                   <button
                     key={u.label}
                     type="button"
                     onClick={u.onClick}
-                    className={`shrink-0 px-3 h-9 inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase tracking-[0.06em] text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)] ${
+                    className={`shrink-0 px-2.5 h-9 inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)] ${
                       !hasSubTabs && i === 0 ? "ml-auto" : ""
                     }`}
                   >
@@ -425,24 +444,27 @@ export default function Layout({ children, currentPageName }) {
         onClose={() => setShowCalculators(false)}
         weightUnit={profile?.weight_unit || "lbs"}
       />
+      {/* sheetMinHeight="" opts this content-sparse capture sheet out of the
+          default min-h-[40dvh] floor — otherwise the floor left a dead gap above
+          the textarea. QuickCapture (embedded) already carries its own mt-auto so
+          the Capture action self-anchors to the sheet bottom (thumb zone); the old
+          mt-auto pt-2 wrapper was redundant. focusHue="violet" gives the capture
+          field the Second-Brain (sleep/mind) identity hue on focus. */}
       <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="max-w-md flex flex-col">
+        <DialogContent className="max-w-md flex flex-col" sheetMinHeight="">
           <DialogHeader>
             <DialogTitle>Stream to Second Brain</DialogTitle>
             <DialogDescription>
               A quick thought, dropped straight into your inbox.
             </DialogDescription>
           </DialogHeader>
-          {/* Anchor the capture surface to the sheet bottom so the Capture action
-              lands in the thumb zone on mobile bottom sheets. */}
-          <div className="mt-auto pt-2">
-            <QuickCapture
-              embedded
-              domain="general"
-              placeholder="What's on your mind?"
-              onCapture={() => setShowNoteModal(false)}
-            />
-          </div>
+          <QuickCapture
+            embedded
+            domain="general"
+            placeholder="What's on your mind?"
+            focusHue="violet"
+            onCapture={() => setShowNoteModal(false)}
+          />
         </DialogContent>
       </Dialog>
     </>

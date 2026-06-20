@@ -34,8 +34,28 @@ const Button = React.forwardRef(({
   // Mirror the solid coral's inert disabled treatment so a disabled coralGhost
   // (e.g. QuickCapture empty-state Save) stops reading as a live CTA: neutral
   // charcoal-surface fill, faint ink, no coral tint at full opacity.
+  // Disabled coralGhost keeps a faint brand/20 border (instead of going fully
+  // neutral) so an empty-state CTA's location stays legible — the user can see
+  // WHERE the action will appear once it's enabled, rather than the affordance
+  // vanishing into the charcoal surface.
   const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
-    "disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100 disabled:bg-none disabled:shadow-none";
+    "disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100 disabled:bg-none disabled:shadow-none disabled:border-brand/20";
+
+  // Destructive — `bad` is the canonical destructive token (blessed in
+  // index.css, SYS-02). RESTING prominence is raised to coral-weight so a
+  // delete out-weights the neutral glassGhost it sits beside in ConfirmDialog
+  // instead of reading as a near-equal twin: bg-bad/18 fill + border-bad/70
+  // edge by DEFAULT (not hover-only). Shared by CreateWorkout / ConfirmDialog /
+  // RecipeBuilder via this one variant.
+  const destructive = "bg-bad/18 text-bad border border-bad/70 rounded-xl font-bold " +
+    "hover:bg-bad/24 hover:border-bad";
+
+  // Plain/icon variant — chrome-free affordance (border-0, transparent fill,
+  // no shadow baked in) so icon-only controls (TodayActions add, AddExerciseForm
+  // close) stop bending a glass variant with `border-0 bg-transparent
+  // shadow-none` override stacks. Inherits ink-muted voice; pair with size="icon"
+  // (or a 44px className) for tap-target compliance.
+  const plain = "border-0 bg-transparent shadow-none text-ink-muted rounded-xl hover:text-ink";
 
   const variants = {
     /* design-system tiers */
@@ -45,11 +65,12 @@ const Button = React.forwardRef(({
     ghost:       glassGhost,
     coralGhost:  coralGhost,
     dim:         "bg-transparent text-ink-muted border border-charcoal-border rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
+    plain:       plain,   // chrome-free icon/affordance — no override stacks
     /* utility / legacy variants */
     default:     glassGhost,
-    primary:     coral,
+    primary:     coral,   // LEGACY alias of `volt`; migrate callers to volt
     ai:          glassGhost,
-    destructive: "bg-bad/12 text-bad border border-bad/45 rounded-xl font-bold hover:bg-bad/18 hover:border-bad/70",
+    destructive: destructive,
     outline:     "border border-charcoal-border bg-transparent text-ink-muted rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
     secondary:   "bg-[var(--glass-bg)] text-ink-muted rounded-xl hover:bg-[var(--glass-edge)] hover:text-ink",
     link:        "text-brand underline-offset-4 hover:underline",

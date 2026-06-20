@@ -375,7 +375,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       onClick={() => setFilter(f.value)}
                       className={`px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
                         filter === f.value
-                          ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
+                          ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                           : 'glass-inset text-ink-muted hover:text-ink'
                       }`}
                     >
@@ -424,7 +424,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                             onClick={() => setFolderFilter(f)}
                             className={`flex items-center gap-1 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
                               folderFilter === f
-                                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
+                                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                                 : 'glass-inset text-ink-muted hover:text-ink'
                             }`}
                           >
@@ -459,7 +459,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 </div>
               ) : filteredWorkouts.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {visibleWorkouts.map((workout, i) => (
                       <WorkoutCard
                         key={workout.id}
@@ -476,7 +476,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <div className="flex justify-center mt-6">
                       <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setLibraryVisible(v => v + 8)}>
                         Show <span className="font-technical mx-1">{Math.min(8, remainingWorkouts)}</span> more
-                        <span className="ml-1.5 text-ink-muted font-technical">{remainingWorkouts}</span>
+                        <span className="ml-1.5 text-ink-faint font-technical">· {remainingWorkouts} left</span>
                       </Button>
                     </div>
                   )}
@@ -536,7 +536,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     aria-pressed={programView === value}
                     className={`flex items-center gap-1.5 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
                       programView === value
-                        ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
+                        ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                         : 'glass-inset text-ink-muted hover:text-ink'
                     }`}
                   >
@@ -570,7 +570,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   subtitle="Start a program to track your progress with auto-progression"
                 />
               ) : (
-                <div className="space-y-6 pb-[calc(var(--dock-clearance)+72px)] md:pb-6">
+                <div className="space-y-6 pb-[var(--dock-clearance)] md:pb-6">
                   {activeEnrollments.length === 0 ? (
                     <ProgramsEmptyState
                       icon={TrendingUp}
@@ -626,7 +626,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   subtitle="Create a multi-week program with exercises, progression rules, and more"
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(var(--dock-clearance)+72px)] md:pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-[var(--dock-clearance)] md:pb-6">
                   {programs.map((program, i) => (
                     <ProgramCard key={program.id} program={program} index={i} />
                   ))}
@@ -800,22 +800,24 @@ function StrengthEntryCard({ entry }) {
 
   const body = (
     <>
-      <div className="flex items-start p-4 pb-3 gap-3">
+      <div className="flex items-start p-4 pb-2 gap-3">
         <div className="w-9 h-9 rounded-full bg-teal/15 flex items-center justify-center shrink-0 text-teal">
           <Dumbbell className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
-          <p className="section-label mt-1">Strength</p>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-y-3 px-4 pb-4">
-        {cells.map((cell, i) => (
+      {/* 2-up on phones, 4-up from sm. Dividers derive from responsive column
+          count: every cell carries a left hairline, then row-starts strip it
+          per breakpoint (1st of each 2-col row on mobile, each 4-col row on sm). */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 px-4 pb-4">
+        {cells.map((cell) => (
           <div
             key={cell.label}
-            className={`flex flex-col ${i % 4 !== 0 ? 'border-l hairline pl-4' : ''}`}
+            className="flex flex-col border-l hairline pl-4 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-4 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
           >
-            <span className="section-label">{cell.label}</span>
+            <span className="section-label text-ink-faint">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-technical font-bold text-[17px] text-ink whitespace-nowrap">{cell.value}</span>
               {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
@@ -878,7 +880,7 @@ function CardioEntryCard({ entry }) {
 
   return (
     <div className="tile">
-      <div className="flex items-start p-4 pb-3 gap-3">
+      <div className="flex items-start p-4 pb-2 gap-3">
         <div className="w-9 h-9 rounded-full bg-carb/15 flex items-center justify-center shrink-0 text-carb">
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
         </div>
@@ -895,7 +897,7 @@ function CardioEntryCard({ entry }) {
               key={cell.label}
               className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
             >
-              <span className="section-label">{cell.label}</span>
+              <span className="section-label text-ink-faint">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="font-technical font-bold text-[17px] text-ink">{cell.value}</span>
                 {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
@@ -1037,7 +1039,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             className={[
               'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97]',
               filter === val
-                ? 'text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]'
+                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
                 : 'glass-inset text-ink-muted hover:text-ink',
             ].join(' ')}
           >

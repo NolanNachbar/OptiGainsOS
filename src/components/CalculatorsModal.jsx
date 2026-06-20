@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +50,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
   const result = calculatePlates();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label className="mb-2 block">
@@ -97,10 +96,8 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
 
       {result && (
         <Card className="surface border-none rise-in">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Plates Per Side</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6 space-y-4">
+            <p className="section-label">Plates Per Side</p>
             {result.platesNeeded.length > 0 ? (
               <div className="space-y-3">
                 {result.platesNeeded.map((plate, index) => (
@@ -118,9 +115,9 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-ink-muted border-charcoal-borderSoft font-technical">
+                    <span className="font-technical text-ink-muted">
                       {(plate.weight * plate.count).toFixed(1)} {weightUnit}
-                    </Badge>
+                    </span>
                   </div>
                 ))}
 
@@ -244,7 +241,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
               <div className="text-sm text-ink-muted mb-1">Working Weight</div>
-              <div className="hero-metric text-4xl text-brand">
+              <div className="hero-metric text-4xl text-ink">
                 {result.rounded} <span className="text-2xl text-ink-muted">{weightUnit}</span>
               </div>
               <div className="text-sm text-ink-muted mt-1">
@@ -279,12 +276,12 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calculator className="w-6 h-6 text-brand" />
+            <Calculator className="w-5 h-5 text-ink-muted" />
             Lifting Calculators
           </DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="1rm" className="w-full">
-          <TabsList className="w-full h-auto mb-6 gap-1 rounded-xl border-b-0 glass-inset p-1">
+          <TabsList className="w-full h-auto mb-4 gap-1 rounded-xl border-b-0 glass-inset p-1">
             <TabsTrigger variant="segment" value="1rm" className="flex-1">
               <Scale className="w-4 h-4 mr-2" />
               1RM
@@ -300,7 +297,7 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
           </TabsList>
 
           <TabsContent value="1rm">
-            <OneRMCalculator onClose={() => {}} weightUnit={weightUnit} embedded />
+            <OneRMCalculator weightUnit={weightUnit} embedded />
           </TabsContent>
 
           <TabsContent value="working">

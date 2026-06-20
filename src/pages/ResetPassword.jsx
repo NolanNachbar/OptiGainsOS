@@ -76,7 +76,7 @@ export default function ResetPassword() {
 
   return (
     <AuthShell>
-      <AuthHeader subtitle="Set a new password" />
+      <AuthHeader subtitle={hasSession === false ? undefined : 'Set a new password'} />
 
       <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2 flex flex-col justify-center">
         {hasSession === null ? (
@@ -94,7 +94,7 @@ export default function ResetPassword() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 min-h-[300px] flex flex-col justify-center">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="password" className="text-ink mb-1 block">New Password</Label>
               <div className="relative">

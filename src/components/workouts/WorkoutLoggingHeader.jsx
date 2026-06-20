@@ -30,11 +30,37 @@ export default function WorkoutLoggingHeader({
   useEffect(() => {
     if (!startTime) return;
 
-    const interval = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
+    let timeoutId;
+    // Phase-aligned tick: a plain 1000ms setInterval drifts off the wall-clock
+    // second boundary (the first tick fires ~1000ms after mount, not at the next
+    // whole second), so the readout visibly stutters — skipping or doubling a
+    // second. Instead we always recompute elapsed from Date.now() and schedule
+    // the NEXT tick at the next whole-second boundary, so the displayed second
+    // flips exactly when the real clock second does.
+    const tick = () => {
+      const elapsedMs = Date.now() - startTime;
+      setElapsedTime(Math.floor(elapsedMs / 1000));
+      // ms remaining until the next whole second of elapsed time.
+      const msToNextSecond = 1000 - (elapsedMs % 1000);
+      timeoutId = setTimeout(tick, msToNextSecond);
+    };
+    tick();
 
-    return () => clearInterval(interval);
+    // Background tabs throttle timers, so the readout freezes while hidden;
+    // recompute immediately on return so it never shows a stale time, then the
+    // tick chain re-aligns itself to the boundary.
+    const resync = () => {
+      if (document.visibilityState === "visible") {
+        clearTimeout(timeoutId);
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", resync);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", resync);
+    };
   }, [startTime]);
 
   const formatTime = (seconds) => {
@@ -80,7 +106,7 @@ export default function WorkoutLoggingHeader({
   // Communicates remaining rest at a glance so the +30s/Skip controls can step
   // down to a thin secondary row without losing the live signal.
   const restProgressTrack = restActive ? (
-    <div className="h-1 w-full rounded-full bg-track overflow-hidden">
+    <div className="h-1.5 w-full rounded-full bg-track overflow-hidden">
       <div
         className="h-full rounded-full bg-teal transition-[width] duration-500 ease-[cubic-bezier(.2,.7,.3,1)]"
         style={{ width: `${restFraction * 100}%` }}
@@ -110,6 +136,16 @@ export default function WorkoutLoggingHeader({
       >
         Skip
       </Button>
+    </div>
+  ) : null;
+
+  // Live elapsed-workout clock cluster — a real datum reused in BOTH mobile
+  // bottom-bar states (rest active and no-rest) so the left slot is never dead
+  // space and the two layouts stay symmetric.
+  const elapsedCluster = startTime ? (
+    <div className="flex items-center gap-1.5 font-technical min-w-0">
+      <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
+      <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
     </div>
   ) : null;
 
@@ -216,7 +252,11 @@ export default function WorkoutLoggingHeader({
                 <div className="flex-1 min-w-0">{restProgressTrack}</div>
                 {restControls(false)}
               </div>
-              <div className="flex items-center justify-end gap-2">
+              {/* Action row mirrors the no-rest layout below: the live elapsed
+                  clock owns the left slot (justify-between) so this row isn't
+                  ~50% dead space and the two states stay visually symmetric. */}
+              <div className="flex items-center justify-between gap-2">
+                {elapsedCluster ?? <span />}
                 {actionCluster}
               </div>
             </>
@@ -224,12 +264,7 @@ export default function WorkoutLoggingHeader({
             <div className="flex items-center justify-between gap-2">
               {/* No rest active → carry the live elapsed timer here (a real
                   datum), never a dead static label. */}
-              {startTime && (
-                <div className="flex items-center gap-1.5 font-technical min-w-0">
-                  <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
-                  <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
-                </div>
-              )}
+              {elapsedCluster}
               {actionCluster}
             </div>
           )}

@@ -105,7 +105,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal rise-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal/80 backdrop-blur border-b border-charcoal-border">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal-surface border-b border-charcoal-border">
         <span className="text-ink font-semibold text-base">Scan Barcode</span>
         <button
           onClick={onClose}
@@ -116,7 +116,13 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         </button>
       </div>
 
-      {/* Camera feed */}
+      {/* Camera feed — only mounted for the live states. In not_found/error the
+          flex-1 void is collapsed so the message + action read as one centered
+          grouped unit instead of floating under a black camera box. */}
+      {(scanState === "idle" ||
+        scanState === "requesting" ||
+        scanState === "scanning" ||
+        scanState === "looking_up") && (
       <div className="relative flex-1 overflow-hidden">
         <video
           ref={videoRef}
@@ -140,16 +146,19 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         {scanState === "scanning" && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-64 h-40">
-              {/* Corner brackets — thin border-2 at border-ink/60 so they sit
-                  close to the hairline language rather than reading as a heavy
-                  decorative frame. */}
+              {/* Corner brackets — drawn in the primary ink token. Deliberate
+                  camera-legibility exception: the charcoal-border hairline
+                  (white/0.10) is invisible over arbitrary live video, so the
+                  reticle uses full-strength ink to stay readable against any
+                  frame. Kept neutral (no coral/hue) so it reads as a viewfinder
+                  guide, not an action or a datum. */}
               {[
                 "top-0 left-0 border-t-2 border-l-2 rounded-tl-lg",
                 "top-0 right-0 border-t-2 border-r-2 rounded-tr-lg",
                 "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg",
                 "bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg",
               ].map((cls, i) => (
-                <div key={i} className={`absolute w-8 h-8 border-ink/60 ${cls}`} />
+                <div key={i} className={`absolute w-8 h-8 border-ink ${cls}`} />
               ))}
               {/* Scan line — neutral ink material; the `info` hue is reserved
                   for biometrics, and coral stays reserved for the action
@@ -164,7 +173,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         <div className="absolute bottom-0 inset-x-0 pb-8 flex flex-col items-center gap-3">
           {scanState === "requesting" && (
             <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
-              <Loader2 className="w-4 h-4 animate-spin" /> Requesting camera…
+              <Loader2 className="w-4 h-4 spin-loop" /> Requesting camera…
             </div>
           )}
           {/* No scanning-state instruction pill — the reticle + traveling sweep
@@ -172,7 +181,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
               crowds the thumb zone above the single Cancel. */}
           {scanState === "looking_up" && (
             <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
-              <Loader2 className="w-4 h-4 animate-spin" /> Looking up {foundBarcode}…
+              <Loader2 className="w-4 h-4 spin-loop" /> Looking up {foundBarcode}…
             </div>
           )}
           {/* Thumb-zone Cancel — reachable while the camera is live (mobile law:
@@ -182,20 +191,22 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
               variant="ghost"
               size="lg"
               onClick={onClose}
-              className="min-h-[44px] px-8 backdrop-blur"
+              className="px-8 backdrop-blur"
             >
               Cancel
             </Button>
           )}
         </div>
       </div>
+      )}
 
-      {/* Not found state — a true bottom sheet: it sits at the bottom edge of
-          the column (the camera feed above is flex-1) so Try again / Enter
-          manually land in the thumb zone with safe-area padding, and rises in
-          on the sheet motion. */}
+      {/* Not found state — the camera block is unmounted, so this fills the
+          takeover (flex-1) and pushes its content to the bottom (justify-end)
+          so the message + Try again / Enter manually read as one grouped unit
+          landing in the thumb zone with safe-area padding, rising in on the
+          sheet motion. */}
       {scanState === "not_found" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center sheet-rise">
+        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-end gap-3 text-center sheet-rise">
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
@@ -214,10 +225,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         </div>
       )}
 
-      {/* Error state — same bottom-sheet anchoring so Close lands in the lower
-          third with safe-area padding. */}
+      {/* Error state — same fill-and-anchor treatment so the icon + message +
+          Close read as one grouped unit landing in the lower third with
+          safe-area padding. */}
       {scanState === "error" && (
-        <div className="bg-charcoal-surface border-t border-charcoal-border px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-3 text-center sheet-rise">
+        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-end gap-3 text-center sheet-rise">
           <AlertTriangle className="w-10 h-10 text-bad" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>

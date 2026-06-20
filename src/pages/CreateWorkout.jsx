@@ -18,12 +18,18 @@ import { toast } from "sonner";
 
 const CARDIO_TYPES = new Set(['cardio', 'hiit']);
 
+// Step types carry no owned hue: a cardio step's type is a structural label,
+// not a biometric datum, so the physiological spectrum doesn't apply and a
+// per-type decorative hue would be DRIFT. The earlier `border`/`text` fields
+// all resolved to the same neutral hairline (dead differentiation API), so
+// they're dropped — every step card gets one neutral left rule (see
+// CardioStepCard) and the type reads from its label, not a color.
 const STEP_TYPES = [
-  { value: 'warmup',   label: 'Warmup',   border: 'border-l-charcoal-border',     text: 'text-ink' },
-  { value: 'active',   label: 'Active',   border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'recovery', label: 'Recovery', border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'rest',     label: 'Rest',     border: 'border-l-charcoal-border',     text: 'text-ink-muted' },
-  { value: 'cooldown', label: 'Cooldown', border: 'border-l-charcoal-borderSoft', text: 'text-ink-muted' },
+  { value: 'warmup',   label: 'Warmup'   },
+  { value: 'active',   label: 'Active'   },
+  { value: 'recovery', label: 'Recovery' },
+  { value: 'rest',     label: 'Rest'     },
+  { value: 'cooldown', label: 'Cooldown' },
 ];
 
 const TARGET_TYPES = [
@@ -283,11 +289,17 @@ export default function CreateWorkout() {
                   />
                 </div>
               ) : (
+                /* Disclosure, not a data field: a quiet inline toggle (auto
+                   width, no glass fill/edge/border) so it reads as a link-style
+                   affordance that reveals an optional field — never as another
+                   empty input competing with the real Inputs above/below. Stays
+                   neutral ink-muted (not coral) so it doesn't drift into a
+                   second action color beside the Save CTA. Keeps Plus + 44px. */
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="dim"
                   onClick={() => setShowDescription(true)}
-                  className="w-full justify-start min-h-[44px] text-ink-muted"
+                  className="justify-start min-h-[44px] border-0 bg-transparent hover:bg-transparent px-1"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add description
@@ -381,13 +393,17 @@ export default function CreateWorkout() {
                 );
               })}
 
+              {/* Add-row buttons all share size=lg (h-11 = 44px tap target, so
+                  no redundant min-h-[44px]) + variant=outline. border-dashed is
+                  reserved for the nested insert inside a repeat block, so a
+                  top-level "add" never visually rhymes with a nested one. */}
               {isCardio ? (
                 <div className="flex gap-2">
-                  <Button type="button" onClick={addExercise} variant="outline" className="flex-1 min-h-[44px]">
+                  <Button type="button" onClick={addExercise} variant="outline" size="lg" className="flex-1">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Step
                   </Button>
-                  <Button type="button" onClick={addRepeatBlock} variant="outline" className="flex-1 min-h-[44px]">
+                  <Button type="button" onClick={addRepeatBlock} variant="outline" size="lg" className="flex-1">
                     <Repeat2 className="w-4 h-4 mr-2" />
                     Add Repeat
                   </Button>
@@ -401,11 +417,20 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
-          {/* Static on every viewport: the primary action sits at the natural
-              end of the flow so it can never float over the last card. The
-              shared Layout <main> already reserves dock + safe-area space below,
-              so this bar is never clipped on a short form. */}
-          <div className="flex gap-3">
+          {/* Action row. This form runs ~1168px (well past one phone viewport),
+              so on mobile the coral Save must not live only at the bottom of the
+              scroll: below lg the row is `sticky bottom-0`, pinned just above the
+              dock (--dock-clearance) with a safe-area inset, so it stays in the
+              thumb zone while the user scrolls the long form. A glass-sheet lid +
+              hairline top edge separates it from the content scrolling beneath.
+              At lg it returns to static flow (no dock, plenty of width), sitting
+              at the natural end of the form. The negative inline margins let the
+              sticky bar bleed to the page gutters on mobile while the lg:static
+              state resets them. */}
+          <div
+            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(var(--dock-clearance)+env(safe-area-inset-bottom))] pt-3
+                       lg:static lg:z-auto lg:mx-0 lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:[backdrop-filter:none]"
+          >
             <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
               Cancel
             </Button>
@@ -426,7 +451,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
-            <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
+            <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0 text-ink-muted hover:text-ink">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
@@ -514,7 +539,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           {block.steps?.length || 0} step{block.steps?.length !== 1 ? 's' : ''} per repeat
         </span>
         {canRemove && (
-          <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0">
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove repeat block" className="ml-auto shrink-0 min-h-[44px] min-w-[44px] px-0 text-ink-muted hover:text-ink">
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
@@ -533,11 +558,15 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
             nested
           />
         ))}
+        {/* Nested-insert affordance: same size=lg/outline as top-level adds,
+            but border-dashed (reserved here) signals it inserts INTO the
+            repeat block rather than appending a top-level step. */}
         <Button
           type="button"
           onClick={onAddStep}
           variant="outline"
-          className="w-full min-h-[44px] border-dashed border-charcoal-border"
+          size="lg"
+          className="w-full border-dashed border-charcoal-border"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Step to Repeat
@@ -548,18 +577,14 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
 }
 
 function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = false }) {
-  const meta = STEP_TYPES.find(s => s.value === step.step_type) || STEP_TYPES[1];
-
-  const card = `glass-inset p-4 border-l-[3px] rise-in ${meta.border}`;
-
   return (
-    <div className={card}>
+    <div className="glass-inset p-4 border-l-[3px] border-l-charcoal-border rise-in">
         <div className="flex justify-between items-start mb-4">
-          <span className={`text-xs font-bold uppercase tracking-[0.06em] ${meta.text}`}>
+          <span className="text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
             Step {index + 1}
           </span>
           {canRemove && (
-            <Button type="button" variant="destructive" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0">
+            <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove step" className="min-h-[44px] min-w-[44px] px-0 shrink-0 text-ink-muted hover:text-ink">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}

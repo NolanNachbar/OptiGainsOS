@@ -216,7 +216,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
               <Dumbbell className="w-3 h-3" /> Lifts
               <span className="font-technical normal-case tracking-normal text-muted-2">· {strength.length}</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 ml-auto lg:hidden transition-transform duration-200 ${liftsOpen ? "rotate-180" : ""}`}
+                className={`w-3.5 h-3.5 ml-auto lg:hidden transition-transform duration-200 [transition-timing-function:var(--ease)] ${liftsOpen ? "rotate-180" : ""}`}
               />
             </button>
             <div className={`${liftsOpen ? "block rise-in lg:animate-none" : "hidden"} lg:block`}>
@@ -300,7 +300,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             <Link
               to="/quick-workout"
               state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
-              className="ml-auto text-brand font-semibold whitespace-nowrap"
+              className="ml-auto -my-2 min-h-[44px] flex items-center text-brand font-semibold whitespace-nowrap"
             >
               Log another
             </Link>

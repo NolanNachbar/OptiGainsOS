@@ -21,7 +21,7 @@ const Textarea = React.forwardRef(({ className = "", size = "default", focusHue 
   return (
     <textarea
       style={{ "--focus-hue": hue }}
-      className={`flex ${heightClass} w-full resize-none rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 py-2 text-[14px] text-ink shadow-[inset_0_1px_0_var(--glass-specular)] placeholder:text-ink-faint focus-visible:outline-none focus-visible:border-[rgb(var(--focus-hue)/0.45)] focus-visible:shadow-[inset_0_1px_0_var(--glass-specular),0_0_0_3px_rgb(var(--focus-hue)/0.10)] transition-[border-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex ${heightClass} w-full resize-none rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 py-2 text-[14px] text-ink shadow-[inset_0_1px_0_var(--glass-specular)] placeholder:text-ink-faint focus-visible:outline-none focus-visible:border-[rgb(var(--focus-hue)/0.45)] focus-visible:shadow-[inset_0_1px_0_var(--glass-specular),0_0_0_3px_rgb(var(--focus-hue)/0.10)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       ref={ref}
       {...props}
     />

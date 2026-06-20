@@ -9,12 +9,15 @@ import { ListChecks, Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
+// Passive AI-source glyph hues. Coral is THE action color and is barred here
+// (a passive datum glyph must never wear it). Each domain maps to a non-action
+// data hue; text-faint is the fallback for unknown domains.
 const DOMAIN_COLORS = {
-  training:  "text-coral",
+  training:  "text-teal",
   nutrition: "text-gold",
-  career:    "text-gold",
+  career:    "text-leaf",
   mind:      "text-violet",
-  recovery:  "text-teal",
+  recovery:  "text-carb",
   admin:     "text-muted-2",
 };
 
@@ -129,10 +132,9 @@ export default function TodayActions({ today, briefActions = [], isError = false
       <SectionLabel
         right={
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
             onClick={() => setAdding(v => !v)}
-            className="min-h-[44px] min-w-[44px] p-0 -my-2 border-0 bg-transparent shadow-none"
+            className="h-11 w-11 p-0 -my-2 active:scale-95 duration-200 [transition-timing-function:var(--ease)]"
             aria-label="Add action"
           >
             <Plus className="w-4 h-4" />
@@ -164,7 +166,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
             >
               <button
                 onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
-                className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors"
+                className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label={todo.completed ? "Mark incomplete" : "Mark complete"}
               >
                 {todo.completed
@@ -176,11 +178,11 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 {todo.text}
               </span>
               {todo.source === "ai_generated" && (
-                <Bot className={`w-3.5 h-3.5 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
+                <Bot className={`w-4 h-4 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
               )}
               <button
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors"
+                className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label="Delete action"
               >
                 <X className="w-3.5 h-3.5" />
@@ -190,7 +192,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         </div>
  
         {adding && (
-          <div className="flex gap-2 mt-4 pt-4 border-t hairline">
+          <div className="rise-in flex gap-2 mt-4 pt-4 border-t hairline">
             <Input
               autoFocus
               value={newText}
@@ -200,12 +202,12 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 if (e.key === "Escape") { setAdding(false); setNewText(""); }
               }}
               placeholder="Add a task..."
-              className="h-9 text-sm flex-1"
+              className="text-sm flex-1"
             />
             <Button
               size="sm"
               variant="dim"
-              className="h-9 px-4 font-bold text-xs uppercase tracking-wider"
+              className="h-11 px-4 font-bold text-xs uppercase tracking-wider"
               disabled={!newText.trim() || addMutation.isPending}
               onClick={() => addMutation.mutate()}
             >

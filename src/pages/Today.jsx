@@ -320,20 +320,6 @@ export default function Today() {
                 </p>
               </div>
             </div>
-            {/* 4 biometric tiles — 2-up at 390px so HRV/RHR/Sleep/Batt values
-                aren't cramped into a 4-col strip, widening to 4-up at sm+. */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-3">
-              {morningMetrics.map((m) => (
-                <MetricTile
-                  key={m.k}
-                  label={m.k}
-                  value={m.v}
-                  unit={m.u || undefined}
-                  accent={m.hue}
-                  className="!px-2.5 !py-2"
-                />
-              ))}
-            </div>
             </>)}
           </div>
         </div>
@@ -352,15 +338,21 @@ export default function Today() {
             // check-in submits neutral and Begin Session stays the sole coral.
             <MorningCheckin today={today} existingCheckin={null} coralCta={false} onComplete={() => setCheckinOpen(false)} />
           ) : (
+            // Disclosure row matching the Today's-detail header (a quiet
+            // glass surface + ChevronDown), NOT a cta-ghost — a ghost button
+            // reads as a secondary ACTION and competed with the coral Begin
+            // Session; as a disclosure row it reads as "tap to reveal".
             <button
               type="button"
               onClick={() => setCheckinOpen(true)}
-              className="cta-ghost w-full justify-start gap-2 px-4"
               aria-expanded={false}
+              className="surface w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 text-left"
             >
-              <Activity className="w-3.5 h-3.5 text-teal shrink-0" />
-              <span>How you feel — subjective check-in</span>
-              <ChevronDown className="w-4 h-4 ml-auto text-muted-2" />
+              <SectionLabel>How you feel</SectionLabel>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-2">
+                Subjective check-in
+                <ChevronDown className="w-4 h-4 text-muted-2" />
+              </span>
             </button>
           )}
         </div>
@@ -370,7 +362,10 @@ export default function Today() {
             engine prescribes nothing it renders the neutral "Log a workout" ghost
             itself (the duplicate ghost that used to live here was removed). */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-          <PrescribedSessionCard today={today} loggedToday={loggedToday} />
+          {/* When the in-progress "tap to continue" banner is showing, it is the
+              SOLE coral primary — demote the Begin Session CTA to a ghost so the
+              page never has two competing coral actions. */}
+          <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={!!activeSession} />
         </div>
 
         {/* Thumb-zone quick actions — the two most-tapped daily logs (food +
@@ -388,7 +383,7 @@ export default function Today() {
                   "Track" filler is dropped. */}
               <Link
                 to="/food-tracker?addFood=true"
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 py-3 min-h-[64px]"
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
               >
                 <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
                 <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
@@ -397,7 +392,7 @@ export default function Today() {
               <button
                 type="button"
                 onClick={() => setShowWeighIn(true)}
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 py-3 min-h-[64px]"
+                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
               >
                 <Scale className="w-[18px] h-[18px]" style={{ color: "var(--hue-violet)" }} />
                 <span className="text-[13px] font-extrabold text-ink leading-none">Weigh in</span>
@@ -416,10 +411,13 @@ export default function Today() {
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 space-y-3 rise-in-3">
           {/* Fuel today — hue-coded rings, one tap to the log */}
           <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
-            <div className="flex items-baseline justify-between">
+            {/* Chevron lives in the header row (the link affordance) so the
+                three rings below own a clean, centered row to themselves. */}
+            <div className="flex items-center justify-between">
               <SectionLabel>Fuel today</SectionLabel>
-              <span className="text-[11px] font-semibold text-faint">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-faint">
                 {nutrition?.phase ? `${nutrition.phase} phase` : "targets"}
+                <ChevronRight className="w-4 h-4 text-faint" />
               </span>
             </div>
             <div className="flex items-center justify-around mt-2 px-1">
@@ -445,16 +443,9 @@ export default function Today() {
                 value={trend.value}
                 frac={trend.frac}
               />
-              <ChevronRight className="w-4 h-4 text-faint" />
             </div>
           </Link>
         </aside>
-
-        {/* Today's Actions — the coaching todo list ported from Dashboard. Self-hides
-            when empty, so it only occupies the slot when there is something to do. */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-5 rise-in-3">
-          <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
-        </div>
 
         {/* Consolidated detail card — one header, one body. The three former
             disclosure drawers (Brief / State / Muscle) collapse into a single
@@ -462,7 +453,7 @@ export default function Today() {
             the whole card sits behind a single disclosure (default closed) so the
             primary surface ends near the 2-viewport mark; on desktop the body is
             always shown. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-5 rise-in-3">
           <div className="surface overflow-hidden">
             {/* Mobile-only disclosure trigger — ≥44px tap target. */}
             <button
@@ -481,6 +472,26 @@ export default function Today() {
             </button>
             {/* Body: toggleable on mobile via detailOpen, always shown on desktop. */}
             <div className={`${detailOpen ? "block" : "hidden"} lg:block`}>
+            {/* Vitals sub-row — the 4 biometric tiles (HRV/RHR/Sleep/Batt) moved
+                off the readiness hero so the hero stays StatRing + verdict and the
+                session CTA lands in viewport 1; the raw markers live one tap down
+                behind this disclosure, beside their fuller State / Muscle context.
+                2-up at 390px, 4-up at sm+ so the values are never cramped. */}
+            <div className="px-4 pt-3 lg:pt-4">
+              <SectionLabel>Vitals</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
+                {morningMetrics.map((m) => (
+                  <MetricTile
+                    key={m.k}
+                    label={m.k}
+                    value={m.v}
+                    unit={m.u || undefined}
+                    accent={m.hue}
+                    className="!px-2.5 !py-2"
+                  />
+                ))}
+              </div>
+            </div>
             {/* In-card switch uses the lighter inset SegmentedControl (NOT the
                 global glass-elevated coral SubTabs strip) so it doesn't mimic the
                 page-level nav pills. */}
@@ -549,6 +560,16 @@ export default function Today() {
             </div>
             </div>
           </div>
+        </div>
+
+        {/* Today's Actions — the coaching todo list ported from Dashboard. Moved
+            BELOW the collapsed detail disclosure so the primary surface (verdict +
+            session CTA + fuel + quick actions) ends near the 2-viewport mark and
+            the coaching todo region no longer pushes the detail disclosure off
+            screen. Self-hides when empty, so it only occupies a slot when there is
+            something to do. */}
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
+          <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
         </div>
       </div>
 

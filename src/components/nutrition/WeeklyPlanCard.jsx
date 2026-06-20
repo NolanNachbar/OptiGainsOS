@@ -250,16 +250,18 @@ export default function WeeklyPlanCard({ bare = false }) {
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
             <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Recovery-Gated Deficit</span>
-            {/* This % is the PLANNED deficit magnitude (kcal series), not a warn
-                signal — render it as the gold kcal hue. text-warn is reserved for
-                the gate chips below, which are the actual recovery alarms. */}
-            <span className="ml-auto font-technical text-sm text-gold">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
+            {/* This % is the PLANNED deficit magnitude — a derived ratio, not a
+                kcal figure, so it must NOT borrow the gold kcal hue (that hue is
+                owned by the calorie datum). Render it neutral (font-technical +
+                secondary ink). text-warn stays reserved for the gate chips below,
+                which are the actual recovery alarms. */}
+            <span className="ml-auto font-technical text-sm text-ink-secondary">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
           </div>
           <p className={`text-xs text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
           {rec.rationale && rec.rationale.length > 90 && (
             <button
               onClick={() => setShowRationale((s) => !s)}
-              className="glass-interactive mt-1 text-[10px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.98]"
+              className="glass-interactive mt-1 min-h-[44px] inline-flex items-center px-2 -mx-2 text-[10px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.98]"
             >
               {showRationale ? "Less" : "Why?"}
             </button>
@@ -421,7 +423,13 @@ export default function WeeklyPlanCard({ bare = false }) {
                   onClick={() => toggleChecked(it.food)}
                   className="glass-interactive w-full flex items-center gap-3 min-h-[44px] px-3.5 py-3 text-xs text-left hover:bg-charcoal-surface active:scale-[0.99]"
                 >
-                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-leaf/60 bg-leaf/15 text-leaf" : "border-track text-transparent"}`}>
+                  {/* Done is a neutral checklist state, NOT a biometric reading —
+                      the ok/warn/bad/info spectrum (and leaf) is reserved for
+                      physiological data. A neutral ink check on the empty-track
+                      ring + the label's existing strikethrough carries "done"
+                      without borrowing a data hue. (ink-* tokens carry baked
+                      alpha, so /xx modifiers don't apply — use the solid token.) */}
+                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-track bg-track text-ink-faint" : "border-track text-transparent"}`}>
                     <Check className="w-3 h-3" />
                   </span>
                   <span className={`font-semibold flex-1 truncate ${done ? "text-ink-faint line-through" : "text-ink"}`}>{it.food}</span>
@@ -446,7 +454,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         <button
           onClick={() => approve.mutate()}
           disabled={approve.isPending || allRows.length === 0}
-          className="cta-coral w-full disabled:opacity-60 active:scale-[0.98] transition-transform duration-200 ease-[var(--ease)]"
+          className="cta-coral w-full disabled:opacity-60 active:scale-[0.98]"
         >
           {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
         </button>

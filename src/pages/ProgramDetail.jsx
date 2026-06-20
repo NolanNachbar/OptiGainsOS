@@ -83,7 +83,7 @@ export default function ProgramDetail() {
   if (!program) {
     return (
       <div className="p-4 md:p-6">
-        <div className="max-w-md mx-auto mt-12">
+        <div className="min-h-[60vh] flex items-center justify-center">
           <div className="surface p-8 text-center flex flex-col items-center rise-in">
             <div className="w-12 h-12 rounded-full glass-inset flex items-center justify-center mb-4">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -93,7 +93,7 @@ export default function ProgramDetail() {
               This program may have been deleted or the link is no longer valid.
             </p>
             <Link to="/workouts">
-              <Button variant="outline" size="lg">Back to Workouts</Button>
+              <Button variant="volt" size="lg">Back to Workouts</Button>
             </Link>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function ProgramDetail() {
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors"
+          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors min-h-[44px] -my-2.5 py-2.5"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Workouts
@@ -280,14 +280,26 @@ export default function ProgramDetail() {
                     enrolled athlete. Promoted directly under the title with
                     tabular numerals so it is read before any secondary metadata. */}
                 {enrollment && positionLabel && (
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="font-technical text-base font-extrabold text-ink">
-                      {positionLabel}
-                    </span>
-                    <span className="font-technical text-sm text-ink-muted">
-                      {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="font-technical text-base font-extrabold text-ink">
+                        {positionLabel}
+                      </span>
+                      <span className="font-technical text-sm text-ink-muted">
+                        {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
+                      </span>
+                    </div>
+                    {/* Progress track sits directly under the position/count line —
+                        no border-t divider — keeping the completion datum with its
+                        numbers. Fill uses bg-brand (the action hue); leaf is
+                        reserved for biometric readiness, not a completion metric. */}
+                    <div className="h-1.5 bg-track rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-brand rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </>
                 )}
                 {program.description && (
                   <>
@@ -464,19 +476,6 @@ export default function ProgramDetail() {
                 )}
               </div>
             </div>
-
-            {/* Progress bar — the position/count/percent now live in the
-                promoted slot under the title, so this is just the visual track. */}
-            {enrollment && (
-              <div className="mt-4 pt-4 border-t hairline">
-                <div className="h-1.5 bg-track rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-leaf/40 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 

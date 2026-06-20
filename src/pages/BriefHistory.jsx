@@ -44,7 +44,10 @@ function BriefEntry({ brief, index = 0 }) {
   const approxCost = estimateBriefCost(brief);
   const hasCoachContent = COACHES.some((c) => json[c.key]);
   const hasContent = !!json.insight || hasCoachContent || json.today_actions?.length > 0;
-  const riseClass = index < RISE_STAGGER.length ? RISE_STAGGER[index] : "";
+  // Cap the staggered entrance to the first card; every row gets the same
+  // single rise-in so a long list animates uniformly instead of fading the
+  // first three in sequence and snapping the remainder in flat.
+  const riseClass = index === 0 ? RISE_STAGGER[0] : "rise-in";
 
   const [open, setOpen] = useState(false);
 
@@ -59,10 +62,10 @@ function BriefEntry({ brief, index = 0 }) {
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
             <Bot className="w-4 h-4 text-teal shrink-0" />
-            <span className="text-sm font-bold text-ink truncate">{date}</span>
+            <span className="text-sm font-bold text-ink truncate font-technical">{date}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {!open && (
+            {!open && index === 0 && (
               <span className="section-label text-faint">Tap to view</span>
             )}
             <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)] ${open ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -70,7 +73,7 @@ function BriefEntry({ brief, index = 0 }) {
         </div>
         {!open && (
           json.insight ? (
-            <p className="text-sm font-semibold text-faint leading-relaxed line-clamp-1 pl-6">{json.insight}</p>
+            <p className="text-sm font-semibold text-faint leading-relaxed line-clamp-1 pl-6 font-technical">{json.insight}</p>
           ) : (
             <p className="text-xs font-semibold text-faint pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
@@ -104,7 +107,7 @@ function BriefEntry({ brief, index = 0 }) {
                   <div>
                     <CoachTag hue={coach.hue}>{coach.label}</CoachTag>
                   </div>
-                  <p className="text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap">{json[coach.key]}</p>
+                  <p className="text-sm font-semibold text-secondary leading-relaxed whitespace-pre-wrap font-technical">{json[coach.key]}</p>
                 </div>
               ))}
 
@@ -182,7 +185,7 @@ export default function BriefHistory() {
             <h1 className="type-display text-[22px] flex items-center gap-2">
               <Bot className="w-5 h-5 text-teal" /> Brief History
             </h1>
-            <p className="text-xs font-semibold text-muted-2 mt-0.5">Last 30 AI-generated daily briefs</p>
+            <p className="text-xs font-semibold text-muted-2 mt-0.5">Last <span className="font-technical">{briefs.length}</span> AI-generated daily briefs</p>
           </div>
         </div>
 
@@ -236,7 +239,7 @@ export default function BriefHistory() {
                 className="w-full min-h-[44px] mt-1"
                 onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
               >
-                Show more ({briefs.length - visibleCount})
+                Show more (<span className="font-technical">{briefs.length - visibleCount}</span>)
               </Button>
             )}
           </>

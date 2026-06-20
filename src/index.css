@@ -68,9 +68,44 @@
      coral (--color-brand #EF7368). Coral is the single ACTION color; this is
      the physiological-spectrum "bad" / destructive hue. They must never be the
      same RGB, or a red destructive control becomes impossible to express
-     (button destructive, badge red, ConfirmDialog, "bad" biometric readouts). */
+     (button destructive, badge red, ConfirmDialog, "bad" biometric readouts).
+     CANONICAL DESTRUCTIVE TOKEN (SYS-02): `bad` is formally blessed as the one
+     destructive-action hue, NOT a drift instance of the biometric spectrum. A
+     destructive control (Button variant="destructive", ConfirmDialog danger
+     confirm, RecipeBuilder delete) carries a RESTING coral-weight presence —
+     bg-bad/18 fill + border-bad/70 edge by default (not hover-only) — so it
+     out-weights the neutral glassGhost it sits beside instead of reading as a
+     near-equal twin. This is the single allowed non-coral action hue; it stays
+     reserved for genuine destruction. */
   --bad:  #E5484D;  --bad-rgb:  229 72 77;
   --info: #5BA8F5;  --info-rgb: 91 168 245;
+  /* ── CANONICAL COLOR LAW (SYS-09) — the one rule behind the drift ──────────
+     Most spectrum-misuse defects collapse to a single under-enforced rule:
+     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and coral is
+     the ONLY action color. Keep this greppable so future drift is obvious.
+
+     (a) ok / warn / bad / info spectrum is reserved for BIOMETRIC readouts ONLY
+         — readiness, HRV, RHR, sleep, ACWR, fatigue/recovery balance, body
+         battery. ACWR and readiness ARE biometrics, so they MAY use the
+         spectrum (e.g. ACWR sweet-spot=ok, high=warn, danger=bad). It is DRIFT
+         to color non-biometric chrome with the spectrum: status banners,
+         net-energy/surplus readouts, grocery/leaf "have-it" ticks, leaf
+         progress bars, generic ok/info progress fills. Those are data or
+         neutral chrome — use the datum's own hue or neutral glass, never the
+         physiological spectrum.
+     (b) DESTRUCTIVE UI uses the blessed `bad` token (SYS-02) — NOT coral, and
+         NOT a drift instance of the biometric spectrum. `bad` is the single
+         allowed non-coral action hue and is reserved for genuine destruction.
+     (c) FORM-VALIDATION / ATTENTION (required-field nudges, "please fix",
+         soft warnings, empty-state prompts) is NOT biometric: render it as
+         neutral glass + ink hierarchy (text-strong / text-muted / text-faint),
+         putting coral ONLY on the actual action (the submit/confirm control).
+         A warn-yellow validation banner = DRIFT (it poaches the spectrum).
+     (d) EACH DATUM OWNS ONE HUE — color is data, not garnish. Macros are
+         fixed: kcal owns GOLD (--hue-gold), Protein = CORAL (--hue-coral),
+         Carbs = BLUE/carb (--hue-blue), Fat = YELLOW (--hue-yellow). Never
+         recolor a macro to fit a layout; never reuse coral as decoration. A
+         second action color, or a datum wearing a borrowed hue, is DRIFT. */
   --color-positive: #5EDCD2;
   --color-danger:   #E5484D;
   --color-cardio:   #5BA8F5;
@@ -129,6 +164,14 @@
      bottom inset). Bottom-anchored overlays (toasts in the thumb zone) add
      this so nothing is clipped under the dock. */
   --dock-clearance: 80px;
+  /* Full painted footprint of the floating dock measured from the bottom
+     viewport edge: the 12px bottom gap + the ≈56px dock body + a 12px
+     breathing gap above it = ~80px. Bottom-anchored OVERLAYS that must sit
+     fully ABOVE the dock (e.g. the bottom-center toast pill, whose ~50px body
+     was landing on top of the dock when offset by --dock-clearance alone, which
+     measures clearance for in-flow content not floated chrome) reference this so
+     their bottom edge clears the entire dock instead of overlapping it. */
+  --dock-total-height: calc(12px + 56px + 12px);
 
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: 'Manrope', system-ui, sans-serif;
@@ -337,6 +380,17 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
+  /* Row-stripe — the og-row-stripe. A faint inset FILL for a row inside a
+     list/table that must read as a distinct state (e.g. a planned, not-yet-
+     eaten food row) without imposing glass-inset's 13px radius on a full-bleed
+     row that already owns the card's square interior corners. Same material as
+     glass-inset, radius inherited from the row. Reserve for state, never as a
+     decorative zebra. */
+  .row-stripe {
+    background: var(--glass-inset-bg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
   /* Liquid-glass chrome — dock, sidebar, sheets, floating controls. */
   .glass-elevated {
     background: var(--dock-tint);
@@ -435,10 +489,13 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   /* Bottom-sheet entrance — slides up from the bottom edge on mobile. */
   .sheet-rise { animation: sheetRise .30s var(--ease) both; }
 
-  /* Rest-timer urgency — system-tokened pulse on our single easing, in the
-     180–320ms band. Replaces Tailwind's default `animate-pulse` (which uses an
-     off-system 2s cubic-bezier(.4,0,.6,1)) for the rest countdown. */
-  .rest-urgent { animation: restUrgent .30s var(--ease) infinite alternate; }
+  /* Rest-timer urgency — system-tokened pulse on our single easing. At .30s per
+     half-cycle this read as a hard ~0.6s STROBE (anxious, not urgent) and dipped
+     to .55 opacity, near a flash. Slowed to ~1.0s per half-cycle (a calm, legible
+     urgency breath, well clear of the seizure-risk strobe band) with a higher .7
+     opacity floor so it signals urgency without flickering. Replaces Tailwind's
+     off-system 2s `animate-pulse` for the rest countdown. */
+  .rest-urgent { animation: restUrgent 1s var(--ease) infinite alternate; }
 
   /* Barcode scan sweep — the line that travels the scan window to read as a
      live, active scanner. A genuine system gap: no other surface needs a
@@ -466,7 +523,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
 @keyframes restUrgent {
   from { opacity: 1; }
-  to   { opacity: .55; }
+  to   { opacity: .7; }
 }
 
 /* One full turn. Linear so the spinner reads as steady rotation, not an eased
@@ -560,12 +617,13 @@ html.light body::before {
 }
 /* Success / default icon reads as neutral glass — green is reserved for the
    biometric spectrum, so Sonner's saturated check is desaturated rather than
-   colored. Tinted to PRIMARY (not secondary): at secondary opacity the check
-   was technically present but visually invisible — neither legible nor absent,
-   the worst of both. Primary makes it a clear, legible neutral glyph. Only the
-   error state below swaps in the coral action tint. */
+   colored. Tinted to SECONDARY so the COPY leads: at primary the neutral check
+   out-shouted the message it was decorating (a checkmark is confirmation, not
+   the payload). Secondary keeps it a legible-but-quiet supporting glyph and lets
+   the text carry the toast. Only the error state below swaps in the coral action
+   tint, where the icon SHOULD draw the eye. */
 [data-sonner-toast].og-toast [data-icon] {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 /* Error / destructive is the only action accent — coral, never biometric red. */
 [data-sonner-toast].og-toast.og-toast--error {
@@ -604,9 +662,20 @@ html.light body::before {
   background: transparent;
   border: 0;
   border-radius: 9999px;
-  color: var(--text-secondary);
+  /* Resting contrast is MUTED on passive toasts: the always-visible X is a
+     convenience on a read-and-forget success pill, not the point of it, so it
+     should not compete with the copy. It still reads (and the 44px hit area is
+     unchanged), but quietly. The actionable error state below raises it back to
+     --text-secondary, where dismissing is a likelier next action. Both states
+     brighten to --text-primary on hover. */
+  color: var(--text-muted);
   opacity: 1 !important;
   transition: color 200ms var(--ease);
+}
+/* Error / CTA toasts are actionable, so their close affordance rests at the
+   more present --text-secondary instead of the muted passive level. */
+[data-sonner-toast].og-toast.og-toast--error .og-toast__close[data-close-button] {
+  color: var(--text-secondary);
 }
 /* The visible chip: ~28px low-weight glass disc centered inside the 44px hit
    area. Sits behind the X glyph (negative z) so the icon still reads on top. */
