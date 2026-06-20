@@ -5,6 +5,13 @@
 // app's muscle-taxonomy used by the heatmap/volume engine), it does not replace it.
 let _cache = null;
 
+// Timed/hold movements log seconds, not reps. Sync name heuristic so it works
+// without loading the library; override per-exercise via exercise.kind.
+const HOLD_RE = /\b(plank|hold|hang|l-?sit|wall ?sit|carry|farmer|isometric|dead ?hang)\b/i;
+export function inferSetKind(name) {
+  return HOLD_RE.test(name || "") ? "hold" : "straight";
+}
+
 export async function loadExerciseLibrary() {
   if (!_cache) {
     const mod = await import("@/data/exerciseLibrary.json");

@@ -1037,7 +1037,7 @@ export default function WorkoutDetail() {
                                   <tr key={si} className="border-b border-charcoal-borderSoft">
                                     <td className="py-2 px-2 font-technical font-extrabold text-ink-muted">{set.set_number}</td>
                                     <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-[10px] text-ink-faint">{weightUnit}</span></td>
-                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.reps}</td>
+                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.duration_s != null ? `${set.duration_s}s` : set.reps}</td>
                                   </tr>
                                 ))}
                               </tbody>

@@ -10,7 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
-import { getLibraryNames, getExerciseInfo } from "@/utils/exerciseLibrary";
+import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
@@ -68,6 +68,8 @@ export default function ExerciseCard({
   const dbEntry = lookupExercise(exercise.name);
   const smartRest = getSmartRestDuration(exercise.name);
   const isProgramMode = !!programExercise;
+  // Timed holds (planks, hangs, carries) log seconds in place of reps.
+  const isHold = (exercise.kind || inferSetKind(exercise.name)) === "hold";
 
   // Presentation only: the first un-completed set is the "active" set.
   const activeSetIndex = exercise.sets.findIndex((s) => !s.completed);
@@ -408,7 +410,7 @@ export default function ExerciseCard({
           <span className="pl-0.5">Set</span>
           <span>Last</span>
           <span className="text-center">{weightUnit}</span>
-          <span className="text-center">Reps</span>
+          <span className="text-center">{isHold ? "Sec" : "Reps"}</span>
           {showRIR && (
             <span className="text-center flex items-center justify-center gap-1">
               RIR
@@ -494,11 +496,11 @@ export default function ExerciseCard({
               />
               <input
                 type="number"
-                aria-label={`Set ${set.set_number} reps`}
-                value={set.reps || ""}
-                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
+                aria-label={isHold ? `Set ${set.set_number} hold seconds` : `Set ${set.set_number} reps`}
+                value={(isHold ? set.duration_s : set.reps) || ""}
+                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, isHold ? 'duration_s' : 'reps', parseInt(e.target.value) || 0)}
                 onFocus={handleInputFocus}
-                placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
+                placeholder={isHold ? "30" : (lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0")}
                 min="0"
                 className={setCell(isActive)}
               />
