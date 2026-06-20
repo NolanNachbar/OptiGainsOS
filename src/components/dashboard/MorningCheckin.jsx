@@ -16,8 +16,9 @@ const MUSCLE_GROUPS = [
 
 const SORENESS_LABELS = ["None", "Mild", "Moderate", "Severe"];
 const SORENESS_COLORS = [
-  // "None" — neutral glass-inset (not a biometric reading), soft hairline edge.
-  "glass-inset text-muted-2 hairline",
+  // "None" — neutral, but with a faint surface fill + visible border so an empty
+  // pill reads as a tappable cycler with a value, not an inert unselected tag.
+  "bg-track/60 text-muted-2 border-charcoal-border",
   // Levels 1-3 ride the physiological spectrum (soreness is a biometric).
   "bg-fat/[0.12] text-fat border-fat/30",
   "bg-warn/[0.12] text-warn border-warn/30",
@@ -212,7 +213,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
               className={`text-xs font-bold min-h-[44px] flex flex-col items-center justify-center px-1 rounded-lg border-[0.5px] ${SORENESS_COLORS[soreness[group]]}`}
             >
               <span className="block truncate">{group}</span>
-              <span className="block text-[10px] opacity-70 mt-0.5">{SORENESS_LABELS[soreness[group]]}</span>
+              <span className="block text-[10.5px] font-semibold opacity-100 mt-0.5">{SORENESS_LABELS[soreness[group]]}</span>
             </button>
           ))}
         </div>
@@ -230,10 +231,14 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
       {/* CORAL DISCIPLINE — standalone the check-in owns the coral primary, but
           when embedded under Today's coral "Begin Session" the host passes
           coralCta={false} so this renders neutral (ghost) and coral stays single. */}
+      {/* mt-1 + scroll-mb give the primary action a small gap so it never sits
+          flush against the bottom dock blur when this form is embedded on Today
+          (the page scroll container clears the dock; the form carries its own
+          breathing room for a premium feel). */}
       <Button
         variant={coralCta ? "volt" : "ghost"}
         size="lg"
-        className="w-full"
+        className="w-full mt-1 scroll-mb-4"
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
       >

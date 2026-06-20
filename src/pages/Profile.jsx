@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Combobox } from "@/components/ui/combobox";
 import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
 import { ProfileStatsCard } from "@/components/ui/system";
+import { deriveInitials } from "@/lib/initials";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
@@ -302,9 +303,9 @@ export default function Profile({ hideHeader }) {
 
   const tdee = getBestTDEE(formData, latestWeight, weightEntries, allFoodEntries, []);
   const displayName = formData.display_name || profile?.display_name || user.user_metadata?.full_name || user.email;
-  const initials = displayName.includes('@')
-    ? displayName[0].toUpperCase()
-    : displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  // Shared deriveInitials helper — same word-leading letter/digit logic the chrome
+  // UserAvatar now uses, so one user shows one consistent avatar everywhere.
+  const initials = deriveInitials(displayName);
 
   const NAV = [
     { id: 'identity', label: 'Identity',        icon: User },

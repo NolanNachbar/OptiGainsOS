@@ -118,6 +118,14 @@ export default function Layout({ children, currentPageName }) {
   const [stripOverflows, setStripOverflows] = useState(false);
   const pstDays = useMemo(() => daysToPST(), []);
 
+  // The gold PST-deadline pill is dashboard chrome (a program countdown), not
+  // form chrome. On creation/edit/builder routes it competes with the page title
+  // on a structure-definition surface, so suppress it there and let the form own
+  // its header.
+  const FORM_ROUTES = ["/create-workout", "/program-builder", "/quick-workout"];
+  const onFormRoute = FORM_ROUTES.some((p) => location.pathname.startsWith(p));
+  const showDeadlineChip = !onFormRoute;
+
   useEffect(() => {
     const updateHeaderHeight = () => {
       const mobileHeader = mobileHeaderRef.current;
@@ -176,7 +184,9 @@ export default function Layout({ children, currentPageName }) {
   // date; a page can override (or `null` to suppress) when the date is
   // misleading — e.g. a history list isn't "today".
   const pageSubtitle = {
-    BriefHistory: "Last 30 AI-generated daily briefs",
+    // Count-neutral: the page renders the real (often small) brief count, so a
+    // hardcoded "Last 30" would contradict a list that frequently shows 1.
+    BriefHistory: "AI-generated daily briefs",
     // Career is an IA orphan with its own in-page header; suppress the default
     // date subtitle so a misleading "today's date" doesn't print under its title.
     Career: null,
@@ -281,7 +291,7 @@ export default function Layout({ children, currentPageName }) {
                 <Link to="/profile">
                   <UserAvatar
                     url={profile?.avatar_url}
-                    username={profile?.username}
+                    name={profile?.display_name || profile?.username}
                     size="sm"
                     className="w-7 h-7 text-xs border border-charcoal-border"
                   />
@@ -311,11 +321,11 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
             </div>
-            <span className="chip-gold">{pstDays} days · PST</span>
+            {showDeadlineChip && <span className="chip-gold">{pstDays} days · PST</span>}
             <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
               <UserAvatar
                 url={profile?.avatar_url}
-                username={profile?.username}
+                name={profile?.display_name || profile?.username}
                 size="sm"
                 className="w-8 h-8 text-xs border border-charcoal-border"
               />
@@ -336,14 +346,19 @@ export default function Layout({ children, currentPageName }) {
             style={{ top: "var(--layout-header-height, 0px)" }}
           >
             <div className="relative">
-              <div ref={stripScrollRef} className="flex items-center gap-1.5 px-[18px] h-11 overflow-x-auto no-scrollbar">
+              {/* h-12 band + min-h-[44px] interactive pills so every nav/utility
+                  target meets the 44px touch minimum (the visual pill keeps its
+                  compact look via py, but the hit area is a real 44px). pr-[18px]
+                  keeps the last utility off the viewport edge so a trailing pill is
+                  never flush-clipped, and lets the scroll-fade sit over padding. */}
+              <div ref={stripScrollRef} className="flex items-center gap-1.5 pl-[18px] pr-[18px] h-12 overflow-x-auto no-scrollbar">
                 {hasSubTabs && activeSection.children.map((c) => {
                   const on = c.active(location);
                   return (
                     <Link
                       key={c.label}
                       to={c.url}
-                      className={`shrink-0 px-3 h-9 inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                      className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
                         on
                           ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                           : "text-ink-muted hover:text-ink"
@@ -356,21 +371,30 @@ export default function Layout({ children, currentPageName }) {
                 {hasSubTabs && (
                   <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
                 )}
-                {/* tracking dropped + px tightened so Calc + Note both fit at
-                    390px without clipping 'Note'->'NO' or forcing a horizontal
-                    scroll (the strip is overflow-x-auto, but the utilities must
-                    read whole, not half-cropped). */}
-                {utilities.map((u, i) => (
+                {/* On routes with no sub-tabs the utilities used to ml-auto to the
+                    far right, leaving the left two-thirds of the glass bar empty —
+                    reading as a toolbar that lost its content. Instead anchor them
+                    to the left content edge behind a small "Tools" eyebrow so the
+                    row reads as an intentional quick-tools group. */}
+                {!hasSubTabs && (
+                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.08em] text-ink-faint mr-0.5">
+                    Tools
+                  </span>
+                )}
+                {/* At <=390px the text labels are dropped (icon-only) so the strip
+                    reads whole instead of clipping 'Note' against the viewport
+                    edge; the label returns at >=400px. aria-label keeps the action
+                    named for AT regardless. min-h-[44px] meets the touch minimum. */}
+                {utilities.map((u) => (
                   <button
                     key={u.label}
                     type="button"
                     onClick={u.onClick}
-                    className={`shrink-0 px-2.5 h-9 inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)] ${
-                      !hasSubTabs && i === 0 ? "ml-auto" : ""
-                    }`}
+                    aria-label={u.label}
+                    className="shrink-0 px-2.5 min-h-[44px] inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)]"
                   >
                     <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                    {u.label}
+                    <span className="hidden min-[400px]:inline">{u.label}</span>
                   </button>
                 ))}
               </div>

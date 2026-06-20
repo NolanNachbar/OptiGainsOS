@@ -165,8 +165,11 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
 export function ProfileStatsCard({ initials, name, stats, padding = "p-4", className = "" }) {
   return (
     <div className={`glass ${padding} text-center ${className}`}>
-      <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center mx-auto">
-        <span className="text-brand text-2xl font-bold">{initials}</span>
+      {/* Neutral avatar disc — matches the chrome UserAvatar. Coral is the single
+          ACTION color (the Sign Out CTA), so it must not be spent on a decorative
+          avatar tint here. */}
+      <div className="w-16 h-16 rounded-full bg-charcoal-elevated flex items-center justify-center mx-auto">
+        <span className="text-ink text-2xl font-bold">{initials}</span>
       </div>
       <p className="text-ink font-semibold mt-3 text-sm leading-tight">{name}</p>
       {stats?.length > 0 && (

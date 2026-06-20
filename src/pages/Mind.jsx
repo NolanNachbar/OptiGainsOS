@@ -727,7 +727,6 @@ const MIND_TABS = [
 
 export default function Mind({ hideHeader }) {
   const [activeTab, setActiveTab] = useState("capture");
-  const activeMeta = MIND_TABS.find(t => t.id === activeTab);
   return (
     <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
       {/* System gap: a ~140ms opacity-only crossfade for tab switches. The shared
@@ -759,16 +758,6 @@ export default function Mind({ hideHeader }) {
           showOnDesktop
           className={`mb-4 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
         />
-
-        {/* Mobile identity: the desktop header is suppressed on small screens, so
-            the active context carries Mind's violet Brain glyph here to keep the
-            domain legible without a duplicate title row. Desktop owns it above. */}
-        {activeMeta && (
-          <div className="lg:hidden flex items-center gap-2 mb-4">
-            <Brain className="w-3.5 h-3.5 text-violet shrink-0" />
-            <span className="section-label !text-violet">{activeMeta.label}</span>
-          </div>
-        )}
 
         {/* Keyed on activeTab so each switch replays the subtle opacity fade. */}
         <div key={activeTab} className="mind-tab-fade">

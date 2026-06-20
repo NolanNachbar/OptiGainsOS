@@ -71,9 +71,11 @@ export default function Today() {
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
 
-  // Subjective readiness check-in for today (ported from Dashboard). When a row
-  // exists, MorningCheckin renders its read-only summary; otherwise the
-  // collapsed one-line prompt is offered.
+  // Subjective readiness check-in for today (ported from Dashboard). When a
+  // COMPLETED row exists (energy logged), MorningCheckin renders its read-only
+  // summary; otherwise the collapsed one-line prompt is offered. A partial row
+  // with no energy must NOT force the full editable form open on load — that is
+  // what buried the prescribed session under the expanded check-in.
   const { data: todayCheckIn } = useQuery({
     queryKey: ["dailyReadiness", today, user?.id],
     queryFn: async () => {
@@ -147,6 +149,8 @@ export default function Today() {
         .select("id, workout_id, program_workout_id, enrollment_id")
         .eq("created_by", user.id)
         .eq("status", "in_progress")
+        // Skip orphan sessions with no navigable target, else the banner dead-ends.
+        .or("workout_id.not.is.null,program_workout_id.not.is.null")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -250,8 +254,8 @@ export default function Today() {
       {activeSession && (
         <Link
           to={activeSession.program_workout_id
-            ? `/workouts/detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
-            : `/workouts/detail?id=${activeSession.workout_id}`}
+            ? `/workout-detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
+            : `/workout-detail?id=${activeSession.workout_id}`}
           className="glass-brand flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-2xl text-brand text-sm font-semibold rise-in"
         >
           <span className="flex items-center gap-2">
@@ -331,7 +335,7 @@ export default function Today() {
             session CTA below stays the single coral primary. Once logged,
             MorningCheckin renders its own read-only summary. */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-          {todayCheckIn ? (
+          {todayCheckIn?.energy ? (
             <MorningCheckin today={today} existingCheckin={todayCheckIn} coralCta={false} />
           ) : checkinOpen ? (
             // coralCta={false}: embedded under the coral "Begin Session", so the

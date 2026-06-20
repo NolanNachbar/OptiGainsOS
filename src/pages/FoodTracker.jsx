@@ -855,7 +855,11 @@ const handleSaveMealTemplate = () => {
 
         {/* ── Main scrollable content ── */}
         <div className="flex-1 min-w-0">
-          <div className="max-w-3xl mx-auto px-3 py-3 pb-24 lg:pb-3 space-y-3.5">
+          {/* Bottom padding clears the floating FAB (which ends ~ dock + 16px +
+              56px above the viewport bottom) so the last meal section can scroll
+              fully above it and no ADD ITEM tap target ever rests under the FAB.
+              Desktop has no FAB, so it keeps the tight pb-3. */}
+          <div className="max-w-3xl mx-auto px-3 py-3 pb-[calc(var(--dock-total-height)+88px)] lg:pb-3 space-y-3.5">
 
             {/* Gold kcal ring + hue-coded P/C/F bars */}
             {(() => {
@@ -906,14 +910,22 @@ const handleSaveMealTemplate = () => {
                           style={{ transition: 'stroke-dasharray 280ms var(--ease)' }}
                         />
                       </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      {/* Center readout: the big number leads, the unit word sits
+                          as its own quiet line, and the consumed/goal context is a
+                          third tabular line. Constraining width to the inner track
+                          (px-1.5) keeps every line clear of the arc rather than
+                          crowding its edge. */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center px-1.5 text-center">
                         {isToday ? (
                           <>
                             <span className={`font-technical text-[22px] font-extrabold leading-none ${calsRemaining < 0 ? 'text-bad' : 'text-gold'}`}>
                               {Math.abs(Math.round(calsRemaining))}
                             </span>
-                            <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
-                              {calsRemaining < 0 ? 'over' : 'left'} · {Math.round(calsConsumed)}/{calsGoal}
+                            <span className={`text-[8px] font-bold uppercase tracking-[0.14em] leading-none mt-1 ${calsRemaining < 0 ? 'text-bad/80' : 'text-muted-2'}`}>
+                              {calsRemaining < 0 ? 'over' : 'left'}
+                            </span>
+                            <span className="font-technical text-[9px] font-semibold text-muted-2 leading-none mt-[3px] tabular-nums">
+                              {Math.round(calsConsumed)}/{calsGoal}
                             </span>
                           </>
                         ) : (
@@ -921,7 +933,7 @@ const handleSaveMealTemplate = () => {
                             <span className="font-technical text-[22px] font-extrabold leading-none text-ink">
                               {Math.round(calsConsumed)}
                             </span>
-                            <span className="font-technical text-[9px] font-bold text-muted-2 mt-1 leading-none">
+                            <span className="text-[8px] font-bold uppercase tracking-[0.14em] leading-none mt-1 text-muted-2">
                               of {calsGoal}
                             </span>
                           </>
@@ -1140,7 +1152,11 @@ const handleSaveMealTemplate = () => {
                               <span className="text-xs font-bold text-carb">{entry.carbs_grams}</span>
                               <span className="text-xs font-bold text-fat">{entry.fats_grams}</span>
                             </div>
-                            <div className="shrink-0 flex items-center justify-end gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            {/* Edit/delete each get a full 44px target; on mobile
+                                they're spaced apart (gap-2) so the paired icons
+                                don't share an edge and risk a mis-tap one-handed.
+                                Desktop collapses the gap since hit areas shrink. */}
+                            <div className="shrink-0 flex items-center justify-end gap-2 sm:gap-0.5 pr-1 sm:pr-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>

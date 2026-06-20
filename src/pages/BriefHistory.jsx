@@ -73,7 +73,7 @@ function BriefEntry({ brief, index = 0 }) {
         </div>
         {!open && (
           json.insight ? (
-            <p className="text-sm font-semibold text-faint leading-relaxed line-clamp-1 pl-6 font-technical">{json.insight}</p>
+            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6 font-technical">{json.insight}</p>
           ) : (
             <p className="text-xs font-semibold text-faint pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
@@ -214,6 +214,23 @@ export default function BriefHistory() {
           </div>
         ) : (
           <>
+            {/* Summary tile anchors the layout so a small list (often a single
+                brief) reads as an intentional composition instead of one card
+                floating over an empty void. Neutral glass, no CTA — the cards
+                below remain the only interactive surface. */}
+            <div className="glass-inset flex items-center gap-3 px-5 py-4 mb-4 rise-in">
+              <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-teal/10 shrink-0">
+                <Bot className="w-4 h-4 text-teal" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-ink leading-tight">
+                  <span className="font-technical">{briefs.length}</span> brief{briefs.length === 1 ? "" : "s"} on file
+                </p>
+                <p className="text-xs font-semibold text-muted-2 mt-0.5">
+                  Most recent {format(parseISO(briefs[0].date), "EEEE, MMMM d")}
+                </p>
+              </div>
+            </div>
             {(() => {
               const shown = briefs.slice(0, visibleCount);
               // Only label time-buckets once a second bucket actually appears —

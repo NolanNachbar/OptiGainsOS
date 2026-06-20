@@ -28,9 +28,12 @@ const Dialog = ({ open, onOpenChange, children }) => {
           containing block to the viewport (portaled to body) — true inset-0 at
           390px with no ancestor transform creating a containing block. */}
       <div className="fixed inset-0 z-[10000]">
-        {/* Full-screen scrim — covers the dock too (a modal owns the screen). */}
+        {/* Full-screen scrim — covers the dock too (a modal owns the screen).
+            Deepened to /85 + a brightness knockdown so bright coral CTAs behind
+            the sheet (e.g. the Add chip in QuickWorkout) desaturate and read as
+            inactive — the modal owns the only live action color. */}
         <div
-          className="fixed inset-0 bg-black/75"
+          className="fixed inset-0 bg-black/85 backdrop-brightness-50"
           style={{
             opacity: scrimIn ? 1 : 0,
             transition: 'opacity .18s var(--ease)',
@@ -125,7 +128,7 @@ DialogTitle.displayName = "DialogTitle";
 const DialogDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-[13px] text-ink-muted ${className}`}
+    className={`text-[14px] text-ink-secondary leading-relaxed ${className}`}
     {...props}
   />
 ));

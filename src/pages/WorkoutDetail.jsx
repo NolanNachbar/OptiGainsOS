@@ -821,7 +821,7 @@ export default function WorkoutDetail() {
             <div className="flex-1 min-w-0">
               {/* Title + description */}
               <CardTitle className="type-display text-2xl mb-1">{workout.title}</CardTitle>
-              {workout.description && (
+              {workout.description && workout.description.trim().toLowerCase() !== (workout.title || "").trim().toLowerCase() && (
                 <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
               <div className="flex flex-wrap gap-6 mb-6">
@@ -887,8 +887,8 @@ export default function WorkoutDetail() {
               {workout.exercises?.length > 0 && (() => {
                 const bodyData = getWorkoutBodyData(workout.exercises);
                 return bodyData.length > 0 ? (
-                  <div className="flex flex-col mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
-                    <MuscleHeatMap data={bodyData} view={muscleView} className="flex-1" maxWidth={220} />
+                  <div className="flex flex-col items-center mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
+                    <MuscleHeatMap data={bodyData} view={muscleView} className="flex-1" maxWidth={150} />
                   </div>
                 ) : null;
               })()}
@@ -1126,9 +1126,9 @@ export default function WorkoutDetail() {
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <DialogDescription>
+          <p className="text-[14px] font-medium text-ink-secondary leading-relaxed">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </DialogDescription>
+          </p>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
