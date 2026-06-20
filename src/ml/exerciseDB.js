@@ -1,3 +1,5 @@
+import _essentialExercises from "@/data/essentialExercises.json";
+
 export const EXERCISE_DB = [
   {
     "name": "Bodyweight Squats",
@@ -3033,6 +3035,14 @@ export const EXERCISE_DB = [
   }
 
 ];
+
+// Beardsley & Carter "Essential Exercises": enrich matching entries by name,
+// append the rest. The JSON stays the source of truth for the `essential` block.
+for (const _ex of _essentialExercises) {
+  const _existing = EXERCISE_DB.find((e) => e.name === _ex.name);
+  if (_existing) _existing.essential = _ex.essential;
+  else EXERCISE_DB.push(_ex);
+}
 
 const _exerciseIndex = new Map(
   EXERCISE_DB.map((ex) => [ex.name.toLowerCase(), ex])
