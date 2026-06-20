@@ -851,7 +851,6 @@ export default function WorkoutDetail() {
                       variant="volt"
                       size="lg"
                       className="w-full hidden lg:flex"
-                      data-tutorial="start-logging-btn"
                     >
                       <Dumbbell className="w-5 h-5 mr-2" />
                       Start Logging Workout
@@ -1084,6 +1083,7 @@ export default function WorkoutDetail() {
                 variant="volt"
                 size="lg"
                 className="w-full"
+                data-tutorial="start-logging-btn"
               >
                 <Dumbbell className="w-5 h-5 mr-2" />
                 Start Logging Workout

@@ -10,7 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
-import { getLibraryNames } from "@/utils/exerciseLibrary";
+import { getLibraryNames, getExerciseInfo } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
@@ -50,6 +50,8 @@ export default function ExerciseCard({
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [customExerciseName, setCustomExerciseName] = useState("");
   const [libNames, setLibNames] = useState([]); // free-exercise-db names, lazy-loaded
+  const [showCues, setShowCues] = useState(false);
+  const [cuesInfo, setCuesInfo] = useState(undefined); // undefined=loading, null=none, object=loaded
   const menuRef = useRef(null);
   const nudgeTimerRef = useRef(null);
 
@@ -104,6 +106,14 @@ export default function ExerciseCard({
       getLibraryNames().then(setLibNames).catch(() => {});
     }
   }, [showReplaceDialog, libNames.length]);
+
+  // Lazy-load how-to instructions for THIS exercise when the cues dialog opens.
+  useEffect(() => {
+    if (showCues) {
+      setCuesInfo(undefined);
+      getExerciseInfo(exercise.name).then((info) => setCuesInfo(info)).catch(() => setCuesInfo(null));
+    }
+  }, [showCues, exercise.name]);
 
   // Handle set completed
   const handleSetCompleted = (setIndex, completed) => {
@@ -284,6 +294,16 @@ export default function ExerciseCard({
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCues(true);
+                    setOpenMenu(false);
+                  }}
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  How to
                 </button>
                 {onReplaceExercise && (
                 <button
@@ -646,6 +666,31 @@ export default function ExerciseCard({
         <Button variant="ghost" className="w-full mt-2 text-ink-muted" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
           Keep current exercise
         </Button>
+      </DialogContent>
+    </Dialog>
+
+    {/* How-to / cues — instructions from the free-exercise-db library */}
+    <Dialog open={showCues} onOpenChange={setShowCues}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{exercise.name}</DialogTitle>
+          {cuesInfo && (cuesInfo.primaryMuscles?.length || cuesInfo.equipment) && (
+            <DialogDescription className="capitalize">
+              {[cuesInfo.primaryMuscles?.join(", "), cuesInfo.equipment].filter(Boolean).join(" · ")}
+            </DialogDescription>
+          )}
+        </DialogHeader>
+        <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto">
+          {cuesInfo === undefined ? (
+            <p className="text-ink-muted">Loading…</p>
+          ) : cuesInfo?.instructions?.length ? (
+            <ol className="list-decimal pl-5 space-y-2">
+              {cuesInfo.instructions.map((step, i) => <li key={i}>{step}</li>)}
+            </ol>
+          ) : (
+            <p className="text-ink-muted">No how-to found for this exercise in the library.</p>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   </>
