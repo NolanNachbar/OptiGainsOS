@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 /**
  * SubTabs — the section-level tab strip used by every hub (Train, Fuel, Analyze…).
@@ -18,17 +18,32 @@ import { useRef, useEffect } from "react";
 export default function SubTabs({ tabs, active, onChange, right, sticky = true, showOnDesktop = false, className = "" }) {
   const stripRef = useRef(null);
   const activeRef = useRef(null);
+  // Edge-fade affordance: when the pill row actually scrolls horizontally, paint a
+  // right fade so the overflow reads as intentional scroll (not an accidental
+  // clip at 390px). Gated behind a real overflow check so it never paints a false
+  // hint when the tabs already fit.
+  const [overflows, setOverflows] = useState(false);
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [active]);
 
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const measure = () => setOverflows(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tabs]);
+
   return (
     <div
       className={`${sticky ? "sticky top-0 z-50" : ""} ${showOnDesktop ? "" : "lg:hidden"} glass-elevated border-x-0 border-t-0 rounded-none ${className}`}
     >
-      <div className="max-w-5xl mx-auto px-3 flex items-center justify-between h-12">
-        <div ref={stripRef} className="flex gap-1 overflow-x-auto no-scrollbar items-center h-full">
+      <div className="max-w-5xl mx-auto px-3 flex items-center justify-between h-12 relative">
+        <div ref={stripRef} className="flex gap-1 overflow-x-auto no-scrollbar items-center h-full pr-6">
           {tabs.map(({ id, label, icon: Icon }) => {
             const isActive = active === id;
             return (
@@ -48,6 +63,17 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
             );
           })}
         </div>
+        {/* Right-edge scroll-fade — only when the row truly overflows. Anchored to
+            the right of the scroller (left of any `right` node) so a clipped
+            trailing pill reads as scrollable rather than accidentally cut off.
+            pointer-events-none so taps pass through. */}
+        {overflows && (
+          <div
+            className={`pointer-events-none absolute inset-y-0 w-8 ${right ? "right-16" : "right-3"}`}
+            style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+            aria-hidden="true"
+          />
+        )}
         {right && <div className="ml-4 shrink-0">{right}</div>}
       </div>
     </div>

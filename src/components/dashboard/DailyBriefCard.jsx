@@ -128,9 +128,9 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
             <Bot className="w-5 h-5 text-teal" />
           </div>
           <div>
-            <p className="text-sm font-bold text-ink">No AI Brief Yet</p>
+            <p className="text-sm font-bold text-ink">No brief for today yet</p>
             <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs">
-              Run the Desktop Agent to generate today's coaching brief. It reads your last 7 days of data and writes the result here.
+              Your coaching brief lands here once today's data is in. Check back, or review your recent briefs.
             </p>
           </div>
           <Link to="/brief-history">

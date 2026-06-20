@@ -49,6 +49,23 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
 
   const isOwner = workout.created_by === userId;
 
+  // Subtitle hygiene: drop a description that just echoes the title or is the
+  // generic "Quick workout session" boilerplate (every quick session shares it,
+  // producing repetitive low-hierarchy noise). When suppressed, derive a more
+  // useful subtitle from the logged content — the lead exercise — so stacked
+  // quick-session cards are distinguishable at a glance.
+  const rawDesc = (workout.description || "").trim();
+  const isBoilerplateDesc =
+    !rawDesc ||
+    /^quick workout session$/i.test(rawDesc) ||
+    rawDesc.toLowerCase() === (workout.title || "").trim().toLowerCase();
+  const leadExercise = workout.exercises?.[0]?.name;
+  const subtitle = isBoilerplateDesc
+    ? leadExercise
+      ? `${leadExercise}${workout.exercises.length > 1 ? ` +${workout.exercises.length - 1} more` : ""}`
+      : null
+    : rawDesc;
+
   // Guard against corrupted auto-saved durations (minute totals in the hundreds).
   const validDuration =
     workout.duration_minutes && workout.duration_minutes > 0 && workout.duration_minutes <= 240
@@ -150,9 +167,9 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
             <h3 className="text-[17px] font-extrabold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
               {workout.title}
             </h3>
-            {workout.description && (
+            {subtitle && (
               <p className="text-xs text-ink-muted line-clamp-2 mt-1 leading-relaxed">
-                {workout.description}
+                {subtitle}
               </p>
             )}
           </div>

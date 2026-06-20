@@ -161,8 +161,12 @@
      of leaving a dead 64px gap. */
   --layout-header-height: 0px;
   /* Clearance above the floating mobile dock (≈56px tall, 12px from the
-     bottom inset). Bottom-anchored overlays (toasts in the thumb zone) add
-     this so nothing is clipped under the dock. */
+     bottom inset). USE THIS for IN-FLOW content bottom padding (a scroll
+     container's last child clearing the dock). Floated/sticky chrome that must
+     sit FULLY ABOVE the dock (sticky save bars, action footers, toasts) should
+     use --dock-total-height instead — several sticky action bars still reference
+     --dock-clearance and read slightly crowded against the dock; align them to
+     --dock-total-height to fix the flush-against-dock crowding everywhere. */
   --dock-clearance: 80px;
   /* Full painted footprint of the floating dock measured from the bottom
      viewport edge: the 12px bottom gap + the ≈56px dock body + a 12px

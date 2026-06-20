@@ -337,7 +337,11 @@ export default function QuickWorkout() {
         }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending}
-        startTime={startTime}
+        // The session clock must not tick before the Resume-vs-Start-Fresh
+        // decision is made — a running timer behind the prompt reads as if a
+        // session already started and contradicts the choice. Hold the header
+        // timer at rest until the prompt is resolved (null hides the cluster).
+        startTime={resumeSession ? null : startTime}
         canFinish={exercises.length > 0}
         restTimer={restTimer}
         restDuration={restDuration}
@@ -561,7 +565,13 @@ export default function QuickWorkout() {
             <Button variant="outline" size="lg" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button variant="volt" size="lg" className="flex-1" onClick={handleResumeSession}>
+            {/* Resume is the brand-affirmative choice, but solid `volt` here
+                carries the canonical coral glow that blooms beneath the button
+                at 390px AND puts a second solid-coral surface on screen while
+                the page's Add chip still bleeds through the scrim. coralGhost
+                keeps Resume clearly the brand-tinted primary of this binary
+                without the halo or the competing second coral fill. */}
+            <Button variant="coralGhost" size="lg" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

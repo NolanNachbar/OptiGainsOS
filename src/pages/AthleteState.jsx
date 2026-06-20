@@ -321,7 +321,11 @@ function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
 // ── Strength section ──────────────────────────────────────────────────────────
 
 function StrengthSection({ data }) {
-  if (!data || Object.keys(data).length === 0) {
+  // Only per-lift objects ({current_e1rm, target, stall_risk, ...}) are renderable.
+  // Flat scalar shapes (e.g. {bench_1rm: 245} from a legacy/seed row) would render
+  // as empty "Bench_1rm — lb" rows, so treat anything non-object as "no data".
+  const liftKeys = data ? Object.keys(data).filter((k) => data[k] && typeof data[k] === "object") : [];
+  if (liftKeys.length === 0) {
     return <p className="text-xs font-semibold text-muted-2">No strength data yet. Log workouts with key lifts to see estimates.</p>;
   }
 
@@ -331,7 +335,7 @@ function StrengthSection({ data }) {
     "Squat (comp)": "squat",
     "Deadlift (conventional comp)": "deadlift",
   };
-  const sorted = LIFT_ORDER.filter(k => data[k]).concat(Object.keys(data).filter(k => !LIFT_ORDER.includes(k)));
+  const sorted = LIFT_ORDER.filter(k => liftKeys.includes(k)).concat(liftKeys.filter(k => !LIFT_ORDER.includes(k)));
 
   return (
     <div>
@@ -830,11 +834,18 @@ export default function AthleteState({ hideHeader = false }) {
   const { data: state, isLoading, isError, refetch } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
     queryFn: async () => {
+      // The engine writes one row per day, but it may not have run yet for the
+      // exact current date (timezone, pre-morning-brief, missed cron). Filtering
+      // strictly on today then collapsed the whole surface to an empty state even
+      // though recent strength/recovery data exists. Fall back to the most recent
+      // row so the page always surfaces the latest computed analysis.
       const { data, error } = await supabase
         .from("athlete_state")
         .select("*")
         .eq("created_by", user.id)
-        .eq("date", today)
+        .lte("date", today)
+        .order("date", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -842,6 +853,10 @@ export default function AthleteState({ hideHeader = false }) {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  // When the surfaced row predates today, note it so the page can flag the data
+  // as carried-forward rather than silently implying it was computed this morning.
+  const isStale = !!state?.date && state.date !== today;
 
   return (
     <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
@@ -858,16 +873,16 @@ export default function AthleteState({ hideHeader = false }) {
                 page caption collapses to a single faint "Updated HH:MM" line to
                 avoid restating the date. */}
             <p className="hidden lg:block font-technical text-[13px] font-semibold text-muted-2 lg:mt-0.5">
-              Computed daily · {today}
+              {isStale ? `As of ${state.date}` : `Computed daily · ${today}`}
               {state?.computed_at && (
                 <span className="ml-2 text-faint">
                   Last updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
             </p>
-            {state?.computed_at && (
+            {(isStale || state?.computed_at) && (
               <p className="lg:hidden font-technical text-[12px] font-semibold text-faint">
-                Updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {isStale ? `As of ${state.date}` : `Updated ${new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
               </p>
             )}
           </div>
@@ -910,11 +925,26 @@ export default function AthleteState({ hideHeader = false }) {
             <CardContent className="pb-8 text-center">
               <div className="pt-8">
                 <BarChart3 className="w-8 h-8 text-faint mx-auto mb-3" />
-                <p className="text-sm text-ink font-bold">Today's analysis is being computed</p>
+                <p className="text-sm text-ink font-bold">No analysis yet</p>
                 <p className="text-xs font-semibold text-muted-2 mt-1 max-w-xs mx-auto">
-                  Your athlete state refreshes automatically each morning. Check back shortly,
-                  or log a workout, weigh-in, or recovery metrics to give the engine more to work with.
+                  Your athlete state refreshes automatically each morning. Give the engine
+                  something to work with and it builds your strength, recovery, and fatigue picture.
                 </p>
+                {/* Single coral primary action (log a workout = the main loop),
+                    with secondary ghost paths so the empty state never dead-ends. */}
+                <div className="mt-5 flex flex-col items-center gap-2 max-w-[260px] mx-auto">
+                  <Button asChild className="w-full h-11">
+                    <Link to="/train">Log a workout</Link>
+                  </Button>
+                  <div className="flex w-full gap-2">
+                    <Button asChild variant="outline" className="flex-1 h-11">
+                      <Link to="/fuel">Log weigh-in</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1 h-11">
+                      <Link to="/recovery">Recovery</Link>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

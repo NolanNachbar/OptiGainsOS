@@ -10,6 +10,7 @@ import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
+import { getLibraryNames, getExerciseInfo } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
@@ -48,8 +49,21 @@ export default function ExerciseCard({
   const [coachingChip, setCoachingChip] = useState(null); // { message, suggestedWeight, type, targetSetIndex }
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [customExerciseName, setCustomExerciseName] = useState("");
+  const [libNames, setLibNames] = useState([]); // free-exercise-db names, lazy-loaded
+  const [showCues, setShowCues] = useState(false);
+  const [cuesInfo, setCuesInfo] = useState(undefined); // undefined=loading, null=none, object=loaded
   const menuRef = useRef(null);
   const nudgeTimerRef = useRef(null);
+
+  // Select the value AND lift the field above the on-screen keyboard. Without the
+  // scroll, focusing a bottom-row set input leaves it hidden behind the keyboard.
+  // ponytail: 250ms heuristic waits for the keyboard animation; swap for a
+  // visualViewport resize listener if the delay proves flaky on some devices.
+  const handleInputFocus = (e) => {
+    e.target.select();
+    const el = e.target;
+    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+  };
 
   const dbEntry = lookupExercise(exercise.name);
   const smartRest = getSmartRestDuration(exercise.name);
@@ -85,6 +99,21 @@ export default function ExerciseCard({
   useEffect(() => {
     return () => { if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current); };
   }, []);
+
+  // Lazy-load the full exercise library only when the swap dialog opens.
+  useEffect(() => {
+    if (showReplaceDialog && libNames.length === 0) {
+      getLibraryNames().then(setLibNames).catch(() => {});
+    }
+  }, [showReplaceDialog, libNames.length]);
+
+  // Lazy-load how-to instructions for THIS exercise when the cues dialog opens.
+  useEffect(() => {
+    if (showCues) {
+      setCuesInfo(undefined);
+      getExerciseInfo(exercise.name).then((info) => setCuesInfo(info)).catch(() => setCuesInfo(null));
+    }
+  }, [showCues, exercise.name]);
 
   // Handle set completed
   const handleSetCompleted = (setIndex, completed) => {
@@ -222,7 +251,7 @@ export default function ExerciseCard({
                 {/* Original exercise targets (non-program) */}
                 {!isProgramMode && originalExercise && (
                   <p className="text-[10.5px] text-ink-muted mt-1 uppercase font-bold tracking-[0.06em]">
-                    Target <span className="font-technical text-ink">{originalExercise.sets || 3}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
+                    Target <span className="font-technical text-ink">{Array.isArray(originalExercise.sets) ? originalExercise.sets.length : (originalExercise.sets || 3)}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
                   </p>
                 )}
                 {/* Last performance data */}
@@ -265,6 +294,16 @@ export default function ExerciseCard({
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCues(true);
+                    setOpenMenu(false);
+                  }}
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  How to
                 </button>
                 {onReplaceExercise && (
                 <button
@@ -419,17 +458,27 @@ export default function ExerciseCard({
               }`}>
                 {set.set_number}
               </span>
-              <span className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1">
+              <button
+                type="button"
+                disabled={!lastPerformance?.lastWeight}
+                onClick={() => {
+                  // Tap "last time" to copy it into this set (Hevy-style prefill).
+                  onUpdateSet(exerciseIndex, setIndex, 'weight', lastPerformance.lastWeight);
+                  onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
+                }}
+                aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
+                className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1 text-left disabled:cursor-default enabled:active:text-brand"
+              >
                 {lastPerformance?.lastWeight
                   ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
                   : '—'}
-              </span>
+              </button>
               <input
                 type="number"
                 aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
                 value={set.weight || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
+                onFocus={handleInputFocus}
                 placeholder={
                   isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
                     ? String(progressionTargets.dailyMin)
@@ -448,7 +497,7 @@ export default function ExerciseCard({
                 aria-label={`Set ${set.set_number} reps`}
                 value={set.reps || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
+                onFocus={handleInputFocus}
                 placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
                 min="0"
                 className={setCell(isActive)}
@@ -463,7 +512,7 @@ export default function ExerciseCard({
                     const rir = val === "" ? null : parseFloat(val);
                     handleRirChange(setIndex, rir);
                   }}
-                  onFocus={(e) => e.target.select()}
+                  onFocus={handleInputFocus}
                   placeholder="—"
                   min="0"
                   max="10"
@@ -589,7 +638,7 @@ export default function ExerciseCard({
               <Combobox
                 value={customExerciseName}
                 onValueChange={setCustomExerciseName}
-                items={allExerciseNames.length > 0 ? allExerciseNames : DB_NAMES}
+                items={(allExerciseNames.length || libNames.length) ? [...new Set([...allExerciseNames, ...libNames])] : DB_NAMES}
                 excludeValue={exercise.name}
                 placeholder="Enter exercise name…"
                 onKeyDown={(e) => {
@@ -617,6 +666,31 @@ export default function ExerciseCard({
         <Button variant="ghost" className="w-full mt-2 text-ink-muted" onClick={() => { setCustomExerciseName(""); setShowReplaceDialog(false); }}>
           Keep current exercise
         </Button>
+      </DialogContent>
+    </Dialog>
+
+    {/* How-to / cues — instructions from the free-exercise-db library */}
+    <Dialog open={showCues} onOpenChange={setShowCues}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{exercise.name}</DialogTitle>
+          {cuesInfo && (cuesInfo.primaryMuscles?.length || cuesInfo.equipment) && (
+            <DialogDescription className="capitalize">
+              {[cuesInfo.primaryMuscles?.join(", "), cuesInfo.equipment].filter(Boolean).join(" · ")}
+            </DialogDescription>
+          )}
+        </DialogHeader>
+        <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto">
+          {cuesInfo === undefined ? (
+            <p className="text-ink-muted">Loading…</p>
+          ) : cuesInfo?.instructions?.length ? (
+            <ol className="list-decimal pl-5 space-y-2">
+              {cuesInfo.instructions.map((step, i) => <li key={i}>{step}</li>)}
+            </ol>
+          ) : (
+            <p className="text-ink-muted">No how-to found for this exercise in the library.</p>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   </>

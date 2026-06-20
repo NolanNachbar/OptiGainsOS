@@ -8,15 +8,22 @@ const TABS = [
   { id: "schedule", label: "Schedule", icon: CalendarDays },
   { id: "library", label: "Library", icon: Dumbbell },
   { id: "programs", label: "Programs", icon: BookOpen },
-  { id: "activity-log", label: "Activity", icon: Activity },
+  { id: "activity", label: "Activity", icon: Activity },
 ];
 const TAB_IDS = TABS.map((t) => t.id);
+// Aliases for URL params that don't match a canonical tab id, so deep links keep
+// resolving to the right tab instead of silently falling back to Schedule.
+// "activity-log" is the legacy param the nav still emits.
+const TAB_ALIASES = { "activity-log": "activity" };
 
 export default function Train() {
-  // The URL is the single source of truth for the active tab.
+  // The URL is the single source of truth for the active tab. The tab id IS the
+  // URL param (label, lowercased) so /train?tab=activity resolves correctly;
+  // legacy params are normalized through TAB_ALIASES on read.
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const activeTab = TAB_IDS.includes(tabParam) ? tabParam : "schedule";
+  const normalizedParam = TAB_ALIASES[tabParam] || tabParam;
+  const activeTab = TAB_IDS.includes(normalizedParam) ? normalizedParam : "schedule";
   const handleTabChange = (tab) => setSearchParams({ tab });
 
   return (
@@ -26,7 +33,7 @@ export default function Train() {
         {activeTab === "schedule" && <WeeklySchedule />}
         {activeTab === "library" && <Workouts defaultTab="library" hideHeader={true} />}
         {activeTab === "programs" && <Workouts defaultTab="programs" hideHeader={true} />}
-        {activeTab === "activity-log" && <Workouts defaultTab="activity-log" hideHeader={true} />}
+        {activeTab === "activity" && <Workouts defaultTab="activity-log" hideHeader={true} />}
       </div>
     </div>
   );

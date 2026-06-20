@@ -597,9 +597,7 @@ export default function ProgramBuilder() {
             so Description + Tags clear both this bar and the dock at 390px. On
             desktop it un-sticks and goes transparent. */}
         <div
-          className={`sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 md:bg-transparent md:shadow-none md:border-0 ${
-            step > 0 ? "glass-elevated" : ""
-          }`}
+          className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 glass-elevated md:bg-transparent md:shadow-none md:border-0"
           style={{ bottom: "calc(var(--dock-clearance) + env(safe-area-inset-bottom))" }}
         >
           {step > 0 && (
@@ -632,13 +630,6 @@ export default function ProgramBuilder() {
                 ? "Update Program"
                 : "Create Program"}
             </Button>
-          )}
-          {/* Helper line for the disabled Next on step 0 — names WHY the coral
-              action is gated, so a greyed-out button isn't a dead end. */}
-          {step === 0 && !canProceed() && (
-            <p className="basis-full text-xs text-ink-muted">
-              Name your program to continue
-            </p>
           )}
         </div>
 
@@ -726,6 +717,13 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             placeholder="e.g., Push Pull Legs Hypertrophy"
             className="mt-1"
           />
+          {/* Gating helper sits with the field it gates, not orphaned at the
+              bottom by the Next button — names WHY forward is locked. */}
+          {!program.name.trim() && (
+            <p className="text-xs text-ink-muted mt-1">
+              Name your program to continue
+            </p>
+          )}
         </div>
 
         {/* Cycle configuration — the load-bearing controls, surfaced directly

@@ -18,13 +18,18 @@ const isRun = (ex) => RUN_NAMES.some(k => ex.name?.toLowerCase().includes(k));
 // "open" for hours, a clock skew) renders as e.g. "398 min" and dominates the
 // scan column. Guard: anything past a plausible single-session ceiling is
 // treated as corrupt and falls back to the exercise count instead of a number
-// that lies. Below the ceiling, format > ~90 min as h:mm so a long-but-real
+// that lies. The floor catches the other end — a sub-5-min "session" (a log
+// opened and abandoned, or leftover seed data) is just as implausible as a
+// 4-hour one, and surfacing "2 min" makes a real workout read as broken/test
+// data; below the floor we drop the duration and let the exercise count carry
+// the card. Below the ceiling, format > ~90 min as h:mm so a long-but-real
 // session reads as "1:48" rather than a bare three-digit minute count.
+const MIN_PLAUSIBLE_SESSION_MIN = 5;   // sub-5-min log reads as abandoned/seed
 const MAX_PLAUSIBLE_SESSION_MIN = 240; // 4h hard ceiling for one logged session
 function formatDuration(seconds) {
   if (!seconds) return null;
   const mins = Math.round(seconds / 60);
-  if (mins <= 0 || mins > MAX_PLAUSIBLE_SESSION_MIN) return null; // implausible → caller falls back
+  if (mins < MIN_PLAUSIBLE_SESSION_MIN || mins > MAX_PLAUSIBLE_SESSION_MIN) return null; // implausible → caller falls back
   if (mins <= 90) return `${mins} min`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -313,15 +318,38 @@ export default function WeeklySchedule() {
           const isCurrentDay = isSameDay(day, new Date());
           const type = dayType(entries, log);
           const pill = TYPE_PILLS[type];
+          // Non-logged, non-program days fall back to a designed muted 'Rest'
+          // label rather than a bare em-dash, so an empty slot never reads as a
+          // raw placeholder ambiguous between rest and missing data.
           const detail = log
             ? getWorkoutSplitTitle(log, entries[0]?.title)
-            : entries[0]?.title || "—";
+            : entries[0]?.title || null;
           // Suppress the day-type pill when it repeats the prior row's type so
           // the dominant repeated value (e.g. TWO-A-DAY every day) stops reading
           // as noise; the workout title then carries the row's identity.
           const prevDay = i > 0 ? weekDays[i - 1] : null;
           const prevType = prevDay ? dayType(getEntriesForDay(prevDay), getLogForDay(prevDay)) : null;
           const showPill = type !== "REST" && type !== prevType;
+          const isRest = type === "REST";
+
+          // Rest days carry no session, so they get a compact single-line row
+          // (date inline, no stacked DD numeral, no trailing slot). This stops
+          // four empty "—" rows from eating the same tall height as the two real
+          // sessions and weakening the first-paint scan toward what's actionable.
+          if (isRest) {
+            return (
+              <button
+                key={i}
+                onClick={() => selectDay(day)}
+                className={`data-row w-full min-h-[28px] items-center py-1 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
+              >
+                <span className={`w-[38px] shrink-0 text-center font-technical text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-faint"}`}>
+                  {format(day, "EEE").slice(0, 2).toUpperCase()} {format(day, "d")}
+                </span>
+                <span className="flex-1 min-w-0 text-xs font-semibold text-faint">Rest</span>
+              </button>
+            );
+          }
 
           return (
             <button
@@ -338,9 +366,13 @@ export default function WeeklySchedule() {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-ink truncate">
-                  {detail}
-                </div>
+                {detail ? (
+                  <div className="text-xs font-semibold text-ink truncate">
+                    {detail}
+                  </div>
+                ) : (
+                  <span className="section-label !text-faint">Rest</span>
+                )}
                 {showPill && (
                   <Chip bg={pill.bg} fg={pill.fg} className="mt-0.5">{pill.label}</Chip>
                 )}
@@ -360,7 +392,10 @@ export default function WeeklySchedule() {
                     <ChevronRight className="w-3.5 h-3.5 text-ink" />
                   </span>
                 ) : log ? (
-                  <CheckCircle2 className="w-4 h-4 text-secondary" />
+                  // The expanded completed card below already shows a check for the
+                  // selected day, so suppress the row check there — keep a single
+                  // completion affordance per session so the two don't compete.
+                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-secondary" />
                 ) : type !== "REST" ? (
                   <ChevronRight className="w-4 h-4 text-faint" />
                 ) : null}
@@ -389,30 +424,36 @@ export default function WeeklySchedule() {
               const logRuns = (selectedLog.exercises || []).filter(isRun);
               const dur = formatDuration(selectedLog.duration_seconds);
               const exCount = logLifts.length + logRuns.length;
+              // A thin/corrupt log (no real duration AND a lone exercise) would
+              // print a misleading "2 min · 1 exercise" that reads as a real-but-
+              // broken session. Suppress the numeric summary in that case — the
+              // "— Logged" label already conveys completion gracefully.
+              const durSecs = selectedLog.duration_seconds || 0;
+              const summaryTrustworthy = !(durSecs < 180 && exCount <= 1);
               return (
                 <div className="glass overflow-hidden rise-in-2">
+                  {/* The highlighted week row directly above already names the
+                      session ("Upper Body Session / STRENGTH / ✓"), so this card
+                      doesn't restate that identity. It leads with what the row
+                      can't show — the session summary (duration · count) — and
+                      acts purely as the toggle into the per-exercise breakdown. */}
                   <button
                     onClick={() => setShowCompleted(v => !v)}
                     aria-expanded={showCompleted}
-                    className="w-full min-h-[44px] px-4 pt-3.5 pb-3 flex items-start justify-between gap-3 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
+                    className="w-full min-h-[44px] px-4 py-3 flex items-center justify-between gap-3 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
                   >
-                    <div className="min-w-0">
-                      <p className="section-label mb-1">
-                        {isTwoADay ? `${dayEcho} AM — Completed` : `${dayEcho} — Completed`}
-                      </p>
-                      <h3 className="type-display text-base leading-tight truncate">
-                        {getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)}
-                      </h3>
-                      <p className="font-technical text-xs font-semibold text-muted-2 mt-0.5 tabular-nums">
-                        {dur ? `${dur} · ` : ""}{exCount} {exCount === 1 ? "exercise" : "exercises"}
-                      </p>
-                    </div>
-                    <span className="flex items-center gap-2 shrink-0">
-                      <span className="w-6 h-6 rounded-full glass-inset flex items-center justify-center">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-secondary" />
+                    <div className="min-w-0 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-secondary shrink-0" />
+                      <span className="section-label">
+                        {isTwoADay ? `${dayEcho} AM — Logged` : `${dayEcho} — Logged`}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
-                    </span>
+                      <span className="font-technical text-xs font-semibold text-muted-2 tabular-nums truncate">
+                        {summaryTrustworthy
+                          ? `${dur ? `${dur} · ` : ""}${exCount} ${exCount === 1 ? "exercise" : "exercises"}`
+                          : ""}
+                      </span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-muted-2 shrink-0 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
                   </button>
                   {showCompleted && (
                     <div className="rise-in">
@@ -559,7 +600,7 @@ export default function WeeklySchedule() {
 
         {/* Persistent primary action — the selected day always has a clear next
             step even when the inline program card doesn't render its own CTA. */}
-        {isToday && !hasInlineProgramCta && (
+        {isToday && !hasInlineProgramCta && hasAnything && (
           selectedLog ? (
             <button
               className="cta-ghost w-full mt-3 rise-in-3"

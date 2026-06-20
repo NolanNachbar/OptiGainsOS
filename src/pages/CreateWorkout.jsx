@@ -428,7 +428,7 @@ export default function CreateWorkout() {
               sticky bar bleed to the page gutters on mobile while the lg:static
               state resets them. */}
           <div
-            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(var(--dock-clearance)+env(safe-area-inset-bottom))] pt-3
+            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(var(--dock-total-height)+16px+env(safe-area-inset-bottom))] pt-3
                        lg:static lg:z-auto lg:mx-0 lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:[backdrop-filter:none]"
           >
             <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">

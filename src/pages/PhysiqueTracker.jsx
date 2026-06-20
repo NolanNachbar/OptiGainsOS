@@ -260,7 +260,13 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <p className="text-xs font-semibold text-faint mt-1">Check your connection and try again.</p>
           </div>
         ) : entries.length === 0 ? (
-          <div className="mt-6 py-8 px-4 text-center glass-inset flex flex-col items-center">
+          // Fill the space below the pose panel and center the prompt so the
+          // screen reads composed, not half-empty. Height = viewport minus the
+          // panel/header above and the dock below.
+          <div
+            className="mt-6 px-4 text-center glass-inset flex flex-col items-center justify-center"
+            style={{ minHeight: "calc(100vh - 360px - var(--dock-clearance))" }}
+          >
             <Camera className="w-7 h-7 text-muted-2 mb-3" />
             <p className="text-sm font-semibold text-muted-2">No shots yet.</p>
             <p className="text-xs font-semibold text-faint mt-1 mb-4">Upload your first photo to start tracking.</p>
@@ -268,6 +274,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
             </Button>
+            <p className="text-[11px] font-semibold text-faint mt-4 max-w-[34ch]">
+              Each shot is analyzed for estimated body fat and tracked over time so you can compare poses side by side.
+            </p>
           </div>
         ) : (
           <div className="mt-6">

@@ -52,6 +52,7 @@ const PhysiqueTracker = lazy(() => import('./pages/PhysiqueTracker'));
 const Fuel = lazy(() => import('./pages/Fuel'));
 const Train = lazy(() => import('./pages/Train'));
 const Insights = lazy(() => import('./pages/Insights'));
+const Coach = lazy(() => import('./pages/Coach'));
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const protectedRoutes = [
   { path: "/brief-history", name: "BriefHistory", component: BriefHistory },
   { path: "/athlete-state", name: "AthleteState", component: AthleteState },
   { path: "/physique", name: "Physique", component: PhysiqueTracker },
+  { path: "/coach", name: "Coach", component: Coach },
 ];
 
 // Global toast surface. Theme is synced to the app theme so Sonner emits the
@@ -221,6 +223,8 @@ function App() {
                       }
                     />
                   ))}
+                  {/* No unmatched path should white-screen — bounce to Today. */}
+                  <Route path="*" element={<Navigate to="/today" replace />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>

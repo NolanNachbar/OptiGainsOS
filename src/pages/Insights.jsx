@@ -107,19 +107,23 @@ export default function Insights() {
 
         {/* Mind lives on its own route; keep it reachable on mobile (sidebar links
             it on desktop). Parked BELOW the brief so the page leads with its named
-            brief content rather than an unrelated nav shortcut. Still inside the
-            thumb zone — the brief above it collapses by default once read. */}
-        <Link
-          to="/mind"
-          className="rise-in-3 tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
-        >
-          <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
-            <p className="text-[11.5px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
-        </Link>
+            brief content rather than an unrelated nav shortcut. Given its own
+            "Explore" header + extra top spacing so it reads as a distinct nav
+            destination, not a second row in the Recent Briefs group. */}
+        <section className="rise-in-3 space-y-2 pt-2">
+          <p className="section-label px-1">Explore</p>
+          <Link
+            to="/mind"
+            className="tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
+          >
+            <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
+              <p className="text-[11.5px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
+          </Link>
+        </section>
       </div>
     </div>
   );

@@ -1,0 +1,275 @@
+[
+  {
+    "name": "Machine Hack Squat",
+    "primaryMuscle": ["Quads"],
+    "secondaryMuscle": ["Glutes", "Adductors", "Soleus"],
+    "type": "Machine",
+    "difficulty": 2,
+    "equipment": ["machine"],
+    "pattern": "Squat",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": true,
+      "targets": "Single-joint quads (vastus lateralis/medialis/intermedius), with adductor magnus, glute max, and soleus",
+      "cues": [
+        "Start at the bottom in full knee flexion with full foot contact",
+        "Flat back; push the footplate away through the full range"
+      ]
+    }
+  },
+  {
+    "name": "Seated Knee Extension",
+    "primaryMuscle": ["Quads"],
+    "secondaryMuscle": [],
+    "type": "Isolation",
+    "difficulty": 1,
+    "equipment": ["machine"],
+    "pattern": "Extension",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": true,
+      "targets": "Rectus femoris (the two-joint quad, not hit by hip+knee extension) plus single-joint quads; develops the lower rectus femoris",
+      "cues": [
+        "Drive the toes toward the ceiling",
+        "Align the knee with the machine pivot; control the eccentric"
+      ]
+    }
+  },
+  {
+    "name": "Seated Leg Curl",
+    "primaryMuscle": ["Hamstrings"],
+    "secondaryMuscle": [],
+    "type": "Isolation",
+    "difficulty": 1,
+    "equipment": ["machine"],
+    "pattern": "Flexion",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": true,
+      "targets": "Two-joint hamstrings (biceps femoris long head, semitendinosus, semimembranosus) plus BF short head; semitendinosus emphasis",
+      "cues": [
+        "Lean forward to increase hip flexion (lengthens the hamstrings)",
+        "Align the knee with the pivot; drive the heels toward the seat, controlled"
+      ]
+    }
+  },
+  {
+    "name": "Barbell Glute Bridge (from Floor)",
+    "primaryMuscle": ["Glutes"],
+    "secondaryMuscle": ["Adductors", "Quads", "Hamstrings"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["barbell"],
+    "pattern": "Bridge",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": true,
+      "targets": "Gluteus maximus (more hip-dominant than the hip thrust due to the shorter knee moment arm); adductor magnus, single-joint quads, hamstrings",
+      "cues": [
+        "Barbell over the hips; drive the hips to the ceiling to full extension",
+        "Brace the abs; squeeze the glutes at the top"
+      ]
+    }
+  },
+  {
+    "name": "Calf Raise in Leg Press",
+    "primaryMuscle": ["Calves"],
+    "secondaryMuscle": ["Soleus"],
+    "type": "Isolation",
+    "difficulty": 1,
+    "equipment": ["machine"],
+    "pattern": "Plantar Flexion",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": false,
+      "targets": "Gastrocnemii (straight-leg position keeps them long) and soleus",
+      "cues": [
+        "Keep the knee extended; dorsiflex into a deep stretch",
+        "Pause ~4s in the stretch; vary toe angle to bias the medial/lateral heads"
+      ]
+    }
+  },
+  {
+    "name": "Smith Machine Shallow Incline Press",
+    "primaryMuscle": ["Chest"],
+    "secondaryMuscle": ["Front Delts", "Triceps"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["smith machine"],
+    "pattern": "Incline Press",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": true,
+      "targets": "Pectoralis major (loaded stretched; clavicular + sternal heads), with anterior deltoid and triceps",
+      "cues": [
+        "~30-degree incline; grip slightly wider than the shoulders",
+        "Start with the shoulder horizontally extended (pec stretched); full range to the upper chest"
+      ]
+    }
+  },
+  {
+    "name": "Machine Lateral Raise",
+    "primaryMuscle": ["Side Delts"],
+    "secondaryMuscle": [],
+    "type": "Isolation",
+    "difficulty": 1,
+    "equipment": ["machine"],
+    "pattern": "Abduction",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": false,
+      "targets": "Middle (lateral) deltoid",
+      "cues": [
+        "Start with the shoulder adducted in the frontal plane",
+        "High-stability machine; control the eccentric"
+      ]
+    }
+  },
+  {
+    "name": "Steep Incline Machine Press",
+    "primaryMuscle": ["Front Delts"],
+    "secondaryMuscle": ["Side Delts", "Chest", "Triceps"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["machine"],
+    "pattern": "Incline Press",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": false,
+      "targets": "Anterior deltoid (steep incline brings the middle delts in too), with pecs and triceps",
+      "cues": [
+        "Steep incline with a frontal-plane start below shoulder height",
+        "Press through the full range"
+      ]
+    }
+  },
+  {
+    "name": "Cable Triceps Cross-Over",
+    "primaryMuscle": ["Triceps"],
+    "secondaryMuscle": [],
+    "type": "Isolation",
+    "difficulty": 2,
+    "equipment": ["cable"],
+    "pattern": "Extension",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": false,
+      "targets": "Triceps brachii long head (shoulder in the anatomical position, elbow flexed)",
+      "cues": [
+        "Shoulder in the anatomical position, elbow flexed at the start",
+        "Peak force where the cable is perpendicular to the forearm"
+      ]
+    }
+  },
+  {
+    "name": "Wide Grip Lat Pulldown",
+    "primaryMuscle": ["Lats"],
+    "secondaryMuscle": ["Upper Back", "Biceps"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["cable"],
+    "pattern": "Vertical Pull",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "long",
+      "stretchMediatedGrowth": false,
+      "targets": "Latissimus dorsi (lumbopelvic region emphasis), teres major, elbow flexors",
+      "cues": [
+        "Wide grip; start with the shoulders abducted overhead",
+        "Pull to the upper chest; control the stretch"
+      ]
+    }
+  },
+  {
+    "name": "Narrow Grip Seated Machine Row",
+    "primaryMuscle": ["Lats"],
+    "secondaryMuscle": ["Upper Back", "Traps", "Rhomboids", "Rear Delts", "Biceps"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["machine"],
+    "pattern": "Horizontal Pull",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": false,
+      "targets": "Latissimus dorsi (thoracic region), with traps and rhomboids for scapular retraction",
+      "cues": [
+        "Narrow grip (closer to the sagittal plane)",
+        "Row and retract the scapulae"
+      ]
+    }
+  },
+  {
+    "name": "Wide Grip Seated Machine Row",
+    "primaryMuscle": ["Rear Delts"],
+    "secondaryMuscle": ["Traps", "Rhomboids", "Biceps"],
+    "type": "Compound",
+    "difficulty": 2,
+    "equipment": ["machine"],
+    "pattern": "Horizontal Pull",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": false,
+      "targets": "Posterior deltoid (wide grip moves it toward the transverse plane), with traps and rhomboids",
+      "cues": [
+        "Wide grip, shoulder horizontally extended",
+        "Lead with the elbows out; retract the scapulae"
+      ]
+    }
+  },
+  {
+    "name": "Machine Preacher Curl",
+    "primaryMuscle": ["Biceps"],
+    "secondaryMuscle": ["Brachialis", "Forearms"],
+    "type": "Isolation",
+    "difficulty": 1,
+    "equipment": ["machine"],
+    "pattern": "Flexion",
+    "goalTags": ["muscle_gain"],
+    "isCardio": false,
+    "essential": {
+      "source": "Beardsley & Carter - Essential Exercises",
+      "position": "short",
+      "stretchMediatedGrowth": false,
+      "targets": "All elbow flexors evenly (biceps long + short heads, brachialis, brachioradialis); no peak load at full extension so it does not bias one",
+      "cues": [
+        "Machine path keeps load even across the range",
+        "Mid-range peak; control through the full range"
+      ]
+    }
+  }
+]

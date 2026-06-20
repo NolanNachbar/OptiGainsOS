@@ -13,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import SubTabs from "@/components/ui/system/SubTabs";
 import {
   Activity, Moon, Zap,
   Info, Calendar
@@ -141,7 +140,14 @@ export default function RecoveryDetail() {
     { id: "sleep", label: "Sleep", icon: Moon },
   ];
   const firstWithData = hasHrv ? "hrv" : hasSteps ? "steps" : "sleep";
-  const [activeChart, setActiveChart] = useState(firstWithData);
+  // `activeChart` is null until the user explicitly picks a tab. While it's
+  // null we follow firstWithData, so once metrics finish loading the card lands
+  // on the first tab that actually has data (HRV) instead of being frozen on
+  // whatever firstWithData resolved to during the empty initial render.
+  const [activeChart, setActiveChart] = useState(null);
+  const hasData = { hrv: hasHrv, steps: hasSteps, sleep: hasSleep };
+  const resolvedChart =
+    activeChart && hasData[activeChart] ? activeChart : firstWithData;
 
   if (isLoading) return (
     <div className="p-4 space-y-4">
@@ -198,7 +204,7 @@ export default function RecoveryDetail() {
                       ACWR drops hero-metric on mobile and reads as a font-technical
                       stat (text-3xl); only at md+ does it scale back up. Color is
                       the physiological spectrum since ACWR is a biometric. */}
-                  <div className={`font-technical text-3xl font-bold md:text-5xl md:font-extrabold ${acwrColor} mb-1`}>{acwr ?? "—"}</div>
+                  <div className={`font-technical text-3xl font-bold md:text-5xl md:font-extrabold tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "—"}</div>
                   <div className="section-label">Current Ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
@@ -213,11 +219,11 @@ export default function RecoveryDetail() {
                     />
                     {acwr != null && (
                       <span
-                        className="absolute -top-[5px] w-[4px] h-[20px] rounded-full transition-[left] duration-300 ease-[var(--ease)]"
+                        className="absolute -top-[5px] w-[6px] h-[20px] rounded-full transition-[left] duration-300 ease-[var(--ease)]"
                         style={{
-                          left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 2px)`,
+                          left: `calc(${Math.max(0, Math.min(100, ((acwr - 0.5) / 1.1) * 100))}% - 3px)`,
                           backgroundColor: acwrPinVar,
-                          boxShadow: "0 0 0 3px var(--color-border)",
+                          boxShadow: "0 0 0 2px var(--color-elevated), 0 0 0 3px var(--color-border)",
                         }}
                       />
                     )}
@@ -293,20 +299,44 @@ export default function RecoveryDetail() {
         ) : (
         <div className="mb-6">
           <Card className="glass-interactive overflow-hidden">
-            <SubTabs
-              tabs={chartTabs}
-              active={activeChart}
-              onChange={setActiveChart}
-              sticky={false}
-              showOnDesktop
-            />
+            {/* In-card segmented control, deliberately NOT the coral SubTabs
+                pill. Coral-pill is reserved for top-level section navigation;
+                this is a lighter neutral-track segmented control so the chart
+                toggle reads as an in-card filter, not a destination. */}
+            <div className="px-3 pt-3">
+              <div
+                role="tablist"
+                aria-label="Biometric trend"
+                className="inline-flex w-full gap-1 rounded-full bg-track p-1"
+              >
+                {chartTabs.map(({ id, label, icon: Icon }) => {
+                  const isActive = resolvedChart === id;
+                  return (
+                    <button
+                      key={id}
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setActiveChart(id)}
+                      className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                        isActive
+                          ? "bg-elevated text-ink shadow-[inset_0_1px_0_var(--glass-specular)]"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {Icon && <Icon className="hidden sm:block w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />}
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* HRV Trend */}
-            {activeChart === "hrv" && (
+            {resolvedChart === "hrv" && (
               <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasHrv ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No HRV data yet — sync your wearable.
+                    <Info className="w-4 h-4 shrink-0" /> No HRV data yet. Sync your wearable.
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -342,11 +372,11 @@ export default function RecoveryDetail() {
             )}
 
             {/* Step Count */}
-            {activeChart === "steps" && (
+            {resolvedChart === "steps" && (
               <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasSteps ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No step data yet — sync your wearable.
+                    <Info className="w-4 h-4 shrink-0" /> No step data yet. Sync your wearable.
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -377,11 +407,11 @@ export default function RecoveryDetail() {
             )}
 
             {/* Sleep Duration */}
-            {activeChart === "sleep" && (
+            {resolvedChart === "sleep" && (
               <CardContent className={`${CHART_BODY_H} pt-4`}>
                 {!hasSleep ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No sleep data yet — sync your wearable.
+                    <Info className="w-4 h-4 shrink-0" /> No sleep duration data yet. Sync your wearable to chart nightly hours.
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
