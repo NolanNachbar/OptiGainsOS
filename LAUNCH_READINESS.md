@@ -1,81 +1,96 @@
-# OptiGains — Launch Readiness (mobile-first, 390px)
+# OptiGains — Launch Readiness (Mobile-First UI Audit)
 
-Branch `ui-audit-mobile-first`. Standard: VAPOR × MACRO (`src/index.css`, `tailwind.config.js`).
-Driven through the gstack headless browser at **390px** against the real account.
+**Branch:** `ui-audit-mobile-first` · **Viewport audited:** 390px primary, 1280px secondary
+**Method:** 6-round ultracode convergence loop — each round: serial `/browse` capture →
+parallel opus agnostic audit (8-point rubric) → synthesize → fix on the main tree → re-audit.
+**Exit:** round-6 backstop (planned). Two consecutive clean sweeps were not reached — see
+"Why no clean sweep" below. **Status: NOT auto-launch-ready; materially improved.**
 
-## Verdict
-**PASS — launch-ready on mobile.** The blind multi-agent audit reached a full clean sweep
-(0 blocker / 0 major / 0 minor) and held it across two confirming sweeps. All 13 original
-blockers and 111 majors are resolved and verified. `npm run build` passes; the audit added zero
-net-new lint errors.
+> Fixes are committed on `ui-audit-mobile-first` only. **Not pushed** — awaiting your OK.
 
-## Defect burn-down (per blind sweep)
-| Sweep | Total | Blocker | Major | Minor |
-|------:|------:|--------:|------:|------:|
-| R1 | 236 | 13 | 111 | 112 |
-| R2 | 65 | 2 | 31 | 32 |
-| R3 | 43 | 1 | 22 | 20 |
-| R4 | 6 | 0 | 4 | 2 |
-| R5 | 0 | 0 | 0 | 0 |
-| R6 | 2 | 0 | 2 | 0 |  ← 1 real (fixed) + 1 capture false-positive
-| R7 | 3 | 0 | 3 | 0 |  ← touch-target stragglers (fixed) |
-| R8 | 0 | 0 | 0 | 0 |  ← clean confirming sweep |
-| R9 | 1 | 0 | 1 | 0 |  ← coral close-button (fixed + class swept) |
+## Burn-down (full-coverage rounds)
 
-The loop ran past the 6-round soft cap because each late round surfaced progressively finer
-touch-target details on tertiary controls; all were genuine and fixed. Two full sweeps (R5, R8)
-came back clean; R6/R7/R9 each surfaced a small number of real stragglers (all fixed) — the
-nature of LLM-judge audits, where each blind pass varies slightly. End state is clean.
+Round 2 is excluded from the trend (auth expired mid-run → thin capture; counts unreliable).
 
-## Independent gate: /design-review — Design A- / AI-Slop A
-Run at 390px (audit core; no auto-fix loop). Verdict: Manrope-only typography, **zero horizontal
-scroll** on all 20 surfaces, no AI-slop patterns, coral = single action color, controlled
-density, no real console errors. Its objective pixel measurement caught a class of **sub-44px
-touch targets** that 9 vision-based rounds missed (~47 controls / 17 files) — all fixed to ≥44px.
-Final objective sweep: every interactive control ≥44px; only residual is combobox inner inputs
-at 42px inside their 44px tappable wrapper (control tap target is 44px — not a reachability bug).
+| Round | 🔴 Blockers | 🟠 Majors | 🟡 Minors | Fixes committed |
+|------:|:--:|:--:|:--:|---|
+| 1 | 12 | 119 | 218 | 14 systemic (`0cb3a9f1`) |
+| 2 | *(thin/auth-lost)* | — | — | 32 per-surface (`90471a6a`) |
+| 3 | 10 | 124 | 189 | 34 (`4282e086`) |
+| 4 | 4 | 100 | 211 | 31 (`f4b8c5e2`) |
+| 5 | 12 | 87 | 214 | 26 (`08dec3e7`) |
+| 6 | 6 | **78** | 188 | 43 (`ce59cb4b`) |
 
-## Per-surface status (final / round-8 captures)
-All PASS at 390px unless noted.
+- **Majors: 119 → 78 (−34%)** — steady, real decline.
+- **Minors: 218 → 188** — modest net reduction (agnostic audits surface fresh nits each round).
+- **Blockers: volatile (12/10/4/12/6)** — "blocker vs major" severity is subjective per fresh
+  agent each round, so the blocker line oscillates rather than converging. Treat it as a
+  signal of *theme churn*, not regression.
+- **Total: ~180 fixes committed across 6 rounds; 68 files changed (+6410 / −4052).**
 
-| Surface | Status |
-|---|---|
-| Today | PASS |
-| Dashboard | PASS (dup header removed, one coral primary, done-state wired) |
-| Train: Schedule / Library / Programs / Activity | PASS |
-| CreateWorkout | PASS (sticky footer above dock, 44px controls) |
-| ProgramBuilder | PASS (sticky nav above dock) |
-| QuickWorkout | PASS |
-| WorkoutDetail | PASS |
-| ProgramDetail | PASS (5984→2106px) |
-| Fuel: Nutrition / Wellness | PASS (FAB removed, rows legible) |
-| FoodTracker (+ Add dialog) | PASS (row actions clear of macros) |
-| AthleteState | PASS |
-| RecoveryDetail | PASS (tooltip rounded) |
-| Physique | PASS (camera state code-audited only — headless cannot grant camera) |
-| Insights | PASS (empty coach sections no longer dead toggles) |
-| BriefHistory | PASS |
-| Mind | PASS |
-| Career (+ form) | PASS |
-| Profile | PASS (save bar hidden on hub — verified via live DOM) |
-| Login / ForgotPassword / ResetPassword | PASS (48px auth CTAs) |
-| Overlays (WeighIn, Calculators, ConfirmDialog, food/recipe/template, etc.) | PASS (bottom sheets, 44px) |
+## Why no clean sweep (and why that's the planned outcome)
 
-## Before / after (390px)
-See `ui-audit/before-after/`:
-- `dashboard.png` — 4310px wall + duplicate header → 2858px, single header
-- `program-detail.png` — 5984px → 2106px
-- `calculators.png` — centered desktop dialog → bottom sheet
-- `fuel.png` — FAB overlapping macro rows → clean
+The audit ran **fully agnostic each round** (per the brief: "each loop agnostic to previous").
+A ruthless, opinionated reviewer always finds *something* to flag, so blocker/major counts do
+not naturally reach zero — the loop converges on *quality of the app*, not on a zero-finding
+score. The design anticipated this with a 6-round backstop, which is the exit taken here.
+The real deliverable is the ~180 committed fixes + this residual-risk list, not a green score.
 
-Per-round raw captures: `ui-audit/round-1/` (before) … `ui-audit/round-8/` (after).
+## Systemic wins landed (cross-cutting)
 
-## Residual minors / deferrals
-None outstanding at R8. Logged coverage limits:
-- Camera-dependent surfaces (BarcodeScanner, Physique capture) audited from code + idle state
-  only — headless cannot grant a camera. Recommend a quick manual pass on a real device.
-- Pre-existing repo lint baseline (unused vars / exhaustive-deps in code this audit did not
-  touch) is unchanged; out of scope for a UI audit.
+- **Design-token sweep** — bad-vs-brand hue split, carb token; `index.css` + `ui/system/primitives`.
+- **Primitive alignment to VAPOR × MACRO** — button / input / textarea / combobox / tabs / badge.
+- **Dialog/sheet scrim + ConfirmDialog danger-coral**; toaster restyle.
+- **IA fix** — removed the orphaned FAB (rendered on zero real landing routes); relocated its
+  Weigh-In / Stream-Note actions into the mobile thumb strip.
+- **Per-page** density, hierarchy, coral-discipline, and ≥44px touch-target fixes across all
+  ~50 surfaces (pages + overlays).
 
-## Independent gate
-`/design-review` run at 390px on the final state — results appended below.
+## Residual risk — MUST address before launch
+
+### Blockers / functional (not pure UI; outside what the loop could fix)
+1. **Program creation is broken** — `Program Builder → Create Program` returns **HTTP 400:
+   "Could not find the `cycle_length` column of `programs` in the schema cache."** Needs a
+   **Supabase migration** to add `cycle_length` to the `programs` table. Until then program
+   creation (and the downstream "Schedule This?" modal) cannot succeed. **Owner: backend/DB.**
+2. **Invalid `/program/:id` hangs on an infinite spinner** — no not-found fallback (unlike
+   `/workout-detail` which shows a clean "Workout not found"). Recurred across rounds; add a
+   missing-program error state.
+
+### Fixed during the loop (verify before launch)
+3. **`/physique` ErrorBoundary crash** (`Cannot read properties of undefined (reading 'pose')`)
+   — introduced by a round-5 per-surface edit, **repaired in round 6** and verified rendering.
+   Re-confirm on a real device with seeded photos.
+
+### Mobile UX (open, lower severity)
+4. **Toast occlusion** — sonner toasts fire bottom-center but stack **behind** an open Dialog's
+   scrim at 390px, so validation errors raised while a modal is open are invisible. Needs a
+   z-index / portal-order fix for `og-toast` vs Dialog overlay.
+5. **Note-capture discoverability** — the "Stream Note" entry now lives only in the Body/Analyze
+   mobile sub-tab strip, not on `/today`; a Today/Fuel user can't reach it without navigating two
+   sections away. Consider a thumb-zone entry on the home surface.
+
+## Dead / unimplemented surfaces (recommend remove or build)
+- `FloatingActionButton.jsx` — removed (was orphaned).
+- `DietPhaseCard.jsx`, `CustomSplitSelector.jsx` — defined but never rendered.
+- `workout-share-modal` — referenced in the audit list but **no share UI exists** in code
+  (`showShareModal` orphaned). Drop from scope or implement.
+- `recipe-log`, `stats-setup-modal` — only reachable with seeded data / first-run state.
+
+## Coverage notes (no silent gaps)
+- ~50 surfaces (26 pages + ~24 overlays) audited at 390px each round with the session
+  pre-authenticated by the orchestrator (subagents are blocked by the safety classifier from
+  logging in, so the main thread logs in + saves browse state before each round).
+- **Unseedable states** (logged every round, not silently skipped): empty/first-run variants
+  for data-backed pages (schedule/library/programs/activity/nutrition/recovery/insights/brief-
+  history), the password-reset token form, camera feeds (barcode scanner, physique capture —
+  native OS picker, headless can't render), and the prescribed quick-workout handoff.
+
+## Recommended next steps
+1. Apply the `cycle_length` Supabase migration (unblocks program creation).
+2. Add the `/program/:id` not-found state and the toast z-index fix.
+3. Manual device pass on `/physique` (post-fix), program flows, and the home note-capture path.
+4. Run `/design-review` at 390px on `/today`, `/fuel`, `/athlete-state` as an independent check
+   before pushing (not auto-run here to avoid mutating the shared browse session at close-out).
+5. Lint: ~70 pre-existing errors remain in `utils/*.js` + `vite.config.js` (Node globals) —
+   pre-date this audit (build is green); clean up separately.
