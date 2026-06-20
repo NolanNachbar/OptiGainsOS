@@ -4,6 +4,8 @@ import { useProfile } from "@/hooks/useUserQueries";
 import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Brain } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
+import WeighInModal from "@/components/WeighInModal";
+import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -52,7 +54,7 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
   { title: "Body", url: "/athlete-state", icon: HeartPulse,
-    matches: ["/athlete-state", "/recovery", "/physique"],
+    matches: ["/athlete-state", "/recovery", "/physique", "/coach"],
     mobileStrip: true,
     children: [
       { label: "State", url: "/athlete-state",
@@ -61,6 +63,8 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/recovery") },
       { label: "Physique", url: "/physique",
         active: (l) => l.pathname.startsWith("/physique") },
+      { label: "Coach", url: "/coach",
+        active: (l) => l.pathname.startsWith("/coach") },
     ] },
   // Analyze reads as Brief + History only. Career was cut from the IA (no nav
   // surface, App.jsx keeps the bare /career route registered but unlinked); Mind
@@ -113,6 +117,7 @@ export default function Layout({ children, currentPageName }) {
   const { profile } = useProfile();
   const [showCalculators, setShowCalculators] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [showWeighIn, setShowWeighIn] = useState(false);
   const mobileHeaderRef = useRef(null);
   const stripScrollRef = useRef(null);
   const [stripOverflows, setStripOverflows] = useState(false);
@@ -457,12 +462,20 @@ export default function Layout({ children, currentPageName }) {
         })}
       </nav>
 
-      {/* The floating action button was removed: it rendered on zero real landing
-          routes (pure dead weight) and a free-floating coral action competed with
-          every page's native add action, breaking the "coral is THE single action
-          color" rule. Its surviving entry points — Calculators and Stream-Note —
-          now live as labeled pills in the mobile utility strip above. (Weigh-In
-          was dropped: it is already a thumb-zone Quick Action on /today.) */}
+      {/* Floating action button — quick global add (workout/food/weigh-in/note).
+          Shown on browsing/dashboard screens; suppressed on focused form/logging
+          routes and on Fuel/FoodTracker, which carry their own coral add FAB, so
+          two coral FABs never share a screen. */}
+      {!["/create-workout", "/quick-workout", "/program-builder", "/workout-detail",
+         "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
+         "/fuel", "/food-tracker"].some((p) => location.pathname.startsWith(p)) && (
+        <FloatingActionButton
+          onWeighIn={() => setShowWeighIn(true)}
+          onCalculators={() => setShowCalculators(true)}
+          onStreamNote={() => setShowNoteModal(true)}
+        />
+      )}
+      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
       <CalculatorsModal
         isOpen={showCalculators}
         onClose={() => setShowCalculators(false)}
