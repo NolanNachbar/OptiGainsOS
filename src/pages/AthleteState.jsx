@@ -321,7 +321,11 @@ function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
 // ── Strength section ──────────────────────────────────────────────────────────
 
 function StrengthSection({ data }) {
-  if (!data || Object.keys(data).length === 0) {
+  // Only per-lift objects ({current_e1rm, target, stall_risk, ...}) are renderable.
+  // Flat scalar shapes (e.g. {bench_1rm: 245} from a legacy/seed row) would render
+  // as empty "Bench_1rm — lb" rows, so treat anything non-object as "no data".
+  const liftKeys = data ? Object.keys(data).filter((k) => data[k] && typeof data[k] === "object") : [];
+  if (liftKeys.length === 0) {
     return <p className="text-xs font-semibold text-muted-2">No strength data yet. Log workouts with key lifts to see estimates.</p>;
   }
 
@@ -331,7 +335,7 @@ function StrengthSection({ data }) {
     "Squat (comp)": "squat",
     "Deadlift (conventional comp)": "deadlift",
   };
-  const sorted = LIFT_ORDER.filter(k => data[k]).concat(Object.keys(data).filter(k => !LIFT_ORDER.includes(k)));
+  const sorted = LIFT_ORDER.filter(k => liftKeys.includes(k)).concat(liftKeys.filter(k => !LIFT_ORDER.includes(k)));
 
   return (
     <div>

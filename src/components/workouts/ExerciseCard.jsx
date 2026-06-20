@@ -51,6 +51,16 @@ export default function ExerciseCard({
   const menuRef = useRef(null);
   const nudgeTimerRef = useRef(null);
 
+  // Select the value AND lift the field above the on-screen keyboard. Without the
+  // scroll, focusing a bottom-row set input leaves it hidden behind the keyboard.
+  // ponytail: 250ms heuristic waits for the keyboard animation; swap for a
+  // visualViewport resize listener if the delay proves flaky on some devices.
+  const handleInputFocus = (e) => {
+    e.target.select();
+    const el = e.target;
+    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+  };
+
   const dbEntry = lookupExercise(exercise.name);
   const smartRest = getSmartRestDuration(exercise.name);
   const isProgramMode = !!programExercise;
@@ -429,7 +439,7 @@ export default function ExerciseCard({
                 aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
                 value={set.weight || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
+                onFocus={handleInputFocus}
                 placeholder={
                   isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
                     ? String(progressionTargets.dailyMin)
@@ -448,7 +458,7 @@ export default function ExerciseCard({
                 aria-label={`Set ${set.set_number} reps`}
                 value={set.reps || ""}
                 onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
+                onFocus={handleInputFocus}
                 placeholder={lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0"}
                 min="0"
                 className={setCell(isActive)}
@@ -463,7 +473,7 @@ export default function ExerciseCard({
                     const rir = val === "" ? null : parseFloat(val);
                     handleRirChange(setIndex, rir);
                   }}
-                  onFocus={(e) => e.target.select()}
+                  onFocus={handleInputFocus}
                   placeholder="—"
                   min="0"
                   max="10"
