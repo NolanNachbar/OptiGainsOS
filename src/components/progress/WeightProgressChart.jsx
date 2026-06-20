@@ -57,10 +57,12 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
           <div className="font-technical text-[18px] font-extrabold text-ink">{currentWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>

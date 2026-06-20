@@ -743,7 +743,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={30}
               ariaLabel="cycle length"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Days per cycle</p>
+            <p className="text-xs text-muted-2 mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
             <Label className="flex items-center gap-1">
