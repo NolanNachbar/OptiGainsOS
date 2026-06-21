@@ -2,6 +2,7 @@
 // Import from '@/components/ui' instead of individual files
 
 export { Button } from './button';
+export { IconButton } from './IconButton';
 export { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './card';
 export { Input } from './input';
 export { Label } from './label';

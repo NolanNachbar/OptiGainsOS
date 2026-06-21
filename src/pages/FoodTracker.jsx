@@ -49,7 +49,7 @@ const getDefaultMealType = () => {
 // color grammar as the summary tiles. Dot separators stay faint ink.
 const MacroResultLine = ({ cal, p, c, f, per100g = false }) => (
   <div className="flex flex-wrap gap-x-1.5 mt-0.5 text-xs font-technical tabular-nums">
-    <span className="text-gold">{Math.round(cal)} cal{per100g ? ' / 100g' : ''}</span>
+    <span className="text-gold">{Math.round(cal)} kcal{per100g ? ' / 100g' : ''}</span>
     <span className="text-ink-faint">·</span>
     <span className="text-coral">P {Math.round(p)}g</span>
     <span className="text-ink-faint">·</span>
@@ -765,6 +765,11 @@ const handleSaveMealTemplate = () => {
     setSelectedDate(format(d, 'yyyy-MM-dd'));
   };
 
+  // 'Today' is a jump-back action, not a status label — only surface it when
+  // the user has scrubbed off the current day, so the word is unambiguously
+  // tappable and never redundant with a date pill that already reads today.
+  const isViewingToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
+
 
   return (
     <div className="text-ink" style={{ scrollPaddingBottom: 'calc(var(--dock-clearance) + 88px)' }}>
@@ -802,12 +807,14 @@ const handleSaveMealTemplate = () => {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-            className="text-xs font-bold text-ink-muted hover:text-brand transition-colors ml-1 px-2 h-11 flex items-center"
-          >
-            Today
-          </button>
+          {!isViewingToday && (
+            <button
+              onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
+              className="text-xs font-bold tracking-wide text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors"
+            >
+              Today
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {/* Coral discipline: the sticky-bar 'Add Food' is desktop-only — on
@@ -845,7 +852,7 @@ const handleSaveMealTemplate = () => {
         onClick={() => { resetForm(); setShowAddDialog(true); }}
         aria-label="Add food"
         className="cta-coral lg:hidden fixed right-4 z-30 h-14 w-14 !rounded-full p-0"
-        style={{ bottom: 'calc(var(--dock-total-height) + 16px)' }}
+        style={{ bottom: 'calc(var(--dock-total-height) + 24px + env(safe-area-inset-bottom))' }}
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -855,11 +862,12 @@ const handleSaveMealTemplate = () => {
 
         {/* ── Main scrollable content ── */}
         <div className="flex-1 min-w-0">
-          {/* Bottom padding clears the floating FAB (which ends ~ dock + 16px +
-              56px above the viewport bottom) so the last meal section can scroll
-              fully above it and no ADD ITEM tap target ever rests under the FAB.
-              Desktop has no FAB, so it keeps the tight pb-3. */}
-          <div className="max-w-3xl mx-auto px-3 py-3 pb-[calc(var(--dock-total-height)+88px)] lg:pb-3 space-y-3.5">
+          {/* Bottom padding reserves the FAB's full floated footprint so the last
+              meal section (incl. the Dinner card's edit/delete controls) scrolls
+              fully ABOVE the coral FAB and no per-row control ever rests under it.
+              FAB body = dock + 24px offset + 56px height; this clears that band
+              plus a breathing gap. Desktop has no FAB, so it keeps the tight pb-3. */}
+          <div className="max-w-3xl mx-auto px-3 py-3 pb-[calc(var(--dock-total-height)+112px+env(safe-area-inset-bottom))] lg:pb-3 space-y-3.5">
 
             {/* Gold kcal ring + hue-coded P/C/F bars */}
             {(() => {
@@ -943,7 +951,12 @@ const handleSaveMealTemplate = () => {
                     {/* Macro bars — each macro owns one hue */}
                     <div className="flex-1 space-y-[9px] min-w-0">
                       {macroRows.map(({ label, consumed, goal, hue }) => {
-                        const pct = goal > 0 ? Math.min(100, Math.round((consumed / goal) * 100)) : 0;
+                        const rawPct = goal > 0 ? (consumed / goal) * 100 : 0;
+                        const pct = Math.min(100, Math.round(rawPct));
+                        // Over-target: the fill saturates to the bad hue and a cap
+                        // marker pins the goal edge, so an over-budget macro reads as
+                        // a distinct WARN state rather than a full in-budget bar.
+                        const over = goal > 0 && consumed > goal;
                         return (
                           <div key={label} className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-muted-2 w-3.5 shrink-0">{label}</span>
@@ -951,10 +964,24 @@ const handleSaveMealTemplate = () => {
                                 readout reads as belonging to its bar; only the
                                 label sits apart. */}
                             <div className="flex-1 flex items-center gap-2 min-w-0">
-                              <div className="flex-1 h-1.5 rounded-full bg-track overflow-hidden">
-                                <div className="h-full rounded-full transition-[width]" style={{ width: `${pct}%`, background: hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
+                              <div className="relative flex-1 h-1.5 rounded-full bg-track overflow-hidden">
+                                {/* Data fills read at 80% so the saturated-coral
+                                    protein bar can't compete with the action FAB —
+                                    coral at full strength stays the one thing to tap.
+                                    Over budget the fill flips to --warn (amber), NOT
+                                    --bad: protein is permanently coral by system rule,
+                                    and --bad is the same red hue, so an over-budget
+                                    bar painted red is indistinguishable from protein's
+                                    standing coral. Amber is distinct from every macro
+                                    hue and from coral, so the WARN reads at a glance. */}
+                                <div className="h-full rounded-full transition-[width] opacity-80" style={{ width: `${pct}%`, background: over ? 'var(--warn)' : hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
+                                {/* Cap marker: a hairline tick at the goal edge so an
+                                    over-target fill reads as having crossed a line. */}
+                                {over && (
+                                  <span className="absolute inset-y-0 right-0 w-[1.5px] bg-warn" />
+                                )}
                               </div>
-                              <span className="font-technical text-[10.5px] font-bold text-muted-2 whitespace-nowrap shrink-0 tabular-nums">
+                              <span className={`font-technical text-[10.5px] font-bold whitespace-nowrap shrink-0 tabular-nums ${over ? 'text-warn' : 'text-muted-2'}`}>
                                 {Math.round(consumed)}<span className="opacity-60">/{goal}g</span>
                               </span>
                             </div>
@@ -1060,11 +1087,11 @@ const handleSaveMealTemplate = () => {
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
-                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors"
+                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand transition-colors"
                             aria-label="Save meal as template"
                             title="Save as template"
                           >
-                            <Bookmark className="w-3.5 h-3.5" />
+                            <Bookmark className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                           </button>
                         )}
                         {/* kcal owns gold — matches the ring + trend grammar. */}
@@ -1082,11 +1109,11 @@ const handleSaveMealTemplate = () => {
                               setNewFood(prev => ({ ...prev, meal_type: mealType }));
                               setShowAddDialog(true);
                             }}
-                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-8 rounded-full text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
+                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-8 rounded-full text-ink-secondary hover:text-brand hover:bg-charcoal-surface2/60 transition-colors"
                             aria-label={`Add item to ${mealType}`}
                             title="Add item"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-[18px] h-[18px] sm:w-4 sm:h-4" />
                           </button>
                         )}
                       </div>
@@ -1126,9 +1153,11 @@ const handleSaveMealTemplate = () => {
                                 )}
                               </div>
                               {/* Mobile: single inline macro strip (hue encodes identity, no captions) */}
+                              {/* kcal lives once per card in the header gold pill —
+                                  the per-row strip carries only P/C/F + serving so a
+                                  single-item meal never restates the same kcal twice
+                                  within ~40px. */}
                               <div className={`sm:hidden font-technical tabular-nums text-[11px] font-semibold mt-0.5 flex flex-wrap items-center gap-x-1.5 ${entry.planned ? 'opacity-45' : ''}`}>
-                                <span className="text-gold">{entry.calories} cal</span>
-                                <span className="text-ink-faint">·</span>
                                 <span className="text-coral">{entry.protein_grams}P</span>
                                 <span className="text-ink-faint">·</span>
                                 <span className="text-carb">{entry.carbs_grams}C</span>
@@ -1157,11 +1186,11 @@ const handleSaveMealTemplate = () => {
                                 don't share an edge and risk a mis-tap one-handed.
                                 Desktop collapses the gap since hit areas shrink. */}
                             <div className="shrink-0 flex items-center justify-end gap-2 sm:gap-0.5 pr-1 sm:pr-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-brand transition-colors">
-                                <Pencil className="w-3.5 h-3.5" />
+                              <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand transition-colors">
+                                <Pencil className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                               </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-muted hover:text-bad transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" />
+                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-bad transition-colors">
+                                <Trash2 className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                               </button>
                             </div>
                           </div>
@@ -1281,8 +1310,8 @@ const handleSaveMealTemplate = () => {
                           return (
                             <div className="glass glass-interactive rounded-lg px-2.5 py-1.5 shadow text-xs text-ink-muted space-y-0.5">
                               <p className="font-semibold">{d.label}</p>
-                              <p className="text-gold font-technical">{d.calories} cal eaten</p>
-                              {d.goal > 0 && <p className="text-ink-muted">Goal: {d.goal} cal</p>}
+                              <p className="text-gold font-technical">{d.calories} kcal eaten</p>
+                              {d.goal > 0 && <p className="text-ink-muted">Goal: {d.goal} kcal</p>}
                             </div>
                           );
                         }}
@@ -1817,7 +1846,7 @@ const handleSaveMealTemplate = () => {
                               className="mt-1 underline font-semibold text-brand"
                               onClick={() => setBaseMacros(prev => ({ ...prev, calories: macroCalcWarning.calculated }))}
                             >
-                              Use {macroCalcWarning.calculated} cal instead
+                              Use {macroCalcWarning.calculated} kcal instead
                             </button>
                           </div>
                         )}

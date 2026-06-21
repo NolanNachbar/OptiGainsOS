@@ -87,14 +87,17 @@ export default function QuickCapture({
         </span>
         <Button
           size="lg"
-          // The disabled coralGhost now renders inert (neutral charcoal fill,
-          // faint ink) via the shared sys-button fix, so an empty field no longer
-          // reads as a live CTA while still marking where the coral action lives.
+          // Empty state stays a readable, quiet coral-tinted affordance
+          // (coralGhost: text-brand on brand/10, well above 4.5:1) so the primary
+          // action is always visible — never the inert charcoal/ink-faint disabled
+          // fill (1.77:1) that made "Capture" disappear. Armed content steps the
+          // weight up to the solid coral (volt). The empty-submit is already
+          // guarded inside captureMutation, so we only disable while pending.
           variant={hasContent ? "volt" : "coralGhost"}
           // Full-width on mobile (embedded sheet AND the page card) so the primary
           // action fills the thumb zone; auto-width only beside the md+ hint row.
           className={embedded ? "flex-1" : "w-full md:w-auto"}
-          disabled={!hasContent || captureMutation.isPending}
+          disabled={captureMutation.isPending}
           onClick={() => captureMutation.mutate()}
         >
           {captureMutation.isPending ? (

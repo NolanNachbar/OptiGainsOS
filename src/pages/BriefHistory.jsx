@@ -61,13 +61,10 @@ function BriefEntry({ brief, index = 0 }) {
       >
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
-            <Bot className="w-4 h-4 text-teal shrink-0" />
+            <Bot className="w-4 h-4 text-muted-2 shrink-0" aria-hidden="true" />
             <span className="text-sm font-bold text-ink truncate font-technical">{date}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {!open && index === 0 && (
-              <span className="section-label text-faint">Tap to view</span>
-            )}
             <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)] ${open ? "rotate-180" : ""}`} aria-hidden="true" />
           </div>
         </div>
@@ -213,7 +210,10 @@ export default function BriefHistory() {
             </Button>
           </div>
         ) : (
-          <>
+          // min-h flex column so a short list anchors its end-of-history
+          // terminator toward the bottom of the viewport (mt-auto) instead of
+          // dumping ~250px of dead charcoal below the cards.
+          <div className="flex flex-col min-h-[calc(100vh-12rem)]">
             {/* Summary tile anchors the layout so a small list (often a single
                 brief) reads as an intentional composition instead of one card
                 floating over an empty void. Neutral glass, no CTA — the cards
@@ -249,7 +249,7 @@ export default function BriefHistory() {
                 );
               });
             })()}
-            {briefs.length > visibleCount && (
+            {briefs.length > visibleCount ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -258,8 +258,21 @@ export default function BriefHistory() {
               >
                 Show more (<span className="font-technical">{briefs.length - visibleCount}</span>)
               </Button>
+            ) : (
+              // End-of-history cap. With a short list the cards used to float
+              // over ~200px of dead black above the dock; a quiet centered
+              // "caught up" footer closes the column so the page reads finished
+              // rather than truncated. Faint, no CTA — the cards stay the only
+              // interactive surface.
+              <div className="flex items-center gap-3 mt-auto pt-6 mb-1 select-none" aria-hidden="true">
+                <span className="h-px flex-1 bg-track" />
+                <span className="section-label text-faint whitespace-nowrap">
+                  You&apos;re all caught up
+                </span>
+                <span className="h-px flex-1 bg-track" />
+              </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

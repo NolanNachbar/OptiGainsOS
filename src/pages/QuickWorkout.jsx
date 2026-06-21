@@ -72,10 +72,12 @@ export default function QuickWorkout() {
   }, [prescribed]);
 
   const [startTime, setStartTime] = useState(Date.now());
+  // The Layout chrome and the logging band both surface today's date already,
+  // so the default session title carries no date — a date-stamped default just
+  // reprinted the chrome's "Quick Workout" + date in a second, inconsistently
+  // formatted row. Prescribed sessions keep their descriptive title (no date).
   const [workoutTitle, setWorkoutTitle] = useState(
-    prescribed?.title
-      ? `${prescribed.title} — ${format(new Date(), "MMM d")}`
-      : `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`
+    prescribed?.title || "Quick Workout"
   );
   // Only surface run-pace zones for run/cardio intent — a generic lifting
   // "Quick Workout" should not show VDOT paces. Driven by prescribed modality
@@ -87,7 +89,7 @@ export default function QuickWorkout() {
   // top-of-page duplicate). Only render the mobile body title when the session
   // is customized — a prescribed session or a user-edited title — so the rename
   // affordance is still reachable when the title actually carries information.
-  const defaultTitle = `Quick Workout - ${format(new Date(), "MMM d, yyyy")}`;
+  const defaultTitle = "Quick Workout";
   const isCustomTitle = !!prescribed || workoutTitle !== defaultTitle;
   const [editingTitle, setEditingTitle] = useState(false);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
@@ -168,7 +170,7 @@ export default function QuickWorkout() {
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,
-    replaceExercise,
+    replaceExercise: replaceExerciseRaw,
     addExercise: addExerciseRaw,
   } = useWorkoutExercises(prescribedInitial);
 
@@ -178,6 +180,15 @@ export default function QuickWorkout() {
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, exerciseName);
     const defaultWeight = suggestion || lastPerf?.lastWeight || 0;
     return addExerciseRaw(exerciseName, defaultWeight);
+  };
+
+  // Same autofill on swap: seed the replacement's load from its own history so a
+  // swap doesn't blank the weight. (ponytail: seeds raw last weight, not rep-
+  // scaled — the picker keeps the old rep target, so scaling is ~identity here.)
+  const replaceExercise = (oldName, newExercise) => {
+    const suggestion = insightSuggestions[newExercise?.name?.toLowerCase()];
+    const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise?.name);
+    return replaceExerciseRaw(oldName, newExercise, suggestion || lastPerf?.lastWeight || 0);
   };
 
   // Observe when workout title scrolls out of view
@@ -349,7 +360,7 @@ export default function QuickWorkout() {
         onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--dock-clearance)+24px+env(safe-area-inset-bottom))] lg:pb-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6">
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -437,19 +448,21 @@ export default function QuickWorkout() {
               </p>
             )}
           </div>
-        ) : (
-          <div className="mb-3 lg:hidden flex items-center gap-2 min-w-0">
-            <p className="text-sm font-semibold text-ink-faint flex-1 min-w-0 truncate">{workoutTitle}</p>
-            <button
-              type="button"
-              aria-label="Rename session"
-              onClick={() => setEditingTitle(true)}
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 shrink-0 text-ink-faint hover:text-ink touch-manipulation"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        ) : !resumeSession ? (
+          // Default-titled session: the chrome already prints "Quick Workout" +
+          // today's date, so DON'T reprint the title here. Show only a quiet
+          // "Rename session" affordance. Gated on !resumeSession so this row
+          // doesn't bleed through the Resume scrim before the user decides.
+          <button
+            type="button"
+            aria-label="Rename session"
+            onClick={() => setEditingTitle(true)}
+            className="mb-3 lg:hidden flex items-center gap-1.5 min-h-[44px] -my-2 text-sm font-semibold text-ink-muted hover:text-ink touch-manipulation"
+          >
+            <Pencil className="w-4 h-4 shrink-0" />
+            Rename session
+          </button>
+        ) : null}
 
         {isRunCardio && <VdotZonesCard className="mb-6" />}
 
@@ -465,6 +478,14 @@ export default function QuickWorkout() {
           </div>
         )}
 
+        {/* While the Resume-vs-Start-Fresh decision is pending, the page behind
+            the prompt must NOT render its empty-state ("No exercises yet" + add
+            form) — that contradicts the sheet's "you have an unfinished
+            session" claim. Hold the body until the choice is made; the chosen
+            path (resume restores the saved sets, start-fresh seeds a blank
+            session) then renders the right state. */}
+        {!resumeSession && (
+        <>
         {/* Pre-session insight (Phase 2+) — suppressed when the engine has
             already prescribed loads, to avoid two coaches contradicting. On the
             empty canvas it's a compact single-line teal coach chip so the first
@@ -550,11 +571,29 @@ export default function QuickWorkout() {
           )}
 
         </div>
+        </>
+        )}
+
+        {/* Resume decision pending: the live empty-state form is intentionally
+            held back (it would contradict the "unfinished session" sheet), but
+            the body must not read as a dead black void behind the scrim. Render
+            a calm, on-brand placeholder so the surface looks deliberate while
+            the athlete picks Resume vs Start Fresh. */}
+        {resumeSession && (
+          <div className="rise-in flex flex-col items-center justify-center text-center gap-3 py-16 text-ink-muted">
+            <span className="w-12 h-12 rounded-2xl glass flex items-center justify-center">
+              <Dumbbell className="w-6 h-6 text-ink-muted" />
+            </span>
+            <p className="text-sm font-semibold max-w-[15rem] leading-relaxed">
+              You have an unfinished session. Resume it or start fresh to begin logging.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Resume previous session prompt */}
       <Dialog open={!!resumeSession} onOpenChange={(open) => { if (!open) handleDismissResume(); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent sheetMinHeight="">
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
@@ -565,13 +604,12 @@ export default function QuickWorkout() {
             <Button variant="outline" size="lg" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            {/* Resume is the brand-affirmative choice, but solid `volt` here
-                carries the canonical coral glow that blooms beneath the button
-                at 390px AND puts a second solid-coral surface on screen while
-                the page's Add chip still bleeds through the scrim. coralGhost
-                keeps Resume clearly the brand-tinted primary of this binary
-                without the halo or the competing second coral fill. */}
-            <Button variant="coralGhost" size="lg" className="flex-1" onClick={handleResumeSession}>
+            {/* Resume is the recommended path, so it carries the solid coral
+                CTA weight to read as clear primary in under 2s. The page body is
+                held behind the scrim (!resumeSession gate) so no competing coral
+                fill bleeds through — this is the only coral surface on screen,
+                paired with the neutral-outline Start Fresh. */}
+            <Button variant="volt" size="lg" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>

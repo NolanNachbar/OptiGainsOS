@@ -179,14 +179,38 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             coral FAB is the sole upload trigger; this panel only configures pose. */}
         <div className="glass px-4 pt-4 pb-4 mt-4 rise-in">
           <div className="section-label mb-2">Pose for this shot</div>
-          <PosePillRow
-            variant="solid"
-            value={pose}
-            onChange={setPose}
-            disabled={busy}
-            className="mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
-            options={POSES.map((p) => ({ value: p.key, label: p.label }))}
-          />
+          {/* Local pose selector (not the shared PosePillRow): the shared solid
+              variant gives the active pill a near-identical dark fill to the
+              inactive ones, so at 390px you can't tell which pose is armed. The
+              active chip here reads as an elevated, lighter chip with a coral
+              border + label — the same selected language as the Fix pose sheet —
+              so the armed pose is unmistakable in under 2s. */}
+          <div
+            role="radiogroup"
+            aria-label="Pose for this shot"
+            className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
+          >
+            {POSES.map((p) => {
+              const isActive = pose === p.key;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => setPose(p.key)}
+                  disabled={busy}
+                  className={`shrink-0 inline-flex items-center justify-center whitespace-nowrap px-3 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 ${
+                    isActive
+                      ? "bg-brand/15 text-brand border-brand/40 shadow-[var(--shadow-1)]"
+                      : "bg-[var(--glass-inset-bg)] text-ink-muted border-charcoal-border hover:bg-[var(--glass-bg)] hover:text-ink"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
           {/* One instructional voice: the per-shot pose cue is the single
               instruction line; the static "same pose/lighting" reminder rides as a
               muted tail rather than its own stacked subtitle above. */}
@@ -260,13 +284,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <p className="text-xs font-semibold text-faint mt-1">Check your connection and try again.</p>
           </div>
         ) : entries.length === 0 ? (
-          // Fill the space below the pose panel and center the prompt so the
-          // screen reads composed, not half-empty. Height = viewport minus the
-          // panel/header above and the dock below.
-          <div
-            className="mt-6 px-4 text-center glass-inset flex flex-col items-center justify-center"
-            style={{ minHeight: "calc(100vh - 360px - var(--dock-clearance))" }}
-          >
+          // Natural-height empty state directly under the pose panel: the CTA
+          // stays in the thumb zone instead of floating mid-screen above a dead
+          // band. No forced viewport-fill.
+          <div className="mt-6 px-4 py-8 text-center glass-inset flex flex-col items-center">
             <Camera className="w-7 h-7 text-muted-2 mb-3" />
             <p className="text-sm font-semibold text-muted-2">No shots yet.</p>
             <p className="text-xs font-semibold text-faint mt-1 mb-4">Upload your first photo to start tracking.</p>
@@ -415,12 +436,12 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         )}
       </div>
 
-      {/* Thumb-zone upload — a floating coral action pinned within the safe
-          area, above the dock, so the primary action is reachable after the
-          fold (the inline CTA above sits in the upper third). Re-triggers the
-          same file input. Hidden while an overlay owns the screen or while a
-          shot is processing. */}
-      {entries.length > 0 && !showCompare && !editingEntry && !pending && (
+      {/* Thumb-zone upload — the single coral upload trigger for the populated
+          view. It only renders once there is history; the empty state owns its
+          own centered coral CTA instead, so the two never compete on one screen.
+          Pinned within the safe area above the dock; re-triggers the same file
+          input. Hidden while an overlay owns the screen or a shot is processing. */}
+      {!loadingEntries && !entriesError && entries.length > 0 && !showCompare && !editingEntry && !pending && (
         <Button
           variant="volt"
           onClick={() => fileInputRef.current?.click()}

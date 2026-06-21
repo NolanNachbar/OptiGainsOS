@@ -55,8 +55,15 @@ function CoachSection({ coach, content, defaultOpen = false }) {
         )}
         <div className="flex-1 min-w-0">
           <CoachTag active={open}>{coach.label}</CoachTag>
+          {/* Collapsed row shows the truncated coach sentence — uniform across all
+              three rows. The earlier bare-datum lead-in mixed a percent, a ratio,
+              and a rate with no shared anchor, so each row read as a different kind
+              of metric; the full sentence carries the number with its own context. */}
           {!open && content && (
-            <p className="text-[12px] font-semibold text-muted-2 truncate mt-1">{content}</p>
+            // text-secondary (0.72) not text-muted-2 (0.50): this preview line
+            // carries numbers (kcal, lb/wk) at 12px, which sat under AA 4.5:1 on
+            // the #181C22 card. Only this row changes, not the shared token.
+            <p className="text-[12px] font-semibold text-secondary truncate mt-1">{content}</p>
           )}
         </div>
         <ChevronDown
@@ -156,18 +163,16 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               <span className="truncate">AI Daily Brief</span>
             </CardTitle>
             {generatedAt && (
-              <span className="sm:hidden font-technical tabular-nums text-[10px] font-semibold text-faint whitespace-nowrap mt-0.5 pl-6">Generated {generatedAt}</span>
+              <span className="sm:hidden font-technical tabular-nums text-[11px] font-medium text-ink whitespace-nowrap mt-0.5 pl-6">Generated {generatedAt}</span>
             )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {generatedAt && (
-              <span className="hidden sm:inline font-technical tabular-nums text-[10px] font-semibold text-faint whitespace-nowrap">Generated {generatedAt}</span>
+              <span className="hidden sm:inline font-technical tabular-nums text-[11px] font-medium text-ink whitespace-nowrap">Generated {generatedAt}</span>
             )}
-            <Link to="/brief-history">
-              <Button variant="dim" size="sm" className="min-h-[44px] text-xs font-semibold text-secondary hover:text-ink gap-1.5 px-3">
-                <History className="w-3.5 h-3.5" /> History
-              </Button>
-            </Link>
+            {/* In-card 'History' pill removed: the BRIEF HISTORY sub-tab in the
+                Layout header is the single canonical path to past briefs, so this
+                pill was a redundant third affordance on the same screen. */}
             <button
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expand brief" : "Collapse brief"}
@@ -192,18 +197,21 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
 
           <div className="mt-2 mb-1">
             {(() => {
-              // Open only the FIRST coach section that has content; the rest stay
-              // collapsed so the brief lands within one viewport instead of a tall
-              // stack of five auto-expanded sections. Only render coaches that have
-              // content — a section with no body is a dead toggle (chevron flips,
-              // nothing expands).
+              // Every coach starts COLLAPSED. Auto-opening the first one painted
+              // its teal active-chip on load, making teal read as decoration
+              // rather than a user-chosen active state — and teal is reserved as
+              // the single primary-action / active signal. With nothing
+              // auto-open, the collapsed rows now lead with their datum (see
+              // CoachSection), so the brief is still scannable without spending
+              // teal. Only render coaches that have content — a section with no
+              // body is a dead toggle (chevron flips, nothing expands).
               const withContent = COACHES.filter(c => json[c.key]);
-              return withContent.map((coach, i) => (
+              return withContent.map((coach) => (
                 <CoachSection
                   key={coach.key}
                   coach={coach}
                   content={json[coach.key]}
-                  defaultOpen={i === 0}
+                  defaultOpen={false}
                 />
               ));
             })()}

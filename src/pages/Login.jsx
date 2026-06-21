@@ -8,31 +8,35 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 
 // ── Shared auth composition ────────────────────────────────────────────────
-// One ambient field + one header recipe for Login / ForgotPassword /
-// ResetPassword. Kept byte-identical across the three paired screens so the
-// front door reads as a single surface (single 24px wordmark, text-ink brand).
-const AMBIENT = {
-  background:
-    'radial-gradient(480px 360px at 80% -10%, rgba(78,205,196,0.16), transparent 70%),' +
-    'radial-gradient(420px 360px at -15% 45%, rgba(155,140,255,0.10), transparent 70%),' +
-    'radial-gradient(560px 440px at 50% 120%, rgba(239,115,104,0.13), transparent 70%)',
-};
+// One header recipe for Login / ForgotPassword / ResetPassword. Kept identical
+// across the three paired screens so the front door reads as a single surface.
+// CLEAN: flat charcoal background — depth comes from surface tone + shadow on
+// the card, never from an ambient gradient/glow.
 
 export function AuthShell({ children }) {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      <div className="absolute inset-0 pointer-events-none" style={AMBIENT} />
-      <div className="flex-1 flex flex-col items-center justify-end sm:justify-center px-5 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 relative z-10 w-full">
-        {children}
-      </div>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] relative w-full"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      {children}
     </div>
   );
 }
 
 export function AuthHeader({ subtitle }) {
+  // Brand mark + wordmark composed as one centered unit so the hero reads
+  // intentional instead of a badge floating over a dark void.
   return (
-    <div className="text-center rise-in">
-      <h1 className="type-display text-[28px] sm:text-[24px] whitespace-nowrap text-ink">OPTIGAINS</h1>
+    <div className="flex flex-col items-center text-center rise-in">
+      <div
+        className="h-12 w-12 rounded-2xl flex items-center justify-center type-display text-[22px] text-[var(--color-action-dark)]"
+        style={{ background: 'var(--color-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)' }}
+        aria-hidden="true"
+      >
+        O
+      </div>
+      <h1 className="type-display text-[28px] sm:text-[24px] whitespace-nowrap text-ink mt-4">OPTIGAINS</h1>
       {subtitle && (
         <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
           {subtitle}
@@ -88,6 +92,7 @@ export default function Login() {
               id="email"
               type="email"
               placeholder="your@email.com"
+              className="placeholder:!text-ink-muted"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
               autoComplete="email"
@@ -101,6 +106,7 @@ export default function Login() {
               id="password"
               type="password"
               placeholder="Password"
+              className="placeholder:!text-ink-muted"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
               autoComplete="current-password"
@@ -111,7 +117,13 @@ export default function Login() {
 
           {errorMsg && <p id="login-error" role="alert" className="text-brand text-[13px] mb-2">{errorMsg}</p>}
 
-          <Button type="submit" variant="volt" size="lg" className="w-full mt-1 active:scale-[.99]" disabled={loading}>
+          <Button
+            type="submit"
+            variant="volt"
+            size="lg"
+            className="w-full mt-1 active:scale-[.99] bg-none bg-[var(--color-brand)] [box-shadow:0_6px_18px_rgba(var(--color-brand-rgb)/0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+            disabled={loading}
+          >
             {loading ? (
               <>
                 <LoadingSpinner size="small" className="mr-1" />
@@ -122,14 +134,12 @@ export default function Login() {
             )}
           </Button>
 
-          <div className="flex items-center justify-center mt-3 px-0.5">
-            <Link
-              to="/forgot-password"
-              className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors inline-flex items-center justify-center min-h-[44px] px-2"
-            >
-              Forgot password
-            </Link>
-          </div>
+          <Link
+            to="/forgot-password"
+            className="cta-ghost w-full mt-2.5 text-[13.5px] font-bold text-ink hover:text-ink active:text-ink"
+          >
+            Forgot password
+          </Link>
         </form>
       </div>
     </AuthShell>

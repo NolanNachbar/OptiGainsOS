@@ -137,6 +137,13 @@ export default function Today() {
   const vdot = state?.vdot_zones || {};
   const score = recovery?.score ?? null;
   const band = bandFor(score);
+  // Readiness owns TEAL in the hue map (readiness · intensity), so the hero ring
+  // and verdict word stay teal whenever the read is positive (>=70). bandFor
+  // hands the 70-84 "Ready" band a body-battery GREEN, which both wears the
+  // wrong family for the single most prominent datum and competes with the teal
+  // FAB/dock as a second action-adjacent color. We keep warn/bad for the
+  // genuinely cautionary bands (Moderate/Recover) so the verdict still signals.
+  const readinessHue = score == null ? band.color : score >= 70 ? "var(--hue-teal)" : band.color;
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
 
@@ -220,11 +227,13 @@ export default function Today() {
   const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
   const { calories: calTarget, protein: proteinTarget } = useDailyTargets(today);
 
-  // lb/wk trend. This is a FUEL datum, not a biometric, so it owns a stable
-  // fuel hue (gold, the kcal family) rather than riding the physiological
-  // ok/warn spectrum — green/warn here read as "good/bad body signal" and steal
-  // the biometric language. On- vs off-goal is expressed by the SIGN (a loss
-  // reads "-0.8", a gain "+1.2") plus a caption, not by recoloring the ring.
+  // lb/wk trend. Gold is the documented owner of kcal, so the trend ring must
+  // NOT also ride gold — two gold rings flanking the coral protein ring flatten
+  // the per-datum encoding (kcal and the trend read as the same datum). Trend is
+  // a body-comp readout, so it carries violet (the body-state family, distinct
+  // from gold kcal and coral protein) while staying off the ok/warn
+  // physiological spectrum. On- vs off-goal is still read from the SIGN (a loss
+  // reads "-0.8", a gain "+1.2") plus the caption, not from recoloring the ring.
   const trendPerWk = nutrition?.weight_trend_lbs_per_week;
   const trendAligned = (() => {
     if (trendPerWk == null) return null;
@@ -237,7 +246,7 @@ export default function Today() {
     value: trendPerWk == null ? "—"
       : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
     frac: trendPerWk != null ? Math.min(1, Math.abs(Number(trendPerWk)) / 2) : 0,
-    hue: trendPerWk == null ? "var(--text-faint)" : "var(--hue-gold)",
+    hue: trendPerWk == null ? "var(--text-faint)" : "var(--hue-violet)",
     caption: trendAligned == null ? "lb/wk" : trendAligned ? "on goal" : "off goal",
   };
 
@@ -256,13 +265,17 @@ export default function Today() {
           to={activeSession.program_workout_id
             ? `/workout-detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
             : `/workout-detail?id=${activeSession.workout_id}`}
-          className="glass-brand flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-2xl text-brand text-sm font-semibold rise-in"
+          // Neutral glass, not glass-brand/text-brand: the FAB is the single
+          // teal action on this screen, so the in-progress banner reads as a
+          // quiet "tap to continue" disclosure row (muted ink + chevron) rather
+          // than a second competing teal CTA.
+          className="surface flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-2xl text-ink text-sm font-semibold rise-in"
         >
           <span className="flex items-center gap-2">
-            <Activity className="w-4 h-4 shrink-0" />
-            Workout in progress — tap to continue
+            <Activity className="w-4 h-4 shrink-0 text-muted-2" />
+            Workout in progress, tap to continue
           </span>
-          <ChevronRight className="w-4 h-4 shrink-0" />
+          <ChevronRight className="w-4 h-4 shrink-0 text-muted-2" />
         </Link>
       )}
 
@@ -314,9 +327,9 @@ export default function Today() {
                   hue), so the arc tracks the score/headline — the component's
                   teal gradient is the default only for non-verdict rings. The
                   micro-label below the score stays 'READINESS'. */}
-              <StatRing value={score} size={104} label="Readiness" color={band.color} />
+              <StatRing value={score} size={104} label="Readiness" color={readinessHue} />
               <div className="flex-1 min-w-0">
-                <h2 className="type-display text-lg sm:text-xl" style={{ color: band.color }}>
+                <h2 className="type-display text-lg sm:text-xl" style={{ color: readinessHue }}>
                   {headline}
                 </h2>
                 <p className="font-technical text-[13px] font-semibold text-muted-2 leading-relaxed mt-1 max-w-[52ch]">
@@ -364,13 +377,20 @@ export default function Today() {
         {/* The day's CTA — under the verdict + check-in so the next action is never
             buried. PrescribedSessionCard owns ALL its fallbacks now: when the
             engine prescribes nothing it renders the neutral "Log a workout" ghost
-            itself (the duplicate ghost that used to live here was removed). */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-          {/* When the in-progress "tap to continue" banner is showing, it is the
-              SOLE coral primary — demote the Begin Session CTA to a ghost so the
-              page never has two competing coral actions. */}
-          <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={!!activeSession} />
-        </div>
+            itself (the duplicate ghost that used to live here was removed).
+
+            One exception: when a workout is already in progress AND the engine has
+            no prescription, the card's ONLY content would be that "Log a workout"
+            fallback ghost — which is redundant with (and competes against) the
+            coral "tap to continue" banner above. In that single case we suppress
+            the card so the continue banner is the sole workout entry. On train
+            days (a prescription exists) the card still renders, and demoteCta
+            keeps its Begin Session a ghost so there's never a second coral. */}
+        {!(activeSession && !prescription) && (
+          <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
+            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={!!activeSession} />
+          </div>
+        )}
 
         {/* Thumb-zone quick actions — the two most-tapped daily logs (food +
             weigh-in). Lifted directly under the session CTA (ABOVE the Fuel
@@ -389,7 +409,10 @@ export default function Today() {
                 to="/food-tracker?addFood=true"
                 className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
               >
-                <Apple className="w-[18px] h-[18px]" style={{ color: "var(--hue-gold)" }} />
+                {/* Action tile, not a datum: the icon carries no value, so it
+                    rides neutral muted ink. Data hues (gold/coral/violet) are
+                    reserved for actual readouts, never tile decoration. */}
+                <Apple className="w-[18px] h-[18px] text-muted-2" />
                 <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
                 <span className="text-[10px] font-semibold text-muted-2 leading-none">Today&apos;s meals</span>
               </Link>
@@ -398,7 +421,7 @@ export default function Today() {
                 onClick={() => setShowWeighIn(true)}
                 className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
               >
-                <Scale className="w-[18px] h-[18px]" style={{ color: "var(--hue-violet)" }} />
+                <Scale className="w-[18px] h-[18px] text-muted-2" />
                 <span className="text-[13px] font-extrabold text-ink leading-none">Weigh in</span>
                 <span className="font-technical text-[10px] font-semibold text-muted-2 leading-none">
                   {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Last unknown"}
@@ -434,14 +457,21 @@ export default function Today() {
                 value={compactK(avgCal)}
                 frac={calTarget && avgCal ? avgCal / calTarget : 0}
               />
+              {/* Protein owns coral. When the 7d average is genuinely absent the
+                  ring drops to the faint track hue (not full coral at frac 0) so
+                  a bare "—" reads as an intentional "no data yet" state rather
+                  than a broken/colorless circle flanked by the two filled
+                  rings. */}
               <MiniRing
-                label={proteinTarget ? `/${Math.round(proteinTarget)}g · 7d` : "protein · 7d"} hue="var(--hue-coral)"
+                label={proteinTarget ? `/${Math.round(proteinTarget)}g · 7d` : "protein · 7d"}
+                hue={nutrition?.avg_protein_7d != null ? "var(--hue-coral)" : "var(--text-faint)"}
                 value={nutrition?.avg_protein_7d != null ? `${Math.round(nutrition.avg_protein_7d)}` : "—"}
                 frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
               />
-              {/* lb/wk rides the stable gold fuel hue; the SIGN (+/−) carries
-                  direction and the label flips to on/off goal so alignment is
-                  read from sign + caption, not from a biometric ring color. */}
+              {/* lb/wk rides the body-comp violet hue (distinct from gold kcal
+                  and coral protein so the three rings read as three datums); the
+                  SIGN (+/−) carries direction and the label flips to on/off goal
+                  so alignment is read from sign + caption, not a ring color. */}
               <MiniRing
                 label={trend.caption} hue={trend.hue}
                 value={trend.value}
@@ -459,12 +489,47 @@ export default function Today() {
             always shown. */}
         <div className="lg:col-start-1 lg:col-span-12 lg:row-start-5 rise-in-3">
           <div className="surface overflow-hidden">
+            {/* Vitals sub-row — the 4 biometric tiles (HRV/RHR/Sleep/Batt) moved
+                off the readiness hero so the hero stays StatRing + verdict and the
+                session CTA lands in viewport 1. Now rendered ALWAYS (not behind
+                the mobile disclosure): at 390px the collapsed stack ended well
+                above the fold and left a tall dead band between this card and the
+                dock. Promoting these 4 glanceable markers fills that hollow with
+                real data instead of an empty gap, while the fuller Brief / State /
+                Muscle context still lives behind the disclosure below.
+                2-up at 390px, 4-up at sm+ so the values are never cramped. */}
+            <div className="px-4 pt-3 lg:pt-4">
+              <SectionLabel>Vitals</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
+                {morningMetrics.map((m, i) => (
+                  <MetricTile
+                    key={m.k}
+                    label={m.k}
+                    value={m.v}
+                    unit={m.u || undefined}
+                    accent={m.hue}
+                    // The global teal FAB (Layout.jsx) is fixed at the viewport
+                    // bottom-right (right-3 = 12px gutter, 48px body) and, on a
+                    // short day where this Vitals card is the last surface, floats
+                    // over the bottom-right BATT tile. At 2-up (mobile) BATT is the
+                    // 4th tile (bottom-right): the FAB intrudes ~44px past the
+                    // tile's right edge, so reserve a right-edge inset (44px FAB
+                    // footprint + a clearance gap) on JUST that cell so its hue dot
+                    // + value sit fully left of the '+'. Dropped at sm+ (4-up, BATT
+                    // no longer sits in the FAB corner) and the inset only applies
+                    // to the colliding cell so the rest of the grid stays
+                    // full-bleed.
+                    className={`!py-2 ${i === 3 ? "!pl-2.5 !pr-16 sm:!px-2.5" : "!px-2.5"}`}
+                  />
+                ))}
+              </div>
+            </div>
             {/* Mobile-only disclosure trigger — ≥44px tap target. */}
             <button
               type="button"
               onClick={() => setDetailOpen((o) => !o)}
               aria-expanded={detailOpen}
-              className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 text-left"
+              className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
             >
               <SectionLabel>Today&apos;s detail</SectionLabel>
               <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-2">
@@ -476,26 +541,6 @@ export default function Today() {
             </button>
             {/* Body: toggleable on mobile via detailOpen, always shown on desktop. */}
             <div className={`${detailOpen ? "block" : "hidden"} lg:block`}>
-            {/* Vitals sub-row — the 4 biometric tiles (HRV/RHR/Sleep/Batt) moved
-                off the readiness hero so the hero stays StatRing + verdict and the
-                session CTA lands in viewport 1; the raw markers live one tap down
-                behind this disclosure, beside their fuller State / Muscle context.
-                2-up at 390px, 4-up at sm+ so the values are never cramped. */}
-            <div className="px-4 pt-3 lg:pt-4">
-              <SectionLabel>Vitals</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
-                {morningMetrics.map((m) => (
-                  <MetricTile
-                    key={m.k}
-                    label={m.k}
-                    value={m.v}
-                    unit={m.u || undefined}
-                    accent={m.hue}
-                    className="!px-2.5 !py-2"
-                  />
-                ))}
-              </div>
-            </div>
             {/* In-card switch uses the lighter inset SegmentedControl (NOT the
                 global glass-elevated coral SubTabs strip) so it doesn't mimic the
                 page-level nav pills. */}

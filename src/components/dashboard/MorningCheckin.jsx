@@ -62,6 +62,12 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // When editing an existing check-in, drop the read-only summary and show the
+  // form (already seeded from existingCheckin below). Previously "Update" nulled
+  // the cache, so the reopened form fell back to defaults and overwrote the saved
+  // energy/mood/soreness on the next save.
+  const [editing, setEditing] = useState(false);
+
   const [energy, setEnergy] = useState(existingCheckin?.energy ?? 7);
   const [mood, setMood] = useState(existingCheckin?.mood ?? 7);
   const [notes, setNotes] = useState(existingCheckin?.notes ?? "");
@@ -124,12 +130,13 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
       queryClient.invalidateQueries({ queryKey: ["dailyReadiness", todayStr, user?.id] });
       queryClient.invalidateQueries({ queryKey: ["soreness", todayStr, user?.id] });
       toast.success("Morning check-in saved");
+      setEditing(false);
       onComplete?.();
     },
     onError: () => toast.error("Failed to save check-in"),
   });
 
-  if (existingCheckin?.energy) {
+  if (existingCheckin?.energy && !editing) {
     const soreGroups = Object.entries(existingCheckin.soreness_snapshot || {})
       .filter(([, level]) => level > 0)
       .sort((a, b) => b[1] - a[1]);
@@ -147,7 +154,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => queryClient.setQueryData(["dailyReadiness", todayStr, user?.id], null)}
+            onClick={() => setEditing(true)}
             className="min-h-[44px] -my-2.5 text-[10px] uppercase tracking-wider"
           >
             Update

@@ -7,9 +7,11 @@ import { format } from "date-fns";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertTriangle, Check, Film, History, Loader2, Upload, X,
+  Video, Sparkles, ListChecks,
 } from "lucide-react";
 
 const RATING_COLOR = (r) =>
@@ -113,11 +115,16 @@ export default function Coach() {
     setOpenReview({ review, url: s?.signedUrl ?? null });
   };
 
+  // The empty canvas — no clip queued, no fresh critique, no history yet.
+  // Center the upload card so its primary CTA falls in the thumb zone instead
+  // of stranding it in the upper-middle with a dead void below.
+  const emptyCanvas = !pending && !critique && !error && reviews.length === 0;
+
   return (
-    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="hidden lg:block type-display text-[22px] mb-1 rise-in">Coach office hours</h1>
-        <p className="text-xs text-muted-2 mb-4">
+    <div className="flex flex-col px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))]">
+      <div className="max-w-3xl mx-auto w-full flex flex-col">
+        <h1 className="type-display text-[22px] mb-1 rise-in">Coach office hours</h1>
+        <p className="text-sm text-muted-2 mb-4">
           Upload a few reps and get a form critique. Best on a side view of squat,
           deadlift, or bench. A single angle can't see depth or load, so treat it as a second set of eyes.
         </p>
@@ -125,25 +132,26 @@ export default function Coach() {
         <input ref={fileInputRef} type="file" accept="video/*"
                className="hidden" onChange={pickFile} disabled={busy} />
 
-        {/* Setup panel */}
+        {/* Setup panel — lead with the working form so the input and CTA are
+            reachable above the fold, not buried under a marketing explainer. */}
         <div className="glass px-4 pt-4 pb-4 rise-in">
           <div className="section-label mb-2">The lift</div>
-          <input
-            type="text" value={exercise} onChange={(e) => setExercise(e.target.value)}
+          <Input
+            value={exercise} onChange={(e) => setExercise(e.target.value)}
             placeholder="e.g. Back squat, conventional deadlift"
             disabled={busy}
-            className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:border-white/25"
+            className="mb-3"
           />
           <div className="section-label mb-2">What to look at (optional)</div>
-          <input
-            type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
+          <Input
+            value={notes} onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Knees cave on the way up?"
             disabled={busy}
-            className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:border-white/25"
+            className="mb-3"
           />
 
           {!pending ? (
-            <Button onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full">
+            <Button variant="volt" size="lg" onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full">
               <Upload className="w-4 h-4 mr-2" /> Choose clip
             </Button>
           ) : (
@@ -158,7 +166,7 @@ export default function Coach() {
               <div className="flex items-center gap-1.5 text-xs text-muted-2">
                 <Film className="w-3.5 h-3.5" /> {pending.file.name}
               </div>
-              <Button onClick={analyze} disabled={busy} className="w-full">
+              <Button variant="volt" size="lg" onClick={analyze} disabled={busy} className="w-full">
                 {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 {busy ? (status || "Working…") : "Get critique"}
               </Button>
@@ -169,6 +177,22 @@ export default function Coach() {
         {error && (
           <div className="mt-3 flex items-start gap-1.5 text-xs text-bad">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {error}
+          </div>
+        )}
+
+        {/* On a fresh, empty canvas a "how it works" strip sits under the form so
+            the screen reads finished without pushing the CTA below the fold. */}
+        {emptyCanvas && (
+          <div className="glass-inset rounded-xl px-4 py-3.5 mt-4 space-y-3 rise-in">
+            <HowToStep icon={Video} title="Film a side view">
+              A few clean reps of squat, deadlift, or bench. Keep clips under 14MB.
+            </HowToStep>
+            <HowToStep icon={Sparkles} title="Coach reviews it">
+              The lift gets scored and checked for safety flags in seconds.
+            </HowToStep>
+            <HowToStep icon={ListChecks} title="Fix, in order">
+              You get prioritized fixes with a cue to focus on next session.
+            </HowToStep>
           </div>
         )}
 
@@ -228,6 +252,20 @@ export default function Coach() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function HowToStep({ icon: Icon, title, children }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="shrink-0 mt-0.5 w-8 h-8 rounded-full grid place-items-center bg-brand/[0.12] text-[var(--brand-tint)]">
+        <Icon className="w-4 h-4" strokeWidth={2} />
+      </div>
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-ink">{title}</div>
+        <p className="text-xs text-muted-2 leading-relaxed mt-0.5">{children}</p>
+      </div>
     </div>
   );
 }

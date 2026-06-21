@@ -40,7 +40,9 @@ const Dialog = ({ open, onOpenChange, children }) => {
           }}
           onClick={() => onOpenChange(false)}
         />
-        {/* Positioner: bottom sheet on mobile, centered dialog on desktop. */}
+        {/* Positioner: bottom sheet on mobile (flush to the bottom edge), centered
+            dialog on desktop. items-end keeps the sheet pinned to the bottom so it
+            reads as an attached sheet, never a floating card with a dark gap below. */}
         <div className="fixed inset-0 flex items-end justify-center md:items-center md:p-4 pointer-events-none">
           <div className="pointer-events-auto w-full md:w-auto">
             {React.Children.map(children, child =>
@@ -75,15 +77,24 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, she
   return (
     <div
       ref={ref}
-      className={`relative z-50 glass-sheet text-ink w-full max-w-lg overflow-y-auto
-        rounded-t-2xl rounded-b-none border-b-0
-        md:rounded-xl md:border-b md:mx-auto
+      className={`relative z-50 glass-sheet text-ink overflow-y-auto w-full max-w-lg
+        md:mx-auto
         sheet-rise md:rise-in
         ${sheetMinHeight} md:min-h-0
-        ${hasCustomPadding ? "" : "p-6"} ${className}`}
+        ${hasCustomPadding ? "" : "p-6"} ${className}
+        max-md:!w-full max-md:!max-w-none
+        max-md:!rounded-t-2xl max-md:!rounded-b-none max-md:!border-b-0
+        md:rounded-xl md:border-b`}
       style={{
         maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem)',
-        paddingBottom: hasCustomPadding ? undefined : 'calc(1.5rem + env(safe-area-inset-bottom))',
+        // The bottom safe-area gap is non-negotiable on a flush bottom sheet: without
+        // it the action row (Start Fresh / Resume) clips against the home-indicator
+        // edge. Default callers get full 1.5rem + inset. Custom-padding callers own
+        // their interior padding, but we still reserve the inset below it so their
+        // last row clears the edge. Inline paddingBottom wins over className padding.
+        paddingBottom: hasCustomPadding
+          ? 'env(safe-area-inset-bottom)'
+          : 'calc(1.5rem + env(safe-area-inset-bottom))',
       }}
       {...props}
     >
@@ -97,10 +108,10 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, she
       {ctx?.onOpenChange && !hideClose && (
         <button
           onClick={() => ctx.onOpenChange(false)}
-          className="absolute right-2 top-2 h-11 w-11 flex items-center justify-center rounded-full text-ink-muted transition-colors hover:text-ink hover:bg-[var(--glass-edge)] focus:outline-none"
+          className="absolute right-2 top-2 h-11 w-11 flex items-center justify-center rounded-full bg-[var(--glass-edge)] text-ink-secondary transition-colors hover:text-ink hover:bg-[var(--glass-edge)] focus:outline-none"
           aria-label="Close"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       )}
       {children}

@@ -364,16 +364,39 @@ export default function ProgramBuilder() {
       progression: ex.progression || { weight_increment: 5, daily_min_pct: 0.85 },
     }));
 
+    // Cardio/HIIT library workouts store cardio STEPS, not strength sets —
+    // mapping them through normalizedExercises produces garbage rep/set rows and
+    // never populates cardio_sessions. Drop them onto the day as a cardio session
+    // instead (same shape the cardio picker writes).
+    const isCardioSource = sourceWorkout.focus === "cardio" || sourceWorkout.focus === "hiit";
+
     setWorkouts((prev) =>
       prev.map((w) =>
         w.day_index === dayIndex
-          ? {
-              ...w,
-              title: sourceWorkout.title || w.title,
-              focus: sourceWorkout.focus || w.focus,
-              exercises: normalizedExercises,
-              source_workout_id: sourceWorkout.id,
-            }
+          ? isCardioSource
+            ? {
+                ...w,
+                title: sourceWorkout.title || w.title,
+                focus: sourceWorkout.focus || w.focus,
+                cardio_sessions: [
+                  ...(w.cardio_sessions || []),
+                  {
+                    workout_id: sourceWorkout.id,
+                    title: sourceWorkout.title,
+                    exercises: sourceWorkout.exercises || [],
+                    duration_minutes: sourceWorkout.duration_minutes || 30,
+                    time_of_day: "anytime",
+                  },
+                ],
+                source_workout_id: sourceWorkout.id,
+              }
+            : {
+                ...w,
+                title: sourceWorkout.title || w.title,
+                focus: sourceWorkout.focus || w.focus,
+                exercises: normalizedExercises,
+                source_workout_id: sourceWorkout.id,
+              }
           : w
       )
     );
@@ -394,6 +417,7 @@ export default function ProgramBuilder() {
         day_index: w.day_index,
         title: w.title,
         focus: w.focus,
+        notes: w.notes || null,
         exercises: (w.exercises || []).map(enrichExercise),
         cardio_sessions: w.cardio_sessions || [],
         week_number: 1,
@@ -488,8 +512,12 @@ export default function ProgramBuilder() {
                     className="hidden"
                     onChange={handleImportJson}
                   />
+                  {/* Import JSON is a power-user shortcut, not the page's job —
+                      keep it a quiet `dim` utility so it sits in the same chrome
+                      tier as Cancel (X) and never competes with naming the
+                      program. One muted cluster, not two action groups. */}
                   <Button
-                    variant="outline"
+                    variant="dim"
                     size="sm"
                     onClick={() => importFileRef.current?.click()}
                     className="min-h-[44px]"
@@ -590,15 +618,18 @@ export default function ProgramBuilder() {
         </AnimatePresence>
 
         {/* Navigation buttons — a true bottom-anchored bar above the floating
-            mobile dock, not a floated guess. Sits exactly one --dock-clearance
-            above the safe-area inset (same token the dock + Layout main padding
-            share), so it can never occlude Step-1 fields. The scroll container
-            reserves matching dock clearance below (see the motion.div pb above)
-            so Description + Tags clear both this bar and the dock at 390px. On
-            desktop it un-sticks and goes transparent. */}
+            mobile dock, not a floated guess. Sits on the shared
+            --floating-chrome-bottom token (= dock's full painted footprint +
+            safe-area + a 12px gap), the one clearance every floated action bar
+            shares, so it can never occlude Step-1 fields. (Previously anchored on
+            --dock-clearance + env(safe-area-inset-bottom), which double-counted
+            the safe-area inset that --dock-clearance already folds in.) The
+            scroll container reserves matching dock clearance below (see the
+            motion.div pb above) so Description + Tags clear both this bar and the
+            dock at 390px. On desktop it un-sticks and goes transparent. */}
         <div
           className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 glass-elevated md:bg-transparent md:shadow-none md:border-0"
-          style={{ bottom: "calc(var(--dock-clearance) + env(safe-area-inset-bottom))" }}
+          style={{ bottom: "var(--floating-chrome-bottom)" }}
         >
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
@@ -611,7 +642,15 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={next}
               disabled={!canProceed()}
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
+              // Disabled coral falls back to charcoal-surface + faint ink (shared
+              // button rule). On its own that reads as dead chrome and fails
+              // contrast, so override the disabled state with secondary ink (72%,
+              // clears 4.5:1) over a faint brand tint with a clearly visible brand
+              // outline (clears 3:1) — same "locked, here's where forward is"
+              // pattern as coralGhost, now legible. The inline helper under Program
+              // Name names WHY it's locked. Page classes come last in the Button's
+              // className string so these win over the shared volt disabled rule.
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px] disabled:border disabled:border-brand/60 disabled:bg-brand/[0.08] disabled:text-ink-secondary"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />

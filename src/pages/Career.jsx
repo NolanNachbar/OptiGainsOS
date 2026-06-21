@@ -302,7 +302,7 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="mt-8">
+        <div className="flex items-center justify-center min-h-[50vh] md:min-h-0 md:mt-8">
           <div className="w-full py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
             <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No applications yet.</p>

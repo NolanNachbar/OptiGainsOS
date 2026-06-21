@@ -27,7 +27,7 @@ export default function Train() {
   const handleTabChange = (tab) => setSearchParams({ tab });
 
   return (
-    <div className="bg-charcoal min-h-screen text-ink">
+    <div className="bg-charcoal min-h-full text-ink">
       <SubTabs tabs={TABS} active={activeTab} onChange={handleTabChange} />
       <div className="max-w-5xl mx-auto py-2 px-4 lg:px-0">
         {activeTab === "schedule" && <WeeklySchedule />}

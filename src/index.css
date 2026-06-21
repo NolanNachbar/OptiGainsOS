@@ -5,27 +5,28 @@
 @tailwind utilities;
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTIGAINS OS — "VAPOR × MACRO" DESIGN SYSTEM
-   Frosted glass over a dark ambient field. Manrope everywhere.
+   OPTIGAINS OS — "CLEAN" DESIGN SYSTEM
+   Flat, dark, data-forward. Numbers first; everything else gets quiet.
 
-   Identity:   #0A0D12 field · frosted-glass rounded cards · hue-coded data
-               (each datum owns one hue) · coral is THE action color ·
-               floating liquid-glass dock · tabular numerals.
-   Materials:  every card is translucent glass (white 5%) with an inset top
-               highlight and a 0.5px hairline edge. The dock/sidebar chrome
-               is heavier liquid glass with backdrop blur.
+   Identity:   #0F1216 field · solid charcoal cards · hue-coded data (each
+               datum owns one hue) · teal is THE action color · flat dock ·
+               Manrope everywhere · tabular numerals.
+   Materials:  cards are SOLID charcoal, each a step lighter as it rises,
+               lifted by soft shadow. No translucency, no blur, no inset
+               specular highlight, no ambient gradient — depth is the surface
+               tone plus shadow.
    Motion:     one easing (cubic-bezier(.2,.7,.3,1)), 180–320ms, entrances
                rise 8px; nothing moves without communicating state.
    ══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── The field ──────────────────────────────────────────────────────── */
-  --color-bg:          #0A0D12;
-  --color-surface:     #11151C;   /* solid stand-in ≈ white 5% over field */
-  --color-surface-2:   #161B23;
-  --color-elevated:    #1C222C;
-  --color-border:      rgba(255, 255, 255, 0.10);
-  --color-border-soft: rgba(255, 255, 255, 0.08);
+  --color-bg:          #0F1216;
+  --color-surface:     #181C22;   /* solid charcoal card (level 1) */
+  --color-surface-2:   #1F242B;   /* raised card (level 2) */
+  --color-elevated:    #23282F;   /* float (level 3) */
+  --color-border:      #272D35;
+  --color-border-soft: #20252D;
   /* The single "empty track" material — the unfilled portion of every
      progress / segment / ring track (readiness + macro bars, NumberPicker
      ticks, calorie-ring stroke) AND the base fill of every skeleton /
@@ -43,13 +44,13 @@
   --text-muted:     rgba(242, 244, 247, 0.50);
   --text-faint:     rgba(242, 244, 247, 0.38);
 
-  /* ── Coral — THE action color ───────────────────────────────────────── */
-  --color-brand:     #EF7368;
-  --color-brand-rgb: 239 115 104;
-  --brand-bright:    #F2937B;   /* gradient top / hover */
-  --brand-deep:      #C25247;   /* pressed / borders */
-  --color-action-dark: #2A1310; /* ink on coral buttons */
-  --brand-tint:      #FFD9C9;   /* active tab ink on coral pill */
+  /* ── Teal — THE action color ────────────────────────────────────────── */
+  --color-brand:     #19C8A6;
+  --color-brand-rgb: 25 200 166;
+  --brand-bright:    #1ED9B4;   /* hover */
+  --brand-deep:      #12A589;   /* pressed / borders */
+  --color-action-dark: #05231D; /* dark ink on the teal action button */
+  --brand-tint:      #CFF7EE;   /* active tab ink on teal pill */
 
   /* ── Hue-coded data (each datum owns one — never decoration) ────────── */
   --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity */
@@ -59,7 +60,11 @@
   --hue-green:  #7BC96F;  --hue-green-rgb: 123 201 111;  /* body battery · done states */
   --hue-blue:   #5BA8F5;  --hue-blue-rgb: 91 168 245;    /* carbs · swim · cardio */
   --hue-gold:   #F2B36B;  --hue-gold-rgb: 242 179 107;   /* kcal · deadline */
-  --hue-yellow: #F4C95D;  --hue-yellow-rgb: 244 201 93;  /* fat */
+  /* Fat sits one slot from kcal-gold on every macro surface, so it must read as
+     an unmistakably DIFFERENT hue, not a paler gold. Shifted to a cooler,
+     greener chartreuse-yellow (less amber/orange) so fat and calories never
+     collide. */
+  --hue-yellow: #E8D44A;  --hue-yellow-rgb: 232 212 74;  /* fat */
 
   /* ── Physiological spectrum (biometrics ONLY) ───────────────────────── */
   --ok:   #7BC96F;  --ok-rgb:   123 201 111;
@@ -118,11 +123,14 @@
   --viz-5: #5B6577;  /* slate — context series */
 
   /* ── Glass material parameters ──────────────────────────────────────── */
-  --glass-bg:          rgba(255, 255, 255, 0.05);
-  --glass-inset-bg:    rgba(255, 255, 255, 0.04);
-  --glass-edge:        rgba(255, 255, 255, 0.10);
-  --glass-edge-strong: rgba(255, 255, 255, 0.13);
-  --glass-specular:    rgba(255, 255, 255, 0.12);
+  /* CLEAN: surfaces are SOLID, not translucent; specular is off (no glass
+     highlight). The .glass* class names are retained so callers don't churn,
+     but they now paint solid charcoal. */
+  --glass-bg:          #181C22;
+  --glass-inset-bg:    #14181D;
+  --glass-edge:        #272D35;
+  --glass-edge-strong: #333A44;
+  --glass-specular:    rgba(255, 255, 255, 0);
   /* Floating-chrome tint (dock, sticky headers, dropdowns, chart tooltips —
      everything on .glass-elevated). Raised from 0.18 → 0.55 because at the
      prior alpha page content read clearly THROUGH the floating dock (Fuel
@@ -130,14 +138,14 @@
      beneath it, not leave it half-legible. Paired with a stronger blur on
      .glass-elevated. Still translucent (the liquid-glass identity), just
      opaque enough to win over busy content. */
-  --dock-tint:         rgba(28, 32, 41, 0.55);
+  --dock-tint:         #1F242B;
   /* Sheet/dialog material — heavier & near-opaque so busy page content
      never bleeds through behind a form (dock-tint is too transparent).
      Raised to 0.98 so bright/coral page content can't register through
      the translucent sheet (SYS-07). */
-  --sheet-bg:          rgba(20, 24, 31, 0.98);
-  --shadow-1: 0 10px 28px rgba(0, 0, 0, 0.32);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
+  --sheet-bg:          #181C22;
+  --shadow-1: 0 6px 18px rgba(0, 0, 0, 0.42);
+  --shadow-2: 0 16px 40px rgba(0, 0, 0, 0.52);
 
   /* THE one easing. RULE: every transition-colors / transition-transform /
      transition-all (and any bespoke `transition:`) MUST carry an explicit
@@ -167,7 +175,29 @@
      use --dock-total-height instead — several sticky action bars still reference
      --dock-clearance and read slightly crowded against the dock; align them to
      --dock-total-height to fix the flush-against-dock crowding everywhere. */
-  --dock-clearance: 80px;
+  /* Aligned to the dock's full painted footprint (--dock-total-height) plus the
+     bottom safe-area inset. The previous flat 80px under-measured the rendered
+     ~92px dock incl. safe-area, so any page padding to --dock-clearance clipped
+     its last content under the dock. One token now clears the dock consistently
+     so pages no longer each patch their own padding. */
+  --dock-clearance: calc(var(--dock-total-height) + env(safe-area-inset-bottom));
+  /* Full floated footprint of the global FAB (FloatingActionButton): its fixed
+     bottom offset (5rem + safe-area) + 48px body + a breathing band above it.
+     Single-sources the clearance content must reserve so the last in-flow card
+     ends above the FAB instead of under its teal '+' — Layout's <main> padding
+     references this rather than recomputing the offset + body by hand.
+     The breathing band is 64px (NOT 24px/48px): the budget must clear the FAB
+     body with real daylight, not graze it. At 24px the last card's bottom-right
+     corner (e.g. Today's VITALS/BATT tile) still touched the FAB on short pages,
+     and at 48px the corner still grazed the '+' when the Vitals card was the
+     last in-flow surface (short day, TodayActions empty) — so the band is the
+     FAB body height (48px) plus a 16px gutter, guaranteeing the card's bottom
+     ends above the FAB's TOP (FAB top sits 5rem + 48px above the bottom edge)
+     on any short surface. This makes the clearance page-agnostic so no screen
+     needs a per-tile pr-x/inset mitigation to keep a corner out from under the
+     '+'. MUST track FloatingActionButton.jsx's offset (bottom: 5rem) + body
+     (48px); if the FAB moves or resizes, update both here and there. */
+  --fab-clearance: calc(5rem + 48px + 64px + env(safe-area-inset-bottom));
   /* Full painted footprint of the floating dock measured from the bottom
      viewport edge: the 12px bottom gap + the ≈56px dock body + a 12px
      breathing gap above it = ~80px. Bottom-anchored OVERLAYS that must sit
@@ -176,9 +206,35 @@
      measures clearance for in-flow content not floated chrome) reference this so
      their bottom edge clears the entire dock instead of overlapping it. */
   --dock-total-height: calc(12px + 56px + 12px);
+  /* Bottom offset for FLOATING ACTION BARS that must sit fully above the dock
+     (sticky save bars, the workout-logging bottom action bar, action footers).
+     One shared clearance = the dock's full painted footprint
+     (--dock-total-height) + the bottom safe-area inset + a 12px breathing gap,
+     so a floated bar reads as a distinct surface above the dock instead of
+     grazing it. Per the note on --dock-clearance above, those bars previously
+     anchored on --dock-clearance (an IN-FLOW padding token) and each hand-added
+     their own gap, reading slightly crowded; reference this single token so the
+     gap above the dock never drifts bar-to-bar. NOTE: --dock-clearance already
+     folds in env(safe-area-inset-bottom), so a bar moving from
+     `calc(var(--dock-clearance) + 12px)` to this token must NOT re-add the inset
+     (it's included here) or the safe-area is double-counted. */
+  --floating-chrome-bottom: calc(var(--dock-total-height) + env(safe-area-inset-bottom) + 12px);
 
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: 'Manrope', system-ui, sans-serif;
+}
+
+/* Bottom clearance for Layout's main content column. The active value (dock-
+   only vs full FAB footprint) is fed in via --content-pb on the element; this
+   rule applies it as a real stylesheet declaration (not an inline style) so the
+   lg override below can zero it. The old approach paired an inline paddingBottom
+   with a `lg:!pb-0` class, but inline styles always beat !important classes, so
+   desktop kept the mobile dock clearance as dead space. Single-sourcing the
+   padding-bottom in CSS (driven by the --content-pb var) lets lg legitimately
+   collapse it to 0. */
+.content-bottom-clearance { padding-bottom: var(--content-pb, 0px); }
+@media (min-width: 1024px) {
+  .content-bottom-clearance { padding-bottom: 0; }
 }
 
 /* ── Light theme — same hues, paper field (dark mode is the hero) ──────── */
@@ -196,12 +252,12 @@ html.light {
   --text-muted:     rgba(23, 27, 34, 0.55);
   --text-faint:     rgba(23, 27, 34, 0.40);
 
-  --color-brand:     #E05348;
-  --color-brand-rgb: 224 83 72;
-  --brand-bright:    #EF7368;
-  --brand-deep:      #B03A31;
-  --color-action-dark: #FFF6F2;
-  --brand-tint:      #7A2118;
+  --color-brand:     #0E8C76;
+  --color-brand-rgb: 14 140 118;
+  --brand-bright:    #12A589;
+  --brand-deep:      #0A6B5B;
+  --color-action-dark: #EAFBF5;
+  --brand-tint:      #0A3A30;
 
   --hue-teal:   #14A89D;  --hue-teal-rgb: 20 168 157;
   --hue-teal-2: #109488;
@@ -210,7 +266,9 @@ html.light {
   --hue-green:  #4D9A41;  --hue-green-rgb: 77 154 65;
   --hue-blue:   #2F6FD0;  --hue-blue-rgb: 47 111 208;
   --hue-gold:   #C07F2A;  --hue-gold-rgb: 192 127 42;
-  --hue-yellow: #B8902B;  --hue-yellow-rgb: 184 144 43;
+  /* Light-theme fat — cooler/greener olive-yellow, pulled clear of kcal-gold
+     (#C07F2A) which the two were nearly sharing before (see :root rationale). */
+  --hue-yellow: #9A9A1E;  --hue-yellow-rgb: 154 154 30;
 
   --ok:   #4D9A41;  --ok-rgb:   77 154 65;
   --warn: #C07F2A;  --warn-rgb: 192 127 42;
@@ -358,17 +416,18 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 .text-ink       { color: var(--text-primary); }
 
 /* ══ Materials ════════════════════════════════════════════════════════════
-   One material: frosted glass. Cards are translucent white over the ambient
-   field with an inset top highlight; chrome (dock, sidebar, sheets) is
-   heavier liquid glass with backdrop blur.
+   CLEAN: one material, solid charcoal. Cards are opaque, lifted by soft
+   shadow; each elevation step is a tone lighter. No translucency, no blur,
+   no inset specular highlight. The .glass* names are retained so callers
+   don't churn — they paint solid surfaces now.
    ═══════════════════════════════════════════════════════════════════════ */
 @layer components {
-  /* Card glass — the og-glass recipe. Every data card. */
+  /* Card surface — every data card. Solid, hairline border, soft shadow. */
   .surface, .surface-2, .tile, .glass {
     background: var(--glass-bg);
-    border: 0.5px solid var(--glass-edge);
-    border-radius: 20px;
-    box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
+    border: 1px solid var(--glass-edge);
+    border-radius: 16px;
+    box-shadow: var(--shadow-1);
   }
   .tile { transition: background .2s var(--ease), border-color .2s var(--ease); }
   .tile-interactive:hover {
@@ -395,32 +454,34 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
-  /* Liquid-glass chrome — dock, sidebar, sheets, floating controls. */
+  /* Floating chrome — dock, sidebar, sheets, floating controls. Solid and
+     opaque (CLEAN: no backdrop blur); it sits ABOVE content on shadow alone. */
   .glass-elevated {
     background: var(--dock-tint);
-    /* Blur raised 14px → 20px so content beneath the dock / sticky headers /
-       dropdowns is frosted into the background instead of staying readable
-       through the chrome (SYS dock-material finding). */
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 0.5px solid var(--glass-edge-strong);
-    box-shadow: inset 1.5px 1.5px 1px var(--glass-specular), var(--shadow-2);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2);
   }
-  /* Sheet/dialog chrome — heavier liquid glass, near-opaque so forms stay
-     legible over busy pages. Used by the bottom-sheet dialog primitive. */
+  /* A glass-elevated surface that sits flush DIRECTLY below the page header
+     (e.g. the logging top bar at top: var(--layout-header-height)) would show a
+     faint horizontal seam where its top edge highlight meets the header's
+     bottom. This modifier drops that top edge so two co-stacked glass surfaces
+     read as one continuous band instead of each reinventing the seam fix. */
+  .glass-elevated--substacked {
+    border-top: 0;
+  }
+  /* Sheet/dialog chrome — solid charcoal panel, lifted by the float shadow.
+     Used by the bottom-sheet dialog primitive. */
   .glass-sheet {
     background: var(--sheet-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 0.5px solid var(--glass-edge-strong);
-    box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-2);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2);
   }
+  /* Brand-tinted surface — the one moment a card carries the action color.
+     Flat teal wash, no blur. */
   .glass-brand {
-    background: rgba(var(--color-brand-rgb) / 0.14);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-    border: 0.5px solid rgba(var(--color-brand-rgb) / 0.30);
-    box-shadow: inset 0 1px 0 var(--glass-specular), 0 8px 24px rgba(var(--color-brand-rgb) / 0.12);
+    background: rgba(var(--color-brand-rgb) / 0.13);
+    border: 1px solid rgba(var(--color-brand-rgb) / 0.30);
+    box-shadow: var(--shadow-1);
   }
   .glass-interactive {
     transition: border-color .25s var(--ease), background .25s var(--ease), transform .25s var(--ease);
@@ -430,16 +491,17 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     border-color: var(--glass-edge-strong);
   }
 
-  /* The coral CTA — og-cta. */
+  /* The teal action CTA — og-cta. Flat solid fill, no gradient, no inset
+     highlight (CLEAN). Class name kept so callers don't churn. */
   .cta-coral {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 48px; border-radius: 16px; white-space: nowrap;
+    height: 48px; border-radius: 14px; white-space: nowrap;
     font-size: 15px; font-weight: 800; color: var(--color-action-dark);
-    background: linear-gradient(135deg, var(--brand-bright) 0%, var(--color-brand) 100%);
-    box-shadow: 0 8px 22px rgba(var(--color-brand-rgb) / 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    transition: transform .15s var(--ease), box-shadow .15s var(--ease);
+    background: var(--color-brand);
+    box-shadow: 0 2px 8px rgba(var(--color-brand-rgb) / 0.30);
+    transition: transform .15s var(--ease), background .15s var(--ease);
   }
-  .cta-coral:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(var(--color-brand-rgb) / 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+  .cta-coral:hover { transform: translateY(-1px); background: var(--brand-bright); }
   .cta-coral:active { transform: none; }
 
   /* Ghost action — og-cta-ghost. */
@@ -562,23 +624,8 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 }
 @keyframes ringFill { from { stroke-dashoffset: var(--ring-circ); } }
 
-/* The ambient field — og-amb. Teal breathes in from the top right, coral
-   rises from below. Decorative only; glass refracts it. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(440px 320px at 90% -8%, rgba(78, 205, 196, 0.10), transparent 70%),
-    radial-gradient(560px 440px at 50% 118%, rgba(239, 115, 104, 0.08), transparent 70%);
-}
-html.light body::before {
-  background:
-    radial-gradient(440px 320px at 90% -8%, rgba(20, 168, 157, 0.07), transparent 70%),
-    radial-gradient(560px 440px at 50% 118%, rgba(224, 83, 72, 0.05), transparent 70%);
-}
+/* CLEAN: the field is flat. No ambient gradient — depth comes from surface
+   tone and shadow, never a glow behind glass. */
 #root { position: relative; z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {

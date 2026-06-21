@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
@@ -256,7 +256,42 @@ export default function WorkoutDetail() {
           setWorkoutNotFound(true);
         }
       } else if (!isProgramSource) {
-        setWorkoutNotFound(true);
+        // No id in the URL: resolve today's prescribed session instead of
+        // dead-ending. Prefer a workout scheduled for today, otherwise fall
+        // back to the most recently created workout. Only show the empty state
+        // when the athlete genuinely has no saved workouts.
+        try {
+          const today = format(new Date(), "yyyy-MM-dd");
+          let resolved = null;
+
+          const scheduled = await db.entities.WorkoutSchedule.filter({
+            scheduled_date: today,
+            created_by: user.id,
+          });
+          const scheduledWorkoutId = scheduled?.[0]?.workout_id;
+          if (scheduledWorkoutId) {
+            const scheduledWorkouts = await db.entities.Workout.filter({
+              id: scheduledWorkoutId,
+              created_by: user.id,
+            });
+            resolved = scheduledWorkouts[0] || null;
+          }
+
+          if (!resolved) {
+            const allWorkouts = await db.entities.Workout.filter({ created_by: user.id });
+            resolved = [...allWorkouts].sort(
+              (a, b) => new Date(b.created_date || b.created_at || 0) - new Date(a.created_date || a.created_at || 0)
+            )[0] || null;
+          }
+
+          if (resolved) {
+            setWorkout(resolved);
+          } else {
+            setWorkoutNotFound(true);
+          }
+        } catch {
+          setWorkoutNotFound(true);
+        }
       }
     };
     loadWorkout();
@@ -586,6 +621,14 @@ export default function WorkoutDetail() {
         ? Math.round((parseInt(rangeMatch[1], 10) + parseInt(rangeMatch[2], 10)) / 2)
         : (parseInt(repsRaw, 10) || ex.sets[0]?.reps || 10);
 
+      // Autofill the replacement's load from its own history (scaled to the new
+      // rep target), mirroring the initial-load seeding. Was hardcoded to 0, so
+      // swapping blanked the weight even when the new movement had past logs.
+      const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise.name);
+      const seedWeight = lastPerf?.lastWeight && lastPerf?.lastReps
+        ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
+        : lastPerf?.lastWeight || 0;
+
       return {
         ...ex,
         name: newExercise.name,
@@ -595,7 +638,7 @@ export default function WorkoutDetail() {
           ...s,
           set_number: i + 1,
           reps: newReps,
-          weight: 0,
+          weight: seedWeight,
           completed: false,
           rpe: null,
           set_type: 'working',
@@ -671,6 +714,15 @@ export default function WorkoutDetail() {
     return exerciseLogs.some(ex => ex.sets?.some(s => !s.completed));
   };
 
+  // Total sets the athlete has actually logged (marked complete). Gates the
+  // logging header's coral Finish + live elapsed clock so the bar stays calm
+  // until there's real progress — TASTE calm-until-progress, same threshold as
+  // QuickWorkout's canFinish.
+  const loggedSetsCount = exerciseLogs.reduce(
+    (n, ex) => n + (ex.sets?.filter(s => s.completed).length || 0),
+    0
+  );
+
   const markAllSetsComplete = () => {
     setExerciseLogs(prev => prev.map(ex => ({
       ...ex,
@@ -740,7 +792,7 @@ export default function WorkoutDetail() {
                 <p className="text-[13px] font-semibold text-ink-muted mb-6">
                   This workout may have been deleted, or the link is no longer valid.
                 </p>
-                <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
+                <Button variant="volt" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Workouts
                 </Button>
@@ -766,6 +818,7 @@ export default function WorkoutDetail() {
           onFinish={handleSaveWorkoutLog}
           isSaving={saveWorkoutLogMutation.isPending}
           startTime={startTime}
+          canFinish={loggedSetsCount > 0}
           restTimer={restTimer}
           restDuration={restDuration}
           onSkipRest={skipRestTimer}
@@ -773,7 +826,7 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-32 lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] pb-32 lg:pb-6 flex flex-col'}`}>
+      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] pb-32 lg:pb-6 flex flex-col'}`}>
         <div className="lg:flex lg:items-start lg:gap-6 w-full">
         <div className="flex-1 min-w-0 rise-in">
         {!isLogging && (
@@ -897,20 +950,22 @@ export default function WorkoutDetail() {
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
-            {/* Pre-workout Notes */}
-            <Card>
-              <CardHeader className="pt-4 pb-2">
-                <CardTitle className="section-label">Pre-workout Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Pre-workout Notes — collapsed by default so the first exercise
+                stays above the fold. Auto-opens if notes already exist. */}
+            <details open={!!preWorkoutNotes} className="glass-inset group">
+              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+                <span className="section-label">Pre-workout Notes</span>
+                <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="px-4 pb-3">
                 <Textarea
                   value={preWorkoutNotes}
                   onChange={(e) => setPreWorkoutNotes(e.target.value)}
                   placeholder="Anything notable going in? Energy, soreness, focus..."
                   className="bg-transparent border-none focus-visible:ring-0 px-0 min-h-[60px] resize-none text-base"
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </details>
 
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
@@ -934,7 +989,14 @@ export default function WorkoutDetail() {
               const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
               const targets = programEx ? progressionTargetsMap[programEx.name] : null;
               return (
-                <div key={exerciseIndex} data-tutorial={exerciseIndex === 0 ? "exercise-card" : undefined}>
+                <div
+                  key={exerciseIndex}
+                  data-tutorial={exerciseIndex === 0 ? "exercise-card" : undefined}
+                  // Scroll the card (and the active set row it contains) clear of
+                  // the floating Cancel/Finish bar when focus/scrollIntoView lands
+                  // here, matching the bar's measured footprint.
+                  className="scroll-mb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:scroll-mb-0"
+                >
                   <ExerciseCard
                     exercise={exerciseLog}
                     exerciseIndex={exerciseIndex}

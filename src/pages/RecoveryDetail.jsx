@@ -42,6 +42,10 @@ const CHART_TOOLTIP_ITEM = {
 // One height for every chart-tab body — plotted OR empty — so the card holds a
 // fixed footprint and never jumps when you switch HRV / Steps / Sleep tabs.
 const CHART_BODY_H = "h-[170px]";
+// Recharts renders the x-axis tick labels flush against the bottom of the plot
+// area, so the body needs explicit bottom padding to keep "Jun 9 … Jun 20" off
+// the card edge (and, for the bottom-most card, clear of the floating dock).
+const CHART_BODY_PAD = "pt-2 pb-4";
 
 export default function RecoveryDetail() {
   const { user } = useAuth();
@@ -69,10 +73,11 @@ export default function RecoveryDetail() {
   }, [prescription, recoveryMetrics]);
   const acwrSource = prescription?.acwr != null ? "engine load model" : "step proxy";
 
-  // ACWR is a biometric, so the physiological spectrum is the correct hue here:
-  // ok in the 0.8–1.3 lowest-risk zone, warn while elevated (1.3–1.5), bad once
-  // it crosses the 1.5 overtraining ceiling. Drives both the number and the
-  // gauge pin so color stays a single source of truth.
+  // ACWR is training load, which teal owns (readiness · intensity). The healthy
+  // 0.8–1.3 lowest-risk zone reads teal — NOT green, since green owns
+  // body-battery/done — and only degrades to warn while elevated (1.3–1.5) and
+  // bad once it crosses the 1.5 overtraining ceiling. Drives both the number and
+  // the gauge pin so color stays a single source of truth.
   const acwrSpectrum =
     acwr == null ? null
     : acwr > 1.5 ? "bad"
@@ -82,12 +87,12 @@ export default function RecoveryDetail() {
     acwrSpectrum == null ? "text-ink-muted"
     : acwrSpectrum === "bad" ? "text-bad"
     : acwrSpectrum === "warn" ? "text-warn"
-    : "text-ok";
+    : "text-teal";
   const acwrPinVar =
     acwrSpectrum == null ? "var(--text-faint)"
     : acwrSpectrum === "bad" ? "var(--bad)"
     : acwrSpectrum === "warn" ? "var(--warn)"
-    : "var(--ok)";
+    : "var(--hue-teal)";
 
   // Prefer the engine's readiness score (athlete_state.recovery.score) so this
   // page matches AthleteState; fall back to the local formula only when the
@@ -140,6 +145,31 @@ export default function RecoveryDetail() {
     { id: "sleep", label: "Sleep", icon: Moon },
   ];
   const firstWithData = hasHrv ? "hrv" : hasSteps ? "steps" : "sleep";
+
+  // Numbers-first headline for the active chart: the most-recent value in the
+  // plotted window, its unit, and the date it was recorded — so the card leads
+  // with a number (like the cards above) instead of a bare sparkline.
+  const lastWith = (key) => {
+    for (let i = chartData.length - 1; i >= 0; i--) {
+      const v = chartData[i][key];
+      if (v != null && (key !== "displaySleep" || v > 0)) return chartData[i];
+    }
+    return null;
+  };
+  const chartMeta = {
+    hrv: (() => {
+      const d = lastWith("displayHrv");
+      return { value: d ? Math.round(d.displayHrv).toLocaleString() : "—", unit: "ms", label: "Latest HRV", date: d?.formattedDate };
+    })(),
+    steps: (() => {
+      const d = lastWith("displaySteps");
+      return { value: d ? Math.round(d.displaySteps).toLocaleString() : "—", unit: "steps", label: "Latest Steps", date: d?.formattedDate };
+    })(),
+    sleep: (() => {
+      const d = lastWith("displaySleep");
+      return { value: d ? d.displaySleep.toFixed(1) : "—", unit: "h", label: "Latest Sleep", date: d?.formattedDate };
+    })(),
+  };
   // `activeChart` is null until the user explicitly picks a tab. While it's
   // null we follow firstWithData, so once metrics finish loading the card lands
   // on the first tab that actually has data (HRV) instead of being frozen on
@@ -158,7 +188,7 @@ export default function RecoveryDetail() {
   );
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink">
+    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))] lg:pb-0">
       <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -209,14 +239,26 @@ export default function RecoveryDetail() {
                 </div>
                 <div className="w-full md:flex-1">
                   {/* ACWR band gauge — neutral track, the 0.8–1.3 lowest-risk
-                      zone is a filled ink reference region. The pin is the datum,
-                      so it carries the physiological spectrum (ok/warn/bad) — ACWR
-                      is a biometric, matching the number's color and the row below. */}
+                      zone is a visible teal-tinted reference region so the
+                      "shaded zone" the caption names is actually drawn. Boundary
+                      ticks at 0.8/1.3 sit on the track and line up with the scale
+                      labels below, tying the pin's position to the numbers. The
+                      pin is the datum, so it carries the physiological spectrum
+                      (ok/warn/bad) — ACWR is a biometric, matching the number's
+                      color and the row below. */}
                   <div className="relative h-[10px] rounded-full bg-track">
                     <span
-                      className="absolute inset-y-0 rounded-sm bg-ink/[0.10]"
+                      className="absolute inset-y-0 rounded-sm bg-teal/[0.18]"
                       style={{ left: `${((0.8 - 0.5) / 1.1) * 100}%`, width: `${((1.3 - 0.8) / 1.1) * 100}%` }}
                     />
+                    {/* Band-boundary ticks anchor the scale labels to the track */}
+                    {[0.8, 1.3].map((t) => (
+                      <span
+                        key={t}
+                        className="absolute inset-y-0 w-px bg-ink-faint"
+                        style={{ left: `${((t - 0.5) / 1.1) * 100}%` }}
+                      />
+                    ))}
                     {acwr != null && (
                       <span
                         className="absolute -top-[5px] w-[6px] h-[20px] rounded-full transition-[left] duration-300 ease-[var(--ease)]"
@@ -240,7 +282,7 @@ export default function RecoveryDetail() {
                 className="text-xs text-ink-muted mt-3 leading-relaxed"
                 title={`Source: ${acwrSource}`}
               >
-                7-day load vs your 28-day average; the shaded zone is lowest-risk.
+                7-day load vs your 28-day average; the shaded 0.8&ndash;1.3 zone is lowest-risk.
               </p>
               {acwr != null && acwr > 1.3 && (
                 <div
@@ -331,9 +373,27 @@ export default function RecoveryDetail() {
               </div>
             </div>
 
+            {/* Numbers-first headline so the trend card leads with the current
+                value + unit (matching the readiness/ACWR cards above) instead of
+                reading as a bare sparkline. */}
+            {hasData[resolvedChart] && (
+              <div className="px-4 pt-3 flex items-baseline justify-between gap-2">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-technical text-3xl font-bold tabular-nums text-ink">{chartMeta[resolvedChart].value}</span>
+                  <span className="section-label">{chartMeta[resolvedChart].unit}</span>
+                </div>
+                <div className="text-right">
+                  <div className="section-label">{chartMeta[resolvedChart].label}</div>
+                  {chartMeta[resolvedChart].date && (
+                    <div className="text-xs text-ink-muted tabular-nums">{chartMeta[resolvedChart].date}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* HRV Trend */}
             {resolvedChart === "hrv" && (
-              <CardContent className={`${CHART_BODY_H} pt-4`}>
+              <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasHrv ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No HRV data yet. Sync your wearable.
@@ -373,7 +433,7 @@ export default function RecoveryDetail() {
 
             {/* Step Count */}
             {resolvedChart === "steps" && (
-              <CardContent className={`${CHART_BODY_H} pt-4`}>
+              <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasSteps ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No step data yet. Sync your wearable.
@@ -408,7 +468,7 @@ export default function RecoveryDetail() {
 
             {/* Sleep Duration */}
             {resolvedChart === "sleep" && (
-              <CardContent className={`${CHART_BODY_H} pt-4`}>
+              <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasSleep ? (
                   <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
                     <Info className="w-4 h-4 shrink-0" /> No sleep duration data yet. Sync your wearable to chart nightly hours.

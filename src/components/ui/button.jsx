@@ -14,15 +14,18 @@ const Button = React.forwardRef(({
   // gradient; everything secondary is frosted-glass ghost material.
   // Disabled coral must stop reading as a live CTA: drop the gradient, neon
   // shadow + specular and fall back to a neutral charcoal-surface fill with
-  // faint ink so the disabled state is unmistakably inert.
-  // The coral glow is declared ONCE via the inline tokened box-shadow (drop +
-  // inset specular). Do NOT re-add `shadow-neon` here: it carries the same
-  // 0_8px_22px brand glow, and stacking it under the inline declaration doubled
-  // the halo into a soft bleed on large CTAs (e.g. CreateWorkout Save, lg).
+  // muted ink (text-ink-muted clears ≥3:1 on charcoal-surface; text-ink-faint
+  // measured ~1.77:1 = effectively invisible) so the disabled state is
+  // unmistakably inert yet still legible.
+  // Flat coral action — the Clean system bans ambient color glow ("Flat teal
+  // fill ... everything else is neutral"). The lift is a NEUTRAL black drop
+  // shadow on the elevation scale (matches --shadow-md), never a colored brand
+  // bloom. Keep only the inset specular for material sheen. Do NOT re-add
+  // `shadow-neon` or any rgba(brand) drop shadow here — that is the halo.
   const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
     "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
-    "[box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)] " +
-    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100";
+    "[box-shadow:0_6px_18px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.4)] " +
+    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-muted disabled:opacity-100";
   // Token-driven glass so every secondary control re-tunes under html.light.
   // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
   // instead of raw white-alpha (which only reads on the dark field).
@@ -32,14 +35,12 @@ const Button = React.forwardRef(({
   // must still read coral (never for Cancel/Back/neutral). Opt in explicitly —
   // plain `ghost` is neutral glass so accidental coral decoration can't drift in.
   // Mirror the solid coral's inert disabled treatment so a disabled coralGhost
-  // (e.g. QuickCapture empty-state Save) stops reading as a live CTA: neutral
-  // charcoal-surface fill, faint ink, no coral tint at full opacity.
-  // Disabled coralGhost keeps a faint brand/20 border (instead of going fully
-  // neutral) so an empty-state CTA's location stays legible — the user can see
-  // WHERE the action will appear once it's enabled, rather than the affordance
-  // vanishing into the charcoal surface.
+  // (e.g. QuickCapture empty-state Capture) stops reading as a live CTA. The
+  // disabled state drops ALL coral tint (fill, ink, border) and falls back to a
+  // neutral charcoal-surface fill with faint ink + a neutral charcoal border, so
+  // an unarmed control is unmistakably inert and never twins the primary action.
   const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
-    "disabled:bg-charcoal-surface disabled:text-ink-faint disabled:opacity-100 disabled:bg-none disabled:shadow-none disabled:border-brand/20";
+    "disabled:bg-none disabled:bg-charcoal-surface disabled:text-ink-muted disabled:border-charcoal-border disabled:shadow-none disabled:opacity-100";
 
   // Destructive — `bad` is the canonical destructive token (blessed in
   // index.css, SYS-02). RESTING prominence is raised to coral-weight so a

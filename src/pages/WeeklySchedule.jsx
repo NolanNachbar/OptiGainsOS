@@ -277,7 +277,10 @@ export default function WeeklySchedule() {
       {/* Week nav */}
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
-          onClick={() => setWeekStart(w => subWeeks(w, 1))}
+          // Move the selected day with the week so the highlighted row, the
+          // detail card, and the "today's session" CTA all stay inside the
+          // visible week (they were independent state, so paging desynced them).
+          onClick={() => { setWeekStart(w => subWeeks(w, 1)); setSelectedDay(d => subWeeks(d, 1)); setShowCompleted(false); }}
           aria-label="Previous week"
           className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
@@ -287,7 +290,7 @@ export default function WeeklySchedule() {
           {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
-          onClick={() => setWeekStart(w => addWeeks(w, 1))}
+          onClick={() => { setWeekStart(w => addWeeks(w, 1)); setSelectedDay(d => addWeeks(d, 1)); setShowCompleted(false); }}
           aria-label="Next week"
           className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
@@ -341,12 +344,22 @@ export default function WeeklySchedule() {
               <button
                 key={i}
                 onClick={() => selectDay(day)}
-                className={`data-row w-full min-h-[28px] items-center py-1 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
+                // Today reads as today even on a rest row: a neutral ink left-rule
+                // plus the inset fill makes the current-day signal unambiguous
+                // without spending the single teal action color on row state
+                // (teal stays reserved for the one action; today is a neutral
+                // emphasis, not a second teal accent).
+                className={`data-row w-full min-h-[28px] items-center py-1 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isCurrentDay ? "glass-inset -mx-1.5 pl-2.5 pr-1.5 border-l-2 border-l-ink" : isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
               >
                 <span className={`w-[38px] shrink-0 text-center font-technical text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-faint"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()} {format(day, "d")}
                 </span>
-                <span className="flex-1 min-w-0 text-xs font-semibold text-faint">Rest</span>
+                <span className={`flex-1 min-w-0 text-xs font-semibold ${isCurrentDay ? "text-ink" : "text-faint"}`}>Rest</span>
+                {/* Empty trailing slot mirrors the session rows' w-[68px] status
+                    column so the Rest row's content area — and thus its selected
+                    highlight's right edge — aligns flush with the other rows
+                    instead of stopping short. */}
+                <span className="w-[68px] shrink-0" aria-hidden="true" />
               </button>
             );
           }
@@ -355,9 +368,9 @@ export default function WeeklySchedule() {
             <button
               key={i}
               onClick={() => selectDay(day)}
-              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
+              className={`data-row w-full min-h-[44px] items-center py-2 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isCurrentDay ? "glass-inset -mx-1.5 pl-2.5 pr-1.5 border-l-2 border-l-ink" : isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
             >
-              <div className={`w-[38px] shrink-0 text-center font-technical ${isCurrentDay ? "glass-inset py-1" : ""}`}>
+              <div className="w-[38px] shrink-0 text-center font-technical">
                 <span className={`block text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
@@ -365,7 +378,7 @@ export default function WeeklySchedule() {
                   {format(day, "d")}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className={`flex-1 min-w-0 ${log ? "opacity-70" : ""}`}>
                 {detail ? (
                   <div className="text-xs font-semibold text-ink truncate">
                     {detail}
@@ -395,7 +408,10 @@ export default function WeeklySchedule() {
                   // The expanded completed card below already shows a check for the
                   // selected day, so suppress the row check there — keep a single
                   // completion affordance per session so the two don't compete.
-                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-secondary" />
+                  // Done state uses the leaf (success) token, not a near-invisible
+                  // dark outline: a filled check at WCAG-passing contrast on the
+                  // card, distinct from the empty/no-check not-done rows.
+                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-leaf fill-leaf/15" />
                 ) : type !== "REST" ? (
                   <ChevronRight className="w-4 h-4 text-faint" />
                 ) : null}
@@ -410,9 +426,54 @@ export default function WeeklySchedule() {
           dropped to avoid a redundant header above the card that repeats it. */}
       <div className="mb-6">
         {!hasAnything ? (
-          <div className="glass py-10 flex flex-col items-center gap-2 rise-in-2">
-            <Moon className="w-6 h-6 text-faint" />
-            <span className="section-label !text-faint">Rest Day</span>
+          // A rest day carries no session. The identity stays a compact strip
+          // (icon + label), but the one meaningful rest-day move — logging
+          // recovery — is promoted to a full-width brand action so today's single
+          // relevant CTA owns the action color instead of losing to the FAB, and
+          // sits low enough to fall in the thumb zone rather than floating
+          // mid-screen above a dead gap.
+          <div className="rise-in-2 flex flex-col">
+            {/* A rest day owns the fold with a fuller recovery card (icon +
+                headline + one-line prompt) rather than a thin strip above a
+                void, so the upper area is intentional content. On a non-today
+                rest day it stays a compact identity card; today it also carries
+                the recovery CTA below. */}
+            <div className="glass px-4 py-6 flex flex-col items-center text-center gap-2.5">
+              {isToday && (
+                // Neutral eyebrow: teal is reserved for the single action (the
+                // "Log recovery" CTA below + app chrome), so the today label
+                // reads as a muted caption rather than a second teal accent.
+                <span className="section-label !text-muted-2">Today</span>
+              )}
+              <span className="grid place-items-center w-11 h-11 rounded-full glass-inset">
+                <Moon className="w-5 h-5 text-faint" />
+              </span>
+              <h2 className="type-display text-[20px]">{dayEcho} — Rest Day</h2>
+              <p className="text-[13px] font-semibold text-muted-2 max-w-[15rem]">
+                {isToday
+                  ? "No session on the plan today. Log how recovery is going so tomorrow's targets stay dialed in."
+                  : "No session scheduled. A planned rest day is part of the program."}
+              </p>
+            </div>
+            {isToday && (
+              <>
+                {/* Flexible spacer drops the one rest-day action into the lower
+                    third so it lands in the thumb zone and the screen no longer
+                    dead-ends in a tall empty charcoal frame. Caps so it never
+                    over-pushes when the program analytics below fill the page. */}
+                <div className="min-h-[12vh] max-h-[28vh] flex-1" aria-hidden="true" />
+                {/* Demoted to ghost: the global FAB also renders coral on this
+                    route, so a coral 'Log recovery' would put two primary coral
+                    CTAs on one screen. Ghost keeps coral as the single
+                    primary-action color (the FAB owns it here). */}
+                <button
+                  onClick={() => navigate("/recovery")}
+                  className="cta-ghost w-full"
+                >
+                  Log recovery
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -443,7 +504,7 @@ export default function WeeklySchedule() {
                     className="w-full min-h-[44px] px-4 py-3 flex items-center justify-between gap-3 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
                   >
                     <div className="min-w-0 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-secondary shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-leaf fill-leaf/15 shrink-0" />
                       <span className="section-label">
                         {isTwoADay ? `${dayEcho} AM — Logged` : `${dayEcho} — Logged`}
                       </span>

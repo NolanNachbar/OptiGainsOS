@@ -387,18 +387,30 @@ export default function Profile({ hideHeader }) {
               className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col'}`}
             >
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
-                  the page title on mobile, so a second one would stack redundantly. */}
-              <ProfileStatsCard
-                padding="p-5"
-                className="mb-3"
-                initials={initials}
-                name={formData.display_name || user.email}
-                stats={profileStats ? [
-                  { value: profileStats.totalWorkouts, label: "Workouts" },
-                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
-                  { value: profileStats.streak, label: "Streak" },
-                ] : null}
-              />
+                  the page title (and the avatar chip) on mobile, so a second avatar
+                  + title inside a card would stack redundantly. This hero instead
+                  LEADS WITH THE NUMBERS in teal — the single action color owning the
+                  one datum that should pull the eye on an otherwise neutral page. */}
+              <div className="glass p-5 mb-3">
+                <p className="text-ink font-semibold text-base leading-tight">
+                  {formData.display_name || user.email}
+                </p>
+                <p className="text-ink-secondary text-[13px] mt-0.5">Your training so far</p>
+                {profileStats && (
+                  <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-charcoal-border">
+                    {[
+                      { value: profileStats.totalWorkouts, label: "Workouts" },
+                      { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                      { value: profileStats.streak, label: "Streak" },
+                    ].map(({ value, label }, i) => (
+                      <div key={i}>
+                        <p className="text-brand font-bold text-2xl leading-none font-technical">{value}</p>
+                        <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-1.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="glass-inset overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
@@ -424,11 +436,22 @@ export default function Profile({ hideHeader }) {
                   try { await signOut(); toast.success('Signed out successfully'); }
                   catch { toast.error('Failed to sign out'); }
                 }}
-                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-bad font-semibold text-sm active:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-ink-muted font-semibold text-sm active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>
+
+              {/* Quiet brand wordmark closing the hub stack. Anchored tight under
+                  Sign Out (not floated in a centered void) and led by a short teal
+                  hairline so it reads as a designed footer rule, not marketing
+                  filler stranded mid-viewport. */}
+              <div className="mt-8 flex items-center justify-center gap-2.5">
+                <span className="h-px w-6 bg-brand/40" />
+                <p className="text-xs font-semibold tracking-wide text-ink-secondary">OptiGains</p>
+                <span className="h-px w-6 bg-brand/40" />
+              </div>
+              <p className="mt-1 text-center text-[11px] text-ink-muted">Train. Fuel. Recover.</p>
             </div>
 
             {/* Mobile: back navigation when inside a section */}
@@ -705,13 +728,13 @@ export default function Profile({ hideHeader }) {
                           onClick={() => {
                             const weightLbs = formData.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight;
                             const protein = Math.round(weightLbs * (parseFloat(proteinPerLb) || 0.8));
-                            const macros = calculateMacroSplit(tdee.tdee, protein);
+                            // calculateMacroSplit already returns daily_*_goal
+                            // keys that match formData; spread it. (The old code
+                            // read macros.calories/.protein/etc — keys that don't
+                            // exist on the result — wiping all four goals to NaN.)
                             setFormData(prev => ({
                               ...prev,
-                              daily_calorie_goal: macros.calories,
-                              daily_protein_goal: macros.protein,
-                              daily_carbs_goal: macros.carbs,
-                              daily_fats_goal: macros.fats,
+                              ...calculateMacroSplit(tdee.tdee, protein),
                             }));
                           }}
                         >

@@ -112,6 +112,9 @@ function ReadingTab() {
     mutationFn: async () => {
       const payload = {
         ...form,
+        // reading_log has CHECK (rating BETWEEN 1 AND 5); an unrated book must
+        // store NULL, not 0, or the insert is rejected and the book is lost.
+        rating: form.rating || null,
         created_by: user.id,
         started_at: form.status === "reading" || form.status === "finished" ? (form.started_at || format(new Date(), "yyyy-MM-dd")) : (form.started_at || null),
         finished_at: form.status === "finished" ? (form.finished_at || format(new Date(), "yyyy-MM-dd")) : null,
@@ -674,45 +677,70 @@ function CaptureTab() {
     enabled: !!user,
   });
 
+  const isEmpty = !isLoading && !isError && recentLogs.length === 0;
+
+  // Quiet idea-starters shown only on an empty surface. They balance the layout
+  // (no more half-viewport void below one stranded card) and teach what belongs
+  // here — without a second coral CTA, since these are guidance, not actions.
+  const PROMPTS = [
+    { icon: BookOpen, label: "A takeaway from a book or article" },
+    { icon: GraduationCap, label: "Something a course or video taught you" },
+    { icon: Layers, label: "A concept you want to understand deeper" },
+  ];
+
   return (
-    // Wrapper sizes to content (space-y, no forced min-height) so the dock sits
-    // directly below content on a sparse Capture tab. QuickCapture renders last so
-    // the primary input lands lower, nearer the thumb zone on mobile.
-    <div className="space-y-5">
-      <div>
-        <h3 className="section-label mb-3 flex items-center gap-2">
-          <History className="w-3 h-3 text-violet" /> Recent Streams
-        </h3>
-        <div className="space-y-3">
-          <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
-          {recentLogs.length > 0 ? recentLogs.map(log => (
-            <div key={log.id} className="glass p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-technical text-[10px] font-semibold text-muted-2 tabular-nums">
-                  {format(parseISO(log.created_at), "MMM d, h:mm a")}
-                </span>
-                {log.processed && (
-                  <span className="font-technical text-[10px] font-semibold text-muted-2">Synced</span>
-                )}
-              </div>
-              <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
-            </div>
-          )) : (!isLoading && !isError && (
-            // Compact empty state (py-6, no oversized icon) so a fresh Capture tab
-            // doesn't scroll into ~250px of dead space below the fold.
-            <div className="py-6 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <BookOpen className="w-6 h-6 text-faint mx-auto mb-1.5" />
-              <p className="text-sm font-semibold text-muted-2">No streams yet — drop a note below to start.</p>
-            </div>
-          ))}
-        </div>
-      </div>
+    // The capture field leads as the hero so a fresh tab opens on the one thing
+    // to do — write. When there are no streams yet we suppress the entire Recent
+    // Streams block (header + dashed placeholder); the input's placeholder is the
+    // only instruction, so we don't repeat "drop a note" in a separate empty box.
+    <div className="space-y-6">
       <div>
         <h3 className="section-label mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
         <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
+      {isEmpty && (
+        <div>
+          <h3 className="section-label mb-3 flex items-center gap-2">
+            <Zap className="w-3 h-3 text-violet" /> Ideas to Capture
+          </h3>
+          <div className="space-y-2">
+            {PROMPTS.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 px-4 py-3 glass-inset">
+                <div className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
+                  <Icon className="w-3.5 h-3.5 text-violet" />
+                </div>
+                <span className="text-sm font-semibold text-muted-2">{label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs font-semibold text-faint mt-3 text-center">Your streams will collect here as you capture.</p>
+        </div>
+      )}
+      {!isEmpty && (
+        <div>
+          <h3 className="section-label mb-3 flex items-center gap-2">
+            <History className="w-3 h-3 text-violet" /> Recent Streams
+          </h3>
+          <div className="space-y-3">
+            <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
+            {recentLogs.map(log => (
+              <div key={log.id} className="glass p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-technical text-[10px] font-semibold text-muted-2 tabular-nums">
+                    {format(parseISO(log.created_at), "MMM d, h:mm a")}
+                  </span>
+                  {log.processed && (
+                    <span className="font-technical text-[10px] font-semibold text-muted-2">Synced</span>
+                  )}
+                </div>
+                <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

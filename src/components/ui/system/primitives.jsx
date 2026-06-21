@@ -82,10 +82,12 @@ export function VerdictBanner({ score, headline, detail, className = "" }) {
  *   size:    "sm" | "md"  (md = roomier tap targets)
  */
 export function SegmentedControl({ options, value, onChange, size = "sm", className = "" }) {
-  const pad = size === "md" ? "px-3 py-1" : "px-2.5 py-0.5";
+  // Every segment is a real tap target: min 44px tall so the control clears the
+  // a11y floor even at size="sm". Padding only controls horizontal breathing room.
+  const pad = size === "md" ? "px-4" : "px-3";
   return (
     <div
-      className={`flex rounded-full overflow-hidden bg-[var(--glass-bg)] border border-charcoal-border text-xs font-semibold shadow-[inset_0_1px_0_var(--glass-specular)] ${className}`}
+      className={`inline-flex rounded-full overflow-hidden bg-[var(--glass-bg)] border border-charcoal-border text-xs font-semibold shadow-[inset_0_1px_0_var(--glass-specular)] ${className}`}
     >
       {options.map(({ value: v, label }) => {
         const isActive = value === v;
@@ -95,7 +97,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
             type="button"
             onClick={() => onChange(v)}
             aria-pressed={isActive}
-            className={`${pad} transition-colors ${
+            className={`${pad} min-h-[44px] inline-flex items-center justify-center transition-colors ${
               isActive
                 ? "bg-track text-ink font-bold"
                 : "text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink"
@@ -130,13 +132,19 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
         const isActive = value === v;
         const base =
           "shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+        // Active pill carries a clear brand accent (matching the design-system
+        // segmented control) so the selected pose is unmistakable against the
+        // near-equal-luminance inactive pills on charcoal. Same active treatment
+        // for both variants — only the inactive rest differs (chip = quieter).
+        const activeTone =
+          "bg-brand/15 text-brand border-brand/40 shadow-[var(--shadow-1)]";
         const tone =
           variant === "chip"
             ? isActive
-              ? "bg-track text-ink border-charcoal-border"
+              ? activeTone
               : "bg-transparent text-ink-muted border-transparent hover:bg-[var(--glass-bg)] hover:text-ink"
             : isActive
-              ? "bg-track text-ink border-charcoal-border"
+              ? activeTone
               : "bg-[var(--glass-inset-bg)] text-ink-muted border-charcoal-border hover:bg-[var(--glass-bg)]";
         return (
           <button
@@ -176,8 +184,10 @@ export function ProfileStatsCard({ initials, name, stats, padding = "p-4", class
         <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
           {stats.map(({ value, label }, i) => (
             <div key={i}>
-              <p className="text-ink font-bold text-lg leading-tight font-technical">{value}</p>
-              <p className="text-ink-muted text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
+              {/* Value in brand teal so 'numbers lead' holds wherever the card
+                  renders (desktop sidebar); caption bumped to secondary for AA. */}
+              <p className="text-brand font-bold text-lg leading-tight font-technical">{value}</p>
+              <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
             </div>
           ))}
         </div>

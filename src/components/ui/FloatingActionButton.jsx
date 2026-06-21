@@ -48,7 +48,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
       {/* Fan-out actions — positioned above the FAB */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed right-[18px] md:bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom) + 4rem)' }}>
+          <div className="fixed right-3 md:bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3" style={{ bottom: 'calc(5rem + 48px + env(safe-area-inset-bottom) + 12px)' }}>
             {actions.map((action, index) => (
               <div
                 key={action.label}
@@ -92,10 +92,24 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
         onClick={() => {
           setIsOpen(!isOpen);
         }}
-        className="fixed right-[18px] md:bottom-6 md:right-6 z-50 w-[52px] h-[52px] text-[var(--color-action-dark)] rounded-full shadow-energy flex items-center justify-center transition-colors bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] [box-shadow:0_8px_22px_rgba(var(--color-brand-rgb)/0.28),inset_0_1px_0_rgba(255,255,255,0.4)]"
-        style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
+        // Flat-depth (Clean): a tighter directional NEUTRAL drop shadow, not a
+        // brand-tinted bloom radiating on all sides. Keep only the inset specular
+        // highlight for material sheen. (Mirrors button.jsx's volt/coral fix.)
+        //
+        // Position: the page content column sits at the px-4 (16px) gutter, so a
+        // FAB at the old right-[18px] with a 52px body sat directly over each
+        // card's right edge during scroll. Tuck it into the gutter (right-3 =
+        // 12px, hugging the viewport edge) and shrink the body to 48px so it
+        // intrudes less of the content column, and tuck it lower toward the dock
+        // (5rem above the dock baseline vs 6rem) so its overlap zone is minimal
+        // and sits below most card content. 48px is still ≥44px tap minimum.
+        className="fixed right-3 md:bottom-6 md:right-6 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center transition-colors bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.4)]"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"
+        aria-label={isOpen ? "Close quick-add menu" : "Quick add"}
+        aria-expanded={isOpen}
+        title="Quick add"
       >
         <motion.div
           animate={{ rotate: isOpen ? 135 : 0 }}

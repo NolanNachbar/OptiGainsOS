@@ -289,21 +289,6 @@ function StallBadge({ risk }) {
   return <Badge className="bg-teal/15 text-teal border-none text-[10px]">Progressing</Badge>;
 }
 
-function ReadinessBadge({ readiness }) {
-  // Distinct ordinal ramp: high=teal → moderate=gold → low=warn → rest=bad.
-  // leaf (green) is reserved for done-states elsewhere, so it stays out of this
-  // ladder; gold separates "moderate" from the adjacent teal it used to share.
-  const map = {
-    high:     { label: "High — Push",      color: "bg-teal/15 text-teal" },
-    moderate: { label: "Moderate — Train", color: "bg-gold/15 text-gold" },
-    low:      { label: "Low — Easy",       color: "bg-warn/15 text-warn" },
-    rest:     { label: "Rest Day",         color: "bg-bad/15 text-bad" },
-    unknown:  { label: "Unknown",          color: "bg-charcoal-elevated text-muted-2" },
-  };
-  const cfg = map[readiness] || map.unknown;
-  return <Badge className={`${cfg.color} border-none text-xs font-bold`}>{cfg.label}</Badge>;
-}
-
 function FatigueColor({ score }) {
   const color = score >= 0.75 ? "text-bad" : score >= 0.5 ? "text-warn" : "text-teal";
   return <span className={`font-technical font-extrabold ${color}`}>{(score * 100).toFixed(0)}%</span>;
@@ -357,12 +342,13 @@ function StrengthSection({ data }) {
             </div>
             {pct != null && (
               <div className="h-1.5 bg-track rounded-full overflow-hidden mt-1.5">
-                {/* Fill tinted by stall state (mirrors HypertrophySection) so a
-                    'Stalled' badge never sits over a full teal bar. */}
+                {/* Teal data-hue fill encodes progress-to-target so the bar reads
+                    as a measure, not decoration. Teal is the data/positive hue
+                    (coral remains THE action color and is never used here), and
+                    the fill width itself differentiates each lift's ratio. Stall
+                    state stays on the StallBadge, so no threshold tinting here. */}
                 <div
-                  className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${
-                    d.stall_risk >= 0.75 ? "bg-bad" : d.stall_risk >= 0.4 ? "bg-warn" : "bg-teal"
-                  }`}
+                  className="h-full rounded-full bg-teal transition-[width] duration-200 ease-[var(--ease)]"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -518,48 +504,6 @@ function HypertrophySection({ data, landmarks }) {
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-// ── Recovery section ──────────────────────────────────────────────────────────
-
-const RECOVERY_HUES = {
-  HRV: "var(--hue-teal-2)",
-  "Sleep Score": "var(--hue-violet)",
-  "Body Battery": "var(--hue-green)",
-  Energy: "var(--hue-gold)",
-};
-
-function RecoverySection({ data }) {
-  if (!data || !data.data_available) {
-    return <p className="text-xs font-semibold text-muted-2">No recovery data today. Sync Garmin to populate.</p>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* The glanceable score lives in the SummaryStrip up top, so this card
-          leads with the push-readiness verdict + the 4 sub-metrics instead of
-          repeating the giant number. */}
-      <div className="flex items-center">
-        <ReadinessBadge readiness={data.push_readiness} />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          { label: "HRV", value: data.hrv ? `${data.hrv}ms` : "—" },
-          { label: "Sleep Score", value: data.sleep_score ? `${data.sleep_score}` : "—" },
-          { label: "Body Battery", value: data.body_battery ? `${data.body_battery}` : "—" },
-          { label: "Energy", value: data.energy ? `${data.energy}/10` : "—" },
-        ].map(({ label, value }) => (
-          <div key={label} className="glass-inset px-3 py-2">
-            <div className="section-label flex items-center gap-1.5">
-              <i className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: RECOVERY_HUES[label] }} />
-              {label}
-            </div>
-            <div className="font-technical text-sm font-extrabold text-ink mt-0.5">{value}</div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -860,7 +804,7 @@ export default function AthleteState({ hideHeader = false }) {
 
   return (
     <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
-      <div className="max-w-4xl mx-auto pb-[var(--dock-clearance)] lg:pb-0">
+      <div className="max-w-4xl mx-auto">
         {!hideHeader && (
           <div className="mb-6 rise-in">
             {/* Title reconciled to the dock label ("Body"). On mobile the shared
@@ -964,9 +908,14 @@ export default function AthleteState({ hideHeader = false }) {
         </div>
 
         {/* Primary cards — the core answer. Always open on every viewport so it
-            lands within ~2 phone viewports. */}
+            lands within ~2 phone viewports. Recovery is intentionally NOT a card
+            here: its score + HRV already headline the SummaryStrip up top, and
+            full recovery detail lives on the dedicated RECOVERY tab (and the
+            "Recovery detail" drill-down link below), so a second "RECOVERY"
+            section on the STATE tab would duplicate the label and collide with
+            the RECOVERY tab. */}
         {!isLoading && !isError && state && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rise-in-2">
+        <div className="grid grid-cols-1 gap-4 rise-in-2">
           {/* Strength */}
           <Card className="glass glass-interactive">
             <CardHeader className="pb-2 pt-4 px-5">
@@ -976,18 +925,6 @@ export default function AthleteState({ hideHeader = false }) {
               <StrengthSection data={state?.strength} />
             </CardContent>
           </Card>
-
-          {/* Recovery — only when synced data exists */}
-          {state?.recovery?.data_available && (
-          <Card className="glass glass-interactive">
-            <CardHeader className="pb-2 pt-4 px-5">
-              <SectionHeader icon={Heart} title="Recovery" color="text-teal" />
-            </CardHeader>
-            <CardContent className="px-5 pb-4">
-              <RecoverySection data={state?.recovery} />
-            </CardContent>
-          </Card>
-          )}
         </div>
         )}
 
@@ -1113,8 +1050,11 @@ export default function AthleteState({ hideHeader = false }) {
         </>
         )}
 
-        {/* Drill-downs — physique photos + recovery trends */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-2">
+        {/* Drill-downs — physique photos + recovery trends. As the page's last
+            in-flow content this carries the dock clearance so it (and the engine
+            accordion above it) always clear the floating mobile dock; the wrapper
+            no longer pads so clearance lives on the true last child. */}
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-[calc(var(--dock-clearance)+var(--dock-total-height))] lg:pb-2">
           <Link to="/physique" className="glass glass-interactive px-4 py-3.5 flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <Camera className="w-4 h-4" />

@@ -472,12 +472,33 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       />
                     ))}
                   </div>
-                  {remainingWorkouts > 0 && (
+                  {remainingWorkouts > 0 ? (
                     <div className="flex justify-center mt-6">
                       <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setLibraryVisible(v => v + 8)}>
                         Show <span className="font-technical mx-1">{Math.min(8, remainingWorkouts)}</span> more
                         <span className="ml-1.5 text-ink-faint font-technical">· {remainingWorkouts} left</span>
                       </Button>
+                    </div>
+                  ) : (
+                    /* All workouts shown — fill the void below short lists with a
+                       quiet build-more prompt instead of an empty charcoal field.
+                       Dim, not coral: keeps coral discipline on this tab. */
+                    <div className="mt-6 tile p-5 text-center">
+                      <p className="text-sm text-ink-muted mb-3">Build out your library</p>
+                      <div className="flex justify-center gap-2">
+                        <Link to="/create-workout">
+                          <Button variant="dim" size="sm" className="active:scale-[0.97]">
+                            <Plus className="w-4 h-4 mr-1.5" />
+                            Create Custom
+                          </Button>
+                        </Link>
+                        <Link to="/program-builder">
+                          <Button variant="dim" size="sm" className="active:scale-[0.97]">
+                            <BookOpen className="w-4 h-4 mr-1.5" />
+                            Program Builder
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   )}
                 </>

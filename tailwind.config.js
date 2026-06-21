@@ -8,8 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Coral — THE action color, driven by CSS vars so the light theme
-        // re-tunes it for contrast automatically.
+        // Teal — THE action color (CLEAN), driven by CSS vars so the light
+        // theme re-tunes it for contrast automatically. Coral is demoted to a
+        // data hue (protein / RHR) under `coral` below.
         brand: 'rgb(var(--color-brand-rgb) / <alpha-value>)',
         brandTint: 'var(--brand-tint)',
         // Semantic ink — use these instead of text-white/slate-* in new code.

@@ -44,12 +44,12 @@ insert into public.user_profiles (
 insert into public.body_weight_entries (created_by, weight, recorded_date)
 select '11111111-1111-1111-1111-111111111111',
        round((185.2 + g*0.085 + sin(g*1.7)*0.55)::numeric, 1),
-       current_date - g
+       timezone('America/Denver', now())::date - g
 from generate_series(0, 29) g;
 
 -- ── 30-day recovery (HRV/RHR/sleep/body battery) for the trend charts ────────
 insert into public.recovery_metrics (created_by, date, hrv, resting_hr, sleep_score, body_battery, source)
-select '11111111-1111-1111-1111-111111111111', current_date - g,
+select '11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date - g,
        round((84 - g*0.3 + sin(g*1.3)*6)::numeric, 1),
        round(47 + sin(g*0.9)*2)::int,
        round(86 - abs(sin(g*0.7))*14)::int,
@@ -59,14 +59,14 @@ from generate_series(0, 29) g;
 
 -- ── Today's readiness check-in ────────────────────────────────────────────────
 insert into public.daily_readiness (created_by, date, energy, mood, soreness, sleep_score)
-values ('11111111-1111-1111-1111-111111111111', current_date, 4, 4, 2, 86);
+values ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date, 4, 4, 2, 86);
 
 -- ── Today's food log ──────────────────────────────────────────────────────────
 insert into public.food_entries (created_by, date, meal_type, food_name, calories, protein_grams, carbs_grams, fats_grams) values
-  ('11111111-1111-1111-1111-111111111111', current_date, 'breakfast', 'Oats, Whey & Blueberries', 612, 42, 74, 16),
-  ('11111111-1111-1111-1111-111111111111', current_date, 'lunch',     'Chicken, Jasmine Rice & Broccoli', 838, 58, 92, 24),
-  ('11111111-1111-1111-1111-111111111111', current_date, 'snack',     'Greek Yogurt & Granola', 322, 31, 33, 8),
-  ('11111111-1111-1111-1111-111111111111', current_date, 'dinner',    'Salmon, Potatoes & Asparagus', 704, 49, 61, 27);
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date, 'breakfast', 'Oats, Whey & Blueberries', 612, 42, 74, 16),
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date, 'lunch',     'Chicken, Jasmine Rice & Broccoli', 838, 58, 92, 24),
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date, 'snack',     'Greek Yogurt & Granola', 322, 31, 33, 8),
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date, 'dinner',    'Salmon, Potatoes & Asparagus', 704, 49, 61, 27);
 
 -- ── A reusable workout template ──────────────────────────────────────────────
 insert into public.workouts (created_by, title, description, focus, duration_minutes, exercises) values
@@ -75,7 +75,7 @@ insert into public.workouts (created_by, title, description, focus, duration_min
 
 -- ── 10 historical workout logs (alternating upper/lower) ─────────────────────
 insert into public.workout_logs (created_by, log_date, exercises, duration_seconds)
-select '11111111-1111-1111-1111-111111111111', current_date - (g*2 + 1),
+select '11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date - (g*2 + 1),
   case when g % 2 = 0
     then '[{"name":"Incline Barbell Press","sets":[{"weight":165,"reps":8},{"weight":165,"reps":8},{"weight":165,"reps":7},{"weight":165,"reps":7}]},{"name":"Weighted Pull-Up","sets":[{"weight":45,"reps":6},{"weight":45,"reps":6},{"weight":45,"reps":5}]}]'::jsonb
     else '[{"name":"Back Squat","sets":[{"weight":285,"reps":5},{"weight":285,"reps":5},{"weight":285,"reps":5}]},{"name":"Romanian Deadlift","sets":[{"weight":245,"reps":8},{"weight":245,"reps":8}]}]'::jsonb
@@ -85,16 +85,37 @@ from generate_series(0, 9) g;
 
 -- ── Today's athlete_state (dashboard cards read these jsonb blobs) ────────────
 insert into public.athlete_state (created_by, date, recovery, fatigue, nutrition, strength, hypertrophy, banister)
-values ('11111111-1111-1111-1111-111111111111', current_date,
-  '{"score":78,"hrv":84,"sleep_score":86,"resting_hr":47,"hrv_trend":"rising"}'::jsonb,
+values ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date,
+  -- data_available gates the Recovery card/tile; compute_athlete_state.py sets it,
+  -- so the seed must too or all three recovery surfaces render empty.
+  -- push_readiness drives the RecoverySection badge; without it the badge falls
+  -- back to "Unknown" while the SummaryStrip tile shows 78/100 — the contradiction
+  -- in the audit. body_battery/energy back the lower grid (else they render "—").
+  '{"data_available":true,"score":78,"push_readiness":"high","hrv":84,"sleep_score":86,"resting_hr":47,"hrv_trend":"rising","body_battery":70,"energy":4}'::jsonb,
   '{"tsb":4.2,"acwr":1.12,"ctl":62,"atl":58,"interpretation":"productive_training"}'::jsonb,
-  '{"avg_calories_7d":2764,"calorie_target":2800,"protein_target":185,"weight_trend_lbs_per_week":-0.6,"phase":"cut"}'::jsonb,
-  '{"bench_1rm":245,"squat_1rm":335,"deadlift_1rm":405,"ohp_1rm":150,"weekly_sets":64,"trend":"rising"}'::jsonb,
+  '{"avg_calories_7d":2764,"avg_protein_7d":182,"calorie_target":2800,"protein_target":185,"weight_trend_lbs_per_week":-0.6,"phase":"cut"}'::jsonb,
+  -- StrengthSection only renders per-lift OBJECTS keyed by the engine's lift names
+  -- (current_e1rm/target/stall_risk/…). The old flat {bench_1rm:…} scalars were
+  -- ignored and the card showed "No strength data yet".
+  '{"Bench (paused comp)":{"current_e1rm":245,"target":275,"stall_risk":0.2,"eta_days":21,"progression_rate_lbs_per_week":2.5,"sessions":18,"progression_command":"INCREASE_LOAD"},"Squat (comp)":{"current_e1rm":335,"target":365,"stall_risk":0.35,"eta_days":35,"progression_rate_lbs_per_week":3.0,"sessions":16,"progression_command":"HOLD"},"Deadlift (conventional comp)":{"current_e1rm":405,"target":455,"stall_risk":0.5,"eta_days":49,"progression_rate_lbs_per_week":5.0,"sessions":14,"progression_command":"HOLD"}}'::jsonb,
   '{"weekly_volume_lbs":148200,"hard_sets":64,"frequency":4}'::jsonb,
   '{"fitness":62.4,"fatigue":58.1,"tsb":4.2}'::jsonb);
 
 -- ── Today's daily brief ───────────────────────────────────────────────────────
 insert into public.daily_briefs (created_by, date, brief_json, model_used)
-values ('11111111-1111-1111-1111-111111111111', current_date,
-  '{"insight":"Three straight days of rising HRV with falling intake — the cut is landing without recovery cost. Spend it on the upper-push session today.","performance":"Pressing volume is up 9% week-over-week at equal RIR. Keep the 4x8 incline at 165 and add 5 lb next exposure if bar speed holds.","nutrition":"Averaging 2,764 kcal against a 2,800 target with protein at 1.0 g/lb. Front-load carbs pre-session.","body_comp":"Trend weight is -0.6 lb/wk, right in the target band."}'::jsonb,
+values ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date,
+  '{"insight":"HRV has risen three days straight while intake fell. The cut is landing without a recovery cost, so spend it on the upper-push session today.","performance":"Pressing volume is up 9% week-over-week at equal RIR. Keep the 4x8 incline at 165 and add 5 lb next exposure if bar speed holds.","nutrition":"2,764 / 2,800 kcal on average, protein at 1.0 g/lb. Front-load carbs pre-session.","body_comp":"-0.6 lb/wk trend weight, right in the target band."}'::jsonb,
   'claude-haiku-4-5');
+
+-- ── Prior-day briefs so Insights "Recent Briefs" has history to show ──────────
+insert into public.daily_briefs (created_by, date, brief_json, model_used)
+values
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date - 1,
+   '{"insight":"HRV held flat after yesterday''s pull session. Recovery is keeping pace with the load.","performance":"+10 lb on the deadlift top set at the same bar speed as last week. Progression is real, not grind.","nutrition":"2,810 kcal and 1.0 g/lb protein. On target.","body_comp":"Trend weight steady. No whoosh yet, which is expected mid-cut."}'::jsonb,
+   'claude-haiku-4-5'),
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date - 2,
+   '{"insight":"Sleep score dipped to 79. Keep intensity in check on accessories today.","performance":"Incline press stalled at 165x8 for the second exposure. Hold load, chase the rep.","nutrition":"Carbs landed low at 210g. Front-load tomorrow pre-session.","body_comp":"-0.7 lb/wk trend weight, slightly ahead of the target band."}'::jsonb,
+   'claude-haiku-4-5'),
+  ('11111111-1111-1111-1111-111111111111', timezone('America/Denver', now())::date - 3,
+   '{"insight":"The three-day HRV rise begins here. Last week''s deload paid off.","performance":"Squat e1RM ticked to 335. Bar speed strong, green to push next week.","nutrition":"2,790 kcal, protein 1.1 g/lb. Clean adherence.","body_comp":"-0.5 lb on the week, right on plan."}'::jsonb,
+   'claude-haiku-4-5');

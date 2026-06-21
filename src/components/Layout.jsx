@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Calculator, Brain } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
@@ -104,14 +104,6 @@ function Wordmark({ size = 17 }) {
   );
 }
 
-// Days remaining to the PST deadline (Aug 31). Rolls to next year once passed.
-function daysToPST() {
-  const now = new Date();
-  let target = new Date(now.getFullYear(), 7, 31);
-  if (target < now) target = new Date(now.getFullYear() + 1, 7, 31);
-  return Math.max(0, Math.ceil((target - now) / 86400000));
-}
-
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const { profile } = useProfile();
@@ -121,15 +113,6 @@ export default function Layout({ children, currentPageName }) {
   const mobileHeaderRef = useRef(null);
   const stripScrollRef = useRef(null);
   const [stripOverflows, setStripOverflows] = useState(false);
-  const pstDays = useMemo(() => daysToPST(), []);
-
-  // The gold PST-deadline pill is dashboard chrome (a program countdown), not
-  // form chrome. On creation/edit/builder routes it competes with the page title
-  // on a structure-definition surface, so suppress it there and let the form own
-  // its header.
-  const FORM_ROUTES = ["/create-workout", "/program-builder", "/quick-workout"];
-  const onFormRoute = FORM_ROUTES.some((p) => location.pathname.startsWith(p));
-  const showDeadlineChip = !onFormRoute;
 
   useEffect(() => {
     const updateHeaderHeight = () => {
@@ -195,6 +178,10 @@ export default function Layout({ children, currentPageName }) {
     // Career is an IA orphan with its own in-page header; suppress the default
     // date subtitle so a misleading "today's date" doesn't print under its title.
     Career: null,
+    // Fuel renders FoodTracker's own interactive date-nav pill (prev/next day +
+    // 'Today' jump). The passive header date subtitle just duplicates it, so
+    // suppress it here and let the functional pill own the date affordance.
+    Fuel: null,
   };
   const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
     ? pageSubtitle[currentPageName]
@@ -217,16 +204,31 @@ export default function Layout({ children, currentPageName }) {
   // The mobile dock carries only the primary sections (dock !== false). Demoted
   // sections (Analyze) stay in the sidebar + mobile sub-tab strip but drop the
   // dock slot, so the dock reads cleaner with fewer, larger thumb targets.
-  const dockItems = navigationItems.filter((item) => item.dock !== false);
+  // BUT the dock must always answer "you are here": when the active section is a
+  // demoted one (e.g. /insights → Analyze), it lights no primary slot, leaving
+  // the whole dock muted under an "Analyze" title. To restore the signal without
+  // re-promoting the section everywhere, append the active demoted section as a
+  // transient extra dock slot only while it's the current surface.
+  const primaryDockItems = navigationItems.filter((item) => item.dock !== false);
+  const activeIsDemoted = activeSection && activeSection.dock === false;
+  const dockItems = activeIsDemoted
+    ? [...primaryDockItems, activeSection]
+    : primaryDockItems;
 
-  // Layout-owned utilities (calculators / stream-note). These used to live only
-  // inside the dead FAB; they now sit in the mobile strip so they have a
-  // persistent, reachable home. Weigh-In was dropped here — it is already a
-  // thumb-zone Quick Action on /today, so a second global entry was redundant.
-  const utilities = [
-    { label: "Calc", icon: Calculator, onClick: () => setShowCalculators(true) },
-    { label: "Note", icon: Brain, onClick: () => setShowNoteModal(true) },
-  ];
+  // The global FAB floats above the dock on the Today home + Train, suppressed on
+  // focused/logging routes and on surfaces with their own coral CTA. Hoist the
+  // predicate so the content padding below can reserve clearance for the FAB's
+  // floated footprint via --fab-clearance — otherwise the last in-flow card (e.g.
+  // Train's Rest Day card) ends under the FAB and the teal '+' bleeds over its
+  // corner. The FAB itself (FloatingActionButton.jsx) hugs the viewport's
+  // bottom-right gutter (right-3, 48px body, tucked low toward the dock) so its
+  // body intrudes minimally on the content column during scroll; --fab-clearance
+  // single-sources the bottom reservation so screens don't each pad by hand.
+  const showFab = !["/create-workout", "/quick-workout", "/program-builder", "/workout-detail",
+    "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
+    "/fuel", "/food-tracker",
+    "/athlete-state", "/recovery", "/physique", "/coach",
+    "/insights", "/brief-history", "/mind", "/career"].some((p) => location.pathname.startsWith(p));
 
   return (
     <>
@@ -284,10 +286,7 @@ export default function Layout({ children, currentPageName }) {
           </nav>
 
           <div className="mt-auto px-2.5">
-            <span className="chip-gold block text-center !rounded-md !py-2 font-extrabold">
-              {pstDays} days to PST
-            </span>
-            <div className="flex items-center justify-between mt-3.5 px-0.5">
+            <div className="flex items-center justify-between px-0.5">
               <span className="font-technical text-[10.5px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
                 {format(new Date(), "EEE MMM d")}
               </span>
@@ -312,21 +311,29 @@ export default function Layout({ children, currentPageName }) {
           <header
             ref={mobileHeaderRef}
             data-mobile-header
-            className="px-[18px] py-2.5 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden backdrop-blur-xl"
+            className="px-[18px] py-2.5 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
             style={{
-              paddingTop: "calc(0.625rem + env(safe-area-inset-top))",
-              background: "color-mix(in srgb, var(--color-bg) 82%, transparent)",
+              // max() gives a 0.75rem (12px) minimum so the title clears the
+              // status bar even when env(safe-area-inset-top) resolves to 0
+              // (non-notch viewports + the audit harness), and adds the real
+              // inset on notch devices so 'Quick Workout' is never clipped at
+              // its top edge. items-center shares this inset with the avatar
+              // pill on the right, so it isn't pressed to the very top edge.
+              paddingTop: "max(0.75rem, calc(0.5rem + env(safe-area-inset-top, 0px)))",
+              background: "var(--color-bg)",
             }}
           >
             <div className="flex-1 min-w-0">
               <h1 className="type-display text-[22px] truncate">{pageDisplayName}</h1>
               {mobileSubtitle && (
-                <div className="text-[12px] font-semibold text-muted-2 truncate">
+                // text-ink-secondary (72%) not text-muted-2 (50%): the date
+                // subtitle read too dim on charcoal; secondary is the AA-safe
+                // secondary-contrast tier.
+                <div className="text-[12px] font-semibold text-ink-secondary truncate">
                   {mobileSubtitle}
                 </div>
               )}
             </div>
-            {showDeadlineChip && <span className="chip-gold">{pstDays} days · PST</span>}
             <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
               <UserAvatar
                 url={profile?.avatar_url}
@@ -337,94 +344,89 @@ export default function Layout({ children, currentPageName }) {
             </Link>
           </header>
 
-          {/* Mobile utility / sub-tab strip — mirrors the desktop sidebar
-              children for the active section (Body/Analyze sub-routes) AND
-              carries the Calculators / Stream-Note utilities (formerly orphaned
-              in the dead FAB) so they're reachable from every section. Both the
-              sub-tab pills and the utilities use the same labeled-pill recipe so
-              the utilities read as named actions, not mystery glyphs. On routes
-              with no sub-tabs the utilities right-align (ml-auto) to keep the
-              compact h-11 band from reading as a half-empty toolbar. A trailing
-              fade is shown only when the row actually overflows. */}
-          <div
-            className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
-            style={{ top: "var(--layout-header-height, 0px)" }}
-          >
-            <div className="relative">
-              {/* h-12 band + min-h-[44px] interactive pills so every nav/utility
-                  target meets the 44px touch minimum (the visual pill keeps its
-                  compact look via py, but the hit area is a real 44px). pr-[18px]
-                  keeps the last utility off the viewport edge so a trailing pill is
-                  never flush-clipped, and lets the scroll-fade sit over padding. */}
-              <div ref={stripScrollRef} className="flex items-center gap-1.5 pl-[18px] pr-[18px] h-12 overflow-x-auto no-scrollbar">
-                {hasSubTabs && activeSection.children.map((c) => {
-                  const on = c.active(location);
-                  return (
-                    <Link
-                      key={c.label}
-                      to={c.url}
-                      className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
-                        on
-                          ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
-                          : "text-ink-muted hover:text-ink"
-                      }`}
-                    >
-                      {c.label}
-                    </Link>
-                  );
-                })}
-                {hasSubTabs && (
-                  <span className="shrink-0 w-px h-5 mx-1 bg-track" aria-hidden="true" />
+          {/* Mobile sub-tab strip — mirrors the desktop sidebar children for the
+              active section (Body / Analyze sub-routes only). It renders ONLY when
+              the section opts in AND a child tab is active, so it never paints an
+              empty band on sections that own their in-page tabs (Train/Fuel) or
+              have none (Today). The Calculators / Stream-Note utilities are not
+              duplicated here — they live in the global FAB's fan-out menu — so the
+              row stays a clean tab strip instead of an orphaned 'Tools' toolbar. */}
+          {hasSubTabs && (
+            <div
+              className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
+              style={{ top: "var(--layout-header-height, 0px)" }}
+            >
+              <div className="relative">
+                {/* h-12 band + min-h-[44px] pills so every tab meets the 44px touch
+                    minimum. pr-[18px] keeps the last pill off the viewport edge so a
+                    trailing tab is never flush-clipped, and lets the scroll-fade sit
+                    over padding. */}
+                <div ref={stripScrollRef} className="flex items-center gap-1.5 pl-[18px] pr-[18px] h-12 overflow-x-auto no-scrollbar">
+                  {activeSection.children.map((c) => {
+                    const on = c.active(location);
+                    return (
+                      <Link
+                        key={c.label}
+                        to={c.url}
+                        // Active sub-tab is a NEUTRAL selected pill, not coral.
+                        // Coral is the single primary-action color and the dock's
+                        // sole 'you are here'; a coral sub-tab fill would both
+                        // out-shout real CTAs and paint a second coral active
+                        // state for the same section. Neutral glass-edge fill +
+                        // full-ink label reads as selected without borrowing coral.
+                        className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                          on
+                            ? "text-ink bg-[var(--glass-edge)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                            // Inactive: text-ink-secondary (0.72) not text-ink-muted
+                            // (0.50). Muted fell below AA 4.5:1 on the glass-elevated
+                            // track for labels like 'DAILY BRIEF'; secondary clears
+                            // it while still reading dimmer than the active pill.
+                            : "text-ink-secondary hover:text-ink"
+                        }`}
+                      >
+                        {c.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+                {/* Right-edge scroll-fade — only when the row truly overflows, so
+                    it never paints a false "scrollable" hint. Non-interactive so
+                    taps pass through. */}
+                {stripOverflows && (
+                  <div
+                    className="pointer-events-none absolute inset-y-0 right-0 w-8"
+                    style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+                    aria-hidden="true"
+                  />
                 )}
-                {/* On routes with no sub-tabs the utilities used to ml-auto to the
-                    far right, leaving the left two-thirds of the glass bar empty —
-                    reading as a toolbar that lost its content. Instead anchor them
-                    to the left content edge behind a small "Tools" eyebrow so the
-                    row reads as an intentional quick-tools group. */}
-                {!hasSubTabs && (
-                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.08em] text-ink-faint mr-0.5">
-                    Tools
-                  </span>
-                )}
-                {/* At <=390px the text labels are dropped (icon-only) so the strip
-                    reads whole instead of clipping 'Note' against the viewport
-                    edge; the label returns at >=400px. aria-label keeps the action
-                    named for AT regardless. min-h-[44px] meets the touch minimum. */}
-                {utilities.map((u) => (
-                  <button
-                    key={u.label}
-                    type="button"
-                    onClick={u.onClick}
-                    aria-label={u.label}
-                    className="shrink-0 px-2.5 min-h-[44px] inline-flex items-center gap-1.5 rounded-full pill-value !shadow-none text-[11px] font-bold uppercase text-ink-muted hover:text-ink active:scale-95 transition-[color,transform] duration-150 [transition-timing-function:var(--ease)]"
-                  >
-                    <u.icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                    <span className="hidden min-[400px]:inline">{u.label}</span>
-                  </button>
-                ))}
               </div>
-              {/* Right-edge scroll-fade — only when the row truly overflows, so
-                  it never paints a false "scrollable" hint (e.g. on /today).
-                  Non-interactive so taps pass through. */}
-              {stripOverflows && (
-                <div
-                  className="pointer-events-none absolute inset-y-0 right-0 w-8"
-                  style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
-                  aria-hidden="true"
-                />
-              )}
             </div>
-          </div>
+          )}
 
           {/* Main content. Bottom padding is the shared --dock-clearance token
               (+ a small gap + safe-area) rather than a magic 7rem, so the dock
               offset is single-sourced with the sticky save-bar / footer
               consumers (Profile save bar, ProgramBuilder footer). */}
-          <main
-            className="flex-1 flex flex-col min-h-0 lg:pb-0"
-            style={{ paddingBottom: "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
-          >
-            <div className="flex-1 min-h-0">{children}</div>
+          <main className="flex-1 flex flex-col min-h-0">
+            {/* Dock/FAB bottom clearance lives on the CONTENT div, not <main>.
+                <main> is flex-1 + min-h-0, so on a short page it collapses to the
+                remaining viewport height and any paddingBottom set on it gets
+                clipped; on a tall scrolling page (Recovery/AthleteState) the
+                content overflows past main's box and main's padding never reaches
+                below the last card, so the HRV sparkline / BODY ANALYTICS card
+                slid under the floating dock. Pinning the clearance to the actual
+                content wrapper makes the reserved space travel WITH the content
+                so the last in-flow element always clears the dock (lg: no dock,
+                so drop it). When the floated FAB is present, reserve its full
+                footprint (--fab-clearance) instead of the dock-only clearance. */}
+            <div
+              className="flex-1 min-h-0 content-bottom-clearance"
+              style={{ "--content-pb": showFab
+                ? "var(--fab-clearance)"
+                : "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
+            >
+              {children}
+            </div>
           </main>
         </div>
       </div>
@@ -463,12 +465,13 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Floating action button — quick global add (workout/food/weigh-in/note).
-          Shown on browsing/dashboard screens; suppressed on focused form/logging
-          routes and on Fuel/FoodTracker, which carry their own coral add FAB, so
-          two coral FABs never share a screen. */}
-      {!["/create-workout", "/quick-workout", "/program-builder", "/workout-detail",
-         "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
-         "/fuel", "/food-tracker"].some((p) => location.pathname.startsWith(p)) && (
+          Shown on the Today home; suppressed on focused form/logging routes and on
+          Fuel/FoodTracker, which carry their own coral add FAB, so two coral FABs
+          never share a screen. Also suppressed on the read-only review surfaces
+          (Body / Analyze / Career), where a global '+' has no clear add intent,
+          collides with data tiles and brief cards, and on Career/Physique would be
+          a second coral action competing with the screen's own coral CTA. */}
+      {showFab && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
           onCalculators={() => setShowCalculators(true)}

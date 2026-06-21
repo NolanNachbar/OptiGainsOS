@@ -83,7 +83,10 @@ export function useWorkoutExercises(initialExercises = []) {
   // fresh. Mirrors WorkoutDetail.handleReplaceExercise so swap behaves the same
   // in the quick-workout flow (previously the Replace menu item was a dead button
   // here — no handler was wired, so it silently did nothing).
-  const replaceExercise = useCallback((oldName, newExercise) => {
+  // seedWeight: the new movement's last-performance load (callers look it up
+  // from history and pass it). Previously hardcoded to 0, so every swap blanked
+  // the load even when the athlete had logged the replacement before.
+  const replaceExercise = useCallback((oldName, newExercise, seedWeight = 0) => {
     if (!newExercise?.name?.trim()) {
       toast.error("Please pick or enter a replacement exercise");
       return;
@@ -102,7 +105,7 @@ export function useWorkoutExercises(initialExercises = []) {
         rest_seconds: newExercise.rest || newExercise.rest_seconds || ex.rest_seconds,
         sets: (ex.sets || []).map((s, i) => ({
           ...s, set_number: i + 1, reps: newReps,
-          weight: 0, completed: false, rpe: null, set_type: 'working',
+          weight: Number(seedWeight) || 0, completed: false, rpe: null, set_type: 'working',
         })),
       };
     }));

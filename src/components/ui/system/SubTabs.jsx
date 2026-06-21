@@ -53,8 +53,8 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
                 onClick={() => onChange(id)}
                 className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   isActive
-                    ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_var(--glass-specular)]"
-                    : "text-ink-muted hover:text-ink"
+                    ? "text-[var(--brand-tint)] bg-brand/[0.30] ring-1 ring-brand/40 shadow-[inset_0_1px_0_var(--glass-specular)]"
+                    : "text-ink-secondary hover:text-ink"
                 }`}
               >
                 {Icon && <Icon className="hidden sm:block w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />}

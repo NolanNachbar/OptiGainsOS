@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, CheckCircle2, AlertTriangle, Clock, Timer } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Clock, Timer } from "lucide-react";
 
 export default function WorkoutLoggingHeader({
   workoutTitle,
@@ -26,6 +26,60 @@ export default function WorkoutLoggingHeader({
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const bottomBarRef = useRef(null);
+
+  // Publish the mobile bottom action bar's true footprint (its rendered height
+  // PLUS the dock clearance + safe-area it floats above) as --logging-bar-clearance.
+  // BLOCKER fix: the bar floats over page content because consumers padded with a
+  // hardcoded guess (pb-32) that's shorter than dock-clearance + bar height, so the
+  // first set-entry row sits under it. Pages can now pad with this measured token so
+  // content always clears the bar regardless of one/two-row state. Re-measures when
+  // the bar grows a second row (rest active) so the clearance tracks layout.
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = bottomBarRef.current;
+    if (!el) {
+      root.style.setProperty("--logging-bar-clearance", "0px");
+      return;
+    }
+    // Distance from the viewport bottom to the bar's TOP edge — this single value
+    // is exactly the bottom padding content needs to clear the bar (it already folds
+    // in the bar's height plus the dock-clearance + safe-area it floats above).
+    const publish = () => {
+      const rect = el.getBoundingClientRect();
+      // The bar is lg:hidden (display:none on desktop) → a zero-height rect. In
+      // that state report 0 clearance, not innerHeight, so desktop pages aren't
+      // padded by a phantom bar.
+      // +8px buffer so the last set row always ends clearly ABOVE the bar (not
+      // flush against its top edge / half-tucked under it) on mobile.
+      const clearance = rect.height === 0
+        ? 0
+        : Math.max(0, Math.ceil(window.innerHeight - rect.top)) + 8;
+      root.style.setProperty("--logging-bar-clearance", `${clearance}px`);
+    };
+    publish();
+    // The first paint can measure before layout settles (rect.top stale → too
+    // small a clearance). A rAF re-measure after the initial frame corrects an
+    // under-measured first value.
+    const raf = requestAnimationFrame(publish);
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    window.addEventListener("resize", publish);
+    // orientationchange fires on rotate before resize settles on some mobile
+    // browsers; re-measure so a landscape↔portrait flip doesn't strand a stale
+    // clearance that hides the last row.
+    window.addEventListener("orientationchange", publish);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", publish);
+      window.removeEventListener("orientationchange", publish);
+      root.style.setProperty("--logging-bar-clearance", "0px");
+    };
+    // ResizeObserver catches the one-row → two-row (rest active) height change and
+    // resize catches viewport/safe-area shifts, so startTime alone (bar mount) is the
+    // only re-run trigger needed.
+  }, [startTime]);
 
   useEffect(() => {
     if (!startTime) return;
@@ -142,24 +196,34 @@ export default function WorkoutLoggingHeader({
   // Live elapsed-workout clock cluster — a real datum reused in BOTH mobile
   // bottom-bar states (rest active and no-rest) so the left slot is never dead
   // space and the two layouts stay symmetric.
-  const elapsedCluster = startTime ? (
+  // TASTE fix: at session start (zero sets logged, !canFinish) the ticking 0:01
+  // next to a coral Finish is premature emphasis — a live clock and a bright CTA
+  // competing before anything's been logged. Hold the clock until there's real
+  // progress (canFinish), the same threshold that earns Finish its coral, so the
+  // bar stays calm on entry and both go live together once the first set lands.
+  const elapsedCluster = startTime && canFinish ? (
     <div className="flex items-center gap-1.5 font-technical min-w-0">
       <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
       <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
     </div>
   ) : null;
 
-  // Cancel / Finish — Finish is the sole coral; Cancel is a neutral dim
-  // affordance. The bad hue is reserved for the in-dialog confirm.
+  // Cancel / Finish — Finish is the structural anchor (bordered when inert,
+  // coral once it's the live next action). Cancel is a recessive text-only
+  // escape hatch: no border box, no icon, muted ink, so the abort never reads
+  // stronger than Finish. The bad hue is reserved for the in-dialog confirm.
   const actionCluster = (
     <div className="flex items-center gap-2 flex-shrink-0">
       <Button
-        variant="dim"
+        // `plain` = chrome-free (no fill, no border box) so Cancel reads as a
+        // recessive text-only escape hatch. `ghost`/glassGhost gave it a solid
+        // boxed pill that out-emphasized Finish — inverted hierarchy. Cancel must
+        // never carry more visual weight than the Finish anchor beside it.
+        variant="plain"
         onClick={() => setShowConfirm(true)}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-4 lg:px-3"
+        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-3 text-ink-muted font-medium"
       >
-        <X className="w-3.5 h-3.5 mr-1.5" />
-        <span>Cancel</span>
+        Cancel
       </Button>
       <Button
         onClick={onFinish}
@@ -189,7 +253,7 @@ export default function WorkoutLoggingHeader({
   return (
     <>
       {/* ── Top bar: read-only timers (+ actions on desktop only) ────────── */}
-      <div className="fixed top-0 left-0 right-0 z-[9998] glass-elevated border-x-0 border-t-0" style={{ top: 'var(--layout-header-height, 0px)' }}>
+      <div className="fixed top-0 left-0 right-0 z-[9998] glass-elevated glass-elevated--substacked border-x-0" style={{ top: 'var(--layout-header-height, 0px)' }}>
         <div className="max-w-4xl mx-auto px-3 md:px-8 py-2">
           {/* Workout Title (when scrolled) - Desktop Only */}
           {showTitleInHeader && (
@@ -202,9 +266,20 @@ export default function WorkoutLoggingHeader({
           <div className="flex items-center justify-between gap-2">
             {/* Timers */}
             <div className="flex items-center gap-3 md:gap-4 min-w-0">
-              {/* Workout Timer */}
+              {/* NOTE: the mobile left slot intentionally carries NO session title.
+                  The Layout chrome already prints the page/session name directly
+                  above this bar, so restating workoutTitle here stacked the same
+                  string twice within ~100px (e.g. "Quick Workout" over "Quick
+                  Workout"). The session name lives in the chrome above and the
+                  scrollable body title; this strip stays quiet (the bottom action
+                  bar carries the live clock / rest countdown). */}
+
+              {/* Workout Timer — hidden on mobile (the bottom bar's elapsedCluster
+                  carries the live elapsed clock there); desktop keeps it up top
+                  next to the rest timer. Mirrors the Rest block's lg-gating so the
+                  same datum never renders twice on a phone. */}
               {startTime && (
-                <div className="flex flex-col min-w-0">
+                <div className="hidden lg:flex flex-col min-w-0">
                   <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Workout</span>
                   <div className="flex items-center gap-1 font-technical">
                     <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-ink-muted flex-shrink-0" />
@@ -237,8 +312,15 @@ export default function WorkoutLoggingHeader({
 
       {/* ── Bottom action bar (mobile only) — thumb zone, above the dock ─── */}
       <div
+        ref={bottomBarRef}
         className="lg:hidden fixed left-0 right-0 z-[9998] glass-elevated border-x-0 border-b-0 rise-in"
-        style={{ bottom: 'calc(var(--dock-clearance, 80px) + env(safe-area-inset-bottom))' }}
+        // Sit on the shared --floating-chrome-bottom token (= dock's full
+        // painted footprint + safe-area + a 12px breathing gap), so every
+        // floated action bar shares ONE clearance value above the dock instead
+        // of each hand-adding its own gap. The token already folds in the
+        // safe-area inset, so don't re-add env(safe-area-inset-bottom) here or
+        // it's double-counted.
+        style={{ bottom: 'var(--floating-chrome-bottom)' }}
       >
         <div className="max-w-4xl mx-auto px-3 py-2.5 flex flex-col gap-2">
           {restRunning ? (

@@ -75,14 +75,19 @@ export default function ExerciseCard({
   const activeSetIndex = exercise.sets.findIndex((s) => !s.completed);
 
   // Set-grid template — SET | PREV | LOAD | REPS | (RIR) | ✓ | ✕
+  // The DONE/✓ and delete/✕ tracks are 44px each (touch-target floor) so the
+  // enlarged hit areas aren't re-clipped by their column width. A wider column
+  // gap on the trailing tracks keeps ✕ off ✓'s edge so a delete-set mis-tap
+  // isn't one stray thumb away from the completion check.
   const gridCols = showRIR
-    ? "grid grid-cols-[26px_minmax(0,1fr)_62px_52px_46px_34px_26px] sm:grid-cols-[32px_minmax(0,1fr)_88px_72px_56px_38px_30px]"
-    : "grid grid-cols-[26px_minmax(0,1fr)_62px_52px_34px_26px] sm:grid-cols-[32px_minmax(0,1fr)_88px_72px_38px_30px]";
+    ? "grid grid-cols-[24px_minmax(52px,1fr)_58px_48px_40px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_88px_72px_56px_44px_44px]"
+    : "grid grid-cols-[24px_minmax(52px,1fr)_58px_48px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_88px_72px_44px_44px]";
 
-  // Translucent value cell — 36px tall, rounded 10px, inset top highlight.
-  // Cells inside the active (coral-tinted) row read slightly brighter.
+  // Translucent value cell — 44px tall (touch-target floor), rounded 10px,
+  // inset top highlight. Cells inside the active (coral-tinted) row read
+  // slightly brighter.
   const setCell = (isActive) =>
-    `h-9 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] text-ink ` +
+    `h-11 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] text-ink ` +
     `placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation ` +
     `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-teal/40 ` +
     `${isActive ? 'bg-white/[0.09]' : 'bg-white/[0.05]'}`;
@@ -422,7 +427,7 @@ export default function ExerciseCard({
               </span>
             </span>
           )}
-          <span></span>
+          <span className="text-center">Done</span>
           <span></span>
         </div>
 
@@ -469,7 +474,7 @@ export default function ExerciseCard({
                   onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
                 }}
                 aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
-                className="font-technical text-[11px] font-semibold text-ink-faint truncate pr-1 text-left disabled:cursor-default enabled:active:text-brand"
+                className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand"
               >
                 {lastPerformance?.lastWeight
                   ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
@@ -530,21 +535,23 @@ export default function ExerciseCard({
                 onClick={() => handleSetCompleted(setIndex, !set.completed)}
                 className="min-h-[44px] w-full flex items-center justify-center touch-manipulation"
               >
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                   set.completed
                     ? 'bg-teal/[0.16] text-teal'
-                    : 'border-[1.5px] border-charcoal-border text-transparent hover:border-white/30'
+                    : 'border-[1.5px] border-white/25 text-ink-faint hover:border-teal/50 hover:text-teal'
                 }`}>
-                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                  <Check className="w-5 h-5" strokeWidth={3} />
                 </span>
               </button>
               <button
                 type="button"
                 aria-label={`Remove set ${set.set_number}`}
                 onClick={() => onRemoveSet(exerciseIndex, setIndex)}
-                className="min-h-[44px] w-full flex items-center justify-center text-ink-faint hover:text-bad touch-manipulation"
+                // ml gap keeps delete (✕) off the completion check's (✓) edge so a
+                // confirm-set tap doesn't sit one stray thumb from deleting the set.
+                className="min-h-[44px] w-full flex items-center justify-center pl-1.5 text-ink-faint hover:text-bad touch-manipulation"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 

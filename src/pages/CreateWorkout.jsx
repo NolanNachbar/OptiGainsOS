@@ -248,13 +248,14 @@ export default function CreateWorkout() {
   return (
     <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        {/* Title is desktop-only — the shared Layout chrome already prints the
-            page name on mobile (single title per viewport). The subtitle is
-            surfaced on every viewport so the 390px primary view still explains
-            what the page does. */}
-        <div className="mb-3 lg:mb-6">
-          <h1 className="text-2xl font-bold text-ink hidden lg:block">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
-          <p className="text-ink-muted text-sm lg:mt-0.5">
+        {/* Desktop-only page header. On mobile the shared Layout chrome already
+            prints the page name and the "Workout Details" CardTitle follows
+            immediately, so this in-file title+subtitle band is suppressed below
+            lg — it was the redundant third header stratum that pushed the first
+            input down the 390px viewport. */}
+        <div className="hidden lg:block mb-6">
+          <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
+          <p className="text-ink-muted text-sm mt-0.5">
             {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
           </p>
         </div>
@@ -298,8 +299,9 @@ export default function CreateWorkout() {
                 <Button
                   type="button"
                   variant="dim"
+                  size="lg"
                   onClick={() => setShowDescription(true)}
-                  className="justify-start min-h-[44px] border-0 bg-transparent hover:bg-transparent px-1"
+                  className="h-11 justify-start border-0 bg-transparent hover:bg-transparent px-1"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add description
@@ -340,7 +342,12 @@ export default function CreateWorkout() {
                     id="duration"
                     type="number"
                     value={workout.duration_minutes}
-                    onChange={(e) => setWorkout({ ...workout, duration_minutes: Math.max(1, parseInt(e.target.value) || 1) })}
+                    // Allow the field to be cleared mid-edit (empty string) so it
+                    // can be retyped; snap back to a valid >=1 on blur. The old
+                    // onChange forced 1 on every keystroke, so backspacing the
+                    // value instantly reset it to 1.
+                    onChange={(e) => setWorkout({ ...workout, duration_minutes: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1) })}
+                    onBlur={(e) => { if (e.target.value === '') setWorkout({ ...workout, duration_minutes: 1 }); }}
                     required
                     min="1"
                     className="mt-1"
@@ -417,6 +424,19 @@ export default function CreateWorkout() {
             </CardContent>
           </Card>
 
+          {/* Mobile spacer: the action row below is `sticky bottom-0` and pins
+              its glass lid over whatever scrolls beneath it. Without this, the
+              last card's inputs can never scroll clear of the pinned bar, so
+              they sit clipped behind it at the fold. The bar's full painted
+              height is pt-3 (12px) + the 44px button + its bottom padding
+              (--dock-total-height + 16px + safe-area), so the spacer must
+              reserve that exact footprint — not a guessed ~64px — or the last
+              inputs stay clipped. At lg the bar is static and needs no spacer. */}
+          <div
+            aria-hidden
+            className="lg:hidden h-[calc(12px+44px+var(--dock-total-height)+16px+env(safe-area-inset-bottom))]"
+          />
+
           {/* Action row. This form runs ~1168px (well past one phone viewport),
               so on mobile the coral Save must not live only at the bottom of the
               scroll: below lg the row is `sticky bottom-0`, pinned just above the
@@ -477,7 +497,8 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               <Input
                 type="number"
                 value={exercise.sets}
-                onChange={(e) => onChange("sets", Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => onChange("sets", e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                onBlur={(e) => { if (e.target.value === '') onChange("sets", 1); }}
                 min="1"
                 className="mt-1"
               />
@@ -496,7 +517,8 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
               <Input
                 type="number"
                 value={exercise.rest_seconds}
-                onChange={(e) => onChange("rest_seconds", parseInt(e.target.value) || 0)}
+                onChange={(e) => onChange("rest_seconds", e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))}
+                onBlur={(e) => { if (e.target.value === '') onChange("rest_seconds", 0); }}
                 min="0"
                 className="mt-1"
               />
@@ -528,7 +550,8 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
           <Input
             type="number"
             value={block.repeat_count}
-            onChange={(e) => onChangeCount(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => onChangeCount(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+            onBlur={(e) => { if (e.target.value === '') onChangeCount(1); }}
             min="1"
             max="99"
             className="w-16 min-h-[44px] text-sm text-center"
