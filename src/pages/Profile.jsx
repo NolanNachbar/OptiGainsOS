@@ -389,7 +389,7 @@ export default function Profile({ hideHeader }) {
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title (and the avatar chip) on mobile, so a second avatar
                   + title inside a card would stack redundantly. This hero instead
-                  LEADS WITH THE NUMBERS in teal — the single action color owning the
+                  LEADS WITH THE NUMBERS in teal, the single action color owning the
                   one datum that should pull the eye on an otherwise neutral page. */}
               <div className="glass p-5 mb-3">
                 <p className="text-ink font-semibold text-base leading-tight">
@@ -562,7 +562,7 @@ export default function Profile({ hideHeader }) {
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
                         {/* Unit selection is passive metadata, not an action, so the
-                            selected pill stays NEUTRAL (glass-inset + ink) — coral is
+                            selected pill stays NEUTRAL (glass-inset + ink), coral is
                             reserved for the single action color. The shared Tabs
                             `segment` variant only paints a brand-tinted active pill, so
                             this neutral segmented control is built inline from the same
@@ -659,7 +659,7 @@ export default function Profile({ hideHeader }) {
                         <SelectContent>
                           {ACTIVITY_LEVELS.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label} — {opt.desc}
+                              {opt.label}, {opt.desc}
                             </SelectItem>
                           ))}
                         </SelectContent>

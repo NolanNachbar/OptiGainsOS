@@ -152,7 +152,7 @@ export default function CycleDayGrid({
                       key={dayIndex}
                       onClick={() => onCellClick?.(workout, cycle, dayIndex)}
                       disabled={!onCellClick}
-                      aria-label={`Cycle ${cycle}, Day ${dayIndex}: ${workout?.title || "Rest"} — ${cellStatus}`}
+                      aria-label={`Cycle ${cycle}, Day ${dayIndex}: ${workout?.title || "Rest"}, ${cellStatus}`}
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (

@@ -121,7 +121,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight: roundWeight(currentWeight * 0.9),
         action: 'deload',
-        message: `Your last ${prev.length} ${exerciseName} sessions averaged RIR ${avgRirLast3.toFixed(1)} — you're grinding near failure. Consider dropping to ${roundWeight(currentWeight * 0.9)} to reset and rebuild.`,
+        message: `Your last ${prev.length} ${exerciseName} sessions averaged RIR ${avgRirLast3.toFixed(1)}, you're grinding near failure. Consider dropping to ${roundWeight(currentWeight * 0.9)} to reset and rebuild.`,
         priority: 3,
       });
       continue;
@@ -137,7 +137,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight,
         action: 'increase',
-        message: `${exerciseName} RIR trend: ${trendStr}. You're earning the weight — attempt ${suggestedWeight} today?`,
+        message: `${exerciseName} RIR trend: ${trendStr}. You're earning the weight, attempt ${suggestedWeight} today?`,
         priority: 2,
       });
       continue;
@@ -152,7 +152,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight,
         action: 'increase',
-        message: `${exerciseName} has felt easy lately (avg RIR ${avgRirLast3.toFixed(1)}). You're leaving gains on the table — try ${suggestedWeight} today.`,
+        message: `${exerciseName} has felt easy lately (avg RIR ${avgRirLast3.toFixed(1)}). You're leaving gains on the table, try ${suggestedWeight} today.`,
         priority: 1,
       });
     }
@@ -191,7 +191,7 @@ export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, t
     return {
       type: 'go_heavier',
       suggestedWeight: suggested,
-      message: `RIR ${rir} — you've got more. Next set: ${suggested}?`,
+      message: `RIR ${rir}, you've got more. Next set: ${suggested}?`,
     };
   }
 
@@ -200,7 +200,7 @@ export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, t
     return {
       type: 'note',
       suggestedWeight: null,
-      message: `RIR ${rir} on your final set — add weight next session.`,
+      message: `RIR ${rir} on your final set, add weight next session.`,
     };
   }
 
@@ -209,7 +209,7 @@ export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, t
     return {
       type: 'affirm',
       suggestedWeight: null,
-      message: `RIR ${rir} — perfect execution.`,
+      message: `RIR ${rir}, perfect execution.`,
     };
   }
 

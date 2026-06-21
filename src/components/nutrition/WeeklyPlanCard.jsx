@@ -176,7 +176,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           if (k.startsWith("optigains.grocery.") && k !== groceryStorageKey(dates[0])) localStorage.removeItem(k);
         }
         localStorage.setItem(groceryStorageKey(dates[0]), JSON.stringify(next));
-      } catch { /* storage full/unavailable — checks just won't persist */ }
+      } catch { /* storage full/unavailable, checks just won't persist */ }
       return next;
     });
   };
@@ -204,7 +204,7 @@ export default function WeeklyPlanCard({ bare = false }) {
     onSuccess: (n) => {
       invalidateFood(qc);
       qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
-      toast.success(`Loaded ${n} planned items across the week — check them off as you eat.`);
+      toast.success(`Loaded ${n} planned items across the week, check them off as you eat.`);
     },
     onError: () => toast.error("Couldn't load the plan"),
   });
@@ -229,7 +229,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             <Cpu className="w-4 h-4 text-ink-muted" />
             <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-bold">This Week's Plan</span>
             {isSunday && (
-              <span className="text-[9px] uppercase tracking-wider text-ink-muted bg-charcoal-surface px-1.5 py-0.5 rounded-full font-bold">Sunday — plan ready</span>
+              <span className="text-[9px] uppercase tracking-wider text-ink-muted bg-charcoal-surface px-1.5 py-0.5 rounded-full font-bold">Sunday, plan ready</span>
             )}
           </div>
           <h3 className="text-lg font-bold text-ink leading-tight mt-1">{planLabel}</h3>
@@ -339,7 +339,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           </div>
           {openDayData.rows.length === 0 ? (
             <p className="px-3.5 py-3 text-xs text-ink-muted">
-              This day's budget is already used up by logged food — nothing left to plan.
+              This day's budget is already used up by logged food, nothing left to plan.
             </p>
           ) : (
             <>
@@ -370,20 +370,20 @@ export default function WeeklyPlanCard({ bare = false }) {
                 <MacroBar p={openDayData.totals.protein} c={openDayData.totals.carbs} f={openDayData.totals.fats} />
                 {openDayData.rows.proteinShortfall > 0 && (
                   <p className="mt-2 text-[10px] text-warn">
-                    Protein lands {openDayData.rows.proteinShortfall} g under target — the food list's lean
+                    Protein lands {openDayData.rows.proteinShortfall} g under target, the food list's lean
                     sources are maxed out. Add a lean protein to the catalog or cover it manually.
                   </p>
                 )}
                 {openDayData.rows.proteinEased > 0 && (
                   <p className="mt-2 text-[10px] text-ink-muted">
                     Protein eased {openDayData.rows.proteinEased} g below the 1.3 g/lb anchor (still ≥ the
-                    1.2 g/lb floor) to hold this day's calorie wall — protein drops last, calories don't bend.
+                    1.2 g/lb floor) to hold this day's calorie wall, protein drops last, calories don't bend.
                   </p>
                 )}
                 {openDayData.rows.calorieOverage > 0 && (
                   <p className="mt-2 text-[10px] text-warn">
                     Even at the 1.2 g/lb protein floor this day runs {openDayData.rows.calorieOverage} kcal
-                    over target — the calorie wall bends before the hard protein floor does.
+                    over target, the calorie wall bends before the hard protein floor does.
                   </p>
                 )}
                 {creamiFoods.length > 0 && (
@@ -391,7 +391,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                     <Snowflake className="w-3 h-3 text-carb shrink-0" />
                     Creami option: {creamiFoods.length > 1
                       ? `blend the ${creamiFoods.slice(0, 3).join(" + ")} into protein ice cream`
-                      : `spin the whey scoop with water/ice into protein ice cream`} — same macros, same cost.
+                      : `spin the whey scoop with water/ice into protein ice cream`}, same macros, same cost.
                   </p>
                 )}
               </div>
@@ -428,7 +428,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                       physiological data. A neutral ink check on the empty-track
                       ring + the label's existing strikethrough carries "done"
                       without borrowing a data hue. (ink-* tokens carry baked
-                      alpha, so /xx modifiers don't apply — use the solid token.) */}
+                      alpha, so /xx modifiers don't apply, use the solid token.) */}
                   <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-track bg-track text-ink-faint" : "border-track text-transparent"}`}>
                     <Check className="w-3 h-3" />
                   </span>
@@ -448,7 +448,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           Pinned to a sticky footer so it stays in the thumb zone instead of
           living ~2000px down the scroll. Backed by the glass-sheet recipe (the
           near-opaque --sheet-bg + blur) so scrolled content can't bleed through
-          behind the CTA — bg-[var(--color-bg)]/95 silently dropped its alpha
+          behind the CTA, bg-[var(--color-bg)]/95 silently dropped its alpha
           (Tailwind can't inject /95 into a raw var()), leaving no real backing. */}
       <div className="sticky bottom-0 px-5 pb-4 pt-3 glass-sheet border-t hairline">
         <button

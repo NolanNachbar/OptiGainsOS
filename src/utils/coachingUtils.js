@@ -192,7 +192,7 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
       id: "good-progress",
       type: "success",
       title: "Great Progress!",
-      description: `You're losing ${Math.abs(weightAnalysis.weeklyRate)} lbs/week — right on track for healthy weight loss.`,
+      description: `You're losing ${Math.abs(weightAnalysis.weeklyRate)} lbs/week, right on track for healthy weight loss.`,
       suggestion: "Keep it up! Stay consistent with your current approach.",
       severity: "low",
     });
@@ -207,7 +207,7 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
       id: "good-progress",
       type: "success",
       title: "Solid Gains!",
-      description: `You're gaining ${weightAnalysis.weeklyRate} lbs/week — a good rate for lean muscle gain.`,
+      description: `You're gaining ${weightAnalysis.weeklyRate} lbs/week, a good rate for lean muscle gain.`,
       suggestion: "Keep hitting your protein targets and progressive overload.",
       severity: "low",
     });

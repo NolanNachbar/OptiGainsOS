@@ -936,7 +936,7 @@ const handleSaveMealTemplate = () => {
                       )}
                     </span>
                     {/* The kcal remaining/eaten figure is already the ring's
-                        center readout — restating it as a chip here was a
+                        center readout, restating it as a chip here was a
                         redundant second kcal datum, so it's dropped. The only
                         thing the ring can't show is the planned-but-unlogged
                         budget, which is surfaced once when relevant. */}
@@ -1058,10 +1058,10 @@ const handleSaveMealTemplate = () => {
                   {planFit.rebalancing
                     ? 'adjusting portions to today’s target…'
                     : planFit.proteinHeld
-                      ? `runs ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal over — portions held at the cut protein floor instead of shrinking.`
+                      ? `runs ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal over, portions held at the cut protein floor instead of shrinking.`
                       : planFit.fits
                         ? 'fits remaining budget'
-                        : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal — edit or remove items.`}
+                        : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal, edit or remove items.`}
                 </span>
               </div>
             )}
@@ -1076,7 +1076,7 @@ const handleSaveMealTemplate = () => {
             ) : entriesLoading ? (
               /* Loading skeletons: bars use the system `bg-track` material with
                  the tokened `.pulse-loop` shimmer (single easing, --loop-dur
-                 cadence) — a restrained, hue-free placeholder breathe. */
+                 cadence), a restrained, hue-free placeholder breathe. */
               <div className="space-y-4">
                 {[
                   { mealType: 'breakfast', label: '01. BREAKFAST' },
@@ -1793,7 +1793,7 @@ const handleSaveMealTemplate = () => {
                         )}
 
                         <p className="text-xs text-ink-muted">
-                          Edit base values —{' '}
+                          Edit base values,{' '}
                           {isUsdaFood
                             ? `per ${newFood.serving_unit}`
                             : (({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[newFood.serving_unit] || 'per serving')}
@@ -1995,7 +1995,7 @@ const handleSaveMealTemplate = () => {
             />
           </div>
           {/* Save pinned to a non-scrolling footer (out of overflow-y-auto). The
-              dialog uses p-0 so it skips the primitive's safe-area pad — re-add it
+              dialog uses p-0 so it skips the primitive's safe-area pad, re-add it
               here so the CTA clears the home-indicator. */}
           <div className="px-6 pt-4 border-t bg-charcoal-surface shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
             <Button variant="volt" className="w-full" disabled={updateGoalsMutation.isPending}
@@ -2461,7 +2461,7 @@ function GoalsFormContent({
                     const weightLbs = profile?.weight_unit === 'kg' ? (latestWeight || 0) * 2.205 : (latestWeight || 0);
                     const protein = weightLbs ? Math.round(weightLbs * proteinPerLb) : profile?.daily_protein_goal || 150;
                     setGoalForm(calculateMacroSplit(phaseCalories, protein));
-                    toast.info('Goals updated to match your phase — save to apply.');
+                    toast.info('Goals updated to match your phase, save to apply.');
                   }}
                 >
                   Sync Goals

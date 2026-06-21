@@ -361,7 +361,7 @@ function PhotosLink() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-ink">Progress photos</p>
         <p className="text-[11.5px] font-semibold text-muted-2">
-          Open the Physique tracker — pose tracking, side-by-side compare, and body-fat trend.
+          Open the Physique tracker, pose tracking, side-by-side compare, and body-fat trend.
         </p>
       </div>
       <ArrowUpRight className="w-4 h-4 text-faint shrink-0" />

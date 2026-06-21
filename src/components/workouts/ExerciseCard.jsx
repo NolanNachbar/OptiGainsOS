@@ -557,14 +557,14 @@ export default function ExerciseCard({
 
             {/* Tag capture. failure_reason (miss): WHY it fell short — technical reasons
                 route to programming, "out of gas" eases the cut. sticking_point (made,
-                RIR ≤ 1): WHERE it stalled — programming only, never the cut signal. */}
+                RIR ≤ 1): WHERE it stalled, programming only, never the cut signal. */}
             {reasonKeys.length > 0 && tagField && (
               <div className="flex flex-wrap items-center gap-1.5 pb-2 pl-0.5 -mt-0.5">
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] ${
                   tagField === 'failure_reason' ? 'text-warn' : 'text-info'
                 }`}>
                   <AlertTriangle className="w-3 h-3" />
-                  {tagField === 'failure_reason' ? 'Missed — why?' : 'Where did it stall?'}
+                  {tagField === 'failure_reason' ? 'Missed, why?' : 'Where did it stall?'}
                 </span>
                 {reasonKeys.map((rk) => {
                   const sel = set[tagField] === rk;

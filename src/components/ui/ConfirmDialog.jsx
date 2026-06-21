@@ -48,7 +48,7 @@ export function ConfirmDialog({
             For DANGER it is a mobile-safety inversion fix: Cancel must be the
             closest tap target and the destructive button must sit above it, so
             both branches use flex-col-reverse (the prior `flex-col` rendered
-            Delete last/lowest — the exact opposite of the intended ordering). */}
+            Delete last/lowest, the exact opposite of the intended ordering). */}
         <div className="flex flex-col-reverse md:flex-row gap-3 mt-6">
           <Button
             variant="ghost"

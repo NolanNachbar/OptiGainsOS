@@ -76,7 +76,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
       const controls = await reader.decodeFromVideoElement(
         videoRef.current,
         async (result, error) => {
-          if (!result) return; // NotFoundException fires continuously — just ignore
+          if (!result) return; // NotFoundException fires continuously, just ignore
           const barcode = result.getText();
           setFoundBarcode(barcode);
           setScanState("looking_up");

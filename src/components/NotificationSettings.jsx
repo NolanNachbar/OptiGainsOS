@@ -52,7 +52,7 @@ export default function NotificationSettings() {
 
       {isSubscribed && (
         <div className="mt-3 flex items-center gap-1.5 text-xs text-leaf">
-          <CheckCircle2 className="w-3.5 h-3.5" /> Active — notifications enabled
+          <CheckCircle2 className="w-3.5 h-3.5" /> Active, notifications enabled
         </div>
       )}
 

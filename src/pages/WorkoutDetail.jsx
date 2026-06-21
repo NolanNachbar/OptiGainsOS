@@ -784,7 +784,7 @@ export default function WorkoutDetail() {
               <>
                 <h2 className="type-display text-2xl text-ink mb-2">Couldn&apos;t load this workout</h2>
                 <p className="text-[13px] font-semibold text-ink-muted mb-6">
-                  Couldn&apos;t load this program workout — try again.
+                  Couldn&apos;t load this program workout, try again.
                 </p>
                 <div className="flex flex-col sm:flex-row sm:justify-center gap-3">
                   <Button

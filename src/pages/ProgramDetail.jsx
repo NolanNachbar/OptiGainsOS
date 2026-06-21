@@ -290,7 +290,7 @@ export default function ProgramDetail() {
                       </span>
                     </div>
                     {/* Progress track sits directly under the position/count line —
-                        no border-t divider — keeping the completion datum with its
+                        no border-t divider, keeping the completion datum with its
                         numbers. Fill uses bg-brand (the action hue); leaf is
                         reserved for biometric readiness, not a completion metric. */}
                     <div className="h-1.5 bg-track rounded-full overflow-hidden mb-2">
@@ -711,7 +711,7 @@ export default function ProgramDetail() {
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-ink-muted mt-2">
-                Enter your current working weight for each exercise (optional — you can also
+                Enter your current working weight for each exercise (optional, you can also
                 enter these during your first session).
               </p>
             </div>

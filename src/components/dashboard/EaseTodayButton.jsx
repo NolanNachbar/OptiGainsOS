@@ -40,7 +40,7 @@ export default function EaseTodayButton() {
   if (done) {
     return (
       <div className="flex items-center gap-1.5 text-xs font-semibold text-leaf px-1">
-        <Check className="w-3.5 h-3.5" /> Easing today's deficit — carbs added back. Recalcs on the next engine run.
+        <Check className="w-3.5 h-3.5" /> Easing today's deficit, carbs added back. Recalcs on the next engine run.
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default function EaseTodayButton() {
     <div className="glass p-3">
       <Button variant="dim" size="sm" onClick={ease} disabled={busy}
         className="min-h-[44px] px-3 text-xs">
-        <BatteryLow className="w-3.5 h-3.5 mr-1.5" /> I'm wrecked — ease today's deficit
+        <BatteryLow className="w-3.5 h-3.5 mr-1.5" /> I'm wrecked, ease today's deficit
       </Button>
     </div>
   );

@@ -392,7 +392,7 @@ export default function QuickWorkout() {
           </div>
           {prescribed && (
             <p className="text-xs font-semibold text-ink-muted mt-1">
-              Logging the engine's prescribed session — targets pre-filled
+              Logging the engine's prescribed session, targets pre-filled
             </p>
           )}
         </div>
@@ -400,7 +400,7 @@ export default function QuickWorkout() {
         {/* Mobile session title / rename — the desktop block above (the
             IntersectionObserver target) is hidden on phones. The Layout chrome
             already prints "Quick Workout" + today's date, so a DEFAULT-titled
-            session shows no duplicate body title — only a quiet "Rename
+            session shows no duplicate body title, only a quiet "Rename
             session" affordance so the user can still customize it. A customized
             or prescribed session shows the real title (which the chrome can't
             convey) with the same 44px Pencil/Check toggle. */}
@@ -444,7 +444,7 @@ export default function QuickWorkout() {
             </div>
             {prescribed && (
               <p className="text-xs font-semibold text-ink-muted mt-1">
-                Logging the engine's prescribed session — targets pre-filled
+                Logging the engine's prescribed session, targets pre-filled
               </p>
             )}
           </div>
@@ -473,14 +473,14 @@ export default function QuickWorkout() {
               <Brain className="w-3.5 h-3.5 text-teal" />
             </div>
             <span className="text-xs font-semibold text-ink-muted leading-relaxed">
-              Loaded from <span className="text-ink font-bold">Engine Prescription</span> — confirm or adjust each set, then finish.
+              Loaded from <span className="text-ink font-bold">Engine Prescription</span>, confirm or adjust each set, then finish.
             </span>
           </div>
         )}
 
         {/* While the Resume-vs-Start-Fresh decision is pending, the page behind
             the prompt must NOT render its empty-state ("No exercises yet" + add
-            form) — that contradicts the sheet's "you have an unfinished
+            form), that contradicts the sheet's "you have an unfinished
             session" claim. Hold the body until the choice is made; the chosen
             path (resume restores the saved sets, start-fresh seeds a blank
             session) then renders the right state. */}
@@ -607,7 +607,7 @@ export default function QuickWorkout() {
             {/* Resume is the recommended path, so it carries the solid coral
                 CTA weight to read as clear primary in under 2s. The page body is
                 held behind the scrim (!resumeSession gate) so no competing coral
-                fill bleeds through — this is the only coral surface on screen,
+                fill bleeds through, this is the only coral surface on screen,
                 paired with the neutral-outline Start Fresh. */}
             <Button variant="volt" size="lg" className="flex-1" onClick={handleResumeSession}>
               Resume

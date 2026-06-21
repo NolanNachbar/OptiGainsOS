@@ -7,10 +7,10 @@ import { Footprints, Target } from "lucide-react";
 // on run/cardio session views. The engine writes min/mile paces per zone plus
 // the polarized weekly split and the VDOT gap to the goal (BUD/S PST).
 const ZONES = [
-  { key: "recovery_pace", label: "Recovery", hint: "Z1 — run by HR, let pace fall where it must", color: "text-info" },
-  { key: "easy_pace", label: "Easy", hint: "Z2 — 80% of weekly volume", color: "text-ok" },
-  { key: "threshold_pace", label: "Threshold", hint: "Z3 — comfortably hard / tempo", color: "text-warn" },
-  { key: "interval_pace", label: "Interval", hint: "Z4 — VO₂max repeats", color: "text-bad" },
+  { key: "recovery_pace", label: "Recovery", hint: "Z1, run by HR, let pace fall where it must", color: "text-info" },
+  { key: "easy_pace", label: "Easy", hint: "Z2, 80% of weekly volume", color: "text-ok" },
+  { key: "threshold_pace", label: "Threshold", hint: "Z3, comfortably hard / tempo", color: "text-warn" },
+  { key: "interval_pace", label: "Interval", hint: "Z4, VO₂max repeats", color: "text-bad" },
 ];
 
 export default function VdotZonesCard({ className = "" }) {

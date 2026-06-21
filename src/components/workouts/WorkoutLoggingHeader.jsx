@@ -326,7 +326,7 @@ export default function WorkoutLoggingHeader({
           {restRunning ? (
             <>
               {/* Rest row: countdown + depleting track + its own +30s / Skip
-                  controls live together on one line — the rest timer owns its
+                  controls live together on one line, the rest timer owns its
                   controls. Cancel / Finish drop to the action row below so the
                   two concerns never crowd into one crammed 5-element line. */}
               <div className="flex items-center gap-2 min-w-0">

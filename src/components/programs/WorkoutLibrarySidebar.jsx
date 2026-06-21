@@ -146,7 +146,7 @@ export default function WorkoutLibrarySidebar() {
             <div className="text-center py-4">
               <p className="text-xs text-ink-muted">
                 {workouts.length === 0
-                  ? "No workouts yet — click a day slot to build exercises inline."
+                  ? "No workouts yet, click a day slot to build exercises inline."
                   : "No workouts match your filters."}
               </p>
             </div>

@@ -35,7 +35,7 @@ function deriveStallSuggestion(avgRir, rirTarget, sessionsAtWeight) {
     return `Weight feels manageable (avg RIR ${avgRir.toFixed(1)}) but reps aren't there yet. Focus on hitting all target reps.`;
   }
   if (sessionsAtWeight >= 5) {
-    return `${sessionsAtWeight} sessions at this weight. Consider a deload week — come back to this weight fresh.`;
+    return `${sessionsAtWeight} sessions at this weight. Consider a deload week, come back to this weight fresh.`;
   }
   return `${sessionsAtWeight} sessions without progress. Check sleep and nutrition are supporting recovery.`;
 }

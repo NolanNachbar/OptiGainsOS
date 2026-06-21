@@ -349,7 +349,7 @@ export default function Layout({ children, currentPageName }) {
               the section opts in AND a child tab is active, so it never paints an
               empty band on sections that own their in-page tabs (Train/Fuel) or
               have none (Today). The Calculators / Stream-Note utilities are not
-              duplicated here — they live in the global FAB's fan-out menu — so the
+              duplicated here, they live in the global FAB's fan-out menu, so the
               row stays a clean tab strip instead of an orphaned 'Tools' toolbar. */}
           {hasSubTabs && (
             <div
@@ -485,7 +485,7 @@ export default function Layout({ children, currentPageName }) {
         weightUnit={profile?.weight_unit || "lbs"}
       />
       {/* sheetMinHeight="" opts this content-sparse capture sheet out of the
-          default min-h-[40dvh] floor — otherwise the floor left a dead gap above
+          default min-h-[40dvh] floor, otherwise the floor left a dead gap above
           the textarea. QuickCapture (embedded) already carries its own mt-auto so
           the Capture action self-anchors to the sheet bottom (thumb zone); the old
           mt-auto pt-2 wrapper was redundant. focusHue="violet" gives the capture

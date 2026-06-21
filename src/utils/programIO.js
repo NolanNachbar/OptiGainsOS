@@ -80,7 +80,7 @@ export function parseProgramJson(jsonString) {
     throw new Error("Invalid JSON file");
   }
 
-  if (!parsed.program) throw new Error("Missing 'program' key — expected { program: { ... } }");
+  if (!parsed.program) throw new Error("Missing 'program' key, expected { program: { ... } }");
   const p = parsed.program;
   if (!p.name || typeof p.name !== "string") throw new Error("Program must have a name");
 

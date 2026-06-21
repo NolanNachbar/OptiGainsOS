@@ -133,7 +133,7 @@ function AdaptiveEnginePanel() {
                 Fatigue clears in <span className="font-technical font-extrabold text-ink">{tauFat.toFixed(0)}d</span>
                 <span className="text-faint"> (pop. avg 15d)</span>
                 {tauFit != null && <>, fitness decays over <span className="font-technical font-extrabold text-ink">{tauFit.toFixed(0)}d</span><span className="text-faint"> (pop. 45d)</span></>}
-                {updates < 4 && <span className="text-faint"> — still calibrating</span>}
+                {updates < 4 && <span className="text-faint">, still calibrating</span>}
               </p>
             )}
             {probe && (
@@ -247,7 +247,7 @@ function WeeklyPlanPanel() {
         {tests.map(t => {
           const b = t.baseline || {};
           const label = t.test_type === "pst_diagnostic"
-            ? "PST diagnostic scheduled — run a benchmark PST and log it so the engine can recalibrate your targets."
+            ? "PST diagnostic scheduled, run a benchmark PST and log it so the engine can recalibrate your targets."
             : t.test_type === "volume_tolerance"
               ? `Volume-tolerance test: ramping ${String(b.muscle || "").replace(/_/g, " ")} (week ${b.week ?? 1}) to probe your MRV.`
               : `${String(t.test_type).replace(/_/g, " ")} test active.`;

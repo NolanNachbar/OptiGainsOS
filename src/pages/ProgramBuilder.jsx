@@ -495,7 +495,7 @@ export default function ProgramBuilder() {
               </p>
             </div>
             {/* Mobile wayfinding shares the action row instead of stacking its
-                own bar — the Layout header owns the top title, so a compact
+                own bar, the Layout header owns the top title, so a compact
                 "Step 1/4 · Details" eyebrow here is enough to orient. */}
             <p className="section-label md:hidden min-w-0 truncate">
               <span className="font-technical">Step {step + 1}/{STEPS.length}</span>
@@ -555,7 +555,7 @@ export default function ProgramBuilder() {
 
         {/* Documented exception to the system's 8px RISE entrance: this is a
             linear stepper, so steps slide HORIZONTALLY (8px right on enter, left
-            on exit) to encode forward/back direction — wayfinding the vertical
+            on exit) to encode forward/back direction, wayfinding the vertical
             rise can't express. Stays on the one system easing + 180–320ms band. */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -757,7 +757,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             className="mt-1"
           />
           {/* Gating helper sits with the field it gates, not orphaned at the
-              bottom by the Next button — names WHY forward is locked. */}
+              bottom by the Next button, names WHY forward is locked. */}
           {!program.name.trim() && (
             <p className="text-xs text-ink-muted mt-1">
               Name your program to continue
@@ -1085,7 +1085,7 @@ function InlineDayEditor({
         {(workout.exercises || []).length === 0 && (
           <div className="text-center py-6 text-ink-muted">
             <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm mb-3">No exercises yet — start building this day.</p>
+            <p className="text-sm mb-3">No exercises yet, start building this day.</p>
             <Button
               type="button"
               size="sm"

@@ -184,7 +184,7 @@ export default function Today() {
     if (action === "REST") {
       return {
         headline: "Rest today",
-        detail: line ? `${line}. The engine calls recovery — honor it.` : "The engine calls recovery. Honor it.",
+        detail: line ? `${line}. The engine calls recovery, honor it.` : "The engine calls recovery. Honor it.",
       };
     }
     if (action) {
@@ -284,7 +284,7 @@ export default function Today() {
             → Fuel rings → thumb-zone quick actions (Log food / Weigh in)
             → Today's Actions → Details disclosure (State / Brief / Muscle).
           Desktop: hero/check-in/session/actions in the left column, the Fuel rail
-          on the right — DOM order stays mobile-first; lg placement is explicit. */}
+          on the right, DOM order stays mobile-first; lg placement is explicit. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
           {/* Load-failure is an app condition, not a biometric — render it as
@@ -324,7 +324,7 @@ export default function Today() {
             ) : (
             <><div className="flex items-center gap-4 sm:gap-6">
               {/* StatRing rule: the readiness ring is BAND-colored (the verdict
-                  hue), so the arc tracks the score/headline — the component's
+                  hue), so the arc tracks the score/headline, the component's
                   teal gradient is the default only for non-verdict rings. The
                   micro-label below the score stays 'READINESS'. */}
               <StatRing value={score} size={104} label="Readiness" color={readinessHue} />
@@ -381,7 +381,7 @@ export default function Today() {
 
             One exception: when a workout is already in progress AND the engine has
             no prescription, the card's ONLY content would be that "Log a workout"
-            fallback ghost — which is redundant with (and competes against) the
+            fallback ghost, which is redundant with (and competes against) the
             coral "tap to continue" banner above. In that single case we suppress
             the card so the continue banner is the sole workout entry. On train
             days (a prescription exists) the card still renders, and demoteCta
@@ -623,7 +623,7 @@ export default function Today() {
       </div>
 
       {/* Weigh-in surface (local so the home owns the daily ritual). The Stream
-          Note modal was removed — the mobile-strip Stream Note utility is the
+          Note modal was removed, the mobile-strip Stream Note utility is the
           single canonical entry. */}
       <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
     </div>

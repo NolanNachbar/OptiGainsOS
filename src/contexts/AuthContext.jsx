@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
           email: 'athlete@local.test',
           password: 'localpassword123',
         });
-        if (error) console.error('[dev auto-login] failed — is the seeded test user present?', error.message);
+        if (error) console.error('[dev auto-login] failed, is the seeded test user present?', error.message);
       }
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);

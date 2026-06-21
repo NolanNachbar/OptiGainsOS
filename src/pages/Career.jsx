@@ -600,7 +600,7 @@ export default function Career({ hideHeader }) {
         )}
 
         {/* Mobile subtitle lives in the Layout chrome (SYS-05 pageSubtitle
-            override) — printing it again here stacked a redundant restated
+            override), printing it again here stacked a redundant restated
             one-liner under the dock-supplied title, so it's dropped. */}
         <Tabs defaultValue="pipeline" className="rise-in">
           <TabsList className="mb-6">

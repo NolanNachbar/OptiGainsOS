@@ -188,7 +188,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       try {
         const data = JSON.parse(evt.target.result);
         if (!data.title || !Array.isArray(data.exercises)) {
-          toast.error("Invalid workout file — missing title or exercises.");
+          toast.error("Invalid workout file, missing title or exercises.");
           return;
         }
         await db.entities.Workout.create({
@@ -793,8 +793,8 @@ function dayLabel(date) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
   const fmt = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-  if (d.getTime() === today.getTime()) return `TODAY — ${fmt}`;
-  if (d.getTime() === yesterday.getTime()) return `YESTERDAY — ${fmt}`;
+  if (d.getTime() === today.getTime()) return `TODAY, ${fmt}`;
+  if (d.getTime() === yesterday.getTime()) return `YESTERDAY, ${fmt}`;
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
 }
 
@@ -1079,7 +1079,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
               ? 'Cardio sessions sync automatically from Garmin each morning.'
               : filter === 'strength'
               ? 'Complete a workout to see it here.'
-              : 'Complete workouts — cardio syncs from Garmin overnight.'}
+              : 'Complete workouts, cardio syncs from Garmin overnight.'}
           </p>
         </div>
       ) : (

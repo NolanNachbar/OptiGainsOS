@@ -104,7 +104,7 @@ export default function SorenessCheckin({ today }) {
 
   return (
     <div className="glass p-4">
-      <p className="text-sm font-extrabold text-ink mb-3">Soreness Check-in — tap to cycle</p>
+      <p className="text-sm font-extrabold text-ink mb-3">Soreness Check-in, tap to cycle</p>
       <div className="grid grid-cols-5 gap-1.5 mb-4">
         {MUSCLE_GROUPS.map(muscle => (
           <button

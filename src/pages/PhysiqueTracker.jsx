@@ -183,7 +183,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               variant gives the active pill a near-identical dark fill to the
               inactive ones, so at 390px you can't tell which pose is armed. The
               active chip here reads as an elevated, lighter chip with a coral
-              border + label — the same selected language as the Fix pose sheet —
+              border + label, the same selected language as the Fix pose sheet —
               so the armed pose is unmistakable in under 2s. */}
           <div
             role="radiogroup"
@@ -481,7 +481,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 {hasDelta && (
                   crossPose ? (
                     <div className="mt-1 text-xs font-semibold text-muted-2">
-                      Cross-pose comparison — BF delta hidden. Match poses to read a trend.
+                      Cross-pose comparison, BF delta hidden. Match poses to read a trend.
                     </div>
                   ) : (
                     /* Aggregate delta is the hero datum of this sheet — sized well

@@ -66,7 +66,7 @@ const Button = React.forwardRef(({
     ghost:       glassGhost,
     coralGhost:  coralGhost,
     dim:         "bg-transparent text-ink-muted border border-charcoal-border rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
-    plain:       plain,   // chrome-free icon/affordance — no override stacks
+    plain:       plain,   // chrome-free icon/affordance, no override stacks
     /* utility / legacy variants */
     default:     glassGhost,
     primary:     coral,   // LEGACY alias of `volt`; migrate callers to volt

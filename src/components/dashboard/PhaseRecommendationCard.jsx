@@ -83,7 +83,7 @@ export default function PhaseRecommendationCard() {
       )}
       {applied && (
         <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-leaf">
-          <Check className="w-3.5 h-3.5" /> Applied — diet now targets a {rec.phase}
+          <Check className="w-3.5 h-3.5" /> Applied, diet now targets a {rec.phase}
         </div>
       )}
       {samePhase && !applied && (

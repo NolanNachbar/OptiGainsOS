@@ -132,21 +132,21 @@ const getWorkoutSplitTitle = (log, scheduledTitle) => {
   if (upperCount > lowerCount) {
     let suffix = "";
     if (scheduledTitle) {
-      if (scheduledTitle.includes("Volume")) suffix = " — Volume";
-      else if (scheduledTitle.includes("Intensity")) suffix = " — Intensity";
-      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
-      else if (scheduledTitle.includes("Push")) suffix = " — Push";
-      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+      if (scheduledTitle.includes("Volume")) suffix = ", Volume";
+      else if (scheduledTitle.includes("Intensity")) suffix = ", Intensity";
+      else if (scheduledTitle.includes("Steady")) suffix = ", Steady";
+      else if (scheduledTitle.includes("Push")) suffix = ", Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = ", Back Off";
     }
     return `Upper Body Session${suffix}`;
   } else if (lowerCount > upperCount) {
     let suffix = "";
     if (scheduledTitle) {
-      if (scheduledTitle.includes("Squat")) suffix = " — Squat";
-      else if (scheduledTitle.includes("Hinge")) suffix = " — Hinge";
-      else if (scheduledTitle.includes("Steady")) suffix = " — Steady";
-      else if (scheduledTitle.includes("Push")) suffix = " — Push";
-      else if (scheduledTitle.includes("Back Off")) suffix = " — Back Off";
+      if (scheduledTitle.includes("Squat")) suffix = ", Squat";
+      else if (scheduledTitle.includes("Hinge")) suffix = ", Hinge";
+      else if (scheduledTitle.includes("Steady")) suffix = ", Steady";
+      else if (scheduledTitle.includes("Push")) suffix = ", Push";
+      else if (scheduledTitle.includes("Back Off")) suffix = ", Back Off";
     }
     return `Lower Body Session${suffix}`;
   }
@@ -287,7 +287,7 @@ export default function WeeklySchedule() {
           <ChevronLeft className="w-4 h-4" />
         </button>
         <span className="font-technical text-sm font-extrabold text-ink">
-          {format(weekStart, "MMM d")} — {format(addDays(weekStart, 6), "MMM d")}
+          {format(weekStart, "MMM d")}, {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
           onClick={() => { setWeekStart(w => addWeeks(w, 1)); setSelectedDay(d => addWeeks(d, 1)); setShowCompleted(false); }}
@@ -356,8 +356,8 @@ export default function WeeklySchedule() {
                 </span>
                 <span className={`flex-1 min-w-0 text-xs font-semibold ${isCurrentDay ? "text-ink" : "text-faint"}`}>Rest</span>
                 {/* Empty trailing slot mirrors the session rows' w-[68px] status
-                    column so the Rest row's content area — and thus its selected
-                    highlight's right edge — aligns flush with the other rows
+                    column so the Rest row's content area, and thus its selected
+                    highlight's right edge, aligns flush with the other rows
                     instead of stopping short. */}
                 <span className="w-[68px] shrink-0" aria-hidden="true" />
               </button>
@@ -393,7 +393,7 @@ export default function WeeklySchedule() {
               {/* Shared fixed-width trailing status slot so completed / up-next /
                   future rows align on one scan column instead of a ragged rail.
                   The high-contrast (ink) trailing slot is RESERVED for the one
-                  actionable day — today's 'UP NEXT' + chevron — so the page still
+                  actionable day, today's 'UP NEXT' + chevron, so the page still
                   answers "what's next" even when today is fully logged. A logged
                   day reads as a quiet neutral check; its minute count is demoted
                   into the expandable detail card below (it was poaching the
@@ -422,7 +422,7 @@ export default function WeeklySchedule() {
       </div>
 
       {/* Selected day — each card's own section-label now carries the day echo
-          ("FRI — COMPLETED" / "FRI — STRENGTH"), so the standalone day caption is
+          ("FRI, COMPLETED" / "FRI, STRENGTH"), so the standalone day caption is
           dropped to avoid a redundant header above the card that repeats it. */}
       <div className="mb-6">
         {!hasAnything ? (
@@ -448,7 +448,7 @@ export default function WeeklySchedule() {
               <span className="grid place-items-center w-11 h-11 rounded-full glass-inset">
                 <Moon className="w-5 h-5 text-faint" />
               </span>
-              <h2 className="type-display text-[20px]">{dayEcho} — Rest Day</h2>
+              <h2 className="type-display text-[20px]">{dayEcho}, Rest Day</h2>
               <p className="text-[13px] font-semibold text-muted-2 max-w-[15rem]">
                 {isToday
                   ? "No session on the plan today. Log how recovery is going so tomorrow's targets stay dialed in."
@@ -496,7 +496,7 @@ export default function WeeklySchedule() {
                   {/* The highlighted week row directly above already names the
                       session ("Upper Body Session / STRENGTH / ✓"), so this card
                       doesn't restate that identity. It leads with what the row
-                      can't show — the session summary (duration · count) — and
+                      can't show, the session summary (duration · count), and
                       acts purely as the toggle into the per-exercise breakdown. */}
                   <button
                     onClick={() => setShowCompleted(v => !v)}
@@ -506,7 +506,7 @@ export default function WeeklySchedule() {
                     <div className="min-w-0 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-leaf fill-leaf/15 shrink-0" />
                       <span className="section-label">
-                        {isTwoADay ? `${dayEcho} AM — Logged` : `${dayEcho} — Logged`}
+                        {isTwoADay ? `${dayEcho} AM, Logged` : `${dayEcho}, Logged`}
                       </span>
                       <span className="font-technical text-xs font-semibold text-muted-2 tabular-nums truncate">
                         {summaryTrustworthy
@@ -563,7 +563,7 @@ export default function WeeklySchedule() {
                 <div key={idx} className="glass overflow-hidden rise-in-2">
                   <div className="px-4 pt-3.5 pb-1">
                     <p className="section-label mb-1">
-                      {isTwoADay ? `${dayEcho} AM — Strength` : `${dayEcho} — ${activeEnrollment?.program?.title || "Program"}`}
+                      {isTwoADay ? `${dayEcho} AM, Strength` : `${dayEcho}, ${activeEnrollment?.program?.title || "Program"}`}
                     </p>
                     <h3 className="type-display text-base leading-tight">{entry.title}</h3>
                   </div>
@@ -613,7 +613,7 @@ export default function WeeklySchedule() {
                   <div className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Timer className="w-3.5 h-3.5 text-carb" />
-                      <span className="section-label !text-carb">{isTwoADay ? "PM — Run" : "Cardio"}</span>
+                      <span className="section-label !text-carb">{isTwoADay ? "PM, Run" : "Cardio"}</span>
                     </div>
                     {isTwoADay && (
                       <p className="text-xs font-semibold text-muted-2 mb-3">

@@ -126,7 +126,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
 
   const titleText = action === "REST"
     ? "Rest Day"
-    : `${ACTION_LABEL[action] || titleCase(action)}${p.split ? ` — ${titleCase(p.split)}` : ""}`;
+    : `${ACTION_LABEL[action] || titleCase(action)}${p.split ? `, ${titleCase(p.split)}` : ""}`;
 
   const calItems = Object.entries(cal).filter(([, v]) => v && (v.sets || v.reps_each));
   const isRest = action === "REST";
@@ -195,11 +195,11 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
           )}
           {interference.anabolic_window && !isRest && (
             <span className="text-ok font-semibold flex items-center gap-1">
-              <Zap className="w-3 h-3" /> Anabolic window open — lift now
+              <Zap className="w-3 h-3" /> Anabolic window open, lift now
             </span>
           )}
           {interference.interference_level === "HIGH" && (
-            <span className="text-warn font-semibold">High interference — protect the lift</span>
+            <span className="text-warn font-semibold">High interference, protect the lift</span>
           )}
         </div>
 
@@ -284,7 +284,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             <AlertTriangle className="w-3.5 h-3.5 text-warn shrink-0 mt-0.5" />
             <p className="text-[11px] text-warn opacity-90 leading-relaxed">
               {overreach.overreaching
-                ? "Overreaching flagged (HRV down / RHR up). The engine forced recovery — honor it."
+                ? "Overreaching flagged (HRV down / RHR up). The engine forced recovery, honor it."
                 : prescription.interference_warning}
             </p>
           </div>
@@ -296,7 +296,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {!isRest && loggedToday && (
           <div className="mt-3.5 flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[44px] text-sm font-semibold text-leaf">
             <Check className="w-4 h-4 shrink-0" />
-            <span>Logged today — nice work.</span>
+            <span>Logged today, nice work.</span>
             <Link
               to="/quick-workout"
               state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}

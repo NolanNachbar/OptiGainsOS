@@ -22,10 +22,10 @@ const DEFAULT_INCREMENTS = {
 
 // Preset program lengths
 const DURATION_PRESETS = [
-  { weeks: 4,  label: "4 Weeks",  description: "Short burst — test the split" },
-  { weeks: 8,  label: "8 Weeks",  description: "Standard block — solid progress" },
-  { weeks: 12, label: "12 Weeks", description: "Full cycle — serious gains" },
-  { weeks: 16, label: "16 Weeks", description: "Extended — peak development" },
+  { weeks: 4,  label: "4 Weeks",  description: "Short burst, test the split" },
+  { weeks: 8,  label: "8 Weeks",  description: "Standard block, solid progress" },
+  { weeks: 12, label: "12 Weeks", description: "Full cycle, serious gains" },
+  { weeks: 16, label: "16 Weeks", description: "Extended, peak development" },
 ];
 
 export default function ProgramDurationModal({ split, goal, onConfirm, onCancel }) {
@@ -48,7 +48,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         week,
         type: "intro",
         label: "Intro Week",
-        description: "Learn the movements — lighter loads, focus on form",
+        description: "Learn the movements, lighter loads, focus on form",
         chipClass: "bg-brand/[12%] text-brand border-brand/30 text-brand",
       };
     }
@@ -59,8 +59,8 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         label: "Deload Week",
         description:
           deloadMode === "match_intro"
-            ? "Same weight as Week 1 — full recovery"
-            : `${deloadReduction} lbs under previous week — active recovery`,
+            ? "Same weight as Week 1, full recovery"
+            : `${deloadReduction} lbs under previous week, active recovery`,
         chipClass: "bg-warn/10 text-warn border-warn/20",
       };
     }
@@ -283,7 +283,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           {/* Week-by-week preview */}
           <div>
             <Label className="text-base font-semibold block mb-3 text-ink">
-              Program Preview — {activeWeeks} weeks
+              Program Preview, {activeWeeks} weeks
             </Label>
             <div className="flex gap-1.5 flex-wrap">
               {weekSchedule.map((w) => (

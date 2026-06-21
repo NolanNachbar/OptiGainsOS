@@ -244,7 +244,7 @@ export default function RecoveryDetail() {
                       ticks at 0.8/1.3 sit on the track and line up with the scale
                       labels below, tying the pin's position to the numbers. The
                       pin is the datum, so it carries the physiological spectrum
-                      (ok/warn/bad) — ACWR is a biometric, matching the number's
+                      (ok/warn/bad), ACWR is a biometric, matching the number's
                       color and the row below. */}
                   <div className="relative h-[10px] rounded-full bg-track">
                     <span
@@ -293,8 +293,8 @@ export default function RecoveryDetail() {
                   }`}
                 >
                   {acwrSpectrum === "bad"
-                    ? `High ACWR (${acwr.toFixed(2)}) — overtraining risk. Reduce volume.`
-                    : `Elevated ACWR (${acwr.toFixed(2)}) — load climbing above the lowest-risk zone.`}
+                    ? `High ACWR (${acwr.toFixed(2)}), overtraining risk. Reduce volume.`
+                    : `Elevated ACWR (${acwr.toFixed(2)}), load climbing above the lowest-risk zone.`}
                 </div>
               )}
             </CardContent>

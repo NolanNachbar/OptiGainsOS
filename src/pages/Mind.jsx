@@ -175,7 +175,7 @@ function ReadingTab() {
           <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
         </div>
         {/* While empty, the ghost "Add your first book" CTA owns the single coral
-            primary — suppress the header button so we don't show two add actions. */}
+            primary, suppress the header button so we don't show two add actions. */}
         {books.length > 0 && (
           <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
             <Plus className="w-3.5 h-3.5" /> Add Book
@@ -217,7 +217,7 @@ function ReadingTab() {
       {!isLoading && !isError && books.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <BookOpen className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2 mb-3">Start your reading list — track books, takeaways, and ratings.</p>
+          <p className="text-sm font-semibold text-muted-2 mb-3">Start your reading list, track books, takeaways, and ratings.</p>
           <Button variant="ghost" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
         </div>
       )}
@@ -614,7 +614,7 @@ function SkillsTab() {
       {!isLoading && !isError && skills.length === 0 && (
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Layers className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2 mb-3">Track what you're building — rate your level and keep skills warm.</p>
+          <p className="text-sm font-semibold text-muted-2 mb-3">Track what you're building, rate your level and keep skills warm.</p>
           <Button variant="ghost" size="sm" onClick={() => setShowAdd(true)}>Add your first skill</Button>
         </div>
       )}

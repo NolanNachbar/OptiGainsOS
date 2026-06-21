@@ -131,10 +131,10 @@ function CTLLineChart({ data }) {
 }
 
 function TSBStatusBadge({ tsb }) {
-  if (tsb > 10) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-ok/10 text-ok border-[0.5px] border-ok/20">Fresh — ready to peak</span>;
-  if (tsb >= 0) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-info/10 text-info border-[0.5px] border-info/20">Balanced — good training state</span>;
-  if (tsb >= -15) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warn/10 text-warn border-[0.5px] border-warn/20">Fatigued — normal heavy block</span>;
-  return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-bad/10 text-bad border-[0.5px] border-bad/20">Deep fatigue — consider a deload</span>;
+  if (tsb > 10) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-ok/10 text-ok border-[0.5px] border-ok/20">Fresh, ready to peak</span>;
+  if (tsb >= 0) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-info/10 text-info border-[0.5px] border-info/20">Balanced, good training state</span>;
+  if (tsb >= -15) return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warn/10 text-warn border-[0.5px] border-warn/20">Fatigued, normal heavy block</span>;
+  return <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-bad/10 text-bad border-[0.5px] border-bad/20">Deep fatigue, consider a deload</span>;
 }
 
 export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, banister }) {
@@ -168,7 +168,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
             Weekly Training Load (TSS)
           </h3>
           <p className="text-xs font-semibold text-muted-2 mt-1 leading-relaxed">
-            TSS (Training Stress Score) measures how hard you worked each week — combining workout duration and intensity.
+            TSS (Training Stress Score) measures how hard you worked each week, combining workout duration and intensity.
             Higher bars = more total training stress that week.
           </p>
         </div>
@@ -278,17 +278,17 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
                 <div>
                   <div className="w-1.5 h-1.5 rounded-full bg-teal mx-auto mb-1" />
                   <div className="font-bold text-muted-2">Fitness (CTL)</div>
-                  <div className="text-faint mt-0.5 leading-snug font-semibold">42-day avg — consistent load capacity</div>
+                  <div className="text-faint mt-0.5 leading-snug font-semibold">42-day avg, consistent load capacity</div>
                 </div>
                 <div>
                   <div className="w-1.5 h-1.5 rounded-full bg-violet mx-auto mb-1" />
                   <div className="font-bold text-muted-2">Fatigue (ATL)</div>
-                  <div className="text-faint mt-0.5 leading-snug font-semibold">7-day avg — recent stress buildup</div>
+                  <div className="text-faint mt-0.5 leading-snug font-semibold">7-day avg, recent stress buildup</div>
                 </div>
                 <div>
                   <div className="w-1.5 h-1.5 rounded-full mx-auto mb-1" style={{ background: "var(--viz-5)" }} />
                   <div className="font-bold text-muted-2">Form (TSB)</div>
-                  <div className="text-faint mt-0.5 leading-snug font-semibold">CTL − ATL — positive means fresh</div>
+                  <div className="text-faint mt-0.5 leading-snug font-semibold">CTL − ATL, positive means fresh</div>
                 </div>
               </div>
             </>

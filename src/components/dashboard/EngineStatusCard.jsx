@@ -53,7 +53,7 @@ export default function EngineStatusCard({ today }) {
 
         <div className="grid grid-cols-3 gap-2 text-center">
           {/* ACWR */}
-          <div className="glass-inset px-2 py-2.5" title="Acute:Chronic Workload Ratio — last 7 days of load vs your 28-day average. 0.8–1.3 is the sweet spot; above 1.5 spikes injury risk.">
+          <div className="glass-inset px-2 py-2.5" title="Acute:Chronic Workload Ratio, last 7 days of load vs your 28-day average. 0.8–1.3 is the sweet spot; above 1.5 spikes injury risk.">
 
             <div className="flex items-center justify-center gap-1 text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
               <Shield className="w-3 h-3" /> Load (ACWR)

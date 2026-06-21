@@ -147,7 +147,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-leaf" />
             {/* Retitled off 'Daily Readiness' so it never collides with the
-                Today ring's 'READINESS' micro-label — this is the SUBJECTIVE
+                Today ring's 'READINESS' micro-label, this is the SUBJECTIVE
                 self-report, distinct from the objective readiness score. */}
             <span className="section-label !text-ink">Subjective check-in</span>
           </div>
@@ -210,7 +210,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
 
       {/* Muscle soreness */}
       <div className="mb-4">
-        <p className="section-label mb-2">Soreness — tap to cycle</p>
+        <p className="section-label mb-2">Soreness, tap to cycle</p>
         <div className="grid grid-cols-3 gap-1.5">
           {MUSCLE_GROUPS.map(group => (
             <button

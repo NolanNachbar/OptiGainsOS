@@ -55,7 +55,7 @@ export default function HoldDeficitButton() {
   if (done) {
     return (
       <div className="flex items-center gap-1.5 text-xs font-semibold text-leaf px-1">
-        <Check className="w-3.5 h-3.5" /> Holding the hard deficit — recalcs on the next engine run.
+        <Check className="w-3.5 h-3.5" /> Holding the hard deficit, recalcs on the next engine run.
       </div>
     );
   }
@@ -64,7 +64,7 @@ export default function HoldDeficitButton() {
     <div className="text-xs text-ink-muted px-1 space-y-1.5">
       <p>
         The engine eased today's deficit to <span className="font-semibold text-ink">{rec?.calorie_target} kcal</span>
-        {" "}(recovery cushion). That's its recommendation — but you can overrule it.
+        {" "}(recovery cushion). That's its recommendation, but you can overrule it.
       </p>
       <Button variant="dim" size="sm" onClick={hold} disabled={busy}
         className="h-8 px-3 text-xs hover:text-warn">

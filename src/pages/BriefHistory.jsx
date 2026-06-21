@@ -81,7 +81,7 @@ function BriefEntry({ brief, index = 0 }) {
 
       {/* Body reveal: grid-rows 0fr→1fr collapses height with no magic max-height,
           paired with opacity + an 8px rise to match the riseIn entrance and the
-          chevron rotation — all on the single system easing in the 180-320ms band. */}
+          chevron rotation, all on the single system easing in the 180-320ms band. */}
       <div
         className="grid transition-[grid-template-rows,opacity] duration-[260ms] ease-[cubic-bezier(.2,.7,.3,1)]"
         style={{ gridTemplateRows: open ? "1fr" : "0fr", opacity: open ? 1 : 0 }}
@@ -216,7 +216,7 @@ export default function BriefHistory() {
           <div className="flex flex-col min-h-[calc(100vh-12rem)]">
             {/* Summary tile anchors the layout so a small list (often a single
                 brief) reads as an intentional composition instead of one card
-                floating over an empty void. Neutral glass, no CTA — the cards
+                floating over an empty void. Neutral glass, no CTA, the cards
                 below remain the only interactive surface. */}
             <div className="glass-inset flex items-center gap-3 px-5 py-4 mb-4 rise-in">
               <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-teal/10 shrink-0">

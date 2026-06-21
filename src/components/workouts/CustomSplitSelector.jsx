@@ -200,7 +200,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                     Exercises per day
                   </p>
                   <p className="text-xs text-ink-muted">
-                    You have 60+ min — choose how many exercises per session
+                    You have 60+ min, choose how many exercises per session
                   </p>
                 </div>
                 <span className="text-lg font-bold text-brand">{exercisesPerDay}</span>

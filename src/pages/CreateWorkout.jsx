@@ -42,11 +42,11 @@ const TARGET_TYPES = [
 ];
 
 const HR_ZONES = [
-  { value: '1', label: 'Zone 1 — Very Light (50–60%)' },
-  { value: '2', label: 'Zone 2 — Light (60–70%)' },
-  { value: '3', label: 'Zone 3 — Moderate (70–80%)' },
-  { value: '4', label: 'Zone 4 — Hard (80–90%)' },
-  { value: '5', label: 'Zone 5 — Max (90–100%)' },
+  { value: '1', label: 'Zone 1, Very Light (50–60%)' },
+  { value: '2', label: 'Zone 2, Light (60–70%)' },
+  { value: '3', label: 'Zone 3, Moderate (70–80%)' },
+  { value: '4', label: 'Zone 4, Hard (80–90%)' },
+  { value: '5', label: 'Zone 5, Max (90–100%)' },
 ];
 
 const defaultStrengthExercise = () => ({ name: "", sets: 3, reps: "10", rest_seconds: 180, notes: "" });
@@ -251,7 +251,7 @@ export default function CreateWorkout() {
         {/* Desktop-only page header. On mobile the shared Layout chrome already
             prints the page name and the "Workout Details" CardTitle follows
             immediately, so this in-file title+subtitle band is suppressed below
-            lg — it was the redundant third header stratum that pushed the first
+            lg, it was the redundant third header stratum that pushed the first
             input down the 390px viewport. */}
         <div className="hidden lg:block mb-6">
           <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
@@ -292,7 +292,7 @@ export default function CreateWorkout() {
               ) : (
                 /* Disclosure, not a data field: a quiet inline toggle (auto
                    width, no glass fill/edge/border) so it reads as a link-style
-                   affordance that reveals an optional field — never as another
+                   affordance that reveals an optional field, never as another
                    empty input competing with the real Inputs above/below. Stays
                    neutral ink-muted (not coral) so it doesn't drift into a
                    second action color beside the Save CTA. Keeps Plus + 44px. */
@@ -430,7 +430,7 @@ export default function CreateWorkout() {
               they sit clipped behind it at the fold. The bar's full painted
               height is pt-3 (12px) + the 44px button + its bottom padding
               (--dock-total-height + 16px + safe-area), so the spacer must
-              reserve that exact footprint — not a guessed ~64px — or the last
+              reserve that exact footprint, not a guessed ~64px, or the last
               inputs stay clipped. At lg the bar is static and needs no spacer. */}
           <div
             aria-hidden

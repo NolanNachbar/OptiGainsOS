@@ -6,9 +6,9 @@ export default function MetricTile({
   label,
   value,
   unit,
-  delta,                 // e.g. "+0.4" — colored by sign unless deltaColor given
+  delta,                 // e.g. "+0.4", colored by sign unless deltaColor given
   deltaColor,
-  accent,                // the datum's hue — dot + delta color
+  accent,                // the datum's hue, dot + delta color
   sub,                   // small caption under the value
   icon: Icon,
   onClick,

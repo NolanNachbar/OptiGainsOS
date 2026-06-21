@@ -259,7 +259,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
               <SelectContent>
                 {ACTIVITY_LEVELS.map(opt => (
                   <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label} — {opt.desc}
+                    {opt.label}, {opt.desc}
                   </SelectItem>
                 ))}
               </SelectContent>

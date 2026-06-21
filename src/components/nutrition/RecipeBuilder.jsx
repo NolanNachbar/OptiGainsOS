@@ -1020,7 +1020,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                         id="recipe-desc"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Optional — e.g., Quick weeknight dinner"
+                        placeholder="Optional, e.g., Quick weeknight dinner"
                         className="mt-1.5 h-11"
                       />
                     </div>
