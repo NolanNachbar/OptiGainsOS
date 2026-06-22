@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
-import { Dumbbell, Pencil, Check, Brain } from "lucide-react";
+import { Dumbbell, Pencil, Check, Brain, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
@@ -160,6 +160,29 @@ export default function QuickWorkout() {
     return [...names].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   }, [allWorkoutLogs]);
 
+  // Recent lifts for the empty-canvas quick-start list — the exercises the
+  // athlete logged most recently, most-recent first, deduped. This fills the
+  // space between the hero and the docked add form so the first viewport has
+  // substance (one-tap re-add) instead of a dead void.
+  const recentExerciseNames = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    const sorted = [...allWorkoutLogs].sort(
+      (a, b) => new Date(b.log_date || 0) - new Date(a.log_date || 0)
+    );
+    for (const log of sorted) {
+      for (const e of log.exercises || []) {
+        const name = e.name?.trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          out.push(name);
+          if (out.length >= 6) return out;
+        }
+      }
+    }
+    return out;
+  }, [allWorkoutLogs]);
+
   // Exercise management
   const {
     exercises,
@@ -234,25 +257,49 @@ export default function QuickWorkout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises]);
 
-  // Rest timer tick — single interval, absolute end timestamp (mirrors WorkoutDetail).
+  // Rest timer tick — phase-aligned to whole seconds, absolute end timestamp.
+  // rtb-6: a fixed 500ms polling interval fired off the wall-clock second
+  // boundary, so the displayed countdown stuttered (a 2x/sec poll lands the
+  // ceil() flip at an arbitrary phase, visibly skipping or doubling a second).
+  // Mirror the elapsed-clock pattern in WorkoutLoggingHeader: recompute from
+  // Date.now() and schedule the NEXT tick at the next whole-second boundary of
+  // the remaining time, so the readout decrements exactly once per real second.
+  // The chain is (re)started imperatively by startRestTimer/addRestTime rather
+  // than polled, so there's no fixed-interval poll at all.
+  const restTickRef = useRef(null);
   useEffect(() => {
-    const tick = () => {
+    restTickRef.current = () => {
       if (restTimerEndRef.current === null) return;
-      const remaining = Math.max(0, Math.ceil((restTimerEndRef.current - Date.now()) / 1000));
+      const msLeft = restTimerEndRef.current - Date.now();
+      const remaining = Math.max(0, Math.ceil(msLeft / 1000));
       setRestTimer(remaining);
-      if (remaining <= 0) restTimerEndRef.current = null;
+      if (remaining <= 0) {
+        restTimerEndRef.current = null;
+        // Rest is over — flash 0:00 for a beat, then clear the chip so the
+        // bottom bar collapses back to its single elapsed-clock row instead of
+        // stranding a dead 0:00 countdown. setRestTimer(null) is what tears the
+        // rest cluster down (restActive = restTimer !== null).
+        clearTimeout(restTimerRef.current);
+        restTimerRef.current = setTimeout(() => setRestTimer(null), 900);
+        return;
+      }
+      // ms until the countdown's next whole-second flip.
+      const msToNextSecond = ((msLeft % 1000) + 1000) % 1000 || 1000;
+      clearTimeout(restTimerRef.current);
+      restTimerRef.current = setTimeout(() => restTickRef.current(), msToNextSecond);
     };
-    restTimerRef.current = setInterval(tick, 500);
-    return () => clearInterval(restTimerRef.current);
+    return () => clearTimeout(restTimerRef.current);
   }, []);
 
   const startRestTimer = (duration) => {
     setRestDuration(duration);
     restTimerEndRef.current = Date.now() + duration * 1000;
     setRestTimer(duration);
+    restTickRef.current?.(); // kick the boundary-aligned chain
   };
 
   const skipRestTimer = () => {
+    clearTimeout(restTimerRef.current);
     restTimerEndRef.current = null;
     setRestTimer(null);
   };
@@ -261,6 +308,7 @@ export default function QuickWorkout() {
     if (restTimerEndRef.current !== null) {
       restTimerEndRef.current += seconds * 1000;
       setRestDuration((prev) => prev + seconds);
+      restTickRef.current?.(); // re-sync the countdown to the new end time
     }
   };
 
@@ -337,6 +385,13 @@ export default function QuickWorkout() {
     return <LoadingScreen />;
   }
 
+  // Empty canvas (no exercises, not the prescribed flow, resume decision past):
+  // the body becomes a single thumb-zone-docked layout — one type-display hero
+  // up top, the add-exercise form pinned into the lower third — so the first
+  // viewport carries substance with no dead void and the primary Add action
+  // lands under the thumb.
+  const isEmptyCanvas = exercises.length === 0 && !prescribed && !resumeSession;
+
   return (
     <div className="min-h-screen relative">
       <WorkoutLoggingHeader
@@ -360,7 +415,17 @@ export default function QuickWorkout() {
         onAddRestTime={addRestTime}
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6">
+      <div
+        className={`max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6 ${
+          // Empty canvas: make the body a viewport-tall flex column so the
+          // add-exercise form can be pushed into the lower (thumb) third with
+          // no dead void between the hero and the form. lg keeps the normal
+          // block flow (desktop has no thumb-zone constraint).
+          isEmptyCanvas
+            ? "flex flex-col min-h-[calc(100svh-96px-env(safe-area-inset-top,0px)-var(--logging-bar-clearance,132px))] lg:block lg:min-h-0"
+            : ""
+        }`}
+      >
         <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -484,42 +549,115 @@ export default function QuickWorkout() {
             session" claim. Hold the body until the choice is made; the chosen
             path (resume restores the saved sets, start-fresh seeds a blank
             session) then renders the right state. */}
-        {!resumeSession && (
-        <>
-        {/* Pre-session insight (Phase 2+) — suppressed when the engine has
-            already prescribed loads, to avoid two coaches contradicting. On the
-            empty canvas it's a compact single-line teal coach chip so the first
-            viewport stays one coherent stack; once exercises exist it expands to
-            the full insight card with its accept/dismiss actions. */}
-        {!prescribed && preSessionInsight && (
-          exercises.length === 0 && !insightExpanded ? (
-            <button
-              type="button"
-              onClick={() => setInsightExpanded(true)}
-              className="w-full mb-4 glass px-3.5 py-3 rounded-xl flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px]"
-            >
-              <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
-                <Brain className="w-3.5 h-3.5 text-teal" />
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="block text-[10px] text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
-                <span className="block text-[12.5px] font-semibold text-ink-muted leading-relaxed">
-                  {preSessionInsight.message}
-                </span>
-              </span>
-            </button>
-          ) : (
-            <PreSessionInsightCard
-              insight={preSessionInsight}
-              onAccept={handleInsightAccept}
-              onDismiss={() => { setInsightDismissed(true); setInsightExpanded(false); }}
-            />
-          )
+        {/* Empty canvas — ONE type-display hero frames the action, a quiet
+            COACH chip (if any), a recent-lifts quick-start list that grows to
+            fill the band, then the add-exercise form whose CTA lands in the
+            lower (thumb) third. The parent flex column is justify-center, so the
+            whole stack is balanced top↕bottom with no contiguous >120px void,
+            and the growing list pins the form low. lg drops back to block flow. */}
+        {isEmptyCanvas && (
+          <>
+            <div className="rise-in lg:hidden">
+              <h2 className="type-display text-[26px] leading-[1.1]">
+                Build your session
+              </h2>
+              <p className="text-sm font-semibold text-ink-muted mt-1.5 leading-relaxed">
+                Add a lift to start logging sets, reps, and load.
+              </p>
+            </div>
+
+            {!prescribed && preSessionInsight && (
+              !insightExpanded ? (
+                <button
+                  type="button"
+                  onClick={() => setInsightExpanded(true)}
+                  className="w-full mt-4 glass px-3.5 py-3 rounded-xl flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px] lg:hidden"
+                >
+                  <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <Brain className="w-3.5 h-3.5 text-teal" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[10px] text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
+                    <span className="block text-[12.5px] font-semibold text-ink-muted leading-relaxed">
+                      {preSessionInsight.message}
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <div className="mt-4 lg:hidden">
+                  <PreSessionInsightCard
+                    insight={preSessionInsight}
+                    onAccept={handleInsightAccept}
+                    onDismiss={() => { setInsightDismissed(true); setInsightExpanded(false); }}
+                  />
+                </div>
+              )
+            )}
+
+            {/* Quick-start list — one-tap re-add of recent lifts as full-width
+                rows. flex-1 lets this region absorb the slack between the hero
+                and the docked form so neither gap exceeds 120px while the form's
+                Add CTA stays in the thumb zone. When there's no history a quiet
+                hint fills the same band. */}
+            <div className="mt-6 flex-1 min-h-0 flex flex-col justify-center lg:hidden">
+              {recentExerciseNames.length > 0 ? (
+                <>
+                  <p className="section-label mb-2.5">Recent lifts</p>
+                  <div className="flex flex-col gap-2">
+                    {recentExerciseNames.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => addExercise(name)}
+                        className="w-full min-h-[48px] px-4 glass rounded-xl text-sm font-bold text-ink flex items-center gap-2.5 touch-manipulation glass-interactive rise-in"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-charcoal-surface2 flex items-center justify-center shrink-0">
+                          <Plus className="w-4 h-4 text-ink-muted" />
+                        </span>
+                        <span className="truncate text-left flex-1">{name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="glass rounded-2xl px-4 py-5 flex items-center gap-3 rise-in">
+                  <span className="w-10 h-10 rounded-xl bg-charcoal-surface2 flex items-center justify-center shrink-0">
+                    <Dumbbell className="w-5 h-5 text-ink-muted" />
+                  </span>
+                  <p className="text-[13px] font-semibold text-ink-muted leading-relaxed">
+                    Pick a lift below to log your first set. Your recent lifts will show up here next time.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* The add-exercise form — its Add CTA is the page's primary action
+                and lands in the thumb zone (lower third) because the flex-1 list
+                above pushes it down. Flows inline on desktop. */}
+            <div className="mt-5 lg:mt-0">
+              <AddExerciseForm
+                onAdd={addExercise}
+                showCloseButton={false}
+                exerciseNames={allHistoryExerciseNames}
+                hasExercises={false}
+              />
+            </div>
+          </>
         )}
 
-        {/* Empty-state prompt is folded INTO the docked AddExerciseForm (it
-            renders its own header in the thumb zone), so there is no longer a
-            standalone top-of-page card split away from the bottom action. */}
+        {!resumeSession && !isEmptyCanvas && (
+        <>
+        {/* Pre-session insight (Phase 2+) — suppressed when the engine has
+            already prescribed loads, to avoid two coaches contradicting. Once
+            exercises exist it's the full insight card with its accept/dismiss
+            actions. */}
+        {!prescribed && preSessionInsight && (
+          <PreSessionInsightCard
+            insight={preSessionInsight}
+            onAccept={handleInsightAccept}
+            onDismiss={() => { setInsightDismissed(true); setInsightExpanded(false); }}
+          />
+        )}
 
         {/* Exercise List */}
         <div className="space-y-4">
