@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useAllFoodEntries, useCustomFoods, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight } from "lucide-react";
+import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -112,6 +112,10 @@ export default function FoodTracker() {
   // False for manual entry and custom/recent foods (baseMacros = per 1 unit).
   const [isUsdaFood, setIsUsdaFood] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  // AI "describe a food" macro estimate (estimate-food-macros edge function).
+  const [estimateInput, setEstimateInput] = useState("");
+  const [isEstimating, setIsEstimating] = useState(false);
+  const [isEstimatedFood, setIsEstimatedFood] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const queryClient = useQueryClient();
   const searchRef = useRef(null);
@@ -506,6 +510,43 @@ export default function FoodTracker() {
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
+    setIsEstimatedFood(false);
+  };
+
+  // AI estimate: turn a plain-language food description into a single-serving
+  // macro estimate (via the estimate-food-macros edge function) and prefill the
+  // form like a custom food so the athlete reviews + adjusts before logging.
+  const estimateFood = async () => {
+    const description = estimateInput.trim();
+    if (!description) { toast.error("Describe a food first"); return; }
+    setIsEstimating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("estimate-food-macros", { body: { description } });
+      if (error) throw error;
+      const est = data?.estimate;
+      if (!est) throw new Error(data?.error || "No estimate returned");
+      selectCustomFood({
+        food_name: est.food_name,
+        serving_size: 1,
+        serving_unit: "serving",
+        calories: est.calories,
+        protein_grams: est.protein,
+        carbs_grams: est.carbs,
+        fats_grams: est.fats,
+      });
+      setServingHint(est.serving_description ? `Estimated for ${est.serving_description}` : null);
+      setIsEstimatedFood(true);
+      setManualExpanded(true);
+      setEstimateInput("");
+      toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
+    } catch (err) {
+      const msg = String(err?.message || err);
+      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
+        ? "AI estimate isn't deployed yet — deploy the estimate-food-macros function to enable it."
+        : `Estimate failed: ${msg}`);
+    } finally {
+      setIsEstimating(false);
+    }
   };
 
   const addCurrentFoodToMeal = () => {
@@ -696,9 +737,11 @@ const handleSaveMealTemplate = () => {
     setSearchQuery("");
     setGenericResults([]); setBrandedResults([]);
     setEditingEntry(null);
+    setIsEstimatedFood(false);
   };
 
   const selectFood = (food) => {
+    setIsEstimatedFood(false);
     // baseMacros always stored per 100g (USDA/barcode nutrient basis)
     const baseMacroValues = {
       calories: Math.round(food.calories),
@@ -1601,6 +1644,40 @@ const handleSaveMealTemplate = () => {
                         )}
                       </div>
                     )}
+
+                    {/* AI estimate — describe a food when exact macros aren't in the DB */}
+                    <div className="border-t border-charcoal-border pt-4">
+                      <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-brand" /> Can't find it? Describe it
+                      </Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id="ai-estimate"
+                          value={estimateInput}
+                          onChange={(e) => setEstimateInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); estimateFood(); } }}
+                          placeholder="e.g., 8 oz grilled chicken breast"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="dim"
+                          size="lg"
+                          onClick={estimateFood}
+                          disabled={isEstimating || !estimateInput.trim()}
+                          className="shrink-0 min-w-[92px]"
+                        >
+                          {isEstimating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Estimate</>}
+                        </Button>
+                      </div>
+                      {isEstimatedFood ? (
+                        <p className="mt-1.5 text-[11px] text-brand flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
+                      )}
+                    </div>
 
                     <div className="border-t border-charcoal-border pt-4">
                       <button
