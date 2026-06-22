@@ -40,6 +40,33 @@ const dateFieldClass = (value) => `${DATE_FIELD}${value ? "" : " is-empty"}`;
 // one-liner above the tabs — hoisted so the two never drift apart.
 const PAGE_SUBTITLE = "Track applications, networking, and job search momentum.";
 
+// Shared sticky action-row for the dialog forms (Pipeline + Networking). Pins to
+// the sheet bottom on the sheet material with a top hairline so it reads as the
+// form's footer. Cancel is the lower-contrast neutral (variant="dim"); teal lives
+// ONLY on Save (the single action color). 44px min height keeps both tappable
+// even without size="lg". Column gap is >=12px (gap-3).
+// FormActions owns the bottom safe-area inset (career-form-dialog-3). The Dialog
+// primitive reserves `calc(1.5rem + env(safe-area-inset-bottom))` of bottom padding
+// for default-padding callers; left alone that leaves a dead band BELOW this sticky
+// bar (bar floats, inset sits empty under it). We bleed past the sheet's p-6 bottom
+// padding AND that reserved inset via a negative bottom margin, then re-pay the
+// inset as the bar's OWN bottom padding so the bar fills to the home-indicator edge
+// with exactly one reserved band, not two.
+function FormActions({ onCancel, onSave, saveDisabled }) {
+  return (
+    <div
+      className="sticky bottom-0 -mx-6 px-6 pt-3 flex gap-3 bg-[var(--sheet-bg)] border-t hairline"
+      style={{
+        marginBottom: 'calc(-1.5rem - env(safe-area-inset-bottom))',
+        paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
+      }}
+    >
+      <Button variant="dim" className="shrink-0 w-auto min-h-[44px]" onClick={onCancel}>Cancel</Button>
+      <Button variant="volt" size="lg" className="flex-1" disabled={saveDisabled} onClick={onSave}>Save</Button>
+    </div>
+  );
+}
+
 function TabQueryState({ isLoading, isError, onRetry }) {
   if (isLoading) {
     return (
@@ -81,7 +108,10 @@ function AppForm({ initial, onSave, onClose }) {
         <Label className="text-xs text-muted-2 mb-1.5 block">Role</Label>
         <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="pt-1 border-t hairline">
+        <h3 className="section-label pt-3 pb-1">Details</h3>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Applied</Label>
           <Input type="date" className={dateFieldClass(form.date_applied)} value={form.date_applied} onChange={e => setForm(p => ({ ...p, date_applied: e.target.value }))} />
@@ -98,9 +128,9 @@ function AppForm({ initial, onSave, onClose }) {
       </div>
       <div>
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
-        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, etc." />
+        <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Recruiter name, salary range, referral source" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-2 mb-1.5 block">Next action</Label>
           <Input value={form.next_action} onChange={e => setForm(p => ({ ...p, next_action: e.target.value }))} placeholder="e.g. Follow up" />
@@ -110,10 +140,7 @@ function AppForm({ initial, onSave, onClose }) {
           <Input type="date" className={dateFieldClass(form.next_action_date)} value={form.next_action_date} onChange={e => setForm(p => ({ ...p, next_action_date: e.target.value }))} />
         </div>
       </div>
-      <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="lg" className="flex-1" disabled={!form.company.trim() || !form.role.trim()} onClick={() => onSave(form)}>Save</Button>
-      </div>
+      <FormActions onCancel={onClose} onSave={() => onSave(form)} saveDisabled={!form.company.trim() || !form.role.trim()} />
     </div>
   );
 }
@@ -211,7 +238,7 @@ function PipelineTab() {
                 <p className="text-sm font-extrabold text-ink truncate">{app.company}</p>
                 <p className="text-xs font-semibold text-muted-2 truncate">{app.role}</p>
               </div>
-              <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+              <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ease-[var(--ease)] shrink-0 -mr-1.5">
                 <button onClick={() => { setEditing(app); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
@@ -227,7 +254,7 @@ function PipelineTab() {
               {STATUS_NEXT[status] && (
                 <button
                   onClick={() => advance.mutate({ id: app.id, status: STATUS_NEXT[status] })}
-                  className="text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] px-2.5 text-muted-2 hover:text-gold transition-colors"
+                  className="text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] px-2.5 text-muted-2 hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
                 >
                   <ArrowRight className="w-3.5 h-3.5" /> Move
                 </button>
@@ -302,15 +329,13 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="flex items-center justify-center min-h-[50vh] md:min-h-0 md:mt-8">
-          <div className="w-full py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
-            <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-            <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-              <Plus className="w-3.5 h-3.5" /> Add your first application
-            </Button>
-          </div>
+        <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
+          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
+          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
+          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
+          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+            <Plus className="w-3.5 h-3.5" /> Add your first application
+          </Button>
         </div>
       )}
 
@@ -379,10 +404,7 @@ function NetworkForm({ initial, onSave, onClose }) {
         <Label className="text-xs text-muted-2 mb-1.5 block">Notes</Label>
         <Textarea rows={3} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="What was discussed, what to follow up on…" />
       </div>
-      <div className="flex gap-2 pt-1">
-        <Button variant="dark" size="lg" className="shrink-0 w-auto" onClick={onClose}>Cancel</Button>
-        <Button variant="volt" size="lg" className="flex-1" disabled={!form.person_name.trim()} onClick={() => onSave(form)}>Save</Button>
-      </div>
+      <FormActions onCancel={onClose} onSave={() => onSave(form)} saveDisabled={!form.person_name.trim()} />
     </div>
   );
 }
@@ -444,15 +466,17 @@ function NetworkingTab() {
             {overdue.length} follow-up{overdue.length > 1 ? "s" : ""} overdue
           </div>
         )}
-        <Button variant="volt" className="gap-1.5 ml-auto min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
-          <Plus className="w-3.5 h-3.5" /> Add Contact
-        </Button>
+        {contacts.length > 0 && (
+          <Button variant="volt" className="gap-1.5 ml-auto min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
+            <Plus className="w-3.5 h-3.5" /> Add Contact
+          </Button>
+        )}
       </div>
 
       <div className="space-y-3">
         <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
         {!isLoading && !isError && contacts.length === 0 && (
-          <div className="py-10 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
+          <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
             <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log a conversation to track follow-ups.</p>
@@ -475,7 +499,7 @@ function NetworkingTab() {
                   </div>
                   {contact.company && <p className="text-xs font-semibold text-muted-2">{contact.company}</p>}
                 </div>
-                <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0 -mr-1.5">
+                <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ease-[var(--ease)] shrink-0 -mr-1.5">
                   <button onClick={() => { setEditing(contact); setShowAdd(true); }} aria-label="Edit" className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted-2 hover:text-ink">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>

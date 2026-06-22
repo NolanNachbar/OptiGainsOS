@@ -61,51 +61,60 @@ export default function WeighInModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" sheetMinHeight="">
+      <DialogContent className="max-w-md flex flex-col" sheetMinHeight="">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Scale className="w-5 h-5" /> Log Your Weight
+            <Scale className="w-5 h-5 text-ink-secondary" /> Log Your Weight
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Flex column so the Save CTA rides mt-auto down to the bottom safe-area
+            thumb zone with no empty glass band beneath it (weigh-in-modal-1,4). */}
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
           <div>
-            <label className="text-sm font-medium text-ink-muted mb-2 block text-center">
+            <label className="form-label mb-2 block">
               Weight ({weightUnit})
             </label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              step="0.1"
-              enterKeyHint="done"
-              placeholder="Enter weight"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="type-display tabular-nums text-center text-2xl sm:text-3xl h-auto py-3"
-              autoFocus
-            />
+            {/* Quiet trailing 'lbs' unit adornment inside the input (weigh-in-modal-3). */}
+            <div className="relative">
+              <Input
+                type="text"
+                inputMode="decimal"
+                step="0.1"
+                enterKeyHint="done"
+                placeholder="Enter weight"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="type-display tabular-nums text-2xl sm:text-3xl h-16 pr-14"
+                autoFocus
+              />
+              <span
+                className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-ink-faint"
+                aria-hidden="true"
+              >
+                {weightUnit}
+              </span>
+            </div>
             {lastWeight != null && (
-              <p className="text-xs text-ink-faint text-center mt-2">
+              <p className="text-xs text-ink-faint mt-2">
                 Last: <span className="tabular-nums">{lastWeight}</span> {weightUnit}
               </p>
             )}
           </div>
-          <div>
-            <Button
-              type="submit"
-              variant="volt"
-              size="lg"
-              className="w-full"
-              disabled={weighInMutation.isPending || !weight || parseFloat(weight) <= 0}
-            >
-              {weighInMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 spin-loop" /> Saving…
-                </>
-              ) : (
-                "Save"
-              )}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            variant="volt"
+            size="lg"
+            className="w-full mt-auto"
+            disabled={weighInMutation.isPending || !weight || parseFloat(weight) <= 0}
+          >
+            {weighInMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 spin-loop" /> Saving…
+              </>
+            ) : (
+              "Save"
+            )}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -264,6 +264,11 @@ export default function CreateWorkout() {
           <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
             <CardContent className="space-y-3 sm:space-y-4">
+              {/* Title is the screen subject: it computes a larger display
+                  font-size/weight than the supporting Folder/Type/Duration row
+                  below (create-workout-4). The Input's own tabular-nums (SYS-01)
+                  rides through; h-auto + py-2 give the bigger glyph room without
+                  the fixed 44px field clipping it. */}
               <div>
                 <Label htmlFor="title">Workout Title *</Label>
                 <Input
@@ -272,7 +277,7 @@ export default function CreateWorkout() {
                   onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
                   placeholder="e.g., Upper Body Strength"
                   required
-                  className="mt-1"
+                  className="mt-1 h-auto py-2.5 text-[20px] font-extrabold tracking-[-0.02em]"
                 />
               </div>
 
@@ -298,60 +303,68 @@ export default function CreateWorkout() {
                    second action color beside the Save CTA. Keeps Plus + 44px. */
                 <Button
                   type="button"
-                  variant="dim"
+                  variant="plain"
                   size="lg"
                   onClick={() => setShowDescription(true)}
-                  className="h-11 justify-start border-0 bg-transparent hover:bg-transparent px-1"
+                  className="h-11 justify-start px-1"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add description
                 </Button>
               )}
 
-              <div>
-                <Label htmlFor="folder">Folder</Label>
-                <Combobox
-                  value={workout.folder}
-                  onValueChange={(value) => setWorkout({ ...workout, folder: value })}
-                  placeholder="e.g., Push Pull Legs, Upper/Lower"
-                >
-                  <ComboboxContent>
-                    {existingFolders.map(f => (
-                      <ComboboxItem key={f} value={f}>{f}</ComboboxItem>
-                    ))}
-                  </ComboboxContent>
-                </Combobox>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              {/* Quiet supporting row (create-workout-4): Folder / Type /
+                  Duration are metadata under the prominent Title, so they wear
+                  the smaller .section-label eyebrow voice (uppercase, faint
+                  ink) and a tighter internal gap than the Title block — one
+                  demoted group, not three peer fields competing with the
+                  subject above. */}
+              <div className="space-y-2">
                 <div>
-                  <Label htmlFor="type">Workout Type *</Label>
-                  <Select value={workout.focus} onValueChange={handleTypeChange}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {WORKOUT_TYPES.map(type => (
-                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  <Label htmlFor="folder" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Folder</Label>
+                  <Combobox
+                    value={workout.folder}
+                    onValueChange={(value) => setWorkout({ ...workout, folder: value })}
+                    placeholder="e.g., Push Pull Legs, Upper/Lower"
+                  >
+                    <ComboboxContent>
+                      {existingFolders.map(f => (
+                        <ComboboxItem key={f} value={f}>{f}</ComboboxItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
 
-                <div>
-                  <Label htmlFor="duration">Duration (minutes) *</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={workout.duration_minutes}
-                    // Allow the field to be cleared mid-edit (empty string) so it
-                    // can be retyped; snap back to a valid >=1 on blur. The old
-                    // onChange forced 1 on every keystroke, so backspacing the
-                    // value instantly reset it to 1.
-                    onChange={(e) => setWorkout({ ...workout, duration_minutes: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1) })}
-                    onBlur={(e) => { if (e.target.value === '') setWorkout({ ...workout, duration_minutes: 1 }); }}
-                    required
-                    min="1"
-                    className="mt-1"
-                  />
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                  <div>
+                    <Label htmlFor="type" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Workout Type *</Label>
+                    <Select value={workout.focus} onValueChange={handleTypeChange}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {WORKOUT_TYPES.map(type => (
+                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="duration" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      value={workout.duration_minutes}
+                      // Allow the field to be cleared mid-edit (empty string) so it
+                      // can be retyped; snap back to a valid >=1 on blur. The old
+                      // onChange forced 1 on every keystroke, so backspacing the
+                      // value instantly reset it to 1.
+                      onChange={(e) => setWorkout({ ...workout, duration_minutes: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1) })}
+                      onBlur={(e) => { if (e.target.value === '') setWorkout({ ...workout, duration_minutes: 1 }); }}
+                      required
+                      min="1"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -467,8 +480,11 @@ export default function CreateWorkout() {
 
 function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, onRemove, onChange }) {
   return (
-    <div className="glass-inset p-4 rise-in">
-        <div className="flex justify-between items-start mb-4">
+    /* Inset padding tightens to p-3 below sm (create-workout-5) so the first
+       exercise's Sets/Reps/Rest pull up within ~1.5 viewport heights on a
+       390px screen; restores p-4 at sm+. */
+    <div className="glass-inset p-3 sm:p-4 rise-in">
+        <div className="flex justify-between items-start mb-3 sm:mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
             <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove exercise" className="min-h-[44px] min-w-[44px] px-0 shrink-0 text-ink-muted hover:text-ink">
@@ -476,7 +492,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
             </Button>
           )}
         </div>
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           <div>
             <Label>Exercise Name *</Label>
             <Combobox
@@ -601,8 +617,8 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
 
 function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = false }) {
   return (
-    <div className="glass-inset p-4 border-l-[3px] border-l-charcoal-border rise-in">
-        <div className="flex justify-between items-start mb-4">
+    <div className="glass-inset p-3 sm:p-4 border-l-[3px] border-l-charcoal-border rise-in">
+        <div className="flex justify-between items-start mb-3 sm:mb-4">
           <span className="text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
             Step {index + 1}
           </span>

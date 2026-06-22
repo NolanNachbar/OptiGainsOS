@@ -281,20 +281,24 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-ink-muted">{inst.total.calories} cal</span>
-                    <button
+                    <Button
+                      variant="plain"
+                      size="icon"
+                      className="min-h-11 min-w-11 hover:text-brand"
                       onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay, mt), mealType: mt })}
-                      className="p-0.5 rounded hover:bg-charcoal-elevated  text-ink-muted hover:text-brand transition-colors"
                       title="Save as meal template"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="plain"
+                      size="icon"
+                      className="min-h-11 min-w-11"
                       onClick={() => excludeMeal(inst.key)}
-                      className="p-0.5 rounded hover:bg-charcoal-elevated  text-ink-muted hover:text-ink-muted transition-colors"
                       title="Skip this meal"
                     >
                       <X className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -339,8 +343,8 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
           </div>
           <Button
             variant="outline"
-            size="sm"
-            className="w-full h-8 text-xs gap-1.5"
+            size="lg"
+            className="w-full gap-1.5"
             onClick={() => setSaveDialog({ entries: planFoodsToEntries(currentDay), mealType: null })}
           >
             <Bookmark className="w-3.5 h-3.5" />

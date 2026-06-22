@@ -110,7 +110,7 @@ export default function MealTemplates({ compact = false }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+        <Loader2 className="w-8 h-8 spin-loop text-brand" />
       </div>
     );
   }
@@ -453,7 +453,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
             >
               {applyMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 spin-loop" />
                   Applying...
                 </>
               ) : (
@@ -578,7 +578,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             <div className="relative">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted animate-spin" />}
+                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted spin-loop" />}
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -731,7 +731,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
           >
             <Button onClick={handleSave} disabled={isSaving} variant="primary" size="lg" className="w-full">
-              {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
+              {isSaving ? <><Loader2 className="w-4 h-4 mr-2 spin-loop" />Saving...</> : "Save Changes"}
             </Button>
             {/* Destructive action demoted to a quiet, right-aligned text control
                 so the coral Save owns the thumb zone and Delete isn't adjacent. */}
@@ -863,18 +863,24 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <p className="text-sm text-ink font-semibold tabular-nums">
-            {selectedEntries.length} of {entries.length} item{entries.length !== 1 ? "s" : ""} to save
-          </p>
-          {/* Selected total summary */}
-          <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg glass-inset">
-            <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
-            <div className="flex gap-3 text-xs tabular-nums">
-              <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+          {/* Selected-total hero — the kcal sum is the largest figure in the
+              sheet body (quiet gold, each datum its own hue) with P/C/F as
+              supporting tabular stats. The item-count is demoted to quiet meta
+              below it (section-label eyebrow + text-faint count) so the number
+              that matters leads. */}
+          <div className="glass-inset px-4 py-3.5">
+            <div className="flex items-baseline gap-2">
+              <span className="hero-metric text-3xl text-gold">{Math.round(totals.calories)}</span>
+              <span className="text-xs text-ink-muted">cal</span>
+            </div>
+            <div className="flex gap-4 text-xs tabular-nums mt-1.5">
               <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
               <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
               <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
             </div>
+            <p className="section-label mt-2.5">
+              <span className="text-faint tabular-nums">{selectedEntries.length} of {entries.length}</span> item{entries.length !== 1 ? "s" : ""} to save
+            </p>
           </div>
           {/* Row cap on BOTH breakpoints — a long day-as-template would otherwise
               push the count + total off-screen. The list scrolls within this cap
@@ -884,7 +890,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
             {entries.map((e, idx) => (
               <label
                 key={idx}
-                className="flex items-center gap-3 p-2.5 min-h-11 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg text-sm cursor-pointer"
+                className="flex items-center gap-3 p-2.5 min-h-11 row-stripe rounded-lg text-sm cursor-pointer"
               >
                 <Checkbox
                   checked={selected[idx]}
@@ -904,9 +910,10 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
           )}
         </div>
 
-        {/* Footer — pinned, non-scrolling, owns the thumb zone */}
+        {/* Footer — pinned, non-scrolling, owns the thumb zone. Solid surface
+            token; a single hairline border-t is the only separator. */}
         <div
-          className="px-6 py-4 border-t border-charcoal-border bg-charcoal-surface/80 shrink-0 space-y-2"
+          className="px-6 py-4 border-t border-charcoal-border bg-charcoal-surface shrink-0 space-y-2"
           style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
           <Button
@@ -918,7 +925,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
           >
             {createMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 spin-loop" />
                 Saving...
               </>
             ) : (

@@ -51,29 +51,27 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
 
   const form = (
     <div className="glass rounded-2xl px-4 pt-4 pb-4 lg:mb-0 rise-in">
-      {/* Empty-state prompt folded in: the input sits directly below it, so the
-          "first exercise" call-to-action and its action are one unit (no
-          split-away top card). */}
+      {/* Quiet caption only — the type-display directive ("Build your session")
+          lives one level up on the page so the hero frames this action. Here
+          "No exercises yet" is a low-weight status caption, NOT a second hero,
+          so the two don't compete. */}
       {isEmptyState && (
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
-            <Dumbbell className="w-3.5 h-3.5 text-teal" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-ink leading-tight">No exercises yet</p>
-            <p className="text-xs font-semibold text-ink-secondary leading-tight mt-0.5">
-              Add your first exercise to start logging.
-            </p>
-          </div>
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <Dumbbell className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+          <p className="text-xs font-semibold text-ink-muted leading-tight">No exercises yet</p>
         </div>
       )}
       <div className="flex gap-2">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <Combobox
               value={exerciseName}
               onValueChange={setExerciseName}
               items={allNames}
-              placeholder="Exercise name (e.g., Bench Press)"
+              // Short placeholder so it never truncates inside the narrow input
+              // on a 390px row (the old "Exercise name (e.g., Bench Press)" was
+              // clipped beside the Add button). The Combobox list teaches the
+              // format; the field only needs to label itself.
+              placeholder="Exercise name"
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
           </div>
@@ -82,9 +80,15 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             variant={isEmptyState ? "volt" : "outline"}
             size="lg"
+            // <sm the label is dropped so Add collapses to an icon-only square,
+            // reclaiming row width for the exercise-name field (which is the
+            // part that was getting squeezed/truncated). The label returns at
+            // sm+ where there's room.
+            className={isEmptyState ? "aspect-square px-0 sm:aspect-auto sm:px-[22px]" : undefined}
+            aria-label="Add exercise"
           >
-            <Plus className="w-4 h-4 mr-1" />
-            Add
+            <Plus className="w-4 h-4 sm:mr-1" />
+            <span className={isEmptyState ? "hidden sm:inline" : undefined}>Add</span>
           </Button>
           {showCloseButton && (
             <Button variant="dim" size="lg" className="aspect-square px-0" onClick={() => setShowForm(false)}>

@@ -175,7 +175,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
               disabled={isScheduling}
             >
               {isScheduling ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-1.5 spin-loop" />
               ) : (
                 <CalendarCheck className="w-4 h-4 mr-1.5" />
               )}

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Waves, Plus, Trophy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayString } from "@/utils/dateUtils";
+import { format, parseISO } from "date-fns";
 
 // BUD/S competitive PST targets
 const PST_TARGETS = {
@@ -84,31 +85,62 @@ function PSTBar({ event, value }) {
   );
 }
 
-// A numeric time field with a PERSISTENT inline unit suffix. The old fields used
-// placeholder="min"/"sec", which vanish once a value is typed — leaving two bare
-// numbers with no unit. The suffix is painted as faint ink pinned to the right
-// edge (not a placeholder) so the unit survives after entry; the input carries
-// right-padding so the typed number never collides with it.
-function TimeField({ unit, value, onChange, disabled, max }) {
+// A numeric time field with a PERSISTENT inline unit suffix. The suffix is
+// painted as ink pinned to the right edge (not a placeholder) so the unit
+// survives after entry; the input carries right-padding so the typed number
+// never collides with it. A left-aligned ink-muted '0' placeholder
+// (pst-test-logger-4) reads in an untouched field; a typed 0 still renders as
+// full-weight ink distinct from the muted placeholder. The suffix sits at
+// text-secondary, heavier than the empty placeholder, and the input/suffix
+// both carry tabular-nums so digits never shift width.
+//
+// When `max` is set (the seconds fields) the value is clamped to 0..max on
+// change AND blur (pst-test-logger-6), with a neutral ink-muted inline hint
+// shown when a clamp fires so the cap is explained without poaching the
+// physiological warn spectrum (form-validation reads as neutral ink, SYS-09c).
+function TimeField({ unit, value, onChange, disabled, max, placeholder = "0" }) {
+  const [clamped, setClamped] = useState(false);
+  const cap = max != null ? parseInt(max) : null;
+
+  const apply = (raw) => {
+    if (cap != null && raw !== "") {
+      const n = parseInt(raw);
+      if (!Number.isNaN(n) && n > cap) {
+        setClamped(true);
+        onChange(String(cap));
+        return;
+      }
+    }
+    setClamped(false);
+    onChange(raw);
+  };
+
   return (
-    <div className="relative flex-1">
-      <Input
-        type="number"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max={max}
-        disabled={disabled}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="pr-10"
-      />
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-faint tabular-nums"
-      >
-        {unit}
-      </span>
+    <div className="flex-1">
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          min="0"
+          max={max}
+          placeholder={placeholder}
+          disabled={disabled}
+          value={value}
+          onChange={e => apply(e.target.value)}
+          onBlur={e => apply(e.target.value)}
+          className="pr-10 tabular-nums"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-secondary tabular-nums"
+        >
+          {unit}
+        </span>
+      </div>
+      {clamped && cap != null && (
+        <p className="mt-1 text-[10px] font-semibold text-muted-2 tabular-nums">Max {cap}</p>
+      )}
     </div>
   );
 }
@@ -168,6 +200,15 @@ export default function PSTTracker() {
   const latest = tests[0];
   const prev   = tests[1];
 
+  // Gate Save (pst-test-logger-2): the form must carry at least one score
+  // before it can upsert, or an empty submit writes an all-null record. The
+  // date alone is not a score, so it is excluded from the check.
+  const hasAnyScore = [
+    form.swim_min, form.swim_sec,
+    form.pushups, form.situps, form.pullups,
+    form.run_min, form.run_sec,
+  ].some(v => String(v).trim() !== "");
+
   return (
     <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
@@ -181,7 +222,7 @@ export default function PSTTracker() {
           </Button>
         </div>
         {latest?.test_date && (
-          <p className="font-technical text-[10px] font-semibold text-muted-2 mt-1">Last tested: {latest.test_date}</p>
+          <p className="font-technical text-[10px] font-semibold text-muted-2 mt-1">Last tested: {format(parseISO(latest.test_date), "MMM d, yyyy")}</p>
         )}
       </CardHeader>
       <CardContent className="px-5 pb-4">
@@ -204,7 +245,7 @@ export default function PSTTracker() {
             {/* Comparison with previous */}
             {prev && (
               <div className="mt-3 pt-3 border-t hairline">
-                <p className="section-label mb-2">vs previous ({prev.test_date})</p>
+                <p className="section-label mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
                 <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },
@@ -219,7 +260,12 @@ export default function PSTTracker() {
                       <div key={label}>
                         <p className="text-muted-2 font-semibold">{label}</p>
                         {delta != null ? (
-                          <p className={`font-technical font-bold ${improved ? "text-teal" : "text-muted-2"}`}>
+                          // Direction is carried by the leading sign + ink WEIGHT
+                          // (pst-test-logger-7): an improvement reads in the `ok`
+                          // physiological-positive token, a regression stays
+                          // neutral ink, instead of overloading the teal action
+                          // hue as a generic "good" decoration.
+                          <p className={`font-technical font-bold ${improved ? "text-ok" : "text-muted-2"}`}>
                             {lower ? (delta < 0 ? "-" : "+") : (delta > 0 ? "+" : "")}{lower ? Math.abs(delta) + "s" : Math.abs(delta)}
                           </p>
                         ) : (
@@ -244,28 +290,41 @@ export default function PSTTracker() {
               <DialogDescription>Record your latest scores; targets are BUD/S competitive standards.</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="space-y-3 px-6">
+          {/* pst-test-logger-1: the action bar at the bottom is sticky bottom-0
+              inside this scroll region. The fields cluster carries a bottom pad
+              equal to the bar's FULL painted height so the last field (Notes)
+              scrolls clear ABOVE the pinned bar at every scroll position instead
+              of its border tucking under / intersecting the action-bar box. The
+              bar paints: pt-3 lid (0.75rem) + 44px lg button + pb (0.75rem) +
+              bottom safe-area inset. We add an 8px clearance gap on top of that
+              so the Notes textarea border keeps daylight from the bar at max
+              scroll. */}
+          <div className="px-6">
+            <div
+              className="space-y-3"
+              style={{ paddingBottom: 'calc(0.75rem + 44px + 0.75rem + env(safe-area-inset-bottom) + 8px)' }}
+            >
             <div>
-              <label className="section-label mb-1 block">Date</label>
+              <label className="form-label mb-1 block">Date</label>
               <Input
                 type="date"
                 disabled={saveMutation.isPending}
                 value={form.test_date}
                 onChange={e => setForm(f => ({ ...f, test_date: e.target.value }))}
-                className={`[color-scheme:dark]${form.test_date ? "" : " is-empty"}`}
+                className="[color-scheme:dark]"
               />
             </div>
             {/* Timed cluster — swim + run share the min/sec entry shape. */}
             <div className="space-y-3">
               <div>
-                <label className="section-label mb-1 block">{PST_TARGETS.swim.label}</label>
+                <label className="form-label mb-1 block">{PST_TARGETS.swim.label}</label>
                 <div className="flex gap-2">
                   <TimeField unit="min" value={form.swim_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_min: v }))} />
                   <TimeField unit="sec" max="59" value={form.swim_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, swim_sec: v }))} />
                 </div>
               </div>
               <div>
-                <label className="section-label mb-1 block">{PST_TARGETS.run.label}</label>
+                <label className="form-label mb-1 block">{PST_TARGETS.run.label}</label>
                 <div className="flex gap-2">
                   <TimeField unit="min" value={form.run_min} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_min: v }))} />
                   <TimeField unit="sec" max="59" value={form.run_sec} disabled={saveMutation.isPending} onChange={v => setForm(f => ({ ...f, run_sec: v }))} />
@@ -279,26 +338,28 @@ export default function PSTTracker() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
               {["pushups", "situps", "pullups"].map(field => (
                 <div key={field}>
-                  <label className="section-label mb-1 block">{PST_TARGETS[field].label}</label>
-                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" disabled={saveMutation.isPending} value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
+                  <label className="form-label mb-1 block">{PST_TARGETS[field].label}</label>
+                  <Input type="number" inputMode="numeric" pattern="[0-9]*" min="0" disabled={saveMutation.isPending} value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} className="tabular-nums" />
                 </div>
               ))}
             </div>
             <div>
-              <label className="section-label mb-1 block">Notes</label>
+              <label className="form-label mb-1 block">Notes</label>
               <Textarea rows={2} placeholder="Optional notes" disabled={saveMutation.isPending} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
             </div>
             {/* Sticky action footer — at 390px the form is tall enough to push the
                 actions below the fold, so pin Cancel/Save to the sheet's bottom
                 edge on the sheet material with a hairline lid + safe-area inset so
                 they stay in the thumb zone without scrolling. -mx-6 cancels the
-                content px-6 so the bar spans the sheet edge to edge. */}
+                content px-6 so the bar spans the sheet edge to edge. Sits OUTSIDE
+                the padded fields div (pst-5) so the Notes box clears it on scroll. */}
             <div
-              className="sticky bottom-0 -mx-6 mt-1 flex gap-3 border-t hairline px-6 pt-3 glass-sheet"
+              className="sticky bottom-0 -mx-6 flex gap-3 border-t hairline px-6 pt-3 glass-sheet"
               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
             >
               <Button variant="ghost" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending || !hasAnyScore} onClick={() => saveMutation.mutate()}>
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 spin-loop" /> Saving…

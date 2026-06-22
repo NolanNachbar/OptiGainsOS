@@ -32,8 +32,8 @@ function MacroBar({ p, c, f }) {
   const tot = Math.max(1, pc + cc + fc);
   const seg = (v, cls) => <span className={cls} style={{ width: `${(v / tot) * 100}%` }} />;
   return (
-    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-charcoal-elevated">
-      {seg(pc, "bg-viz-2")}{seg(cc, "bg-viz-3")}{seg(fc, "bg-viz-4")}
+    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-track">
+      {seg(pc, "bg-coral")}{seg(cc, "bg-carb")}{seg(fc, "bg-fat")}
     </div>
   );
 }
@@ -269,7 +269,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           {(rec.gates || []).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {rec.gates.map((g) => (
-                <span key={g} className="text-[9px] uppercase tracking-wider text-warn bg-warn/10 border border-warn/20 px-1.5 py-0.5 rounded font-bold">
+                <span key={g} className="text-[9px] uppercase tracking-wider text-warn bg-warn/10 border border-warn/20 px-1.5 py-0.5 rounded-full font-bold">
                   {GATE_LABEL[g] || g}
                 </span>
               ))}
@@ -304,7 +304,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                     day-detail panel). Eaten-out days keep the gold figure and swap
                     only the sub-line to a muted tag, so the gold/viz-3 hue mapping
                     stays uniform across all 7 cells. */}
-                <div className="font-technical text-xs text-gold leading-none">{d.totals.calories || "—"}</div>
+                <div className="font-technical text-xs text-gold leading-none">{d.totals.calories ? d.totals.calories.toLocaleString() : "—"}</div>
                 {!d.rows.length && (
                   <div className="text-[9px] uppercase tracking-wider font-bold text-ink-faint leading-none mt-1">logged</div>
                 )}
@@ -350,7 +350,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                     <div key={r.food_name} className="flex items-center gap-2 py-0.5 text-xs">
                       <span className="text-ink font-semibold flex-1 truncate">{r.food_name}</span>
                       {r.timing && r.timing !== "anytime" && (
-                        <span className={`shrink-0 text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${r.timing === "pre" ? "text-carb bg-carb/15" : "text-leaf bg-leaf/15"}`}>
+                        <span className="shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full text-ink-muted bg-charcoal-surface">
                           {r.timing === "pre" ? "Pre-WO" : "Post-WO"}
                         </span>
                       )}
@@ -364,12 +364,12 @@ export default function WeeklyPlanCard({ bare = false }) {
                 <div className="flex items-center justify-between text-[11px] mb-1">
                   <span className="text-ink-muted font-semibold">Day macros</span>
                   <span className="font-technical text-ink-muted">
-                    <span className="text-viz-2">{Math.round(openDayData.totals.protein)}p</span> · <span className="text-viz-3">{Math.round(openDayData.totals.carbs)}c</span> · <span className="text-viz-4">{Math.round(openDayData.totals.fats)}f</span>
+                    <span className="text-coral">{Math.round(openDayData.totals.protein)}p</span> · <span className="text-carb">{Math.round(openDayData.totals.carbs)}c</span> · <span className="text-fat">{Math.round(openDayData.totals.fats)}f</span>
                   </span>
                 </div>
                 <MacroBar p={openDayData.totals.protein} c={openDayData.totals.carbs} f={openDayData.totals.fats} />
                 {openDayData.rows.proteinShortfall > 0 && (
-                  <p className="mt-2 text-[10px] text-warn">
+                  <p className="mt-2 text-[10px] text-ink-secondary">
                     Protein lands {openDayData.rows.proteinShortfall} g under target, the food list's lean
                     sources are maxed out. Add a lean protein to the catalog or cover it manually.
                   </p>
@@ -381,7 +381,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                   </p>
                 )}
                 {openDayData.rows.calorieOverage > 0 && (
-                  <p className="mt-2 text-[10px] text-warn">
+                  <p className="mt-2 text-[10px] text-ink-secondary">
                     Even at the 1.2 g/lb protein floor this day runs {openDayData.rows.calorieOverage} kcal
                     over target, the calorie wall bends before the hard protein floor does.
                   </p>
@@ -403,7 +403,7 @@ export default function WeeklyPlanCard({ bare = false }) {
       {/* ── Grocery list: checkable while shopping, persists for the week ── */}
       <button
         onClick={() => setShowShopping((s) => !s)}
-        className="glass-interactive w-full px-5 py-3 mt-3 flex items-center gap-2 text-xs text-ink-secondary hover:text-ink active:scale-[0.99] border-t hairline"
+        className="glass-interactive w-full min-h-[44px] px-5 py-3 mt-3 flex items-center gap-2 text-xs text-ink-secondary hover:text-ink active:scale-[0.99] border-t hairline"
       >
         <ShoppingCart className="w-3.5 h-3.5 text-ink-muted" />
         <span className="font-bold">Grocery list</span>
@@ -429,7 +429,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                       ring + the label's existing strikethrough carries "done"
                       without borrowing a data hue. (ink-* tokens carry baked
                       alpha, so /xx modifiers don't apply, use the solid token.) */}
-                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${done ? "border-track bg-track text-ink-faint" : "border-track text-transparent"}`}>
+                  <span className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${done ? "border-track bg-track text-ink-faint" : "border-track text-transparent"}`}>
                     <Check className="w-3 h-3" />
                   </span>
                   <span className={`font-semibold flex-1 truncate ${done ? "text-ink-faint line-through" : "text-ink"}`}>{it.food}</span>
@@ -454,7 +454,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         <button
           onClick={() => approve.mutate()}
           disabled={approve.isPending || allRows.length === 0}
-          className="cta-coral w-full disabled:opacity-60 active:scale-[0.98]"
+          className="cta-action w-full disabled:opacity-60 active:scale-[0.98]"
         >
           {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
         </button>

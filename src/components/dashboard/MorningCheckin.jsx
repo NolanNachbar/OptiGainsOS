@@ -4,7 +4,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayString } from "@/utils/dateUtils";
 
@@ -19,8 +19,11 @@ const SORENESS_COLORS = [
   // "None" — neutral, but with a faint surface fill + visible border so an empty
   // pill reads as a tappable cycler with a value, not an inert unselected tag.
   "bg-track/60 text-muted-2 border-charcoal-border",
-  // Levels 1-3 ride the physiological spectrum (soreness is a biometric).
-  "bg-fat/[0.12] text-fat border-fat/30",
+  // Levels 1-3 ride the physiological spectrum (soreness is a biometric). Level
+  // 1 ("Mild") is the benign low end, so it reads ok-green, NOT the fat data
+  // hue (fat is a macro datum, never a soreness band) — the spectrum runs
+  // ok → warn → bad as severity climbs (today-1).
+  "bg-ok/[0.12] text-ok border-ok/30",
   "bg-warn/[0.12] text-warn border-warn/30",
   "bg-bad/[0.12] text-bad border-bad/30",
 ];
@@ -32,14 +35,14 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
       <div className="flex flex-col items-center">
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors"
+          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
-        <span className="font-technical text-3xl font-extrabold text-ink w-12 text-center leading-none">{value}</span>
+        <span className="hero-metric text-3xl text-ink w-12 text-center">{value}</span>
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors"
+          className="h-11 w-11 flex items-center justify-center text-muted-2 hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronDown className="w-4 h-4" />
         </button>
@@ -48,8 +51,12 @@ function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
         {Array.from({ length: max }, (_, i) => (
           <div
             key={i}
-            className={`h-0.5 w-2 rounded-full transition-colors ${
-              i < value ? "bg-teal" : "bg-track"
+            // Filled ticks read as NEUTRAL ink, not brand teal: Energy/Mood are
+            // subjective self-report data (not the page action and not a
+            // biometric-spectrum readout), so the level meter must not spend the
+            // single teal action color. Empty ticks stay on the shared track.
+            className={`h-0.5 w-2 rounded-full transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+              i < value ? "bg-ink-secondary" : "bg-track"
             }`}
           />
         ))}
@@ -144,31 +151,37 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
     return (
       <div className="glass overflow-hidden">
         <div className="px-4 py-3 border-b hairline flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-leaf" />
+          {/* Completed confirmation lives in ink hierarchy, not a green check:
+              the leaf/green check poached the biometric spectrum to decorate a
+              chrome "done" state. The label leads (primary ink), a faint "Logged"
+              caption carries the confirmation (today-4). */}
+          <div className="flex items-baseline gap-2">
             {/* Retitled off 'Daily Readiness' so it never collides with the
                 Today ring's 'READINESS' micro-label, this is the SUBJECTIVE
                 self-report, distinct from the objective readiness score. */}
             <span className="section-label !text-ink">Subjective check-in</span>
+            <span className="text-[10px] font-semibold text-faint uppercase tracking-wider">Logged</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
+          {/* 'Update' is a quiet re-entry affordance on a completed card, not a
+              primary action: borderless quiet text (no ghost button chrome) so
+              it reads as a tap-to-edit link, not a competing control (today-3). */}
+          <button
+            type="button"
             onClick={() => setEditing(true)}
-            className="min-h-[44px] -my-2.5 text-[10px] uppercase tracking-wider"
+            className="min-h-[44px] -my-2.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-secondary hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
           >
             Update
-          </Button>
+          </button>
         </div>
         <div className="p-4 flex flex-col md:flex-row gap-6">
           <div className="flex gap-8">
             <div className="text-center">
               <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Energy</div>
-              <div className="font-technical text-2xl font-extrabold text-ink leading-none">{existingCheckin.energy}<span className="text-xs font-semibold text-muted-2">/10</span></div>
+              <div className="hero-metric text-2xl text-ink">{existingCheckin.energy}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
             <div className="text-center">
               <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Mood</div>
-              <div className="font-technical text-2xl font-extrabold text-ink leading-none">{existingCheckin.mood}<span className="text-xs font-semibold text-muted-2">/10</span></div>
+              <div className="hero-metric text-2xl text-ink">{existingCheckin.mood}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
           </div>
 

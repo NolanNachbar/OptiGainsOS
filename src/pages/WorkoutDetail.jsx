@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
 import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown } from "lucide-react";
-import { format } from "date-fns";
+import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
 import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
@@ -261,7 +261,7 @@ export default function WorkoutDetail() {
         // back to the most recently created workout. Only show the empty state
         // when the athlete genuinely has no saved workouts.
         try {
-          const today = format(new Date(), "yyyy-MM-dd");
+          const today = getTodayString(profile?.timezone);
           let resolved = null;
 
           const scheduled = await db.entities.WorkoutSchedule.filter({
@@ -468,7 +468,7 @@ export default function WorkoutDetail() {
 
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
-      const today = format(new Date(), "yyyy-MM-dd");
+      const today = getTodayString(profile?.timezone);
       const durationSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : null;
 
       // Resolve the real workout ID — program workouts use a synthetic ID
@@ -774,7 +774,7 @@ export default function WorkoutDetail() {
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex flex-col items-center justify-start pt-12 lg:justify-center lg:pt-0">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex flex-col items-center justify-center">
         <Card className="w-full max-w-md mx-auto rise-in">
           <CardContent className="py-12 text-center">
             <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
@@ -893,23 +893,27 @@ export default function WorkoutDetail() {
               {workout.description && workout.description.trim().toLowerCase() !== (workout.title || "").trim().toLowerCase() && (
                 <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
-              <div className="flex flex-wrap gap-6 mb-6">
+              {/* wd-5: one HERO figure (Exercises — always present, the core
+                  count for the session) reads as the hero-metric; Duration is
+                  subordinate (smaller, muted) so the two summary numbers form a
+                  clear hierarchy instead of two equal-weight twins. */}
+              <div className="flex flex-wrap items-end gap-x-8 gap-y-3 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <Target className="w-6 h-6 text-ink-muted" />
+                    <div>
+                      <div className="section-label">Exercises</div>
+                      <div className="hero-metric text-[28px] text-ink">{workout.exercises?.length || 0} <span className="text-[12px] font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
+                    </div>
+                  </div>
                   {workout.duration_minutes != null && (
                     <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-ink-muted" />
+                      <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
                         <div className="section-label">Duration</div>
-                        <div className="font-technical font-extrabold text-[15px] text-ink">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-ink-muted" />
-                    <div>
-                      <div className="section-label">Exercises</div>
-                      <div className="font-technical font-extrabold text-[15px] text-ink">{workout.exercises?.length || 0} <span className="text-[11px] font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
-                    </div>
-                  </div>
                 </div>
 
 
@@ -1150,23 +1154,25 @@ export default function WorkoutDetail() {
 
           {/* Sticky thumb-zone primary action — mobile only. Keeps "Start
               Logging" reachable after scrolling the exercise list. Clears the
-              floating dock via --dock-clearance + safe-area inset. */}
+              floating dock via --dock-clearance + safe-area inset.
+              wd-6: the CTA is its own teal action surface, so the wrapping
+              glass-elevated panel (a card around a button) is dropped — the
+              button rides directly in the sticky slot with no redundant chrome
+              behind it. */}
           <div
             className="lg:hidden sticky bottom-0 -mx-4 px-4 pt-3 z-30 pointer-events-none"
             style={{ paddingBottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
           >
-            <div className="glass-elevated rounded-2xl p-2 pointer-events-auto">
-              <Button
-                onClick={handleStartLogging}
-                variant="volt"
-                size="lg"
-                className="w-full"
-                data-tutorial="start-logging-btn"
-              >
-                <Dumbbell className="w-5 h-5 mr-2" />
-                Start Logging Workout
-              </Button>
-            </div>
+            <Button
+              onClick={handleStartLogging}
+              variant="volt"
+              size="lg"
+              className="w-full pointer-events-auto"
+              data-tutorial="start-logging-btn"
+            >
+              <Dumbbell className="w-5 h-5 mr-2" />
+              Start Logging Workout
+            </Button>
           </div>
           </>
         )}

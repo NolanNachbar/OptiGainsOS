@@ -297,7 +297,7 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
           </TabsList>
 
           <TabsContent value="1rm">
-            <OneRMCalculator weightUnit={weightUnit} embedded />
+            <OneRMCalculator weightUnit={weightUnit} />
           </TabsContent>
 
           <TabsContent value="working">

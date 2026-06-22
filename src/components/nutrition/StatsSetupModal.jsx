@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ACTIVITY_LEVELS, SEX_OPTIONS } from "@/lib/constants";
 
 export default function StatsSetupModal({ open, onOpenChange }) {
@@ -136,17 +136,16 @@ export default function StatsSetupModal({ open, onOpenChange }) {
       <DialogContent className="max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Set Up TDEE Calculation</DialogTitle>
+          <DialogDescription>
+            Fill in your stats and we'll automatically calculate your daily calorie and macro targets.
+          </DialogDescription>
         </DialogHeader>
-
-        <p className="text-sm text-ink-muted ">
-          Fill in your stats and we'll automatically calculate your daily calorie and macro targets.
-        </p>
 
         <div className="space-y-4 pt-2">
           {/* Sex + Age */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Sex</Label>
+              <Label className="form-label">Sex</Label>
               <Select value={sex} onValueChange={setSex}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select sex">
@@ -161,7 +160,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
               </Select>
             </div>
             <div>
-              <Label>Age</Label>
+              <Label className="form-label">Age</Label>
               <Input
                 type="number"
                 placeholder="25"
@@ -177,8 +176,8 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           {/* Height */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <Label>Height</Label>
-              <div className="flex gap-1 bg-charcoal-elevated rounded-lg p-0.5">
+              <Label className="form-label">Height</Label>
+              <div className="flex gap-1 glass-inset bg-track p-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -189,8 +188,8 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     }
                     setHeightUnit("in");
                   }}
-                  className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "in" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-ink-muted"
+                  className={`px-3 py-1 rounded-md text-sm transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                    heightUnit === "in" ? "bg-charcoal-surface shadow-dark-card text-ink font-semibold" : "text-ink-muted"
                   }`}
                 >ft/in</button>
                 <button
@@ -202,8 +201,8 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     }
                     setHeightUnit("cm");
                   }}
-                  className={`px-3 py-1 rounded-md text-sm transition-all ${
-                    heightUnit === "cm" ? "bg-charcoal-surface shadow text-brand font-medium" : "text-ink-muted"
+                  className={`px-3 py-1 rounded-md text-sm transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                    heightUnit === "cm" ? "bg-charcoal-surface shadow-dark-card text-ink font-semibold" : "text-ink-muted"
                   }`}
                 >cm</button>
               </div>
@@ -211,7 +210,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
             {heightUnit === "in" ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-sm">Feet</Label>
+                  <Label className="form-label">Feet</Label>
                   <Input
                     type="number"
                     placeholder="5"
@@ -223,7 +222,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Inches</Label>
+                  <Label className="form-label">Inches</Label>
                   <Input
                     type="number"
                     placeholder="10"
@@ -243,13 +242,14 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 onChange={e => setHeightCm(e.target.value)}
                 min="100"
                 max="250"
+                className="mt-1"
               />
             )}
           </div>
 
           {/* Activity Level */}
           <div>
-            <Label>Activity Level</Label>
+            <Label className="form-label">Activity Level</Label>
             <Select value={activityLevel} onValueChange={setActivityLevel}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select activity level">
@@ -268,7 +268,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
 
           {/* Current Weight */}
           <div>
-            <Label>Current Weight ({profile?.weight_unit || "lbs"})</Label>
+            <Label className="form-label">Current Weight ({profile?.weight_unit || "lbs"})</Label>
             <Input
               type="number"
               step="0.1"
@@ -281,7 +281,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
 
           {/* Protein Target */}
           <div>
-            <Label>Protein Target</Label>
+            <Label className="form-label">Protein Target</Label>
             <div className="flex items-center gap-2 mt-1">
               <Input
                 type="number"
@@ -292,7 +292,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 onChange={e => setProteinPerLb(e.target.value)}
                 className="w-24"
               />
-              <span className="text-sm text-ink-muted ">
+              <span className="font-technical text-sm text-ink-muted">
                 g / lb
                 {proteinGrams ? ` = ${proteinGrams}g/day` : ""}
               </span>
@@ -303,10 +303,11 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="sticky bottom-0 -mx-6 mt-2 flex gap-3 border-t border-charcoal-borderSoft bg-[var(--sheet-bg)] px-6 pt-4">
           <Button
             type="button"
             variant="outline"
+            size="lg"
             className="flex-1"
             onClick={() => onOpenChange(false)}
           >
@@ -314,7 +315,9 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           </Button>
           <Button
             type="button"
-            className="flex-1 bg-brand hover:bg-brand"
+            variant="volt"
+            size="lg"
+            className="flex-1"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >

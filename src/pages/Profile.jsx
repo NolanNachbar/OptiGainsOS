@@ -26,10 +26,10 @@ import { format } from "date-fns";
 
 function SectionHeader({ icon: Icon, title }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="p-2 rounded-lg bg-charcoal-elevated">
-        <Icon className="w-4 h-4 text-ink-muted" />
-      </div>
+    <div className="flex items-center gap-2.5 mb-4">
+      {/* Inline muted-ink glyph — no raised charcoal-elevated square chip (that
+          read as a decorative tile rather than a quiet section marker). */}
+      <Icon className="w-4 h-4 text-ink-muted shrink-0" />
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
     </div>
   );
@@ -384,33 +384,28 @@ export default function Profile({ hideHeader }) {
                 hierarchy stays tight instead of stranding Sign Out at the
                 viewport bottom with a dead void above it. */}
             <div
-              className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col'}`}
+              className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col min-h-[calc(100dvh-var(--layout-header-height)-var(--floating-chrome-bottom))]'}`}
             >
               {/* No in-page "Profile" h1 here: the Layout chrome header already shows
                   the page title (and the avatar chip) on mobile, so a second avatar
-                  + title inside a card would stack redundantly. This hero instead
-                  LEADS WITH THE NUMBERS in teal, the single action color owning the
-                  one datum that should pull the eye on an otherwise neutral page. */}
-              <div className="glass p-5 mb-3">
-                <p className="text-ink font-semibold text-base leading-tight">
-                  {formData.display_name || user.email}
-                </p>
-                <p className="text-ink-secondary text-[13px] mt-0.5">Your training so far</p>
-                {profileStats && (
-                  <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-charcoal-border">
-                    {[
-                      { value: profileStats.totalWorkouts, label: "Workouts" },
-                      { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
-                      { value: profileStats.streak, label: "Streak" },
-                    ].map(({ value, label }, i) => (
-                      <div key={i}>
-                        <p className="text-brand font-bold text-2xl leading-none font-technical">{value}</p>
-                        <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-1.5">{label}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  + title inside a card would stack redundantly (showAvatar=false).
+                  Rendered via the shared ProfileStatsCard primitive so the hub and
+                  desktop sidebar never drift. Stats are DATA, not the single
+                  action color, so all three read in NEUTRAL ink (no text-brand);
+                  teal is reserved for the actual action controls on the page. */}
+              <ProfileStatsCard
+                showAvatar={false}
+                align="left"
+                padding="p-5"
+                className="mb-3"
+                name={formData.display_name || user.email}
+                subtitle="Your training so far"
+                stats={profileStats ? [
+                  { value: profileStats.totalWorkouts, label: "Workouts" },
+                  { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
+                  { value: profileStats.streak, label: "Streak" },
+                ] : null}
+              />
               <div className="glass-inset overflow-hidden">
                 {NAV.map(({ id, label, icon: Icon }, idx) => (
                   <button
@@ -419,9 +414,10 @@ export default function Profile({ hideHeader }) {
                     onClick={() => setActiveSection(id)}
                     className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-charcoal-elevated hover:bg-charcoal-elevated ${idx < NAV.length - 1 ? 'border-b border-charcoal-border' : ''}`}
                   >
-                    <div className="p-1.5 rounded-md bg-charcoal-elevated">
-                      <Icon className="w-3.5 h-3.5 text-ink-muted" />
-                    </div>
+                    {/* Inline muted-ink glyph — no raised charcoal-elevated square
+                        chip behind each row icon (that read as a decorative tile,
+                        not an affordance). */}
+                    <Icon className="w-5 h-5 text-ink-muted shrink-0" />
                     <span className="text-ink flex-1">{label}</span>
                     <ChevronRight className="w-4 h-4 text-ink-muted" />
                   </button>
@@ -442,11 +438,12 @@ export default function Profile({ hideHeader }) {
                 Sign Out
               </button>
 
-              {/* Quiet brand wordmark closing the hub stack. Anchored tight under
-                  Sign Out (not floated in a centered void) and led by a short teal
-                  hairline so it reads as a designed footer rule, not marketing
-                  filler stranded mid-viewport. */}
-              <div className="mt-8 flex items-center justify-center gap-2.5">
+              {/* Quiet brand wordmark closing the hub stack. `mt-auto` pushes it to
+                  the BOTTOM of the column (the column fills the viewport height) so
+                  the slack collapses into one intentional gap below the footer
+                  instead of stranding a dead void mid-screen above it. Led by a
+                  short teal hairline so it reads as a designed footer rule. */}
+              <div className="mt-auto pt-10 flex items-center justify-center gap-2.5">
                 <span className="h-px w-6 bg-brand/40" />
                 <p className="text-xs font-semibold tracking-wide text-ink-secondary">OptiGains</p>
                 <span className="h-px w-6 bg-brand/40" />
@@ -822,8 +819,12 @@ export default function Profile({ hideHeader }) {
               </Card>
           </div>{/* end body section */}
 
-          {/* Spacer for sticky bar */}
-          {showSaveBar && <div className="h-28 md:h-20" />}
+          {/* Spacer for the sticky save bar — reserves the bar's body (~64px)
+              PLUS its bottom offset from the same --floating-chrome-bottom token
+              the bar is anchored on (profile-5), so the last field always clears
+              the bar instead of hiding under it. Desktop pins to bottom:0, so it
+              only needs the body height. */}
+          {showSaveBar && <div className="h-[calc(64px+var(--floating-chrome-bottom))] md:h-20" />}
         </form>
 
         {/* ── SETTINGS SECTION (outside form — all actions are immediate) ── */}
@@ -846,7 +847,7 @@ export default function Profile({ hideHeader }) {
                   <p className="font-medium text-ink">Report a Bug</p>
                   <p className="text-sm text-ink-muted">Found something broken? Let us know.</p>
                 </div>
-                <Button variant="outline" asChild>
+                <Button variant="outline" size="lg" asChild>
                   <a
                     href="https://docs.google.com/forms/d/e/1FAIpQLSdJPHWYaP6caujXTLhBAEjxWAZlLiGNxqnph3lMm96eMlVArg/viewform?usp=publish-editor"
                     target="_blank"
@@ -878,8 +879,8 @@ export default function Profile({ hideHeader }) {
                     <p className="text-sm text-ink-muted">Permanently delete your account and all data</p>
                   </div>
                   <Button
-                    variant="outline"
-                    className="border-bad/20 text-bad hover:bg-bad/10 hover:text-bad"
+                    variant="destructive"
+                    size="lg"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -893,11 +894,12 @@ export default function Profile({ hideHeader }) {
                     This will permanently delete your profile, food entries, and workout schedules. This action cannot be undone.
                   </p>
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleteLoading}>
+                    <Button variant="outline" size="lg" onClick={() => setShowDeleteConfirm(false)} disabled={deleteLoading}>
                       Cancel
                     </Button>
                     <Button
-                      className="bg-bad hover:bg-bad/80 text-ink"
+                      variant="destructive"
+                      size="lg"
                       disabled={deleteLoading}
                       onClick={async () => {
                         setDeleteLoading(true);
@@ -929,15 +931,22 @@ export default function Profile({ hideHeader }) {
 
       </div>{/* end max-w-6xl */}
 
-      {/* Sticky Save Bar — on mobile it docks flush directly above the floating
-          liquid-glass dock (dock = ~52px tall, 12px from the bottom inset) and
-          shares the dock's glass-elevated chrome so the two read as one unit; no
-          detached gap. On desktop it pins to the bottom edge. */}
+      {/* Sticky Save Bar — sits fully above the floating dock via the shared
+          --floating-chrome-bottom token (dock footprint + safe-area + breathing
+          gap), so its offset never drifts from the other floating action bars.
+          On desktop it pins to the bottom edge. When NOT dirty it is fully
+          inert: the translate hides it AND opacity-0 + invisible +
+          pointer-events-none make it un-hit-testable, so a fresh hub / form
+          never has a phantom 'Save Changes' bar in the thumb zone (profile-1).
+          Motion rides the single system easing (var(--ease)) — no off-system
+          ease-out class (profile-6). */}
       <div
-        className={`fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-[10000] glass-elevated md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-transform duration-300 ease-out ${
-          showSaveBar ? 'translate-y-0' : 'translate-y-[calc(100%+72px+env(safe-area-inset-bottom,0px))] md:translate-y-full'
+        aria-hidden={!showSaveBar}
+        className={`fixed bottom-[var(--floating-chrome-bottom)] md:bottom-0 left-0 right-0 z-[10000] glass-elevated md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-[transform,opacity,visibility] duration-300 ease-[var(--ease)] ${
+          showSaveBar
+            ? 'translate-y-0 opacity-100 visible pointer-events-auto'
+            : 'translate-y-[calc(100%+var(--floating-chrome-bottom))] md:translate-y-full opacity-0 invisible pointer-events-none'
         }`}
-        style={{ transitionTimingFunction: 'var(--ease)' }}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
           {/* Compact status label — muted ink. Hidden on mobile (<sm) where the

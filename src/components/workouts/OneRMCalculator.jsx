@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calculator, X } from "lucide-react";
 
 // 1RM calculation using Brzycki formula
 const calculate1RM = (weight, reps) => {
@@ -18,7 +16,7 @@ const calculateWeightForReps = (oneRM, targetReps) => {
   return Math.round(oneRM * ((37 - targetReps) / 36));
 };
 
-export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedded = false }) {
+export default function OneRMCalculator({ weightUnit }) {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
 
@@ -35,21 +33,8 @@ export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedd
 
   const repRanges = [1, 3, 5, 8, 10, 12];
 
-  const content = (
-    <Card className={embedded ? "border-none shadow-none" : "w-full max-w-md border-none"}>
-      {!embedded && (
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-5 h-5" />
-              1RM Calculator
-            </CardTitle>
-            <Button variant="dim" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardHeader>
-      )}
+  return (
+    <Card className="border-none shadow-none">
       <CardContent className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -84,7 +69,7 @@ export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedd
             </p>
           )}
 
-          {oneRM && (
+          {oneRM ? (
             <Card className="surface border-none rise-in">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
@@ -109,6 +94,32 @@ export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedd
                 </div>
               </CardContent>
             </Card>
+          ) : (
+            /* Quiet placeholder scaffold — keeps the sheet content-sized and shows
+               the shape of the result (muted hero dash + greyed rep-range grid)
+               before inputs are filled, so the tab never opens to a large empty band. */
+            <Card className="surface border-none" aria-hidden="true">
+              <CardContent className="pt-6 space-y-4">
+                <div className="text-center">
+                  <div className="text-sm text-ink-faint mb-1">Estimated 1 Rep Max</div>
+                  <div className="hero-metric text-4xl text-ink-faint">
+                    —
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t hairline">
+                  <p className="section-label text-ink-faint">Weight for target reps</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {repRanges.map((targetReps) => (
+                      <div key={targetReps} className="text-center p-2 glass-inset opacity-50">
+                        <div className="text-xs text-ink-faint">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
+                        <div className="font-semibold text-ink-faint font-technical">—</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <p className="text-xs text-ink-muted text-center">
@@ -116,15 +127,5 @@ export default function OneRMCalculator({ onClose = () => {}, weightUnit, embedd
           </p>
         </CardContent>
       </Card>
-  );
-
-  if (embedded) {
-    return content;
-  }
-
-  return (
-    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      {content}
-    </div>
   );
 }

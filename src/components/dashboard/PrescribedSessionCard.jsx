@@ -327,7 +327,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
               }}
-              className={`${demoteCta ? "cta-ghost" : "cta-coral"} w-full mt-3.5`}
+              className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full mt-3.5`}
             >
               Begin Session
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>

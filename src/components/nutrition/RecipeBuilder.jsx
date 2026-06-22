@@ -49,6 +49,7 @@ import {
   Star,
   Share2,
   ChevronRight,
+  MoreVertical,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -103,7 +104,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+        <Loader2 className="w-8 h-8 spin-loop text-brand" />
       </div>
     );
   }
@@ -238,20 +239,17 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 <p className="text-xs text-ink-muted -mt-1">
                   {recipe.ingredients?.length || 0} ingredients · per serving
                 </p>
-                {/* Actions */}
+                {/* Actions — Log is the single full-width primary; Share / Edit /
+                    Delete are demoted into the overflow menu. */}
                 <div className="flex gap-1.5">
                   <Button variant="volt" size="sm" onClick={() => handleLog(recipe)} className="flex-1 min-h-[44px]">
                     <UtensilsCrossed className="w-3 h-3 mr-1" />Log
                   </Button>
-                  <Button variant="outline" size="icon" onClick={() => setSharingRecipe(recipe)} title="Share" className="h-11 w-11">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={() => handleEdit(recipe)} aria-label="Edit recipe" className="h-11 w-11">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="destructive" size="icon" onClick={() => handleDelete(recipe)} aria-label="Delete recipe" className="h-11 w-11">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <RecipeCardMenu
+                    onShare={() => setSharingRecipe(recipe)}
+                    onEdit={() => handleEdit(recipe)}
+                    onDelete={() => handleDelete(recipe)}
+                  />
                 </div>
               </div>
             );
@@ -316,47 +314,120 @@ const stepVariants = {
   exit: (dir) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
 };
 
+// Overflow menu for a recipe card — keeps Log as the single full-width primary
+// while Share / Edit / Delete live behind a kebab. Mirrors the WorkoutCard kebab:
+// collision-aware (flips above the trigger near the viewport bottom), closes on
+// outside click, 44px tap targets.
+function RecipeCardMenu({ onShare, onEdit, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [flipUp, setFlipUp] = useState(false);
+  const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  const toggle = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      // ~150px menu height + dock clearance; flip up if it would collide.
+      setFlipUp(window.innerHeight - rect.bottom < 200);
+    }
+    setOpen((v) => !v);
+  };
+
+  const run = (fn) => () => { fn(); setOpen(false); };
+
+  return (
+    <div className="relative shrink-0" ref={menuRef}>
+      <Button
+        ref={triggerRef}
+        variant="outline"
+        size="icon"
+        onClick={toggle}
+        aria-label="Recipe options"
+        aria-expanded={open}
+        className="h-11 w-11"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+      {open && (
+        <div className={`absolute right-0 glass-elevated rounded-xl py-1 z-20 min-w-[150px] ${flipUp ? "bottom-12" : "top-12"}`}>
+          <button
+            onClick={run(onShare)}
+            className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+          >
+            <Share2 className="w-3.5 h-3.5" />Share
+          </button>
+          <button
+            onClick={run(onEdit)}
+            className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+          >
+            <Pencil className="w-3.5 h-3.5" />Edit
+          </button>
+          <button
+            onClick={run(onDelete)}
+            className="w-full px-3 py-2 text-left text-sm text-bad hover:bg-bad/10 transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+          >
+            <Trash2 className="w-3.5 h-3.5" />Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StickyMacroBar({ ingredients, servings }) {
   const totals = calculateRecipeTotals(ingredients);
   const hasIngredients = ingredients.length > 0;
 
   return (
     <div
-      className={`sticky top-0 z-10 glass-elevated border-b px-6 py-3 transition-opacity duration-300 [transition-timing-function:var(--ease)] ${
+      className={`sticky top-0 z-10 glass-elevated glass-elevated--substacked border-b px-6 py-3 transition-opacity duration-300 [transition-timing-function:var(--ease)] ${
         hasIngredients ? "" : "opacity-40"
       }`}
     >
-      <div className="grid grid-cols-4 gap-3 text-center">
+      {/* Calories leads at a display size; P/C/F sit beneath as quiet supporting
+          figures so the macro bar has a clear primary readout. */}
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <div className="text-lg font-bold text-gold font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
+          <div className="hero-metric text-3xl text-gold transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide mt-0.5">
             Calories
           </div>
         </div>
-        <div>
-          <div className="text-lg font-bold text-coral font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
-            {Math.round(totals.total_protein * 10) / 10}g
+        <div className="flex gap-4 text-right">
+          <div>
+            <div className="text-sm font-bold text-coral font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+              {Math.round(totals.total_protein * 10) / 10}g
+            </div>
+            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Protein
+            </div>
           </div>
-          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
-            Protein
+          <div>
+            <div className="text-sm font-bold text-carb font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+              {Math.round(totals.total_carbs * 10) / 10}g
+            </div>
+            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Carbs
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-carb font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
-            {Math.round(totals.total_carbs * 10) / 10}g
-          </div>
-          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
-            Carbs
-          </div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-fat font-technical tabular-nums transition-all duration-300 [transition-timing-function:var(--ease)]">
-            {Math.round(totals.total_fats * 10) / 10}g
-          </div>
-          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
-            Fats
+          <div>
+            <div className="text-sm font-bold text-fat font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+              {Math.round(totals.total_fats * 10) / 10}g
+            </div>
+            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Fats
+            </div>
           </div>
         </div>
       </div>
@@ -436,7 +507,7 @@ function CollapsibleFoodSection({ label, icon, count, children }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: SYSTEM_EASE }}
             className="overflow-hidden"
           >
             <div className="max-h-48 overflow-y-auto border rounded-xl bg-charcoal-surface mt-2">
@@ -481,7 +552,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
             value={ingredient.serving_size}
             onChange={(e) => onUpdateServing(index, e.target.value)}
             onFocus={(e) => e.target.select()}
-            className="w-16 h-11 text-center"
+            className="w-16 h-11 text-center font-technical tabular-nums"
             min="0"
             step="1"
           />
@@ -596,7 +667,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
     <div className="space-y-3">
       <button
         onClick={onCancel}
-        className="flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to search
@@ -622,7 +693,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
             onChange={(e) => setAmount(e.target.value)}
             min="0"
             step="0.5"
-            className="w-20 h-11 text-center rounded-lg"
+            className="w-20 h-11 text-center rounded-lg font-technical tabular-nums"
           />
           <Select value={unit} onValueChange={setUnit}>
             <SelectTrigger className="h-11 w-28 text-sm rounded-lg">
@@ -940,7 +1011,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
             {currentStep === 2 && (
               <button
                 onClick={() => goToStep(1)}
-                className="h-11 w-11 flex items-center justify-center -ml-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors"
+                className="h-11 w-11 flex items-center justify-center -ml-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors duration-200 [transition-timing-function:var(--ease)]"
                 aria-label="Back to details"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -953,14 +1024,14 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
               <div className="flex items-center gap-2 mt-0.5">
                 <div className="flex gap-1.5">
                   <div
-                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 [transition-timing-function:var(--ease)] ${
                       currentStep >= 1
                         ? "bg-brand"
                         : "bg-track"
                     }`}
                   />
                   <div
-                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 [transition-timing-function:var(--ease)] ${
                       currentStep >= 2
                         ? "bg-brand"
                         : "bg-track"
@@ -975,7 +1046,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="h-11 w-11 flex items-center justify-center -mr-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors"
+            className="h-11 w-11 flex items-center justify-center -mr-2 rounded-full text-ink-muted hover:text-ink hover:bg-[var(--glass-edge)] transition-colors duration-200 [transition-timing-function:var(--ease)]"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -1032,6 +1103,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           variant="outline"
                           size="icon"
                           onClick={() => setServings(Math.max(1, servings - 1))}
+                          disabled={servings <= 1}
                           className="h-11 w-11 rounded-xl"
                         >
                           <Minus className="w-4 h-4" />
@@ -1041,7 +1113,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           value={servings}
                           onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
                           min="1"
-                          className="w-20 h-11 text-center text-lg font-semibold"
+                          className="w-20 h-11 text-center text-lg font-semibold font-technical tabular-nums"
                         />
                         <Button
                           variant="outline"
@@ -1107,7 +1179,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               className="pl-10 h-11 rounded-xl glass glass-interactive focus:bg-charcoal-surface"
                             />
                             {isSearching && (
-                              <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand animate-spin" />
+                              <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand spin-loop" />
                             )}
                           </div>
 
@@ -1216,7 +1288,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: "auto" }}
                                 exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
+                                transition={{ duration: 0.2, ease: SYSTEM_EASE }}
                               >
                                 <IngredientCard
                                   ingredient={ing}
@@ -1256,7 +1328,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 mr-2 spin-loop" />
                         Saving...
                       </>
                     ) : isEditing ? (
@@ -1300,12 +1372,14 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-lg w-full max-h-[88dvh] sm:max-h-[75vh] sm:my-8 flex flex-col overflow-hidden p-0 min-h-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-3 border-b pr-12">
           <DialogTitle>Log Recipe: {recipe.name}</DialogTitle>
-        </DialogHeader>
+        </div>
 
-        <div className="space-y-4">
+        {/* Scroll region */}
+        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Date</Label>
@@ -1349,7 +1423,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
                 onChange={(e) => setServingCount(e.target.value)}
                 min="0.5"
                 step="0.5"
-                className="w-20 h-11 text-center"
+                className="w-20 h-11 text-center font-technical tabular-nums"
               />
               <Button
                 variant="outline"
@@ -1388,7 +1462,13 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
               <div className="text-xs text-ink-muted">Fats</div>
             </div>
           </div>
+        </div>
 
+        {/* Pinned footer — keeps the Log CTA in the thumb zone without scrolling */}
+        <div
+          className="px-6 pt-4 pb-6 border-t bg-charcoal-surface/50 flex-shrink-0"
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        >
           <Button
             variant="volt"
             size="lg"
@@ -1398,7 +1478,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
           >
             {logMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 spin-loop" />
                 Logging...
               </>
             ) : (

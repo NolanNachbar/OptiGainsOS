@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import FoodTracker from "./FoodTracker";
 import Supplements from "./Supplements";
@@ -6,14 +6,17 @@ import Progress from "./Progress";
 import WeeklyPlanCard from "@/components/nutrition/WeeklyPlanCard";
 import { Droplets, Utensils, CalendarRange, ChevronRight, LineChart } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import QuickCapture from "@/components/QuickCapture";
 import { SubTabs } from "@/components/ui/system";
 
 export default function Fuel() {
   const [searchParams, setSearchParams] = useSearchParams();
-  // The URL is the single source of truth — sidebar/sub-tab links both work.
-  // "wellness" kept as a legacy alias that lands on the Body tab.
+  // The URL is the single source of truth, sidebar/sub-tab links both work.
   const tabParam = searchParams.get("tab");
+  // Legacy "wellness" alias redirects to the canonical Body tab so the URL
+  // never lingers on a name the nav no longer surfaces.
+  useEffect(() => {
+    if (tabParam === "wellness") setSearchParams({ tab: "body" }, { replace: true });
+  }, [tabParam, setSearchParams]);
   const activeTab = tabParam === "body" || tabParam === "wellness"
     ? "body"
     : tabParam === "hydration"
@@ -71,17 +74,6 @@ export default function Fuel() {
                 Merged in from the retired standalone /progress route. The Progress
                 sub-tab strip is its own label, so no extra section heading here. */}
             <Progress embedded />
-
-            {/* Quick Capture — secondary, kept behind a disclosure to save height */}
-            <details className="group glass">
-              <summary className="px-4 py-3 flex items-center justify-between cursor-pointer list-none section-label">
-                Stream Note
-                <ChevronRight className="w-4 h-4 text-ink-faint transition-transform group-open:rotate-90" />
-              </summary>
-              <div className="px-4 pb-4">
-                <QuickCapture embedded domain="general" placeholder="Stream a note to Second Brain..." />
-              </div>
-            </details>
           </div>
         ) : (
           <div className="px-4 pt-4 max-w-2xl mx-auto space-y-6 pb-[var(--dock-clearance)]">

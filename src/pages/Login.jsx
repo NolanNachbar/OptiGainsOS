@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 export function AuthShell({ children }) {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] relative w-full"
+      className="min-h-screen flex flex-col items-center justify-end sm:justify-center px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(12vh,env(safe-area-inset-bottom))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] relative w-full"
       style={{ background: 'var(--color-bg)' }}
     >
       {children}
@@ -31,12 +31,12 @@ export function AuthHeader({ subtitle }) {
     <div className="flex flex-col items-center text-center rise-in">
       <div
         className="h-12 w-12 rounded-2xl flex items-center justify-center type-display text-[22px] text-[var(--color-action-dark)]"
-        style={{ background: 'var(--color-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)' }}
+        style={{ background: 'var(--color-brand)' }}
         aria-hidden="true"
       >
         O
       </div>
-      <h1 className="type-display text-[28px] sm:text-[24px] whitespace-nowrap text-ink mt-4">OPTIGAINS</h1>
+      <h1 className="type-display text-[24px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OPTIGAINS</h1>
       {subtitle && (
         <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
           {subtitle}
@@ -115,13 +115,13 @@ export default function Login() {
             />
           </div>
 
-          {errorMsg && <p id="login-error" role="alert" className="text-brand text-[13px] mb-2">{errorMsg}</p>}
+          {errorMsg && <p id="login-error" role="alert" className="text-ink text-[13px] mb-2">{errorMsg}</p>}
 
           <Button
             type="submit"
             variant="volt"
             size="lg"
-            className="w-full mt-1 active:scale-[.99] bg-none bg-[var(--color-brand)] [box-shadow:0_6px_18px_rgba(var(--color-brand-rgb)/0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+            className="w-full mt-1"
             disabled={loading}
           >
             {loading ? (
@@ -134,12 +134,9 @@ export default function Login() {
             )}
           </Button>
 
-          <Link
-            to="/forgot-password"
-            className="cta-ghost w-full mt-2.5 text-[13.5px] font-bold text-ink hover:text-ink active:text-ink"
-          >
-            Forgot password
-          </Link>
+          <Button asChild variant="ghost" size="lg" className="w-full mt-2.5">
+            <Link to="/forgot-password">Forgot password</Link>
+          </Button>
         </form>
       </div>
     </AuthShell>

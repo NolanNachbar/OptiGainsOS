@@ -42,7 +42,6 @@ import {
   Dumbbell,
   TrendingUp,
   Calendar,
-  Repeat,
   X,
   Activity,
 } from "lucide-react";
@@ -192,7 +191,21 @@ export default function ProgramBuilder() {
   }, [program.cycle_length]);
 
   if (editId && loadingExisting) return <LoadingScreen />;
-  if (editId && errorExisting) return <div className="min-h-screen bg-charcoal flex items-center justify-center"><p className="text-bad">Failed to load program</p></div>;
+  if (editId && errorExisting) return (
+    <div className="min-h-screen bg-charcoal flex items-center justify-center px-4">
+      <Card className="max-w-sm w-full">
+        <CardContent className="pt-6 text-center space-y-4">
+          <div>
+            <p className="type-display text-lg text-ink">Failed to load program</p>
+            <p className="text-ink-muted text-sm mt-1">Check your connection and try again.</p>
+          </div>
+          <Button variant="volt" onClick={() => window.location.reload()} className="w-full min-h-[44px]">
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   // ── Step navigation ──
   const canProceed = () => {
@@ -518,7 +531,7 @@ export default function ProgramBuilder() {
                       program. One muted cluster, not two action groups. */}
                   <Button
                     variant="dim"
-                    size="sm"
+                    size="default"
                     onClick={() => importFileRef.current?.click()}
                     className="min-h-[44px]"
                   >
@@ -564,7 +577,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.24, ease: [0.2, 0.7, 0.3, 1] }}
-            className="pb-[calc(var(--dock-clearance)+88px+env(safe-area-inset-bottom))] md:pb-0"
+            className="pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-0"
           >
             {step === 0 && (
               <StepDetails
@@ -626,10 +639,21 @@ export default function ProgramBuilder() {
             the safe-area inset that --dock-clearance already folds in.) The
             scroll container reserves matching dock clearance below (see the
             motion.div pb above) so Description + Tags clear both this bar and the
-            dock at 390px. On desktop it un-sticks and goes transparent. */}
+            dock at 390px.
+
+            On desktop (md+) it un-sticks and reads as a CardFooter of the form
+            card above (pdm-5): a continuous hairline top border + a tight 12px
+            gap (md:mt-3) glue Next to the card bottom so it owns the form's
+            action, no floating gap.
+
+            This route renders with showDock=false, so there is no floating dock
+            to clear: the bar bottom-anchors directly to the safe-area inset + a
+            12px gap (program-builder-1) instead of reserving the dock's painted
+            footprint via --floating-chrome-bottom. The scroll container above
+            reserves only this bar's own height (no +88px dock band). */}
         <div
-          className="sticky z-20 -mx-4 md:mx-0 mt-6 px-4 md:px-0 py-3 md:py-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 glass-elevated md:bg-transparent md:shadow-none md:border-0"
-          style={{ bottom: "var(--floating-chrome-bottom)" }}
+          className="sticky z-20 -mx-4 md:mx-0 mt-6 md:mt-3 px-4 md:px-4 py-3 md:pt-3 md:pb-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 glass-elevated md:bg-transparent md:shadow-none md:rounded-none md:border-x-0 md:border-b-0 md:border-t md:border-solid md:[border-top-color:var(--color-border-soft)]"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           {step > 0 && (
             <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
@@ -642,15 +666,12 @@ export default function ProgramBuilder() {
               variant="volt"
               onClick={next}
               disabled={!canProceed()}
-              // Disabled coral falls back to charcoal-surface + faint ink (shared
-              // button rule). On its own that reads as dead chrome and fails
-              // contrast, so override the disabled state with secondary ink (72%,
-              // clears 4.5:1) over a faint brand tint with a clearly visible brand
-              // outline (clears 3:1) — same "locked, here's where forward is"
-              // pattern as coralGhost, now legible. The inline helper under Program
-              // Name names WHY it's locked. Page classes come last in the Button's
-              // className string so these win over the shared volt disabled rule.
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px] disabled:border disabled:border-brand/60 disabled:bg-brand/[0.08] disabled:text-ink-secondary"
+              // Disabled Next falls to the shared volt disabled rule: neutral
+              // charcoal-surface inert with faint ink — no brand-channel border or
+              // background, so coral stays the single action color and a locked
+              // control never borrows it. The inline helper under Program Name
+              // ("Name your program to continue") carries WHY it's locked.
+              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -712,7 +733,7 @@ function NumberStepper({ value, onChange, min, max, ariaLabel }) {
         onChange={(e) => onChange(clamp(parseInt(e.target.value) || min))}
         min={min}
         max={max}
-        className="flex-1 min-h-[44px] text-center tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+        className="flex-1 min-h-[44px] text-center text-xl font-technical font-bold appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
       />
       <Button
         type="button"
@@ -749,7 +770,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
     <Card>
       <CardContent className="space-y-3 pt-5">
         <div>
-          <Label>Program Name *</Label>
+          <Label className="form-label">Program Name *</Label>
           <Input
             value={program.name}
             onChange={(e) => update("name", e.target.value)}
@@ -772,7 +793,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
             keeps its own full-width row; all three rejoin 3-up on desktop. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
-            <Label>Cycle Length *</Label>
+            <Label className="form-label">Cycle Length *</Label>
             <NumberStepper
               value={program.cycle_length}
               onChange={(v) => update("cycle_length", v)}
@@ -780,13 +801,10 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               max={30}
               ariaLabel="cycle length"
             />
-            <p className="text-xs text-muted-2 mt-0.5">Days per cycle · rest days included</p>
+            <p className="text-xs text-ink-muted mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
-            <Label className="flex items-center gap-1">
-              <Repeat className="w-3.5 h-3.5" />
-              Cycles *
-            </Label>
+            <Label className="form-label">Cycles *</Label>
             <NumberStepper
               value={program.num_cycles}
               onChange={(v) => update("num_cycles", v)}
@@ -799,7 +817,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           {/* Goal spans both columns (own row) then rejoins the desktop
               three-up row. */}
           <div className="sm:col-span-2 md:col-span-1">
-            <Label>Goal</Label>
+            <Label className="form-label">Goal</Label>
             <Select
               value={program.goal}
               onValueChange={(v) => update("goal", v)}
@@ -820,17 +838,24 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           </div>
         </div>
 
-        {/* Total training days — the derived datum. font-technical (tabular
-            numerals) is scoped to the numbers only, not the whole sentence, so
-            the prose stays in the UI voice. Treatment mirrors StepConfirm's
-            "Total Days" stat: muted label prose + ink-weighted tabular total. */}
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary">
-          <Calendar className="w-4 h-4 flex-shrink-0 text-ink-muted" />
-          <span>
-            <span className="font-technical">{program.cycle_length}</span>-day cycle repeated{" "}
-            <span className="font-technical">{program.num_cycles}</span> time{program.num_cycles !== 1 ? "s" : ""} ={" "}
-            <strong className="font-technical text-ink">{program.cycle_length * program.num_cycles} total training days</strong>
-          </span>
+        {/* Total training days — the derived datum, promoted to the ONE
+            dominant display figure on Step 1 (program-builder-2,3). The total
+            renders as a hero-metric far larger than any label (.form-label,
+            12px) or stepper value (~14px) so Step 1 lands a single focal number.
+            The whole derived line is wrapped in font-technical (tabular
+            numerals) so every figure aligns; the supporting prose stays muted
+            below the hero figure (program-builder-3 / program-duration-modal-6). */}
+        <div className="flex items-center gap-3 glass-inset p-4 font-technical">
+          <Calendar className="w-5 h-5 flex-shrink-0 text-ink-muted" />
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2">
+              <span className="hero-metric text-4xl text-ink">{program.cycle_length * program.num_cycles}</span>
+              <span className="section-label">total training days</span>
+            </div>
+            <p className="text-sm text-ink-secondary mt-0.5">
+              {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
 
         {/* Optional details — Description + Tags are deferred behind a
@@ -855,7 +880,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           {showOptional && (
             <div className="space-y-3 mt-2 rise-in">
               <div>
-                <Label>Description</Label>
+                <Label className="form-label">Description</Label>
                 <Textarea
                   value={program.description}
                   onChange={(e) => update("description", e.target.value)}
@@ -866,7 +891,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
               </div>
 
               <div>
-                <Label>Tags</Label>
+                <Label className="form-label">Tags</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={tagInput}
@@ -1127,7 +1152,7 @@ function InlineDayEditor({
           <Select
             onValueChange={(targetDay) => onCopyDay(dayIndex, parseInt(targetDay))}
           >
-            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-[12.5px]">
+            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-xs">
               <Copy className="w-3 h-3 mr-1" />
               Copy to...
             </SelectTrigger>

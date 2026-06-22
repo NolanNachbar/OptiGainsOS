@@ -176,17 +176,20 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
         </div>
 
         <div className="pt-0 pb-4 px-4 md:px-6">
-          {/* Stats row — both cells always render so columns stay stable */}
+          {/* Stats row — both cells always render so columns stay stable. The
+              two values are demoted below the title (train-library-5): smaller
+              (text-[15px]) and secondary ink so the workout NAME stays the
+              card's dominant element, not the two metrics under it. */}
           <div className="flex">
             <div className="flex-1 flex flex-col">
               <span className="section-label">Duration</span>
-              <span className={`font-technical font-bold text-[17px] mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
+              <span className={`font-technical font-bold text-[15px] mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "—"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
               <span className="section-label">Exercises</span>
-              <span className="font-technical font-bold text-[17px] text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
+              <span className="font-technical font-bold text-[15px] text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
         </div>

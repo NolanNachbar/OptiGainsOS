@@ -13,10 +13,20 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { resetPassword } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate through the inline #email-error path (role=alert, text-ink)
+    // instead of the native OS tooltip — mirrors Login.jsx.
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setErrorMsg('Enter a valid email address');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -40,11 +50,11 @@ export default function ForgotPassword() {
             <div className="glass-inset mx-auto flex h-12 w-12 items-center justify-center text-ink">
               <CheckCircle className="w-5 h-5" />
             </div>
-            <p className="type-display text-[18px] text-ink">Check your email</p>
-            <p className="text-secondary text-[12.5px]">
+            <p className="text-ink text-sm font-semibold">Check your email</p>
+            <p className="text-secondary text-xs">
               We've sent a password reset link to <span className="font-semibold text-ink">{email}</span>
             </p>
-            <p className="text-secondary text-[12.5px]">
+            <p className="text-secondary text-xs">
               Didn't receive the email? Check your spam folder or try again.
             </p>
             <Button
@@ -57,8 +67,8 @@ export default function ForgotPassword() {
             </Button>
           </div>
         ) : (
-          <form key="form" onSubmit={handleSubmit} className="space-y-4 rise-in">
-            <p className="type-display text-[18px] text-ink text-center">Enter your email</p>
+          <form key="form" onSubmit={handleSubmit} className="space-y-4 rise-in" noValidate>
+            <p className="text-secondary text-sm text-center">Enter the email tied to your account and we'll send a reset link.</p>
             <div>
               <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
               <div className="relative">
@@ -68,13 +78,15 @@ export default function ForgotPassword() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
                   className="pl-10"
                   autoComplete="email"
                   autoFocus
-                  required
+                  aria-invalid={!!errorMsg}
+                  aria-describedby={errorMsg ? 'email-error' : undefined}
                 />
               </div>
+              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[13px] mt-1.5">{errorMsg}</p>}
             </div>
 
             <Button
@@ -99,7 +111,7 @@ export default function ForgotPassword() {
         <div className="flex items-center justify-center mt-3 pt-2 border-t border-charcoal-borderSoft px-0.5">
           <Link
             to="/login"
-            className="text-[13px] font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+            className="text-sm font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to sign in

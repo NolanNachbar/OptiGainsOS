@@ -25,10 +25,10 @@ import {
 function InfoNote({ children, label = "What do these mean?" }) {
   return (
     <details className="group mt-1">
-      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-faint hover:text-muted-2 transition-colors">
+      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-faint hover:text-muted-2 transition-colors duration-200 ease-[var(--ease)]">
         <Info className="w-3.5 h-3.5" />
         <span>{label}</span>
-        <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+        <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 ease-[var(--ease)] group-open:rotate-180" />
       </summary>
       <p className="text-[10px] font-semibold text-muted-2 mt-1.5 leading-relaxed">{children}</p>
     </details>
@@ -343,10 +343,12 @@ function StrengthSection({ data }) {
             {pct != null && (
               <div className="h-1.5 bg-track rounded-full overflow-hidden mt-1.5">
                 {/* Teal data-hue fill encodes progress-to-target so the bar reads
-                    as a measure, not decoration. Teal is the data/positive hue
-                    (coral remains THE action color and is never used here), and
-                    the fill width itself differentiates each lift's ratio. Stall
-                    state stays on the StallBadge, so no threshold tinting here. */}
+                    as a measure, not decoration. Here teal is used as the
+                    data/positive hue; the single action color is teal
+                    (var(--color-brand) #19C8A6), reserved for actual controls and
+                    never spent on this readout. The fill width itself
+                    differentiates each lift's ratio. Stall state stays on the
+                    StallBadge, so no threshold tinting here. */}
                 <div
                   className="h-full rounded-full bg-teal transition-[width] duration-200 ease-[var(--ease)]"
                   style={{ width: `${pct}%` }}
@@ -408,7 +410,15 @@ const HEAT_FIGURE_KEY = {
 
 function HypertrophySection({ data, landmarks }) {
   const [showAll, setShowAll] = useState(false);
-  if (!data || Object.keys(data).length === 0) {
+
+  // Mirror StrengthSection's guard: only entries carrying real per-muscle volume
+  // ({weekly_sets, fatigue_score, mav, ...}) are renderable. A flat/legacy shape
+  // (weekly_sets == null) would divide into NaN% bars and empty labels, so treat
+  // anything without weekly_sets as "no data".
+  const entries = data
+    ? Object.entries(data).filter(([, d]) => d && typeof d === "object" && d.weekly_sets != null)
+    : [];
+  if (entries.length === 0) {
     return <p className="text-xs font-semibold text-muted-2">No volume data this week.</p>;
   }
 
@@ -423,7 +433,7 @@ function HypertrophySection({ data, landmarks }) {
     return { mav: Math.round(mav), mrv: Math.round(mrv) };
   };
 
-  const sorted = Object.entries(data).sort((a, b) => b[1].fatigue_score - a[1].fatigue_score);
+  const sorted = entries.sort((a, b) => b[1].fatigue_score - a[1].fatigue_score);
   const anyLearned = sorted.some(([m]) => learnedFor(m));
   // Cap the bar wall to the most-fatigued 8 by default so the section never
   // becomes an endless mid-page scroll; the rest is one tap away.
@@ -447,15 +457,18 @@ function HypertrophySection({ data, landmarks }) {
           const learned = learnedFor(muscle);
           const mav = learned?.mav ?? d.mav;
           const mrv = learned?.mrv ?? d.mrv;
-          const pct = Math.min((d.weekly_sets / mav) * 100, 120);
-          const overMrv = d.weekly_sets >= mrv;
+          // Guard the ratio so a missing/zero MAV can't render a NaN% bar.
+          const rawPct = Number.isFinite(d.weekly_sets) && mav > 0
+            ? (d.weekly_sets / mav) * 100 : null;
+          const pct = rawPct != null ? Math.min(rawPct, 120) : null;
+          const overMrv = mrv > 0 && d.weekly_sets >= mrv;
           return (
             <div key={muscle}>
               <div className="flex items-center justify-between text-xs mb-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-secondary capitalize">{muscle.replace("_", " ")}</span>
+                  <span className="font-bold text-secondary capitalize">{muscle.replace(/_/g, " ")}</span>
                   {learned && (
-                    <span className="text-[10px] uppercase tracking-[0.08em] text-teal/70 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
+                    <span className="text-[10px] uppercase tracking-[0.08em] text-muted-2 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
                       learned
                     </span>
                   )}
@@ -466,12 +479,14 @@ function HypertrophySection({ data, landmarks }) {
                   <FatigueColor score={d.fatigue_score} />
                 </div>
               </div>
-              <div className="h-1.5 bg-track rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${d.fatigue_score >= 0.75 ? "bg-bad" : d.fatigue_score >= 0.5 ? "bg-warn" : "bg-teal"}`}
-                  style={{ width: `${Math.min(pct, 100)}%` }}
-                />
-              </div>
+              {pct != null && (
+                <div className="h-1.5 bg-track rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${d.fatigue_score >= 0.75 ? "bg-bad" : d.fatigue_score >= 0.5 ? "bg-warn" : "bg-teal"}`}
+                    style={{ width: `${Math.min(pct, 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -480,15 +495,15 @@ function HypertrophySection({ data, landmarks }) {
             type="button"
             onClick={() => setShowAll((v) => !v)}
             aria-expanded={showAll}
-            className="cta-ghost !h-11 !text-[11px] !font-bold uppercase tracking-[0.08em] !text-muted-2 hover:!text-ink active:scale-[0.98] transition-transform w-full"
+            className="cta-ghost !h-11 !text-[11px] !font-bold uppercase tracking-[0.08em] !text-muted-2 hover:!text-ink active:scale-[0.98] transition-transform duration-200 ease-[var(--ease)] w-full"
           >
             {showAll ? "Show less" : `Show all ${sorted.length} muscles`}
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-[var(--ease)] ${showAll ? "rotate-180" : ""}`} />
           </button>
         )}
         <InfoNote label="Reading these bars">
-          Fatigue: teal &lt;50%, amber 50-75%, coral &gt;75%. Bars fill to MAV target.
-          {anyLearned && <span className="text-teal/60"> · &ldquo;learned&rdquo; = engine-adapted landmark, not a template.</span>}
+          Fatigue: teal &lt;50%, amber 50-75%, red &gt;75%. Bars fill to MAV target.
+          {anyLearned && <span className="text-muted-2"> · &ldquo;learned&rdquo; = engine-adapted landmark, not a template.</span>}
         </InfoNote>
       </div>
       {figureData.length > 0 && (
@@ -530,13 +545,14 @@ function FatigueSection({ data }) {
           <div className="hero-metric text-3xl text-ink">{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
           <div className="section-label">Training Stress Balance</div>
         </div>
-        <Badge className="ml-auto bg-charcoal-elevated text-muted-2 border-none capitalize text-xs">
-          {(data.interpretation || "").replace("_", " ")}
+        <Badge className="ml-auto glass-inset text-muted-2 border-none capitalize text-xs">
+          {(data.interpretation || "").replace(/_/g, " ")}
         </Badge>
       </div>
 
-      {/* ATL / CTL / ACWR */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* ATL / CTL / CNS / ACWR — 2-up at 390px (4 narrow columns clipped the
+          labels on a phone), widening to the 4-up row at sm+. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { label: "ATL", value: data.atl?.toFixed(1), desc: "7d acute load", hue: "var(--hue-violet)", warn: data.atl > 80 },
           { label: "CTL", value: data.ctl?.toFixed(1), desc: "42d chronic load", hue: "var(--hue-teal)" },
@@ -657,13 +673,17 @@ function NutritionSection({ data, targets }) {
           <span className="font-technical text-ink font-bold">
             {avgCal ? Math.round(avgCal).toLocaleString() : "—"}
             {calorie_target ? <span className="text-muted-2 font-semibold"> / {calorie_target.toLocaleString()}</span> : null}
-            {adherencePct != null ? <span className={`ml-1.5 ${adherencePct >= 90 && adherencePct <= 110 ? "text-teal" : "text-warn"}`}>({adherencePct}%)</span> : null}
+            {adherencePct != null ? <span className="ml-1.5 text-muted-2">({adherencePct}%)</span> : null}
           </span>
         </div>
         {calPct != null && (
           <div className="h-1.5 bg-track rounded-full overflow-hidden">
+            {/* Calories own GOLD (the macro's hue, SYS-09d). Adherence is read on
+                the (xx%) figure, not by tinting the bar with the biometric
+                spectrum, so the fill stays a single data hue regardless of over/
+                under. */}
             <div
-              className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${calPct > 110 ? "bg-bad" : calPct >= 90 ? "bg-gold" : "bg-warn"}`}
+              className="h-full rounded-full bg-gold transition-[width] duration-200 ease-[var(--ease)]"
               style={{ width: `${Math.min(calPct, 100)}%` }}
             />
           </div>
@@ -681,8 +701,10 @@ function NutritionSection({ data, targets }) {
         </div>
         {proteinPct != null && (
           <div className="h-1.5 bg-track rounded-full overflow-hidden">
+            {/* Protein owns CORAL (--hue-coral, SYS-09d) — the macro's fixed hue,
+                not the biometric spectrum. Fill width reads the ratio to target. */}
             <div
-              className={`h-full rounded-full transition-[width] duration-200 ease-[var(--ease)] ${proteinPct >= 100 ? "bg-teal" : proteinPct >= 80 ? "bg-warn" : "bg-bad"}`}
+              className="h-full rounded-full bg-coral transition-[width] duration-200 ease-[var(--ease)]"
               style={{ width: `${Math.min(proteinPct, 100)}%` }}
             />
           </div>
@@ -726,7 +748,7 @@ function SummaryStrip({ state, vdot }) {
       // (mirroring FatigueSection's tsbColor) rather than a fixed hue. Violet is
       // reserved for ATL elsewhere; using it here was a hue collision.
       accent: fatigue.tsb > 5 ? "var(--hue-teal)" : fatigue.tsb > -5 ? "var(--text-muted)" : "var(--bad)",
-      sub: (fatigue.interpretation || "").replace("_", " ") || undefined,
+      sub: (fatigue.interpretation || "").replace(/_/g, " ") || undefined,
     },
     vdot != null && {
       label: "VDOT", value: Number(vdot).toFixed(1),
@@ -739,6 +761,38 @@ function SummaryStrip({ state, vdot }) {
   ].filter(Boolean);
 
   if (tiles.length === 0) return null;
+
+  // With only 1–2 metrics the 4-up grid reads as a sparse, half-empty row. Lead
+  // instead with a Recovery hero (the headline biometric) at hero-metric scale,
+  // falling back to the first available tile when recovery isn't present, and
+  // trail any remaining tile beside it. ≥3 tiles keep the dense glanceable grid.
+  if (tiles.length < 3) {
+    const heroIdx = Math.max(0, tiles.findIndex((t) => t.label === "Recovery"));
+    const hero = tiles[heroIdx];
+    const rest = tiles.filter((_, i) => i !== heroIdx);
+    return (
+      <div className="mb-4 rise-in space-y-2">
+        <div className="glass-inset px-4 py-4">
+          <div className="section-label flex items-center gap-1.5">
+            <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hero.accent }} />
+            {hero.label}
+          </div>
+          <div className="flex items-baseline gap-1 mt-1.5">
+            <span className="hero-metric text-ink text-[40px]">{hero.value ?? "—"}</span>
+            {hero.unit && <span className="text-sm font-semibold text-muted-2">{hero.unit}</span>}
+          </div>
+          {hero.sub && <div className="text-xs font-semibold text-muted-2 mt-1 capitalize">{hero.sub}</div>}
+        </div>
+        {rest.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {rest.map((t) => (
+              <MetricTile key={t.label} label={t.label} value={t.value} unit={t.unit} accent={t.accent} sub={t.sub} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 rise-in">
@@ -942,7 +996,7 @@ export default function AthleteState({ hideHeader = false }) {
             type="button"
             onClick={() => setDetailOpen((v) => !v)}
             aria-expanded={detailOpen}
-            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform"
+            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
           >
             <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <BarChart3 className="w-3.5 h-3.5" />
@@ -951,7 +1005,7 @@ export default function AthleteState({ hideHeader = false }) {
               <span className="block section-label !text-ink">Body analytics</span>
               <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Fatigue · Volume · Endurance · Nutrition</span>
             </span>
-            <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${detailOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${detailOpen ? "rotate-180" : ""}`} />
           </button>
           {/* Height + opacity reveal via grid-rows (the system has no disclosure
               primitive); single easing, in-band duration, content rises 8px in.
@@ -1027,7 +1081,7 @@ export default function AthleteState({ hideHeader = false }) {
               type="button"
               onClick={() => setEngineOpen((v) => !v)}
               aria-expanded={engineOpen}
-              className="w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform"
+              className="w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
             >
               <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-gold/[0.13] text-gold">
                 <Cpu className="w-3.5 h-3.5" />
@@ -1036,7 +1090,7 @@ export default function AthleteState({ hideHeader = false }) {
                 <span className="block section-label !text-ink">Engine internals</span>
                 <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Adaptive engine · Weekly plan · Pace zones</span>
               </span>
-              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform ${engineOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${engineOpen ? "rotate-180" : ""}`} />
             </button>
             {/* Same grid-rows height + opacity reveal as the analytics accordion. */}
             <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[280ms] ease-[cubic-bezier(.2,.7,.3,1)] ${engineOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
@@ -1054,7 +1108,7 @@ export default function AthleteState({ hideHeader = false }) {
             in-flow content this carries the dock clearance so it (and the engine
             accordion above it) always clear the floating mobile dock; the wrapper
             no longer pads so clearance lives on the true last child. */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-[calc(var(--dock-clearance)+var(--dock-total-height))] lg:pb-2">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-[var(--dock-clearance)] lg:pb-2">
           <Link to="/physique" className="glass glass-interactive px-4 py-3.5 flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <Camera className="w-4 h-4" />

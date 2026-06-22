@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { calculateEWMA } from "@/utils/coachingUtils";
 
 export default function WeightProgressChart({ data, weightUnit = 'lbs', className }) {
@@ -51,38 +52,42 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
   return (
     <div className="w-full">
-      {/* items-stretch lets the three plain stat cards match the Change card's
-          height without the old hard-coded &nbsp; spacer rows reclaiming ~16px each. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 items-stretch">
+      {/* Current weight is the hero figure: full-width, largest type. The
+          Starting / Trend / Change trio reads as quieter supporting context. */}
+      <div className="glass-inset p-4 mb-2">
+        <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
+        <div className="hero-metric text-ink text-[34px] leading-none">
+          {currentWeight}
+          <span className="text-[15px] text-muted-2 font-semibold ml-1.5">{weightUnit}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-6 items-stretch">
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
-          <div className="font-technical text-[18px] font-extrabold text-ink">{startWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
-        </div>
-        <div className="glass-inset p-3">
-          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
-          <div className="font-technical text-[18px] font-extrabold text-ink">{currentWeight} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
-          <div className="font-technical text-xs font-semibold text-muted-2 mt-0.5" aria-hidden="true">&nbsp;</div>
+          <div className="font-technical text-[15px] font-extrabold text-secondary">{startWeight} <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
-          <div className="font-technical text-[18px] font-extrabold text-ink">{currentTrend} <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span></div>
+          <div className="font-technical text-[15px] font-extrabold text-secondary">{currentTrend} <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
         <div className="glass-inset p-3">
           <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
-          <div className="font-technical text-[18px] font-extrabold text-ink flex items-baseline gap-1">
-            {weightChange !== 0 && <span className="text-[12px]" aria-hidden="true">{weightChange > 0 ? '▲' : '▼'}</span>}
+          <div className="font-technical text-[15px] font-extrabold text-secondary flex items-center gap-0.5">
+            {weightChange !== 0 && (weightChange > 0
+              ? <ArrowUpRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              : <ArrowDownRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />)}
             <span>{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}</span>
-            <span className="text-[12px] text-muted-2 font-semibold">{weightUnit}</span>
+            <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span>
           </div>
-          <div className="font-technical text-[10px] text-muted-2 font-semibold">({percentChange > 0 ? '+' : ''}{percentChange}%)</div>
+          <div className="font-technical text-[10px] text-muted-2 font-semibold mt-0.5">({percentChange > 0 ? '+' : ''}{percentChange}%)</div>
         </div>
       </div>
 
       <div className={`w-full ${className || 'h-80'}`}>
         <ResponsiveContainer width="100%" height="100%" minHeight={200}>
           <LineChart data={trendedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="0" stroke="var(--color-track)" strokeOpacity={1} />
+            <CartesianGrid horizontal vertical={false} strokeDasharray="0" stroke="var(--color-track)" strokeOpacity={0.5} />
             <XAxis
               dataKey="recorded_date"
               ticks={xTicks}
@@ -106,8 +111,9 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
               type="monotone"
               dataKey="weight"
               stroke="var(--text-muted)"
-              strokeWidth={1}
+              strokeWidth={1.5}
               dot={false}
+              isAnimationActive={false}
               activeDot={{ r: 3, fill: 'var(--text-muted)', strokeWidth: 0 }}
             />
             <Line
@@ -117,6 +123,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
               strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
+              isAnimationActive={false}
               activeDot={{ r: 4, fill: 'var(--viz-1)', strokeWidth: 0 }}
             />
           </LineChart>
@@ -125,11 +132,11 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
       <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-[2.5px] rounded-full" style={{ background: 'var(--text-muted)' }} />
+          <span className="w-3.5 h-[2px] rounded-full bg-ink-muted" />
           Raw
         </span>
         <span className="flex items-center gap-1.5">
-          <div className="w-3.5 h-px" style={{ borderTop: '2px dashed var(--viz-1)' }} />
+          <span className="w-3.5 border-t-2 border-dashed border-viz-1" />
           Trend (EWMA)
         </span>
       </div>
