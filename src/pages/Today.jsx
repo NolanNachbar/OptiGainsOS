@@ -3,10 +3,10 @@
  *
  * Answers "what do I do today?" within 3 seconds (the Vapor×Macro hero):
  *   1. Readiness glass card — teal ring + verdict + hue-coded metric grid
- *   2. The engine's prescribed session (rows + load pills + coral CTA)
+ *   2. The engine's prescribed session (rows + load pills + teal CTA)
  *   3. Fuel today — hue-coded rings, one tap to the log
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase, db } from "@/api/supabaseClient";
@@ -21,10 +21,9 @@ import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard"
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
 import TodayActions from "@/components/dashboard/TodayActions";
-import WeighInModal from "@/components/WeighInModal";
 import { StatRing, MetricTile, SectionLabel, MiniRing, SegmentedControl } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight, Scale, Apple, ChevronDown } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
@@ -36,6 +35,11 @@ const compactK = (n) =>
   n == null || Number.isNaN(Number(n)) ? "—"
     : Number(n) >= 1000 ? `${(Number(n) / 1000).toFixed(1)}k`
     : String(Math.round(Number(n)));
+// Full thousands-separated integer — used for the kcal ring's TARGET caption so
+// it reads non-lossy ("/2,800 · 7d"), distinct from the compact in-ring average
+// value (which abbreviates to "2.8k" to fit the 50px ring).
+const withThousands = (n) =>
+  n == null || Number.isNaN(Number(n)) ? "—" : Math.round(Number(n)).toLocaleString("en-US");
 const sentence = (s) => {
   const t = String(s || "").replace(/_/g, " ").trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
@@ -50,10 +54,10 @@ export default function Today() {
   // local so the home stays the daily-ritual home without depending on the
   // global FAB. (The Stream Note tile was retired — the mobile-strip Stream Note
   // utility is the single canonical entry, so the freed thumb slot now hosts the
-  // subjective readiness check-in.)
-  const [showWeighIn, setShowWeighIn] = useState(false);
+  // subjective readiness check-in. Weigh-in is launched from the global FAB fan,
+  // so Today no longer carries its own weigh-in tile or modal — dashboard-5.)
   // Subjective readiness check-in (ported from Dashboard) — collapsed to a
-  // one-line prompt by default so the coral session CTA stays the single coral
+  // one-line prompt by default so the teal session CTA stays the single teal
   // primary in the first viewport; the form's "Check In" only materializes once
   // the athlete opens it.
   const [checkinOpen, setCheckinOpen] = useState(false);
@@ -64,9 +68,14 @@ export default function Today() {
   const [detailTab, setDetailTab] = useState("brief");
   // The whole detail card is collapsed behind a single disclosure on mobile
   // (default closed) so the primary surface ends near the 2-viewport mark; on
-  // desktop the right rail has room, so it renders open.
+  // desktop the right rail has room, so it renders open. EXCEPTION (density):
+  // when the detail card is the last surface AND Today's Actions is empty (no
+  // brief-seeded actions), a closed disclosure leaves a tall empty charcoal band
+  // above the dock at 390px — so in that case the disclosure defaults OPEN to
+  // fill the hollow with the Brief/State/Muscle body. Auto-open fires once (ref-
+  // guarded) so the user can still collapse it afterward.
   const [detailOpen, setDetailOpen] = useState(false);
-  const weightUnit = profile?.weight_unit || "lb";
+  const detailAutoOpened = useRef(false);
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
@@ -131,19 +140,63 @@ export default function Today() {
     [recentLogs, today]
   );
 
+  // Density guard: Today's Actions self-hides when there are no actions, which
+  // would otherwise strand the detail card (mobile disclosure default-closed) as
+  // the last surface with a tall empty band above the dock. When the brief seeds
+  // no actions, auto-open the detail disclosure ONCE so its body fills that
+  // hollow; the user can still collapse it afterward (ref-guarded so we never
+  // fight a manual close).
+  const briefActions = todayBrief?.brief_json?.today_actions;
+  useEffect(() => {
+    if (detailAutoOpened.current) return;
+    if (todayBrief === undefined) return; // brief still loading
+    if (!briefActions?.length) {
+      setDetailOpen(true);
+      detailAutoOpened.current = true;
+    }
+  }, [todayBrief, briefActions]);
+
   const recovery = state?.recovery || {};
   const fatigue = state?.fatigue || {};
   const nutrition = state?.nutrition || {};
   const vdot = state?.vdot_zones || {};
   const score = recovery?.score ?? null;
   const band = bandFor(score);
+  // "Calibrating" — no engine action yet (no prescription). In this state the
+  // hero must NOT signal a confident verdict: the arc + headline word are not
+  // brand teal regardless of the raw recovery score, since the engine hasn't
+  // cleared anything to train.
+  const calibrating = prescription?.mpc_action == null;
   // Readiness owns TEAL in the hue map (readiness · intensity), so the hero ring
   // and verdict word stay teal whenever the read is positive (>=70). bandFor
   // hands the 70-84 "Ready" band a body-battery GREEN, which both wears the
   // wrong family for the single most prominent datum and competes with the teal
   // FAB/dock as a second action-adjacent color. We keep warn/bad for the
   // genuinely cautionary bands (Moderate/Recover) so the verdict still signals.
-  const readinessHue = score == null ? band.color : score >= 70 ? "var(--hue-teal)" : band.color;
+  //
+  // CALIBRATING (today-2 / dashboard-1): the engine hasn't cleared a session, so
+  // the hero must NOT signal a confident teal verdict. But a flat-grey arc read
+  // as broken/disabled, hiding the biometric the athlete DID log. So while
+  // calibrating we still paint the arc its raw BAND hue (a measured biometric
+  // readout — never brand teal: bandFor's teal stop is --hue-teal #5EDCD2, a data
+  // hue, not the rgb(25,200,166) action teal), and the verdict WORD stays
+  // non-teal by lifting to --text-primary. When a real read exists, the ring uses
+  // the readiness-teal for the positive band and the band hue otherwise.
+  const readinessHue = score == null
+    ? "var(--text-faint)"
+    : calibrating
+      ? band.color
+      : score >= 70 ? "var(--hue-teal)" : band.color;
+  // The headline word never reads brand teal. While calibrating it lifts to
+  // --text-primary (the strongest non-teal ink) so the directive leads cleanly;
+  // a null score keeps it at --text-secondary; otherwise it tracks the verdict
+  // arc hue (which is the data --hue-teal, not the action teal, on a positive
+  // read).
+  const headlineColor = score == null
+    ? "var(--text-secondary)"
+    : calibrating
+      ? "var(--text-primary)"
+      : readinessHue;
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
 
@@ -166,6 +219,33 @@ export default function Today() {
     enabled: !!user,
     staleTime: 30 * 1000,
   });
+
+  // ── The single teal-primary selector (dashboard-6) ──────────────────────
+  // Teal is THE action color, so the page must show exactly ONE teal primary.
+  // Rather than carry parallel coralCta / demoteCta flags that could drift out of
+  // sync, ONE selector names which surface owns the teal CTA, and every per-
+  // surface flag is derived from it:
+  //   "session"  → the prescribed-session card paints teal "Begin Session"
+  //                (train day: a prescription exists, not REST, nothing logged,
+  //                 no active session demoting it to a ghost).
+  //   "checkin"  → no session teal, so the check-in's "Check In" is the one teal
+  //                primary (no prescription / rest / already logged).
+  // The active-session "tap to continue" banner is deliberately neutral glass and
+  // never the teal primary, so it doesn't enter this decision.
+  const tealPrimary =
+    !!prescription &&
+    prescription.mpc_action !== "REST" &&
+    !loggedToday &&
+    !activeSession
+      ? "session"
+      : "checkin";
+  // Derived per-surface flags — single source above.
+  // PrescribedSessionCard: its Begin Session is the teal primary only when the
+  // session owns it; otherwise it's demoted to a ghost.
+  const demoteSessionCta = tealPrimary !== "session";
+  // MorningCheckin: its "Check In" submits teal only when the check-in owns the
+  // primary (coralCta=true → teal/volt button), else neutral ghost.
+  const checkinOwnsTeal = tealPrimary === "checkin";
 
   // The directive — one headline, one supporting sentence. The lead word is
   // derived from the readiness band (bandFor), so the WORD never contradicts the
@@ -304,20 +384,20 @@ export default function Today() {
             </div>
           )}
           {/* The readiness hero — verdict in 3 seconds */}
-          <div className="glass px-4 sm:px-5 py-4 rise-in relative overflow-hidden">
+          <div className="glass px-4 sm:px-5 py-4 rise-in">
             {(prescriptionLoading || stateLoading) ? (
-              <div className="animate-pulse space-y-3">
+              <div className="pulse-loop space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="w-[104px] h-[104px] rounded-full glass-inset shrink-0" />
+                  <div className="w-[104px] h-[104px] rounded-full bg-track shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-5 glass-inset w-2/3" />
-                    <div className="h-3 glass-inset w-full" />
-                    <div className="h-3 glass-inset w-4/5" />
+                    <div className="h-5 bg-track rounded-lg w-2/3" />
+                    <div className="h-3 bg-track rounded-lg w-full" />
+                    <div className="h-3 bg-track rounded-lg w-4/5" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px]">
                   {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 glass-inset" />
+                    <div key={i} className="h-12 bg-track rounded-lg" />
                   ))}
                 </div>
               </div>
@@ -329,10 +409,10 @@ export default function Today() {
                   micro-label below the score stays 'READINESS'. */}
               <StatRing value={score} size={104} label="Readiness" color={readinessHue} />
               <div className="flex-1 min-w-0">
-                <h2 className="type-display text-lg sm:text-xl" style={{ color: readinessHue }}>
+                <h2 className="type-display text-lg sm:text-xl" style={{ color: headlineColor }}>
                   {headline}
                 </h2>
-                <p className="font-technical text-[13px] font-semibold text-muted-2 leading-relaxed mt-1 max-w-[52ch]">
+                <p className="font-technical text-[13px] font-semibold text-secondary leading-relaxed mt-1 max-w-[52ch]">
                   {detail}
                 </p>
               </div>
@@ -344,20 +424,23 @@ export default function Today() {
         {/* Subjective readiness check-in — directly under the readiness hero so
             it lives where the athlete already reads the verdict (resolves the
             "subjective check-in buried / 99 taps" IA gap). Collapsed to a
-            one-line prompt; the coral "Check In" only fires once expanded, so the
-            session CTA below stays the single coral primary. Once logged,
+            one-line prompt; the teal "Check In" only fires once expanded, so the
+            session CTA below stays the single teal primary. Once logged,
             MorningCheckin renders its own read-only summary. */}
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
           {todayCheckIn?.energy ? (
             <MorningCheckin today={today} existingCheckin={todayCheckIn} coralCta={false} />
           ) : checkinOpen ? (
-            // coralCta={false}: embedded under the coral "Begin Session", so the
-            // check-in submits neutral and Begin Session stays the sole coral.
-            <MorningCheckin today={today} existingCheckin={null} coralCta={false} onComplete={() => setCheckinOpen(false)} />
+            // coralCta tracks real CTA presence: when the session card paints its
+            // own teal "Begin Session", the check-in submits NEUTRAL so the page
+            // keeps a single teal primary. With no train-day session CTA (no
+            // prescription / rest / already logged), the check-in's "Check In"
+            // becomes that single teal primary.
+            <MorningCheckin today={today} existingCheckin={null} coralCta={checkinOwnsTeal} onComplete={() => setCheckinOpen(false)} />
           ) : (
             // Disclosure row matching the Today's-detail header (a quiet
             // glass surface + ChevronDown), NOT a cta-ghost — a ghost button
-            // reads as a secondary ACTION and competed with the coral Begin
+            // reads as a secondary ACTION and competed with the teal Begin
             // Session; as a disclosure row it reads as "tap to reveal".
             <button
               type="button"
@@ -365,11 +448,8 @@ export default function Today() {
               aria-expanded={false}
               className="surface w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 text-left"
             >
-              <SectionLabel>How you feel</SectionLabel>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-2">
-                Subjective check-in
-                <ChevronDown className="w-4 h-4 text-muted-2" />
-              </span>
+              <SectionLabel>Subjective check-in</SectionLabel>
+              <ChevronDown className="w-4 h-4 text-secondary" />
             </button>
           )}
         </div>
@@ -382,13 +462,13 @@ export default function Today() {
             One exception: when a workout is already in progress AND the engine has
             no prescription, the card's ONLY content would be that "Log a workout"
             fallback ghost, which is redundant with (and competes against) the
-            coral "tap to continue" banner above. In that single case we suppress
+            teal "tap to continue" banner above. In that single case we suppress
             the card so the continue banner is the sole workout entry. On train
             days (a prescription exists) the card still renders, and demoteCta
-            keeps its Begin Session a ghost so there's never a second coral. */}
+            keeps its Begin Session a ghost so there's never a second teal. */}
         {!(activeSession && !prescription) && (
           <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={!!activeSession} />
+            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} />
           </div>
         )}
 
@@ -401,33 +481,21 @@ export default function Today() {
         <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
           <div className="glass px-4 pt-3 pb-3 rise-in">
             <SectionLabel className="mb-2">Quick actions</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
-              {/* Matched pair: the ACTION is the bold tile title; the metric (or
-                  nothing for food) is a quiet caption underneath. The meaningless
-                  "Track" filler is dropped. */}
-              <Link
-                to="/food-tracker?addFood=true"
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
-              >
-                {/* Action tile, not a datum: the icon carries no value, so it
-                    rides neutral muted ink. Data hues (gold/coral/violet) are
-                    reserved for actual readouts, never tile decoration. */}
-                <Apple className="w-[18px] h-[18px] text-muted-2" />
-                <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
-                <span className="text-[10px] font-semibold text-muted-2 leading-none">Today&apos;s meals</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowWeighIn(true)}
-                className="glass-inset tile-interactive flex flex-col items-center justify-center gap-1.5 min-h-[64px]"
-              >
-                <Scale className="w-[18px] h-[18px] text-muted-2" />
-                <span className="text-[13px] font-extrabold text-ink leading-none">Weigh in</span>
-                <span className="font-technical text-[10px] font-semibold text-muted-2 leading-none">
-                  {profile?.current_weight ? `${Math.round(profile.current_weight)} ${weightUnit}` : "Last unknown"}
-                </span>
-              </button>
-            </div>
+            {/* One tile: weigh-in was dropped here as a redundant entry — the
+                global FAB fan already owns "Weigh In" (dashboard-5), so a second
+                weigh-in launcher on Today duplicated it. "Log food" is the one
+                most-tapped daily log, so it takes the full row. */}
+            <Link
+              to="/food-tracker?addFood=true"
+              className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
+            >
+              {/* Action tile, not a datum: the icon carries no value, so it
+                  rides neutral muted ink. Data hues (gold/coral/violet) are
+                  reserved for actual readouts, never tile decoration. */}
+              <Apple className="w-[18px] h-[18px] text-muted-2" />
+              <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
+              <span className="text-[10px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
+            </Link>
           </div>
         </div>
 
@@ -437,14 +505,20 @@ export default function Today() {
             lg:col/row-start, so this DOM move is mobile-only. */}
         <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 space-y-3 rise-in-3">
           {/* Fuel today — hue-coded rings, one tap to the log */}
-          <Link to="/fuel" className="glass glass-interactive block px-4 py-3">
+          {/* active:press — tap feedback on the whole Fuel card so a thumb tap
+              reads as a pressed control, not an inert panel (today-7). On the
+              single system easing; the scale settles back on release. */}
+          <Link
+            to="/fuel"
+            className="glass glass-interactive block px-4 py-3 transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-[0.98]"
+          >
             {/* Chevron lives in the header row (the link affordance) so the
                 three rings below own a clean, centered row to themselves. */}
             <div className="flex items-center justify-between">
               <SectionLabel>Fuel today</SectionLabel>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-faint">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
                 {nutrition?.phase ? `${nutrition.phase} phase` : "targets"}
-                <ChevronRight className="w-4 h-4 text-faint" />
+                <ChevronRight className="w-4 h-4 text-secondary" />
               </span>
             </div>
             <div className="flex items-center justify-around mt-2 px-1">
@@ -453,7 +527,7 @@ export default function Today() {
                   agree. Labels say "/ target · 7d avg" so the number is never
                   mistaken for today's intake or for the goal itself. */}
               <MiniRing
-                label={calTarget ? `/${compactK(calTarget)} · 7d` : "kcal · 7d"} hue="var(--hue-gold)" size={50}
+                label={calTarget ? `/${withThousands(calTarget)} · 7d` : "kcal · 7d"} hue="var(--hue-gold)" size={50}
                 value={compactK(avgCal)}
                 frac={calTarget && avgCal ? avgCal / calTarget : 0}
               />
@@ -501,25 +575,20 @@ export default function Today() {
             <div className="px-4 pt-3 lg:pt-4">
               <SectionLabel>Vitals</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
-                {morningMetrics.map((m, i) => (
+                {morningMetrics.map((m) => (
                   <MetricTile
                     key={m.k}
                     label={m.k}
                     value={m.v}
                     unit={m.u || undefined}
                     accent={m.hue}
-                    // The global teal FAB (Layout.jsx) is fixed at the viewport
-                    // bottom-right (right-3 = 12px gutter, 48px body) and, on a
-                    // short day where this Vitals card is the last surface, floats
-                    // over the bottom-right BATT tile. At 2-up (mobile) BATT is the
-                    // 4th tile (bottom-right): the FAB intrudes ~44px past the
-                    // tile's right edge, so reserve a right-edge inset (44px FAB
-                    // footprint + a clearance gap) on JUST that cell so its hue dot
-                    // + value sit fully left of the '+'. Dropped at sm+ (4-up, BATT
-                    // no longer sits in the FAB corner) and the inset only applies
-                    // to the colliding cell so the rest of the grid stays
-                    // full-bleed.
-                    className={`!py-2 ${i === 3 ? "!pl-2.5 !pr-16 sm:!px-2.5" : "!px-2.5"}`}
+                    // Uniform L+R padding on every Vitals cell so the four tiles
+                    // compute identical insets at 390px. FAB overlap is handled by
+                    // the page's --fab-clearance bottom budget (Layout's <main>
+                    // reserves the FAB's full footprint), so the bottom-right BATT
+                    // tile no longer needs a bespoke right-edge inset to clear the
+                    // floating '+'.
+                    className="!py-2 !px-2.5"
                   />
                 ))}
               </div>
@@ -532,10 +601,10 @@ export default function Today() {
               className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
             >
               <SectionLabel>Today&apos;s detail</SectionLabel>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-2">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
                 Brief · state · muscle
                 <ChevronDown
-                  className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpen ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpen ? "rotate-180" : ""}`}
                 />
               </span>
             </button>
@@ -556,9 +625,15 @@ export default function Today() {
                 className="inline-flex [&_button]:min-h-[44px] [&_button]:px-4"
               />
             </div>
-            <div key={detailTab} className="rise-in">
+            {/* Even vertical rhythm (today-5): the tab body opens one shared
+                step (pt-3 / lg:pt-4) below the SegmentedControl — the SAME gap
+                that sits above the control and above the Vitals grid — so
+                Vitals → control → brief read as evenly spaced bands rather than
+                three different gaps. Each tab carries only its bottom padding
+                (pb-4); the top gap lives here once. */}
+            <div key={detailTab} className="rise-in pt-3 lg:pt-4 pb-4">
               {detailTab === "state" && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-4 py-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-4">
                   <MetricTile
                     label="Form · TSB"
                     value={fmt(fatigue?.tsb)}
@@ -591,19 +666,19 @@ export default function Today() {
                 </div>
               )}
               {detailTab === "brief" && (
-                <div className="px-4 py-3">
+                <div className="px-4">
                   <DailyBriefCard today={today} />
                 </div>
               )}
               {detailTab === "muscle" && (
                 heatmapError ? (
-                  <p className="px-4 py-4 text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
+                  <p className="px-4 text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
                 ) : fatigueData.length > 0 ? (
-                  <div className="flex justify-center px-4 py-3">
+                  <div className="flex justify-center px-4">
                     <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
                   </div>
                 ) : (
-                  <p className="px-4 py-4 text-[12px] text-muted-2 font-semibold">No recent training load to map</p>
+                  <p className="px-4 text-[12px] text-muted-2 font-semibold">No recent training load to map</p>
                 )
               )}
             </div>
@@ -618,14 +693,9 @@ export default function Today() {
             screen. Self-hides when empty, so it only occupies a slot when there is
             something to do. */}
         <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
-          <TodayActions today={today} briefActions={todayBrief?.brief_json?.today_actions} isError={briefError} />
+          <TodayActions today={today} briefActions={briefActions} isError={briefError} />
         </div>
       </div>
-
-      {/* Weigh-in surface (local so the home owns the daily ritual). The Stream
-          Note modal was removed, the mobile-strip Stream Note utility is the
-          single canonical entry. */}
-      <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
     </div>
   );
 }

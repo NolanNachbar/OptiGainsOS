@@ -13,13 +13,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
 import { TabCount } from "@/components/ui/system";
-import { Calendar, Zap, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
+import { Calendar, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, ThumbsUp, Upload, HelpCircle, Copy, Download, Activity, Link2, SlidersHorizontal, Pencil, Check, X, Waves, Bike, Footprints, Rows3, Repeat, AlertTriangle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { parseISO } from "date-fns";
 
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
+
+// One filter-pill recipe shared across Library (Type, Folder) and Activity so the
+// three selectors read as one family: same shape, same neutral selected fill
+// (bg-track + ink), same motion. Teal never enters a filter pill — selection is a
+// neutral state change, not an action.
+const FILTER_PILL_BASE =
+  "px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97]";
+const filterPill = (active) =>
+  `${FILTER_PILL_BASE} ${active ? "glass-inset bg-track text-ink" : "glass-inset text-ink-muted hover:text-ink"}`;
 
 export default function Workouts({ defaultTab = "activity-log", hideHeader = false }) {
   const { user } = useAuth();
@@ -81,6 +90,13 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
   const { enrollments, isLoading: enrollmentsLoading } = useEnrollments();
   const activeEnrollments = enrollments.filter((e) => e.status === "active");
   const pastEnrollments = enrollments.filter((e) => e.status !== "active");
+
+  // True when the currently-visible Programs view already surfaces a teal
+  // 'Build a Program' CTA, so the top-right teal '+' create is suppressed and
+  // the empty view never shows two teal-fill create controls (train-programs-2).
+  const showsBuildCta =
+    (programView === 'active' && !enrollmentsLoading && activeEnrollments.length === 0) ||
+    (programView === 'my-programs' && !programsLoading && programs.length === 0);
 
   const cloneWorkoutMutation = useMutation({
     mutationFn: async (workoutId) => {
@@ -323,31 +339,32 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <TabsContent value="library">
         <div className="mb-6">
           <div className="pb-2">
+            {/* One control cluster: Filters · Import · help, no wide gap. */}
             <div className="flex items-center gap-2">
-              {/* Filters — Button to match Import; coral-tinted only when active */}
+              {/* Filters — stays dim both states; an active filter signals via a
+                  neutral edge fill + ink, never a brand tint (a second action
+                  color would be drift). */}
               <Button
-                variant={filter !== 'all' || folderFilter !== 'all' ? 'coralGhost' : 'dim'}
+                variant="dim"
                 size="lg"
-                className="px-3"
+                className={`px-3 ${filter !== 'all' || folderFilter !== 'all' ? 'bg-[var(--glass-edge)] text-ink' : ''}`}
                 onClick={() => setFilterOpen(v => !v)}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 Filters
                 {(filter !== 'all' || folderFilter !== 'all') && (
-                  <span className="bg-brand/20 text-brand text-[11px] font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
+                  <span className="bg-track text-ink-secondary text-[11px] font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
                     {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
                   </span>
                 )}
               </Button>
-              <div className="ml-auto flex items-center gap-1">
-                <Button variant="dim" size="lg" className="px-3" onClick={() => document.getElementById("import-workout-input").click()}>
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  Import
-                </Button>
-                <Button variant="ghost" size="icon" className="h-11 w-11 text-ink-muted hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import file format guide" title="Import file format guide">
-                  <HelpCircle className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button variant="dim" size="lg" className="px-3 ml-auto" onClick={() => document.getElementById("import-workout-input").click()}>
+                <Upload className="w-3.5 h-3.5" />
+                Import
+              </Button>
+              <Button variant="plain" size="icon" className="h-11 w-11 -ml-1 text-ink-faint hover:text-ink" onClick={() => setShowFormatGuide(true)} aria-label="Import file format guide" title="Import file format guide">
+                <HelpCircle className="w-4 h-4" />
+              </Button>
               <input
                 id="import-workout-input"
                 type="file"
@@ -360,7 +377,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
 
           {/* Expandable filter panel */}
           {filterOpen && (
-            <div className="pb-4 border-t hairline pt-3 space-y-3">
+            <div className="rise-in pb-4 border-t hairline pt-3 space-y-3">
               <div>
                 <p className="section-label mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -373,11 +390,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <button
                       key={f.value}
                       onClick={() => setFilter(f.value)}
-                      className={`px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
-                        filter === f.value
-                          ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
-                          : 'glass-inset text-ink-muted hover:text-ink'
-                      }`}
+                      className={filterPill(filter === f.value)}
                     >
                       {f.label}
                     </button>
@@ -407,9 +420,9 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-3 h-11 rounded-full text-xs font-semibold border border-brand/30 glass-inset text-ink outline-none w-28"
+                              className="px-3 h-11 rounded-full text-xs font-semibold border border-charcoal-border glass-inset text-ink outline-none w-28"
                             />
-                            <button type="submit" aria-label="Save folder name" className="h-11 w-11 flex items-center justify-center rounded-full text-leaf hover:text-leaf active:scale-[0.97]">
+                            <button type="submit" aria-label="Save folder name" className="h-11 w-11 flex items-center justify-center rounded-full text-brand hover:text-brand active:scale-[0.97]">
                               <Check className="w-4 h-4" />
                             </button>
                             <button type="button" onClick={() => setRenamingFolder(null)} aria-label="Cancel rename" className="h-11 w-11 flex items-center justify-center rounded-full text-ink-muted hover:text-ink active:scale-[0.97]">
@@ -422,11 +435,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                         <div key={f} className="flex items-center gap-0.5 group">
                           <button
                             onClick={() => setFolderFilter(f)}
-                            className={`flex items-center gap-1 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
-                              folderFilter === f
-                                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
-                                : 'glass-inset text-ink-muted hover:text-ink'
-                            }`}
+                            className={`flex items-center gap-1 ${filterPill(folderFilter === f)}`}
                           >
                             {f === 'all' && <FolderOpen className="w-3 h-3" />}
                             {f === 'all' ? 'All Folders' : f === 'unfiled' ? 'Unfiled' : f}
@@ -449,12 +458,12 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               )}
             </div>
           )}
-          <div className="pb-[calc(var(--dock-clearance)+72px)] md:pb-6">
+          <div className="pb-[var(--dock-clearance)] md:pb-6">
             <div>
               {workoutsLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-28 rounded-xl tile pulse-loop" />
+                    <div key={i} className="h-28 rounded-xl bg-track pulse-loop" />
                   ))}
                 </div>
               ) : filteredWorkouts.length > 0 ? (
@@ -480,54 +489,36 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       </Button>
                     </div>
                   ) : (
-                    /* All workouts shown — fill the void below short lists with a
-                       quiet build-more prompt instead of an empty charcoal field.
-                       Dim, not coral: keeps coral discipline on this tab. */
-                    <div className="mt-6 tile p-5 text-center">
-                      <p className="text-sm text-ink-muted mb-3">Build out your library</p>
-                      <div className="flex justify-center gap-2">
-                        <Link to="/create-workout">
-                          <Button variant="dim" size="sm" className="active:scale-[0.97]">
-                            <Plus className="w-4 h-4 mr-1.5" />
-                            Create Custom
-                          </Button>
-                        </Link>
-                        <Link to="/program-builder">
-                          <Button variant="dim" size="sm" className="active:scale-[0.97]">
-                            <BookOpen className="w-4 h-4 mr-1.5" />
-                            Program Builder
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-6">
-                  <Zap className="w-10 h-10 text-ink-muted mx-auto mb-3" />
-                  <h3 className="text-base font-semibold text-ink mb-1">
-                    No workouts yet
-                  </h3>
-                  <p className="text-sm text-ink-muted mb-4">
-                    Create your own workouts or build a full program
-                  </p>
-                  {filter === "all" && (
-                    <div className="flex justify-center gap-2">
+                    /* All workouts shown — a compact inline build prompt (single
+                       hairline row) rather than the heavy empty-state card, so a
+                       short-but-non-empty library doesn't get a big void card
+                       under it. The full LibraryBuildPrompt is reserved for the
+                       truly-empty case below. Tight pt/pb keep the void under the
+                       last card under ~150px; both actions clear the 44px tap
+                       floor and teal lands only on Create Custom. */
+                    <div className="mt-6 border-t hairline pt-4 flex flex-wrap items-center justify-center gap-2 pb-2">
+                      <p className="text-sm text-ink-muted w-full text-center mb-1">Build out your library</p>
                       <Link to="/create-workout">
-                        <Button variant="primary">
-                          <Plus className="w-4 h-4 mr-2" />
+                        <Button variant="primary" size="lg" className="min-h-[44px] active:scale-[0.97]">
+                          <Plus className="w-4 h-4" />
                           Create Custom
                         </Button>
                       </Link>
                       <Link to="/program-builder">
-                        <Button variant="outline">
-                          <BookOpen className="w-4 h-4 mr-2" />
+                        <Button variant="outline" size="lg" className="min-h-[44px] active:scale-[0.97]">
+                          <BookOpen className="w-4 h-4" />
                           Program Builder
                         </Button>
                       </Link>
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <LibraryBuildPrompt
+                  title="No workouts yet"
+                  subtitle="Create your own workouts or build a full program"
+                  showActions={filter === "all"}
+                />
               )}
             </div>
           </div>
@@ -542,11 +533,15 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               className="hidden"
               onChange={handleImportProgram}
             />
-            {/* Single nav row: segmented filter pills + a compact Create action,
-                replacing the old nested Tabs + floating coral bar (3 stacked
-                nav rows collapsed to 1). */}
+            {/* Single nav row: a subordinate segmented section strip + a compact
+                Create action. The two views (Active / My Programs) read as ONE
+                quiet inset strip (a section selector), not two loud standalone
+                pills competing with the page's content. The top-right teal '+'
+                is suppressed whenever the visible view already offers a teal
+                'Build a Program' CTA, so the empty Programs view never shows two
+                teal-fill create controls. */}
             <div className="flex items-center gap-2 mb-6">
-              <div className="flex gap-2 min-w-0 overflow-x-auto">
+              <div className="inline-flex gap-1 p-1 glass-inset rounded-full min-w-0 overflow-x-auto">
                 {[
                   { value: 'active', label: 'Active', icon: TrendingUp, count: activeEnrollments.length },
                   { value: 'my-programs', label: 'My Programs', icon: BookOpen, count: null },
@@ -555,10 +550,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     key={value}
                     onClick={() => setProgramView(value)}
                     aria-pressed={programView === value}
-                    className={`flex items-center gap-1.5 px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97] ${
+                    className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
                       programView === value
-                        ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
-                        : 'glass-inset text-ink-muted hover:text-ink'
+                        ? 'bg-track text-ink'
+                        : 'text-ink-muted hover:text-ink'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -569,19 +564,22 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   </button>
                 ))}
               </div>
-              {/* Compact coral create — sits in the nav row, not floating. */}
-              <Link to="/program-builder" className="ml-auto shrink-0">
-                <Button variant="primary" size="icon" className="h-11 w-11 rounded-full" aria-label="Create program">
-                  <Plus className="w-5 h-5" />
-                </Button>
-              </Link>
+              {/* Compact teal create — sits in the nav row, not floating. Hidden
+                  when the active view already shows a teal 'Build a Program'. */}
+              {!showsBuildCta && (
+                <Link to="/program-builder" className="ml-auto shrink-0">
+                  <Button variant="primary" size="icon" className="h-11 w-11 rounded-full" aria-label="Create program">
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {programView === 'active' && (
               enrollmentsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
-                    <div key={i} className="h-40 rounded-xl tile pulse-loop" />
+                    <div key={i} className="h-40 rounded-xl bg-track pulse-loop" />
                   ))}
                 </div>
               ) : activeEnrollments.length === 0 && pastEnrollments.length === 0 ? (
@@ -589,6 +587,14 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   icon={TrendingUp}
                   title="No active programs"
                   subtitle="Start a program to track your progress with auto-progression"
+                  action={
+                    <Link to="/program-builder">
+                      <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Build a Program
+                      </Button>
+                    </Link>
+                  }
                 />
               ) : (
                 <div className="space-y-6 pb-[var(--dock-clearance)] md:pb-6">
@@ -597,6 +603,14 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       icon={TrendingUp}
                       title="No active programs"
                       subtitle="Start a program to track your progress with auto-progression"
+                      action={
+                        <Link to="/program-builder">
+                          <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Build a Program
+                          </Button>
+                        </Link>
+                      }
                     />
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -637,7 +651,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               programsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
-                    <div key={i} className="h-40 rounded-xl tile pulse-loop" />
+                    <div key={i} className="h-40 rounded-xl bg-track pulse-loop" />
                   ))}
                 </div>
               ) : programs.length === 0 ? (
@@ -645,6 +659,14 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   icon={BookOpen}
                   title="No programs yet"
                   subtitle="Create a multi-week program with exercises, progression rules, and more"
+                  action={
+                    <Link to="/program-builder">
+                      <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Build a Program
+                      </Button>
+                    </Link>
+                  }
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-[var(--dock-clearance)] md:pb-6">
@@ -683,7 +705,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <div className="glass-inset p-3 text-sm text-ink-muted">
             This will remove it from your library and any scheduled workouts. This action cannot be undone.
           </div>
-          <div className="flex gap-3 mt-2">
+          <div className="flex gap-4 mt-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -762,7 +784,7 @@ function fmtDuration(seconds) {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
   const s = seconds % 60;
-  return `${m}m ${s}s`;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
 function fmtPace(metersPerSecond, type, avgPaceSecPerKm) {
@@ -811,37 +833,54 @@ function groupByDay(entries) {
 // ─── Entry cards ─────────────────────────────────────────────────────────────
 
 function StrengthEntryCard({ entry }) {
-  // Mirror CardioEntryCard geometry: a 36px teal icon-chip header + a
-  // position-driven stat grid (4-up) sharing the same gap/padding/divider
-  // modulo, so strength and cardio rows read as one family.
-  const cells = [{ label: 'Exercises', value: entry.exerciseCount }];
-  if (entry.sets > 0) cells.push({ label: 'Sets', value: entry.sets });
-  if (entry.volume) cells.push({ label: 'Volume', value: Math.round(entry.volume).toLocaleString(), suffix: 'lbs' });
-  if (entry.duration) cells.push({ label: 'Duration', value: entry.duration });
+  // ONE dominant datum (train-activity-3): the heaviest signal of the session
+  // (Volume when logged, else Sets, else Exercises) reads as a hero figure in
+  // the header; everything else is a subordinate caption. Below it, a STABLE
+  // 4-cell scaffold (train-activity-5) — Exercises / Sets / Volume / Duration
+  // always render in the same columns, missing values shown as a faint em-dash —
+  // so today's freshly-logged entry never reflows as stats fill in.
+  const hero = entry.volume
+    ? { label: 'Volume', value: Math.round(entry.volume).toLocaleString(), suffix: 'lbs' }
+    : entry.sets > 0
+      ? { label: 'Sets', value: entry.sets }
+      : { label: 'Exercises', value: entry.exerciseCount };
+
+  const cells = [
+    { label: 'Exercises', value: entry.exerciseCount || '—' },
+    { label: 'Sets', value: entry.sets > 0 ? entry.sets : '—' },
+    { label: 'Volume', value: entry.volume ? Math.round(entry.volume).toLocaleString() : '—', suffix: entry.volume ? 'lbs' : null },
+    { label: 'Duration', value: entry.duration || '—' },
+  ];
 
   const body = (
     <>
-      <div className="flex items-start p-4 pb-2 gap-3">
-        <div className="w-9 h-9 rounded-full bg-teal/15 flex items-center justify-center shrink-0 text-teal">
+      <div className="flex items-center p-4 pb-3 gap-3">
+        <div className="w-9 h-9 rounded-full bg-track flex items-center justify-center shrink-0 text-ink-muted">
           <Dumbbell className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
+          <span className="section-label">{hero.label}</span>
+        </div>
+        {/* Dominant figure — the row's one hero metric. */}
+        <div className="flex items-baseline gap-1 shrink-0">
+          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
-      {/* 2-up on phones, 4-up from sm. Dividers derive from responsive column
-          count: every cell carries a left hairline, then row-starts strip it
-          per breakpoint (1st of each 2-col row on mobile, each 4-col row on sm). */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 px-4 pb-4">
-        {cells.map((cell) => (
+      {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
+          row never leaves an orphaned left hairline. Subordinate to the hero:
+          smaller values, so the header figure stays dominant. */}
+      <div className="grid grid-cols-4 gap-y-3 px-4 pb-4 border-t hairline pt-3">
+        {cells.map((cell, i) => (
           <div
             key={cell.label}
-            className="flex flex-col border-l hairline pl-4 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-4 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
+            className={`flex flex-col ${i % 4 !== 0 ? 'border-l hairline pl-4' : ''}`}
           >
-            <span className="section-label text-ink-faint">{cell.label}</span>
+            <span className="section-label">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-technical font-bold text-[17px] text-ink whitespace-nowrap">{cell.value}</span>
-              {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
+              <span className={`font-technical font-bold text-[15px] whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
+              {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
             </div>
           </div>
         ))}
@@ -854,7 +893,7 @@ function StrengthEntryCard({ entry }) {
     return (
       <Link
         to={`/workout-detail?id=${entry.workoutId}`}
-        className="block relative overflow-hidden tile tile-interactive transition-transform active:scale-[0.99]"
+        className="block relative overflow-hidden tile tile-interactive transition-transform duration-200 ease-[var(--ease)] active:scale-[0.99]"
       >
         {body}
       </Link>
@@ -890,10 +929,19 @@ function CardioEntryCard({ entry }) {
   const duration = fmtDuration(entry.movingTime);
   const pace = fmtPace(entry.avgSpeed, entry.activityType, entry.avgPaceSecPerKm);
 
+  // ONE dominant datum to mirror the strength row (train-activity-3): Distance
+  // leads when present, else Time, else Avg HR. The rest become subordinate cells.
+  const hero = distance
+    ? { label: typeLabel, value: distance }
+    : duration
+      ? { label: typeLabel, value: duration }
+      : entry.avgHeartrate
+        ? { label: typeLabel, value: Math.round(entry.avgHeartrate), suffix: 'bpm' }
+        : { label: typeLabel, value: '—' };
+
   // Build only the cells we have, then drive dividers off grid position so a
   // 3-col grid never leaves orphaned left hairlines on wrapped rows.
   const cells = [];
-  if (distance) cells.push({ label: 'Distance', value: distance });
   if (duration) cells.push({ label: 'Time', value: duration });
   if (pace) cells.push({ label: 'Pace', value: pace });
   if (entry.avgHeartrate) cells.push({ label: 'Avg HR', value: Math.round(entry.avgHeartrate), suffix: 'bpm' });
@@ -901,27 +949,32 @@ function CardioEntryCard({ entry }) {
 
   return (
     <div className="tile">
-      <div className="flex items-start p-4 pb-2 gap-3">
+      <div className="flex items-center p-4 pb-3 gap-3">
         <div className="w-9 h-9 rounded-full bg-carb/15 flex items-center justify-center shrink-0 text-carb">
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
-          <p className="section-label mt-1">{typeLabel}</p>
+          <p className="section-label">{hero.label}</p>
+        </div>
+        {/* Dominant figure — the row's one hero metric. */}
+        <div className="flex items-baseline gap-1 shrink-0">
+          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
 
       {cells.length > 0 && (
-        <div className="grid grid-cols-3 gap-y-3 px-4 pb-4">
+        <div className="grid grid-cols-3 gap-y-3 px-4 pb-4 border-t hairline pt-3">
           {cells.map((cell, i) => (
             <div
               key={cell.label}
               className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
             >
-              <span className="section-label text-ink-faint">{cell.label}</span>
+              <span className="section-label">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="font-technical font-bold text-[17px] text-ink">{cell.value}</span>
-                {cell.suffix && <span className="text-[10px] text-ink-faint uppercase">{cell.suffix}</span>}
+                <span className="font-technical font-bold text-[15px] text-ink-secondary">{cell.value}</span>
+                {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
               </div>
             </div>
           ))}
@@ -938,11 +991,14 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
   const [visibleCount, setVisibleCount] = useState(8);
 
   if (isLoading) {
+    // Skeletons mirror the real surfaces they stand in for: the weekly summary is
+    // .glass-elevated, each entry is a .tile (train-activity-4) — not raw bg-track
+    // boxes — so the loading state reads as the page's own scaffold dimming in.
     return (
       <div className="space-y-3">
-        <div className="h-20 rounded-[20px] tile pulse-loop" />
+        <div className="h-20 glass-elevated rounded-[20px] pulse-loop" />
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-28 rounded-xl tile pulse-loop" />
+          <div key={i} className="h-28 tile pulse-loop" />
         ))}
       </div>
     );
@@ -950,7 +1006,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
 
   if (error) {
     return (
-      <div className="glass px-4 py-8 text-center">
+      <div className="tile px-4 py-8 text-center">
         <AlertTriangle className="w-10 h-10 text-warn mx-auto mb-3" />
         <h3 className="text-base font-semibold text-ink mb-1">Couldn't load your activity</h3>
         <p className="text-sm text-ink-muted mb-4">Something went wrong fetching your workout history.</p>
@@ -970,12 +1026,19 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
       if (!Array.isArray(ex.sets)) return sum;
       return sum + ex.sets.reduce((s, set) => s + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
     }, 0);
+    // Distinct titles: when the source workout is gone (or never had a name),
+    // derive a title from the logged content (lead exercise + count) so stacked
+    // rows don't all read as the generic 'Workout'.
+    const leadExercise = logExercises[0]?.name;
+    const derivedTitle = leadExercise
+      ? `${leadExercise}${logExercises.length > 1 ? ` +${logExercises.length - 1}` : ''}`
+      : 'Strength session';
     return {
       type: 'strength',
       id: log.id,
       workoutId: log.workout_id || null,
       date: log.log_date ? parseISO(log.log_date) : new Date(log.created_at),
-      title: workout?.title || 'Workout',
+      title: workout?.title || derivedTitle,
       exerciseCount: logExercises.length,
       exercises: logExercises,
       sets: totalSets,
@@ -1029,7 +1092,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
           <span className="hero-metric text-[34px] text-ink">
-            {thisWeek.length}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">sess</span>
+            {thisWeek.length}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
         </div>
         {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
@@ -1040,29 +1103,24 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Cardio</span>
-            <span className="font-technical font-bold text-[17px] text-carb">{weekCardio}</span>
+            <span className="font-technical font-bold text-[17px] text-ink">{weekCardio}</span>
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Distance</span>
-            <span className="font-technical font-bold text-[17px] text-carb">
-              {weekMiles > 0 ? weekMiles.toFixed(1) : '—'}<span className="text-[12px] font-semibold text-ink-faint ml-1 align-baseline">mi</span>
+            <span className="font-technical font-bold text-[17px] text-ink">
+              {weekMiles > 0 ? weekMiles.toFixed(1) : 0}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">mi</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* Filter pills */}
-      <div className="flex gap-2 mb-4">
+      {/* Filter pills — one non-wrapping row preceding the feed. */}
+      <div className="flex flex-nowrap gap-2 mb-4 overflow-x-auto no-scrollbar">
         {[['all', 'All'], ['strength', 'Strength'], ['cardio', 'Cardio']].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setFilter(val)}
-            className={[
-              'px-3.5 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-150 ease-[var(--ease)] active:scale-[0.97]',
-              filter === val
-                ? 'glass-inset bg-white/[0.08] text-ink shadow-[inset_0_1px_0_var(--glass-specular)]'
-                : 'glass-inset text-ink-muted hover:text-ink',
-            ].join(' ')}
+            className={`shrink-0 ${filterPill(filter === val)}`}
           >
             {label}
           </button>
@@ -1071,7 +1129,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
 
       {/* Feed */}
       {allEntries.length === 0 ? (
-        <div className="glass px-4 py-8 text-center">
+        <div className="tile px-4 py-8 text-center">
           <Activity className="w-10 h-10 text-ink-muted mx-auto mb-3" />
           <h3 className="text-base font-semibold text-ink mb-1">No activity yet</h3>
           <p className="text-sm text-ink-muted mb-2">
@@ -1083,14 +1141,14 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 pb-[var(--dock-clearance)] md:pb-6">
           {grouped.map(({ label, entries }, i) => (
             // Stagger the first few day groups so the feed cascades in on
             // var(--ease) rather than landing all at once.
             <section key={label} className={`${['rise-in', 'rise-in-2', 'rise-in-3'][Math.min(i, 2)]} ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
-              {/* Day header — its own tier (brighter) so it reads above the
-                  in-card stat captions that share .section-label. */}
-              <h3 className="section-label text-ink-secondary mb-2.5">{label}</h3>
+              {/* Day header — its own tier (heavier + brighter) so it reads above
+                  the in-card stat captions that share .section-label. */}
+              <h3 className="section-label !font-extrabold text-ink mb-2.5">{label}</h3>
               <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
@@ -1106,10 +1164,10 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
             </section>
           ))}
           {allEntries.length > visibleCount && (
-            <div className="flex justify-center pt-2">
-              <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setVisibleCount(v => v + 8)}>
-                Load more
-                <span className="ml-1.5 text-ink-faint font-technical">{allEntries.length - visibleCount}</span>
+            <div className="flex justify-center pt-4">
+              <Button variant="dim" size="lg" className="min-h-[44px] active:scale-[0.97]" onClick={() => setVisibleCount(v => v + 8)}>
+                Load <span className="font-technical mx-1">{Math.min(8, allEntries.length - visibleCount)}</span> more
+                <span className="ml-1.5 text-ink-faint font-technical">· {allEntries.length - visibleCount} left</span>
               </Button>
             </div>
           )}
@@ -1120,13 +1178,50 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
   );
 }
 
-function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
+// One shared build-out prompt for the Library tab: the same glass card and
+// action pair backs both the empty state and the all-shown "fill the void"
+// prompt, so the two read as one unit instead of two near-twins.
+function LibraryBuildPrompt({ title, subtitle, showActions = true }) {
   return (
-    <div className="glass px-4 py-8 text-center">
-      <Icon className="w-10 h-10 text-ink-muted mx-auto mb-3" />
+    <div className="glass px-4 py-12 text-center">
+      <div className="w-14 h-14 rounded-full bg-track flex items-center justify-center mx-auto mb-4">
+        <Dumbbell className="w-7 h-7 text-ink-muted" />
+      </div>
       <h3 className="text-base font-semibold text-ink mb-1">{title}</h3>
-      <p className="text-sm text-ink-muted mb-4">{subtitle}</p>
-      {action}
+      <p className="text-sm text-ink-muted mb-5 max-w-xs mx-auto">{subtitle}</p>
+      {showActions && (
+        <div className="flex justify-center gap-2">
+          <Link to="/create-workout">
+            <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Custom
+            </Button>
+          </Link>
+          <Link to="/program-builder">
+            <Button variant="outline" className="min-h-[44px] active:scale-[0.97]">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Program Builder
+            </Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
+  // A self-sized empty card (no forced viewport-height floor): icon, copy, and
+  // the action stack together with even spacing so the card reads as one compact
+  // prompt instead of a tall band with the CTA stranded at the bottom edge. Rises
+  // in on the system easing.
+  return (
+    <div className="rise-in glass px-4 py-12 text-center flex flex-col items-center">
+      <div className="w-14 h-14 rounded-full bg-track flex items-center justify-center mx-auto mb-4">
+        <Icon className="w-7 h-7 text-ink-muted" />
+      </div>
+      <h3 className="text-base font-semibold text-ink mb-1">{title}</h3>
+      <p className="text-sm text-ink-secondary max-w-xs mx-auto">{subtitle}</p>
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }

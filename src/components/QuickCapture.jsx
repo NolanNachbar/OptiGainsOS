@@ -82,26 +82,26 @@ export default function QuickCapture({
             phone (the primary surface) has no such keys, so gate the hint to md+.
             The redundant domain label is dropped: the section heading already
             names the surface, so repeating "MIND" here was decoration. */}
-        <span className="hidden md:inline text-[10px] font-technical text-ink-faint shrink-0">
+        <span className="hidden md:inline text-[10.5px] font-technical text-ink-faint shrink-0">
           ⌘/Ctrl + Enter to capture
         </span>
         <Button
           size="lg"
-          // Empty state stays a readable, quiet coral-tinted affordance
-          // (coralGhost: text-brand on brand/10, well above 4.5:1) so the primary
-          // action is always visible — never the inert charcoal/ink-faint disabled
-          // fill (1.77:1) that made "Capture" disappear. Armed content steps the
-          // weight up to the solid coral (volt). The empty-submit is already
-          // guarded inside captureMutation, so we only disable while pending.
-          variant={hasContent ? "volt" : "coralGhost"}
+          // The primary action holds the near-solid teal `volt` fill in BOTH
+          // states so "Capture" is unmistakably the CTA the moment the sheet
+          // opens, instead of fading into a quiet brand/10 ghost outline. The
+          // empty-submit is already guarded inside captureMutation (it returns
+          // early when content is blank), so the armed/disabled behavior is
+          // preserved: we only disable while pending.
+          variant="volt"
           // Full-width on mobile (embedded sheet AND the page card) so the primary
           // action fills the thumb zone; auto-width only beside the md+ hint row.
           className={embedded ? "flex-1" : "w-full md:w-auto"}
-          disabled={captureMutation.isPending}
+          disabled={!hasContent || captureMutation.isPending}
           onClick={() => captureMutation.mutate()}
         >
           {captureMutation.isPending ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 spin-loop" />
           ) : (
             "Capture"
           )}

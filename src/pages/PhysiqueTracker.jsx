@@ -166,57 +166,49 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   return (
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? "pt-0 px-0 md:px-0 min-h-0" : ""}`}>
       <div className="max-w-3xl mx-auto">
-        {!hideHeader && (
-          <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
-        )}
+        {/* Desktop-only title: the global top-bar that renders the "Physique"
+            route title is lg:hidden, so without this lg:block heading the page
+            has no title on lg+. The two never overlap (mutually exclusive
+            breakpoints). */}
+        <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
 
-        {/* Hidden file input — both the empty-state CTA and the coral FAB drive it. */}
+        {/* Hidden file input — both the empty-state CTA and the teal FAB drive it. */}
         <input ref={fileInputRef} type="file" accept="image/*,video/*"
                className="hidden" onChange={handleFile} disabled={busy} />
 
         {/* Pose picker — wrapped in a glass control panel so it reads as a setup
             panel for the shot, not a second tab bar trailing the nav strip. The
-            coral FAB is the sole upload trigger; this panel only configures pose. */}
+            teal action FAB is the sole upload trigger; this panel only configures
+            pose. */}
         <div className="glass px-4 pt-4 pb-4 mt-4 rise-in">
           <div className="section-label mb-2">Pose for this shot</div>
-          {/* Local pose selector (not the shared PosePillRow): the shared solid
-              variant gives the active pill a near-identical dark fill to the
-              inactive ones, so at 390px you can't tell which pose is armed. The
-              active chip here reads as an elevated, lighter chip with a coral
-              border + label, the same selected language as the Fix pose sheet —
-              so the armed pose is unmistakable in under 2s. */}
-          <div
-            role="radiogroup"
-            aria-label="Pose for this shot"
-            className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 mb-2 [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
-          >
-            {POSES.map((p) => {
-              const isActive = pose === p.key;
-              return (
-                <button
-                  key={p.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
-                  onClick={() => setPose(p.key)}
-                  disabled={busy}
-                  className={`shrink-0 inline-flex items-center justify-center whitespace-nowrap px-3 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 ${
-                    isActive
-                      ? "bg-brand/15 text-brand border-brand/40 shadow-[var(--shadow-1)]"
-                      : "bg-[var(--glass-inset-bg)] text-ink-muted border-charcoal-border hover:bg-[var(--glass-bg)] hover:text-ink"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* One instructional voice: the per-shot pose cue is the single
-              instruction line; the static "same pose/lighting" reminder rides as a
-              muted tail rather than its own stacked subtitle above. */}
+          {/* The single shared pose selector — same PosePillRow (active-chip) the
+              Review sheet uses, so the armed pose reads identically here and there
+              and the two selectors never drift. */}
+          {/* Scroll affordance: the row scroll-snaps pose-to-pose (snap-x on the
+              track, snap-start on each pill via the arbitrary child selector so
+              the primitive stays untouched) and the right-edge mask deliberately
+              clips the 4th pill mid-glyph, so a partial pill peeks past the fade
+              as the "there's more, swipe" cue. Each pill already carries the 44px
+              min tap target from the primitive. */}
+          <PosePillRow
+            variant="solid"
+            value={pose}
+            onChange={setPose}
+            disabled={busy}
+            className="mb-2 snap-x snap-mandatory scroll-pl-4 [&>button]:snap-start [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
+            options={POSES.map((p) => ({ value: p.key, label: p.label }))}
+          />
+          {/* Two-line instructional rhythm with a clear tonal step: the per-shot
+              pose cue is the primary instruction (secondary ink); the static
+              "same lighting/distance" reminder drops to its own quieter line with
+              a wider gap (mt-3) and the faintest ink tier (text-faint) so the two
+              read as cue-then-aside, not one wrapped block. */}
           <p className="text-xs font-semibold text-secondary">
-            {POSES.find((p) => p.key === pose)?.cue}{" "}
-            <span className="text-muted-2">Same lighting and distance each time to track the trend.</span>
+            {POSES.find((p) => p.key === pose)?.cue}
+          </p>
+          <p className="mt-3 text-xs font-semibold text-faint">
+            Same lighting and distance each time to track the trend.
           </p>
         </div>
 
@@ -274,7 +266,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="section-label mb-2">History</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="glass-inset h-48 sm:h-44 animate-pulse" />
+                <div key={i} className="bg-track rounded-lg h-48 sm:h-44 pulse-loop" />
               ))}
             </div>
           </div>
@@ -284,23 +276,39 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <p className="text-xs font-semibold text-faint mt-1">Check your connection and try again.</p>
           </div>
         ) : entries.length === 0 ? (
-          // Natural-height empty state directly under the pose panel: the CTA
-          // stays in the thumb zone instead of floating mid-screen above a dead
-          // band. No forced viewport-fill.
-          <div className="mt-6 px-4 py-8 text-center glass-inset flex flex-col items-center">
-            <Camera className="w-7 h-7 text-muted-2 mb-3" />
-            <p className="text-sm font-semibold text-muted-2">No shots yet.</p>
-            <p className="text-xs font-semibold text-faint mt-1 mb-4">Upload your first photo to start tracking.</p>
-            <Button variant="volt" size="lg" disabled={busy} onClick={() => fileInputRef.current?.click()}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
-            </Button>
-            <p className="text-[11px] font-semibold text-faint mt-4 max-w-[34ch]">
-              Each shot is analyzed for estimated body fat and tracked over time so you can compare poses side by side.
-            </p>
+          // Empty state — copy only, no in-flow CTA. The upload trigger is
+          // pinned in the thumb zone at the dock (rendered below). The block is
+          // anchored directly UNDER the pose panel (mt-5, no full-viewport
+          // centering): the prior `minHeight: calc(100svh - 22rem)` + items-center
+          // floated the card to the vertical middle, opening a continuous bare run
+          // well over 150px on both sides of it. Instead the glass-inset card
+          // STRETCHES to fill the band between the panel and the pinned CTA
+          // (flex-col on a min-height wrapper, card flex-1), so its top sits flush
+          // under the panel and its bottom ends just above the pinned CTA — no
+          // contiguous empty vertical run >150px anywhere between them. The copy
+          // stays vertically centered WITHIN the card. paddingBottom reserves the
+          // pinned-CTA footprint (the ~48px lg button on --floating-chrome-bottom)
+          // so the card's own bottom clears it rather than sliding under it.
+          <div
+            className="mt-5 flex flex-col"
+            style={{
+              minHeight: 'calc(100svh - 20rem)',
+              paddingBottom: 'calc(var(--floating-chrome-bottom) + 60px)',
+            }}
+          >
+            <div className="w-full flex-1 px-4 py-7 text-center glass-inset flex flex-col items-center justify-center">
+              <Camera className="w-7 h-7 text-muted-2 mb-3" />
+              <p className="text-sm font-extrabold text-ink">No shots yet.</p>
+              <p className="text-xs font-semibold text-muted-2 mt-1 max-w-[34ch]">
+                Each shot is analyzed for estimated body fat and tracked over time so you can compare poses side by side.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="mt-6">
+          // Populated branch — pad the bottom by --fab-clearance so the last
+          // tile (and Show-all control) always clears the pinned camera FAB
+          // instead of sitting under it.
+          <div className="mt-6" style={{ paddingBottom: 'var(--fab-clearance)' }}>
             <div className="section-label mb-2">History</div>
 
             {/* Single inline control row above the grid: Filter (left) and Compare
@@ -327,22 +335,29 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   </>
                 ) : (
                   <>
-                    <button
+                    {/* Filter + Compare are one neutral pill family: same Button
+                        variant=dim so they share border treatment and radius and
+                        no longer read as two unrelated affordances. */}
+                    <Button
+                      variant="dim"
+                      size="sm"
                       type="button"
                       onClick={() => setFilterOpen((o) => !o)}
                       aria-expanded={filterOpen}
-                      className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full text-[11px] font-bold border-[0.5px] border-charcoal-border bg-[var(--glass-inset-bg)] text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink active:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="min-h-[44px] text-[11px] font-bold"
                     >
                       <ArrowLeftRight className="w-3.5 h-3.5 rotate-90" />
                       Filter: <span className="text-ink">{filterPose ? POSE_LABEL[filterPose] : "All"}</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="dim"
+                      size="sm"
                       onClick={() => setCompareMode(true)}
-                      className="flex items-center gap-1.5 min-h-[44px] text-[11px] font-bold text-muted-2 hover:text-ink transition-colors px-3 rounded-md hover:bg-[var(--glass-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="min-h-[44px] text-[11px] font-bold"
                     >
                       <ArrowLeftRight className="w-3.5 h-3.5" />
                       Compare
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -385,8 +400,8 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         className="absolute inset-0 z-10"
                         aria-label={isSelected ? "Deselect" : "Select for comparison"}
                       >
-                        {/* Selected = a neutral track-tinted wash + a 0.5px coral
-                            ring (data outline, not a coral fill). The coral check
+                        {/* Selected = a neutral track-tinted wash + a 0.5px teal
+                            action ring (data outline, not a fill). The teal check
                             badge stays the single action mark. */}
                         <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-track ring-[0.5px] ring-inset ring-brand" : "hover:bg-[var(--glass-bg)]"}`} />
                         {isSelected && (
@@ -436,22 +451,58 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         )}
       </div>
 
-      {/* Thumb-zone upload — the single coral upload trigger for the populated
-          view. It only renders once there is history; the empty state owns its
-          own centered coral CTA instead, so the two never compete on one screen.
-          Pinned within the safe area above the dock; re-triggers the same file
-          input. Hidden while an overlay owns the screen or a shot is processing. */}
+      {/* Thumb-zone upload — the single teal action upload trigger for the
+          populated view. It only renders once there is history; the empty state
+          owns its own thumb-zone CTA below, so the two never compete on one
+          screen. Pinned within the safe area above the dock on the shared
+          --floating-chrome-bottom offset (the dock-aligned offset for FLOATED
+          chrome — the prior --dock-clearance is an IN-FLOW padding token and left
+          the FAB grazing the dock). Hidden while an overlay owns the screen or a
+          shot is processing. The armed pose is surfaced both to assistive tech
+          (aria-label) and visibly on a neutral chip riding just above the FAB, so
+          the icon-only trigger still tells you which pose it will capture. */}
       {!loadingEntries && !entriesError && entries.length > 0 && !showCompare && !editingEntry && !pending && (
-        <Button
-          variant="volt"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-          aria-label={`Upload ${POSE_LABEL[pose]} shot`}
-          className="fixed right-4 z-40 h-14 w-14 !rounded-full !p-0 rise-in"
-          style={{ bottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
+        <div
+          className="fixed right-4 z-40 flex flex-col items-end gap-2 rise-in"
+          style={{ bottom: 'var(--floating-chrome-bottom)' }}
         >
-          {busy ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-        </Button>
+          <span className="pill-value pill-value--sm font-semibold text-secondary">
+            {POSE_LABEL[pose]}
+          </span>
+          <Button
+            variant="volt"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            aria-label={`Upload ${POSE_LABEL[pose]} shot`}
+            className="h-14 w-14 !rounded-full !p-0"
+          >
+            {busy ? <Loader2 className="w-6 h-6 spin-loop" /> : <Camera className="w-6 h-6" />}
+          </Button>
+        </div>
+      )}
+
+      {/* Empty-state thumb-zone upload — a labeled full-width teal action CTA
+          pinned at the dock so the first-run upload trigger lands in the lower
+          third on the shared --floating-chrome-bottom offset (the dock-aligned
+          offset for FLOATED chrome), not stranded mid-screen above a dead band.
+          Same single action color (volt → teal) as the populated FAB; the two
+          never co-exist (gated on entries.length === 0). */}
+      {!loadingEntries && !entriesError && entries.length === 0 && !pending && (
+        <div
+          className="fixed inset-x-4 z-40 max-w-3xl mx-auto rise-in"
+          style={{ bottom: 'var(--floating-chrome-bottom)' }}
+        >
+          <Button
+            variant="volt"
+            size="lg"
+            className="w-full"
+            disabled={busy}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {busy ? <Loader2 className="w-4 h-4 spin-loop" /> : <Camera className="w-4 h-4" />}
+            {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
+          </Button>
+        </div>
       )}
 
       {/* Side-by-side comparison — bottom sheet on mobile */}
@@ -549,7 +600,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       </Dialog>
 
       {/* Upload review — confirm before anything uploads. File-select only stages
-          the media; Analyze (coral) commits, Retake (ghost) re-opens the picker. */}
+          the media; Analyze (teal action) commits, Retake (ghost) re-opens the picker. */}
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !busy) closeReview(); }}>
         <DialogContent>
           <DialogHeader>
@@ -582,11 +633,11 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {error}
                 </div>
               )}
-              {/* Analyze (volt) is the committed full-width action; Retake is a
+              {/* Analyze (teal action) is the committed full-width action; Retake is a
                   quieter inline ghost so the two no longer read as equal weight. */}
               <div className="mt-4 flex flex-col gap-2">
                 <Button variant="volt" size="lg" className="w-full" disabled={busy} onClick={confirmUpload}>
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {busy ? <Loader2 className="w-4 h-4 spin-loop" /> : <Check className="w-4 h-4" />}
                   {busy ? (status || "Working…") : "Analyze"}
                 </Button>
                 <button
@@ -603,7 +654,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   so the staged shot can't be re-tapped while busy. */}
               {busy && (
                 <div className="absolute inset-0 z-10 glass-inset rounded-lg flex flex-col items-center justify-center gap-2">
-                  <Loader2 className="w-7 h-7 animate-spin text-brand" />
+                  <Loader2 className="w-7 h-7 spin-loop text-brand" />
                   <span className="text-xs font-semibold text-secondary">{status || "Working…"}</span>
                 </div>
               )}
