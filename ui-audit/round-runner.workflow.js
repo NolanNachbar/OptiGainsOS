@@ -200,14 +200,23 @@ for (; round <= lastRound; round++) {
   const journeys = await runCapture()
   const withShots = journeys.filter((j) => j.shots && j.shots.length)
   const gaps = journeys.filter((j) => !(j.shots && j.shots.length)).map((j) => ({ surface: j.id, note: 'no shots (selector-miss or unreachable)' }))
-  // HARD failures are deterministic ground truth (white-screen, pageerror, missing text) — promote to blocker
-  // findings directly, no LLM needed. capture = verifier; the opus evaluator below = advisory taste only.
-  const hardFindings = journeys.filter((j) => j.hardFail).map((j) => ({
-    id: `${j.id}-hardfail`, surface: j.id, severity: 'blocker', category: 'mobile',
-    file: '(deterministic capture)', whatsWrong: `Hard failure on capture: ${j.hardFail}`,
-    fix: 'Investigate and fix the crash / blank screen / missing content.',
-    verifyBy: `capture.mjs reports no hardFail for journey ${j.id}`,
+  // capture.mjs hardFails are two kinds, and they must NOT be treated the same:
+  //  - intrinsic CRASHES (white-screen / pageerror / exception): real ground truth → auto-promote to blocker.
+  //  - flow-ASSERTION misses (missing text / expected element / topInside / etc.): a hand-authored flows.json
+  //    selector that may simply be STALE, not a bug. Auto-blockering these floods the contract with phantom
+  //    fixes (observed: 42→40 hardFails across a full fix round = drift, not real defects). Instead, hand the
+  //    journey to the opus evaluator with the failed assertion as a hint so it judges from the screenshots.
+  const isCrash = (hf) => /^(white-screen|pageerror|exception)/.test(hf)
+  const hardFindings = journeys.filter((j) => j.hardFail && isCrash(j.hardFail)).map((j) => ({
+    id: `${j.id}-crash`, surface: j.id, severity: 'blocker', category: 'mobile',
+    file: '(deterministic capture)', whatsWrong: `Crash on capture: ${j.hardFail}`,
+    fix: 'Investigate and fix the crash / blank screen.',
+    verifyBy: `capture.mjs reports no crash for journey ${j.id}`,
   }))
+  // journeyId → the failed flow assertion, passed to the evaluator as a triage hint (not auto-blockered).
+  const assertionMiss = Object.fromEntries(
+    journeys.filter((j) => j.hardFail && !isCrash(j.hardFail)).map((j) => [j.id, j.hardFail])
+  )
 
   // capture grabbed every journey cheaply; the opus taste-evaluation is the cost driver, so bound it.
   // Round 1 (inScope null): hard-fails + page surfaces first, fill to MAX_EVAL with flows.
@@ -223,7 +232,7 @@ for (; round <= lastRound; round++) {
     evalJourneys = [...new Map([...fails, ...pages, ...rest].map((j) => [j.id, j])).values()].slice(0, MAX_EVAL)
   }
   const deferred = withShots.length - evalJourneys.length
-  log(`Round ${round}: captured ${journeys.length} journeys (${withShots.length} with shots, ${hardFindings.length} hard-fail); opus-evaluating ${evalJourneys.length}, deferring ${deferred}`)
+  log(`Round ${round}: captured ${journeys.length} journeys (${withShots.length} with shots, ${hardFindings.length} crash, ${Object.keys(assertionMiss).length} assertion-miss→triage); opus-evaluating ${evalJourneys.length}, deferring ${deferred}`)
 
   // EVALUATE — adversarial evaluator, one per journey, parallel. Harsh by design.
   phase('Evaluate')
@@ -242,6 +251,10 @@ ${RUBRIC_TEXT}
 Screenshots to inspect (Read each PNG; paths are repo-relative): ${JSON.stringify(j.shots)}
 Captured page text for context: ${JSON.stringify((j.finalText || '').slice(0, 300))}
 Open the source for this screen to cite exact file:line.
+${assertionMiss[j.id] ? `TRIAGE A FAILED CHECK: a scripted flow assertion failed here — "${assertionMiss[j.id]}". This is
+EITHER a real user-visible defect OR just a stale test selector. Decide from the screenshots + source: only
+report a finding (and pick its real severity) if it's a genuine problem a user would hit. If the screen looks
+correct and the assertion is just out of date, do NOT report it as a defect.` : ''}
 ${toVerify.length ? `VERIFY PRIOR FIXES — for EACH assertion below, look at the live screenshots and report holds=true ONLY
 if the screenshots actually show it satisfied. Default to holds=false if you cannot SEE it satisfied:
 ${toVerify.map((a, i) => `  ${i + 1}. ${a}`).join('\n')}` : 'No prior contract to verify (first round).'}
