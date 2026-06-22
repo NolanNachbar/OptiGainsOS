@@ -26,7 +26,7 @@ import copy
 from datetime import date
 
 from engine.vdot_engine import VDOTEngine
-from engine.athlete_profile import apply_philosophy
+from engine.athlete_profile import apply_philosophy, MUSCLE_EMPHASIS
 from engine.log_ingest import canon
 
 # How strongly the learned exercise-value posterior (learners.exercise_value) and
@@ -401,7 +401,9 @@ def _pick_assistance(lift: str, pool: list, weakness: dict, assist_week: int) ->
 # Upper A and B hit the SAME muscles every session — full upper every time.
 # The difference is ORDER: A is push-first (bench before pull-ups), B is pull-first.
 # The stable fatigue_cost sort in _build_session preserves insertion order for ties
-# (bench and pull-up both at 4.0), so the muscle list order drives exercise order.
+# (bench and pull-up both at 4.0), so the muscle list order drives exercise order
+# within a fatigue tier. That sort also applies an emphasis nudge (see _order_key),
+# so priority isolations like side delts lead the isolation block rather than trail it.
 UPPER_A_MUSCLES = ["chest", "upper_chest", "shoulders", "triceps", "side_delts",
                    "lats", "upper_back", "biceps", "rear_delts", "traps", "neck"]
 UPPER_B_MUSCLES = ["lats", "upper_back", "biceps", "rear_delts",
@@ -883,8 +885,24 @@ def _build_session(
         chosen_names.add(iso_name)
         slots.append((iso_ex, iso_muscle))
 
-    # Sort by fatigue_cost descending (compounds first)
-    slots.sort(key=lambda t: t[0].get("fatigue_cost", 2.0), reverse=True)
+    # Sort by fatigue_cost descending (compounds first), with a priority nudge so
+    # emphasised muscles (side delts, upper chest, traps, …) LEAD the isolation
+    # block instead of sinking to the very end of the session. MUSCLE_EMPHASIS only
+    # drove weekly volume before — order ignored it, so a 1.5x-priority side delt
+    # still landed dead last behind triceps and face pulls. The nudge is bounded
+    # below the isolation→compound gap (isolations ~1.0, lightest compound ~3.0) so
+    # it only reorders work WITHIN a fatigue tier: priority isolations float above
+    # other isolations, but never ahead of a real compound. The SBD goal lifts /
+    # top sets stay first and fresh.
+    def _order_key(slot):
+        ex, muscle = slot
+        fc = ex.get("fatigue_cost", 2.0)
+        # emphasis 1.0 (neutral) → +0.0 ; 1.5 (top priority) → +0.5.
+        # Capped at 1.9 so the max isolation key (1.0 + 1.9 = 2.9) can never reach
+        # the lightest compound (3.0) — the compound/isolation boundary is preserved.
+        nudge = min(1.9, max(0.0, MUSCLE_EMPHASIS.get(muscle, 1.0) - 1.0))
+        return fc + nudge
+    slots.sort(key=_order_key, reverse=True)
 
     exercises = []
     for ex_copy, muscle in slots:

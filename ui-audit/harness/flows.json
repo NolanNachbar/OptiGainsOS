@@ -1,0 +1,4127 @@
+[
+ {
+  "id": "dashboard-fab-opens",
+  "label": "FAB opens and displays action menu",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Quick Workout"
+   },
+   {
+    "expectText": "Log Food"
+   },
+   {
+    "expectText": "Weigh In"
+   },
+   {
+    "expectText": "Stream Note"
+   },
+   {
+    "expectText": "Create Workout"
+   },
+   {
+    "expectText": "Calculators"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-fab-weigh-in-modal",
+  "label": "FAB -> Weigh In opens modal with weight input field",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Weigh In"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Log Your Weight"
+   },
+   {
+    "exists": "input[inputMode='decimal']"
+   },
+   {
+    "expectText": "Save"
+   },
+   {
+    "shot": "weigh-in-modal-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectGone": "input[inputMode='decimal']"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-fab-calculators-modal",
+  "label": "FAB -> Calculators opens modal with lifting calculator tabs",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Calculators"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Lifting Calculators"
+   },
+   {
+    "expectText": "1RM"
+   },
+   {
+    "expectText": "Working"
+   },
+   {
+    "expectText": "Plates"
+   },
+   {
+    "shot": "calculators-modal-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "notText": "Lifting Calculators"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-fab-stream-note-modal",
+  "label": "FAB -> Stream Note opens quick capture modal",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Stream Note"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Stream to Second Brain"
+   },
+   {
+    "expectText": "A quick thought, dropped straight into your inbox."
+   },
+   {
+    "exists": "textarea[placeholder*='mind']"
+   },
+   {
+    "shot": "stream-note-modal-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "notText": "Stream to Second Brain"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-morning-checkin-disclosure",
+  "label": "Morning check-in disclosure opens and shows form",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "How you feel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Energy"
+   },
+   {
+    "expectText": "Mood"
+   },
+   {
+    "expectText": "Soreness — tap to cycle"
+   },
+   {
+    "expectText": "Check In"
+   },
+   {
+    "shot": "morning-checkin-form-open"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-todays-actions-add",
+  "label": "Today's Actions add new action disclosure",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "exists": "[aria-label='Add action']"
+   },
+   {
+    "click": "[aria-label='Add action']"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectText": "Add a task..."
+   },
+   {
+    "exists": "input[placeholder='Add a task...']"
+   },
+   {
+    "expectText": "Add"
+   },
+   {
+    "shot": "todays-actions-add-form-open"
+   }
+  ]
+ },
+ {
+  "id": "dashboard-fab-menu-closes-on-backdrop",
+  "label": "FAB menu closes when backdrop is tapped",
+  "steps": [
+   {
+    "goto": "/today"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Weigh In"
+   },
+   {
+    "click": ".fixed.inset-0"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "notText": "Weigh In"
+   }
+  ]
+ },
+ {
+  "id": "food-add-dialog-opens",
+  "label": "Add Food dialog opens and search input is visible",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button[aria-label='Add food']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "#search"
+   },
+   {
+    "expectText": "Search USDA Database"
+   }
+  ]
+ },
+ {
+  "id": "food-search-chicken-shows-results",
+  "label": "Type 'chicken' query in search, results appear within dialog",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button[aria-label='Add food']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "fill": {
+     "selector": "#search",
+     "value": "chicken"
+    }
+   },
+   {
+    "settle": 2000
+   },
+   {
+    "exists": ".section-label:has-text('Generic Foods')"
+   },
+   {
+    "notText": "No results"
+   }
+  ]
+ },
+ {
+  "id": "food-barcode-scanner-overlay",
+  "label": "Barcode scanner button opens full-screen scanner overlay above dialog",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button[aria-label='Add food']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "click": "button[aria-label='Scan barcode']"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "exists": "div.z-\\[10002\\]"
+   },
+   {
+    "expectText": "Scan Barcode"
+   },
+   {
+    "topInside": "div.z-\\[10002\\]"
+   },
+   {
+    "click": "button[aria-label='Close scanner']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "div.z-\\[10002\\]"
+   }
+  ]
+ },
+ {
+  "id": "food-new-meal-dialog-opens",
+  "label": "New Meal dialog opens and displays meal type selector",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('New Meal')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Build New Meal"
+   },
+   {
+    "exists": "div:has-text('Meal Type')"
+   },
+   {
+    "expectText": "Search USDA Database"
+   }
+  ]
+ },
+ {
+  "id": "food-new-meal-closes",
+  "label": "New Meal dialog closes when canceled",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('New Meal')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "div:has-text('Build New Meal')"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "div:has-text('Build New Meal')"
+   }
+  ]
+ },
+ {
+  "id": "food-setup-stats-modal-opens",
+  "label": "Setup Stats / TDEE modal opens from goals card",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('Set up TDEE')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "TDEE Calculation"
+   }
+  ]
+ },
+ {
+  "id": "food-setup-stats-modal-closes",
+  "label": "Setup Stats modal closes when dismissed",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('Set up TDEE')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "div:has-text('TDEE Calculation')"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "div:has-text('TDEE Calculation')"
+   }
+  ]
+ },
+ {
+  "id": "food-templates-tab-switches",
+  "label": "Templates tab in sidebar shows meal templates panel",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('Templates')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Templates"
+   }
+  ]
+ },
+ {
+  "id": "food-recipes-tab-switches",
+  "label": "Recipes tab in sidebar shows recipe builder panel",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('Recipes')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Recipes"
+   }
+  ]
+ },
+ {
+  "id": "food-ideas-tab-switches",
+  "label": "Ideas tab in sidebar shows meal plan ideas panel",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button:has-text('Ideas')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Ideas"
+   }
+  ]
+ },
+ {
+  "id": "food-components-recipe-builder-open-close",
+  "label": "Open Recipe Builder panel on food tracker and close it without saving",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "clickText": "New Recipe"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "[role='dialog']"
+   },
+   {
+    "expectText": "Create Recipe"
+   },
+   {
+    "shot": "recipe-builder-open"
+   },
+   {
+    "click": "[aria-label='Close']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ },
+ {
+  "id": "food-components-meal-templates-view-list",
+  "label": "Navigate to Meal Templates tab and assert template list loads",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "clickText": "Templates"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Meal Templates"
+   },
+   {
+    "shot": "templates-tab-loaded"
+   },
+   {
+    "expectText": "Save a meal from the daily log"
+   }
+  ]
+ },
+ {
+  "id": "food-components-meal-ideas-open-close",
+  "label": "Open Meal Ideas panel and verify ideas render with regenerate option",
+  "steps": [
+   {
+    "goto": "/food-tracker"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "clickText": "Ideas"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Meal Plan Ideas"
+   },
+   {
+    "shot": "meal-ideas-loaded"
+   },
+   {
+    "exists": "[class*='RefreshCw']"
+   },
+   {
+    "expectText": "Regenerate"
+   }
+  ]
+ },
+ {
+  "id": "fuel-nutrition-edit-goals",
+  "label": "Nutrition tab: open Edit Goals modal and cancel without saving",
+  "steps": [
+   {
+    "goto": "/fuel"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Daily log"
+   },
+   {
+    "click": "button:has-text('Edit Goals')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Nutrition Goals"
+   },
+   {
+    "expectText": "Set your daily calorie and macro targets"
+   },
+   {
+    "exists": "input#macro-calorie-target"
+   },
+   {
+    "shot": "goals-modal-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "input#macro-calorie-target"
+   }
+  ]
+ },
+ {
+  "id": "fuel-nutrition-week-plan",
+  "label": "Nutrition tab: Week plan button opens and closes dialog",
+  "steps": [
+   {
+    "goto": "/fuel"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Week plan"
+   },
+   {
+    "clickText": "Week plan"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "This Week's Plan"
+   },
+   {
+    "expectText": "carb cycle"
+   },
+   {
+    "exists": "button:has-text('Approve')"
+   },
+   {
+    "shot": "week-plan-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "notText": "This Week's Plan"
+   }
+  ]
+ },
+ {
+  "id": "fuel-body-stream-note",
+  "label": "Body tab: Stream Note disclosure opens and closes",
+  "steps": [
+   {
+    "goto": "/fuel?tab=body"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Stream Note"
+   },
+   {
+    "clickText": "Stream Note"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "textarea"
+   },
+   {
+    "expectText": "Stream a note to Second Brain"
+   },
+   {
+    "shot": "stream-note-open"
+   },
+   {
+    "clickText": "Stream Note"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "textarea[placeholder*='Stream a note']"
+   }
+  ]
+ },
+ {
+  "id": "fuel-hydration-water-add",
+  "label": "Hydration tab: Water add control increments value",
+  "steps": [
+   {
+    "goto": "/fuel?tab=hydration"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Water"
+   },
+   {
+    "exists": "button:has-text('+250ml')"
+   },
+   {
+    "shot": "hydration-initial"
+   },
+   {
+    "clickText": "+250ml"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "250 /"
+   },
+   {
+    "shot": "hydration-after-add"
+   }
+  ]
+ },
+ {
+  "id": "train-schedule-tab",
+  "label": "Navigate to Schedule tab and verify content loads",
+  "steps": [
+   {
+    "goto": "/train?tab=schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Schedule"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "schedule-tab-loaded"
+   }
+  ]
+ },
+ {
+  "id": "train-library-tab",
+  "label": "Navigate to Library tab and verify workout content displays",
+  "steps": [
+   {
+    "goto": "/train?tab=library"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Library"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "exists": "button:has-text('Import')"
+   },
+   {
+    "shot": "library-tab-loaded"
+   }
+  ]
+ },
+ {
+  "id": "train-library-format-guide-dialog",
+  "label": "Open format guide dialog in Library tab and close it",
+  "steps": [
+   {
+    "goto": "/train?tab=library"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button[aria-label='Import file format guide']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Workout Import Format"
+   },
+   {
+    "topInside": "[role='dialog']"
+   },
+   {
+    "shot": "format-guide-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "[role='dialog']"
+   },
+   {
+    "shot": "format-guide-closed"
+   }
+  ]
+ },
+ {
+  "id": "train-programs-tab",
+  "label": "Navigate to Programs tab and verify content displays",
+  "steps": [
+   {
+    "goto": "/train?tab=programs"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Programs"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "programs-tab-loaded"
+   }
+  ]
+ },
+ {
+  "id": "train-activity-log-tab",
+  "label": "Navigate to Activity tab (activity-log alias) and verify content displays",
+  "steps": [
+   {
+    "goto": "/train?tab=activity-log"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Activity"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "activity-log-tab-loaded"
+   }
+  ]
+ },
+ {
+  "id": "train-activity-tab-canonical",
+  "label": "Navigate to Activity tab using canonical tab=activity parameter",
+  "steps": [
+   {
+    "goto": "/train?tab=activity"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Activity"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "activity-canonical-loaded"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-loads",
+  "label": "Program detail page loads with title and content",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "notText": "Program not found"
+   },
+   {
+    "exists": "h1"
+   },
+   {
+    "shot": "program-header-visible"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-workout-tile",
+  "label": "Tap a workout tile to open workout detail modal and close it",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='button'][class*='glass-inset']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "[role='dialog']"
+   },
+   {
+    "shot": "workout-modal-open"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-show-all-cycles",
+  "label": "Expand and collapse all cycles view",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Show all"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Show current cycle only"
+   },
+   {
+    "shot": "all-cycles-expanded"
+   },
+   {
+    "clickText": "Show current cycle only"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Show all"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-show-all-progression",
+  "label": "Expand and collapse all progression exercises view",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Show all"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "exercises"
+   },
+   {
+    "shot": "progression-expanded"
+   },
+   {
+    "clickText": "Show fewer"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Show fewer"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-enroll-dialog",
+  "label": "Open and close enrollment Start Program dialog",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Start Program"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Enter your current working weight"
+   },
+   {
+    "shot": "enroll-dialog-open"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-pause-dialog",
+  "label": "Open Manage, tap Pause, verify action flows",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Manage"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "button"
+   },
+   {
+    "shot": "manage-menu-expanded"
+   },
+   {
+    "clickText": "Pause"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Program paused"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-restart-cancel",
+  "label": "Open Manage, tap Cancel, confirm dialog appears then dismiss",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Manage"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Cancel Enrollment?"
+   },
+   {
+    "shot": "restart-confirm-dialog"
+   },
+   {
+    "clickText": "Keep Enrollment"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ },
+ {
+  "id": "program-detail-delete-cancel",
+  "label": "Open Manage, tap Delete, confirm dialog appears then dismiss",
+  "steps": [
+   {
+    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Manage"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Delete"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Delete Program?"
+   },
+   {
+    "shot": "delete-confirm-dialog"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-step-1-renders",
+  "label": "Program Builder Step 1 renders with all required fields",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Program Name"
+   },
+   {
+    "expectText": "Cycle Length"
+   },
+   {
+    "expectText": "Cycles"
+   },
+   {
+    "expectText": "Goal"
+   },
+   {
+    "shot": "step-1-initial-render"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-name-unlocks-next",
+  "label": "Entering program name unlocks Next button on Step 1",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Upper Lower Hybrid"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "expectText": "Upper Lower Hybrid"
+   },
+   {
+    "shot": "step-1-name-filled"
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Cycle Days"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-cycle-stepper-increment",
+  "label": "Cycle length stepper increments and decrements via +/- buttons",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Test Program"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "expectText": "7-day cycle"
+   },
+   {
+    "click": "button[aria-label='Increase cycle length']"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectText": "8-day cycle"
+   },
+   {
+    "shot": "cycle-stepper-incremented"
+   },
+   {
+    "click": "button[aria-label='Decrease cycle length']"
+   },
+   {
+    "settle": 300
+   },
+   {
+    "expectText": "7-day cycle"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-goal-selector",
+  "label": "Goal dropdown opens and selects a value on Step 1",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Goal Test"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "button[role='combobox']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Fat Loss"
+   },
+   {
+    "shot": "goal-dropdown-open"
+   },
+   {
+    "clickText": "Fat Loss"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectText": "Fat Loss"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-optional-details-disclosure",
+  "label": "Optional details disclosure expands to show description and tags",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notText": "Description"
+   },
+   {
+    "click": "button:has-text('Optional details')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Description"
+   },
+   {
+    "shot": "optional-details-expanded"
+   },
+   {
+    "expectText": "Tags"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-advance-to-step-2",
+  "label": "Step 1 advances to Step 2 (Cycle Days) after naming program",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "5-Day Split"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Cycle Days"
+   },
+   {
+    "expectText": "5-Day Cycle Template"
+   },
+   {
+    "shot": "step-2-cycle-days"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-step-2-click-day-opens-editor",
+  "label": "Clicking a day cell on Step 2 opens inline exercise editor",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "PPL Test"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "button[aria-label*='Cycle 1, Day 1']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Editing Exercises"
+   },
+   {
+    "expectText": "Day 1"
+   },
+   {
+    "shot": "editor-opened-day-1"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-add-exercise-to-day",
+  "label": "Adding an exercise in inline editor shows exercise row with fields",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Exercise Builder"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "button[aria-label*='Cycle 1, Day 1']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "click": "button:has-text('Add Exercise')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Exercise 1"
+   },
+   {
+    "expectText": "Sets"
+   },
+   {
+    "expectText": "Rep Target"
+   },
+   {
+    "shot": "exercise-row-added"
+   },
+   {
+    "exists": "input[placeholder='Exercise name']"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-exercise-name-autocomplete",
+  "label": "Typing exercise name in editor shows/updates exercise details",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Bench Test"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "button[aria-label*='Cycle 1, Day 1']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "click": "button:has-text('Add Exercise')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Exercise name']",
+     "value": "Bench Press"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectText": "Bench Press"
+   },
+   {
+    "shot": "exercise-name-entered"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-close-day-editor",
+  "label": "Closing day editor collapses and returns to cycle grid",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Close Test"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "click": "button[aria-label*='Cycle 1, Day 1']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Editing Exercises"
+   },
+   {
+    "click": "button[aria-label='Close editor']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "text:has('Editing Exercises')"
+   },
+   {
+    "shot": "editor-closed"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-step-back-navigation",
+  "label": "Back button on Step 2 returns to Step 1",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Back Test"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button:has-text('Next')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Cycle Days"
+   },
+   {
+    "click": "button:has-text('Back')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Program Name"
+   },
+   {
+    "shot": "back-to-step-1"
+   }
+  ]
+ },
+ {
+  "id": "program-builder-create-cancel-button",
+  "label": "Cancel (X) button exits builder without saving",
+  "steps": [
+   {
+    "goto": "/program-builder"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder*='Push Pull']",
+     "value": "Unsaved Test"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button[aria-label='Cancel']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Workouts"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-page-renders",
+  "label": "Create Workout page renders with title and exercise list",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Workout Title"
+   },
+   {
+    "expectText": "Workout Type"
+   },
+   {
+    "expectText": "Duration"
+   },
+   {
+    "expectText": "Exercises"
+   },
+   {
+    "shot": "create-workout-initial"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-title-entry",
+  "label": "Entering workout title and type shows in form",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Push Day Strength"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectText": "Push Day Strength"
+   },
+   {
+    "shot": "workout-title-filled"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-add-strength-exercise",
+  "label": "Adding an exercise to strength workout shows exercise card with fields",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Upper Body"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "button:has-text('Add Exercise')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Exercise 2"
+   },
+   {
+    "shot": "strength-exercise-added"
+   },
+   {
+    "exists": "input[placeholder*='Push-ups']"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-exercise-sets-reps",
+  "label": "Editing exercise sets/reps in strength workout updates values",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Leg Day"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='e.g., 10-12']",
+     "value": "8-10"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "expectText": "8-10"
+   },
+   {
+    "shot": "exercise-reps-updated"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-change-to-cardio",
+  "label": "Changing workout type from strength to cardio updates exercise UI",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Cardio Test"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "[role='combobox']:nth-of-type(1)"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Cardio"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Steps"
+   },
+   {
+    "expectText": "Add Step"
+   },
+   {
+    "shot": "workout-type-changed-cardio"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-cardio-step-fields",
+  "label": "Cardio step card shows step name, type, duration, and target fields",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Run Workout"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "[role='combobox']:nth-of-type(1)"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Cardio"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Step Name"
+   },
+   {
+    "expectText": "Step Type"
+   },
+   {
+    "expectText": "Duration"
+   },
+   {
+    "expectText": "Target"
+   },
+   {
+    "shot": "cardio-step-visible"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-remove-exercise-dialog",
+  "label": "Clicking remove exercise button triggers deletion action",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Delete Test"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "button[aria-label='Remove exercise']:first-of-type"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "shot": "remove-exercise-triggered"
+   }
+  ]
+ },
+ {
+  "id": "create-workout-cancel-navigation",
+  "label": "Cancel button navigates away from create workout without saving",
+  "steps": [
+   {
+    "goto": "/create-workout"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "fill": {
+     "selector": "input[id='title']",
+     "value": "Unsaved Workout"
+    }
+   },
+   {
+    "settle": 300
+   },
+   {
+    "click": "button:has-text('Cancel')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Workouts"
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-navigate-and-assert-week-grid",
+  "label": "Navigate to weekly schedule and assert week grid renders with dates",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "exists": ".glass"
+   },
+   {
+    "expectText": "MON"
+   },
+   {
+    "expectText": "SUN"
+   },
+   {
+    "shot": "week-grid-rendered"
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-select-day-and-view-details",
+  "label": "Select a different day in the week grid and assert selected day card appears",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "click": ".data-row:nth-child(2)"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "day-selected"
+   },
+   {
+    "exists": ".glass"
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-toggle-completed-workout-card",
+  "label": "Expand completed workout card and assert exercises are visible, then collapse",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "click": "button[aria-expanded='false']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "workout-expanded"
+   },
+   {
+    "expectText": "exercises"
+   },
+   {
+    "click": "button[aria-expanded='true']"
+   },
+   {
+    "settle": 600
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-toggle-weekly-volume",
+  "label": "Expand weekly volume card and assert muscle breakdown is visible, then collapse",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Weekly Volume"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "volume-expanded"
+   },
+   {
+    "expectText": "sets"
+   },
+   {
+    "clickText": "Weekly Volume"
+   },
+   {
+    "settle": 600
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-navigate-weeks-previous",
+  "label": "Click previous week button and assert week dates change",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "shot": "initial-week"
+   },
+   {
+    "click": "button[aria-label='Previous week']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "previous-week"
+   },
+   {
+    "exists": ".glass"
+   }
+  ]
+ },
+ {
+  "id": "weekly-schedule-navigate-weeks-next",
+  "label": "Click next week button and assert week dates change",
+  "steps": [
+   {
+    "goto": "/weekly-schedule"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "click": "button[aria-label='Next week']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "next-week"
+   },
+   {
+    "exists": ".glass"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-quick-workout-renders",
+  "label": "Quick Workout page loads and displays logging UI with exercise input",
+  "steps": [
+   {
+    "goto": "/quick-workout"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Quick Workout"
+   },
+   {
+    "exists": "[class*='AddExerciseForm']"
+   },
+   {
+    "shot": "quick-workout-ready"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-quick-workout-add-exercise",
+  "label": "Quick Workout allows adding an exercise and displays the exercise card",
+  "steps": [
+   {
+    "goto": "/quick-workout"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[placeholder*='Search']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "fill": {
+     "selector": "[placeholder*='Search']",
+     "value": "Bench"
+    }
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Bench Press"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Bench Press"
+   },
+   {
+    "exists": "[data-tutorial='exercise-card']"
+   },
+   {
+    "shot": "exercise-added"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-quick-workout-resume-dialog",
+  "label": "Quick Workout shows resume session dialog and can dismiss with Start Fresh",
+  "steps": [
+   {
+    "goto": "/quick-workout"
+   },
+   {
+    "settle": 2000
+   },
+   {
+    "expectText": "Resume Workout?"
+   },
+   {
+    "expectText": "unfinished session"
+   },
+   {
+    "shot": "resume-dialog-visible"
+   },
+   {
+    "clickText": "Start Fresh"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "Resume Workout?"
+   },
+   {
+    "shot": "resume-dismissed"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-quick-workout-start-logging",
+  "label": "Quick Workout allows starting logging and displays the logging UI with timer",
+  "steps": [
+   {
+    "goto": "/quick-workout"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[placeholder*='Search']"
+   },
+   {
+    "fill": {
+     "selector": "[placeholder*='Search']",
+     "value": "Squat"
+    }
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Back Squat"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Start Fresh"
+   },
+   {
+    "exists": "[class*='ExerciseCard']"
+   },
+   {
+    "shot": "quick-workout-exercise-ready"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-quick-workout-rest-timer",
+  "label": "Quick Workout rest timer appears and displays countdown",
+  "steps": [
+   {
+    "goto": "/quick-workout"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[placeholder*='Search']"
+   },
+   {
+    "fill": {
+     "selector": "[placeholder*='Search']",
+     "value": "Press"
+    }
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Overhead Press"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "[class*='grid']"
+   },
+   {
+    "click": "[class*='rounded-full'][class*='bg-white']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "exists": "[class*='Timer']"
+   },
+   {
+    "shot": "rest-timer-active"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-detail-page-loads",
+  "label": "Workout Detail page loads and displays workout preview with Start Logging button",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "exists": "[data-tutorial='start-logging-btn']"
+   },
+   {
+    "shot": "workout-detail-loaded"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-detail-start-logging",
+  "label": "Workout Detail starts logging when button clicked and displays logging UI",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[data-tutorial='start-logging-btn']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Logging"
+   },
+   {
+    "exists": "[class*='ExerciseCard']"
+   },
+   {
+    "shot": "detail-logging-active"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-detail-resume-dialog",
+  "label": "Workout Detail shows resume dialog with Resume and Start Fresh options",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 2000
+   },
+   {
+    "expectText": "Resume Workout?"
+   },
+   {
+    "expectText": "unfinished session"
+   },
+   {
+    "shot": "detail-resume-dialog"
+   },
+   {
+    "clickText": "Start Fresh"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "Resume Workout?"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-cancel-dialog",
+  "label": "Cancel button opens confirm dialog, and Keep Going closes it without canceling",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[data-tutorial='start-logging-btn']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "click": "[class*='plain'][class*='text-ink-muted']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Cancel Workout?"
+   },
+   {
+    "expectText": "progress for this workout will be lost"
+   },
+   {
+    "shot": "cancel-confirm-visible"
+   },
+   {
+    "clickText": "Keep Going"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "Cancel Workout?"
+   },
+   {
+    "shot": "cancel-dismissed-stayed"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-set-input-interaction",
+  "label": "Logging UI allows entering weight and reps for a set",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[data-tutorial='start-logging-btn']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "exists": "[class*='font-technical'][class*='text-center']"
+   },
+   {
+    "click": "[class*='font-technical'][class*='text-center'][placeholder*='']"
+   },
+   {
+    "settle": 300
+   },
+   {
+    "fill": {
+     "selector": "[class*='font-technical'][class*='text-center']",
+     "value": "185"
+    }
+   },
+   {
+    "settle": 400
+   },
+   {
+    "shot": "set-weight-entered"
+   }
+  ]
+ },
+ {
+  "id": "workout-logging-detail-rest-timer",
+  "label": "Workout Detail rest timer displays and counts down after completing a set",
+  "steps": [
+   {
+    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[data-tutorial='start-logging-btn']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "click": "[class*='rounded-full'][class*='bg-white']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Rest"
+   },
+   {
+    "exists": "[class*='Timer']"
+   },
+   {
+    "shot": "detail-rest-timer-visible"
+   }
+  ]
+ },
+ {
+  "id": "mind-navigate-all-tabs",
+  "label": "Navigate through all four Mind tabs and verify content loads",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Capture"
+   },
+   {
+    "shot": "mind-tabs-visible"
+   },
+   {
+    "click": "[role='tab'][aria-selected='false']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Book"
+   },
+   {
+    "click": "[role='tab'][aria-selected='false']:has-text('Study')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Log Study Session"
+   },
+   {
+    "click": "[role='tab'][aria-selected='false']:has-text('Skills')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Skill"
+   },
+   {
+    "click": "[role='tab']:has-text('Capture')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "New Learning Log"
+   }
+  ]
+ },
+ {
+  "id": "mind-reading-add-book-dialog",
+  "label": "Open Add Book dialog, assert all form fields are present, then close",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Add Book"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Book"
+   },
+   {
+    "expectText": "Track a book with its status, rating, and key takeaways."
+   },
+   {
+    "exists": "input[placeholder='Book title']"
+   },
+   {
+    "exists": "input[placeholder='Author']"
+   },
+   {
+    "exists": "[role='combobox']:has-text('Category')"
+   },
+   {
+    "exists": "[role='combobox']:has-text('Status')"
+   },
+   {
+    "exists": "button[aria-label*='Rate']"
+   },
+   {
+    "exists": "textarea[placeholder='Key takeaways...']"
+   },
+   {
+    "shot": "mind-add-book-dialog"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "textarea[placeholder='Key takeaways...']"
+   }
+  ]
+ },
+ {
+  "id": "mind-reading-add-book-form-fill",
+  "label": "Fill in Add Book form with all fields and save a new book",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Add Book"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Book title']",
+     "value": "Test Book Title"
+    }
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Author']",
+     "value": "Test Author"
+    }
+   },
+   {
+    "click": "[role='combobox']:has-text('Category')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Technical"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "[role='combobox']:has-text('Status')"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Reading"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "click": "button[aria-label='Rate 4 stars']"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "fill": {
+     "selector": "textarea[placeholder='Key takeaways...']",
+     "value": "Key takeaway 1: Important concept"
+    }
+   },
+   {
+    "shot": "mind-book-form-filled"
+   },
+   {
+    "clickText": "Save"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Test Book Title"
+   }
+  ]
+ },
+ {
+  "id": "mind-reading-edit-book-dialog",
+  "label": "Open an existing reading item's edit dialog and close it",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Start your reading list"
+   },
+   {
+    "click": "button[aria-label='Edit']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Edit Book"
+   },
+   {
+    "expectText": "Update this book's status, rating, or takeaways."
+   },
+   {
+    "exists": "input[placeholder='Book title']"
+   },
+   {
+    "shot": "mind-edit-book-dialog"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "input[placeholder='Book title']"
+   }
+  ]
+ },
+ {
+  "id": "mind-reading-delete-book-confirm",
+  "label": "Open delete confirm for a reading item, assert danger dialog, then cancel",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Start your reading list"
+   },
+   {
+    "click": "button[aria-label='Delete']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Delete book?"
+   },
+   {
+    "expectText": "This permanently removes the book and its notes."
+   },
+   {
+    "exists": "button:has-text('Delete')"
+   },
+   {
+    "shot": "mind-delete-book-confirm"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "button:has-text('Delete')"
+   }
+  ]
+ },
+ {
+  "id": "mind-study-log-session",
+  "label": "Fill study session form and log a new study session",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Study')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Log Study Session"
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Topic / Subject']",
+     "value": "React Hooks"
+    }
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Minutes']",
+     "value": "45"
+    }
+   },
+   {
+    "click": "[role='combobox']:last-of-type"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "video"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Notes (optional)']",
+     "value": "Learned useCallback patterns"
+    }
+   },
+   {
+    "shot": "mind-study-form-filled"
+   },
+   {
+    "clickText": "Log Session"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "React Hooks"
+   },
+   {
+    "expectText": "45 min"
+   }
+  ]
+ },
+ {
+  "id": "mind-study-delete-session-confirm",
+  "label": "Open delete confirm for a study session and cancel",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Study')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Log your first session"
+   },
+   {
+    "click": "button[aria-label*='Delete']:has-text('X')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Delete study session?"
+   },
+   {
+    "expectText": "This permanently removes the session from your log."
+   },
+   {
+    "shot": "mind-study-delete-confirm"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "button:has-text('Delete')"
+   }
+  ]
+ },
+ {
+  "id": "mind-skills-add-skill-dialog",
+  "label": "Open Add Skill dialog, fill form, and save a new skill",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Skills')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "clickText": "Add Skill"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Skill"
+   },
+   {
+    "exists": "input[placeholder='e.g. TypeScript']"
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='e.g. TypeScript']",
+     "value": "React Native"
+    }
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='e.g. Frontend, Machine Learning']",
+     "value": "Frontend"
+    }
+   },
+   {
+    "click": "button:has-text('3')"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "shot": "mind-skills-form-filled"
+   },
+   {
+    "clickText": "Save"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "React Native"
+   }
+  ]
+ },
+ {
+  "id": "mind-skills-delete-skill-confirm",
+  "label": "Open delete confirm for a skill and cancel",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Skills')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Track what you're building"
+   },
+   {
+    "click": "button[aria-label*='Delete']:has-text('X')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Delete skill?"
+   },
+   {
+    "expectText": "This permanently removes the skill and its practice history."
+   },
+   {
+    "shot": "mind-skills-delete-confirm"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "button:has-text('Delete')"
+   }
+  ]
+ },
+ {
+  "id": "mind-capture-new-log",
+  "label": "Capture a learning note and assert it appears in the recent streams",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Capture')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "New Learning Log"
+   },
+   {
+    "fill": {
+     "selector": "textarea[placeholder*='What did you learn']",
+     "value": "Learned about MCP protocols in Claude"
+    }
+   },
+   {
+    "shot": "mind-capture-textarea-filled"
+   },
+   {
+    "clickText": "Capture"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Learned about MCP protocols in Claude"
+   },
+   {
+    "expectText": "Recent Streams"
+   }
+  ]
+ },
+ {
+  "id": "mind-reading-status-transition",
+  "label": "Click book status badge to transition reading status and verify update",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Reading')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Start your reading list"
+   },
+   {
+    "click": "button:has-text('Want to Read')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Reading"
+   }
+  ]
+ },
+ {
+  "id": "mind-skills-practice-button",
+  "label": "Click Practiced button on a skill and verify it updates",
+  "steps": [
+   {
+    "goto": "/mind"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "[role='tab']:has-text('Skills')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "notText": "Track what you're building"
+   },
+   {
+    "click": "button:has-text('Practiced')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "0d ago"
+   }
+  ]
+ },
+ {
+  "id": "career-empty-state-add-dialog",
+  "label": "Career pipeline empty state renders and Add Application dialog opens from empty state button",
+  "steps": [
+   {
+    "goto": "/career"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "No applications yet."
+   },
+   {
+    "expectText": "Log your first role to start tracking the pipeline."
+   },
+   {
+    "exists": "[class*='Building2']"
+   },
+   {
+    "clickText": "Add your first application"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Application"
+   },
+   {
+    "expectText": "Log a role you applied to and track it through the pipeline."
+   },
+   {
+    "shot": "add-application-dialog-open"
+   }
+  ]
+ },
+ {
+  "id": "career-add-dialog-form-inputs",
+  "label": "Add Application dialog displays all form inputs and fields are accessible",
+  "steps": [
+   {
+    "goto": "/career"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Add your first application"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "input[placeholder='Company name']"
+   },
+   {
+    "exists": "input[placeholder='Job title']"
+   },
+   {
+    "exists": "input[type='date']"
+   },
+   {
+    "expectText": "Company"
+   },
+   {
+    "expectText": "Role"
+   },
+   {
+    "expectText": "Applied"
+   },
+   {
+    "expectText": "Status"
+   },
+   {
+    "expectText": "Notes"
+   },
+   {
+    "expectText": "Next action"
+   },
+   {
+    "expectText": "Next action date"
+   },
+   {
+    "exists": "button:has-text('Cancel')"
+   },
+   {
+    "shot": "add-dialog-all-fields-visible"
+   }
+  ]
+ },
+ {
+  "id": "career-add-dialog-cancel-closes",
+  "label": "Add Application dialog closes when Cancel button is clicked",
+  "steps": [
+   {
+    "goto": "/career"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Add your first application"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Add Application"
+   },
+   {
+    "shot": "dialog-before-cancel"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": "dialog [role='dialog']"
+   },
+   {
+    "expectText": "No applications yet."
+   },
+   {
+    "shot": "dialog-after-cancel"
+   }
+  ]
+ },
+ {
+  "id": "career-status-dropdown-options",
+  "label": "Add Application dialog status dropdown displays all application statuses",
+  "steps": [
+   {
+    "goto": "/career"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Add your first application"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "click": "select + [role='combobox']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Applied"
+   },
+   {
+    "expectText": "Screening"
+   },
+   {
+    "expectText": "Interview"
+   },
+   {
+    "expectText": "Offer"
+   },
+   {
+    "expectText": "Rejected"
+   },
+   {
+    "shot": "status-dropdown-open"
+   }
+  ]
+ },
+ {
+  "id": "physique-upload-modal-opens",
+  "label": "Upload photo modal opens and closes",
+  "steps": [
+   {
+    "goto": "/physique"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "History"
+   },
+   {
+    "click": ".fixed.right-4.z-40[aria-label*='Upload']"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Review shot"
+   },
+   {
+    "shot": "upload-modal-visible"
+   },
+   {
+    "exists": "[class*='glass-inset'] [class*='flex'][class*='items-center'][class*='justify-center']"
+   },
+   {
+    "click": "[aria-label='Close']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "Review shot"
+   }
+  ]
+ },
+ {
+  "id": "physique-compare-mode-opens",
+  "label": "Compare mode: select 2 photos and open comparison modal",
+  "steps": [
+   {
+    "goto": "/physique"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "History"
+   },
+   {
+    "click": "button:has-text('Compare')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Pick 2 photos"
+   },
+   {
+    "shot": "compare-mode-active"
+   },
+   {
+    "click": ".grid.grid-cols-2 .tile:first-child button[aria-label*='Select']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Pick 1 more"
+   },
+   {
+    "click": ".grid.grid-cols-2 .tile:nth-child(2) button[aria-label*='Select']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Ready"
+   },
+   {
+    "click": "button:has-text('Compare'):not(:has-text('Compare mode'))"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Side by side"
+   },
+   {
+    "shot": "compare-modal-visible"
+   },
+   {
+    "click": "[aria-label='Close']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "Side by side"
+   }
+  ]
+ },
+ {
+  "id": "physique-edit-pose-opens-and-closes",
+  "label": "Tap pencil icon to open Fix pose dialog",
+  "steps": [
+   {
+    "goto": "/physique"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "History"
+   },
+   {
+    "click": ".grid.grid-cols-2 .tile button[aria-label='Fix pose']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Fix pose"
+   },
+   {
+    "shot": "edit-pose-modal-visible"
+   },
+   {
+    "exists": "button:has-text('Front relaxed')"
+   },
+   {
+    "exists": "button:has-text('Back double biceps')"
+   },
+   {
+    "click": "[aria-label='Close']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectGone": "Fix pose"
+   }
+  ]
+ },
+ {
+  "id": "physique-edit-pose-change-and-assert",
+  "label": "Change pose selection in Fix pose dialog",
+  "steps": [
+   {
+    "goto": "/physique"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "History"
+   },
+   {
+    "click": ".grid.grid-cols-2 .tile button[aria-label='Fix pose']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Fix pose"
+   },
+   {
+    "click": "button:has-text('Front double biceps')"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectGone": "Fix pose"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "History"
+   }
+  ]
+ },
+ {
+  "id": "physique-filter-by-pose",
+  "label": "Open filter dropdown and select a pose",
+  "steps": [
+   {
+    "goto": "/physique"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "History"
+   },
+   {
+    "click": "button:has-text('Filter:')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Front relaxed"
+   },
+   {
+    "shot": "filter-dropdown-open"
+   },
+   {
+    "click": "button[role='radio']:has-text('Side chest')"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Filter: Side chest"
+   },
+   {
+    "expectGone": "Filter: All"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-renders-profile-hub",
+  "label": "Profile hub renders on mobile with stats and nav",
+  "steps": [
+   {
+    "goto": "/profile"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Your training so far"
+   },
+   {
+    "expectText": "Workouts"
+   },
+   {
+    "exists": "button:has-text('Identity')"
+   },
+   {
+    "exists": "button:has-text('Body & Nutrition')"
+   },
+   {
+    "exists": "button:has-text('Settings')"
+   },
+   {
+    "shot": "profile_hub_visible"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-open-body-section",
+  "label": "Open Body & Nutrition section from mobile hub, assert content, close",
+  "steps": [
+   {
+    "goto": "/profile"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "Body & Nutrition"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Body Stats"
+   },
+   {
+    "expectText": "Nutrition Goals"
+   },
+   {
+    "exists": "input[placeholder='25']"
+   },
+   {
+    "shot": "body_section_open"
+   },
+   {
+    "clickText": "Profile"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Your training so far"
+   },
+   {
+    "notText": "Body Stats"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-open-identity-section",
+  "label": "Open Identity section from mobile hub, assert account fields, close",
+  "steps": [
+   {
+    "goto": "/profile"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "Identity"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Account"
+   },
+   {
+    "exists": "input#display-name"
+   },
+   {
+    "exists": "input#email"
+   },
+   {
+    "shot": "identity_section_open"
+   },
+   {
+    "clickText": "Profile"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Your training so far"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-open-settings-section",
+  "label": "Open Settings section from mobile hub, assert notifications and danger zone",
+  "steps": [
+   {
+    "goto": "/profile"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "Settings"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Notifications"
+   },
+   {
+    "expectText": "Danger Zone"
+   },
+   {
+    "expectText": "Delete Account"
+   },
+   {
+    "shot": "settings_section_open"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-delete-account-confirm-dialog",
+  "label": "Open Delete Account confirm dialog and assert warning, then cancel",
+  "steps": [
+   {
+    "goto": "/profile"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "Settings"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "expectText": "Delete Account"
+   },
+   {
+    "clickText": "Delete Account"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Are you sure?"
+   },
+   {
+    "expectText": "This will permanently delete your profile, food entries, and workout schedules"
+   },
+   {
+    "exists": "button:has-text('Cancel')"
+   },
+   {
+    "exists": "button:has-text('Yes, Delete My Account')"
+   },
+   {
+    "shot": "delete_confirm_dialog_open"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "notText": "Are you sure?"
+   },
+   {
+    "expectText": "Delete Account"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-athlete-state-renders",
+  "label": "/athlete-state renders populated data without 'No data' message",
+  "steps": [
+   {
+    "goto": "/athlete-state"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "notText": "No analysis yet"
+   },
+   {
+    "expectText": "Strength Goals"
+   },
+   {
+    "notText": "No data"
+   },
+   {
+    "notText": "No strength data"
+   },
+   {
+    "shot": "athlete_state_populated"
+   }
+  ]
+ },
+ {
+  "id": "profile-body-recovery-renders-charts",
+  "label": "/recovery renders readiness score and chart tabs without 'No data'",
+  "steps": [
+   {
+    "goto": "/recovery"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Today's Readiness"
+   },
+   {
+    "notText": "No data"
+   },
+   {
+    "notText": "No biometric trends yet"
+   },
+   {
+    "exists": "button[role='tab'][aria-selected='true']"
+   },
+   {
+    "shot": "recovery_charts_visible"
+   }
+  ]
+ },
+ {
+  "id": "analyze-insights-renders-no-brief-gracefully",
+  "label": "Insights page renders when test user has no brief for today",
+  "steps": [
+   {
+    "goto": "/insights"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "No brief for today yet"
+   },
+   {
+    "expectText": "Your coaching brief lands here once today's data is in"
+   },
+   {
+    "notText": "undefined"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "insights-empty-brief-state"
+   },
+   {
+    "exists": "a[href='/brief-history']"
+   }
+  ]
+ },
+ {
+  "id": "analyze-insights-view-past-briefs-link",
+  "label": "Insights page View Past Briefs link is clickable and navigates",
+  "steps": [
+   {
+    "goto": "/insights"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "clickText": "View Past Briefs"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Brief History"
+   }
+  ]
+ },
+ {
+  "id": "analyze-insights-mind-learning-link-visible",
+  "label": "Insights page Mind & Learning link is visible and clickable",
+  "steps": [
+   {
+    "goto": "/insights"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Mind & Learning"
+   },
+   {
+    "expectText": "Reading, study notes & skills"
+   },
+   {
+    "shot": "insights-explore-section"
+   },
+   {
+    "clickText": "Mind & Learning"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Mind"
+   }
+  ]
+ },
+ {
+  "id": "analyze-brief-history-renders",
+  "label": "Brief History page renders without errors",
+  "steps": [
+   {
+    "goto": "/brief-history"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Brief History"
+   },
+   {
+    "notText": "undefined"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "brief-history-loaded"
+   }
+  ]
+ },
+ {
+  "id": "analyze-brief-history-graceful-empty-state",
+  "label": "Brief History shows graceful empty state when no briefs exist",
+  "steps": [
+   {
+    "goto": "/brief-history"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "No briefs generated yet"
+   },
+   {
+    "expectText": "Run your Desktop Agent to generate the first one"
+   },
+   {
+    "notText": "undefined"
+   },
+   {
+    "shot": "brief-history-empty"
+   }
+  ]
+ },
+ {
+  "id": "analyze-brief-history-back-to-home",
+  "label": "Brief History empty state Back to home button works",
+  "steps": [
+   {
+    "goto": "/brief-history"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "clickText": "Back to home"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "expectText": "Today"
+   }
+  ]
+ },
+ {
+  "id": "analyze-coach-page-renders",
+  "label": "Coach office hours page renders without errors",
+  "steps": [
+   {
+    "goto": "/coach"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "notBlank": true
+   },
+   {
+    "expectText": "Coach office hours"
+   },
+   {
+    "expectText": "Upload a few reps and get a form critique"
+   },
+   {
+    "notText": "undefined"
+   },
+   {
+    "notText": "Something went wrong"
+   },
+   {
+    "shot": "coach-empty-state"
+   }
+  ]
+ },
+ {
+  "id": "analyze-coach-how-to-steps-visible",
+  "label": "Coach page displays all how-to steps on empty canvas",
+  "steps": [
+   {
+    "goto": "/coach"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "Film a side view"
+   },
+   {
+    "expectText": "Coach reviews it"
+   },
+   {
+    "expectText": "Fix, in order"
+   },
+   {
+    "expectText": "A few clean reps of squat, deadlift, or bench"
+   },
+   {
+    "expectText": "The lift gets scored and checked for safety flags"
+   },
+   {
+    "shot": "coach-instructions"
+   }
+  ]
+ },
+ {
+  "id": "analyze-coach-upload-form-visible",
+  "label": "Coach page shows upload form with exercise and notes inputs",
+  "steps": [
+   {
+    "goto": "/coach"
+   },
+   {
+    "settle": 1200
+   },
+   {
+    "expectText": "The lift"
+   },
+   {
+    "expectText": "What to look at (optional)"
+   },
+   {
+    "exists": "input[placeholder*='Back squat']"
+   },
+   {
+    "exists": "input[placeholder*='Knees cave']"
+   },
+   {
+    "expectText": "Choose clip"
+   },
+   {
+    "shot": "coach-form-inputs"
+   }
+  ]
+ },
+ {
+  "id": "analyze-coach-past-reviews-section-visible",
+  "label": "Coach page Past reviews section displays with historical reviews",
+  "steps": [
+   {
+    "goto": "/coach"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Past reviews"
+   },
+   {
+    "shot": "coach-past-reviews-section"
+   },
+   {
+    "exists": "button:has-text('Form review')"
+   }
+  ]
+ },
+ {
+  "id": "analyze-coach-past-review-open-and-close",
+  "label": "Coach page can open and close past review dialog",
+  "steps": [
+   {
+    "goto": "/coach"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "click": "button[class*='glass-inset'][class*='rounded-lg']"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "shot": "coach-review-dialog-open"
+   },
+   {
+    "expectText": "Form review"
+   },
+   {
+    "press": "Escape"
+   },
+   {
+    "settle": 300
+   },
+   {
+    "expectGone": "[role='dialog']"
+   }
+  ]
+ }
+]

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { lookupBarcode } from "@/api/openFoodFacts";
 import { Button } from "@/components/ui/button";
@@ -102,8 +103,14 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[10001] flex flex-col bg-charcoal rise-in">
+  // Portal to document.body so the overlay escapes any ancestor stacking
+  // context (Layout has fixed/z-indexed/translateZ elements, and the Add-Food
+  // Dialog portals to body at z-[10000]). Rendered inline, the scanner's
+  // z-index is scoped to a trapped context and the body-level dialog paints
+  // over it — hiding the camera and letting taps fall through to the dialog
+  // scrim (which dismisses everything). z-[10002] sits above the dialog.
+  return createPortal(
+    <div className="fixed inset-0 z-[10002] flex flex-col bg-charcoal rise-in">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal-surface border-b border-charcoal-border">
         <span className="text-ink font-semibold text-base">Scan Barcode</span>
@@ -242,6 +249,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
           </Button>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

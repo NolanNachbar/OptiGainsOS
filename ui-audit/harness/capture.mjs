@@ -11,7 +11,7 @@
 //
 // Run: bun ui-audit/harness/capture.mjs        (dev server must be on :5173)
 import { chromium } from 'playwright';
-import { readFileSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const BASE = process.env.BASE || 'http://localhost:5173';
@@ -46,11 +46,28 @@ const flows = [
   ]},
 ];
 
-const journeys = [...surfaces, ...flows];
+// External comprehensive flows (authored per-feature). Appended if present so the
+// surface auto-derivation and the hand flows above always run as a baseline.
+let extraFlows = [];
+const extraPath = join(ROOT, process.env.FLOWS || 'flows.json');
+if (existsSync(extraPath)) {
+  try { extraFlows = JSON.parse(readFileSync(extraPath, 'utf8')); }
+  catch (e) { console.error('failed to parse flows.json:', e.message); }
+}
+
+// FLOWS_ONLY=1 runs just the authored flows (faster fix-loop iterations).
+const journeys = process.env.FLOWS_ONLY ? [...flows, ...extraFlows] : [...surfaces, ...flows, ...extraFlows];
 
 async function runJourney(browser, j) {
-  const ctx = await browser.newContext({ viewport: MOBILE });
+  const ctx = await browser.newContext({ viewport: MOBILE, permissions: ['camera'] });
   const page = await ctx.newPage();
+  // Poll a condition so assertions wait for data/animation instead of one-shotting
+  // (eliminates concurrency/network timing false-negatives against the hosted DB).
+  const poll = async (fn, ms = 5000, every = 350) => {
+    const end = Date.now() + ms;
+    for (;;) { try { if (await fn()) return true; } catch {} if (Date.now() > end) return false; await page.waitForTimeout(every); }
+  };
+  const bodyText = async () => (await page.locator('body').innerText().catch(() => '')).toLowerCase();
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message.split('\n')[0]));
@@ -69,9 +86,28 @@ async function runJourney(browser, j) {
       if (step.settle) await page.waitForTimeout(step.settle);
       if (step.click) { try { await page.click(step.click, { timeout: 4000 }); } catch { errors.push('click-miss: ' + step.click); } }
       if (step.clickText) { try { await page.getByText(step.clickText, { exact: false }).first().click({ timeout: 4000 }); } catch { errors.push('clickText-miss: ' + step.clickText); } }
+      if (step.fill) { try { await page.fill(step.fill.selector, step.fill.value, { timeout: 4000 }); } catch { errors.push('fill-miss: ' + step.fill.selector); } }
+      if (step.press) { try { await page.keyboard.press(step.press); } catch {} }
       if (step.shot) { const p = join(dir, `${i}-${step.shot}.png`); await page.screenshot({ path: p }); shots.push(`ui-audit/harness/out/${j.id}/${i}-${step.shot}.png`); }
       if (step.notBlank) { const t = (await page.locator('body').innerText().catch(() => '')).trim(); if (t.length < 30) hardFail = 'white-screen'; }
-      if (step.expectText) { const t = await page.locator('body').innerText().catch(() => ''); if (!t.includes(step.expectText)) hardFail = `missing text: "${step.expectText}"`; }
+      // Assertions POLL (case-insensitive text): wait for the condition rather than
+      // one-shot, so slow data loads / animations don't read as failures.
+      if (step.expectText) { const ok = await poll(async () => (await bodyText()).includes(step.expectText.toLowerCase())); if (!ok) hardFail = `missing text: "${step.expectText}"`; }
+      if (step.notText) { const ok = await poll(async () => !(await bodyText()).includes(step.notText.toLowerCase())); if (!ok) hardFail = `unexpected text present: "${step.notText}"`; }
+      if (step.exists) { const ok = await poll(async () => (await page.locator(step.exists).count().catch(() => 0)) > 0); if (!ok) hardFail = `expected element missing: ${step.exists}`; }
+      if (step.expectGone) { const ok = await poll(async () => (await page.locator(step.expectGone).count().catch(() => 0)) === 0); if (!ok) hardFail = `element should be gone: ${step.expectGone}`; }
+      // Stacking assertion (would have caught the barcode-scanner-behind-dialog bug):
+      // the element painted at screen center must be inside `topInside`.
+      if (step.topInside) {
+        const check = () => page.evaluate((sel) => {
+          const root = document.querySelector(sel);
+          if (!root) return 'missing';
+          const el = document.elementFromPoint(Math.floor(innerWidth/2), Math.floor(innerHeight/2));
+          return root.contains(el) ? 'inside' : 'obscured';
+        }, step.topInside);
+        const ok = await poll(async () => (await check()) === 'inside');
+        if (!ok) { const st = await check(); hardFail = st === 'missing' ? `topInside root missing: ${step.topInside}` : `overlay obscured: element at center is NOT inside ${step.topInside}`; }
+      }
     }
   } catch (e) { hardFail = 'exception: ' + e.message.split('\n')[0]; }
   const finalText = (await page.locator('body').innerText().catch(() => '')).slice(0, 400).replace(/\s+/g, ' ');
@@ -93,7 +129,7 @@ async function pool(items, n, fn) {
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 const started = Date.now();
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const results = await pool(journeys, CONCURRENCY, (j) => runJourney(browser, j));
 await browser.close();
 const elapsed = ((Date.now() - started) / 1000).toFixed(1);

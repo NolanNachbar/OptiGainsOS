@@ -54,3 +54,6 @@ The Complete Guide to Navy Seal Fitness.pdf
 .gstack/
 .audit/
 ui-audit/round-*/
+
+# Scratch/probe tooling (local only)
+ui-audit/_probe/
