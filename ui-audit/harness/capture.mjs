@@ -78,10 +78,21 @@ async function runJourney(browser, j) {
   let first = true;
   try {
     for (const [i, step] of j.steps.entries()) {
+      if (hardFail) break;
       if (step.goto) {
         const url = `${BASE}${step.goto}${step.goto.includes('?') ? '&' : '?'}bypass_auth=true`;
         await page.goto(url, { waitUntil: 'load' }); // never networkidle: Vite HMR socket never settles
-        if (first) { await page.waitForTimeout(1500); first = false; } // let bypass login resolve
+        if (first) {
+          // Poll until auth bypass resolves: body no longer shows sign-in OR a fab-button is present.
+          const authed = await poll(async () => {
+            const t = await bodyText();
+            if (!t.includes('sign in')) return true;
+            if ((await page.locator('[data-fab-button], .fab-button, [aria-label*="add" i]').count().catch(() => 0)) > 0) return true;
+            return false;
+          }, 6000);
+          if (!authed) hardFail = 'auth-bypass-failed: login page still showing';
+          first = false;
+        }
       }
       if (step.settle) await page.waitForTimeout(step.settle);
       if (step.click) { try { await page.click(step.click, { timeout: 4000 }); } catch { errors.push('click-miss: ' + step.click); } }
@@ -89,13 +100,13 @@ async function runJourney(browser, j) {
       if (step.fill) { try { await page.fill(step.fill.selector, step.fill.value, { timeout: 4000 }); } catch { errors.push('fill-miss: ' + step.fill.selector); } }
       if (step.press) { try { await page.keyboard.press(step.press); } catch {} }
       if (step.shot) { const p = join(dir, `${i}-${step.shot}.png`); await page.screenshot({ path: p }); shots.push(`ui-audit/harness/out/${j.id}/${i}-${step.shot}.png`); }
-      if (step.notBlank) { const t = (await page.locator('body').innerText().catch(() => '')).trim(); if (t.length < 30) hardFail = 'white-screen'; }
+      if (step.notBlank) { const t = (await page.locator('body').innerText().catch(() => '')).trim(); if (t.length < 30) { if (!hardFail) hardFail = 'white-screen'; } }
       // Assertions POLL (case-insensitive text): wait for the condition rather than
       // one-shot, so slow data loads / animations don't read as failures.
-      if (step.expectText) { const ok = await poll(async () => (await bodyText()).includes(step.expectText.toLowerCase())); if (!ok) hardFail = `missing text: "${step.expectText}"`; }
-      if (step.notText) { const ok = await poll(async () => !(await bodyText()).includes(step.notText.toLowerCase())); if (!ok) hardFail = `unexpected text present: "${step.notText}"`; }
-      if (step.exists) { const ok = await poll(async () => (await page.locator(step.exists).count().catch(() => 0)) > 0); if (!ok) hardFail = `expected element missing: ${step.exists}`; }
-      if (step.expectGone) { const ok = await poll(async () => (await page.locator(step.expectGone).count().catch(() => 0)) === 0); if (!ok) hardFail = `element should be gone: ${step.expectGone}`; }
+      if (step.expectText) { const ok = await poll(async () => (await bodyText()).includes(step.expectText.toLowerCase())); if (!ok) { if (!hardFail) hardFail = `missing text: "${step.expectText}"`; } }
+      if (step.notText) { const ok = await poll(async () => !(await bodyText()).includes(step.notText.toLowerCase())); if (!ok) { if (!hardFail) hardFail = `unexpected text present: "${step.notText}"`; } }
+      if (step.exists) { const ok = await poll(async () => (await page.locator(step.exists).count().catch(() => 0)) > 0); if (!ok) { if (!hardFail) hardFail = `expected element missing: ${step.exists}`; } }
+      if (step.expectGone) { const ok = await poll(async () => (await page.locator(step.expectGone).count().catch(() => 0)) === 0); if (!ok) { if (!hardFail) hardFail = `element should be gone: ${step.expectGone}`; } }
       // Stacking assertion (would have caught the barcode-scanner-behind-dialog bug):
       // the element painted at screen center must be inside `topInside`.
       if (step.topInside) {
@@ -106,7 +117,7 @@ async function runJourney(browser, j) {
           return root.contains(el) ? 'inside' : 'obscured';
         }, step.topInside);
         const ok = await poll(async () => (await check()) === 'inside');
-        if (!ok) { const st = await check(); hardFail = st === 'missing' ? `topInside root missing: ${step.topInside}` : `overlay obscured: element at center is NOT inside ${step.topInside}`; }
+        if (!ok) { const st = await check(); if (!hardFail) hardFail = st === 'missing' ? `topInside root missing: ${step.topInside}` : `overlay obscured: element at center is NOT inside ${step.topInside}`; }
       }
     }
   } catch (e) { hardFail = 'exception: ' + e.message.split('\n')[0]; }

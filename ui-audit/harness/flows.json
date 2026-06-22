@@ -823,13 +823,16 @@
   "label": "Body tab: Stream Note disclosure opens and closes",
   "steps": [
    {
-    "goto": "/fuel?tab=body"
+    "goto": "/today"
    },
    {
-    "settle": 1500
+    "settle": 1200
    },
    {
-    "expectText": "Stream Note"
+    "click": "[data-tutorial='fab-button']"
+   },
+   {
+    "settle": 600
    },
    {
     "clickText": "Stream Note"
@@ -838,22 +841,19 @@
     "settle": 800
    },
    {
-    "exists": "details[open] textarea"
-   },
-   {
-    "exists": "textarea[placeholder*='Stream a note']"
+    "exists": "textarea[placeholder*='mind']"
    },
    {
     "shot": "stream-note-open"
    },
    {
-    "clickText": "Stream Note"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 600
+    "settle": 500
    },
    {
-    "expectGone": "details[open]"
+    "expectGone": "textarea[placeholder*='mind']"
    }
   ]
  },
@@ -1072,16 +1072,25 @@
   "label": "Program detail page loads with title and content",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=programs"
    },
    {
     "settle": 1500
    },
    {
-    "notBlank": true
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Schedule"
    },
    {
     "notText": "Program not found"
+   },
+   {
+    "notBlank": true
    },
    {
     "exists": "h1"
@@ -1096,10 +1105,22 @@
   "label": "Tap a workout tile to open workout detail modal and close it",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=programs"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Schedule"
+   },
+   {
+    "notText": "Program not found"
    },
    {
     "click": "button[aria-label*='Day 1']"
@@ -1135,10 +1156,22 @@
   "label": "Expand and collapse all cycles view",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=programs"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "expectText": "Schedule"
+   },
+   {
+    "notText": "Program not found"
    },
    {
     "clickText": "Show all"
@@ -1168,10 +1201,19 @@
   "label": "Progression Tracking card lists per-exercise working weights",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 1800
+    "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Program not found"
    },
    {
     "expectText": "Progression Tracking"
@@ -1192,10 +1234,22 @@
   "label": "Enrolled header shows Manage overflow; open and close it",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=library"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Program not found"
+   },
+   {
+    "expectText": "Manage"
    },
    {
     "expectText": "workouts"
@@ -1231,10 +1285,22 @@
   "label": "Open Manage overflow and verify management actions are present",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=library"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Program not found"
+   },
+   {
+    "expectText": "Manage"
    },
    {
     "clickText": "Manage"
@@ -1261,10 +1327,22 @@
   "label": "Open Manage, tap Delete, confirm dialog appears then dismiss",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=library"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Program not found"
+   },
+   {
+    "expectText": "Manage"
    },
    {
     "clickText": "Manage"
@@ -1303,10 +1381,22 @@
   "label": "Open Manage, tap Delete, confirm dialog appears then dismiss",
   "steps": [
    {
-    "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
+    "goto": "/train?tab=library"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='/program/']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Program not found"
+   },
+   {
+    "expectText": "Manage"
    },
    {
     "clickText": "Manage"
@@ -2119,6 +2209,9 @@
     "settle": 1500
    },
    {
+    "notText": "Forgot password"
+   },
+   {
     "notBlank": true
    },
    {
@@ -2152,6 +2245,9 @@
     "settle": 1500
    },
    {
+    "notText": "Forgot password"
+   },
+   {
     "notBlank": true
    },
    {
@@ -2177,6 +2273,9 @@
    },
    {
     "settle": 1500
+   },
+   {
+    "notText": "Forgot password"
    },
    {
     "notBlank": true
@@ -2210,6 +2309,9 @@
    },
    {
     "settle": 1500
+   },
+   {
+    "notText": "Forgot password"
    },
    {
     "notBlank": true
@@ -2248,6 +2350,9 @@
     "settle": 1500
    },
    {
+    "notText": "Forgot password"
+   },
+   {
     "notBlank": true
    },
    {
@@ -2276,6 +2381,9 @@
    },
    {
     "settle": 1500
+   },
+   {
+    "notText": "Forgot password"
    },
    {
     "notBlank": true
@@ -2515,10 +2623,19 @@
   "label": "Workout Detail page loads and displays workout preview with Start Logging button",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
     "settle": 1500
+   },
+   {
+    "click": "a[href*='workout-detail']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
    },
    {
     "notBlank": true
@@ -2536,16 +2653,19 @@
   "label": "Workout Detail starts logging when button clicked and displays logging UI",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 1600
+    "settle": 1500
    },
    {
-    "click": "button:has-text('Start Fresh')"
+    "click": "a[href*='workout-detail']"
    },
    {
-    "settle": 900
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
@@ -2572,10 +2692,22 @@
   "label": "Workout Detail shows resume dialog with Resume and Start Fresh options",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 2000
+    "settle": 1500
+   },
+   {
+    "click": "a[href*='workout-detail']"
+   },
+   {
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
+   },
+   {
+    "settle": 500
    },
    {
     "expectText": "Resume Workout?"
@@ -2602,16 +2734,19 @@
   "label": "Cancel button opens confirm dialog, and Keep Going closes it without canceling",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 1600
+    "settle": 1500
    },
    {
-    "click": "button:has-text('Start Fresh')"
+    "click": "a[href*='workout-detail']"
    },
    {
-    "settle": 900
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
@@ -2659,16 +2794,19 @@
   "label": "Logging UI allows entering weight and reps for a set",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 1600
+    "settle": 1500
    },
    {
-    "click": "button:has-text('Start Fresh')"
+    "click": "a[href*='workout-detail']"
    },
    {
-    "settle": 900
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
@@ -2701,16 +2839,19 @@
   "label": "Workout Detail rest timer displays and counts down after completing a set",
   "steps": [
    {
-    "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
+    "goto": "/train?tab=library"
    },
    {
-    "settle": 1600
+    "settle": 1500
    },
    {
-    "click": "button:has-text('Start Fresh')"
+    "click": "a[href*='workout-detail']"
    },
    {
-    "settle": 900
+    "settle": 1500
+   },
+   {
+    "notText": "Workout not found"
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
