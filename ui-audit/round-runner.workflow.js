@@ -21,69 +21,10 @@ const maxRounds = Math.min(6, Math.max(1, A.maxRounds || 3))
 const gate = A.gate || 8
 const baseUrl = A.baseUrl || 'http://localhost:5173'
 const diagnoseOnly = !!A.diagnoseOnly
-const CAPTURE_BATCH = 10
 const MIN_BUDGET_PER_ROUND = 80000 // bail before starting a round we likely can't finish
-
-// browse is ONE shared Chromium daemon → capture MUST be serial. Evaluate/Plan/Fix never touch it.
-// Public routes (login / forgot-password / reset-password) are deliberately EXCLUDED: reaching them
-// requires logging out, which destroys the shared daemon session for every later batch. They are stable
-// and already audited. Audit them separately if needed, never inline with authed surfaces.
-const SURFACES = [
-  { id: 'today', type: 'page', route: '/today', reach: 'default landing (Today dock)', states: ['populated', 'rest-day', 'workout-in-progress'] },
-  { id: 'dashboard', type: 'page', route: '/dashboard', reach: 'deep link (nav maps to Today)', states: ['populated', 'morning-checkin'] },
-  { id: 'train-schedule', type: 'page', route: '/train?tab=schedule', reach: 'Train dock → Schedule', states: ['populated', 'empty'] },
-  { id: 'train-library', type: 'page', route: '/train?tab=library', reach: 'Train dock → Library', states: ['populated', 'empty', 'filters'] },
-  { id: 'train-programs', type: 'page', route: '/train?tab=programs', reach: 'Train dock → Programs', states: ['populated', 'empty'] },
-  { id: 'train-activity', type: 'page', route: '/train?tab=activity-log', reach: 'Train dock → Activity', states: ['populated', 'empty'] },
-  { id: 'fuel-nutrition', type: 'page', route: '/fuel', reach: 'Fuel dock → Nutrition', states: ['populated', 'empty'] },
-  { id: 'fuel-wellness', type: 'page', route: '/fuel?tab=wellness', reach: 'Fuel dock → Wellness', states: ['populated', 'empty'] },
-  { id: 'food-tracker', type: 'page', route: '/food-tracker', reach: 'FAB → Log Food', states: ['populated', 'empty'] },
-  { id: 'athlete-state', type: 'page', route: '/athlete-state', reach: 'Body dock → State', states: ['populated', 'empty'] },
-  { id: 'recovery', type: 'page', route: '/recovery', reach: 'Body dock → Recovery', states: ['populated', 'empty'] },
-  { id: 'physique', type: 'page', route: '/physique', reach: 'Body dock → Physique', states: ['gallery', 'empty'] },
-  { id: 'insights', type: 'page', route: '/insights', reach: 'Analyze dock → Daily Brief', states: ['populated', 'empty'] },
-  { id: 'brief-history', type: 'page', route: '/brief-history', reach: 'Analyze dock → Brief History', states: ['list', 'empty'] },
-  { id: 'mind', type: 'page', route: '/mind', reach: 'Analyze dock → Mind', states: ['populated', 'empty'] },
-  { id: 'career', type: 'page', route: '/career', reach: 'direct URL (unlinked in nav)', states: ['populated', 'empty'] },
-  { id: 'profile', type: 'page', route: '/profile', reach: 'header avatar tap', states: ['hub', 'stats', 'forms'] },
-  { id: 'weekly-schedule', type: 'page', route: '/weekly-schedule', reach: 'Train → Schedule → Edit week', states: ['populated', 'empty'] },
-  { id: 'program-detail', type: 'page', route: '/program/_probe', reach: 'Train → Programs → tap a program card (needs real id)', states: ['enrolled', 'not-enrolled', 'not-found'] },
-  { id: 'program-builder', type: 'page', route: '/program-builder', reach: 'Train → Library → Create Program', states: ['wizard'] },
-  { id: 'create-workout', type: 'page', route: '/create-workout', reach: 'FAB → Create Workout', states: ['empty-form'] },
-  { id: 'quick-workout', type: 'page', route: '/quick-workout', reach: 'FAB → Quick Workout', states: ['empty', 'prescribed'] },
-  { id: 'workout-detail', type: 'page', route: '/workout-detail', reach: 'Today/Schedule → Start Workout (needs params)', states: ['logging', 'not-found'] },
-  // overlays
-  { id: 'fab-menu', type: 'overlay', route: '/today', reach: 'tap FAB (+) bottom-right', states: ['open'] },
-  { id: 'weigh-in-modal', type: 'overlay', route: '/today', reach: 'FAB → Weigh In', states: ['empty'] },
-  { id: 'calculators-modal', type: 'overlay', route: '/today', reach: 'FAB → Calculators', states: ['1rm', 'working-weight', 'plates'] },
-  { id: 'stream-note-modal', type: 'overlay', route: '/today', reach: 'FAB → Stream Note', states: ['empty'] },
-  { id: 'today-quick-note', type: 'overlay', route: '/today', reach: 'Today → Note Capture tile', states: ['empty'] },
-  { id: 'add-food-dialog', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Add Food', states: ['search', 'results'] },
-  { id: 'barcode-scanner-modal', type: 'overlay', route: '/food-tracker', reach: 'Add Food → Barcode (camera idle in headless)', states: ['idle'] },
-  { id: 'week-plan-dialog', type: 'overlay', route: '/fuel', reach: 'Fuel → Review Weekly Plan', states: ['plan'] },
-  { id: 'meal-template-apply', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → Apply', states: ['confirm'] },
-  { id: 'meal-template-edit', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → template → edit', states: ['form'] },
-  { id: 'save-as-template', type: 'overlay', route: '/food-tracker', reach: 'Meal plan ideas → Save Day', states: ['form'] },
-  { id: 'recipe-builder', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Recipes → create', states: ['wizard'] },
-  { id: 'recipe-log', type: 'overlay', route: '/food-tracker', reach: 'Food Tracker → Recipes → Log', states: ['form'] },
-  { id: 'stats-setup-modal', type: 'overlay', route: '/food-tracker', reach: 'TDEE / Setup Stats (probe trigger)', states: ['form'] },
-  { id: 'program-duration-modal', type: 'overlay', route: '/program-builder', reach: 'Program create flow → duration', states: ['form'] },
-  { id: 'schedule-after-create-modal', type: 'overlay', route: '/program-builder', reach: 'after completing Program Builder → Schedule This? (only mounted in ProgramBuilder)', states: ['form'] },
-  { id: 'confirm-dialog-generic', type: 'overlay', route: '/fuel?tab=wellness', reach: 'weight history → delete entry → confirm (danger variant)', states: ['danger'] },
-  { id: 'mind-add-dialog', type: 'overlay', route: '/mind', reach: 'Mind → Add Book/Skill', states: ['form'] },
-  { id: 'career-form-dialog', type: 'overlay', route: '/career', reach: 'Career → New/Edit application', states: ['form'] },
-  { id: 'pst-test-logger', type: 'overlay', route: '/athlete-state', reach: 'PST card → Log Test (probe Mind/AthleteState)', states: ['form'] },
-  { id: 'physique-upload-modal', type: 'overlay', route: '/physique', reach: 'Physique → camera / Take Photo (camera idle headless)', states: ['idle'] },
-  { id: 'physique-compare-modal', type: 'overlay', route: '/physique', reach: 'Physique → select 2+ → Compare', states: ['side-by-side'] },
-  { id: 'rest-timer-bar', type: 'overlay', route: '/quick-workout', reach: 'during set logging → rest timer', states: ['countdown'] },
-  { id: 'workout-share-modal', type: 'overlay', route: '/workout-detail', reach: 'logging → Share after completion', states: ['share'] },
-  { id: 'sonner-toast', type: 'overlay', route: '/today', reach: 'global → trigger any mutation', states: ['success', 'error'] },
-]
-const SURFACE_BY_ID = Object.fromEntries(SURFACES.map((s) => [s.id, s]))
-const ALL_IDS = SURFACES.map((s) => s.id)
-const initialScope = (Array.isArray(A.surfaces) && A.surfaces.length) ? A.surfaces : ALL_IDS
-
-function chunk(a, n) { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o }
+// capture.mjs grabs ALL ~130 journeys in parallel cheaply, but the opus taste-evaluation is the cost
+// driver and the session-limit risk, so we bound how many journeys get opus-evaluated per round.
+const MAX_EVAL = A.maxEval || 40
 
 const SYSTEM_LAW = `
 VAPOR × MACRO design system (read src/index.css + tailwind.config.js to confirm tokens):
@@ -101,26 +42,22 @@ MOBILE LAWS (390px is the product; 1280px is a secondary sanity check only):
 - Core content of a primary page lands within ~2 phone viewport heights before fold-heavy stuff.
 - Text legible without zoom; tap feedback on every interactive element.`
 
-const BROWSE = `B="$HOME/.claude/skills/gstack/browse/dist/browse"`
-
-const CAPTURE_BATCH_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['shots'],
+// capture.mjs manifest shape: results[] of { id, label, hardFail, shots:[paths], finalText }.
+const MANIFEST_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['results'],
   properties: {
-    shots: {
+    note: { type: 'string' },
+    results: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false,
-        required: ['surface', 'state', 'viewport', 'path', 'reached'],
+        type: 'object', additionalProperties: false, required: ['id', 'shots'],
         properties: {
-          surface: { type: 'string' }, state: { type: 'string' },
-          viewport: { type: 'string', enum: ['390', '1280'] }, path: { type: 'string' },
-          reached: { type: 'boolean' }, scrollHeight390: { type: 'number' }, note: { type: 'string' },
+          id: { type: 'string' }, label: { type: 'string' },
+          hardFail: { type: ['string', 'null'] },
+          shots: { type: 'array', items: { type: 'string' } },
+          finalText: { type: 'string' },
         },
       },
-    },
-    gaps: {
-      type: 'array',
-      items: { type: 'object', additionalProperties: false, required: ['surface', 'note'], properties: { surface: { type: 'string' }, note: { type: 'string' } } },
     },
   },
 }
@@ -200,45 +137,24 @@ const FIXRESULT_SCHEMA = {
   properties: { id: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } }, buildPass: { type: 'boolean' }, summary: { type: 'string' } },
 }
 
-// ── capture helper: serial batches against the single shared browse daemon ──
-async function captureSurfaces(roundDir, ids) {
-  const list = ids.map((id) => SURFACE_BY_ID[id]).filter(Boolean)
-  const batches = chunk(list, CAPTURE_BATCH)
-  const shots = [], gaps = []
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i]
-    const r = await agent(
-      `CAPTURE (batch ${i + 1}/${batches.length}). Drive the gstack headless browser to screenshot each surface.
-CRITICAL: the browser is a SINGLE shared daemon — issue browse commands one at a time, never in parallel.
-Setup: ${BROWSE}  (invoke as "$B <cmd>"). Base URL: ${baseUrl} (a PWA; service worker anchors this origin).
-AUTH: this dev server auto-logs-in via the \`?bypass_auth=true\` query param (it stores a Supabase
-session in localStorage). Verify: $B goto ${baseUrl}/dashboard ; $B url.
-If it lands on /login, RE-AUTH by running \`$B goto ${baseUrl}/?bypass_auth=true\` ; \`$B wait --load\` ;
-sleep 3 ; then \`$B goto ${baseUrl}/dashboard\` and re-check the url. (Do NOT use \`state load\` — the saved
-state does not contain the auth token. Do NOT type or guess a password — the classifier blocks it.)
-NEVER log out and NEVER clear localStorage — that destroys the shared session for every later batch.
-NOTE: the Vite dev server holds an HMR websocket open, so \`$B wait --networkidle\` NEVER settles. Use
-\`$B wait --load\` plus a short sleep or a selector wait — never networkidle, or you will loop forever.
-If a surface STILL shows /login after the bypass_auth re-auth, mark it a gap (do not log out to retry).
-
-For EACH surface in this batch: ${JSON.stringify(batch)}
-  1. $B viewport 390x844
-  2. Reach it. type "page" → $B goto ${baseUrl}<route>. type "overlay" → goto the host route, $B snapshot -i,
-     then click the control in "reach" to open it. $B wait --load after navigation (NOT networkidle).
-  3. Record full scroll height at 390: $B js "document.body.scrollHeight".
-  4. Screenshot each meaningful state it actually has (from "states"; skip states needing unseedable data and
-     record them in gaps): $B screenshot ${roundDir}/<surface-id>/390-<state>.png
-  5. Secondary check: $B viewport 1280x900 ; $B screenshot ${roundDir}/<surface-id>/1280-populated.png
-  6. If a surface cannot be reached on mobile, add it to gaps with the reason (never skip silently).
-Return the manifest of every shot saved (surface, state, viewport, path, reached, scrollHeight390) plus gaps.`,
-      { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA, model: 'sonnet' }
-    )
-    if (r && r.shots) shots.push(...r.shots)
-    if (r && r.gaps) gaps.push(...r.gaps)
-  }
-  const bySurface = {}
-  for (const s of shots) (bySurface[s.surface] || (bySurface[s.surface] = [])).push(s)
-  return { bySurface, gaps }
+// ── capture: deterministic, parallel, isolated Playwright contexts via capture.mjs ──
+// Replaces the old serial agent-driven browse loop. capture.mjs launches one chromium and gives every
+// journey its own browser.newContext() (no shared-daemon tab-stomping), auths each via ?bypass_auth=true,
+// captures ~130 journeys (App.jsx routes + the 114 flows in flows.json) in ~1-2 min, and flags HARD
+// failures (white-screen, pageerror, missing-text) deterministically — those are ground truth, no LLM.
+async function runCapture() {
+  const r = await agent(
+    `Run the deterministic parallel capture harness for the OptiGains mobile audit, then return its manifest.
+Run EXACTLY this (cwd is the repo root; the dev server is already up at ${baseUrl}):
+  CONCURRENCY=8 BASE=${baseUrl} bun ui-audit/harness/capture.mjs
+It launches Playwright, captures every journey in parallel, and prints "captured N journeys in Xs ...".
+WAIT for it to finish (up to ~5 min). It writes ui-audit/harness/out/manifest.json.
+Then read ui-audit/harness/out/manifest.json and return its "results" array VERBATIM: each item is
+{ id, label, hardFail, shots:[repo-relative png paths], finalText }. Do not edit, filter, or invent items.
+If the command errors (e.g. bun missing, dev server down), return results:[] and put the error in note.`,
+    { label: 'capture', phase: 'Capture', schema: MANIFEST_SCHEMA, model: 'sonnet' }
+  )
+  return (r && r.results) || []
 }
 
 // ── STEP 0 — PLAN (the planner role; runs once) ─────────────────────────────
@@ -266,7 +182,9 @@ to this audit). Do NOT run ANY git commands.`
 
 // ── THE GAN LOOP ────────────────────────────────────────────────────────────
 const scoreboard = []
-let inScope = initialScope
+// inScope = the journey ids to opus-evaluate. null on round 1 = auto-pick a bounded set after capture;
+// later rounds carry the journey ids a prior fix touched. Optional A.surfaces pins it for round 1.
+let inScope = (Array.isArray(A.surfaces) && A.surfaces.length) ? A.surfaces : null
 let priorContract = null
 let stopped = null
 let round = startRound
@@ -275,44 +193,63 @@ const lastRound = startRound + maxRounds - 1
 for (; round <= lastRound; round++) {
   if (budget && budget.total && budget.remaining() < MIN_BUDGET_PER_ROUND) { stopped = 'budget'; break }
   const roundDir = `./ui-audit/round-${round}`
-  log(`── Round ${round}/${lastRound} — ${inScope.length} surfaces in scope @ ${baseUrl}`)
+  log(`── Round ${round}/${lastRound} — eval scope: ${inScope ? inScope.length + ' touched journeys' : 'auto-select'} @ ${baseUrl}`)
 
-  // CAPTURE (re-capture = the live re-verification of last round's fixes)
+  // CAPTURE — deterministic + parallel via capture.mjs; re-runs every round = live re-verification of fixes.
   phase('Capture')
-  const { bySurface, gaps } = await captureSurfaces(roundDir, inScope)
+  const journeys = await runCapture()
+  const withShots = journeys.filter((j) => j.shots && j.shots.length)
+  const gaps = journeys.filter((j) => !(j.shots && j.shots.length)).map((j) => ({ surface: j.id, note: 'no shots (selector-miss or unreachable)' }))
+  // HARD failures are deterministic ground truth (white-screen, pageerror, missing text) — promote to blocker
+  // findings directly, no LLM needed. capture = verifier; the opus evaluator below = advisory taste only.
+  const hardFindings = journeys.filter((j) => j.hardFail).map((j) => ({
+    id: `${j.id}-hardfail`, surface: j.id, severity: 'blocker', category: 'mobile',
+    file: '(deterministic capture)', whatsWrong: `Hard failure on capture: ${j.hardFail}`,
+    fix: 'Investigate and fix the crash / blank screen / missing content.',
+    verifyBy: `capture.mjs reports no hardFail for journey ${j.id}`,
+  }))
 
-  // EVALUATE — adversarial evaluator, one per surface, parallel. Harsh by design.
+  // capture grabbed every journey cheaply; the opus taste-evaluation is the cost driver, so bound it.
+  // Round 1 (inScope null): hard-fails + page surfaces first, fill to MAX_EVAL with flows.
+  // Later rounds: only journeys a prior fix touched (re-verify), plus any new hard-fail.
+  let evalJourneys
+  if (inScope) {
+    const want = new Set(inScope)
+    evalJourneys = withShots.filter((j) => want.has(j.id) || j.hardFail)
+  } else {
+    const pages = withShots.filter((j) => j.id.startsWith('surface-'))
+    const fails = withShots.filter((j) => j.hardFail)
+    const rest = withShots.filter((j) => !j.id.startsWith('surface-') && !j.hardFail)
+    evalJourneys = [...new Map([...fails, ...pages, ...rest].map((j) => [j.id, j])).values()].slice(0, MAX_EVAL)
+  }
+  const deferred = withShots.length - evalJourneys.length
+  log(`Round ${round}: captured ${journeys.length} journeys (${withShots.length} with shots, ${hardFindings.length} hard-fail); opus-evaluating ${evalJourneys.length}, deferring ${deferred}`)
+
+  // EVALUATE — adversarial evaluator, one per journey, parallel. Harsh by design.
   phase('Evaluate')
   const priorAssertions = {}
-  if (priorContract) {
-    for (const c of priorContract.perSurface || []) (priorAssertions[c.surface] || (priorAssertions[c.surface] = [])).push(c.assertion)
-    // systemic assertions touch shared chrome → check them on every surface still in scope
-  }
+  if (priorContract) for (const c of priorContract.perSurface || []) (priorAssertions[c.surface] || (priorAssertions[c.surface] = [])).push(c.assertion)
   const systemicAssertions = priorContract ? (priorContract.systemic || []).map((s) => s.assertion) : []
-  const evaluated = await parallel(inScope.map((id) => () => {
-    const s = SURFACE_BY_ID[id]
-    const shots = bySurface[id] || []
-    // No shots = a capture gap (unseedable state / unreachable), NOT a quality-zero surface. Flag it so the
-    // rubric floor ignores it; otherwise an uncapturable surface pins minCriterion at 0 and clean-sweep is impossible.
-    if (!shots.length) return Promise.resolve({ surface: id, noShots: true, scores: null, findings: [], verifiedFixes: [] })
-    const toVerify = [...(priorAssertions[id] || []), ...systemicAssertions]
+  const evaluated = await parallel(evalJourneys.map((j) => () => {
+    const toVerify = [...(priorAssertions[j.id] || []), ...systemicAssertions]
     return agent(
-      `ADVERSARIAL EVALUATOR for surface "${id}" (${s.type}, route ${s.route}). You are a ruthless, hard-to-please
+      `ADVERSARIAL EVALUATOR for journey "${j.id}" (${j.label || j.id}). You are a ruthless, hard-to-please
 design + UX critic. Your bias is to be HARSH: when unsure, mark it down. You did NOT write this code; your only
 job is to find what is wrong and to refuse to pass weak work. Self-congratulation is failure.
 ${SYSTEM_LAW}
 GRADING RUBRIC (score each 1-10, brutally honest, against this written standard):
 ${RUBRIC_TEXT}
-Screenshots to inspect (Read each PNG): ${JSON.stringify(shots)}
-Open the source for this surface to cite exact file:line.
+Screenshots to inspect (Read each PNG; paths are repo-relative): ${JSON.stringify(j.shots)}
+Captured page text for context: ${JSON.stringify((j.finalText || '').slice(0, 300))}
+Open the source for this screen to cite exact file:line.
 ${toVerify.length ? `VERIFY PRIOR FIXES — for EACH assertion below, look at the live screenshots and report holds=true ONLY
 if the screenshots actually show it satisfied. Default to holds=false if you cannot SEE it satisfied:
 ${toVerify.map((a, i) => `  ${i + 1}. ${a}`).join('\n')}` : 'No prior contract to verify (first round).'}
 Then report EVERY remaining defect against the 8-point lens (drift, mobile, consistency, hierarchy, density,
-belonging, slop, motion). Per finding: a stable id "${id}-N", severity (blocker/major/minor), category, exact
+belonging, slop, motion). Per finding: a stable id "${j.id}-N", severity (blocker/major/minor), category, exact
 file:line, what's wrong, concrete fix using existing tokens + src/components/ui/* primitives, and verifyBy (the
 observable that will prove it fixed next round). Do NOT fix anything.`,
-      { label: `eval:${id}`, phase: 'Evaluate', schema: EVAL_SCHEMA, model: 'opus' }
+      { label: `eval:${j.id}`, phase: 'Evaluate', schema: EVAL_SCHEMA, model: 'opus' }
     )
   }))
 
@@ -320,8 +257,8 @@ observable that will prove it fixed next round). Do NOT fix anything.`,
   // missing data. Counting it as clean is the quiet-failure trap, so track it and refuse to stop on it.
   const failedEvals = (evaluated || []).filter((r) => !r).length
   const surfaces = (evaluated || []).filter(Boolean)
-  const scored = surfaces.filter((r) => r.scores)   // real evals only (excludes no-shots gaps)
-  const findings = surfaces.flatMap((r) => (r.findings || []).map((f) => ({ ...f, surface: r.surface })))
+  const scored = surfaces.filter((r) => r.scores)   // real evals only
+  const findings = [...hardFindings, ...surfaces.flatMap((r) => (r.findings || []).map((f) => ({ ...f, surface: r.surface })))]
   const counts = {
     blockers: findings.filter((f) => f.severity === 'blocker').length,
     majors: findings.filter((f) => f.severity === 'major').length,
@@ -343,7 +280,7 @@ observable that will prove it fixed next round). Do NOT fix anything.`,
 
   // STOP CHECK — objective, evaluator-decided, Ralph-proof. Clean sweep OR hard cap.
   // Bail loudly if too many evaluators died (rate limit etc.) — never fix on partial data or fake a clean sweep.
-  if (failedEvals > Math.max(2, inScope.length * 0.25)) { stopped = 'evaluation-incomplete'; break }
+  if (failedEvals > Math.max(2, evalJourneys.length * 0.25)) { stopped = 'evaluation-incomplete'; break }
   const cleanSweep = failedEvals === 0 && counts.blockers === 0 && counts.majors === 0 && minCriterion >= gate
   if (cleanSweep) { stopped = 'clean-sweep'; break }
   if (diagnoseOnly) { stopped = 'diagnose-only'; break }
@@ -405,13 +342,13 @@ ${FIX_RULES}`,
     )
   ))
 
-  // Next round re-verifies exactly the surfaces we touched (systemic touches shared chrome → re-check all
-  // surfaces that had findings, since a token/primitive change can regress any of them). No silent capping.
+  // Next round re-verifies exactly the journeys we touched (systemic touches shared chrome → re-check every
+  // journey that had a finding, since a token/primitive change can regress any of them). No silent capping.
   priorContract = contract
   const touched = new Set((contract.perSurface || []).map((f) => f.surface))
   if ((contract.systemic || []).length) for (const f of findings) touched.add(f.surface)
-  inScope = [...touched].filter((id) => SURFACE_BY_ID[id])
-  if (!inScope.length) inScope = initialScope
+  inScope = [...touched]
+  if (!inScope.length) inScope = null   // nothing identifiable touched → auto-pick the bounded set again
 }
 
 return {
