@@ -55,7 +55,7 @@
   /* ── Hue-coded data (each datum owns one — never decoration) ────────── */
   --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity */
   --hue-teal-2: #4ECDC4;                                 /* HRV */
-  --hue-coral:  #EF7368;  --hue-coral-rgb: 239 115 104;  /* action · RHR · protein */
+  --hue-coral:  #EF7368;  --hue-coral-rgb: 239 115 104;  /* RHR · protein */
   --hue-violet: #9B8CFF;  --hue-violet-rgb: 155 140 255; /* sleep · fatigue (ATL) */
   --hue-green:  #7BC96F;  --hue-green-rgb: 123 201 111;  /* body battery · done states */
   --hue-blue:   #5BA8F5;  --hue-blue-rgb: 91 168 245;    /* carbs · swim · cardio */
@@ -70,24 +70,25 @@
   --ok:   #7BC96F;  --ok-rgb:   123 201 111;
   --warn: #E2A23C;  --warn-rgb: 226 162 60;
   /* Destructive red — a deeper, cooler true-red, deliberately distinct from
-     coral (--color-brand #EF7368). Coral is the single ACTION color; this is
+     teal (--color-brand #19C8A6). Teal is the single ACTION color; this is
      the physiological-spectrum "bad" / destructive hue. They must never be the
      same RGB, or a red destructive control becomes impossible to express
      (button destructive, badge red, ConfirmDialog, "bad" biometric readouts).
      CANONICAL DESTRUCTIVE TOKEN (SYS-02): `bad` is formally blessed as the one
      destructive-action hue, NOT a drift instance of the biometric spectrum. A
      destructive control (Button variant="destructive", ConfirmDialog danger
-     confirm, RecipeBuilder delete) carries a RESTING coral-weight presence —
+     confirm, RecipeBuilder delete) carries a RESTING action-weight presence —
      bg-bad/18 fill + border-bad/70 edge by default (not hover-only) — so it
      out-weights the neutral glassGhost it sits beside instead of reading as a
-     near-equal twin. This is the single allowed non-coral action hue; it stays
+     near-equal twin. This is the single allowed non-action-color hue; it stays
      reserved for genuine destruction. */
   --bad:  #E5484D;  --bad-rgb:  229 72 77;
   --info: #5BA8F5;  --info-rgb: 91 168 245;
   /* ── CANONICAL COLOR LAW (SYS-09) — the one rule behind the drift ──────────
      Most spectrum-misuse defects collapse to a single under-enforced rule:
-     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and coral is
-     the ONLY action color. Keep this greppable so future drift is obvious.
+     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and teal
+     (--color-brand #19C8A6) is the ONLY action color. Keep this greppable so
+     future drift is obvious.
 
      (a) ok / warn / bad / info spectrum is reserved for BIOMETRIC readouts ONLY
          — readiness, HRV, RHR, sleep, ACWR, fatigue/recovery balance, body
@@ -98,13 +99,13 @@
          progress bars, generic ok/info progress fills. Those are data or
          neutral chrome — use the datum's own hue or neutral glass, never the
          physiological spectrum.
-     (b) DESTRUCTIVE UI uses the blessed `bad` token (SYS-02) — NOT coral, and
+     (b) DESTRUCTIVE UI uses the blessed `bad` token (SYS-02) — NOT teal, and
          NOT a drift instance of the biometric spectrum. `bad` is the single
-         allowed non-coral action hue and is reserved for genuine destruction.
+         allowed non-action-color hue and is reserved for genuine destruction.
      (c) FORM-VALIDATION / ATTENTION (required-field nudges, "please fix",
          soft warnings, empty-state prompts) is NOT biometric: render it as
          neutral glass + ink hierarchy (text-strong / text-muted / text-faint),
-         putting coral ONLY on the actual action (the submit/confirm control).
+         putting teal ONLY on the actual action (the submit/confirm control).
          A warn-yellow validation banner = DRIFT (it poaches the spectrum).
      (d) EACH DATUM OWNS ONE HUE — color is data, not garnish. Macros are
          fixed: kcal owns GOLD (--hue-gold), Protein = CORAL (--hue-coral),
@@ -161,6 +162,17 @@
      traveling line at entrance speed strobes, so a calm ~1.6s-per-pass loop
      reads as "alive" rather than "flashing". Not for one-shot entrances. */
   --loop-dur: 1.6s;
+
+  /* ── Barcode-scan reticle ───────────────────────────────────────────────
+     The viewfinder window the camera frames a barcode inside. A genuine
+     system gap: no other surface needs a scan reticle, so its geometry lives
+     in named tokens instead of magic Tailwind sizes (w-64 h-40 / w-8 h-8) on
+     the JSX. The sweep line travels half the window height, so its keyframe
+     references --scan-reticle-h via calc() — change the window size here and
+     the sweep tracks it automatically. */
+  --scan-reticle-w:      16rem;   /* viewfinder window width  */
+  --scan-reticle-h:      10rem;   /* viewfinder window height */
+  --scan-reticle-corner: 2rem;    /* corner-bracket arm length */
 
   /* ── Layout chrome metrics ──────────────────────────────────────────── */
   /* Default header height = 0. Layout overrides this to the real mobile
@@ -357,8 +369,8 @@ html.light input[type=date]::-webkit-calendar-picker-indicator {
 /* Date field text inherits our ink voice; the placeholder mask reads faint so
    an unset date matches our text-input placeholder weight. */
 input[type=date]::-webkit-datetime-edit { color: var(--text-primary); }
-input[type=date]::-webkit-datetime-edit-text,
-input[type=date].is-empty::-webkit-datetime-edit { color: var(--text-faint); }
+input[type=date]::-webkit-datetime-edit-text { color: var(--text-faint); }
+input[type=date].is-empty::-webkit-datetime-edit { color: var(--text-muted); }
 
 /* Body Highlighter SVG overrides — the little anatomy figure */
 svg.rbh, .rbh { background-color: transparent !important; }
@@ -394,6 +406,19 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   color: var(--text-muted);
 }
 
+/* Data-entry field label — readable sentence-case label that sits above an
+   input. Distinct from the .section-label eyebrow: larger (12px), non-uppercase,
+   secondary ink, tabular numerals so any inline figures align with the field. */
+.form-label {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
 /* Tabular numerals for every stat. */
 .font-technical {
   font-family: var(--font-ui);
@@ -425,7 +450,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   /* Card surface — every data card. Solid, hairline border, soft shadow. */
   .surface, .surface-2, .tile, .glass {
     background: var(--glass-bg);
-    border: 1px solid var(--glass-edge);
+    border: 0.5px solid var(--glass-edge);
     border-radius: 16px;
     box-shadow: var(--shadow-1);
   }
@@ -440,7 +465,6 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   .glass-inset {
     background: var(--glass-inset-bg);
     border-radius: 13px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
   /* Row-stripe — the og-row-stripe. A faint inset FILL for a row inside a
@@ -451,7 +475,6 @@ svg.rbh path:hover, svg.rbh polygon:hover,
      decorative zebra. */
   .row-stripe {
     background: var(--glass-inset-bg);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
   /* Floating chrome — dock, sidebar, sheets, floating controls. Solid and
@@ -492,17 +515,18 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   }
 
   /* The teal action CTA — og-cta. Flat solid fill, no gradient, no inset
-     highlight (CLEAN). Class name kept so callers don't churn. */
-  .cta-coral {
+     highlight (CLEAN). Painted with teal (--color-brand). `.cta-coral` is kept
+     as a back-compat alias selector so un-swept callers keep working. */
+  .cta-action, .cta-coral {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; border-radius: 14px; white-space: nowrap;
     font-size: 15px; font-weight: 800; color: var(--color-action-dark);
     background: var(--color-brand);
     box-shadow: 0 2px 8px rgba(var(--color-brand-rgb) / 0.30);
-    transition: transform .15s var(--ease), background .15s var(--ease);
+    transition: transform .2s var(--ease), background .2s var(--ease);
   }
-  .cta-coral:hover { transform: translateY(-1px); background: var(--brand-bright); }
-  .cta-coral:active { transform: none; }
+  .cta-action:hover, .cta-coral:hover { transform: translateY(-1px); background: var(--brand-bright); }
+  .cta-action:active, .cta-coral:active { transform: none; }
 
   /* Ghost action — og-cta-ghost. */
   .cta-ghost {
@@ -605,16 +629,18 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   to   { opacity: .45; }
 }
 
-/* The scan line travels across the ~160px scan window (h-40). Translating it
-   from the top edge to the bottom edge communicates "scanning" via motion
-   rather than borrowing the coral action hue. */
+/* The scan line travels the scan window (height = --scan-reticle-h). Sweeping
+   it from the top edge to the bottom edge — half the window height in each
+   direction — communicates "scanning" via motion rather than borrowing the
+   teal action hue. Derived from the reticle token so the sweep tracks the
+   window size automatically. */
 @keyframes scanSweep {
-  from { transform: translateY(-72px); }
-  to   { transform: translateY(72px); }
+  from { transform: translateY(calc(var(--scan-reticle-h) / -2)); }
+  to   { transform: translateY(calc(var(--scan-reticle-h) / 2)); }
 }
 
 @keyframes sheetRise {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -629,7 +655,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 #root { position: relative; z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass-interactive, .cta-coral { transition: none; }
+  .glass-interactive, .cta-action, .cta-coral { transition: none; }
   .rise-in, .rise-in-2, .rise-in-3, .sheet-rise, .rest-urgent, .scan-sweep, .pulse-loop { animation: none; }
   /* Spinner keeps turning even under reduced-motion: it's a load indicator, not
      decorative motion, so silencing it would strand users on a frozen glyph. */
@@ -640,7 +666,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
    easing, 8px rise entrance. richColors is OFF — Sonner's saturated success
    green / info blue / warning yellow would poach the biometric-only spectrum,
    so success/info read as restrained neutral glass and only error/destructive
-   borrows coral (--color-brand), the single action color. Tokens are theme-
+   borrows teal (--color-brand #19C8A6), the single action color. Tokens are theme-
    aware (re-tune on html.light) so one rule covers both themes. */
 [data-sonner-toaster],
 [data-sonner-toast] {
@@ -652,7 +678,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   border: 0.5px solid var(--color-border);
   color: var(--text-primary);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 var(--glass-specular), var(--shadow-1);
+  box-shadow: var(--shadow-1);
   /* Re-time Sonner's own enter/exit slide to the single system easing within
      the 180–320ms band. Sonner v2 drives the actual mount translate via its
      --y / --lift vars (its own slide), so we override the timing curve rather
@@ -671,14 +697,17 @@ svg.rbh path:hover, svg.rbh polygon:hover,
    colored. Tinted to SECONDARY so the COPY leads: at primary the neutral check
    out-shouted the message it was decorating (a checkmark is confirmation, not
    the payload). Secondary keeps it a legible-but-quiet supporting glyph and lets
-   the text carry the toast. Only the error state below swaps in the coral action
+   the text carry the toast. Only the error state below swaps in the teal action
    tint, where the icon SHOULD draw the eye. */
 [data-sonner-toast].og-toast [data-icon] {
   color: var(--text-secondary);
 }
-/* Error / destructive is the only action accent — coral, never biometric red. */
+/* Error / destructive keeps the NEUTRAL hairline edge — teal on the border read
+   as decoration (a second action accent competing with coral), so the error
+   state borrows the action tint only on its ICON, where the accent is earned and
+   draws the eye. The surface stays the same neutral glass as a passive toast. */
 [data-sonner-toast].og-toast.og-toast--error {
-  border-color: rgba(var(--color-brand-rgb) / 0.45);
+  border-color: var(--color-border);
 }
 [data-sonner-toast].og-toast.og-toast--error [data-icon] {
   color: var(--color-brand);
@@ -689,10 +718,12 @@ svg.rbh path:hover, svg.rbh polygon:hover,
    transform:translate(-35%,-35%); 20px box). We override the position vars AND
    target [data-close-button] directly (combined with the .og-toast__close class
    for specificity) so the 44px box, pinned-right inset, and radius win over
-   Sonner's own [data-styled='true'] [data-close-button] rule. opacity:1
-   forces it always-visible for BOTH success and error states (Sonner only
-   reveals it on hover by default — the success/error asymmetry was a visibility
-   artifact; opacity:1 makes the two symmetric). */
+   Sonner's own [data-styled='true'] [data-close-button] rule. The sizing /
+   position below is shared, but the ALWAYS-VISIBLE pin (opacity:1) is scoped to
+   .og-toast--error only: an error/CTA toast is actionable and demands a
+   dismiss affordance the moment it lands, whereas a passive read-and-forget
+   toast auto-dismisses, so it falls back to Sonner's hover-only reveal and
+   stays uncluttered. */
 [data-sonner-toast].og-toast {
   --toast-close-button-start: unset;
   --toast-close-button-end: 6px;
@@ -713,19 +744,20 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   background: transparent;
   border: 0;
   border-radius: 9999px;
-  /* Resting contrast is MUTED on passive toasts: the always-visible X is a
-     convenience on a read-and-forget success pill, not the point of it, so it
-     should not compete with the copy. It still reads (and the 44px hit area is
-     unchanged), but quietly. The actionable error state below raises it back to
-     --text-secondary, where dismissing is a likelier next action. Both states
-     brighten to --text-primary on hover. */
-  color: var(--text-muted);
-  opacity: 1 !important;
+  /* Resting contrast is --text-secondary: the always-visible X is a convenience
+     on a read-and-forget pill, not the point of it, so it stays quiet relative
+     to the copy while still clearing the legibility floor (>=4.5:1 on the
+     elevated surface). Both passive and error states brighten to --text-primary
+     on hover. */
+  color: var(--text-secondary);
   transition: color 200ms var(--ease);
 }
-/* Error / CTA toasts are actionable, so their close affordance rests at the
-   more present --text-secondary instead of the muted passive level. */
+/* Error / CTA toasts are actionable, so their close affordance is pinned
+   always-visible (Sonner reveals the X on hover by default — useless on a
+   touch surface for a toast you must dismiss). Passive success/info toasts are
+   left to Sonner's hover-only default since they auto-dismiss. */
 [data-sonner-toast].og-toast.og-toast--error .og-toast__close[data-close-button] {
+  opacity: 1 !important;
   color: var(--text-secondary);
 }
 /* The visible chip: ~28px low-weight glass disc centered inside the 44px hit

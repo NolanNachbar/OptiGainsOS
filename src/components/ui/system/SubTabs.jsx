@@ -2,7 +2,8 @@ import { useRef, useEffect, useState } from "react";
 
 /**
  * SubTabs — the section-level tab strip used by every hub (Train, Fuel, Analyze…).
- * Liquid-glass strip; the active tab is a coral pill (the dock language).
+ * Liquid-glass strip; the active tab is a neutral selected pill (matches the
+ * Layout mobile strip), not an action-colored pill.
  * Mobile-only by default — on desktop the sidebar renders the same sub-tabs
  * indented under the active section (pass showOnDesktop to keep the strip).
  *
@@ -53,7 +54,7 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
                 onClick={() => onChange(id)}
                 className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   isActive
-                    ? "text-[var(--brand-tint)] bg-brand/[0.30] ring-1 ring-brand/40 shadow-[inset_0_1px_0_var(--glass-specular)]"
+                    ? "text-ink bg-[var(--glass-edge)]"
                     : "text-ink-secondary hover:text-ink"
                 }`}
               >
@@ -70,7 +71,7 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
         {overflows && (
           <div
             className={`pointer-events-none absolute inset-y-0 w-8 ${right ? "right-16" : "right-3"}`}
-            style={{ background: "linear-gradient(to right, transparent, var(--color-bg))" }}
+            style={{ background: "linear-gradient(to right, transparent, var(--dock-tint))" }}
             aria-hidden="true"
           />
         )}

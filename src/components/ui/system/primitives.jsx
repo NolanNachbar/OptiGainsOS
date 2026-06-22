@@ -87,7 +87,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
   const pad = size === "md" ? "px-4" : "px-3";
   return (
     <div
-      className={`inline-flex rounded-full overflow-hidden bg-[var(--glass-bg)] border border-charcoal-border text-xs font-semibold shadow-[inset_0_1px_0_var(--glass-specular)] ${className}`}
+      className={`inline-flex rounded-full overflow-hidden bg-[var(--glass-bg)] border border-charcoal-border text-xs font-semibold ${className}`}
     >
       {options.map(({ value: v, label }) => {
         const isActive = value === v;
@@ -97,7 +97,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
             type="button"
             onClick={() => onChange(v)}
             aria-pressed={isActive}
-            className={`${pad} min-h-[44px] inline-flex items-center justify-center transition-colors ${
+            className={`${pad} min-h-[44px] inline-flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
               isActive
                 ? "bg-track text-ink font-bold"
                 : "text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink"
@@ -132,12 +132,12 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
         const isActive = value === v;
         const base =
           "shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-        // Active pill carries a clear brand accent (matching the design-system
-        // segmented control) so the selected pose is unmistakable against the
-        // near-equal-luminance inactive pills on charcoal. Same active treatment
+        // Active pill is a neutral elevated chip (raised glass fill + hairline +
+        // shadow) so the selected pose reads as "lifted" without spending the
+        // single coral/brand action hue on a selector. Same active treatment
         // for both variants — only the inactive rest differs (chip = quieter).
         const activeTone =
-          "bg-brand/15 text-brand border-brand/40 shadow-[var(--shadow-1)]";
+          "bg-[var(--glass-bg)] text-ink border-charcoal-border shadow-[var(--shadow-1)]";
         const tone =
           variant === "chip"
             ? isActive
@@ -166,28 +166,49 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
  * ProfileStatsCard — the avatar + name + 3-stat hub card. Single source for the
  * Profile mobile hub and desktop sidebar so the two never drift.
  *
- *   initials: avatar initials
- *   name:     display name / email
- *   stats:    [{ value, label }] (rendered in a 3-col grid)
+ *   initials:  avatar initials
+ *   name:      display name / email
+ *   subtitle:  optional caption under the name (e.g. "Your training so far")
+ *   stats:     [{ value, label }] (rendered in a 3-col grid)
+ *   heroIndex: optional index of the ONE stat that leads in brand teal; all
+ *              other stats render in neutral ink (numbers are DATA, not the
+ *              single action color). Omit to keep every stat neutral.
+ *   showAvatar:render the avatar disc (desktop sidebar). The mobile hub passes
+ *              false — the chrome header already shows the avatar, so a second
+ *              one would stack redundantly.
+ *   align:     'center' (sidebar) | 'left' (mobile hub hero).
  */
-export function ProfileStatsCard({ initials, name, stats, padding = "p-4", className = "" }) {
+export function ProfileStatsCard({
+  initials,
+  name,
+  subtitle,
+  stats,
+  heroIndex,
+  showAvatar = true,
+  align = "center",
+  padding = "p-4",
+  className = "",
+}) {
+  const alignText = align === "left" ? "text-left" : "text-center";
   return (
-    <div className={`glass ${padding} text-center ${className}`}>
-      {/* Neutral avatar disc — matches the chrome UserAvatar. Coral is the single
-          ACTION color (the Sign Out CTA), so it must not be spent on a decorative
-          avatar tint here. */}
-      <div className="w-16 h-16 rounded-full bg-charcoal-elevated flex items-center justify-center mx-auto">
-        <span className="text-ink text-2xl font-bold">{initials}</span>
-      </div>
-      <p className="text-ink font-semibold mt-3 text-sm leading-tight">{name}</p>
+    <div className={`glass ${padding} ${alignText} ${className}`}>
+      {showAvatar && (
+        // Neutral avatar disc — matches the chrome UserAvatar. Teal is the single
+        // ACTION color, so it must not be spent on a decorative avatar tint here.
+        <div className="w-16 h-16 rounded-full bg-charcoal-elevated flex items-center justify-center mx-auto">
+          <span className="text-ink text-2xl font-bold">{initials}</span>
+        </div>
+      )}
+      <p className={`text-ink font-semibold ${showAvatar ? "mt-3 text-sm" : "text-base"} leading-tight`}>{name}</p>
+      {subtitle && <p className="text-ink-secondary text-[13px] mt-0.5">{subtitle}</p>}
       {stats?.length > 0 && (
-        <div className="grid grid-cols-3 gap-1 mt-4 pt-4 border-t border-charcoal-border">
+        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-charcoal-border">
           {stats.map(({ value, label }, i) => (
             <div key={i}>
-              {/* Value in brand teal so 'numbers lead' holds wherever the card
-                  renders (desktop sidebar); caption bumped to secondary for AA. */}
-              <p className="text-brand font-bold text-lg leading-tight font-technical">{value}</p>
-              <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
+              {/* Stats are DATA, not the single action color: they read in
+                  NEUTRAL ink. At most ONE stat (heroIndex) leads in brand teal. */}
+              <p className={`font-bold leading-tight font-technical ${showAvatar ? "text-lg" : "text-2xl leading-none"} ${i === heroIndex ? "text-brand" : "text-ink"}`}>{value}</p>
+              <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-1">{label}</p>
             </div>
           ))}
         </div>
@@ -220,13 +241,14 @@ export function MiniRing({ label, value, frac = 1, hue = "var(--hue-teal)", size
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle cx={cx} cy={cx} r={r} stroke="var(--color-border-soft)" strokeWidth={size * 0.107} fill="none" />
         <circle cx={cx} cy={cx} r={r} stroke={hue} strokeWidth={size * 0.107} fill="none" strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={c * (1 - clamped)} transform={`rotate(-90 ${cx} ${cx})`} />
+          strokeDasharray={c} strokeDashoffset={c * (1 - clamped)} transform={`rotate(-90 ${cx} ${cx})`}
+          style={{ "--ring-circ": `${c}px`, animation: "ringFill .9s var(--ease) both" }} />
         <text x={cx} y={cx + size * 0.095} textAnchor="middle" fill="var(--text-primary)"
           fontSize={size * 0.25} fontWeight="800" style={{ fontVariantNumeric: "tabular-nums" }}>
           {value}
         </text>
       </svg>
-      <span className="text-[9.5px] font-bold text-muted-2">{label}</span>
+      <span className="text-[11px] font-bold text-ink-secondary">{label}</span>
     </div>
   );
 }

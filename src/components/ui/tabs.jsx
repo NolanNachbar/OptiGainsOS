@@ -40,14 +40,14 @@ const TabsTrigger = React.forwardRef(({ className = "", value, variant = "underl
   // segmented control. underline: full-width tab strip (default, unchanged).
   const isSegment = variant === "segment";
   const activeClass = isSegment
-    ? 'bg-brand/[0.18] text-[var(--brand-tint)] rounded-md shadow-[inset_0_1px_0_var(--glass-specular)]'
+    ? 'bg-[var(--glass-edge)] text-ink rounded-md'
     : 'text-ink border-b-2 border-brand';
 
   return (
     <button
       ref={ref}
       onClick={() => onValueChange(value)}
-      className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-3 min-h-[44px] text-[13px] font-medium transition-[color,border-color,background-color] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+      className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-3 min-h-[44px] text-[13px] font-medium transition-[color,border-color,background-color] duration-200 ease-[var(--ease)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
         isActive
           ? activeClass
           : 'text-ink-muted hover:text-ink'

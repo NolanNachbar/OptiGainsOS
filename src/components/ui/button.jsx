@@ -8,38 +8,40 @@ const Button = React.forwardRef(({
   children,
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
+  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-[transform,background-color,border-color,box-shadow,color,opacity] duration-200 ease-[var(--ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
-  // Coral is THE action color: solid-action variants share the og-cta
-  // gradient; everything secondary is frosted-glass ghost material.
-  // Disabled coral must stop reading as a live CTA: drop the gradient, neon
+  // Teal (var(--color-brand) #19C8A6) is THE single action color: a flat solid
+  // fill, never a blend or ramp. Solid-action variants share this teal `action`
+  // fill; everything secondary is frosted-glass ghost material.
+  // Disabled action must stop reading as a live CTA: drop the fill, neon
   // shadow + specular and fall back to a neutral charcoal-surface fill with
   // muted ink (text-ink-muted clears ≥3:1 on charcoal-surface; text-ink-faint
   // measured ~1.77:1 = effectively invisible) so the disabled state is
   // unmistakably inert yet still legible.
-  // Flat coral action — the Clean system bans ambient color glow ("Flat teal
+  // Flat teal action — the Clean system bans ambient color glow ("Flat teal
   // fill ... everything else is neutral"). The lift is a NEUTRAL black drop
   // shadow on the elevation scale (matches --shadow-md), never a colored brand
-  // bloom. Keep only the inset specular for material sheen. Do NOT re-add
+  // bloom. Flat solid fill and no inset specular. Do NOT re-add
   // `shadow-neon` or any rgba(brand) drop shadow here — that is the halo.
-  const coral = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
-    "bg-gradient-to-br from-[var(--brand-bright)] to-[var(--color-brand)] " +
-    "[box-shadow:0_6px_18px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.4)] " +
-    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:text-ink-muted disabled:opacity-100";
+  const action = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
+    "bg-[var(--color-brand)] hover:bg-[var(--brand-bright)] " +
+    "[box-shadow:0_6px_18px_rgba(0,0,0,0.42)] " +
+    "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:border disabled:border-charcoal-border disabled:text-ink-muted disabled:opacity-100";
   // Token-driven glass so every secondary control re-tunes under html.light.
   // Edges/fills/specular ride --color-border / --glass-bg / --glass-specular
   // instead of raw white-alpha (which only reads on the dark field).
   const glassGhost = "bg-[var(--glass-bg)] text-ink border border-charcoal-border rounded-xl " +
-    "[box-shadow:inset_0_1px_0_var(--glass-specular)] hover:bg-[var(--glass-edge)]";
-  // Coral-tinted quiet affordance. Reserved for genuine secondary ACTIONS that
-  // must still read coral (never for Cancel/Back/neutral). Opt in explicitly —
-  // plain `ghost` is neutral glass so accidental coral decoration can't drift in.
-  // Mirror the solid coral's inert disabled treatment so a disabled coralGhost
-  // (e.g. QuickCapture empty-state Capture) stops reading as a live CTA. The
-  // disabled state drops ALL coral tint (fill, ink, border) and falls back to a
-  // neutral charcoal-surface fill with faint ink + a neutral charcoal border, so
-  // an unarmed control is unmistakably inert and never twins the primary action.
-  const coralGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
+    "hover:bg-[var(--glass-edge)]";
+  // Teal-tinted quiet affordance. Reserved for genuine secondary ACTIONS that
+  // must still read teal (var(--color-brand)) (never for Cancel/Back/neutral).
+  // Opt in explicitly — plain `ghost` is neutral glass so accidental teal
+  // decoration can't drift in. Mirror the solid action's inert disabled
+  // treatment so a disabled actionGhost (e.g. QuickCapture empty-state Capture)
+  // stops reading as a live CTA. The disabled state drops ALL teal tint (fill,
+  // ink, border) and falls back to a neutral charcoal-surface fill with faint
+  // ink + a neutral charcoal border, so an unarmed control is unmistakably
+  // inert and never twins the primary action.
+  const actionGhost = "bg-brand/10 text-brand border border-brand/20 rounded-xl hover:bg-brand/15 " +
     "disabled:bg-none disabled:bg-charcoal-surface disabled:text-ink-muted disabled:border-charcoal-border disabled:shadow-none disabled:opacity-100";
 
   // Destructive — `bad` is the canonical destructive token (blessed in
@@ -58,18 +60,21 @@ const Button = React.forwardRef(({
   // (or a 44px className) for tap-target compliance.
   const plain = "border-0 bg-transparent shadow-none text-ink-muted rounded-xl hover:text-ink";
 
+  // Prop NAMES are kept as-is for back-compat so call sites don't churn; they
+  // all alias onto the renamed `action` / `actionGhost` style constants.
   const variants = {
     /* design-system tiers */
-    volt:        coral,   // canonical coral action variant
-    energy:      coral,   // DEPRECATED alias of `volt`; migrate callers to volt
+    volt:        action,   // canonical teal action variant
+    energy:      action,   // DEPRECATED alias of `volt`; migrate callers to volt
+    coral:       action,   // back-compat prop name; resolves to teal `action`
     dark:        glassGhost,
     ghost:       glassGhost,
-    coralGhost:  coralGhost,
+    coralGhost:  actionGhost,  // back-compat prop name; resolves to `actionGhost`
     dim:         "bg-transparent text-ink-muted border border-charcoal-border rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
     plain:       plain,   // chrome-free icon/affordance, no override stacks
     /* utility / legacy variants */
     default:     glassGhost,
-    primary:     coral,   // LEGACY alias of `volt`; migrate callers to volt
+    primary:     action,   // LEGACY alias of `volt`; migrate callers to volt
     ai:          glassGhost,
     destructive: destructive,
     outline:     "border border-charcoal-border bg-transparent text-ink-muted rounded-xl hover:bg-[var(--glass-bg)] hover:text-ink",
