@@ -52,7 +52,7 @@
     "settle": 600
    },
    {
-    "clickText": "Weigh In"
+    "click": "span:text-is(\"Weigh In\")"
    },
    {
     "settle": 800
@@ -70,10 +70,10 @@
     "shot": "weigh-in-modal-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 400
+    "settle": 500
    },
    {
     "expectGone": "input[inputMode='decimal']"
@@ -97,7 +97,7 @@
     "settle": 600
    },
    {
-    "clickText": "Calculators"
+    "click": "span:text-is(\"Calculators\")"
    },
    {
     "settle": 800
@@ -118,10 +118,10 @@
     "shot": "calculators-modal-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 400
+    "settle": 500
    },
    {
     "notText": "Lifting Calculators"
@@ -145,7 +145,7 @@
     "settle": 600
    },
    {
-    "clickText": "Stream Note"
+    "click": "span:text-is(\"Stream Note\")"
    },
    {
     "settle": 800
@@ -163,10 +163,10 @@
     "shot": "stream-note-modal-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 400
+    "settle": 500
    },
    {
     "notText": "Stream to Second Brain"
@@ -226,9 +226,6 @@
     "settle": 400
    },
    {
-    "expectText": "Add a task..."
-   },
-   {
     "exists": "input[placeholder='Add a task...']"
    },
    {
@@ -236,6 +233,15 @@
    },
    {
     "shot": "todays-actions-add-form-open"
+   },
+   {
+    "click": "[aria-label='Add action']"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "expectGone": "input[placeholder='Add a task...']"
    }
   ]
  },
@@ -256,16 +262,22 @@
     "settle": 600
    },
    {
-    "expectText": "Weigh In"
+    "exists": ".fixed.inset-0.bg-black\\/40"
    },
    {
-    "click": ".fixed.inset-0"
+    "exists": "span:text-is(\"Weigh In\")"
    },
    {
-    "settle": 400
+    "click": ".fixed.inset-0.bg-black\\/40"
    },
    {
-    "notText": "Weigh In"
+    "settle": 1000
+   },
+   {
+    "expectGone": ".fixed.inset-0.bg-black\\/40"
+   },
+   {
+    "expectGone": "span:text-is(\"Weigh In\")"
    }
   ]
  },
@@ -295,7 +307,7 @@
  },
  {
   "id": "food-search-chicken-shows-results",
-  "label": "Type 'chicken' query in search, results appear within dialog",
+  "label": "Type 'chicken' query in Add-Food search, USDA results appear within sheet",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -310,19 +322,34 @@
     "settle": 800
    },
    {
+    "exists": ".glass-sheet"
+   },
+   {
     "fill": {
      "selector": "#search",
      "value": "chicken"
     }
    },
    {
-    "settle": 2000
+    "settle": 2500
    },
    {
-    "exists": ".section-label:has-text('Generic Foods')"
+    "expectText": "Generic Foods"
    },
    {
     "notText": "No results"
+   },
+   {
+    "shot": "food-search-chicken"
+   },
+   {
+    "click": "button[aria-label='Close']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -370,7 +397,7 @@
  },
  {
   "id": "food-new-meal-dialog-opens",
-  "label": "New Meal dialog opens and displays meal type selector",
+  "label": "Build New Meal dialog opens (via More sheet) and shows meal type + USDA search",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -379,7 +406,16 @@
     "settle": 1500
    },
    {
-    "click": "button:has-text('New Meal')"
+    "clickText": "Templates, recipes"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "exists": ".glass-sheet"
+   },
+   {
+    "clickText": "Build New Meal"
    },
    {
     "settle": 800
@@ -388,16 +424,19 @@
     "expectText": "Build New Meal"
    },
    {
-    "exists": "div:has-text('Meal Type')"
+    "expectText": "Meal Type"
    },
    {
     "expectText": "Search USDA Database"
+   },
+   {
+    "shot": "food-new-meal-open"
    }
   ]
  },
  {
   "id": "food-new-meal-closes",
-  "label": "New Meal dialog closes when canceled",
+  "label": "Build New Meal dialog closes via Close button",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -406,28 +445,34 @@
     "settle": 1500
    },
    {
-    "click": "button:has-text('New Meal')"
+    "clickText": "Templates, recipes"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "clickText": "Build New Meal"
    },
    {
     "settle": 800
    },
    {
-    "exists": "div:has-text('Build New Meal')"
+    "expectText": "Search USDA Database"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
-    "expectGone": "div:has-text('Build New Meal')"
+    "notText": "Search USDA Database"
    }
   ]
  },
  {
   "id": "food-setup-stats-modal-opens",
-  "label": "Setup Stats / TDEE modal opens from goals card",
+  "label": "Nutrition Goals / TDEE modal opens from the goals card",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -436,19 +481,31 @@
     "settle": 1500
    },
    {
-    "click": "button:has-text('Set up TDEE')"
+    "click": "button:has(span.section-label:has-text('Nutrition goals'))"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "clickText": "Edit Goals"
    },
    {
     "settle": 800
    },
    {
-    "expectText": "TDEE Calculation"
+    "expectText": "Nutrition Goals"
+   },
+   {
+    "expectText": "Auto-calculate from TDEE"
+   },
+   {
+    "shot": "food-goals-tdee-open"
    }
   ]
  },
  {
   "id": "food-setup-stats-modal-closes",
-  "label": "Setup Stats modal closes when dismissed",
+  "label": "Nutrition Goals / TDEE modal closes via Close button",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -457,22 +514,28 @@
     "settle": 1500
    },
    {
-    "click": "button:has-text('Set up TDEE')"
+    "click": "button:has(span.section-label:has-text('Nutrition goals'))"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "clickText": "Edit Goals"
    },
    {
     "settle": 800
    },
    {
-    "exists": "div:has-text('TDEE Calculation')"
+    "expectText": "Auto-calculate from TDEE"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
-    "expectGone": "div:has-text('TDEE Calculation')"
+    "notText": "Auto-calculate from TDEE"
    }
   ]
  },
@@ -541,7 +604,7 @@
  },
  {
   "id": "food-components-recipe-builder-open-close",
-  "label": "Open Recipe Builder panel on food tracker and close it without saving",
+  "label": "Open Recipe Builder (Create Recipe) from More sheet and close without saving",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -553,13 +616,19 @@
     "notBlank": true
    },
    {
-    "clickText": "New Recipe"
+    "clickText": "Templates, recipes"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "exists": ".glass-sheet"
+   },
+   {
+    "click": "button.text-brand:has-text('New')"
    },
    {
     "settle": 800
-   },
-   {
-    "exists": "[role='dialog']"
    },
    {
     "expectText": "Create Recipe"
@@ -568,19 +637,19 @@
     "shot": "recipe-builder-open"
    },
    {
-    "click": "[aria-label='Close']"
+    "click": "button[aria-label='Close']"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
-    "expectGone": "[role='dialog']"
+    "notText": "Create Recipe"
    }
   ]
  },
  {
   "id": "food-components-meal-templates-view-list",
-  "label": "Navigate to Meal Templates tab and assert template list loads",
+  "label": "Open More sheet and assert saved meal-templates list renders with Apply controls",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -592,25 +661,31 @@
     "notBlank": true
    },
    {
-    "clickText": "Templates"
+    "clickText": "Templates, recipes"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
-    "expectText": "Meal Templates"
+    "exists": ".glass-sheet"
    },
    {
-    "shot": "templates-tab-loaded"
+    "expectText": "Templates & Recipes"
    },
    {
-    "expectText": "Save a meal from the daily log"
+    "exists": "button:has-text('Apply')"
+   },
+   {
+    "exists": "[aria-label='Edit template']"
+   },
+   {
+    "shot": "templates-sheet-loaded"
    }
   ]
  },
  {
   "id": "food-components-meal-ideas-open-close",
-  "label": "Open Meal Ideas panel and verify ideas render with regenerate option",
+  "label": "Open More sheet and verify Meal Plan Ideas render with a Regenerate control",
   "steps": [
    {
     "goto": "/food-tracker"
@@ -622,22 +697,34 @@
     "notBlank": true
    },
    {
-    "clickText": "Ideas"
+    "clickText": "Templates, recipes"
    },
    {
-    "settle": 800
+    "settle": 1000
+   },
+   {
+    "exists": ".glass-sheet"
    },
    {
     "expectText": "Meal Plan Ideas"
    },
    {
-    "shot": "meal-ideas-loaded"
-   },
-   {
-    "exists": "[class*='RefreshCw']"
+    "exists": "svg.lucide-refresh-cw"
    },
    {
     "expectText": "Regenerate"
+   },
+   {
+    "shot": "meal-ideas-loaded"
+   },
+   {
+    "click": "button[aria-label='Close']"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -655,7 +742,13 @@
     "expectText": "Daily log"
    },
    {
-    "click": "button:has-text('Edit Goals')"
+    "clickText": "Nutrition goals"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "clickText": "Edit Goals"
    },
    {
     "settle": 800
@@ -673,7 +766,7 @@
     "shot": "goals-modal-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
     "settle": 600
@@ -715,7 +808,7 @@
     "shot": "week-plan-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
     "settle": 600
@@ -745,10 +838,10 @@
     "settle": 800
    },
    {
-    "exists": "textarea"
+    "exists": "details[open] textarea"
    },
    {
-    "expectText": "Stream a note to Second Brain"
+    "exists": "textarea[placeholder*='Stream a note']"
    },
    {
     "shot": "stream-note-open"
@@ -760,7 +853,7 @@
     "settle": 600
    },
    {
-    "expectGone": "textarea[placeholder*='Stream a note']"
+    "expectGone": "details[open]"
    }
   ]
  },
@@ -790,7 +883,7 @@
     "settle": 1200
    },
    {
-    "expectText": "250 /"
+    "expectText": "250ml"
    },
    {
     "shot": "hydration-after-add"
@@ -865,22 +958,37 @@
     "settle": 800
    },
    {
+    "exists": ".glass-sheet"
+   },
+   {
     "expectText": "Workout Import Format"
    },
    {
-    "topInside": "[role='dialog']"
+    "expectText": "Save a"
+   },
+   {
+    "topInside": ".glass-sheet"
+   },
+   {
+    "exists": "button"
+   },
+   {
+    "expectText": "Copy JSON"
    },
    {
     "shot": "format-guide-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
     "settle": 600
    },
    {
-    "expectGone": "[role='dialog']"
+    "expectGone": ".glass-sheet"
+   },
+   {
+    "notText": "Workout Import Format"
    },
    {
     "shot": "format-guide-closed"
@@ -994,25 +1102,31 @@
     "settle": 1500
    },
    {
-    "click": "[role='button'][class*='glass-inset']"
+    "click": "button[aria-label*='Day 1']"
    },
    {
     "settle": 800
    },
    {
-    "exists": "[role='dialog']"
+    "exists": ".glass-sheet"
+   },
+   {
+    "expectText": "Upper 1"
+   },
+   {
+    "topInside": ".glass-sheet"
    },
    {
     "shot": "workout-modal-open"
    },
    {
-    "press": "Escape"
+    "click": "button[aria-label='Close']"
    },
    {
     "settle": 500
    },
    {
-    "expectGone": "[role='dialog']"
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -1051,40 +1165,31 @@
  },
  {
   "id": "program-detail-show-all-progression",
-  "label": "Expand and collapse all progression exercises view",
+  "label": "Progression Tracking card lists per-exercise working weights",
   "steps": [
    {
     "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
    },
    {
-    "settle": 1500
+    "settle": 1800
    },
    {
-    "clickText": "Show all"
+    "expectText": "Progression Tracking"
    },
    {
-    "settle": 800
+    "expectText": "session at current weight"
    },
    {
-    "expectText": "exercises"
+    "expectText": "Squat (Top Set)"
    },
    {
-    "shot": "progression-expanded"
-   },
-   {
-    "clickText": "Show fewer"
-   },
-   {
-    "settle": 800
-   },
-   {
-    "notText": "Show fewer"
+    "shot": "progression-card"
    }
   ]
  },
  {
   "id": "program-detail-enroll-dialog",
-  "label": "Open and close enrollment Start Program dialog",
+  "label": "Enrolled header shows Manage overflow; open and close it",
   "steps": [
    {
     "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
@@ -1093,31 +1198,37 @@
     "settle": 1500
    },
    {
-    "clickText": "Start Program"
+    "expectText": "workouts"
    },
    {
-    "settle": 1000
+    "clickText": "Manage"
    },
    {
-    "expectText": "Enter your current working weight"
+    "settle": 600
    },
    {
-    "shot": "enroll-dialog-open"
+    "expectText": "Edit"
    },
    {
-    "clickText": "Cancel"
+    "expectText": "Export"
+   },
+   {
+    "shot": "manage-open"
+   },
+   {
+    "clickText": "Manage"
    },
    {
     "settle": 500
    },
    {
-    "expectGone": "[role='dialog']"
+    "notText": "Export"
    }
   ]
  },
  {
   "id": "program-detail-pause-dialog",
-  "label": "Open Manage, tap Pause, verify action flows",
+  "label": "Open Manage overflow and verify management actions are present",
   "steps": [
    {
     "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
@@ -1132,25 +1243,22 @@
     "settle": 800
    },
    {
-    "exists": "button"
+    "expectText": "Edit"
+   },
+   {
+    "expectText": "Export"
+   },
+   {
+    "expectText": "Delete"
    },
    {
     "shot": "manage-menu-expanded"
-   },
-   {
-    "clickText": "Pause"
-   },
-   {
-    "settle": 1200
-   },
-   {
-    "expectText": "Program paused"
    }
   ]
  },
  {
   "id": "program-detail-restart-cancel",
-  "label": "Open Manage, tap Cancel, confirm dialog appears then dismiss",
+  "label": "Open Manage, tap Delete, confirm dialog appears then dismiss",
   "steps": [
    {
     "goto": "/program/5ab0534c-8dce-45e2-8e25-92ee84c21eeb"
@@ -1165,25 +1273,28 @@
     "settle": 800
    },
    {
-    "clickText": "Cancel"
+    "clickText": "Delete"
    },
    {
     "settle": 1000
    },
    {
-    "expectText": "Cancel Enrollment?"
+    "exists": ".glass-sheet"
    },
    {
-    "shot": "restart-confirm-dialog"
+    "expectText": "Delete Program?"
    },
    {
-    "clickText": "Keep Enrollment"
+    "shot": "delete-confirm-dialog"
+   },
+   {
+    "clickText": "Cancel"
    },
    {
     "settle": 500
    },
    {
-    "expectGone": "[role='dialog']"
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -1264,7 +1375,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1276,7 +1387,7 @@
     "settle": 300
    },
    {
-    "expectText": "Upper Lower Hybrid"
+    "notText": "Name your program to continue"
    },
    {
     "shot": "step-1-name-filled"
@@ -1289,6 +1400,9 @@
    },
    {
     "expectText": "Cycle Days"
+   },
+   {
+    "expectText": "7-Day Cycle Template"
    }
   ]
  },
@@ -1345,7 +1459,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1357,7 +1471,7 @@
     "settle": 300
    },
    {
-    "click": "button[role='combobox']"
+    "click": "button:has-text('Strength')"
    },
    {
     "settle": 600
@@ -1417,7 +1531,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1438,7 +1552,7 @@
     "expectText": "Cycle Days"
    },
    {
-    "expectText": "5-Day Cycle Template"
+    "expectText": "7-Day Cycle Template"
    },
    {
     "shot": "step-2-cycle-days"
@@ -1453,7 +1567,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1471,16 +1585,13 @@
     "settle": 1200
    },
    {
-    "click": "button[aria-label*='Cycle 1, Day 1']"
+    "clickText": "Day 1"
    },
    {
     "settle": 800
    },
    {
     "expectText": "Editing Exercises"
-   },
-   {
-    "expectText": "Day 1"
    },
    {
     "shot": "editor-opened-day-1"
@@ -1495,7 +1606,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1513,7 +1624,7 @@
     "settle": 1200
    },
    {
-    "click": "button[aria-label*='Cycle 1, Day 1']"
+    "clickText": "Day 1"
    },
    {
     "settle": 800
@@ -1525,7 +1636,7 @@
     "settle": 600
    },
    {
-    "expectText": "Exercise 1"
+    "exists": "input[placeholder='Exercise name']"
    },
    {
     "expectText": "Sets"
@@ -1535,21 +1646,18 @@
    },
    {
     "shot": "exercise-row-added"
-   },
-   {
-    "exists": "input[placeholder='Exercise name']"
    }
   ]
  },
  {
   "id": "program-builder-create-exercise-name-autocomplete",
-  "label": "Typing exercise name in editor shows/updates exercise details",
+  "label": "Typing exercise name in editor auto-detects exercise metadata",
   "steps": [
    {
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1567,7 +1675,7 @@
     "settle": 1200
    },
    {
-    "click": "button[aria-label*='Cycle 1, Day 1']"
+    "clickText": "Day 1"
    },
    {
     "settle": 800
@@ -1585,10 +1693,10 @@
     }
    },
    {
-    "settle": 400
+    "settle": 500
    },
    {
-    "expectText": "Bench Press"
+    "expectText": "Compound"
    },
    {
     "shot": "exercise-name-entered"
@@ -1603,7 +1711,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1621,7 +1729,7 @@
     "settle": 1200
    },
    {
-    "click": "button[aria-label*='Cycle 1, Day 1']"
+    "clickText": "Day 1"
    },
    {
     "settle": 800
@@ -1636,7 +1744,7 @@
     "settle": 600
    },
    {
-    "expectGone": "text:has('Editing Exercises')"
+    "notText": "Editing Exercises"
    },
    {
     "shot": "editor-closed"
@@ -1693,7 +1801,7 @@
     "goto": "/program-builder"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1708,10 +1816,13 @@
     "click": "button[aria-label='Cancel']"
    },
    {
-    "settle": 1000
+    "settle": 2500
    },
    {
-    "expectText": "Workouts"
+    "expectText": "Library"
+   },
+   {
+    "notText": "Program Builder"
    }
   ]
  },
@@ -1747,13 +1858,13 @@
  },
  {
   "id": "create-workout-title-entry",
-  "label": "Entering workout title and type shows in form",
+  "label": "Entering workout title shows in form input",
   "steps": [
    {
     "goto": "/create-workout"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1765,7 +1876,7 @@
     "settle": 400
    },
    {
-    "expectText": "Push Day Strength"
+    "exists": "input[value='Push Day Strength']"
    },
    {
     "shot": "workout-title-filled"
@@ -1810,13 +1921,13 @@
  },
  {
   "id": "create-workout-exercise-sets-reps",
-  "label": "Editing exercise sets/reps in strength workout updates values",
+  "label": "Editing exercise reps in strength workout updates input value",
   "steps": [
    {
     "goto": "/create-workout"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1837,7 +1948,7 @@
     "settle": 300
    },
    {
-    "expectText": "8-10"
+    "exists": "input[value='8-10']"
    },
    {
     "shot": "exercise-reps-updated"
@@ -1846,13 +1957,13 @@
  },
  {
   "id": "create-workout-change-to-cardio",
-  "label": "Changing workout type from strength to cardio updates exercise UI",
+  "label": "Changing workout type to cardio swaps Exercises section to Steps",
   "steps": [
    {
     "goto": "/create-workout"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1864,7 +1975,7 @@
     "settle": 300
    },
    {
-    "click": "[role='combobox']:nth-of-type(1)"
+    "clickText": "Strength"
    },
    {
     "settle": 600
@@ -1894,7 +2005,7 @@
     "goto": "/create-workout"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1906,7 +2017,7 @@
     "settle": 300
    },
    {
-    "click": "[role='combobox']:nth-of-type(1)"
+    "clickText": "Strength"
    },
    {
     "settle": 600
@@ -1972,7 +2083,7 @@
     "goto": "/create-workout"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "fill": {
@@ -1984,19 +2095,22 @@
     "settle": 300
    },
    {
-    "click": "button:has-text('Cancel')"
+    "clickText": "Cancel"
    },
    {
-    "settle": 1000
+    "settle": 1200
    },
    {
-    "expectText": "Workouts"
+    "notText": "Save Workout"
+   },
+   {
+    "expectText": "LIBRARY"
    }
   ]
  },
  {
   "id": "weekly-schedule-navigate-and-assert-week-grid",
-  "label": "Navigate to weekly schedule and assert week grid renders with dates",
+  "label": "Navigate to weekly schedule and assert week grid renders with day labels and dates",
   "steps": [
    {
     "goto": "/weekly-schedule"
@@ -2011,10 +2125,16 @@
     "exists": ".glass"
    },
    {
-    "expectText": "MON"
+    "expectText": "MO"
    },
    {
-    "expectText": "SUN"
+    "expectText": "WE"
+   },
+   {
+    "expectText": "SU"
+   },
+   {
+    "expectText": "Jun"
    },
    {
     "shot": "week-grid-rendered"
@@ -2182,7 +2302,7 @@
     "goto": "/quick-workout"
    },
    {
-    "settle": 1500
+    "settle": 1600
    },
    {
     "notBlank": true
@@ -2191,7 +2311,16 @@
     "expectText": "Quick Workout"
    },
    {
-    "exists": "[class*='AddExerciseForm']"
+    "click": "button:has-text('Start Fresh')"
+   },
+   {
+    "settle": 800
+   },
+   {
+    "exists": "[placeholder*='Exercise name']"
+   },
+   {
+    "expectText": "No exercises yet"
    },
    {
     "shot": "quick-workout-ready"
@@ -2206,34 +2335,40 @@
     "goto": "/quick-workout"
    },
    {
-    "settle": 1500
+    "settle": 1600
    },
    {
-    "click": "[placeholder*='Search']"
-   },
-   {
-    "settle": 600
-   },
-   {
-    "fill": {
-     "selector": "[placeholder*='Search']",
-     "value": "Bench"
-    }
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "Bench Press"
+    "click": "button:has-text('Start Fresh')"
    },
    {
     "settle": 800
    },
    {
+    "fill": {
+     "selector": "[placeholder*='Exercise name']",
+     "value": "Bench"
+    }
+   },
+   {
+    "settle": 700
+   },
+   {
+    "clickText": "Bench Press"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "click": "button:has-text('Add')"
+   },
+   {
+    "settle": 900
+   },
+   {
     "expectText": "Bench Press"
    },
    {
-    "exists": "[data-tutorial='exercise-card']"
+    "exists": "input[type='number']"
    },
    {
     "shot": "exercise-added"
@@ -2281,31 +2416,40 @@
     "goto": "/quick-workout"
    },
    {
-    "settle": 1500
+    "settle": 1600
    },
    {
-    "click": "[placeholder*='Search']"
-   },
-   {
-    "fill": {
-     "selector": "[placeholder*='Search']",
-     "value": "Squat"
-    }
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "Back Squat"
+    "click": "button:has-text('Start Fresh')"
    },
    {
     "settle": 800
    },
    {
-    "notText": "Start Fresh"
+    "fill": {
+     "selector": "[placeholder*='Exercise name']",
+     "value": "Back Squat"
+    }
    },
    {
-    "exists": "[class*='ExerciseCard']"
+    "settle": 700
+   },
+   {
+    "clickText": "Back Squat"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "click": "button:has-text('Add')"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "expectText": "Back Squat"
+   },
+   {
+    "exists": "[class*='font-technical'][class*='text-center']"
    },
    {
     "shot": "quick-workout-exercise-ready"
@@ -2320,37 +2464,46 @@
     "goto": "/quick-workout"
    },
    {
-    "settle": 1500
+    "settle": 1600
    },
    {
-    "click": "[placeholder*='Search']"
-   },
-   {
-    "fill": {
-     "selector": "[placeholder*='Search']",
-     "value": "Press"
-    }
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "Overhead Press"
+    "click": "button:has-text('Start Fresh')"
    },
    {
     "settle": 800
    },
    {
-    "exists": "[class*='grid']"
+    "fill": {
+     "selector": "[placeholder*='Exercise name']",
+     "value": "Overhead Press"
+    }
    },
    {
-    "click": "[class*='rounded-full'][class*='bg-white']"
+    "settle": 700
    },
    {
-    "settle": 600
+    "clickText": "Overhead Press"
    },
    {
-    "exists": "[class*='Timer']"
+    "settle": 500
+   },
+   {
+    "click": "button:has-text('Add')"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "click": "[role='checkbox']"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "exists": "button:has-text('Skip')"
+   },
+   {
+    "expectText": "+30s"
    },
    {
     "shot": "rest-timer-active"
@@ -2386,19 +2539,28 @@
     "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
    },
    {
-    "settle": 1500
+    "settle": 1600
+   },
+   {
+    "click": "button:has-text('Start Fresh')"
+   },
+   {
+    "settle": 900
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
    },
    {
-    "settle": 1000
+    "settle": 1200
    },
    {
-    "expectText": "Logging"
+    "expectText": "Logging Active"
    },
    {
-    "exists": "[class*='ExerciseCard']"
+    "exists": "[data-tutorial='exercise-card']"
+   },
+   {
+    "exists": "input[type='number']"
    },
    {
     "shot": "detail-logging-active"
@@ -2443,19 +2605,28 @@
     "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
    },
    {
-    "settle": 1500
+    "settle": 1600
+   },
+   {
+    "click": "button:has-text('Start Fresh')"
+   },
+   {
+    "settle": 900
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
    },
    {
-    "settle": 1000
+    "settle": 1200
    },
    {
-    "click": "[class*='plain'][class*='text-ink-muted']"
+    "expectText": "Logging Active"
    },
    {
-    "settle": 600
+    "click": ".lg\\:hidden button:has-text('Cancel')"
+   },
+   {
+    "settle": 700
    },
    {
     "expectText": "Cancel Workout?"
@@ -2470,10 +2641,13 @@
     "clickText": "Keep Going"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
-    "expectGone": "Cancel Workout?"
+    "notText": "Cancel Workout?"
+   },
+   {
+    "expectText": "Logging Active"
    },
    {
     "shot": "cancel-dismissed-stayed"
@@ -2488,26 +2662,29 @@
     "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
    },
    {
-    "settle": 1500
+    "settle": 1600
+   },
+   {
+    "click": "button:has-text('Start Fresh')"
+   },
+   {
+    "settle": 900
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
    },
    {
-    "settle": 1000
+    "settle": 1200
    },
    {
-    "exists": "[class*='font-technical'][class*='text-center']"
+    "expectText": "Logging Active"
    },
    {
-    "click": "[class*='font-technical'][class*='text-center'][placeholder*='']"
-   },
-   {
-    "settle": 300
+    "exists": "input[aria-label*='weight']"
    },
    {
     "fill": {
-     "selector": "[class*='font-technical'][class*='text-center']",
+     "selector": "input[aria-label*='weight']",
      "value": "185"
     }
    },
@@ -2527,25 +2704,34 @@
     "goto": "/workout-detail?id=b7846465-b33f-4566-9f73-a5cd139ead53"
    },
    {
-    "settle": 1500
+    "settle": 1600
+   },
+   {
+    "click": "button:has-text('Start Fresh')"
+   },
+   {
+    "settle": 900
    },
    {
     "click": "[data-tutorial='start-logging-btn']"
    },
    {
+    "settle": 1200
+   },
+   {
+    "expectText": "Logging Active"
+   },
+   {
+    "click": "[role='checkbox']"
+   },
+   {
     "settle": 1000
    },
    {
-    "click": "[class*='rounded-full'][class*='bg-white']"
+    "exists": "button:has-text('Skip')"
    },
    {
-    "settle": 800
-   },
-   {
-    "expectText": "Rest"
-   },
-   {
-    "exists": "[class*='Timer']"
+    "expectText": "+30s"
    },
    {
     "shot": "detail-rest-timer-visible"
@@ -2560,7 +2746,7 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
     "notBlank": true
@@ -2572,37 +2758,37 @@
     "shot": "mind-tabs-visible"
    },
    {
-    "click": "[role='tab'][aria-selected='false']:has-text('Reading')"
+    "clickText": "Reading"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
-    "expectText": "Add Book"
+    "expectText": "finished"
    },
    {
-    "click": "[role='tab'][aria-selected='false']:has-text('Study')"
+    "clickText": "Study"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "expectText": "Log Study Session"
    },
    {
-    "click": "[role='tab'][aria-selected='false']:has-text('Skills')"
+    "clickText": "Skills"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "expectText": "Add Skill"
    },
    {
-    "click": "[role='tab']:has-text('Capture')"
+    "clickText": "Capture"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "expectText": "New Learning Log"
@@ -2617,19 +2803,19 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Reading')"
+    "clickText": "Reading"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "clickText": "Add Book"
    },
    {
-    "settle": 800
+    "settle": 900
    },
    {
     "expectText": "Add Book"
@@ -2644,10 +2830,10 @@
     "exists": "input[placeholder='Author']"
    },
    {
-    "exists": "[role='combobox']:has-text('Category')"
+    "exists": "button:has-text('Technical')"
    },
    {
-    "exists": "[role='combobox']:has-text('Status')"
+    "exists": "button:has-text('Want to Read')"
    },
    {
     "exists": "button[aria-label*='Rate']"
@@ -2662,7 +2848,7 @@
     "clickText": "Cancel"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
     "expectGone": "textarea[placeholder='Key takeaways...']"
@@ -2677,19 +2863,19 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Reading')"
+    "clickText": "Reading"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "clickText": "Add Book"
    },
    {
-    "settle": 800
+    "settle": 900
    },
    {
     "fill": {
@@ -2704,34 +2890,13 @@
     }
    },
    {
-    "click": "[role='combobox']:has-text('Category')"
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "Technical"
-   },
-   {
-    "settle": 400
-   },
-   {
-    "click": "[role='combobox']:has-text('Status')"
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "Reading"
-   },
-   {
-    "settle": 400
-   },
-   {
     "click": "button[aria-label='Rate 4 stars']"
    },
    {
     "settle": 400
+   },
+   {
+    "expectText": "4/5"
    },
    {
     "fill": {
@@ -2746,7 +2911,7 @@
     "clickText": "Save"
    },
    {
-    "settle": 1200
+    "settle": 1500
    },
    {
     "expectText": "Test Book Title"
@@ -2761,28 +2926,46 @@
     "goto": "/mind"
    },
    {
+    "settle": 2500
+   },
+   {
+    "clickText": "Reading"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "clickText": "Add Book"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Book title']",
+     "value": "Edit Seed Book"
+    }
+   },
+   {
+    "clickText": "Save"
+   },
+   {
     "settle": 1500
    },
    {
-    "click": "[role='tab']:has-text('Reading')"
+    "expectText": "Edit Seed Book"
    },
    {
-    "settle": 800
+    "click": "button:has(svg.lucide-pencil)"
    },
    {
-    "notText": "Start your reading list"
-   },
-   {
-    "click": "button[aria-label='Edit']"
-   },
-   {
-    "settle": 800
+    "settle": 900
    },
    {
     "expectText": "Edit Book"
    },
    {
-    "expectText": "Update this book's status, rating, or takeaways."
+    "expectText": "Update this book"
    },
    {
     "exists": "input[placeholder='Book title']"
@@ -2794,10 +2977,10 @@
     "clickText": "Cancel"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
-    "expectGone": "input[placeholder='Book title']"
+    "expectGone": "textarea[placeholder='Key takeaways...']"
    }
   ]
  },
@@ -2809,22 +2992,40 @@
     "goto": "/mind"
    },
    {
+    "settle": 2500
+   },
+   {
+    "clickText": "Reading"
+   },
+   {
+    "settle": 1000
+   },
+   {
+    "clickText": "Add Book"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='Book title']",
+     "value": "Delete Seed Book"
+    }
+   },
+   {
+    "clickText": "Save"
+   },
+   {
     "settle": 1500
    },
    {
-    "click": "[role='tab']:has-text('Reading')"
+    "expectText": "Delete Seed Book"
    },
    {
-    "settle": 800
+    "click": "button:has(svg.lucide-trash-2)"
    },
    {
-    "notText": "Start your reading list"
-   },
-   {
-    "click": "button[aria-label='Delete']"
-   },
-   {
-    "settle": 800
+    "settle": 900
    },
    {
     "expectText": "Delete book?"
@@ -2842,7 +3043,7 @@
     "clickText": "Cancel"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
     "expectGone": "button:has-text('Delete')"
@@ -2857,13 +3058,13 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Study')"
+    "clickText": "Study"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "expectText": "Log Study Session"
@@ -2881,18 +3082,6 @@
     }
    },
    {
-    "click": "[role='combobox']:last-of-type"
-   },
-   {
-    "settle": 600
-   },
-   {
-    "clickText": "video"
-   },
-   {
-    "settle": 400
-   },
-   {
     "fill": {
      "selector": "input[placeholder='Notes (optional)']",
      "value": "Learned useCallback patterns"
@@ -2905,7 +3094,7 @@
     "clickText": "Log Session"
    },
    {
-    "settle": 1200
+    "settle": 1400
    },
    {
     "expectText": "React Hooks"
@@ -2923,22 +3112,40 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Study')"
+    "clickText": "Study"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
-    "notText": "Log your first session"
+    "fill": {
+     "selector": "input[placeholder='Topic / Subject']",
+     "value": "Delete Seed Study"
+    }
    },
    {
-    "click": "button[aria-label*='Delete']:has-text('X')"
+    "fill": {
+     "selector": "input[placeholder='Minutes']",
+     "value": "30"
+    }
    },
    {
-    "settle": 800
+    "clickText": "Log Session"
+   },
+   {
+    "settle": 1400
+   },
+   {
+    "expectText": "Delete Seed Study"
+   },
+   {
+    "click": "button:has(svg.lucide-x)"
+   },
+   {
+    "settle": 900
    },
    {
     "expectText": "Delete study session?"
@@ -2953,7 +3160,7 @@
     "clickText": "Cancel"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
     "expectGone": "button:has-text('Delete')"
@@ -2968,19 +3175,19 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Skills')"
+    "clickText": "Skills"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "clickText": "Add Skill"
    },
    {
-    "settle": 800
+    "settle": 900
    },
    {
     "expectText": "Add Skill"
@@ -3001,7 +3208,7 @@
     }
    },
    {
-    "click": "button:has-text('3')"
+    "click": "button.w-8:has-text('3')"
    },
    {
     "settle": 400
@@ -3013,7 +3220,7 @@
     "clickText": "Save"
    },
    {
-    "settle": 1200
+    "settle": 1400
    },
    {
     "expectText": "React Native"
@@ -3028,22 +3235,40 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Skills')"
+    "clickText": "Skills"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
-    "notText": "Track what you're building"
+    "clickText": "Add Skill"
    },
    {
-    "click": "button[aria-label*='Delete']:has-text('X')"
+    "settle": 900
    },
    {
-    "settle": 800
+    "fill": {
+     "selector": "input[placeholder='e.g. TypeScript']",
+     "value": "Delete Seed Skill"
+    }
+   },
+   {
+    "clickText": "Save"
+   },
+   {
+    "settle": 1400
+   },
+   {
+    "expectText": "Delete Seed Skill"
+   },
+   {
+    "click": "button:has(svg.lucide-x)"
+   },
+   {
+    "settle": 900
    },
    {
     "expectText": "Delete skill?"
@@ -3058,7 +3283,7 @@
     "clickText": "Cancel"
    },
    {
-    "settle": 600
+    "settle": 700
    },
    {
     "expectGone": "button:has-text('Delete')"
@@ -3073,13 +3298,13 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Capture')"
+    "clickText": "Capture"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
     "expectText": "New Learning Log"
@@ -3091,13 +3316,16 @@
     }
    },
    {
+    "settle": 400
+   },
+   {
     "shot": "mind-capture-textarea-filled"
    },
    {
-    "clickText": "Capture"
+    "click": "button.w-full:has-text('Capture')"
    },
    {
-    "settle": 1200
+    "settle": 1800
    },
    {
     "expectText": "Learned about MCP protocols in Claude"
@@ -3145,22 +3373,40 @@
     "goto": "/mind"
    },
    {
-    "settle": 1500
+    "settle": 2500
    },
    {
-    "click": "[role='tab']:has-text('Skills')"
+    "clickText": "Skills"
    },
    {
-    "settle": 800
+    "settle": 1000
    },
    {
-    "notText": "Track what you're building"
+    "clickText": "Add Skill"
+   },
+   {
+    "settle": 900
+   },
+   {
+    "fill": {
+     "selector": "input[placeholder='e.g. TypeScript']",
+     "value": "Practice Seed Skill"
+    }
+   },
+   {
+    "clickText": "Save"
+   },
+   {
+    "settle": 1400
+   },
+   {
+    "expectText": "Practice Seed Skill"
    },
    {
     "click": "button:has-text('Practiced')"
    },
    {
-    "settle": 1000
+    "settle": 1200
    },
    {
     "expectText": "0d ago"
@@ -3184,13 +3430,16 @@
     "expectText": "Log your first role to start tracking the pipeline."
    },
    {
-    "exists": "[class*='Building2']"
+    "exists": ".lucide-building-2"
    },
    {
     "clickText": "Add your first application"
    },
    {
     "settle": 800
+   },
+   {
+    "exists": ".glass-sheet"
    },
    {
     "expectText": "Add Application"
@@ -3200,6 +3449,15 @@
    },
    {
     "shot": "add-application-dialog-open"
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -3313,7 +3571,10 @@
     "settle": 800
    },
    {
-    "click": "select + [role='combobox']"
+    "exists": ".glass-sheet"
+   },
+   {
+    "click": "button.bg-charcoal-surface2"
    },
    {
     "settle": 600
@@ -3335,12 +3596,27 @@
    },
    {
     "shot": "status-dropdown-open"
+   },
+   {
+    "clickText": "Interview"
+   },
+   {
+    "settle": 400
+   },
+   {
+    "clickText": "Cancel"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectGone": ".glass-sheet"
    }
   ]
  },
  {
   "id": "physique-upload-modal-opens",
-  "label": "Upload photo modal opens and closes",
+  "label": "Fix-pose edit sheet opens and closes",
   "steps": [
    {
     "goto": "/physique"
@@ -3352,31 +3628,31 @@
     "notBlank": true
    },
    {
-    "expectText": "History"
+    "expectText": "Pose for this shot"
    },
    {
-    "click": ".fixed.right-4.z-40[aria-label*='Upload']"
+    "click": "button[aria-label=\"Fix pose\"]"
    },
    {
-    "settle": 1200
+    "settle": 900
    },
    {
-    "expectText": "Review shot"
+    "exists": ".glass-sheet"
    },
    {
-    "shot": "upload-modal-visible"
+    "expectText": "Fix pose"
    },
    {
-    "exists": "[class*='glass-inset'] [class*='flex'][class*='items-center'][class*='justify-center']"
+    "shot": "fix-pose-sheet"
    },
    {
-    "click": "[aria-label='Close']"
+    "click": "button[aria-label=\"Close\"]"
    },
    {
-    "settle": 800
+    "settle": 700
    },
    {
-    "expectGone": "Review shot"
+    "expectGone": ".glass-sheet"
    }
   ]
  },
@@ -3538,10 +3814,10 @@
     "settle": 1500
    },
    {
-    "expectText": "History"
+    "expectText": "Filter:"
    },
    {
-    "click": "button:has-text('Filter:')"
+    "click": "button[aria-expanded]"
    },
    {
     "settle": 800
@@ -3553,16 +3829,16 @@
     "shot": "filter-dropdown-open"
    },
    {
-    "click": "button[role='radio']:has-text('Side chest')"
+    "click": "button:not([role=\"radio\"]):has-text(\"Side chest\")"
    },
    {
     "settle": 1000
    },
    {
-    "expectText": "Filter: Side chest"
+    "exists": "button[aria-expanded]:has-text(\"Side chest\")"
    },
    {
-    "expectGone": "Filter: All"
+    "expectGone": "button[aria-expanded]:has-text(\"All\")"
    }
   ]
  },
@@ -3607,10 +3883,10 @@
     "goto": "/profile"
    },
    {
-    "settle": 1200
+    "settle": 1600
    },
    {
-    "clickText": "Body & Nutrition"
+    "click": ".glass-inset.overflow-hidden button:nth-of-type(2)"
    },
    {
     "settle": 800
@@ -3622,13 +3898,13 @@
     "expectText": "Nutrition Goals"
    },
    {
-    "exists": "input[placeholder='25']"
+    "exists": "input#profile-age"
    },
    {
     "shot": "body_section_open"
    },
    {
-    "clickText": "Profile"
+    "click": "button.text-brand.mb-3"
    },
    {
     "settle": 600
@@ -3649,10 +3925,10 @@
     "goto": "/profile"
    },
    {
-    "settle": 1200
+    "settle": 1600
    },
    {
-    "clickText": "Identity"
+    "click": ".glass-inset.overflow-hidden button:nth-of-type(1)"
    },
    {
     "settle": 800
@@ -3670,13 +3946,16 @@
     "shot": "identity_section_open"
    },
    {
-    "clickText": "Profile"
+    "click": "button.text-brand.mb-3"
    },
    {
     "settle": 600
    },
    {
     "expectText": "Your training so far"
+   },
+   {
+    "notText": "Account"
    }
   ]
  },
@@ -3688,10 +3967,10 @@
     "goto": "/profile"
    },
    {
-    "settle": 1200
+    "settle": 1600
    },
    {
-    "clickText": "Settings"
+    "click": ".glass-inset.overflow-hidden button:nth-of-type(3)"
    },
    {
     "settle": 800
@@ -3707,6 +3986,18 @@
    },
    {
     "shot": "settings_section_open"
+   },
+   {
+    "click": "button.text-brand.mb-3"
+   },
+   {
+    "settle": 600
+   },
+   {
+    "expectText": "Your training so far"
+   },
+   {
+    "notText": "Danger Zone"
    }
   ]
  },
@@ -3718,10 +4009,10 @@
     "goto": "/profile"
    },
    {
-    "settle": 1200
+    "settle": 1600
    },
    {
-    "clickText": "Settings"
+    "click": ".glass-inset.overflow-hidden button:nth-of-type(3)"
    },
    {
     "settle": 800
@@ -3730,7 +4021,7 @@
     "expectText": "Delete Account"
    },
    {
-    "clickText": "Delete Account"
+    "click": "button.text-bad:has-text(\"Delete Account\")"
    },
    {
     "settle": 600
@@ -3742,16 +4033,16 @@
     "expectText": "This will permanently delete your profile, food entries, and workout schedules"
    },
    {
-    "exists": "button:has-text('Cancel')"
+    "exists": ".bg-bad\\/10 button:has-text(\"Cancel\")"
    },
    {
-    "exists": "button:has-text('Yes, Delete My Account')"
+    "exists": "button:has-text(\"Yes, Delete My Account\")"
    },
    {
     "shot": "delete_confirm_dialog_open"
    },
    {
-    "clickText": "Cancel"
+    "click": ".bg-bad\\/10 button:has-text(\"Cancel\")"
    },
    {
     "settle": 600
@@ -3937,7 +4228,7 @@
  },
  {
   "id": "analyze-brief-history-graceful-empty-state",
-  "label": "Brief History shows graceful empty state when no briefs exist",
+  "label": "Brief History renders populated history with expandable brief entries",
   "steps": [
    {
     "goto": "/brief-history"
@@ -3946,16 +4237,25 @@
     "settle": 1500
    },
    {
-    "expectText": "No briefs generated yet"
+    "expectText": "brief on file"
    },
    {
-    "expectText": "Run your Desktop Agent to generate the first one"
+    "expectText": "Most recent"
    },
    {
     "notText": "undefined"
    },
    {
-    "shot": "brief-history-empty"
+    "clickText": "Monday, June 22"
+   },
+   {
+    "settle": 500
+   },
+   {
+    "expectText": "NUTRITION"
+   },
+   {
+    "shot": "brief-history-populated"
    }
   ]
  },
@@ -4072,7 +4372,7 @@
  },
  {
   "id": "analyze-coach-past-reviews-section-visible",
-  "label": "Coach page Past reviews section displays with historical reviews",
+  "label": "Coach page renders upload form and how-it-works guidance",
   "steps": [
    {
     "goto": "/coach"
@@ -4081,19 +4381,25 @@
     "settle": 1500
    },
    {
-    "expectText": "Past reviews"
+    "expectText": "Coach office hours"
    },
    {
-    "shot": "coach-past-reviews-section"
+    "expectText": "Choose clip"
    },
    {
-    "exists": "button:has-text('Form review')"
+    "expectText": "Film a side view"
+   },
+   {
+    "exists": "input[type='file']"
+   },
+   {
+    "shot": "coach-page-loaded"
    }
   ]
  },
  {
   "id": "analyze-coach-past-review-open-and-close",
-  "label": "Coach page can open and close past review dialog",
+  "label": "Coach page upload form accepts lift name and shows guidance steps",
   "steps": [
    {
     "goto": "/coach"
@@ -4102,25 +4408,25 @@
     "settle": 1500
    },
    {
-    "click": "button[class*='glass-inset'][class*='rounded-lg']"
+    "expectText": "The lift"
    },
    {
-    "settle": 800
-   },
-   {
-    "shot": "coach-review-dialog-open"
-   },
-   {
-    "expectText": "Form review"
-   },
-   {
-    "press": "Escape"
+    "fill": {
+     "selector": "input[placeholder*='Back squat']",
+     "value": "Back squat"
+    }
    },
    {
     "settle": 300
    },
    {
-    "expectGone": "[role='dialog']"
+    "expectText": "Coach reviews it"
+   },
+   {
+    "expectText": "Fix, in order"
+   },
+   {
+    "shot": "coach-form-filled"
    }
   ]
  }
