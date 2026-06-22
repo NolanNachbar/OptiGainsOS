@@ -1,29 +1,34 @@
 export const meta = {
-  name: 'ui-audit-round',
-  description: 'One mobile-first UI audit round: serial capture (shared browser) → parallel audit → IA → synthesize → parallel fix',
+  name: 'ui-audit-gan',
+  description: 'Planner → (capture → adversarial evaluator → maker/checker contract → fix)* GAN loop. Runs rounds until clean-sweep or a hard round cap, re-verifying every fix on a fresh capture.',
   phases: [
+    { title: 'Plan', detail: 'one opus planner: rubric weights + IA priority sprints (runs once)', model: 'opus' },
     { title: 'Capture', detail: 'serial batches against the single shared browse daemon, 390px + 1280px' },
-    { title: 'Audit', detail: 'one opus agent per surface, parallel, reads screenshots + source', model: 'opus' },
-    { title: 'IA', detail: 'tap-count + placement from source/inventory (rounds 1–2 only)', model: 'opus' },
-    { title: 'Synthesize', detail: 'dedupe into systemic + per-surface fix plan', model: 'opus' },
-    { title: 'Fix', detail: 'systemic serial on main tree; per-surface parallel in worktrees' },
+    { title: 'Evaluate', detail: 'adversarial evaluator per surface: scores rubric + verifies prior contract on the LIVE app', model: 'opus' },
+    { title: 'Contract', detail: 'generator proposes fixes + verify-assertions; evaluator critiques and signs off before any code is written', model: 'opus' },
+    { title: 'Fix', detail: 'systemic serial on main tree; per-surface parallel; build-gated' },
   ],
 }
 
-// Self-contained: surfaces are embedded (passing 65 inline via args proved fragile).
-// args only carries small scalars: { round, baseUrl, runIA, login:{email,password} }.
-const round = (args && args.round) || 1
-const baseUrl = (args && args.baseUrl) || 'http://localhost:5173'
-const runIA = args && typeof args.runIA === 'boolean' ? args.runIA : (round <= 2)
-const login = (args && args.login) || { email: 'nvtnachbar@gmail.com', password: 'Gains123' }
-const DIR = `./ui-audit/round-${round}`
+// ── Loop knobs (the guide's stop condition + cost trap live here) ────────────
+// maxRounds is the HARD cap so the loop can't run all night for nothing (Ralph Wiggum).
+// gate is the rubric bar: clean-sweep = zero blocker/major AND every rubric criterion >= gate.
+// args can arrive as a parsed object OR a JSON string depending on the caller — parse defensively
+// (the sibling workflows do the same; not doing it here once made startRound silently default to 1).
+const A = (typeof args === 'string' ? JSON.parse(args) : args) || {}
+const startRound = A.startRound || 1
+const maxRounds = Math.min(6, Math.max(1, A.maxRounds || 3))
+const gate = A.gate || 8
+const baseUrl = A.baseUrl || 'http://localhost:5173'
+const diagnoseOnly = !!A.diagnoseOnly
 const CAPTURE_BATCH = 10
+const MIN_BUDGET_PER_ROUND = 80000 // bail before starting a round we likely can't finish
 
-// browse is ONE shared Chromium daemon → capture MUST be serial. Audit/IA/Fix never touch it.
+// browse is ONE shared Chromium daemon → capture MUST be serial. Evaluate/Plan/Fix never touch it.
+// Public routes (login / forgot-password / reset-password) are deliberately EXCLUDED: reaching them
+// requires logging out, which destroys the shared daemon session for every later batch. They are stable
+// and already audited. Audit them separately if needed, never inline with authed surfaces.
 const SURFACES = [
-  { id: 'login', type: 'page', route: '/login', reach: 'requires logout first; authed nav redirects to /dashboard', states: ['empty', 'error'] },
-  { id: 'forgot-password', type: 'page', route: '/forgot-password', reach: 'from /login → Forgot password link (needs logout)', states: ['empty', 'email-sent'] },
-  { id: 'reset-password', type: 'page', route: '/reset-password', reach: 'via email recovery link (needs token)', states: ['empty'] },
   { id: 'today', type: 'page', route: '/today', reach: 'default landing (Today dock)', states: ['populated', 'rest-day', 'workout-in-progress'] },
   { id: 'dashboard', type: 'page', route: '/dashboard', reach: 'deep link (nav maps to Today)', states: ['populated', 'morning-checkin'] },
   { id: 'train-schedule', type: 'page', route: '/train?tab=schedule', reach: 'Train dock → Schedule', states: ['populated', 'empty'] },
@@ -74,6 +79,9 @@ const SURFACES = [
   { id: 'workout-share-modal', type: 'overlay', route: '/workout-detail', reach: 'logging → Share after completion', states: ['share'] },
   { id: 'sonner-toast', type: 'overlay', route: '/today', reach: 'global → trigger any mutation', states: ['success', 'error'] },
 ]
+const SURFACE_BY_ID = Object.fromEntries(SURFACES.map((s) => [s.id, s]))
+const ALL_IDS = SURFACES.map((s) => s.id)
+const initialScope = (Array.isArray(A.surfaces) && A.surfaces.length) ? A.surfaces : ALL_IDS
 
 function chunk(a, n) { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o }
 
@@ -117,183 +125,293 @@ const CAPTURE_BATCH_SCHEMA = {
   },
 }
 
-const FINDINGS_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['surface', 'findings'],
+// PLAN — the planner role: a written rubric (the guide: "subjective quality IS gradable if you
+// write the opinion down") + IA sprint order. Deliberately high-level, not granular tech detail,
+// so a planner error doesn't cascade through every round.
+const PLAN_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['rubric', 'priorityOrder'],
+  properties: {
+    rubric: {
+      type: 'array',
+      items: {
+        type: 'object', additionalProperties: false, required: ['criterion', 'weight', 'whatGoodLooksLike', 'whatFailsLooksLike'],
+        properties: { criterion: { type: 'string', enum: ['design', 'originality', 'craft', 'functionality'] }, weight: { type: 'number' }, whatGoodLooksLike: { type: 'string' }, whatFailsLooksLike: { type: 'string' } },
+      },
+    },
+    priorityOrder: { type: 'array', items: { type: 'string' } },
+    recommendedHomeOrder: { type: 'array', items: { type: 'string' } },
+    notes: { type: 'string' },
+  },
+}
+
+// EVALUATE — the discriminator. Scores the 4 rubric criteria 1-10 AND, in verification rounds,
+// reports whether each prior-contract assertion actually HOLDS on the live capture (the gate that
+// stops the fixer from grading its own homework).
+const EVAL_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['surface', 'scores', 'findings'],
   properties: {
     surface: { type: 'string' },
+    scores: {
+      type: 'object', additionalProperties: false, required: ['design', 'originality', 'craft', 'functionality'],
+      properties: { design: { type: 'number' }, originality: { type: 'number' }, craft: { type: 'number' }, functionality: { type: 'number' } },
+    },
+    verifiedFixes: {
+      type: 'array',
+      items: { type: 'object', additionalProperties: false, required: ['assertion', 'holds'], properties: { id: { type: 'string' }, assertion: { type: 'string' }, holds: { type: 'boolean' }, note: { type: 'string' } } },
+    },
     findings: {
       type: 'array',
       items: {
         type: 'object', additionalProperties: false,
-        required: ['severity', 'category', 'file', 'whatsWrong', 'fix'],
+        required: ['id', 'severity', 'category', 'file', 'whatsWrong', 'fix', 'verifyBy'],
         properties: {
+          id: { type: 'string' },
           severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
           category: { type: 'string', enum: ['drift', 'mobile', 'consistency', 'hierarchy', 'density', 'belonging', 'slop', 'motion'] },
           file: { type: 'string' }, whatsWrong: { type: 'string' }, fix: { type: 'string' },
+          verifyBy: { type: 'string', description: 'the concrete observable that proves this is fixed next round' },
         },
       },
     },
   },
 }
 
-const IA_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['tapCounts', 'findings', 'recommendedHomeOrder'],
-  properties: {
-    tapCounts: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['feature', 'tapsFromLaunch', 'verdict'], properties: { feature: { type: 'string' }, tapsFromLaunch: { type: 'number' }, verdict: { type: 'string', enum: ['too-buried', 'over-promoted', 'ok'] } } } },
-    findings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['severity', 'whatsWrong', 'fix'], properties: { severity: { type: 'string', enum: ['blocker', 'major', 'minor'] }, whatsWrong: { type: 'string' }, fix: { type: 'string' } } } },
-    recommendedHomeOrder: { type: 'array', items: { type: 'string' } },
-  },
-}
-
-const FIXPLAN_SCHEMA = {
+// CONTRACT — maker proposes, checker signs off BEFORE any code is written. The finalized contract
+// is the fix plan, every entry carrying a testable assertion the next round's evaluator grades against.
+const CONTRACT_PROPOSAL_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['systemic', 'perSurface'],
   properties: {
-    systemic: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'files', 'instruction'], properties: { id: { type: 'string' }, title: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' } } } },
-    perSurface: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['surface', 'files', 'instruction'], properties: { surface: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' } } } },
+    systemic: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'files', 'instruction', 'assertion'], properties: { id: { type: 'string' }, title: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' }, assertion: { type: 'string' } } } },
+    perSurface: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['surface', 'files', 'instruction', 'assertion'], properties: { surface: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' }, assertion: { type: 'string' } } } },
+  },
+}
+const CONTRACT_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['accepted', 'systemic', 'perSurface'],
+  properties: {
+    accepted: { type: 'boolean' },
+    rejected: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['ref', 'reason'], properties: { ref: { type: 'string' }, reason: { type: 'string' } } } },
+    systemic: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'title', 'files', 'instruction', 'assertion'], properties: { id: { type: 'string' }, title: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' }, assertion: { type: 'string' } } } },
+    perSurface: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['surface', 'files', 'instruction', 'assertion'], properties: { surface: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, instruction: { type: 'string' }, assertion: { type: 'string' } } } },
   },
 }
 
 const FIXRESULT_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['id', 'filesChanged', 'buildPass', 'lintPass', 'summary'],
-  properties: { id: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } }, buildPass: { type: 'boolean' }, lintPass: { type: 'boolean' }, summary: { type: 'string' } },
+  type: 'object', additionalProperties: false, required: ['id', 'filesChanged', 'buildPass', 'summary'],
+  properties: { id: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } }, buildPass: { type: 'boolean' }, summary: { type: 'string' } },
 }
 
-// ── STEP A — CAPTURE (serial batches; browser is single-threaded) ───────────
-log(`Round ${round}: ${SURFACES.length} surfaces @ ${baseUrl} (serial capture, parallel audit)`)
-phase('Capture')
-const batches = chunk(SURFACES, CAPTURE_BATCH)
-const allShots = []
-const gaps = []
-for (let i = 0; i < batches.length; i++) {
-  const batch = batches[i]
-  const r = await agent(
-    `STEP A — CAPTURE (batch ${i + 1}/${batches.length}). Drive the gstack headless browser to screenshot each surface.
+// ── capture helper: serial batches against the single shared browse daemon ──
+async function captureSurfaces(roundDir, ids) {
+  const list = ids.map((id) => SURFACE_BY_ID[id]).filter(Boolean)
+  const batches = chunk(list, CAPTURE_BATCH)
+  const shots = [], gaps = []
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i]
+    const r = await agent(
+      `CAPTURE (batch ${i + 1}/${batches.length}). Drive the gstack headless browser to screenshot each surface.
 CRITICAL: the browser is a SINGLE shared daemon — issue browse commands one at a time, never in parallel.
 Setup: ${BROWSE}  (invoke as "$B <cmd>"). Base URL: ${baseUrl} (a PWA; service worker anchors this origin).
-The session is PRE-AUTHENTICATED by the orchestrator. Verify: $B goto ${baseUrl}/dashboard ; $B url.
-If it lands on /login, run \`$B state load uiauth\` then \`$B goto ${baseUrl}/dashboard\` and re-check.
-Do NOT type or guess a password — the safety classifier blocks credential entry and it wastes the run.
-If it STILL shows /login after state-load, mark every authed surface in this batch as a gap
-("session expired; orchestrator must re-auth") and capture only public routes (login/forgot/reset).
+AUTH: this dev server auto-logs-in via the \`?bypass_auth=true\` query param (it stores a Supabase
+session in localStorage). Verify: $B goto ${baseUrl}/dashboard ; $B url.
+If it lands on /login, RE-AUTH by running \`$B goto ${baseUrl}/?bypass_auth=true\` ; \`$B wait --load\` ;
+sleep 3 ; then \`$B goto ${baseUrl}/dashboard\` and re-check the url. (Do NOT use \`state load\` — the saved
+state does not contain the auth token. Do NOT type or guess a password — the classifier blocks it.)
+NEVER log out and NEVER clear localStorage — that destroys the shared session for every later batch.
+NOTE: the Vite dev server holds an HMR websocket open, so \`$B wait --networkidle\` NEVER settles. Use
+\`$B wait --load\` plus a short sleep or a selector wait — never networkidle, or you will loop forever.
+If a surface STILL shows /login after the bypass_auth re-auth, mark it a gap (do not log out to retry).
 
 For EACH surface in this batch: ${JSON.stringify(batch)}
   1. $B viewport 390x844
   2. Reach it. type "page" → $B goto ${baseUrl}<route>. type "overlay" → goto the host route, $B snapshot -i,
-     then click the control in "reach" to open it. Always $B wait --networkidle after navigation.
+     then click the control in "reach" to open it. $B wait --load after navigation (NOT networkidle).
   3. Record full scroll height at 390: $B js "document.body.scrollHeight".
   4. Screenshot each meaningful state it actually has (from "states"; skip states needing unseedable data and
-     record them in gaps): $B screenshot ${DIR}/<surface-id>/390-<state>.png
-  5. Secondary check: $B viewport 1280x900 ; $B screenshot ${DIR}/<surface-id>/1280-populated.png
+     record them in gaps): $B screenshot ${roundDir}/<surface-id>/390-<state>.png
+  5. Secondary check: $B viewport 1280x900 ; $B screenshot ${roundDir}/<surface-id>/1280-populated.png
   6. If a surface cannot be reached on mobile, add it to gaps with the reason (never skip silently).
 Return the manifest of every shot saved (surface, state, viewport, path, reached, scrollHeight390) plus gaps.`,
-    { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA }
-  )
-  if (r && r.shots) allShots.push(...r.shots)
-  if (r && r.gaps) gaps.push(...r.gaps)
-}
-
-const shotsBySurface = {}
-for (const s of allShots) { (shotsBySurface[s.surface] || (shotsBySurface[s.surface] = [])).push(s) }
-
-// ── STEP B — AUDIT (parallel) + STEP C — IA (concurrent, source-only) ───────
-phase('Audit')
-const auditPromise = parallel(SURFACES.map((s) => () => {
-  const shots = shotsBySurface[s.id] || []
-  if (!shots.length) return Promise.resolve({ surface: s.id, findings: [] })
-  return agent(
-    `STEP B — AGNOSTIC AUDIT of surface "${s.id}" (${s.type}, route ${s.route}), blind to all other surfaces.
-Ruthless design-eye walkthrough at 390px primary.
-${SYSTEM_LAW}
-Screenshots to inspect (Read each PNG): ${JSON.stringify(shots)}
-Open the source for this surface to cite exact file:line.
-Report EVERYTHING against this 8-point rubric:
-  1. DESIGN-SYSTEM DRIFT  2. MOBILE FITNESS  3. VISUAL CONSISTENCY  4. HIERARCHY & CLARITY
-  5. VERTICAL DENSITY (excessive 390px scroll?)  6. BELONGING & PLACEMENT  7. AI-SLOP / UNFINISHED  8. MOTION & FEEDBACK
-Per finding: severity (blocker/major/minor), category, exact file:line, what's wrong, concrete fix using
-existing tokens + src/components/ui/* primitives. Do NOT fix anything.`,
-    { label: `audit:${s.id}`, phase: 'Audit', schema: FINDINGS_SCHEMA, model: 'opus' }
-  )
-}))
-
-const iaPromise = runIA
-  ? agent(
-      `STEP C — INFORMATION ARCHITECTURE for the OptiGains mobile PWA. Reason from source, do NOT drive the browser.
-${SYSTEM_LAW}
-Read src/App.jsx (routes) and src/components/Layout.jsx (5-section dock Today·Train·Fuel·Body·Analyze + FAB).
-Importance = real usage: log today's workout, log food/macros, daily brief / readiness, weigh in. For each,
-count taps from a cold launch and judge whether it deserves a faster path (dock slot, FAB, home thumb-zone card).
-Flag buried high-value and over-promoted low-value features. Propose a concrete home priority order a
-MacroFactor/Whoop user finds instantly.`,
-      { label: 'ia', phase: 'IA', schema: IA_SCHEMA, model: 'opus' }
+      { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA }
     )
-  : Promise.resolve(null)
-
-const [audited, ia] = await Promise.all([auditPromise, iaPromise])
-const findings = (audited || []).filter(Boolean).flatMap((r) => (r && r.findings) || [])
-const all = [...findings, ...((ia && ia.findings) || [])]
-const counts = {
-  blockers: all.filter((f) => f.severity === 'blocker').length,
-  majors: all.filter((f) => f.severity === 'major').length,
-  minors: all.filter((f) => f.severity === 'minor').length,
+    if (r && r.shots) shots.push(...r.shots)
+    if (r && r.gaps) gaps.push(...r.gaps)
+  }
+  const bySurface = {}
+  for (const s of shots) (bySurface[s.surface] || (bySurface[s.surface] = [])).push(s)
+  return { bySurface, gaps }
 }
-log(`Round ${round} findings — blocker:${counts.blockers} major:${counts.majors} minor:${counts.minors}`)
 
-// ── STEP D — SYNTHESIZE (barrier) ───────────────────────────────────────────
-phase('Synthesize')
+// ── STEP 0 — PLAN (the planner role; runs once) ─────────────────────────────
+phase('Plan')
 const plan = await agent(
-  `STEP D — SYNTHESIZE. Merge and DEDUPE these findings into a fix plan. Collapse cross-page issues into
-SYSTEMIC fixes (e.g. "12 pages use raw slate text" → ONE token sweep, not 12 edits).
+  `PLANNER for the OptiGains mobile PWA UI audit. Reason from source; do NOT drive the browser.
 ${SYSTEM_LAW}
-Findings: ${JSON.stringify(all)}
-IA: ${JSON.stringify(ia ? { tapCounts: ia.tapCounts, recommendedHomeOrder: ia.recommendedHomeOrder } : null)}
-Order of work: token sweep → shared primitives → per-page drift → mobile/IA → density → polish.
-Partition:
-  - systemic[]: fixes touching SHARED files (tokens, src/components/ui/*, Layout). Run serially on main tree.
-  - perSurface[]: per-page fixes. CRITICAL: files MUST be DISJOINT across entries so parallel worktree edits
-    never collide. If two surfaces need the same file, hoist that edit into systemic[].`,
-  { label: 'synth', phase: 'Synthesize', schema: FIXPLAN_SCHEMA, model: 'opus' }
+Two jobs, both high-level (do NOT plan granular per-file changes — that cascades errors over a long run):
+1. RUBRIC: write the grading opinion DOWN as 4 weighted criteria — design, originality, craft, functionality —
+   weights summing to 1.0, weighted toward design + originality (the model already handles functionality well).
+   For each, state in one line what GOOD looks like and what a FAIL looks like at the Whoop/MacroFactor bar.
+   The point is to make taste gradable and to kill AI slop (purple gradients, centered desktop dialogs, dead space).
+2. IA PRIORITY: read src/App.jsx (routes) and src/components/Layout.jsx (5-section dock Today·Train·Fuel·Body·Analyze
+   + FAB). Real usage = log today's workout, log food/macros, daily brief/readiness, weigh in. Return priorityOrder
+   (surface ids, most user-critical first) and recommendedHomeOrder (home thumb-zone priority a MacroFactor/Whoop
+   user finds instantly).`,
+  { label: 'plan', phase: 'Plan', schema: PLAN_SCHEMA, model: 'opus' }
 )
+const RUBRIC_TEXT = (plan && plan.rubric || []).map((r) => `- ${r.criterion} (w=${r.weight}): GOOD = ${r.whatGoodLooksLike}; FAIL = ${r.whatFailsLooksLike}`).join('\n')
 
-// ── STEP E — FIX (ALL serial on the MAIN working tree; no worktrees) ────────
-// Worktree isolation branched from a stale ancestor in round 1, so fixes were made
-// against old code and had to be discarded. Apply directly on the current main tree,
-// serially (the tree is shared; serial = zero race). build is the per-fix gate; lint
-// is project-wide and has PRE-EXISTING debt unrelated to this audit, so do not gate on it.
-const FIX_RULES = `Edit ONLY the files in your list, on the current working tree. Use existing tokens +
+const FIX_RULES = `Edit ONLY the files in your contract entry, on the current working tree. Use existing tokens +
 src/components/ui/* primitives; extend the system only for a genuine gap, and document it. After editing run
 \`npm run build\` — it MUST pass. Do NOT run \`npm run lint\` (the project has pre-existing lint debt unrelated
-to this audit; do not try to fix it). Do NOT run ANY git commands.`
-phase('Fix')
-const systemic = []
-for (const fix of ((plan && plan.systemic) || [])) {
-  const r = await agent(
-    `STEP E — SYSTEMIC FIX "${fix.title}" (id ${fix.id}). Shared files: ${fix.files.join(', ')}.
+to this audit). Do NOT run ANY git commands.`
+
+// ── THE GAN LOOP ────────────────────────────────────────────────────────────
+const scoreboard = []
+let inScope = initialScope
+let priorContract = null
+let stopped = null
+let round = startRound
+const lastRound = startRound + maxRounds - 1
+
+for (; round <= lastRound; round++) {
+  if (budget && budget.total && budget.remaining() < MIN_BUDGET_PER_ROUND) { stopped = 'budget'; break }
+  const roundDir = `./ui-audit/round-${round}`
+  log(`── Round ${round}/${lastRound} — ${inScope.length} surfaces in scope @ ${baseUrl}`)
+
+  // CAPTURE (re-capture = the live re-verification of last round's fixes)
+  phase('Capture')
+  const { bySurface, gaps } = await captureSurfaces(roundDir, inScope)
+
+  // EVALUATE — adversarial evaluator, one per surface, parallel. Harsh by design.
+  phase('Evaluate')
+  const priorAssertions = {}
+  if (priorContract) {
+    for (const c of priorContract.perSurface || []) (priorAssertions[c.surface] || (priorAssertions[c.surface] = [])).push(c.assertion)
+    // systemic assertions touch shared chrome → check them on every surface still in scope
+  }
+  const systemicAssertions = priorContract ? (priorContract.systemic || []).map((s) => s.assertion) : []
+  const evaluated = await parallel(inScope.map((id) => () => {
+    const s = SURFACE_BY_ID[id]
+    const shots = bySurface[id] || []
+    if (!shots.length) return Promise.resolve({ surface: id, scores: { design: 0, originality: 0, craft: 0, functionality: 0 }, findings: [], verifiedFixes: [] })
+    const toVerify = [...(priorAssertions[id] || []), ...systemicAssertions]
+    return agent(
+      `ADVERSARIAL EVALUATOR for surface "${id}" (${s.type}, route ${s.route}). You are a ruthless, hard-to-please
+design + UX critic. Your bias is to be HARSH: when unsure, mark it down. You did NOT write this code; your only
+job is to find what is wrong and to refuse to pass weak work. Self-congratulation is failure.
+${SYSTEM_LAW}
+GRADING RUBRIC (score each 1-10, brutally honest, against this written standard):
+${RUBRIC_TEXT}
+Screenshots to inspect (Read each PNG): ${JSON.stringify(shots)}
+Open the source for this surface to cite exact file:line.
+${toVerify.length ? `VERIFY PRIOR FIXES — for EACH assertion below, look at the live screenshots and report holds=true ONLY
+if the screenshots actually show it satisfied. Default to holds=false if you cannot SEE it satisfied:
+${toVerify.map((a, i) => `  ${i + 1}. ${a}`).join('\n')}` : 'No prior contract to verify (first round).'}
+Then report EVERY remaining defect against the 8-point lens (drift, mobile, consistency, hierarchy, density,
+belonging, slop, motion). Per finding: a stable id "${id}-N", severity (blocker/major/minor), category, exact
+file:line, what's wrong, concrete fix using existing tokens + src/components/ui/* primitives, and verifyBy (the
+observable that will prove it fixed next round). Do NOT fix anything.`,
+      { label: `eval:${id}`, phase: 'Evaluate', schema: EVAL_SCHEMA, model: 'opus' }
+    )
+  }))
+
+  const surfaces = (evaluated || []).filter(Boolean)
+  const findings = surfaces.flatMap((r) => (r.findings || []).map((f) => ({ ...f, surface: r.surface })))
+  const counts = {
+    blockers: findings.filter((f) => f.severity === 'blocker').length,
+    majors: findings.filter((f) => f.severity === 'major').length,
+    minors: findings.filter((f) => f.severity === 'minor').length,
+  }
+  // weighted rubric score per surface, and the worst single criterion anywhere (the gate looks at the floor)
+  const weights = Object.fromEntries((plan && plan.rubric || []).map((r) => [r.criterion, r.weight || 0.25]))
+  const minCriterion = surfaces.length ? Math.min(...surfaces.flatMap((r) => ['design', 'originality', 'craft', 'functionality'].map((k) => r.scores[k]))) : 0
+  const verifiedHeld = surfaces.flatMap((r) => r.verifiedFixes || []).filter((v) => v.holds).length
+  const verifiedTotal = surfaces.flatMap((r) => r.verifiedFixes || []).length
+  scoreboard.push({
+    round, counts, minCriterion,
+    regressionsCaught: verifiedTotal - verifiedHeld,
+    verified: `${verifiedHeld}/${verifiedTotal}`,
+    surfacesEvaluated: surfaces.length,
+    gaps,
+  })
+  log(`Round ${round}: blocker:${counts.blockers} major:${counts.majors} minor:${counts.minors} | worst rubric ${minCriterion}/10 | prior fixes held ${verifiedHeld}/${verifiedTotal}`)
+
+  // STOP CHECK — objective, evaluator-decided, Ralph-proof. Clean sweep OR hard cap.
+  const cleanSweep = counts.blockers === 0 && counts.majors === 0 && minCriterion >= gate
+  if (cleanSweep) { stopped = 'clean-sweep'; break }
+  if (diagnoseOnly) { stopped = 'diagnose-only'; break }
+  if (round === lastRound) { stopped = 'max-rounds'; break }
+  if (!findings.length) { stopped = 'no-actionable-findings'; break }
+
+  // CONTRACT — maker proposes a fix plan + verify-assertions; checker critiques scope and signs off
+  // BEFORE a line is written. Grade next round happens against THIS contract, not the vague spec.
+  phase('Contract')
+  const proposal = await agent(
+    `GENERATOR (maker). Propose a fix plan for THIS round's findings. You will negotiate "done" with an adversarial
+checker before writing any code.
+${SYSTEM_LAW}
+Findings: ${JSON.stringify(findings)}
+IA priority: ${JSON.stringify({ priorityOrder: plan && plan.priorityOrder, recommendedHomeOrder: plan && plan.recommendedHomeOrder })}
+Collapse cross-page issues into SYSTEMIC fixes (e.g. "12 pages use raw slate text" → ONE token sweep). Order:
+token sweep → shared primitives → per-page drift → mobile/IA → density → polish. Partition:
+  - systemic[]: fixes to SHARED files (tokens, src/components/ui/*, Layout). Applied serially on main tree.
+  - perSurface[]: per-page fixes. Files MUST be DISJOINT across entries (parallel worktrees must not collide);
+    if two surfaces need the same file, hoist it into systemic[].
+For EVERY entry write an assertion: a single concrete, screenshot-checkable statement that will be TRUE iff the
+fix worked (the checker will grade exactly this next round). Vague assertions get rejected.`,
+    { label: 'contract:propose', phase: 'Contract', schema: CONTRACT_PROPOSAL_SCHEMA, model: 'opus' }
+  )
+  const contract = await agent(
+    `EVALUATOR (checker) finalizing the build contract. The maker proposed the plan below. Push back like a hard
+reviewer, then SIGN IT.
+${SYSTEM_LAW}
+Maker proposal: ${JSON.stringify(proposal)}
+Do ALL of:
+  - Reject entries that are over-scoped, speculative, or churn subjective taste with low confidence (list in rejected[]).
+  - Tighten every weak assertion into something objectively checkable on a 390px screenshot. No "looks better".
+  - Guarantee perSurface files are DISJOINT across entries; hoist any collision into systemic[].
+  - Keep the smallest plan that clears blockers + majors and lifts the worst rubric criterion toward ${gate}/10.
+Then write the finalized contract to ${roundDir}/contract.json (use the Write tool) and return it with accepted=true.`,
+    { label: 'contract:finalize', phase: 'Contract', schema: CONTRACT_SCHEMA, model: 'opus' }
+  )
+
+  // FIX — systemic serial on main tree (shared = serial = zero race), per-surface parallel.
+  phase('Fix')
+  for (const fix of (contract && contract.systemic || [])) {
+    await agent(
+      `SYSTEMIC FIX "${fix.title}" (id ${fix.id}). Shared files: ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
+Done means this assertion is TRUE: ${fix.assertion}
 ${FIX_RULES}`,
-    { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
-  )
-  if (r) systemic.push(r)
-}
-const perSurface = []
-for (const fix of ((plan && plan.perSurface) || [])) {
-  const r = await agent(
-    `STEP E — PER-SURFACE FIX for "${fix.surface}". Files: ${fix.files.join(', ')}.
+      { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
+    )
+  }
+  await parallel((contract && contract.perSurface || []).map((fix) => () =>
+    agent(
+      `PER-SURFACE FIX for "${fix.surface}". Files: ${fix.files.join(', ')}.
 ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
+Done means this assertion is TRUE: ${fix.assertion}
 ${FIX_RULES}`,
-    { label: `fix:${fix.surface}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
-  )
-  if (r) perSurface.push(r)
+      { label: `fix:${fix.surface}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
+    )
+  ))
+
+  // Next round re-verifies exactly the surfaces we touched (systemic touches shared chrome → re-check all
+  // surfaces that had findings, since a token/primitive change can regress any of them). No silent capping.
+  priorContract = contract
+  const touched = new Set((contract.perSurface || []).map((f) => f.surface))
+  if ((contract.systemic || []).length) for (const f of findings) touched.add(f.surface)
+  inScope = [...touched].filter((id) => SURFACE_BY_ID[id])
+  if (!inScope.length) inScope = initialScope
 }
 
 return {
-  round,
-  counts,
-  cleanSweep: counts.blockers === 0 && counts.majors === 0,
-  coverageGaps: gaps,
-  findings: all,
-  ia,
-  plan,
-  fixes: { systemic, perSurface },
+  stopped,                 // 'clean-sweep' | 'max-rounds' | 'no-actionable-findings' | 'budget' | 'diagnose-only'
+  roundsRun: scoreboard.length,
+  finalRound: round > lastRound ? lastRound : round,
+  scoreboard,              // per-round counts + worst rubric + prior-fix verification (cost-per-accepted proxy)
+  openFindings: scoreboard.length ? scoreboard[scoreboard.length - 1].counts : null,
+  rubric: plan && plan.rubric,
+  recommendedHomeOrder: plan && plan.recommendedHomeOrder,
 }
