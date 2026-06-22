@@ -22,9 +22,10 @@ const USER_ID = Deno.env.get("USER_ID")!;
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
 const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
 
-// Gemini inline_data caps the whole request near 20MB; base64 inflates ~33%, so
-// keep source clips under ~14MB. Bigger clips → Files API (the upgrade path).
-const MAX_BYTES = 14 * 1024 * 1024;
+// We upload the clip to the Gemini Files API (not inline_data), which lifts the
+// ~20MB inline-request cap to ~2GB. The cap here is just a sanity/abuse bound and
+// must fit in the edge function's memory (we hold the whole buffer at once).
+const MAX_BYTES = 50 * 1024 * 1024;
 
 const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), {
@@ -39,16 +40,53 @@ function extractJSON(raw: string): Record<string, unknown> | null {
   return null;
 }
 
-// ArrayBuffer → base64 in chunks (String.fromCharCode spread blows the stack on
-// multi-MB buffers).
-function toBase64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+// Upload a clip to the Gemini Files API and return a file_uri usable in
+// generateContent. Resumable protocol: start (get upload URL) → upload+finalize →
+// poll until the file leaves PROCESSING (video needs a moment to be readable).
+async function uploadToGeminiFiles(buf: ArrayBuffer, mimeType: string): Promise<string> {
+  const numBytes = buf.byteLength;
+  const startRes = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Command": "start",
+        "X-Goog-Upload-Header-Content-Length": String(numBytes),
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ file: { display_name: "form-clip" } }),
+    },
+  );
+  if (!startRes.ok) throw new Error(`Files API start ${startRes.status}: ${(await startRes.text()).slice(0, 200)}`);
+  const uploadUrl = startRes.headers.get("X-Goog-Upload-URL");
+  if (!uploadUrl) throw new Error("Files API: no upload URL returned");
+
+  const upRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      "X-Goog-Upload-Command": "upload, finalize",
+      "X-Goog-Upload-Offset": "0",
+      "Content-Length": String(numBytes),
+    },
+    body: buf,
+  });
+  if (!upRes.ok) throw new Error(`Files API upload ${upRes.status}: ${(await upRes.text()).slice(0, 200)}`);
+  const upJson = await upRes.json() as { file?: { uri?: string; name?: string; state?: string } };
+  const file = upJson.file;
+  if (!file?.uri || !file?.name) throw new Error("Files API: no file uri returned");
+
+  // Video is PROCESSING right after upload; generateContent fails until ACTIVE.
+  let state = file.state;
+  const deadline = Date.now() + 45000;
+  while (state === "PROCESSING" && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const pollRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${file.name}?key=${GEMINI_API_KEY}`);
+    if (pollRes.ok) state = ((await pollRes.json()) as { state?: string }).state;
   }
-  return btoa(bin);
+  if (state !== "ACTIVE") throw new Error(`Files API: clip not ready (state=${state})`);
+  return file.uri;
 }
 
 Deno.serve(async (req) => {
@@ -77,19 +115,19 @@ Deno.serve(async (req) => {
     return json({ error: `could not sign storage path: ${signErr?.message ?? "unknown"}` }, 400);
   }
 
-  // Fetch the clip bytes and inline them.
-  let dataB64: string, mimeType: string;
+  // Fetch the clip bytes, then upload to the Gemini Files API (returns a file_uri).
+  let fileUri: string, mimeType: string;
   try {
     const vidRes = await fetch(signed.signedUrl);
     if (!vidRes.ok) return json({ error: `could not read clip: ${vidRes.status}` }, 502);
     const buf = await vidRes.arrayBuffer();
     if (buf.byteLength > MAX_BYTES) {
       return json({
-        error: `clip is ${(buf.byteLength / 1024 / 1024).toFixed(1)}MB; keep it under ${MAX_BYTES / 1024 / 1024}MB (trim to a few reps).`,
+        error: `clip is ${(buf.byteLength / 1024 / 1024).toFixed(1)}MB; keep it under ${MAX_BYTES / 1024 / 1024}MB.`,
       }, 413);
     }
     mimeType = vidRes.headers.get("content-type") || "video/mp4";
-    dataB64 = toBase64(buf);
+    fileUri = await uploadToGeminiFiles(buf, mimeType);
   } catch (err) {
     return json({ error: `clip read failed: ${String(err)}` }, 502);
   }
@@ -120,7 +158,7 @@ Deno.serve(async (req) => {
           contents: [{
             parts: [
               { text: prompt },
-              { inline_data: { mime_type: mimeType, data: dataB64 } },
+              { file_data: { mime_type: mimeType, file_uri: fileUri } },
             ],
           }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 1200, responseMimeType: "application/json" },

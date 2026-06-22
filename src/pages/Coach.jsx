@@ -17,12 +17,11 @@ import {
 const RATING_COLOR = (r) =>
   r >= 8 ? "text-good" : r >= 5 ? "text-warn" : "text-bad";
 
-// Gemini inline_data caps the whole request near 20MB and base64 inflates the
-// payload ~33%, so reject clips over ~14MB before uploading rather than letting
-// the edge function fail opaquely on the inline-request cap.
-// FUTURE: long clips should go through the Gemini Files API (resumable upload +
-// file reference) instead of inlining, which lifts this cap.
-const MAX_BYTES = 14 * 1024 * 1024;
+// The edge function uploads the clip to the Gemini Files API (not inline_data),
+// so the old ~14MB inline cap is gone. This bound just rejects clips too large to
+// be a few reps (and keep the edge function's in-memory buffer sane). 50MB covers
+// ~10s of 1080p iPhone video comfortably.
+const MAX_BYTES = 50 * 1024 * 1024;
 
 export default function Coach() {
   const { user } = useAuth();
@@ -62,7 +61,7 @@ export default function Coach() {
     if (!file) return;
     if (!file.type.startsWith("video/")) { setError("Pick a video clip."); return; }
     if (file.size > MAX_BYTES) {
-      setError("That clip is too big. Trim to a few reps, or keep clips under 14MB.");
+      setError("That clip is too big. Trim to a few reps, or keep clips under 50MB.");
       return;
     }
     setError(""); setCritique(null);
@@ -167,7 +166,7 @@ export default function Coach() {
                 <Film className="w-3.5 h-3.5" /> {pending.file.name}
               </div>
               <Button variant="volt" size="lg" onClick={analyze} disabled={busy} className="w-full">
-                {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {busy ? <Loader2 className="w-4 h-4 mr-2 spin-loop" /> : null}
                 {busy ? (status || "Working…") : "Get critique"}
               </Button>
             </div>
@@ -185,7 +184,7 @@ export default function Coach() {
         {emptyCanvas && (
           <div className="glass-inset rounded-xl px-4 py-3.5 mt-4 space-y-3 rise-in">
             <HowToStep icon={Video} title="Film a side view">
-              A few clean reps of squat, deadlift, or bench. Keep clips under 14MB.
+              A few clean reps of squat, deadlift, or bench. Keep clips under 50MB.
             </HowToStep>
             <HowToStep icon={Sparkles} title="Coach reviews it">
               The lift gets scored and checked for safety flags in seconds.
@@ -244,7 +243,7 @@ export default function Coach() {
               {openReview.url
                 ? <video src={openReview.url} controls playsInline className="w-full rounded-lg bg-black/40 object-contain" style={{ maxHeight: "42vh" }} />
                 : <div className="w-full h-40 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold gap-1.5">
-                    <Loader2 className="w-5 h-5 animate-spin" /> Loading clip…
+                    <Loader2 className="w-5 h-5 spin-loop" /> Loading clip…
                   </div>
               }
               {openReview.review.result && <Critique c={openReview.review.result} embedded />}
