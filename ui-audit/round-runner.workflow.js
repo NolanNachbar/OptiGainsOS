@@ -2,11 +2,11 @@ export const meta = {
   name: 'ui-audit-gan',
   description: 'Planner → (capture → adversarial evaluator → maker/checker contract → fix)* GAN loop. Runs rounds until clean-sweep or a hard round cap, re-verifying every fix on a fresh capture.',
   phases: [
-    { title: 'Plan', detail: 'one opus planner: rubric weights + IA priority sprints (runs once)', model: 'opus' },
-    { title: 'Capture', detail: 'serial batches against the single shared browse daemon, 390px + 1280px' },
-    { title: 'Evaluate', detail: 'adversarial evaluator per surface: scores rubric + verifies prior contract on the LIVE app', model: 'opus' },
-    { title: 'Contract', detail: 'generator proposes fixes + verify-assertions; evaluator critiques and signs off before any code is written', model: 'opus' },
-    { title: 'Fix', detail: 'systemic serial on main tree; per-surface parallel; build-gated' },
+    { title: 'Plan', detail: 'opus advisor: rubric weights + IA priority sprints (runs once)', model: 'opus' },
+    { title: 'Capture', detail: 'sonnet workers, serial batches against the single shared browse daemon, 390px + 1280px', model: 'sonnet' },
+    { title: 'Evaluate', detail: 'opus advisor: adversarial evaluator per surface, scores rubric + verifies prior contract on the LIVE app', model: 'opus' },
+    { title: 'Contract', detail: 'sonnet maker proposes fixes + assertions; opus advisor critiques and signs off before any code is written' },
+    { title: 'Fix', detail: 'sonnet workers: systemic serial on main tree; per-surface parallel; build-gated', model: 'sonnet' },
   ],
 }
 
@@ -231,7 +231,7 @@ For EACH surface in this batch: ${JSON.stringify(batch)}
   5. Secondary check: $B viewport 1280x900 ; $B screenshot ${roundDir}/<surface-id>/1280-populated.png
   6. If a surface cannot be reached on mobile, add it to gaps with the reason (never skip silently).
 Return the manifest of every shot saved (surface, state, viewport, path, reached, scrollHeight390) plus gaps.`,
-      { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA }
+      { label: `capture:b${i + 1}`, phase: 'Capture', schema: CAPTURE_BATCH_SCHEMA, model: 'sonnet' }
     )
     if (r && r.shots) shots.push(...r.shots)
     if (r && r.gaps) gaps.push(...r.gaps)
@@ -292,7 +292,9 @@ for (; round <= lastRound; round++) {
   const evaluated = await parallel(inScope.map((id) => () => {
     const s = SURFACE_BY_ID[id]
     const shots = bySurface[id] || []
-    if (!shots.length) return Promise.resolve({ surface: id, scores: { design: 0, originality: 0, craft: 0, functionality: 0 }, findings: [], verifiedFixes: [] })
+    // No shots = a capture gap (unseedable state / unreachable), NOT a quality-zero surface. Flag it so the
+    // rubric floor ignores it; otherwise an uncapturable surface pins minCriterion at 0 and clean-sweep is impossible.
+    if (!shots.length) return Promise.resolve({ surface: id, noShots: true, scores: null, findings: [], verifiedFixes: [] })
     const toVerify = [...(priorAssertions[id] || []), ...systemicAssertions]
     return agent(
       `ADVERSARIAL EVALUATOR for surface "${id}" (${s.type}, route ${s.route}). You are a ruthless, hard-to-please
@@ -314,33 +316,39 @@ observable that will prove it fixed next round). Do NOT fix anything.`,
     )
   }))
 
+  // A null entry = the evaluator agent itself died (rate limit, crash). That is NOT "no findings" — it is
+  // missing data. Counting it as clean is the quiet-failure trap, so track it and refuse to stop on it.
+  const failedEvals = (evaluated || []).filter((r) => !r).length
   const surfaces = (evaluated || []).filter(Boolean)
+  const scored = surfaces.filter((r) => r.scores)   // real evals only (excludes no-shots gaps)
   const findings = surfaces.flatMap((r) => (r.findings || []).map((f) => ({ ...f, surface: r.surface })))
   const counts = {
     blockers: findings.filter((f) => f.severity === 'blocker').length,
     majors: findings.filter((f) => f.severity === 'major').length,
     minors: findings.filter((f) => f.severity === 'minor').length,
   }
-  // weighted rubric score per surface, and the worst single criterion anywhere (the gate looks at the floor)
-  const weights = Object.fromEntries((plan && plan.rubric || []).map((r) => [r.criterion, r.weight || 0.25]))
-  const minCriterion = surfaces.length ? Math.min(...surfaces.flatMap((r) => ['design', 'originality', 'craft', 'functionality'].map((k) => r.scores[k]))) : 0
+  // Worst single criterion across surfaces that actually have scores (the gate looks at the floor).
+  // Uncapturable surfaces (noShots) are gaps, not zeros, so they do not block the floor.
+  const minCriterion = scored.length ? Math.min(...scored.flatMap((r) => ['design', 'originality', 'craft', 'functionality'].map((k) => r.scores[k]))) : 0
   const verifiedHeld = surfaces.flatMap((r) => r.verifiedFixes || []).filter((v) => v.holds).length
   const verifiedTotal = surfaces.flatMap((r) => r.verifiedFixes || []).length
   scoreboard.push({
     round, counts, minCriterion,
     regressionsCaught: verifiedTotal - verifiedHeld,
     verified: `${verifiedHeld}/${verifiedTotal}`,
-    surfacesEvaluated: surfaces.length,
+    surfacesEvaluated: scored.length, failedEvals,
     gaps,
   })
-  log(`Round ${round}: blocker:${counts.blockers} major:${counts.majors} minor:${counts.minors} | worst rubric ${minCriterion}/10 | prior fixes held ${verifiedHeld}/${verifiedTotal}`)
+  log(`Round ${round}: blocker:${counts.blockers} major:${counts.majors} minor:${counts.minors} | worst rubric ${minCriterion}/10 | prior fixes held ${verifiedHeld}/${verifiedTotal} | ${failedEvals} eval(s) failed`)
 
   // STOP CHECK — objective, evaluator-decided, Ralph-proof. Clean sweep OR hard cap.
-  const cleanSweep = counts.blockers === 0 && counts.majors === 0 && minCriterion >= gate
+  // Bail loudly if too many evaluators died (rate limit etc.) — never fix on partial data or fake a clean sweep.
+  if (failedEvals > Math.max(2, inScope.length * 0.25)) { stopped = 'evaluation-incomplete'; break }
+  const cleanSweep = failedEvals === 0 && counts.blockers === 0 && counts.majors === 0 && minCriterion >= gate
   if (cleanSweep) { stopped = 'clean-sweep'; break }
   if (diagnoseOnly) { stopped = 'diagnose-only'; break }
   if (round === lastRound) { stopped = 'max-rounds'; break }
-  if (!findings.length) { stopped = 'no-actionable-findings'; break }
+  if (!findings.length) { stopped = failedEvals ? 'evaluation-incomplete' : 'no-actionable-findings'; break }
 
   // CONTRACT — maker proposes a fix plan + verify-assertions; checker critiques scope and signs off
   // BEFORE a line is written. Grade next round happens against THIS contract, not the vague spec.
@@ -358,7 +366,7 @@ token sweep → shared primitives → per-page drift → mobile/IA → density �
     if two surfaces need the same file, hoist it into systemic[].
 For EVERY entry write an assertion: a single concrete, screenshot-checkable statement that will be TRUE iff the
 fix worked (the checker will grade exactly this next round). Vague assertions get rejected.`,
-    { label: 'contract:propose', phase: 'Contract', schema: CONTRACT_PROPOSAL_SCHEMA, model: 'opus' }
+    { label: 'contract:propose', phase: 'Contract', schema: CONTRACT_PROPOSAL_SCHEMA, model: 'sonnet' }
   )
   const contract = await agent(
     `EVALUATOR (checker) finalizing the build contract. The maker proposed the plan below. Push back like a hard
@@ -383,7 +391,7 @@ ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
 Done means this assertion is TRUE: ${fix.assertion}
 ${FIX_RULES}`,
-      { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
+      { label: `fix:sys:${fix.id}`, phase: 'Fix', schema: FIXRESULT_SCHEMA, model: 'sonnet' }
     )
   }
   await parallel((contract && contract.perSurface || []).map((fix) => () =>
@@ -393,7 +401,7 @@ ${SYSTEM_LAW}
 Instruction: ${fix.instruction}
 Done means this assertion is TRUE: ${fix.assertion}
 ${FIX_RULES}`,
-      { label: `fix:${fix.surface}`, phase: 'Fix', schema: FIXRESULT_SCHEMA }
+      { label: `fix:${fix.surface}`, phase: 'Fix', schema: FIXRESULT_SCHEMA, model: 'sonnet' }
     )
   ))
 
