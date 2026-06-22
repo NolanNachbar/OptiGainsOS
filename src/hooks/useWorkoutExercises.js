@@ -78,11 +78,13 @@ export function useWorkoutExercises(initialExercises = []) {
     });
   }, []);
 
-  // Swap an exercise for a chosen alternative (DB entry or free-text custom),
-  // keeping the set count but resetting load/reps so the new movement starts
-  // fresh. Mirrors WorkoutDetail.handleReplaceExercise so swap behaves the same
-  // in the quick-workout flow (previously the Replace menu item was a dead button
-  // here — no handler was wired, so it silently did nothing).
+  // Swap an exercise for a chosen alternative (DB entry or free-text custom).
+  // Already-completed sets are CARRIED FORWARD exactly as logged (count + load +
+  // reps + rpe) so a mid-exercise swap never discards finished work; only the
+  // remaining (uncompleted) sets adopt the replacement's seed load/reps. Mirrors
+  // WorkoutDetail.handleReplaceExercise so swap behaves the same in the
+  // quick-workout flow (previously the Replace menu item was a dead button here —
+  // no handler was wired, so it silently did nothing).
   // seedWeight: the new movement's last-performance load (callers look it up
   // from history and pass it). Previously hardcoded to 0, so every swap blanked
   // the load even when the athlete had logged the replacement before.
@@ -91,6 +93,7 @@ export function useWorkoutExercises(initialExercises = []) {
       toast.error("Please pick or enter a replacement exercise");
       return;
     }
+    const newName = newExercise.name.trim();
     setExercises(prev => prev.map(ex => {
       if (ex.name !== oldName) return ex;
       const repsRaw = String(newExercise.reps ?? newExercise.rep_target ?? ex.sets?.[0]?.reps ?? 10).trim();
@@ -98,15 +101,19 @@ export function useWorkoutExercises(initialExercises = []) {
       const newReps = m
         ? Math.round((parseInt(m[1], 10) + parseInt(m[2], 10)) / 2)
         : (parseInt(repsRaw, 10) || ex.sets?.[0]?.reps || 10);
+      const completedCount = (ex.sets || []).filter(s => s.completed).length;
       return {
         ...ex,
-        name: newExercise.name.trim(),
-        notes: null,
+        name: newName,
+        // Record the mid-set swap so the engine's notes_parser can learn
+        // equipment/preference substitutions (only when work was already done).
+        notes: completedCount > 0
+          ? `Swapped ${oldName} → ${newName} after ${completedCount} set${completedCount > 1 ? 's' : ''}`
+          : null,
         rest_seconds: newExercise.rest || newExercise.rest_seconds || ex.rest_seconds,
-        sets: (ex.sets || []).map((s, i) => ({
-          ...s, set_number: i + 1, reps: newReps,
-          weight: Number(seedWeight) || 0, completed: false, rpe: null, set_type: 'working',
-        })),
+        sets: (ex.sets || []).map((s, i) => s.completed
+          ? { ...s, set_number: i + 1 }
+          : { ...s, set_number: i + 1, reps: newReps, weight: Number(seedWeight) || 0, completed: false, rpe: null, set_type: 'working' }),
       };
     }));
   }, []);

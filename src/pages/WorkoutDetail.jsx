@@ -326,11 +326,19 @@ export default function WorkoutDetail() {
     if (workout && isLogging && exerciseLogs.length === 0) {
       let initialLogs;
 
+      // `sets` arrives in two shapes across sources: a COUNT (number, e.g. seeded
+      // templates `sets: 4`) or an ARRAY of set objects (real saved workouts /
+      // log format). Array.from({length: <array>}) coerces the array to NaN for
+      // length != 1, seeding ZERO rows — so multi-set exercises rendered with
+      // nothing to log. Normalize to a count for both init paths.
+      const resolveSetCount = (sets, fallback = 3) =>
+        Array.isArray(sets) ? (sets.length || fallback) : (Number(sets) || fallback);
+
       if (isProgramSource && programWorkout?.exercises && enrollment) {
         // Program mode: initialize with set types and target weights
         initialLogs = programWorkout.exercises.filter(ex => !isRunEx(ex)).map((ex, index) => {
           const targets = progressionTargetsMap[ex.name];
-          const numSets = ex.sets || 3;
+          const numSets = resolveSetCount(ex.sets);
 
           // Get last performance for autofill
           const lastPerf = getLastExercisePerformance(allWorkoutLogs, ex.name);
@@ -369,7 +377,7 @@ export default function WorkoutDetail() {
           return {
             name: exercise.name,
             exercise_index: index,
-            sets: Array.from({ length: exercise.sets || 3 }, (_, setIndex) => ({
+            sets: Array.from({ length: resolveSetCount(exercise.sets) }, (_, setIndex) => ({
               set_number: setIndex + 1,
               reps: targetReps,
               weight: scaledWeight,
@@ -629,20 +637,28 @@ export default function WorkoutDetail() {
         ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
         : lastPerf?.lastWeight || 0;
 
+      // Carry forward already-completed sets exactly as logged so a mid-exercise
+      // swap never discards finished work; only the remaining (uncompleted) sets
+      // adopt the replacement's seed load/reps.
+      const completedCount = ex.sets.filter(s => s.completed).length;
       return {
         ...ex,
         name: newExercise.name,
-        notes: null,
+        notes: completedCount > 0
+          ? `Swapped ${oldName} → ${newExercise.name} after ${completedCount} set${completedCount > 1 ? 's' : ''}`
+          : null,
         rest_seconds: newExercise.rest || newExercise.rest_seconds || ex.rest_seconds,
-        sets: ex.sets.map((s, i) => ({
-          ...s,
-          set_number: i + 1,
-          reps: newReps,
-          weight: seedWeight,
-          completed: false,
-          rpe: null,
-          set_type: 'working',
-        })),
+        sets: ex.sets.map((s, i) => s.completed
+          ? { ...s, set_number: i + 1 }
+          : {
+              ...s,
+              set_number: i + 1,
+              reps: newReps,
+              weight: seedWeight,
+              completed: false,
+              rpe: null,
+              set_type: 'working',
+            }),
       };
     }));
 
