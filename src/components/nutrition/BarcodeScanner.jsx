@@ -110,7 +110,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
   // over it — hiding the camera and letting taps fall through to the dialog
   // scrim (which dismisses everything). z-[10002] sits above the dialog.
   return createPortal(
-    <div className="fixed inset-0 z-[10002] flex flex-col bg-charcoal rise-in">
+    <div className="fixed inset-0 z-[10002] flex flex-col bg-charcoal sheet-rise">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal-surface border-b border-charcoal-border">
         <span className="text-ink font-semibold text-base">Scan Barcode</span>
@@ -152,7 +152,10 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         {/* Scanning frame overlay */}
         {scanState === "scanning" && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-64 h-40">
+            <div
+              className="relative"
+              style={{ width: "var(--scan-reticle-w)", height: "var(--scan-reticle-h)" }}
+            >
               {/* Corner brackets — drawn in the primary ink token. Deliberate
                   camera-legibility exception: the charcoal-border hairline
                   (white/0.10) is invisible over arbitrary live video, so the
@@ -165,7 +168,11 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
                 "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg",
                 "bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg",
               ].map((cls, i) => (
-                <div key={i} className={`absolute w-8 h-8 border-ink ${cls}`} />
+                <div
+                  key={i}
+                  className={`absolute border-ink ${cls}`}
+                  style={{ width: "var(--scan-reticle-corner)", height: "var(--scan-reticle-corner)" }}
+                />
               ))}
               {/* Scan line — neutral ink material; the `info` hue is reserved
                   for biometrics, and coral stays reserved for the action
@@ -207,13 +214,14 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
       </div>
       )}
 
-      {/* Not found state — the camera block is unmounted, so this fills the
-          takeover (flex-1) and pushes its content to the bottom (justify-end)
-          so the message + Try again / Enter manually read as one grouped unit
-          landing in the thumb zone with safe-area padding, rising in on the
-          sheet motion. */}
+      {/* Not found state — the camera block is unmounted, so this content-sized
+          panel fills the takeover (flex-1) and CENTERS the message + Try again /
+          Enter manually as one grouped cluster (no >200px black void, since the
+          camera box is gone). The single entrance is the root's sheet-rise; this
+          panel doesn't re-animate. Safe-area padding keeps the actions clear of
+          the bottom inset. */}
       {scanState === "not_found" && (
-        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-end gap-3 text-center sheet-rise">
+        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-center gap-3 text-center">
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
@@ -232,21 +240,30 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
         </div>
       )}
 
-      {/* Error state — same fill-and-anchor treatment so the icon + message +
-          Close read as one grouped unit landing in the lower third with
-          safe-area padding. */}
+      {/* Error state — same content-sized, CENTERED cluster (camera box is
+          unmounted, so no black void). The single entrance is the root's
+          sheet-rise; this panel doesn't re-animate. */}
       {scanState === "error" && (
-        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-end gap-3 text-center sheet-rise">
-          <AlertTriangle className="w-10 h-10 text-bad" />
+        <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-center gap-3 text-center">
+          {/* Neutral muted ink — the physiological `bad`/spectrum hues are
+              reserved for biometric readouts (SYS-09), not chrome. A camera
+              failure is operational chrome, so the glyph reads as quiet ink. */}
+          <AlertTriangle className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>
             <p className="text-sm text-ink-muted mt-1">{errorMessage}</p>
           </div>
-          {/* One ghost dismiss treatment across states (matches the live-scan
-              Cancel) so the escape affordance is consistent. */}
-          <Button variant="ghost" size="lg" className="w-full" onClick={onClose}>
-            Close
-          </Button>
+          {/* Manual entry is the recovery action when the camera can't run, so
+              it carries the single teal action color; Close is the neutral
+              escape beside it. */}
+          <div className="flex gap-2 w-full">
+            <Button variant="primary" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+              Enter manually
+            </Button>
+            <Button variant="ghost" size="lg" className="flex-1" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
       )}
     </div>,

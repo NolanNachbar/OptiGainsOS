@@ -47,18 +47,25 @@ function StarRating({ value, onChange, readonly }) {
             // Tap the current high star to clear back to unrated, so a mis-tap is
             // recoverable without a separate control.
             onClick={() => !readonly && onChange?.(n === value ? 0 : n)}
-            className={`transition-colors inline-flex items-center justify-center rounded-full ${readonly ? "cursor-default" : "cursor-pointer w-11 h-11 hover:text-gold active:text-gold active:scale-95 focus-visible:ring-2 focus-visible:ring-gold/40"} ${filled ? "text-gold" : "text-ink-faint"}`}
+            // Empty stars read heavier on the editable control (text-ink-secondary)
+            // than on the read-only StarRating in book cards (text-ink-muted), so
+            // the editable rating signals it is actionable. A rating is a self-
+            // assessment, not a biometric or an owned datum, so the fill ladder is
+            // NEUTRAL INK (text-ink), never gold — gold is the kcal/deadline hue and
+            // would read as a borrowed accent here. The focus ring is the brand
+            // (the system focus color), not a gold tint.
+            className={`transition-colors duration-[180ms] ease-[var(--ease)] inline-flex items-center justify-center rounded-full ${readonly ? "cursor-default" : "cursor-pointer w-11 h-11 hover:text-ink active:text-ink active:scale-95 focus-visible:ring-2 focus-visible:ring-brand"} ${filled ? "text-ink" : readonly ? "text-ink-muted" : "text-ink-secondary"}`}
             disabled={readonly}
             aria-label={readonly ? undefined : `Rate ${n} star${n > 1 ? "s" : ""}`}
           >
             {/* Unrated stars read as hollow outlines so the editable control has a
-                visible empty cue; rated stars fill gold. */}
+                visible empty cue; rated stars fill neutral ink. */}
             <Star className={`w-4 h-4 ${filled ? "fill-current" : "fill-none"}`} />
           </button>
         );
       })}
       {!readonly && (
-        <span className="ml-2 text-xs font-technical text-ink-faint">
+        <span className="ml-2 text-xs font-technical text-ink-secondary">
           {value ? `${value}/5` : "Tap to rate"}
         </span>
       )}
@@ -77,7 +84,7 @@ function TabQueryState({ isLoading, isError, onRetry }) {
   if (isError) {
     return (
       <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-        <AlertTriangle className="w-7 h-7 text-warn mx-auto mb-2" />
+        <AlertTriangle className="w-7 h-7 text-muted-2 mx-auto mb-2" />
         <p className="text-sm font-semibold text-muted-2 mb-3">Couldn't load data.</p>
         <Button variant="ghost" size="sm" onClick={onRetry}>Retry</Button>
       </div>
@@ -171,9 +178,11 @@ function ReadingTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
-        </div>
+        {books.length > 0 && (
+          <div>
+            <p className="font-technical text-xs font-semibold text-ink-muted">{books.filter(b => b.status === "finished").length} finished · {currentlyReading.length} in progress</p>
+          </div>
+        )}
         {/* While empty, the ghost "Add your first book" CTA owns the single coral
             primary, suppress the header button so we don't show two add actions. */}
         {books.length > 0 && (
@@ -215,10 +224,10 @@ function ReadingTab() {
       })()}
 
       {!isLoading && !isError && books.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-          <BookOpen className="w-8 h-8 text-faint mx-auto mb-2" />
+        <div className="surface p-8 text-center flex flex-col items-center">
+          <BookOpen className="w-8 h-8 text-faint mb-2" />
           <p className="text-sm font-semibold text-muted-2 mb-3">Start your reading list, track books, takeaways, and ratings.</p>
-          <Button variant="ghost" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
+          <Button variant="volt" size="lg" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
         </div>
       )}
 
@@ -238,18 +247,22 @@ function ReadingTab() {
             <DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle>
             <DialogDescription>{editing ? "Update this book's status, rating, or takeaways." : "Track a book with its status, rating, and key takeaways."}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Title</Label>
-              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" />
+              {/* Title is the one required field (Save is gated on it), so its label
+                  reads at full ink strength while the optional fields below stay at
+                  secondary — privileging the field that actually unblocks Save,
+                  using ink hierarchy rather than a spectrum-warn accent. */}
+              <Label className="text-xs text-ink mb-1.5 block">Title</Label>
+              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Book title" required aria-required="true" />
             </div>
             <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Author</Label>
+              <Label className="text-xs text-ink-secondary mb-1.5 block">Author</Label>
               <Input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))} placeholder="Author" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-ink-muted mb-1.5 block">Category</Label>
+                <Label className="text-xs text-ink-secondary mb-1.5 block">Category</Label>
                 <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -258,7 +271,7 @@ function ReadingTab() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-ink-muted mb-1.5 block">Status</Label>
+                <Label className="text-xs text-ink-secondary mb-1.5 block">Status</Label>
                 <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -268,15 +281,15 @@ function ReadingTab() {
               </div>
             </div>
             <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Rating</Label>
+              <Label className="text-xs text-ink-secondary mb-1.5 block">Rating</Label>
               <StarRating value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
             </div>
             <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Notes</Label>
+              <Label className="text-xs text-ink-secondary mb-1.5 block">Notes</Label>
               <Textarea size="default" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
+              <Button variant="ghost" size="lg" className="basis-1/3 shrink-0" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
               <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
@@ -420,13 +433,16 @@ function StudyTab() {
           </div>
       </div>
 
+      {/* Weekly hours is the single dominant display number on the Study tab; total
+          sessions sits beside it as a quiet supporting figure (smaller, muted ink),
+          so the tab reads with one hero stat rather than two equal-weight numbers. */}
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-inset p-4 text-center">
-          <p className="font-technical text-2xl font-extrabold text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
+          <p className="hero-metric text-3xl text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
         <div className="glass-inset p-4 text-center">
-          <p className="font-technical text-2xl font-extrabold text-ink">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
+          <p className="font-technical text-base font-bold text-muted-2">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
           <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
@@ -546,7 +562,9 @@ function SkillsTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         {stale.length > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-warn">
+          // Staleness is not a biometric, so it is NOT the warn spectrum. It rides
+          // Mind's owned violet identity, the same hue the level dots and glyph use.
+          <div className="flex items-center gap-1.5 text-xs text-violet">
             <AlertTriangle className="w-3.5 h-3.5" />
             {stale.length} skill{stale.length > 1 ? "s" : ""} not practiced in 14+ days
           </div>
@@ -565,7 +583,7 @@ function SkillsTab() {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
-            <div key={skill.id} className={`glass p-4 group ${isStale ? "rounded-2xl border-warn/15 bg-warn/[0.04]" : "glass-interactive"}`}>
+            <div key={skill.id} className={`glass p-4 group ${isStale ? "rounded-2xl border-violet/15 bg-violet/[0.04]" : "glass-interactive"}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
@@ -589,14 +607,17 @@ function SkillsTab() {
               </div>
               <div className="flex items-center justify-between">
                 {isStale ? (
-                  <span className="text-[10px] font-bold text-warn flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-violet flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     {daysSince === null ? "Never practiced" : `${daysSince}d ago`}
                   </span>
                 ) : (
                   <span className="font-technical text-[10px] font-semibold text-muted-2">{daysSince}d ago</span>
                 )}
-                <Button size="sm" variant="coralGhost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
+                {/* Neutral ghost so the only solid/tinted teal in the Skills
+                    viewport is the header Add action — a per-card teal-tinted
+                    "Practiced" was a second action accent (drift). */}
+                <Button size="sm" variant="ghost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Practiced
                 </Button>
               </div>
@@ -630,7 +651,7 @@ function SkillsTab() {
       />
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="glass glass-interactive max-w-sm">
+        <DialogContent>
           <DialogHeader><DialogTitle className="text-ink">Add Skill</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
@@ -654,7 +675,7 @@ function SkillsTab() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowAdd(false)}>Cancel</Button>
+              <Button variant="ghost" size="lg" className="basis-1/3 shrink-0" onClick={() => setShowAdd(false)}>Cancel</Button>
               <Button variant="volt" size="lg" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
@@ -773,7 +794,10 @@ export default function Mind({ hideHeader }) {
               <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
                 <Brain className="w-[15px] h-[15px] text-violet" />
               </div>
-              <h1 className="type-display text-2xl">Mind & Learning</h1>
+              {/* Surface title reconciled with the mobile Layout header, which
+                  prints "Mind" — both breakpoints now name the surface identically
+                  beside its violet identity glyph. */}
+              <h1 className="type-display text-2xl">Mind</h1>
             </div>
           </header>
         )}

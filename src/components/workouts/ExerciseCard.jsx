@@ -89,8 +89,8 @@ export default function ExerciseCard({
   const setCell = (isActive) =>
     `h-11 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] text-ink ` +
     `placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation ` +
-    `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-teal/40 ` +
-    `${isActive ? 'bg-white/[0.09]' : 'bg-white/[0.05]'}`;
+    `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-brand/40 ` +
+    `${isActive ? 'bg-[var(--glass-bg)]' : 'bg-track'}`;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -398,13 +398,17 @@ export default function ExerciseCard({
           </div>
         )}
 
-        {/* Set progress segments — done teal, current coral, upcoming faint */}
+        {/* Set progress segments — NEUTRAL, not hue-coded. rtb-2/3: completed/active/
+            pending was bg-teal/bg-brand, but a set-progress strip is structural
+            chrome, not a datum that owns a hue (teal is the single action color).
+            Repainted to a neutral ramp: completed = bright glass edge, active =
+            primary ink, pending = the shared empty track material. */}
         <div className="flex gap-[5px] mb-3">
           {exercise.sets.map((s, i) => (
             <i
               key={i}
               className={`flex-1 h-1 rounded-full ${
-                s.completed ? 'bg-teal' : i === activeSetIndex ? 'bg-brand' : 'bg-white/10'
+                s.completed ? 'bg-[var(--glass-edge-strong)]' : i === activeSetIndex ? 'bg-ink' : 'bg-track'
               }`}
             />
           ))}
@@ -454,10 +458,10 @@ export default function ExerciseCard({
           return (
           <div key={setIndex}>
             <div
-              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors ${
+              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
                 isActive
-                  ? 'bg-[rgba(239,115,104,0.06)] rounded-xl -mx-2 px-2'
-                  : setIndex === 0 ? '' : 'border-t-[0.5px] border-t-white/[0.08]'
+                  ? 'bg-brand/[0.06] rounded-xl -mx-2 px-2'
+                  : setIndex === 0 ? '' : 'border-t-[0.5px] border-t-charcoal-border'
               }`}
             >
               <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
@@ -535,10 +539,10 @@ export default function ExerciseCard({
                 onClick={() => handleSetCompleted(setIndex, !set.completed)}
                 className="min-h-[44px] w-full flex items-center justify-center touch-manipulation"
               >
-                <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   set.completed
-                    ? 'bg-teal/[0.16] text-teal'
-                    : 'border-[1.5px] border-white/25 text-ink-faint hover:border-teal/50 hover:text-teal'
+                    ? 'bg-brand/[0.16] text-brand'
+                    : 'border-[1.5px] border-charcoal-border text-ink-faint hover:border-brand/50 hover:text-brand'
                 }`}>
                   <Check className="w-5 h-5" strokeWidth={3} />
                 </span>
@@ -618,7 +622,7 @@ export default function ExerciseCard({
           </div>
         ) : exercise.notes ? (
           <p
-            className="mt-3 text-sm text-ink-muted italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-white/[0.05] rounded-r-lg py-1"
+            className="mt-3 text-sm text-ink-muted italic border-l-2 border-brand/30 pl-3 cursor-pointer hover:bg-track rounded-r-lg py-1"
             onClick={() => setEditingNotes(true)}
           >
             {exercise.notes}

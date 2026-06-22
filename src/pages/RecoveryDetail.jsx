@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Activity, Moon, Zap,
-  Info, Calendar
+  Info, Calendar, Watch
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -49,6 +50,7 @@ const CHART_BODY_PAD = "pt-2 pb-4";
 
 export default function RecoveryDetail() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { recoveryMetrics, isLoading, error } = useRecoveryMetrics(60); // Get 60 days for chronic load
 
@@ -73,26 +75,29 @@ export default function RecoveryDetail() {
   }, [prescription, recoveryMetrics]);
   const acwrSource = prescription?.acwr != null ? "engine load model" : "step proxy";
 
-  // ACWR is training load, which teal owns (readiness · intensity). The healthy
-  // 0.8–1.3 lowest-risk zone reads teal — NOT green, since green owns
-  // body-battery/done — and only degrades to warn while elevated (1.3–1.5) and
-  // bad once it crosses the 1.5 overtraining ceiling. Drives both the number and
-  // the gauge pin so color stays a single source of truth.
+  // Readiness 78 is the single page hero in teal display weight. A healthy ACWR
+  // must NOT also carry a colored display value, or the page reads as two heroes
+  // (DRIFT). So at the lowest-risk 0.8–1.3 zone the ACWR number reads as a quiet
+  // neutral font-technical stat (text-ink-muted) — it only earns the
+  // physiological spectrum once it leaves the healthy band: warn while elevated
+  // (1.3–1.5) and bad past the 1.5 overtraining ceiling. The gauge pin follows
+  // the same rule (neutral faint inside the band, spectrum outside it) so color
+  // stays a single source of truth and never competes with the readiness hero.
   const acwrSpectrum =
     acwr == null ? null
     : acwr > 1.5 ? "bad"
     : acwr > 1.3 ? "warn"
     : "ok";
   const acwrColor =
-    acwrSpectrum == null ? "text-ink-muted"
+    acwrSpectrum == null ? "text-ink-faint"
     : acwrSpectrum === "bad" ? "text-bad"
     : acwrSpectrum === "warn" ? "text-warn"
-    : "text-teal";
+    : "text-ink-muted";
   const acwrPinVar =
     acwrSpectrum == null ? "var(--text-faint)"
     : acwrSpectrum === "bad" ? "var(--bad)"
     : acwrSpectrum === "warn" ? "var(--warn)"
-    : "var(--hue-teal)";
+    : "var(--text-muted)";
 
   // Prefer the engine's readiness score (athlete_state.recovery.score) so this
   // page matches AthleteState; fall back to the local formula only when the
@@ -137,6 +142,14 @@ export default function RecoveryDetail() {
   const hasHrv = chartData.some((d) => d.displayHrv != null);
   const hasSteps = chartData.some((d) => d.displaySteps != null);
   const hasSleep = chartData.some((d) => d.displaySleep > 0);
+
+  // Drives the thumb-zone primary + the empty-state sync prompts: with no
+  // biometric trends the page has nothing to read, so the hero action is
+  // "Sync wearable" (connect a device). Once data is flowing the action becomes
+  // "Log readiness" (a daily check-in). Both route to the integrations surface
+  // under /profile where wearable sync + manual entry live.
+  const needsSync = !hasHrv && !hasSteps && !hasSleep;
+  const goToSync = () => navigate("/profile");
 
   // One chart at a time inside a sub-tab strip to keep the page short.
   const chartTabs = [
@@ -188,11 +201,11 @@ export default function RecoveryDetail() {
   );
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))] lg:pb-0">
+    <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink pb-[var(--fab-clearance)] lg:pb-0">
       <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <Card className="md:col-span-1 glass-interactive">
+          <Card className="md:col-span-1 glass-interactive rise-in">
             <CardHeader className="pb-1 md:pb-2">
               <CardTitle className="section-label">Today's Readiness</CardTitle>
             </CardHeader>
@@ -205,25 +218,29 @@ export default function RecoveryDetail() {
                 {athleteStateError && (
                   <p className="text-xs text-warn mb-2">Recovery scores estimated (engine unavailable)</p>
                 )}
+                {/* The supporting biometric pair stays quiet so readiness 78 is
+                    the only display-weight number in the card: font-technical at
+                    a calmer text-lg in secondary ink (the colored leaf/violet
+                    dots carry the datum identity, not the figure weight). */}
                 <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-3 md:pt-4 mt-1 md:mt-2">
                   <div className="text-center">
                     <div className="section-label mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-leaf" /> Body Battery
                     </div>
-                    <div className="font-technical text-xl text-ink">{latest?.body_battery ?? "—"}</div>
+                    <div className="font-technical text-lg text-ink-secondary">{latest?.body_battery ?? "—"}</div>
                   </div>
                   <div className="text-center">
                     <div className="section-label mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-violet" /> Sleep Score
                     </div>
-                    <div className="font-technical text-xl text-ink">{latest?.sleep_score ?? "—"}</div>
+                    <div className="font-technical text-lg text-ink-secondary">{latest?.sleep_score ?? "—"}</div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 glass-interactive">
+          <Card className="md:col-span-2 glass-interactive rise-in-2">
             <CardHeader className="pb-1 md:pb-2">
               <CardTitle className="section-label">Training Load (ACWR)</CardTitle>
             </CardHeader>
@@ -232,8 +249,11 @@ export default function RecoveryDetail() {
                 <div className="text-center">
                   {/* Readiness is the single page hero (hero-metric text-6xl), so
                       ACWR drops hero-metric on mobile and reads as a font-technical
-                      stat (text-3xl); only at md+ does it scale back up. Color is
-                      the physiological spectrum since ACWR is a biometric. */}
+                      stat (text-3xl); only at md+ does it scale back up. At a
+                      healthy ratio the figure stays NEUTRAL ink (acwrColor →
+                      text-ink-muted) so it never reads as a second colored hero;
+                      it only earns the physiological spectrum once it leaves the
+                      0.8–1.3 band (warn/bad). */}
                   <div className={`font-technical text-3xl font-bold md:text-5xl md:font-extrabold tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "—"}</div>
                   <div className="section-label">Current Ratio</div>
                 </div>
@@ -301,6 +321,22 @@ export default function RecoveryDetail() {
           </Card>
         </div>
 
+        {/* Thumb-zone primary — the single teal action on the page, parked in
+            the lower third on mobile (below both readiness + ACWR cards, so its
+            center sits well past the 560px thumb line on a 390px viewport).
+            "Sync wearable" when there's nothing to read yet, otherwise "Log
+            readiness" — both route to the /profile integrations surface where
+            wearable sync + manual entry live. Full-width 48px CTA clears the
+            44px touch-target floor. */}
+        <Button
+          variant="volt"
+          onClick={goToSync}
+          className="w-full h-12 mb-6 rise-in-3"
+        >
+          <Watch className="w-4 h-4 shrink-0" />
+          {needsSync ? "Sync wearable" : "Log readiness"}
+        </Button>
+
         {error ? (
           <Card className="mb-6 glass">
             <CardContent className="pb-6">
@@ -329,18 +365,26 @@ export default function RecoveryDetail() {
             <CardContent className="pb-6">
               <div className="pt-6 flex items-center gap-3">
                 <Info className="w-5 h-5 text-ink-muted shrink-0" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
                   <p className="text-xs text-ink-muted mt-0.5">
                     Connect your wearable to populate HRV, step, and sleep charts.
                   </p>
                 </div>
+                <Button
+                  variant="coralGhost"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={goToSync}
+                >
+                  Sync
+                </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
         <div className="mb-6">
-          <Card className="glass-interactive overflow-hidden">
+          <Card className="glass-interactive overflow-hidden rise-in-3">
             {/* In-card segmented control, deliberately NOT the coral SubTabs
                 pill. Coral-pill is reserved for top-level section navigation;
                 this is a lighter neutral-track segmented control so the chart
@@ -365,7 +409,7 @@ export default function RecoveryDetail() {
                           : "text-ink-muted hover:text-ink"
                       }`}
                     >
-                      {Icon && <Icon className="hidden sm:block w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />}
+                      {Icon && <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />}
                       {label}
                     </button>
                   );
@@ -395,8 +439,11 @@ export default function RecoveryDetail() {
             {resolvedChart === "hrv" && (
               <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasHrv ? (
-                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No HRV data yet. Sync your wearable.
+                  <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
+                    <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No HRV data yet.</span>
+                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
+                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
+                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -435,8 +482,11 @@ export default function RecoveryDetail() {
             {resolvedChart === "steps" && (
               <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasSteps ? (
-                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No step data yet. Sync your wearable.
+                  <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
+                    <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No step data yet.</span>
+                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
+                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
+                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -470,8 +520,11 @@ export default function RecoveryDetail() {
             {resolvedChart === "sleep" && (
               <CardContent className={`${CHART_BODY_H} ${CHART_BODY_PAD}`}>
                 {!hasSleep ? (
-                  <div className="flex h-full items-center gap-2 text-xs font-semibold text-ink-muted">
-                    <Info className="w-4 h-4 shrink-0" /> No sleep duration data yet. Sync your wearable to chart nightly hours.
+                  <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
+                    <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No sleep duration data yet.</span>
+                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
+                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
+                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">

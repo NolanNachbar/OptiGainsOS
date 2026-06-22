@@ -12,16 +12,16 @@ import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { estimateBriefCost } from "@/utils/briefCost";
 
 const COACHES = [
-  { key: "performance",  label: "Performance",  icon: Dumbbell,  hue: "!text-teal bg-teal/10" },
-  { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-carb bg-carb/10" },
-  { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-leaf bg-leaf/10" },
-  { key: "body_comp",    label: "Body Comp",    icon: Scale,     hue: "!text-violet bg-violet/10" },
-  { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-info bg-info/10" },
-  { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-gold bg-gold/10" },
+  { key: "performance",  label: "Performance",  icon: Dumbbell,  hue: "!text-ink-muted bg-track" },
+  { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-ink-muted bg-track" },
+  { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-ink-muted bg-track" },
+  { key: "body_comp",    label: "Body Comp",    icon: Scale,     hue: "!text-ink-muted bg-track" },
+  { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-ink-muted bg-track" },
+  { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-ink-muted bg-track" },
 ];
 
-/** Coach-persona tag — tiny uppercase hue-coded chip. */
-function CoachTag({ children, hue = "!text-teal bg-teal/10" }) {
+/** Coach-persona tag — tiny uppercase neutral chip. */
+function CoachTag({ children, hue = "!text-ink-muted bg-track" }) {
   return (
     <span className={`section-label ${hue} rounded-md px-2 py-0.5 whitespace-nowrap shrink-0`}>
       {children}
@@ -70,7 +70,7 @@ function BriefEntry({ brief, index = 0 }) {
         </div>
         {!open && (
           json.insight ? (
-            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-1 pl-6 font-technical">{json.insight}</p>
+            <p className="text-sm font-semibold text-secondary leading-relaxed line-clamp-2 pl-6 font-technical">{json.insight}</p>
           ) : (
             <p className="text-xs font-semibold text-faint pl-6">
               {hasContent ? "Tap to view coach notes." : NO_CONTENT_COPY}
@@ -93,7 +93,7 @@ function BriefEntry({ brief, index = 0 }) {
           >
             {json.insight && (
               <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
-                <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+                <Lightbulb className="w-3.5 h-3.5 text-muted-2 shrink-0 mt-0.5" aria-hidden="true" />
                 <p className="text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
               </div>
             )}
@@ -114,7 +114,7 @@ function BriefEntry({ brief, index = 0 }) {
                   <ul className="space-y-1">
                     {json.today_actions.map((action, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm font-semibold text-secondary">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-teal/60 shrink-0" />
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-track shrink-0" />
                         {action}
                       </li>
                     ))}
@@ -167,7 +167,7 @@ export default function BriefHistory() {
   });
 
   return (
-    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[max(6rem,env(safe-area-inset-bottom))]">
+    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[var(--dock-clearance)]">
       <div className="max-w-2xl mx-auto">
         {/* Desktop-only header: the shared Layout chrome already prints
             "Brief History" + the same "Last 30 AI-generated daily briefs"
@@ -180,7 +180,7 @@ export default function BriefHistory() {
           </Link>
           <div>
             <h1 className="type-display text-[22px] flex items-center gap-2">
-              <Bot className="w-5 h-5 text-teal" /> Brief History
+              <Bot className="w-5 h-5 text-muted-2" aria-hidden="true" /> Brief History
             </h1>
             <p className="text-xs font-semibold text-muted-2 mt-0.5">Last <span className="font-technical">{briefs.length}</span> AI-generated daily briefs</p>
           </div>
@@ -192,7 +192,7 @@ export default function BriefHistory() {
               // Match the merged collapsed BriefEntry card (px-5 py-2.5 over a
               // date row + single-line insight clamp ≈ 64px) so the skeleton
               // doesn't jump on load.
-              <div key={i} className="h-[64px] glass animate-pulse" />
+              <div key={i} className="h-[64px] rounded-xl bg-track pulse-loop" />
             ))}
           </div>
         ) : isError ? (
@@ -219,8 +219,8 @@ export default function BriefHistory() {
                 floating over an empty void. Neutral glass, no CTA, the cards
                 below remain the only interactive surface. */}
             <div className="glass-inset flex items-center gap-3 px-5 py-4 mb-4 rise-in">
-              <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-teal/10 shrink-0">
-                <Bot className="w-4 h-4 text-teal" aria-hidden="true" />
+              <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-track shrink-0">
+                <Bot className="w-4 h-4 text-muted-2" aria-hidden="true" />
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-ink leading-tight">

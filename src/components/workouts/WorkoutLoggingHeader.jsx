@@ -143,26 +143,32 @@ export default function WorkoutLoggingHeader({
     ? Math.max(0, Math.min(1, restTimer / restDuration))
     : 0;
 
-  // Live rest countdown chip — teal coach hue throughout; urgency is a
-  // system-tokened pulse (.rest-urgent), not a hue swap. Reused inline in the
-  // mobile bottom bar so the countdown sits next to its own controls.
+  // Live rest countdown chip, neutral ink, NOT teal. Teal (the single action
+  // color) belongs to the armed +30s/Skip controls beside it; a teal countdown
+  // made the read-only readout the brightest pixel in the row, out-shouting its
+  // own controls. The number reads as primary ink, the Timer glyph as muted ink,
+  // and urgency stays a system-tokened pulse (.rest-urgent), never a hue swap.
   const restCountdown = restActive ? (
     <div className={`flex items-center gap-1 font-technical ${restUrgent ? 'rest-urgent' : ''}`}>
-      <Timer className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 text-teal" />
-      <span className={`text-teal text-sm md:text-base tabular-nums ${restUrgent ? 'font-black' : 'font-extrabold'}`}>
+      <Timer className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 text-ink-muted" />
+      <span className={`text-ink text-sm md:text-base tabular-nums ${restUrgent ? 'font-black' : 'font-extrabold'}`}>
         {restTimer === 0 ? '0:00' : formatRestTime(restTimer)}
       </span>
     </div>
   ) : null;
 
-  // Depleting rest progress track — the bg-track material (one shared "empty
-  // track" token) with a teal filled portion that drains over the rest period.
-  // Communicates remaining rest at a glance so the +30s/Skip controls can step
-  // down to a thin secondary row without losing the live signal.
+  // rtb-3: depleting rest progress track. Rest is a workout DATUM, so the filled
+  // portion wears the rest datum hue — the teal DATA hue (--hue-teal, the
+  // readiness/positive/intensity hue), NOT --color-brand (the action teal Skip
+  // wears). A datum owning its hue here is correct: the bar is a read-only
+  // remaining-rest readout, not a control, so it doesn't poach the "one teal
+  // action" rule. bg-track is the empty channel; the bar is h-1.5 so it reads as
+  // a visible hued depletion bar rather than a faint hairline. rtb-5: the width
+  // transition rides the single system easing via var(--ease).
   const restProgressTrack = restActive ? (
     <div className="h-1.5 w-full rounded-full bg-track overflow-hidden">
       <div
-        className="h-full rounded-full bg-teal transition-[width] duration-500 ease-[cubic-bezier(.2,.7,.3,1)]"
+        className="h-full rounded-full bg-teal transition-[width] duration-500 [transition-timing-function:var(--ease)]"
         style={{ width: `${restFraction * 100}%` }}
       />
     </div>
@@ -173,20 +179,25 @@ export default function WorkoutLoggingHeader({
   // bar renders these on their own thin secondary row (the countdown + track
   // live above), so withCountdown only applies to the desktop top bar's inline
   // cluster.
+  // rtb-1/2: mid-rest, Skip ("get back to work") is the live next action, so it
+  // wears the teal volt action fill; +30s is the quieter adjustment and stays
+  // neutral glass (ghost). One teal control per rest row — Skip — so the action
+  // color points at exactly one thing. rtb-6: each control min-w-[64px] so a 1–2
+  // char label ("Skip"/"+30s") keeps a forgiving thumb target.
   const restControls = (withCountdown) => restRunning ? (
     <div className="flex gap-2 items-center min-w-0">
       {withCountdown && restCountdown}
       <Button
         variant="ghost"
         onClick={() => onAddRestTime?.(30)}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold"
+        className="min-h-[44px] min-w-[64px] lg:min-h-0 lg:h-9 font-bold"
       >
         +30s
       </Button>
       <Button
-        variant="ghost"
+        variant="volt"
         onClick={() => onSkipRest?.()}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 font-bold"
+        className="min-h-[44px] min-w-[64px] lg:min-h-0 lg:h-9 font-bold"
       >
         Skip
       </Button>
@@ -250,11 +261,31 @@ export default function WorkoutLoggingHeader({
     </div>
   );
 
+  // The mobile top bar carries NOTHING in most states (the workout clock, the
+  // running rest countdown, and the action cluster are all lg-only; on a phone
+  // they live in the thumb-zone bottom bar). The single thing it can show on
+  // mobile is the post-rest "Rest 0:00" readout (restActive && !restRunning).
+  // wd-2: when there's no mobile-visible content, collapse the bar to zero height
+  // (no py-2 band, no hairline) so an empty grey strip never floats above the
+  // workout card. Desktop always has content (clock / actions), so the padding +
+  // edge re-appear at lg.
+  const hasMobileTopContent = restActive && !restRunning;
+
   return (
     <>
       {/* ── Top bar: read-only timers (+ actions on desktop only) ────────── */}
-      <div className="fixed top-0 left-0 right-0 z-[9998] glass-elevated glass-elevated--substacked border-x-0" style={{ top: 'var(--layout-header-height, 0px)' }}>
-        <div className="max-w-4xl mx-auto px-3 md:px-8 py-2">
+      <div
+        className={`fixed top-0 left-0 right-0 z-[9998] border-x-0 ${
+          hasMobileTopContent ? 'glass-elevated glass-elevated--substacked' : 'lg:glass-elevated lg:glass-elevated--substacked'
+        }`}
+        style={{ top: 'var(--layout-header-height, 0px)' }}
+      >
+        {/* rtb-7: the bar is fixed left-0 right-0, so on desktop its left edge
+            spans UNDER the floating sidebar (w-[216px] + ml-4 ≈ 232px). Pad the
+            inner container's left to clear the sidebar wordmark on lg so the
+            Workout/Rest timers never sit beneath it. Mobile (no sidebar) keeps
+            the symmetric px-3. */}
+        <div className={`max-w-4xl mx-auto px-3 md:px-8 lg:pl-[248px] ${hasMobileTopContent ? 'py-2' : 'py-0 lg:py-2'}`}>
           {/* Workout Title (when scrolled) - Desktop Only */}
           {showTitleInHeader && (
             <h2 className="hidden md:block font-extrabold tracking-[-0.01em] text-ink text-base mb-2 truncate animate-in fade-in slide-in-from-top-2 duration-200">
@@ -325,21 +356,30 @@ export default function WorkoutLoggingHeader({
         <div className="max-w-4xl mx-auto px-3 py-2.5 flex flex-col gap-2">
           {restRunning ? (
             <>
-              {/* Rest row: countdown + depleting track + its own +30s / Skip
-                  controls live together on one line, the rest timer owns its
-                  controls. Cancel / Finish drop to the action row below so the
-                  two concerns never crowd into one crammed 5-element line. */}
+              {/* rtb-1: two rows on mobile, NOT one ml-auto cluster. Forcing the
+                  countdown + restControls + Cancel/Finish into a single 390px row
+                  squeezed the coral Finish past the right edge (label clipped to
+                  "Finis…"). Row 1 carries the read-only rest state (countdown +
+                  full-width depleting track); row 2 carries the live controls
+                  (+30s / Skip on the left, then the Cancel / full-width Finish
+                  anchor). Each row's content box stays inside 390px. */}
               <div className="flex items-center gap-2 min-w-0">
                 {restCountdown}
-                <div className="flex-1 min-w-0">{restProgressTrack}</div>
-                {restControls(false)}
+                <div className="flex-1 min-w-0">
+                  {restProgressTrack}
+                </div>
               </div>
-              {/* Action row mirrors the no-rest layout below: the live elapsed
-                  clock owns the left slot (justify-between) so this row isn't
-                  ~50% dead space and the two states stay visually symmetric. */}
-              <div className="flex items-center justify-between gap-2">
-                {elapsedCluster ?? <span />}
-                {actionCluster}
+              {/* rtb-4: mid-rest the live work is the rest controls (Skip/+30s),
+                  so they flex-GROW and own the row; the Cancel/Finish cluster is
+                  flex-none and quiet (Finish is already `dim` while restRunning).
+                  Once rest ends the no-rest branch restores Finish's prominence. */}
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex-1 min-w-0">
+                  {restControls(false)}
+                </div>
+                <div className="flex-none">
+                  {actionCluster}
+                </div>
               </div>
             </>
           ) : (
@@ -358,14 +398,19 @@ export default function WorkoutLoggingHeader({
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-bad" />
+                <AlertTriangle className="w-5 h-5 text-ink-muted" />
                 Cancel Workout?
               </DialogTitle>
             </DialogHeader>
             <p className="text-[13px] text-ink-muted">
               Your progress for this workout will be lost. Are you sure you want to cancel?
             </p>
-            <div className="flex gap-2 mt-2">
+            {/* rtb-7: rendered via the shared Dialog primitive, which is already a
+                bottom sheet flush to the safe-area on mobile (centered only at md+).
+                gap-4 keeps >=16px between Keep Going (neutral outline) and the
+                destructive Cancel Workout so the abort never sits a stray thumb from
+                Keep Going. */}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4 mt-2">
               <Button
                 variant="outline"
                 size="lg"

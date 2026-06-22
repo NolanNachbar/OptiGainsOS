@@ -9,9 +9,9 @@ import { ListChecks, Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
-// Passive AI-source glyph hues. Coral is THE action color and is barred here
-// (a passive datum glyph must never wear it). Each domain maps to a non-action
-// data hue; text-faint is the fallback for unknown domains.
+// Passive AI-source glyph hues. Teal (#19C8A6) is THE action color and is
+// barred here (a passive datum glyph must never wear it). Each domain maps to a
+// non-action data hue; text-faint is the fallback for unknown domains.
 const DOMAIN_COLORS = {
   training:  "text-teal",
   nutrition: "text-gold",
@@ -125,8 +125,6 @@ export default function TodayActions({ today, briefActions = [], isError = false
     <div className="glass glass-interactive px-4 pt-3 pb-3 text-sm text-bad">Could not load today's actions</div>
   );
 
-  if (total === 0 && !adding) return null;
-
   return (
     <div className="glass glass-interactive px-4 pt-3 pb-3">
       <SectionLabel
@@ -142,17 +140,20 @@ export default function TodayActions({ today, briefActions = [], isError = false
         }
       >
         <span className="flex items-center gap-2">
-          <ListChecks className="w-4 h-4 text-leaf" />
+          <ListChecks className="w-4 h-4 text-muted-2" />
           Today's Actions
           {total > 0 && (
             <span className="font-technical text-[10px] text-muted-2 font-bold">{completed}/{total}</span>
           )}
         </span>
       </SectionLabel>
+      {total === 0 && !adding && (
+        <p className="text-xs text-faint py-2">No actions yet, tap + to add one</p>
+      )}
       {total > 0 && (
         <div className="h-1 bg-track rounded-full mt-2.5">
           <div
-            className="h-full bg-leaf rounded-full transition-all duration-500 [transition-timing-function:var(--ease)]"
+            className="h-full bg-[var(--glass-edge-strong)] rounded-full transition-all duration-300 [transition-timing-function:var(--ease)]"
             style={{ width: `${(completed / total) * 100}%` }}
           />
         </div>
@@ -185,7 +186,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label="Delete action"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -205,9 +206,8 @@ export default function TodayActions({ today, briefActions = [], isError = false
               className="text-sm flex-1"
             />
             <Button
-              size="sm"
-              variant="dim"
-              className="h-11 px-4 font-bold text-xs uppercase tracking-wider"
+              size="lg"
+              variant="volt"
               disabled={!newText.trim() || addMutation.isPending}
               onClick={() => addMutation.mutate()}
             >

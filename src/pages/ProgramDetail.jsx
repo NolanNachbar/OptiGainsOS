@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoadingScreen } from "@/components/ui/loading-spinner";
 import {
   Dialog,
   DialogContent,
@@ -61,7 +60,7 @@ export default function ProgramDetail() {
   const { user } = useAuth();
 
 
-  const { program, isLoading: programLoading } = useProgram(programId);
+  const { program, isLoading: programLoading, error: programError } = useProgram(programId);
   const { enrollment, isLoading: enrollmentLoading } = useEnrollment(programId);
   const enrollMutation = useEnrollInProgram();
   const statusMutation = useUpdateEnrollmentStatus();
@@ -79,11 +78,45 @@ export default function ProgramDetail() {
   const [showManageActions, setShowManageActions] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
 
-  if (programLoading || enrollmentLoading) return <LoadingScreen />;
-  if (!program) {
+  // Page-shaped skeleton (header + Schedule card) on the dark field, padded for
+  // the dock so it can't clip. Scoped to this route — loading-spinner.jsx is
+  // shared, so the full-screen LoadingScreen is intentionally not used here.
+  if (programLoading || enrollmentLoading) {
     return (
-      <div className="p-4 md:p-6">
-        <div className="min-h-[60vh] flex items-center justify-center">
+      <div
+        className="p-4 md:p-6"
+        style={{ paddingBottom: 'var(--dock-clearance)' }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="pulse-loop rounded bg-track h-4 w-28 mb-4" />
+          <Card className="mb-6">
+            <CardContent className="pt-5 pb-5 space-y-3">
+              <div className="pulse-loop rounded-full bg-track h-5 w-20" />
+              <div className="pulse-loop rounded-lg bg-track h-7 w-3/5" />
+              <div className="pulse-loop rounded bg-track h-4 w-4/5" />
+              <div className="pulse-loop rounded bg-track h-4 w-2/5" />
+            </CardContent>
+          </Card>
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="pulse-loop rounded bg-track h-5 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
+              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
+              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+  // Treat a query error the same as a missing program so the not-found state
+  // paints immediately instead of waiting on retries.
+  if (!program || programError) {
+    return (
+      <div className="p-4 md:p-6" style={{ paddingBottom: 'var(--dock-clearance)' }}>
+        <div className="min-h-[60vh] flex flex-col items-center justify-end pb-16">
           <div className="surface p-8 text-center flex flex-col items-center rise-in">
             <div className="w-12 h-12 rounded-full glass-inset flex items-center justify-center mb-4">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
@@ -583,7 +616,7 @@ export default function ProgramDetail() {
                             Stalled
                           </Badge>
                         ) : state.ready_to_progress && (
-                          <Badge variant="green" className="text-xs mt-1">
+                          <Badge variant="outline" className="text-xs mt-1 text-ink-muted">
                             Ready to progress
                           </Badge>
                         )}
@@ -626,7 +659,7 @@ export default function ProgramDetail() {
         {/* Workout detail dialog */}
         <Dialog open={!!showWorkoutDetail} onOpenChange={() => setShowWorkoutDetail(null)}>
           <DialogContent className="max-w-lg flex flex-col max-h-[85vh] p-0">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border  flex-shrink-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border flex-shrink-0">
               <DialogTitle>{showWorkoutDetail?.title}</DialogTitle>
             </DialogHeader>
             {showWorkoutDetail && (
@@ -751,7 +784,7 @@ export default function ProgramDetail() {
               </div>
             </div>
             <div
-              className="flex gap-2 px-6 py-4 border-t border-charcoal-border bg-charcoal-surface  shrink-0"
+              className="flex gap-2 px-6 py-4 border-t border-charcoal-border shrink-0"
               style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
             >
               <Button variant="outline" className="flex-1" onClick={() => setShowEnrollDialog(false)}>

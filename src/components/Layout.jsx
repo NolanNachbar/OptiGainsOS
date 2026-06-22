@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Brain } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
@@ -66,21 +66,29 @@ const navigationItems = [
       { label: "Coach", url: "/coach",
         active: (l) => l.pathname.startsWith("/coach") },
     ] },
-  // Analyze reads as Brief + History only. Career was cut from the IA (no nav
-  // surface, App.jsx keeps the bare /career route registered but unlinked); Mind
-  // keeps a single entry point (the in-page Mind & Learning card on /insights),
-  // so neither is promoted to a nav sub-tab here. /mind still matches so the
-  // section stays highlighted when that route is reached. /career is deliberately
-  // NOT matched: it was hijacking the Analyze sub-tab strip + dock highlight for
-  // a route that is not a genuine Analyze child. As an IA orphan it now resolves
-  // to no activeSection (no strip, no dock highlight) until it earns its own home.
-  // Analyze is demoted out of the 5-slot dock (dock:false): per the IA audit
-  // both Body and Analyze are over-promoted review surfaces, and a 4-slot dock
-  // reads cleaner with less per-slot crowding. Analyze still owns its sidebar
-  // entry, route matching, and the mobile sub-tab strip — only the dock icon
-  // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile).
+  // Mind owns its OWN nav home so /mind lights a Mind dock entry, not Analyze.
+  // Mind renders an in-page <SubTabs> (Capture / Reading / Study / Skills) plus a
+  // "Mind" section title, so it must NOT opt into the Layout mobileStrip — a strip
+  // here would duplicate Mind's in-page tabs. dock:false demotes it like Analyze:
+  // it has no permanent dock slot, but the "append active demoted section" rule
+  // below paints a transient Mind dock slot (and lights it) while /mind is the
+  // current surface, so the dock reads "Mind", not a muted Analyze.
+  { title: "Mind", url: "/mind", icon: Brain, dock: false,
+    matches: ["/mind"] },
+  // Analyze reads as Brief + History. /career is matched here so Career rides the
+  // Analyze section: its dock highlight lights the demoted Analyze parent and its
+  // mobile strip is Analyze's. Career is NOT a sub-tab child (no Career pill) — it
+  // is a sibling review surface that lives under the Analyze parent for "you are
+  // here" signal only, until it earns a dedicated home. Mind moved to its own
+  // section above, so /mind is no longer matched here.
+  // Analyze is demoted out of the dock (dock:false): per the IA audit both Body
+  // and Analyze are over-promoted review surfaces, and a tighter dock reads
+  // cleaner with less per-slot crowding. Analyze still owns its sidebar entry,
+  // route matching, and the mobile sub-tab strip — only the permanent dock icon
+  // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile);
+  // the transient-demoted-slot rule lights the dock when it is the live surface.
   { title: "Analyze", url: "/insights", icon: BarChart3, dock: false,
-    matches: ["/insights", "/brief-history", "/mind"],
+    matches: ["/insights", "/brief-history", "/career"],
     mobileStrip: true,
     children: [
       { label: "Daily Brief", url: "/insights",
@@ -215,20 +223,27 @@ export default function Layout({ children, currentPageName }) {
     ? [...primaryDockItems, activeSection]
     : primaryDockItems;
 
-  // The global FAB floats above the dock on the Today home + Train, suppressed on
-  // focused/logging routes and on surfaces with their own coral CTA. Hoist the
+  // The global FAB floats above the dock on the Today home, suppressed on
+  // focused/logging routes and on surfaces with their own teal CTA (Train owns
+  // an in-context create '+', so the global FAB stays off there). Hoist the
   // predicate so the content padding below can reserve clearance for the FAB's
-  // floated footprint via --fab-clearance — otherwise the last in-flow card (e.g.
-  // Train's Rest Day card) ends under the FAB and the teal '+' bleeds over its
-  // corner. The FAB itself (FloatingActionButton.jsx) hugs the viewport's
-  // bottom-right gutter (right-3, 48px body, tucked low toward the dock) so its
-  // body intrudes minimally on the content column during scroll; --fab-clearance
-  // single-sources the bottom reservation so screens don't each pad by hand.
+  // floated footprint via --fab-clearance — otherwise the last in-flow card ends
+  // under the FAB and the teal '+' bleeds over its corner. The FAB itself
+  // (FloatingActionButton.jsx) hugs the viewport's bottom-right gutter (right-3,
+  // 48px body, tucked low toward the dock) so its body intrudes minimally on the
+  // content column during scroll; --fab-clearance single-sources the bottom
+  // reservation so screens don't each pad by hand.
   const showFab = !["/create-workout", "/quick-workout", "/program-builder", "/workout-detail",
+    "/train",
     "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
     "/fuel", "/food-tracker",
     "/athlete-state", "/recovery", "/physique", "/coach",
     "/insights", "/brief-history", "/mind", "/career"].some((p) => location.pathname.startsWith(p));
+
+  // The mobile dock is suppressed on /program-builder: that screen owns a
+  // full-width sticky footer (its save/next CTA), so the floating dock would
+  // stack over it and steal the thumb zone. Suppress HERE only.
+  const showDock = !location.pathname.startsWith("/program-builder");
 
   return (
     <>
@@ -250,9 +265,9 @@ export default function Layout({ children, currentPageName }) {
                 <div key={item.title}>
                   <Link
                     to={item.url}
-                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[13.5px] font-bold transition-colors duration-150 ${
+                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[13.5px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                       isActive
-                        ? "text-[var(--brand-tint)] bg-brand/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]"
+                        ? "text-[var(--brand-tint)] bg-brand/[0.16]"
                         : "text-ink-faint hover:text-ink"
                     }`}
                   >
@@ -268,9 +283,9 @@ export default function Layout({ children, currentPageName }) {
                           <Link
                             key={c.label}
                             to={c.url}
-                            className={`px-2 py-[5px] rounded-md text-[12px] font-bold transition-colors duration-150 ${
+                            className={`px-2 py-[5px] rounded-md text-[12px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                               on
-                                ? "text-ink bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                                ? "text-ink bg-white/[0.05]"
                                 : "text-ink-faint hover:text-ink-muted"
                             }`}
                           >
@@ -368,15 +383,17 @@ export default function Layout({ children, currentPageName }) {
                       <Link
                         key={c.label}
                         to={c.url}
-                        // Active sub-tab is a NEUTRAL selected pill, not coral.
-                        // Coral is the single primary-action color and the dock's
-                        // sole 'you are here'; a coral sub-tab fill would both
-                        // out-shout real CTAs and paint a second coral active
-                        // state for the same section. Neutral glass-edge fill +
-                        // full-ink label reads as selected without borrowing coral.
-                        className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-150 ${
+                        // Active sub-tab is a NEUTRAL selected pill, never the teal
+                        // action color (--color-brand). Teal is the single
+                        // primary-action color and the dock's sole 'you are here';
+                        // a teal sub-tab fill would both out-shout real CTAs and
+                        // paint a second teal active state for the same section. A
+                        // solid surface fill (--color-surface) + full-ink label
+                        // reads as a lifted, clearly-selected pill against the
+                        // translucent glass-elevated track without borrowing teal.
+                        className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                           on
-                            ? "text-ink bg-[var(--glass-edge)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                            ? "text-ink bg-[var(--color-surface)]"
                             // Inactive: text-ink-secondary (0.72) not text-ink-muted
                             // (0.50). Muted fell below AA 4.5:1 on the glass-elevated
                             // track for labels like 'DAILY BRIEF'; secondary clears
@@ -433,7 +450,9 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile — the floating liquid-glass dock (4 primary sections; Analyze
           is demoted to the sidebar/strip, so the grid auto-sizes to the dock
-          items rather than a hard-coded 5 columns). */}
+          items rather than a hard-coded 5 columns). Suppressed on
+          /program-builder, which owns a full-width sticky footer CTA. */}
+      {showDock && (
       <nav
         className="glass-elevated z-[9999] lg:hidden rounded-full grid px-[9px] py-2"
         style={{
@@ -451,9 +470,9 @@ export default function Layout({ children, currentPageName }) {
             <Link
               key={item.title}
               to={item.url}
-              className={`flex flex-col items-center gap-[2px] py-1 rounded-full min-w-0 transition-colors duration-150 ${
+              className={`flex flex-col items-center gap-[2px] py-1 rounded-full min-w-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                 isActive
-                  ? "text-[var(--brand-tint)] bg-brand/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  ? "text-[var(--brand-tint)] bg-brand/[0.18]"
                   : "text-ink-faint hover:text-ink-muted"
               }`}
             >
@@ -463,14 +482,15 @@ export default function Layout({ children, currentPageName }) {
           );
         })}
       </nav>
+      )}
 
       {/* Floating action button — quick global add (workout/food/weigh-in/note).
           Shown on the Today home; suppressed on focused form/logging routes and on
-          Fuel/FoodTracker, which carry their own coral add FAB, so two coral FABs
+          Fuel/FoodTracker, which carry their own teal add FAB, so two teal FABs
           never share a screen. Also suppressed on the read-only review surfaces
-          (Body / Analyze / Career), where a global '+' has no clear add intent,
-          collides with data tiles and brief cards, and on Career/Physique would be
-          a second coral action competing with the screen's own coral CTA. */}
+          (Body / Analyze / Mind / Career), where a global '+' has no clear add
+          intent, collides with data tiles and brief cards, and on Career/Physique
+          would be a second teal action competing with the screen's own teal CTA. */}
       {showFab && (
         <FloatingActionButton
           onWeighIn={() => setShowWeighIn(true)}
