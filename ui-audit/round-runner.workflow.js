@@ -4,7 +4,7 @@ export const meta = {
   phases: [
     { title: 'Plan', detail: 'opus advisor: rubric weights + IA priority sprints (runs once)', model: 'opus' },
     { title: 'Capture', detail: 'sonnet workers, serial batches against the single shared browse daemon, 390px + 1280px', model: 'sonnet' },
-    { title: 'Evaluate', detail: 'opus advisor: adversarial evaluator per surface, scores rubric + verifies prior contract on the LIVE app', model: 'opus' },
+    { title: 'Evaluate', detail: 'adversarial evaluator per journey: opus on a run\'s first (broad) round, sonnet on re-verify rounds; scores rubric + verifies prior contract on the LIVE app' },
     { title: 'Contract', detail: 'sonnet maker proposes fixes + assertions; opus advisor critiques and signs off before any code is written' },
     { title: 'Fix', detail: 'sonnet workers: systemic serial on main tree; per-surface parallel; build-gated', model: 'sonnet' },
   ],
@@ -232,13 +232,17 @@ for (; round <= lastRound; round++) {
     evalJourneys = [...new Map([...fails, ...pages, ...rest].map((j) => [j.id, j])).values()].slice(0, MAX_EVAL)
   }
   const deferred = withShots.length - evalJourneys.length
-  log(`Round ${round}: captured ${journeys.length} journeys (${withShots.length} with shots, ${hardFindings.length} crash, ${Object.keys(assertionMiss).length} assertion-miss→triage); opus-evaluating ${evalJourneys.length}, deferring ${deferred}`)
+  log(`Round ${round}: captured ${journeys.length} journeys (${withShots.length} with shots, ${hardFindings.length} crash, ${Object.keys(assertionMiss).length} assertion-miss→triage); evaluating ${evalJourneys.length} (${round === startRound ? 'opus' : 'sonnet'}), deferring ${deferred}`)
 
   // EVALUATE — adversarial evaluator, one per journey, parallel. Harsh by design.
   phase('Evaluate')
   const priorAssertions = {}
   if (priorContract) for (const c of priorContract.perSurface || []) (priorAssertions[c.surface] || (priorAssertions[c.surface] = [])).push(c.assertion)
   const systemicAssertions = priorContract ? (priorContract.systemic || []).map((s) => s.assertion) : []
+  // First round of a run = the fresh broad audit → opus (the strict advisor where it matters most).
+  // Re-verification rounds re-grade mostly-fixed journeys against concrete assertions, which sonnet handles
+  // well and far faster/cheaper. Contract sign-off stays opus regardless. Set A.evalModel to override.
+  const evalModel = A.evalModel || (round === startRound ? 'opus' : 'sonnet')
   const evaluated = await parallel(evalJourneys.map((j) => () => {
     const toVerify = [...(priorAssertions[j.id] || []), ...systemicAssertions]
     return agent(
@@ -262,7 +266,7 @@ Then report EVERY remaining defect against the 8-point lens (drift, mobile, cons
 belonging, slop, motion). Per finding: a stable id "${j.id}-N", severity (blocker/major/minor), category, exact
 file:line, what's wrong, concrete fix using existing tokens + src/components/ui/* primitives, and verifyBy (the
 observable that will prove it fixed next round). Do NOT fix anything.`,
-      { label: `eval:${j.id}`, phase: 'Evaluate', schema: EVAL_SCHEMA, model: 'opus' }
+      { label: `eval:${j.id}`, phase: 'Evaluate', schema: EVAL_SCHEMA, model: evalModel }
     )
   }))
 
