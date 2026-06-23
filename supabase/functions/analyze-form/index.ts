@@ -158,7 +158,15 @@ Deno.serve(async (req) => {
           contents: [{
             parts: [
               { text: prompt },
-              { file_data: { mime_type: mimeType, file_uri: fileUri } },
+              {
+                file_data: { mime_type: mimeType, file_uri: fileUri },
+                // Gemini samples video at 1 fps by default. A lift rep takes ~1-3s,
+                // so at 1 fps the model sees ~1 frame per rep and can't read the
+                // movement (bar path, depth, knee tracking) — it then invents
+                // plausible-but-wrong faults. Sample at 5 fps so it actually sees
+                // the rep. Clips are a few seconds, so the extra frames are cheap.
+                video_metadata: { fps: 5 },
+              },
             ],
           }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 1200, responseMimeType: "application/json" },
