@@ -80,7 +80,6 @@ export default function WorkoutDetail() {
   const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
   const [resumeSession, setResumeSession] = useState(null); // session data to offer resume for
-  const [sessionCheckDone, setSessionCheckDone] = useState(false); // true once the DB session check resolves
   const workoutCardRef = useRef(null);
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
@@ -177,7 +176,6 @@ export default function WorkoutDetail() {
   // On mount, check for an in-progress session to offer resumption
   useEffect(() => {
     if (isTutorialDemo) {
-      setSessionCheckDone(true);
       return;
     }
     const workoutId = urlParams.get('id');
@@ -190,7 +188,6 @@ export default function WorkoutDetail() {
           setResumeSession(session);
         }
       }
-      setSessionCheckDone(true);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -558,8 +555,11 @@ export default function WorkoutDetail() {
 
       // If program mode, update progression state and advance enrollment
       if (isProgramSource && enrollment && programWorkoutId) {
-        // Calculate which cycle this workout belongs to from today's schedule
-        const { program: activeProgram } = queryClient.getQueryData(['program', enrollment.program_id]) || {};
+        // Calculate which cycle this workout belongs to from today's schedule.
+        // useProgram stores the program object directly under this key (not
+        // wrapped as { program }); the cycle is also recomputed authoritatively
+        // inside useLogProgramWorkout, so this is only a best-effort hint.
+        const activeProgram = queryClient.getQueryData(['program', enrollment.program_id]);
         const todayWorkout = activeProgram ? getTodayProgramWorkout(enrollment, activeProgram.workouts || []) : null;
         const workoutCycle = todayWorkout?.cycle;
 
@@ -602,10 +602,6 @@ export default function WorkoutDetail() {
     },
   });
 
-  // Auto-start logging for program workouts (skip if already completed)
-  const isAlreadyCompleted = isProgramSource && enrollment?.completed_workouts?.some(
-    cw => cw.program_workout_id === programWorkoutId
-  );
   // Don't auto-start — user must explicitly press Start
   const shouldAutoStart = false;
   const hasAutoStartedRef = useRef(false);

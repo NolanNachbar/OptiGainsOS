@@ -107,6 +107,16 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     // No engine prescription, but a program day is scheduled — surface it as the
     // day's workout (routed to the program logger), not a generic "log a workout".
     if (programHref) {
+      // Once logged, show a completion row instead of a live link — a second tap
+      // would otherwise re-log and double-advance the program (it has no
+      // engine-prescribed completion swap to fall back on).
+      if (loggedToday) {
+        return (
+          <div className="flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[44px] text-sm font-semibold text-leaf">
+            <Check className="w-4 h-4 shrink-0" /> Logged today, nice work.
+          </div>
+        );
+      }
       return (
         <Link to={programHref} className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
           Begin program workout

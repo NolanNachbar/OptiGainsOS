@@ -3,7 +3,7 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys, invalidatePrograms } from "@/lib/queryKeys";
 import { updateProgressionState } from "@/utils/programProgression";
-import { normalizeCardioSession } from "@/utils/programSchedule";
+import { normalizeCardioSession, getProgramSchedule } from "@/utils/programSchedule";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -232,7 +232,7 @@ export function useEnrollInProgram() {
         ...enrollmentData,
       });
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       invalidatePrograms(queryClient);
     },
   });
@@ -246,7 +246,34 @@ export function useLogProgramWorkout() {
       let newState = { ...enrollment.progression_state };
 
       const programWorkout = await db.entities.ProgramWorkout.get(programWorkoutId);
-      const currentCycle = workoutCycle || enrollment.current_cycle || 1;
+      // Fetch all workouts up front: used both to derive the calendar cycle (so
+      // the completion key matches getProgramSchedule even when workoutCycle was
+      // not passed, e.g. from the Today route) and for v2 advancement below.
+      const allProgramWorkouts = await db.entities.ProgramWorkout.filter({ program_id: enrollment.program_id });
+
+      // Derive cycle/day the same way the schedule does, so the completion key
+      // lines up with what getProgramSchedule compares against (off-calendar
+      // users otherwise key completions to the wrong cycle and "today" never
+      // shows as done).
+      const scheduleEntry = getProgramSchedule(enrollment, allProgramWorkouts)
+        .find((e) => e.programWorkoutId === programWorkoutId && e.isCurrent);
+      const actualCycle = scheduleEntry?.cycle || workoutCycle || enrollment.current_cycle || 1;
+      const actualDayIndex = scheduleEntry?.dayIndex || programWorkout.day_index;
+
+      // Idempotency guard: if this exact program day is already marked complete,
+      // do not append a duplicate completion or advance the enrollment again.
+      // Stops a double-tap / lost-response retry from silently skipping a day.
+      const alreadyLogged = (enrollment.completed_workouts || []).some(
+        (cw) => cw && cw.program_workout_id === programWorkoutId
+          && cw.cycle === actualCycle && cw.day_index === actualDayIndex
+      );
+      if (alreadyLogged) {
+        return {
+          status: enrollment.status,
+          current_week: enrollment.current_cycle || enrollment.current_week,
+          current_day: enrollment.current_day_index || enrollment.current_day,
+        };
+      }
 
       for (const log of exerciseLogs) {
         const exerciseConfig = (programWorkout.exercises || []).find(
@@ -256,9 +283,6 @@ export function useLogProgramWorkout() {
           newState = updateProgressionState(newState, exerciseConfig, log.sets || []);
         }
       }
-
-      const actualCycle = currentCycle;
-      const actualDayIndex = programWorkout.day_index;
 
       // Store completion with the ACTUAL cycle and day_index from the calendar schedule
       const completedWorkouts = [
@@ -279,9 +303,7 @@ export function useLogProgramWorkout() {
       if (isV2) {
         // v2: Simplified progression - just advance to next workout in sequence
         // No calendar-based skipping - user completes workouts in order
-
-        const allProgramWorkouts = await db.entities.ProgramWorkout.filter({ program_id: enrollment.program_id });
-        const sortedWorkouts = allProgramWorkouts.sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
+        const sortedWorkouts = [...allProgramWorkouts].sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
 
         // Advance to next workout
         let new_day_index = actualDayIndex + 1;

@@ -90,8 +90,10 @@ export default function Today() {
   // progression instead of being logged as an ad-hoc quick workout.
   const { enrollments } = useEnrollments();
   const todayProgramWorkout = useMemo(() => {
-    const active = enrollments.find((e) => e.status === "active")
-      || enrollments.find((e) => e.status === "paused");
+    // Only an ACTIVE enrollment surfaces a program CTA here. A paused program
+    // must not be routed to the program logger, since logging it would silently
+    // flip it back to active.
+    const active = enrollments.find((e) => e.status === "active");
     if (!active) return null;
     const entry = getTodayProgramWorkout(active, active.program?.workouts);
     return entry
