@@ -124,7 +124,12 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     if (!file || !user?.id) return;
     setError("");
     const isVideo = file.type.startsWith("video/");
-    setPending({ file, previewUrl: URL.createObjectURL(file), isVideo });
+    // Stable storage path per staged shot (reused across retries), so a retry
+    // after a lost response re-targets the SAME object + DB row rather than
+    // inserting a duplicate that would skew the session-averaged BF.
+    const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    setPending({ file, previewUrl: URL.createObjectURL(file), isVideo, path });
   };
 
   const closeReview = () => {
@@ -141,21 +146,22 @@ export default function PhysiqueTracker({ hideHeader = false }) {
 
   const confirmUpload = async () => {
     if (!pending || !user?.id) return;
-    const { file, isVideo } = pending;
+    const { file, isVideo, path } = pending;
     setError(""); setBusy(true);
 
     try {
-      const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
-      const path = `${user.id}/${Date.now()}.${ext}`;
-
       setStatus("Uploading…");
+      // upsert:true so a retry re-uploading the same stable path succeeds
+      // instead of failing on "already exists".
       const { error: upErr } = await supabase.storage
-        .from("physique").upload(path, file, { contentType: file.type, upsert: false });
+        .from("physique").upload(path, file, { contentType: file.type, upsert: true });
       if (upErr) throw upErr;
 
       setStatus(isVideo ? "Saving…" : "Analyzing physique…");
       const { data, error: fnErr } = await supabase.functions.invoke("analyze-physique", {
-        body: { path, media_type: isVideo ? "video" : "photo", pose },
+        // taken_at = local date so all of one evening's shots share a day (UTC
+        // would split a late session across two days and mis-average it).
+        body: { path, media_type: isVideo ? "video" : "photo", pose, taken_at: format(new Date(), "yyyy-MM-dd") },
       });
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
@@ -209,8 +215,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const sessionBf = latestSession ? Math.round(latestSession.bf * 10) / 10 : null;
   const delta = latestSession && prevSession ? (latestSession.bf - prevSession.bf) : null;
   // Representative entry for the qualitative read (assessment / focus / range):
-  // the most recent shot in the session that carries an analysis.
-  const latest = latestSession?.entries.find((e) => e.analysis) || null;
+  // the most recent ANALYZED PHOTO in the session. A same-day video carries a
+  // stub analysis ({note}) with no bodyfat, which would blank the card, so
+  // require a real bodyfat estimate too.
+  const latest = latestSession?.entries.find((e) => e.bodyfat_estimate != null && e.analysis) || null;
 
   const filteredEntries = entries.filter((e) => !filterPose || e.pose === filterPose);
   const visibleEntries = showAllHistory ? filteredEntries : filteredEntries.slice(0, HISTORY_CAP);

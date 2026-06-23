@@ -54,6 +54,21 @@ Deno.serve(async (req) => {
   const pose      = (body.pose as string) || null;
   const takenAt   = (body.taken_at as string) || new Date().toISOString().slice(0, 10);
 
+  // Idempotency: photo_path is unique per staged shot and reused across retries,
+  // so if a row already exists for it (a retry after a lost response), return
+  // that row instead of inserting a duplicate that would skew the session avg.
+  {
+    const { data: existing } = await supabase
+      .from("physique_entries")
+      .select("*")
+      .eq("created_by", USER_ID)
+      .eq("photo_path", path)
+      .maybeSingle();
+    if (existing) {
+      return json({ stored: true, analyzed: existing.bodyfat_estimate != null, entry: existing, deduped: true });
+    }
+  }
+
   // Videos aren't auto-analyzed (vision model takes stills) — store the entry only.
   if (mediaType === "video") {
     const { data, error } = await supabase.from("physique_entries").insert({
