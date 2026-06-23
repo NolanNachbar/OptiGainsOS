@@ -10,16 +10,22 @@ import { X, ScanLine, Loader2, AlertTriangle, PackageSearch, Camera } from "luci
 export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound, onScanLabel }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
+  // Guards the async barcode lookup: flips false on close so a lookup that
+  // resolves AFTER the user cancelled can't inject the abandoned product into
+  // the Add Food form.
+  const activeRef = useRef(false);
   const [scanState, setScanState] = useState("idle"); // idle | requesting | scanning | looking_up | not_found | error
   const [errorMessage, setErrorMessage] = useState("");
   const [foundBarcode, setFoundBarcode] = useState("");
 
   const stopCamera = () => {
+    activeRef.current = false;
     try { controlsRef.current?.stop(); } catch { /* already stopped */ }
     controlsRef.current = null;
   };
 
   const startScanning = async () => {
+    activeRef.current = true;
     setScanState("requesting");
     setErrorMessage("");
 
@@ -76,6 +82,9 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
           stream.getTracks().forEach((t) => t.stop());
 
           const food = await lookupBarcode(barcode);
+          // Bail if the user closed/cancelled while the lookup was in flight —
+          // otherwise an abandoned scan would overwrite their in-progress entry.
+          if (!activeRef.current) return;
           if (food) {
             onFoodFound(food);
           } else {

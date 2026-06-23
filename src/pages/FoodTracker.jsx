@@ -72,6 +72,52 @@ const GHOST_DASHED =
 // goals" affordance swaps this for a teal action-hover instead.
 const GHOST_DASHED_HOVER = "hover:text-ink hover:border-charcoal-borderSoft";
 
+// Downscale a captured photo before upload. Phones shoot multi-MB full-res
+// images that blow the edge function's ~10MB cap and crawl on weak connections,
+// so cap the long edge and re-encode as JPEG. Falls back to the raw data URL if
+// the image can't be decoded.
+async function downscaleToDataUrl(file, maxEdge = 1568, quality = 0.8) {
+  const rawUrl = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Could not read the photo"));
+    r.readAsDataURL(file);
+  });
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = rawUrl;
+    });
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    if (scale >= 1) return rawUrl; // already small enough
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch {
+    return rawUrl; // decode failed — send the original and let the server decide
+  }
+}
+
+// supabase functions.invoke throws a generic "non-2xx" FunctionsHttpError whose
+// message hides the real server reason (that lives in error.context, a Response).
+// Surface the actual message so the user knows what to fix (shrink the photo,
+// retake the label, retry), instead of a misleading "isn't deployed yet".
+async function fnErrorMessage(error) {
+  const ctx = error?.context;
+  if (ctx && typeof ctx.json === "function") {
+    const body = await ctx.json().catch(() => null);
+    if (body?.error) return body.error;
+  }
+  if (/Failed to send/i.test(error?.message || "")) {
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+  return error?.message || "Request failed";
+}
+
 export default function FoodTracker() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -558,7 +604,7 @@ export default function FoodTracker() {
     setIsEstimating(true);
     try {
       const { data, error } = await supabase.functions.invoke("estimate-food-macros", { body: { description } });
-      if (error) throw error;
+      if (error) throw new Error(await fnErrorMessage(error));
       const est = data?.estimate;
       if (!est) throw new Error(data?.error || "No estimate returned");
       selectCustomFood({
@@ -576,10 +622,7 @@ export default function FoodTracker() {
       setEstimateInput("");
       toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
     } catch (err) {
-      const msg = String(err?.message || err);
-      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
-        ? "AI estimate isn't deployed yet — deploy the estimate-food-macros function to enable it."
-        : `Estimate failed: ${msg}`);
+      toast.error(err.message || "Estimate failed");
     } finally {
       setIsEstimating(false);
     }
@@ -593,13 +636,18 @@ export default function FoodTracker() {
     setMealMealType(getDefaultMealType());
   };
 
-  const pickMealPhoto = (ev) => {
+  const pickMealPhoto = async (ev) => {
     const file = ev.target.files?.[0];
     ev.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setMealPhoto({ dataUrl: String(reader.result), previewUrl: URL.createObjectURL(file) });
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const dataUrl = await downscaleToDataUrl(file);
+      setMealPhoto({ dataUrl, previewUrl });
+    } catch {
+      URL.revokeObjectURL(previewUrl);
+      toast.error("Couldn't process that photo");
+    }
   };
 
   const estimateMeal = async () => {
@@ -610,14 +658,11 @@ export default function FoodTracker() {
       // Photo wins if both are present (the image carries more signal).
       const body = mealPhoto ? { image: mealPhoto.dataUrl } : { description };
       const { data, error } = await supabase.functions.invoke("estimate-meal", { body });
-      if (error) throw error;
+      if (error) throw new Error(await fnErrorMessage(error));
       if (!data?.items?.length) throw new Error(data?.error || "No foods identified");
       setEstMealItems(data.items);
     } catch (err) {
-      const msg = String(err?.message || err);
-      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
-        ? "Meal estimator isn't deployed yet."
-        : `Estimate failed: ${msg}`);
+      toast.error(err.message || "Estimate failed");
     } finally {
       setIsEstimatingMeal(false);
     }
@@ -629,29 +674,31 @@ export default function FoodTracker() {
     if (!estMealItems?.length) return;
     setIsLoggingMeal(true);
     try {
-      // Each estimated item is a portion total, so it logs as a 1-serving entry —
-      // same shape selectCustomFood/addFoodMutation produce.
-      for (const it of estMealItems) {
-        await db.entities.FoodEntry.create({
-          food_name: it.food_name,
-          meal_type: mealMealType,
-          serving_size: 1,
-          serving_unit: "serving",
-          calories: Math.round(it.calories),
-          protein_grams: it.protein,
-          carbs_grams: it.carbs,
-          fats_grams: it.fats,
-          date: selectedDate,
-          created_by: user.id,
-        });
-      }
+      // Each estimated item is a portion total, so it logs as a 1-serving entry.
+      // ONE atomic multi-row insert (not a per-item loop): all-or-nothing, so a
+      // mid-batch network failure can't leave a partial log that a retry would
+      // then double-insert.
+      const rows = estMealItems.map((it) => ({
+        food_name: it.food_name,
+        meal_type: mealMealType,
+        serving_size: 1,
+        serving_unit: "serving",
+        calories: Math.round(it.calories),
+        protein_grams: it.protein,
+        carbs_grams: it.carbs,
+        fats_grams: it.fats,
+        date: selectedDate,
+        created_by: user.id,
+      }));
+      const { error } = await supabase.from("food_entries").insert(rows);
+      if (error) throw error;
       invalidateFood(queryClient);
       toast.success(`Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`);
       resetMealEstimator();
       setShowMealEstimator(false);
       setShowAddDialog(false);
     } catch {
-      toast.error("Failed to log meal");
+      toast.error("Couldn't log the meal, nothing was saved. Try again.");
     } finally {
       setIsLoggingMeal(false);
     }
@@ -663,13 +710,18 @@ export default function FoodTracker() {
     setLabelPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; });
   };
 
-  const pickLabelPhoto = (ev) => {
+  const pickLabelPhoto = async (ev) => {
     const file = ev.target.files?.[0];
     ev.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setLabelPhoto({ dataUrl: String(reader.result), previewUrl: URL.createObjectURL(file) });
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const dataUrl = await downscaleToDataUrl(file);
+      setLabelPhoto({ dataUrl, previewUrl });
+    } catch {
+      URL.revokeObjectURL(previewUrl);
+      toast.error("Couldn't process that photo");
+    }
   };
 
   const readLabel = async () => {
@@ -677,7 +729,7 @@ export default function FoodTracker() {
     setIsReadingLabel(true);
     try {
       const { data, error } = await supabase.functions.invoke("read-nutrition-label", { body: { image: labelPhoto.dataUrl } });
-      if (error) throw error;
+      if (error) throw new Error(await fnErrorMessage(error));
       const est = data?.estimate;
       if (!est) throw new Error(data?.error || "Could not read the label");
       // Prefill the single-item form like a custom food (totals are per serving).
@@ -697,10 +749,7 @@ export default function FoodTracker() {
       resetLabelCapture();
       toast.success(`Read label · ${est.confidence} confidence — review & adjust`);
     } catch (err) {
-      const msg = String(err?.message || err);
-      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
-        ? "Label reader isn't deployed yet."
-        : `Couldn't read label: ${msg}`);
+      toast.error(err.message || "Couldn't read the label");
     } finally {
       setIsReadingLabel(false);
     }
@@ -2070,7 +2119,7 @@ const handleSaveMealTemplate = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            {servingHint && isUsdaFood && (
+                            {servingHint && (isUsdaFood || isEstimatedFood) && (
                               <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingHint}</p>
                             )}
                           </div>
@@ -2252,7 +2301,9 @@ const handleSaveMealTemplate = () => {
                       saveCustomFoodMutation.mutate(buildCustomFoodPayload());
                     }
                   }}
-                  disabled={!newFood.food_name || addFoodMutation.isPending || updateFoodMutation.isPending}
+                  // Block a blank/zero amount: it would log a real entry with 0
+                  // calories and serving_size coerced to 1 (a silent empty log).
+                  disabled={!newFood.food_name || (parseFloat(newFood.serving_amount) || 0) <= 0 || addFoodMutation.isPending || updateFoodMutation.isPending}
                   variant="volt"
                   size="lg"
                   className="w-full"
