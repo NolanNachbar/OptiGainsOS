@@ -82,8 +82,14 @@ function CardioDoneToggle({ done, onToggle }) {
   );
 }
 
-export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false }) {
+export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false, programWorkout = null }) {
   const { prescription } = useTodayPrescription(today);
+  // When today is a scheduled program day, route the session CTAs to the program
+  // logger (source=program) so the workout completes the program day and drives
+  // progression — instead of /quick-workout, which logs it as an ad-hoc session.
+  const programHref = programWorkout
+    ? `/workout-detail?source=program&enrollmentId=${programWorkout.enrollmentId}&programWorkoutId=${programWorkout.programWorkoutId}`
+    : null;
   const [liftsOpen, setLiftsOpen] = useState(false);
   // Pre-train check-in: free-text the athlete enters before lifting. Carried
   // into the logger as a "PRE:" session note, which notes_parser.py reads to
@@ -98,6 +104,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // No engine prescription yet — own the single off-script fallback so logging a
   // workout is never buried (Today no longer renders its own duplicate ghost).
   if (!prescription) {
+    // No engine prescription, but a program day is scheduled — surface it as the
+    // day's workout (routed to the program logger), not a generic "log a workout".
+    if (programHref) {
+      return (
+        <Link to={programHref} className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
+          Begin program workout
+        </Link>
+      );
+    }
     return (
       <Link to="/quick-workout" className="cta-ghost w-full">
         Log a workout
@@ -322,8 +337,8 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {!isRest && !loggedToday && (
           <>
             <Link
-              to="/quick-workout"
-              state={{
+              to={programHref || "/quick-workout"}
+              state={programHref ? undefined : {
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
               }}

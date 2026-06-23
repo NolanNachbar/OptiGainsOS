@@ -6,7 +6,7 @@
  *   2. The engine's prescribed session (rows + load pills + teal CTA)
  *   3. Fuel today — hue-coded rings, one tap to the log
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase, db } from "@/api/supabaseClient";
@@ -15,6 +15,8 @@ import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
+import { useEnrollments } from "@/hooks/useProgramQueries";
+import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
@@ -74,11 +76,28 @@ export default function Today() {
   // above the dock at 390px — so in that case the disclosure defaults OPEN to
   // fill the hollow with the Brief/State/Muscle body. Auto-open fires once (ref-
   // guarded) so the user can still collapse it afterward.
-  const [detailOpen, setDetailOpen] = useState(false);
-  const detailAutoOpened = useRef(false);
+  // null = the user hasn't toggled the detail card yet, so its open state falls
+  // back to a data-driven default (see detailOpenResolved below). Once they
+  // toggle, their choice sticks.
+  const [detailOpen, setDetailOpen] = useState(null);
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
+
+  // Today's scheduled program workout (if the athlete is enrolled in a program
+  // and the schedule lands a workout on today). When present, the session CTA
+  // routes to the program logger so the day completes the program and drives
+  // progression instead of being logged as an ad-hoc quick workout.
+  const { enrollments } = useEnrollments();
+  const todayProgramWorkout = useMemo(() => {
+    const active = enrollments.find((e) => e.status === "active")
+      || enrollments.find((e) => e.status === "paused");
+    if (!active) return null;
+    const entry = getTodayProgramWorkout(active, active.program?.workouts);
+    return entry
+      ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId }
+      : null;
+  }, [enrollments]);
 
   // Subjective readiness check-in for today (ported from Dashboard). When a
   // COMPLETED row exists (energy logged), MorningCheckin renders its read-only
@@ -142,19 +161,12 @@ export default function Today() {
 
   // Density guard: Today's Actions self-hides when there are no actions, which
   // would otherwise strand the detail card (mobile disclosure default-closed) as
-  // the last surface with a tall empty band above the dock. When the brief seeds
-  // no actions, auto-open the detail disclosure ONCE so its body fills that
-  // hollow; the user can still collapse it afterward (ref-guarded so we never
-  // fight a manual close).
+  // the last surface with a tall empty band above the dock. So the detail card's
+  // effective open state is DERIVED (no effect, no ref): use the user's explicit
+  // toggle once they make one, otherwise fall back to a data-driven default that
+  // auto-opens when the loaded brief seeds no actions, filling that hollow.
   const briefActions = todayBrief?.brief_json?.today_actions;
-  useEffect(() => {
-    if (detailAutoOpened.current) return;
-    if (todayBrief === undefined) return; // brief still loading
-    if (!briefActions?.length) {
-      setDetailOpen(true);
-      detailAutoOpened.current = true;
-    }
-  }, [todayBrief, briefActions]);
+  const detailOpenResolved = detailOpen ?? (todayBrief !== undefined && !briefActions?.length);
 
   const recovery = state?.recovery || {};
   const fatigue = state?.fatigue || {};
@@ -233,8 +245,7 @@ export default function Today() {
   // The active-session "tap to continue" banner is deliberately neutral glass and
   // never the teal primary, so it doesn't enter this decision.
   const tealPrimary =
-    !!prescription &&
-    prescription.mpc_action !== "REST" &&
+    ((!!prescription && prescription.mpc_action !== "REST") || !!todayProgramWorkout) &&
     !loggedToday &&
     !activeSession
       ? "session"
@@ -468,7 +479,7 @@ export default function Today() {
             keeps its Begin Session a ghost so there's never a second teal. */}
         {!(activeSession && !prescription) && (
           <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} />
+            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} />
           </div>
         )}
 
@@ -596,20 +607,20 @@ export default function Today() {
             {/* Mobile-only disclosure trigger — ≥44px tap target. */}
             <button
               type="button"
-              onClick={() => setDetailOpen((o) => !o)}
-              aria-expanded={detailOpen}
+              onClick={() => setDetailOpen(!detailOpenResolved)}
+              aria-expanded={detailOpenResolved}
               className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
             >
               <SectionLabel>Today&apos;s detail</SectionLabel>
               <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
                 Brief · state · muscle
                 <ChevronDown
-                  className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpen ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpenResolved ? "rotate-180" : ""}`}
                 />
               </span>
             </button>
-            {/* Body: toggleable on mobile via detailOpen, always shown on desktop. */}
-            <div className={`${detailOpen ? "block" : "hidden"} lg:block`}>
+            {/* Body: toggleable on mobile via detailOpenResolved, always shown on desktop. */}
+            <div className={`${detailOpenResolved ? "block" : "hidden"} lg:block`}>
             {/* In-card switch uses the lighter inset SegmentedControl (NOT the
                 global glass-elevated coral SubTabs strip) so it doesn't mimic the
                 page-level nav pills. */}
