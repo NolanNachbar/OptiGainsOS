@@ -3,29 +3,19 @@ import { createPortal } from "react-dom";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { lookupBarcode } from "@/api/openFoodFacts";
 import { Button } from "@/components/ui/button";
-import { X, ScanLine, Loader2, AlertTriangle, PackageSearch } from "lucide-react";
+import { X, ScanLine, Loader2, AlertTriangle, PackageSearch, Camera } from "lucide-react";
 
 // BarcodeScanner renders its own fixed overlay (not inside Dialog) so it can
 // sit above the Add Food dialog without z-index wrestling.
-export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound }) {
+export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound, onScanLabel }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   const [scanState, setScanState] = useState("idle"); // idle | requesting | scanning | looking_up | not_found | error
   const [errorMessage, setErrorMessage] = useState("");
   const [foundBarcode, setFoundBarcode] = useState("");
 
-  useEffect(() => {
-    if (!open) {
-      stopCamera();
-      setScanState("idle");
-      return;
-    }
-    startScanning();
-    return stopCamera;
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const stopCamera = () => {
-    try { controlsRef.current?.stop(); } catch {}
+    try { controlsRef.current?.stop(); } catch { /* already stopped */ }
     controlsRef.current = null;
   };
 
@@ -75,7 +65,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
     try {
       const controls = await reader.decodeFromVideoElement(
         videoRef.current,
-        async (result, error) => {
+        async (result) => {
           if (!result) return; // NotFoundException fires continuously, just ignore
           const barcode = result.getText();
           setFoundBarcode(barcode);
@@ -100,6 +90,23 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
       stream.getTracks().forEach((t) => t.stop());
     }
   };
+
+  useEffect(() => {
+    if (!open) {
+      // The component renders null while closed, so scanState doesn't matter
+      // until the next open, when startScanning resets it. Skipping a reset here
+      // keeps this effect free of a synchronous setState.
+      stopCamera();
+      return;
+    }
+    // Genuine external-system effect: opening the scanner starts the camera, and
+    // startScanning sets scan state as the async camera/permission flow resolves.
+    // The set-state-in-effect heuristic can't see that this is camera lifecycle,
+    // not derived state, so it's suppressed for this call.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startScanning();
+    return stopCamera;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
@@ -227,16 +234,33 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound 
             <p className="font-semibold text-ink">Product not found</p>
             <p className="text-sm text-ink-muted mt-1">Barcode: {foundBarcode}</p>
           </div>
-          {/* Rescan is the single intended primary — keep coral on it; entering
-              manually is the secondary path on neutral glass. */}
-          <div className="flex gap-2 w-full">
-            <Button variant="primary" size="lg" className="flex-1" onClick={() => startScanning()}>
-              Try again
-            </Button>
-            <Button variant="ghost" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
-              Enter manually
-            </Button>
-          </div>
+          {/* When a label-read fallback is wired up it's the recommended recovery
+              (reads exact macros off the panel), so it takes the single primary
+              action; Try again / Enter manually drop to secondary + ghost. */}
+          {onScanLabel ? (
+            <>
+              <Button variant="primary" size="lg" className="w-full" onClick={() => onScanLabel(foundBarcode)}>
+                <Camera className="w-4 h-4" /> Photograph the label
+              </Button>
+              <div className="flex gap-2 w-full">
+                <Button variant="dim" size="lg" className="flex-1" onClick={() => startScanning()}>
+                  Try again
+                </Button>
+                <Button variant="ghost" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+                  Enter manually
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-2 w-full">
+              <Button variant="primary" size="lg" className="flex-1" onClick={() => startScanning()}>
+                Try again
+              </Button>
+              <Button variant="ghost" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+                Enter manually
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

@@ -131,6 +131,24 @@ export default function FoodTracker() {
   const [estimateInput, setEstimateInput] = useState("");
   const [isEstimating, setIsEstimating] = useState(false);
   const [isEstimatedFood, setIsEstimatedFood] = useState(false);
+  // Quick-meal estimator (estimate-meal edge fn): a free-text or photo meal ->
+  // a list of items the athlete confirms, then batch-logs. For travel/restaurants
+  // where weighing each item isn't possible.
+  const [showMealEstimator, setShowMealEstimator] = useState(false);
+  const [mealText, setMealText] = useState("");
+  const [mealPhoto, setMealPhoto] = useState(null); // { dataUrl, previewUrl }
+  const [estMealItems, setEstMealItems] = useState(null);  // estimated items (null until estimated)
+  const [mealMealType, setMealMealType] = useState(getDefaultMealType());
+  const [isEstimatingMeal, setIsEstimatingMeal] = useState(false);
+  const [isLoggingMeal, setIsLoggingMeal] = useState(false);
+  const mealPhotoInputRef = useRef(null);
+  // Nutrition-label reader (read-nutrition-label edge fn): barcode-miss fallback.
+  // Snap the Nutrition Facts panel + type the name -> prefills the manual form.
+  const [showLabelCapture, setShowLabelCapture] = useState(false);
+  const [labelName, setLabelName] = useState("");
+  const [labelPhoto, setLabelPhoto] = useState(null); // { dataUrl, previewUrl }
+  const [isReadingLabel, setIsReadingLabel] = useState(false);
+  const labelPhotoInputRef = useRef(null);
   const [editingEntry, setEditingEntry] = useState(null);
   const queryClient = useQueryClient();
   const searchRef = useRef(null);
@@ -564,6 +582,127 @@ export default function FoodTracker() {
         : `Estimate failed: ${msg}`);
     } finally {
       setIsEstimating(false);
+    }
+  };
+
+  // ── Quick-meal estimator: text/photo -> item list -> batch log ──────────
+  const resetMealEstimator = () => {
+    setMealText("");
+    setEstMealItems(null);
+    setMealPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; });
+    setMealMealType(getDefaultMealType());
+  };
+
+  const pickMealPhoto = (ev) => {
+    const file = ev.target.files?.[0];
+    ev.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setMealPhoto({ dataUrl: String(reader.result), previewUrl: URL.createObjectURL(file) });
+    reader.readAsDataURL(file);
+  };
+
+  const estimateMeal = async () => {
+    const description = mealText.trim();
+    if (!description && !mealPhoto) { toast.error("Describe your meal or add a photo"); return; }
+    setIsEstimatingMeal(true);
+    try {
+      // Photo wins if both are present (the image carries more signal).
+      const body = mealPhoto ? { image: mealPhoto.dataUrl } : { description };
+      const { data, error } = await supabase.functions.invoke("estimate-meal", { body });
+      if (error) throw error;
+      if (!data?.items?.length) throw new Error(data?.error || "No foods identified");
+      setEstMealItems(data.items);
+    } catch (err) {
+      const msg = String(err?.message || err);
+      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
+        ? "Meal estimator isn't deployed yet."
+        : `Estimate failed: ${msg}`);
+    } finally {
+      setIsEstimatingMeal(false);
+    }
+  };
+
+  const removeEstMealItem = (idx) => setEstMealItems((items) => items.filter((_, i) => i !== idx));
+
+  const logMealItems = async () => {
+    if (!estMealItems?.length) return;
+    setIsLoggingMeal(true);
+    try {
+      // Each estimated item is a portion total, so it logs as a 1-serving entry —
+      // same shape selectCustomFood/addFoodMutation produce.
+      for (const it of estMealItems) {
+        await db.entities.FoodEntry.create({
+          food_name: it.food_name,
+          meal_type: mealMealType,
+          serving_size: 1,
+          serving_unit: "serving",
+          calories: Math.round(it.calories),
+          protein_grams: it.protein,
+          carbs_grams: it.carbs,
+          fats_grams: it.fats,
+          date: selectedDate,
+          created_by: user.id,
+        });
+      }
+      invalidateFood(queryClient);
+      toast.success(`Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`);
+      resetMealEstimator();
+      setShowMealEstimator(false);
+      setShowAddDialog(false);
+    } catch {
+      toast.error("Failed to log meal");
+    } finally {
+      setIsLoggingMeal(false);
+    }
+  };
+
+  // ── Nutrition-label reader: barcode-miss fallback ───────────────────────
+  const resetLabelCapture = () => {
+    setLabelName("");
+    setLabelPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; });
+  };
+
+  const pickLabelPhoto = (ev) => {
+    const file = ev.target.files?.[0];
+    ev.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setLabelPhoto({ dataUrl: String(reader.result), previewUrl: URL.createObjectURL(file) });
+    reader.readAsDataURL(file);
+  };
+
+  const readLabel = async () => {
+    if (!labelPhoto) { toast.error("Add a photo of the label first"); return; }
+    setIsReadingLabel(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("read-nutrition-label", { body: { image: labelPhoto.dataUrl } });
+      if (error) throw error;
+      const est = data?.estimate;
+      if (!est) throw new Error(data?.error || "Could not read the label");
+      // Prefill the single-item form like a custom food (totals are per serving).
+      selectCustomFood({
+        food_name: labelName.trim() || "Scanned product",
+        serving_size: 1,
+        serving_unit: "serving",
+        calories: est.calories,
+        protein_grams: est.protein,
+        carbs_grams: est.carbs,
+        fats_grams: est.fats,
+      });
+      setServingHint(est.serving_description ? `Label: ${est.serving_description}` : null);
+      setIsEstimatedFood(true);
+      setManualExpanded(true);
+      setShowLabelCapture(false);
+      resetLabelCapture();
+      toast.success(`Read label · ${est.confidence} confidence — review & adjust`);
+    } catch (err) {
+      const msg = String(err?.message || err);
+      toast.error(/Failed to send|not found|404|non-2xx/i.test(msg)
+        ? "Label reader isn't deployed yet."
+        : `Couldn't read label: ${msg}`);
+    } finally {
+      setIsReadingLabel(false);
     }
   };
 
@@ -1565,6 +1704,23 @@ const handleSaveMealTemplate = () => {
             </DialogHeader>
 
               <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {/* Quick-meal: describe or photograph a whole meal and split it
+                    into items. Sits above search as the fast path for travel /
+                    restaurants where weighing each item isn't possible. */}
+                {!editingEntry && (
+                  <button
+                    type="button"
+                    onClick={() => { resetMealEstimator(); setShowMealEstimator(true); }}
+                    className="w-full flex items-center gap-2.5 rounded-lg border border-charcoal-border bg-charcoal-elevated px-4 py-3 text-left hover:bg-[var(--glass-bg)] transition-colors min-h-[44px]"
+                  >
+                    <Sparkles className="w-4 h-4 text-brand shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-bold text-ink">Log a whole meal</span>
+                      <span className="block text-[11px] text-ink-muted">Describe it or snap a photo — splits into items</span>
+                    </span>
+                    <Camera className="w-4 h-4 text-ink-muted shrink-0" />
+                  </button>
+                )}
                 <div>
                   <Label htmlFor="search">Search USDA Database</Label>
                   <div className="flex gap-2 mt-1">
@@ -2116,6 +2272,196 @@ const handleSaveMealTemplate = () => {
             </DialogContent>
           </Dialog>
         )}
+
+      {/* ─── Quick-meal estimator (text or photo → item list → batch log) ─── */}
+      <Dialog open={showMealEstimator} onOpenChange={(open) => { setShowMealEstimator(open); if (!open) resetMealEstimator(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Log a whole meal</DialogTitle>
+            <DialogDescription>
+              Describe what you ate or add a photo. It splits into items you adjust before logging.
+            </DialogDescription>
+          </DialogHeader>
+
+          <input
+            ref={mealPhotoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={pickMealPhoto}
+          />
+
+          {!estMealItems ? (
+            <div className="space-y-3">
+              <textarea
+                value={mealText}
+                onChange={(e) => setMealText(e.target.value)}
+                rows={3}
+                disabled={isEstimatingMeal}
+                placeholder="e.g. cheeseburger, large fries, and a regular coke"
+                className="w-full glass-inset rounded-lg px-3 py-2 text-sm text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+              />
+              {mealPhoto ? (
+                <div className="relative">
+                  <img src={mealPhoto.previewUrl} alt="Meal to estimate" className="w-full rounded-lg object-contain max-h-56 bg-black/40" />
+                  <button
+                    type="button"
+                    onClick={() => setMealPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; })}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white"
+                    aria-label="Remove photo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Button type="button" variant="dim" size="lg" className="w-full" onClick={() => mealPhotoInputRef.current?.click()} disabled={isEstimatingMeal}>
+                  <Camera className="w-4 h-4" /> Add a photo
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="volt"
+                size="lg"
+                className="w-full"
+                onClick={estimateMeal}
+                disabled={isEstimatingMeal || (!mealText.trim() && !mealPhoto)}
+              >
+                {isEstimatingMeal ? <><Loader2 className="w-4 h-4 spin-loop" /> Estimating…</> : <><Sparkles className="w-4 h-4" /> Estimate</>}
+              </Button>
+              <p className="text-[11px] text-ink-muted">
+                Rough estimate, less accurate than weighing. Review the items before logging.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Add to</Label>
+                <Select value={mealMealType} onValueChange={setMealMealType}>
+                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="breakfast">Breakfast</SelectItem>
+                    <SelectItem value="lunch">Lunch</SelectItem>
+                    <SelectItem value="dinner">Dinner</SelectItem>
+                    <SelectItem value="snack">Snack</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {estMealItems.map((it, i) => (
+                  <div key={i} className="glass-inset rounded-lg px-3 py-2 flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-ink truncate">{it.food_name}</div>
+                      <div className="font-technical text-[11px] text-ink-muted">
+                        {it.serving_description} · {it.calories} kcal · P{it.protein} C{it.carbs} F{it.fats}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeEstMealItem(i)}
+                      className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center text-ink-muted hover:text-bad"
+                      aria-label={`Remove ${it.food_name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {(() => {
+                const t = estMealItems.reduce(
+                  (a, i) => ({ cal: a.cal + i.calories, p: a.p + i.protein, c: a.c + i.carbs, f: a.f + i.fats }),
+                  { cal: 0, p: 0, c: 0, f: 0 },
+                );
+                return (
+                  <div className="flex items-center justify-between text-sm font-bold text-ink border-t border-charcoal-border pt-2">
+                    <span>Total</span>
+                    <span className="font-technical">
+                      {Math.round(t.cal)} kcal · P{Math.round(t.p)} C{Math.round(t.c)} F{Math.round(t.f)}
+                    </span>
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-2">
+                <Button type="button" variant="dim" size="lg" className="flex-1" onClick={() => setEstMealItems(null)} disabled={isLoggingMeal}>
+                  Back
+                </Button>
+                <Button type="button" variant="volt" size="lg" className="flex-1" onClick={logMealItems} disabled={isLoggingMeal || !estMealItems.length}>
+                  {isLoggingMeal ? <Loader2 className="w-4 h-4 spin-loop" /> : `Log ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Nutrition-label reader (barcode-miss fallback) ─── */}
+      <Dialog open={showLabelCapture} onOpenChange={(open) => { setShowLabelCapture(open); if (!open) resetLabelCapture(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Read a nutrition label</DialogTitle>
+            <DialogDescription>
+              Barcode missed it? Snap the Nutrition Facts panel and type the product name. The macros read straight off the label.
+            </DialogDescription>
+          </DialogHeader>
+
+          <input
+            ref={labelPhotoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={pickLabelPhoto}
+          />
+
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="label-name">Product name</Label>
+              <Input
+                id="label-name"
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+                placeholder="e.g. Chobani vanilla yogurt"
+                disabled={isReadingLabel}
+                className="mt-1"
+              />
+            </div>
+            {labelPhoto ? (
+              <div className="relative">
+                <img src={labelPhoto.previewUrl} alt="Nutrition label to read" className="w-full rounded-lg object-contain max-h-72 bg-black/40" />
+                <button
+                  type="button"
+                  onClick={() => setLabelPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; })}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white"
+                  aria-label="Remove photo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Button type="button" variant="dim" size="lg" className="w-full" onClick={() => labelPhotoInputRef.current?.click()} disabled={isReadingLabel}>
+                <Camera className="w-4 h-4" /> Photograph the label
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="volt"
+              size="lg"
+              className="w-full"
+              onClick={readLabel}
+              disabled={isReadingLabel || !labelPhoto}
+            >
+              {isReadingLabel ? <><Loader2 className="w-4 h-4 spin-loop" /> Reading…</> : <><Camera className="w-4 h-4" /> Read label</>}
+            </Button>
+            <p className="text-[11px] text-ink-muted">
+              Reads the printed numbers, so it's accurate when the panel is sharp and fully in frame. Review before logging.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ─── Goals Modal ─── */}
       <Dialog open={showGoalsModal} onOpenChange={setShowGoalsModal}>
         <DialogContent className="max-w-lg flex flex-col p-0">
@@ -2135,7 +2481,6 @@ const handleSaveMealTemplate = () => {
               setProteinPerLb={setProteinPerLb}
               goalForm={goalForm}
               setGoalForm={setGoalForm}
-              updateGoalsMutation={updateGoalsMutation}
               navigate={navigate}
               setShowGoalsModal={setShowGoalsModal}
               setShowStatsModal={setShowStatsModal}
@@ -2541,6 +2886,11 @@ Oats,389,17,66,7,100g`}</pre>
           setSearchQuery(barcode);
           toast.info("Product not found. Try searching manually.");
         }}
+        onScanLabel={() => {
+          setShowBarcodeScanner(false);
+          resetLabelCapture();
+          setShowLabelCapture(true);
+        }}
       />
     </div>
   );
@@ -2550,7 +2900,6 @@ function GoalsFormContent({
   activePhase, tdee, profile, latestWeight,
   proteinPerLb, setProteinPerLb,
   goalForm, setGoalForm,
-  updateGoalsMutation,
   navigate, setShowGoalsModal, setShowStatsModal,
 }) {
 
