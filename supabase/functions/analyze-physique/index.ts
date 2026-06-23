@@ -57,16 +57,16 @@ Deno.serve(async (req) => {
   // Idempotency: photo_path is unique per staged shot and reused across retries,
   // so if a row already exists for it (a retry after a lost response), return
   // that row instead of inserting a duplicate that would skew the session avg.
-  {
-    const { data: existing } = await supabase
-      .from("physique_entries")
-      .select("*")
-      .eq("created_by", USER_ID)
-      .eq("photo_path", path)
-      .maybeSingle();
-    if (existing) {
-      return json({ stored: true, analyzed: existing.bodyfat_estimate != null, entry: existing, deduped: true });
-    }
+  // A unique index on (created_by, photo_path) is the DB-level backstop.
+  const existingEntry = async () => {
+    const { data } = await supabase
+      .from("physique_entries").select("*")
+      .eq("created_by", USER_ID).eq("photo_path", path).maybeSingle();
+    return data;
+  };
+  const existing = await existingEntry();
+  if (existing) {
+    return json({ stored: true, analyzed: existing.bodyfat_estimate != null, entry: existing, deduped: true });
   }
 
   // Videos aren't auto-analyzed (vision model takes stills) — store the entry only.
@@ -76,7 +76,15 @@ Deno.serve(async (req) => {
       taken_at: takenAt, weight_lb: weightLb, pose,
       analysis: { note: "Video stored; auto-analysis runs on photos. Upload a still for an estimate." },
     }).select().single();
-    if (error) return json({ error: error.message }, 500);
+    if (error) {
+      // Concurrent retry lost the select race but hit the unique index — return
+      // the row the other request inserted instead of erroring.
+      if (error.code === "23505") {
+        const dup = await existingEntry();
+        if (dup) return json({ stored: true, analyzed: false, entry: dup, deduped: true });
+      }
+      return json({ error: error.message }, 500);
+    }
     return json({ stored: true, analyzed: false, entry: data });
   }
 
@@ -137,7 +145,13 @@ Deno.serve(async (req) => {
     confidence: (analysis.confidence as string) ?? null,
     analysis,
   }).select().single();
-  if (error) return json({ error: error.message }, 500);
+  if (error) {
+    if (error.code === "23505") {
+      const dup = await existingEntry();
+      if (dup) return json({ stored: true, analyzed: dup.bodyfat_estimate != null, entry: dup, deduped: true });
+    }
+    return json({ error: error.message }, 500);
+  }
 
   return json({ stored: true, analyzed: true, entry: data });
 });
