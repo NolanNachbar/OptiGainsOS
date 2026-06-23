@@ -32,7 +32,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         .from("physique_entries")
         .select("*")
         .eq("created_by", user.id)
+        // taken_at is date-granularity, so same-day uploads tie; created_at
+        // breaks the tie so "Latest" tracks the most recently uploaded shot.
         .order("taken_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
       const withUrls = await Promise.all((data ?? []).map(async (e) => {
@@ -68,6 +71,18 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const [pose, setPose] = useState(POSES[0].key);
   const [filterPose, setFilterPose] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Guided photo session — walks all 6 poses in order so you don't have to
+  // remember which is next. `session.index` is the current pose; null = off.
+  const [session, setSession] = useState(null);
+  const [sessionDone, setSessionDone] = useState(false);
+
+  const startSession = () => {
+    setSessionDone(false);
+    setSession({ index: 0 });
+    setPose(POSES[0].key);
+  };
+  const endSession = () => setSession(null);
 
   // Compare
   const [compareMode, setCompareMode] = useState(false);
@@ -148,6 +163,18 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       setStatus("");
       closeReview();
       await queryClient.invalidateQueries({ queryKey: ['physique-entries', user?.id] });
+
+      // Guided session: advance to the next pose, or finish after the last one.
+      if (session) {
+        const next = session.index + 1;
+        if (next < POSES.length) {
+          setSession({ index: next });
+          setPose(POSES[next].key);
+        } else {
+          setSession(null);
+          setSessionDone(true);
+        }
+      }
     } catch (e) {
       setError(e.message || String(e));
       setStatus("");
@@ -156,9 +183,34 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     }
   };
 
-  const latest = entries.find((e) => e.bodyfat_estimate != null);
-  const prev   = entries.filter((e) => e.bodyfat_estimate != null && e.pose === latest?.pose)[1];
-  const delta  = latest && prev ? (latest.bodyfat_estimate - prev.bodyfat_estimate) : null;
+  // The headline BF is a SESSION reading: all of a morning's shots (same
+  // taken_at date) averaged into one number, so it reflects every pose rather
+  // than whichever photo was uploaded last. Per-shot estimates still show on the
+  // history tiles. Trend is session-over-session (this morning vs the prior one).
+  const sessions = (() => {
+    const byDay = new Map();
+    for (const e of entries) {
+      if (!byDay.has(e.taken_at)) byDay.set(e.taken_at, []);
+      byDay.get(e.taken_at).push(e);
+    }
+    return [...byDay.entries()]
+      .map(([date, es]) => {
+        const ests = es.map((e) => e.bodyfat_estimate).filter((v) => v != null);
+        const bf = ests.length ? ests.reduce((a, b) => a + b, 0) / ests.length : null;
+        return { date, entries: es, bf, count: ests.length };
+      })
+      .filter((s) => s.bf != null)
+      // entries are already taken_at desc, so Map preserves newest-first; sort
+      // defensively in case the source order ever changes.
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
+  })();
+  const latestSession = sessions[0] || null;
+  const prevSession = sessions[1] || null;
+  const sessionBf = latestSession ? Math.round(latestSession.bf * 10) / 10 : null;
+  const delta = latestSession && prevSession ? (latestSession.bf - prevSession.bf) : null;
+  // Representative entry for the qualitative read (assessment / focus / range):
+  // the most recent shot in the session that carries an analysis.
+  const latest = latestSession?.entries.find((e) => e.analysis) || null;
 
   const filteredEntries = entries.filter((e) => !filterPose || e.pose === filterPose);
   const visibleEntries = showAllHistory ? filteredEntries : filteredEntries.slice(0, HISTORY_CAP);
@@ -176,40 +228,73 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         <input ref={fileInputRef} type="file" accept="image/*,video/*"
                className="hidden" onChange={handleFile} disabled={busy} />
 
-        {/* Pose picker — wrapped in a glass control panel so it reads as a setup
-            panel for the shot, not a second tab bar trailing the nav strip. The
-            teal action FAB is the sole upload trigger; this panel only configures
-            pose. */}
+        {/* Pose setup. Two modes: a guided session that walks all 6 poses in order
+            (so you don't have to remember which is next), or the manual picker for
+            a one-off shot. During a session the panel shows the current pose + cue
+            and its own Capture button; the separate FAB/empty-CTA is suppressed. */}
         <div className="glass px-4 pt-4 pb-4 mt-4 rise-in">
-          <div className="section-label mb-2">Pose for this shot</div>
-          {/* The single shared pose selector — same PosePillRow (active-chip) the
-              Review sheet uses, so the armed pose reads identically here and there
-              and the two selectors never drift. */}
-          {/* Scroll affordance: the row scroll-snaps pose-to-pose (snap-x on the
-              track, snap-start on each pill via the arbitrary child selector so
-              the primitive stays untouched) and the right-edge mask deliberately
-              clips the 4th pill mid-glyph, so a partial pill peeks past the fade
-              as the "there's more, swipe" cue. Each pill already carries the 44px
-              min tap target from the primitive. */}
-          <PosePillRow
-            variant="solid"
-            value={pose}
-            onChange={setPose}
-            disabled={busy}
-            className="mb-2 snap-x snap-mandatory scroll-pl-4 [&>button]:snap-start [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
-            options={POSES.map((p) => ({ value: p.key, label: p.label }))}
-          />
-          {/* Two-line instructional rhythm with a clear tonal step: the per-shot
-              pose cue is the primary instruction (secondary ink); the static
-              "same lighting/distance" reminder drops to its own quieter line with
-              a wider gap (mt-3) and the faintest ink tier (text-faint) so the two
-              read as cue-then-aside, not one wrapped block. */}
-          <p className="text-xs font-semibold text-secondary">
-            {POSES.find((p) => p.key === pose)?.cue}
-          </p>
-          <p className="mt-3 text-xs font-semibold text-faint">
-            Same lighting and distance each time to track the trend.
-          </p>
+          {session ? (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="section-label">Pose {session.index + 1} of {POSES.length}</div>
+                <button
+                  type="button"
+                  onClick={endSession}
+                  disabled={busy}
+                  className="min-h-[44px] -my-2 px-1 text-xs font-bold text-muted-2 hover:text-ink disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+                >
+                  End session
+                </button>
+              </div>
+              <div className="type-display text-lg text-ink">{POSES[session.index].label}</div>
+              <p className="mt-1 text-xs font-semibold text-secondary">{POSES[session.index].cue}</p>
+              <p className="mt-2 text-xs font-semibold text-faint">
+                Same lighting and distance each time to track the trend.
+              </p>
+              <Button
+                variant="volt"
+                size="lg"
+                className="w-full mt-3"
+                disabled={busy}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {busy ? <Loader2 className="w-4 h-4 spin-loop" /> : <Camera className="w-4 h-4" />}
+                {busy ? (status || "Working…") : `Capture ${POSES[session.index].label}`}
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="section-label">Pose for this shot</div>
+                <Button variant="dim" size="sm" onClick={startSession} className="min-h-[44px] text-[11px] font-bold">
+                  <Camera className="w-3.5 h-3.5" /> Guided session
+                </Button>
+              </div>
+              {/* The single shared pose selector — same PosePillRow (active-chip)
+                  the Review sheet uses, so the armed pose reads identically here
+                  and there. Scroll-snaps pose-to-pose; the right-edge mask clips
+                  the 4th pill mid-glyph as the "swipe for more" cue. */}
+              <PosePillRow
+                variant="solid"
+                value={pose}
+                onChange={setPose}
+                disabled={busy}
+                className="mb-2 snap-x snap-mandatory scroll-pl-4 [&>button]:snap-start [mask-image:linear-gradient(to_right,#000_calc(100%-28px),transparent)]"
+                options={POSES.map((p) => ({ value: p.key, label: p.label }))}
+              />
+              <p className="text-xs font-semibold text-secondary">
+                {POSES.find((p) => p.key === pose)?.cue}
+              </p>
+              <p className="mt-3 text-xs font-semibold text-faint">
+                Same lighting and distance each time to track the trend.
+              </p>
+              {sessionDone && (
+                <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-ok rise-in">
+                  <Check className="w-3.5 h-3.5" /> All 6 poses captured. Nice work.
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         {error && (
@@ -226,10 +311,13 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="flex items-baseline justify-between">
               <div>
                 <div className="font-technical text-2xl font-extrabold text-ink">
-                  {latest.bodyfat_estimate}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
+                  {sessionBf}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">
-                  {latest.analysis.bodyfat_range} · <span className="font-technical">confidence {latest.confidence ?? "—"}/10</span> · {format(parseISO(latest.taken_at), 'MMM d, yyyy')}
+                  {latestSession.count > 1
+                    ? `avg of ${latestSession.count} shots`
+                    : latest.analysis.bodyfat_range}
+                  {" · "}{format(parseISO(latestSession.date), 'MMM d, yyyy')}
                 </div>
               </div>
               {delta != null && (
@@ -461,7 +549,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           shot is processing. The armed pose is surfaced both to assistive tech
           (aria-label) and visibly on a neutral chip riding just above the FAB, so
           the icon-only trigger still tells you which pose it will capture. */}
-      {!loadingEntries && !entriesError && entries.length > 0 && !showCompare && !editingEntry && !pending && (
+      {!loadingEntries && !entriesError && entries.length > 0 && !showCompare && !editingEntry && !pending && !session && (
         <div
           className="fixed right-4 z-40 flex flex-col items-end gap-2 rise-in"
           style={{ bottom: 'var(--floating-chrome-bottom)' }}
@@ -487,7 +575,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
           offset for FLOATED chrome), not stranded mid-screen above a dead band.
           Same single action color (volt → teal) as the populated FAB; the two
           never co-exist (gated on entries.length === 0). */}
-      {!loadingEntries && !entriesError && entries.length === 0 && !pending && (
+      {!loadingEntries && !entriesError && entries.length === 0 && !pending && !session && (
         <div
           className="fixed inset-x-4 z-40 max-w-3xl mx-auto rise-in"
           style={{ bottom: 'var(--floating-chrome-bottom)' }}
