@@ -422,16 +422,31 @@ LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
 PUSH_MUSCLES = ["chest", "shoulders", "triceps", "side_delts", "upper_chest"]
 PULL_MUSCLES = ["upper_back", "lats", "biceps", "traps", "neck", "rear_delts"]
 LEGS_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
-FULL_BODY_A  = ["chest", "quads", "lats", "calves", "core", "side_delts", "upper_chest"]
-FULL_BODY_B  = ["hamstrings", "shoulders", "upper_back", "triceps", "glutes", "traps", "neck",
-                "rear_delts"]
+# Full-body (FBEOD): every session trains the WHOLE body — a chest press, a back
+# pull, a squat, a hinge, a shoulder, an arm, calves and core — and the FOCUS
+# muscle earns a second movement. The 4-day rotation mirrors the athlete's saved
+# "FBEOD - Hypertrophy" template (Chest → Back → Shoulders/Arms → Legs), so a
+# single full-body day is never half a body the way the old A/B partition was.
+FULL_BODY_CHEST  = ["chest", "upper_chest", "lats", "quads", "hamstrings",
+                    "side_delts", "triceps", "calves", "core"]
+FULL_BODY_BACK   = ["lats", "upper_back", "chest", "quads", "hamstrings",
+                    "side_delts", "biceps", "calves", "core"]
+FULL_BODY_SHARMS = ["shoulders", "side_delts", "rear_delts", "chest", "lats",
+                    "quads", "biceps", "triceps", "calves"]
+FULL_BODY_LEGS   = ["quads", "hamstrings", "glutes", "chest", "lats",
+                    "side_delts", "biceps", "triceps", "calves"]
+# Legacy 2-day aliases — older logs / hand-edited titles that still say
+# "full_body_a/b" resolve to the nearest focus day instead of breaking.
+FULL_BODY_A = FULL_BODY_CHEST
+FULL_BODY_B = FULL_BODY_LEGS
 
 PUSH_FREQ = {"chest": 2, "shoulders": 2, "triceps": 3, "side_delts": 2, "upper_chest": 2}
 PULL_FREQ = {"upper_back": 2, "lats": 2, "biceps": 3, "traps": 2, "neck": 2, "rear_delts": 2}
 LEGS_FREQ = {"quads": 2, "hamstrings": 2, "glutes": 2, "calves": 2, "core": 2}
 FULL_FREQ = {"chest": 3, "quads": 3, "lats": 3, "calves": 3, "core": 3,
              "hamstrings": 3, "shoulders": 3, "upper_back": 3, "triceps": 3, "glutes": 3,
-             "side_delts": 3, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3}
+             "side_delts": 3, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3,
+             "biceps": 3}
 
 # Kept for internal _session_sets helper compatibility
 _UPPER_FREQ = UPPER_FREQ
@@ -619,8 +634,13 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float,
     Supports split_framework: 'upper_lower' | 'ppl' | 'full_body'
     """
     if split_framework == "full_body":
-        last = next((t for t in reversed(recent_types) if "full_body" in t), "full_body_b")
-        return "full_body_b" if last == "full_body_a" else "full_body_a"
+        # 4-day FBEOD rotation: Chest → Back → Shoulders/Arms → Legs. Advance from
+        # the most-recent full-body focus; unknown/legacy history restarts at chest.
+        fb_order = ["full_body_chest", "full_body_back", "full_body_sharms", "full_body_legs"]
+        last = next((t for t in reversed(recent_types) if t in fb_order), None)
+        if last is None:
+            return fb_order[0]
+        return fb_order[(fb_order.index(last) + 1) % len(fb_order)]
 
     if split_framework == "ppl":
         ppl_order = ["push", "pull", "legs"]
@@ -693,8 +713,12 @@ SESSION_TITLE = {
     "push":                "Push Session",
     "pull":                "Pull Session",
     "legs":                "Legs Session",
-    "full_body_a":         "Full Body A",
-    "full_body_b":         "Full Body B",
+    "full_body_chest":     "Full Body — Chest",
+    "full_body_back":      "Full Body — Back",
+    "full_body_sharms":    "Full Body — Shoulders + Arms",
+    "full_body_legs":      "Full Body — Legs",
+    "full_body_a":         "Full Body A",   # legacy alias (older titles)
+    "full_body_b":         "Full Body B",   # legacy alias (older titles)
 }
 
 # Recognised split keys — an override outside this set falls back to _decide_split.
@@ -760,8 +784,12 @@ def _build_session(
         "push":                (PUSH_MUSCLES,    PUSH_FREQ),
         "pull":                (PULL_MUSCLES,    PULL_FREQ),
         "legs":                (LEGS_MUSCLES,    LEGS_FREQ),
-        "full_body_a":         (FULL_BODY_A,     FULL_FREQ),
-        "full_body_b":         (FULL_BODY_B,     FULL_FREQ),
+        "full_body_chest":     (FULL_BODY_CHEST,  FULL_FREQ),
+        "full_body_back":      (FULL_BODY_BACK,   FULL_FREQ),
+        "full_body_sharms":    (FULL_BODY_SHARMS, FULL_FREQ),
+        "full_body_legs":      (FULL_BODY_LEGS,   FULL_FREQ),
+        "full_body_a":         (FULL_BODY_A,      FULL_FREQ),  # legacy alias
+        "full_body_b":         (FULL_BODY_B,      FULL_FREQ),  # legacy alias
     }
     relevant, freq_map = split_map.get(split, (UPPER_MUSCLES, UPPER_FREQ))
     if not wt:
@@ -778,6 +806,17 @@ def _build_session(
         excluded_names.add("Deadlift (Top Set)")
     elif split == "lower_hinge_primary":
         excluded_names.add("Back Squat (Top Set)")
+    elif split.startswith("full_body"):
+        # Full-body = FBEOD hypertrophy mode. The competition singles (squat/deadlift
+        # top sets) give way to hypertrophy compounds (Barbell/Zercher/Front Squat,
+        # RDL) so every day reads like the athlete's "FBEOD - Hypertrophy" template
+        # rather than a stack of 1x3-5 comp singles. The comp Bench Daily Single is
+        # kept ONLY on the chest-focus day (its heavy day + the daily-bench technique);
+        # the other focuses press with a single hypertrophy movement (Incline DB, Dips).
+        excluded_names.add("Back Squat (Top Set)")
+        excluded_names.add("Deadlift (Top Set)")
+        if split != "full_body_chest":
+            excluded_names.add("Bench Press (Daily Single)")
 
     used_patterns: set = set()
     chosen_names: set = set()
@@ -869,6 +908,9 @@ def _build_session(
         "upper_b":             [("triceps", "Triceps OH Extension")],
         "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+        # Legs-focus full-body day earns the same guaranteed quad+ham isolations so
+        # it reads like the FBEOD "Legs Focus" template, not one squat + calves.
+        "full_body_legs":      [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         "upper_volume":        [("triceps", "Triceps Pushdown")],   # legacy
         "upper_intensity":     [("triceps", "Triceps OH Extension")],  # legacy
     }
@@ -1002,6 +1044,21 @@ def _build_session(
                 variant = _pick_assistance("squat", _sq_pool, weakness, assist_week)
                 if variant and variant not in {e.get("name") for e in exercises}:
                     exercises.append(_assistance_slot(variant, wt, intensity, readiness_z))
+
+    # Full-body bench frequency: the athlete benches 3-4x/week. On the non-chest
+    # focus days the MAIN chest work is a hypertrophy press (chosen in the knapsack
+    # above); add a light comp Bench Daily Single as a technique touch — a single
+    # top rep, no back-off/assistance — so bench frequency holds without becoming the
+    # day's primary chest volume. Skipped on the chest-focus day (it already benches
+    # heavy) and when bench is blocked.
+    if (split.startswith("full_body") and split != "full_body_chest"
+            and canon("Bench Press (Daily Single)") not in blocked
+            and "Bench Press (Daily Single)" in _EX_BY_NAME
+            and not any(e.get("name") == "Bench Press (Daily Single)" for e in exercises)):
+        touch = _scale(copy.deepcopy(_EX_BY_NAME["Bench Press (Daily Single)"]),
+                       intensity, True, readiness_z)
+        touch["sets"] = 1
+        exercises.insert(0, touch)
 
     # Weak-point accessory: a second isolated mover for a flagged sticking point
     # (e.g. bench-lockout → triceps extension), added only when that goal lift is
