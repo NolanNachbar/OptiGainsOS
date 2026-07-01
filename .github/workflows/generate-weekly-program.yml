@@ -31,5 +31,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          USER_ID: ${{ secrets.USER_ID }}
           DAYS_AHEAD: ${{ github.event.inputs.days_ahead || '0' }}
         run: python scripts/generate_weekly_program.py
