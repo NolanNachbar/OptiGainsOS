@@ -254,13 +254,24 @@ class NutritionModulator:
             # preservation macros (protein + fat floor + pre-workout carbs). No
             # loss-rate cap — the only brakes are the recovery/strength gates
             # (headroom) and the 4-6 week duration cap enforced elsewhere.
-            # Pure macro arithmetic underestimates the true calorie floor because real
-            # protein sources carry fat calories (~10% overhead) and fixed staples are
-            # always prepended by the optimizer (whey ~120 kcal always; dextrose ~112 kcal
-            # on training days). Add a ~10% overhead + whey base so calorie_target never
-            # lands below what the optimizer can actually achieve.
-            staple_kcal  = 120 + (112 if carb_target_g and carb_target_g > 0 else 0)
-            floor_kcal   = (protein_g * 4 + fat_floor_g * 9 + (carb_target_g or 0) * 4) * 1.10 + staple_kcal
+            # The floor is the plain macro arithmetic. The optimizer's fixed staples
+            # live INSIDE these macros, not on top of them: the whey scoop (~120 kcal)
+            # is ~24g of protein already counted in protein_g, and the training-day
+            # dextrose (~28g, 112 kcal) IS the pre-workout carb budget counted in
+            # carb_target_g. Likewise the fat that rides along with real protein
+            # sources (beef, salmon, eggs) is fat grams counted against fat_floor_g.
+            # The only true feasibility pad is the sliver of dextrose the optimizer
+            # prepends beyond the day's carb target.
+            # (Historical: a 1.10 "real food overhead" plus a flat 232 kcal staple
+            # add-on double-counted these and inflated the cut target by ~400 kcal —
+            # ~2000 instead of the ~1600 the TNF macro floor implies. Removed 2026-07-06.)
+            DEXTROSE_G = 28
+            dextrose_overshoot_kcal = (
+                max(0, DEXTROSE_G - carb_target_g) * 4
+                if carb_target_g and carb_target_g > 0 else 0
+            )
+            floor_kcal   = (protein_g * 4 + fat_floor_g * 9
+                            + (carb_target_g or 0) * 4 + dextrose_overshoot_kcal)
             max_deficit  = max(0.0, self.maintenance_kcal - floor_kcal)
             kcal_deficit = round(max_deficit * headroom)
             calorie_target = round(self.maintenance_kcal - kcal_deficit)
