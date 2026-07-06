@@ -21,7 +21,6 @@ import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
-import MorningCheckin from "@/components/dashboard/MorningCheckin";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { StatRing, MetricTile, SectionLabel, MiniRing, SegmentedControl } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
@@ -62,7 +61,6 @@ export default function Today() {
   // one-line prompt by default so the teal session CTA stays the single teal
   // primary in the first viewport; the form's "Check In" only materializes once
   // the athlete opens it.
-  const [checkinOpen, setCheckinOpen] = useState(false);
   // One consolidated detail card with a 3-way segmented control (Brief /
   // State / Muscle) replaces three stacked disclosure drawers. Defaults to
   // "brief" so the Daily Brief headline is promoted highest (per IA) when the
@@ -256,9 +254,6 @@ export default function Today() {
   // PrescribedSessionCard: its Begin Session is the teal primary only when the
   // session owns it; otherwise it's demoted to a ghost.
   const demoteSessionCta = tealPrimary !== "session";
-  // MorningCheckin: its "Check In" submits teal only when the check-in owns the
-  // primary (coralCta=true → teal/volt button), else neutral ghost.
-  const checkinOwnsTeal = tealPrimary === "checkin";
 
   // The directive — one headline, one supporting sentence. The lead word is
   // derived from the readiness band (bandFor), so the WORD never contradicts the
@@ -434,40 +429,7 @@ export default function Today() {
           </div>
         </div>
 
-        {/* Subjective readiness check-in — directly under the readiness hero so
-            it lives where the athlete already reads the verdict (resolves the
-            "subjective check-in buried / 99 taps" IA gap). Collapsed to a
-            one-line prompt; the teal "Check In" only fires once expanded, so the
-            session CTA below stays the single teal primary. Once logged,
-            MorningCheckin renders its own read-only summary. */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-          {todayCheckIn?.energy ? (
-            <MorningCheckin today={today} existingCheckin={todayCheckIn} coralCta={false} />
-          ) : checkinOpen ? (
-            // coralCta tracks real CTA presence: when the session card paints its
-            // own teal "Begin Session", the check-in submits NEUTRAL so the page
-            // keeps a single teal primary. With no train-day session CTA (no
-            // prescription / rest / already logged), the check-in's "Check In"
-            // becomes that single teal primary.
-            <MorningCheckin today={today} existingCheckin={null} coralCta={checkinOwnsTeal} onComplete={() => setCheckinOpen(false)} />
-          ) : (
-            // Disclosure row matching the Today's-detail header (a quiet
-            // glass surface + ChevronDown), NOT a cta-ghost — a ghost button
-            // reads as a secondary ACTION and competed with the teal Begin
-            // Session; as a disclosure row it reads as "tap to reveal".
-            <button
-              type="button"
-              onClick={() => setCheckinOpen(true)}
-              aria-expanded={false}
-              className="surface w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 text-left"
-            >
-              <SectionLabel>Subjective check-in</SectionLabel>
-              <ChevronDown className="w-4 h-4 text-secondary" />
-            </button>
-          )}
-        </div>
-
-        {/* The day's CTA — under the verdict + check-in so the next action is never
+        {/* The day's CTA — under the verdict so the next action is never
             buried. PrescribedSessionCard owns ALL its fallbacks now: when the
             engine prescribes nothing it renders the neutral "Log a workout" ghost
             itself (the duplicate ghost that used to live here was removed).
@@ -480,8 +442,11 @@ export default function Today() {
             days (a prescription exists) the card still renders, and demoteCta
             keeps its Begin Session a ghost so there's never a second teal. */}
         {!(activeSession && !prescription) && (
-          <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} />
+          <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
+            {/* The subjective check-in now rides the Begin Session flow: the card
+                gates its CTA on todayCheckin (no check-in yet → check-in sheet
+                first, then straight into the logger). */}
+            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} />
           </div>
         )}
 
@@ -491,7 +456,7 @@ export default function Today() {
             and never requires a scroll. On desktop it stays in the left column
             (lg:row-start-4) below the session; the Fuel rail keeps the right
             rail, so this DOM move is mobile-only. */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-4 rise-in-2">
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
           <div className="glass px-4 pt-3 pb-3 rise-in">
             <SectionLabel className="mb-2">Quick actions</SectionLabel>
             {/* One tile: weigh-in was dropped here as a redundant entry — the
@@ -574,7 +539,7 @@ export default function Today() {
             the whole card sits behind a single disclosure (default closed) so the
             primary surface ends near the 2-viewport mark; on desktop the body is
             always shown. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-5 rise-in-3">
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-4 rise-in-3">
           <div className="surface overflow-hidden">
             {/* Vitals sub-row — the 4 biometric tiles (HRV/RHR/Sleep/Batt) moved
                 off the readiness hero so the hero stays StatRing + verdict and the
@@ -705,7 +670,7 @@ export default function Today() {
             the coaching todo region no longer pushes the detail disclosure off
             screen. Self-hides when empty, so it only occupies a slot when there is
             something to do. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-6 rise-in-3">
+        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-5 rise-in-3">
           <TodayActions today={today} briefActions={briefActions} isError={briefError} />
         </div>
       </div>

@@ -829,6 +829,7 @@ export default function WorkoutDetail() {
           onCancel={handleCancelLogging}
           onFinish={handleSaveWorkoutLog}
           isSaving={saveWorkoutLogMutation.isPending}
+          weightUnit={weightUnit}
           startTime={startTime}
           canFinish={loggedSetsCount > 0}
           restTimer={restTimer}

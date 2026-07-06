@@ -95,14 +95,46 @@ Deno.serve(async (req) => {
     return json({ error: `could not sign storage path: ${signErr?.message ?? "unknown"}` }, 400);
   }
 
+  // Previous same-pose photo → pairwise delta. Two independent absolute guesses
+  // are noisier than one model reading both photos side by side; the CHANGE is
+  // the datum the training/diet engines consume, so estimate it directly.
+  let prevEntry: { photo_path: string; taken_at: string; bodyfat_estimate: number | null } | null = null;
+  let prevUrl: string | null = null;
+  if (pose) {
+    const { data: prevRows } = await supabase
+      .from("physique_entries")
+      .select("photo_path, taken_at, bodyfat_estimate")
+      .eq("created_by", USER_ID).eq("pose", pose).eq("media_type", "photo")
+      .lt("taken_at", takenAt)
+      .order("taken_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+    prevEntry = (prevRows?.[0] as typeof prevEntry) ?? null;
+    if (prevEntry) {
+      const { data: prevSigned } = await supabase.storage
+        .from("physique").createSignedUrl(prevEntry.photo_path, 300);
+      prevUrl = prevSigned?.signedUrl ?? null;
+    }
+  }
+
+  const deltaSchema = prevUrl
+    ? ', "delta": {"direction": "leaner|similar|fuller", ' +
+      '"bf_change_estimate": <number, percentage points, current minus previous>, ' +
+      '"visual_changes": "<1-2 sentences: what visibly changed vs the previous photo>"}'
+    : "";
   const prompt =
-    "You are a physique-assessment assistant. Estimate body composition from this photo. " +
+    "You are a physique-assessment assistant. Estimate body composition. " +
     (pose ? `The subject is holding the "${pose}" pose, so judge the muscle groups that pose emphasizes. ` : "") +
+    (prevUrl
+      ? `TWO images are provided of the SAME person in the SAME pose. IMAGE 1 is the PREVIOUS photo, taken ${prevEntry!.taken_at}` +
+        (prevEntry!.bodyfat_estimate != null ? ` (estimated then at ${prevEntry!.bodyfat_estimate}% bodyfat)` : "") +
+        ". IMAGE 2 is the CURRENT photo. Assess the CURRENT photo, and judge the CHANGE between the two like a coach would (leaner/similar/fuller, where it shows). "
+      : "") +
     "Be honest that photo-based bodyfat is approximate. Return STRICT JSON, no prose, no markdown fences:\n" +
     '{"bodyfat_estimate": <number, percent>, "bodyfat_range": "<e.g. 12-15%>", ' +
     '"confidence": "low|medium|high", "assessment": "<1-2 sentence overall read>", ' +
     '"strengths": ["<developed/lean areas>"], "focus_areas": ["<lagging or higher-fat areas>"], ' +
-    '"vs_lean_goal": "<what would visibly change at a leaner bodyfat>"}. ' +
+    '"vs_lean_goal": "<what would visibly change at a leaner bodyfat>"' + deltaSchema + "}. " +
     "Base confidence on lighting, pose, and how much of the body is visible.";
 
   let raw: string;
@@ -118,6 +150,9 @@ Deno.serve(async (req) => {
           role: "user",
           content: [
             { type: "text", text: prompt },
+            // Image order matches the prompt: previous first (when present),
+            // current photo last.
+            ...(prevUrl ? [{ type: "image_url", image_url: { url: prevUrl } }] : []),
             { type: "image_url", image_url: { url: signed.signedUrl } },
           ],
         }],

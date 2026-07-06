@@ -6,16 +6,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PosePillRow } from "@/components/ui/system";
+import PhysiqueTrendChart from "@/components/progress/PhysiqueTrendChart";
+import { useBodyWeightEntries } from "@/hooks/useUserQueries";
 import {
   AlertTriangle, ArrowLeftRight, Camera, Check, Film,
   Loader2, Pencil, TrendingDown, TrendingUp, X,
 } from "lucide-react";
 
+// Pose protocol follows the coaching consensus (Legion / My PT Hub / Faarkrog):
+// relaxed shots track fat change, flexed shots track muscle change, and the
+// SIDE RELAXED profile is the single best fat-trend pose (waistline/lower back)
+// — it was the missing one. Existing pose keys are kept so history stays intact.
 const POSES = [
   { key: "front-relaxed", label: "Front relaxed",      cue: "Face the camera, arms relaxed at your sides, stand naturally. Don't suck in." },
   { key: "front-flexed",  label: "Front double biceps", cue: "Face the camera, flex both arms up, spread your lats." },
+  { key: "side-relaxed",  label: "Side relaxed",        cue: "Turn to your right side, arms straight out in front (zombie arms) so your waistline stays visible. Stand natural, don't suck in." },
   { key: "side-chest",    label: "Side chest",          cue: "Turn to your right side, near arm across chest, brace. Same side every time." },
-  { key: "abs-thighs",    label: "Abs & thighs",        cue: "Face the camera, slight ab crunch, one leg forward to show quads." },
+  { key: "abs-thighs",    label: "Abs & thighs",        cue: "Face the camera, exhale and flex your abs hard, one leg forward to show quads." },
   { key: "back-relaxed",  label: "Back relaxed",        cue: "Face away, arms relaxed at your sides, stand naturally." },
   { key: "back-flexed",   label: "Back double biceps",  cue: "Face away, flex both arms up, spread your lats." },
 ];
@@ -24,6 +31,7 @@ const POSE_LABEL = Object.fromEntries(POSES.map((p) => [p.key, p.label]));
 export default function PhysiqueTracker({ hideHeader = false }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { weightEntries } = useBodyWeightEntries();
 
   const { data: entries = [], isLoading: loadingEntries, isError: entriesError } = useQuery({
     queryKey: ['physique-entries', user?.id],
@@ -93,7 +101,12 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const [editingPose, setEditingPose] = useState(null);
 
   // Upload review — file-select stages a preview; analysis only fires on confirm.
-  const [pending, setPending] = useState(null); // { file, previewUrl, isVideo }
+  const [pending, setPending] = useState(null); // { file, previewUrl, isVideo, path, suggestedPose }
+  // Bulk upload: extra staged shots waiting behind `pending`, plus the batch
+  // size so the review sheet can read "Shot 2 of 6". Poses are auto-suggested
+  // in guided-session order and stay editable per shot in the sheet.
+  const [uploadQueue, setUploadQueue] = useState([]);
+  const [batchTotal, setBatchTotal] = useState(0);
 
   // History grid cap (avoid an unbounded scroll wall on the primary view)
   const HISTORY_CAP = 12;
@@ -117,19 +130,36 @@ export default function PhysiqueTracker({ hideHeader = false }) {
   const editingEntry = entries.find(e => e.id === editingPose);
 
   // File-select only stages the chosen media for review — nothing uploads until
-  // the user confirms Analyze in the review sheet.
+  // the user confirms Analyze in the review sheet. Multi-select stages a QUEUE:
+  // the sheet steps through the shots one by one (check-in mornings are 6+
+  // photos, one-at-a-time re-picking was the slow part), auto-suggesting poses
+  // in guided order.
   const handleFile = (ev) => {
-    const file = ev.target.files?.[0];
+    const files = Array.from(ev.target.files || []);
     ev.target.value = "";
-    if (!file || !user?.id) return;
+    if (!files.length || !user?.id) return;
     setError("");
-    const isVideo = file.type.startsWith("video/");
-    // Stable storage path per staged shot (reused across retries), so a retry
-    // after a lost response re-targets the SAME object + DB row rather than
-    // inserting a duplicate that would skew the session-averaged BF.
-    const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
-    const path = `${user.id}/${Date.now()}.${ext}`;
-    setPending({ file, previewUrl: URL.createObjectURL(file), isVideo, path });
+    const now = Date.now();
+    const items = files.map((file, i) => {
+      const isVideo = file.type.startsWith("video/");
+      // Stable storage path per staged shot (reused across retries), so a retry
+      // after a lost response re-targets the SAME object + DB row rather than
+      // inserting a duplicate that would skew the session-averaged BF. The `_i`
+      // suffix keeps paths unique within one multi-select batch.
+      const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
+      return {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        isVideo,
+        path: `${user.id}/${now}_${i}.${ext}`,
+        // Batch → guided pose order; single shot → whatever pose is armed.
+        suggestedPose: files.length > 1 ? (POSES[i]?.key ?? POSES[POSES.length - 1].key) : pose,
+      };
+    });
+    setPending(items[0]);
+    setUploadQueue(items.slice(1));
+    setBatchTotal(items.length);
+    if (files.length > 1) setPose(items[0].suggestedPose);
   };
 
   const closeReview = () => {
@@ -137,6 +167,11 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl);
       return null;
     });
+    setUploadQueue((q) => {
+      q.forEach((item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
+    setBatchTotal(0);
   };
 
   const retakePending = () => {
@@ -167,7 +202,17 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       if (data?.error) throw new Error(data.error);
 
       setStatus("");
-      closeReview();
+      // Batch: advance the review sheet to the next staged shot instead of
+      // closing, arming its suggested pose. Last shot (or single) closes.
+      if (uploadQueue.length > 0) {
+        if (pending.previewUrl) URL.revokeObjectURL(pending.previewUrl);
+        const [next, ...rest] = uploadQueue;
+        setPending(next);
+        setUploadQueue(rest);
+        setPose(next.suggestedPose);
+      } else {
+        closeReview();
+      }
       await queryClient.invalidateQueries({ queryKey: ['physique-entries', user?.id] });
 
       // Guided session: advance to the next pose, or finish after the last one.
@@ -232,8 +277,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             breakpoints). */}
         <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
 
-        {/* Hidden file input — both the empty-state CTA and the teal FAB drive it. */}
-        <input ref={fileInputRef} type="file" accept="image/*,video/*"
+        {/* Hidden file input — every upload trigger drives it. `multiple` lets a
+            check-in morning stage all its shots at once; the review sheet steps
+            through them. */}
+        <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple
                className="hidden" onChange={handleFile} disabled={busy} />
 
         {/* Pose setup. Two modes: a guided session that walks all 6 poses in order
@@ -258,6 +305,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               <p className="mt-1 text-xs font-semibold text-secondary">{POSES[session.index].cue}</p>
               <p className="mt-2 text-xs font-semibold text-faint">
                 Same lighting and distance each time to track the trend.
+              </p>
+              <p className="mt-1 text-xs font-semibold text-faint">
+                Shooting solo? Use your phone camera's self-timer, then pick the shot from your library here.
               </p>
               <Button
                 variant="volt"
@@ -296,9 +346,25 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               <p className="mt-3 text-xs font-semibold text-faint">
                 Same lighting and distance each time to track the trend.
               </p>
+              {/* The upload trigger lives ON the pose card — you just armed a
+                  pose, the next tap uploads it. Replaces the icon-only floating
+                  FAB, which read as decoration, not as "upload". Hidden in the
+                  empty state, which pins its own labeled thumb-zone CTA. */}
+              {entries.length > 0 && (
+                <Button
+                  variant="volt"
+                  size="lg"
+                  className="w-full mt-3"
+                  disabled={busy}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {busy ? <Loader2 className="w-4 h-4 spin-loop" /> : <Camera className="w-4 h-4" />}
+                  {busy ? (status || "Working…") : `Upload ${POSE_LABEL[pose]} shot`}
+                </Button>
+              )}
               {sessionDone && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-ok rise-in">
-                  <Check className="w-3.5 h-3.5" /> All 6 poses captured. Nice work.
+                  <Check className="w-3.5 h-3.5" /> All {POSES.length} poses captured. Nice work.
                 </p>
               )}
             </>
@@ -352,6 +418,18 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 <span className="text-muted-2">At a leaner BF: </span>{latest.analysis.vs_lean_goal}
               </p>
             )}
+            </div>
+          </div>
+        )}
+
+        {/* BF + weight trend — the composition picture over time. Sessions carry
+            the photo-BF datum; the logged bodyweight rides a second axis so a
+            flat BF with falling weight (or vice versa) is readable at a glance. */}
+        {sessions.length >= 2 && (
+          <div className="mt-5">
+            <div className="section-label mb-2">Trend</div>
+            <div className="glass px-3 pt-4 pb-2 rise-in">
+              <PhysiqueTrendChart sessions={sessions} weightEntries={weightEntries} className="h-52" />
             </div>
           </div>
         )}
@@ -471,6 +549,47 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               )}
             </div>
 
+            {/* Same-pose timeline — with a pose filter active, the shots of that
+                pose read oldest → newest as one strip (the like-for-like
+                comparison a coach would flip through), with the analyzer's
+                latest same-pose delta read underneath. */}
+            {filterPose && !compareMode && (() => {
+              const poseTimeline = entries
+                .filter((e) => e.pose === filterPose && e.media_type === "photo" && e.url)
+                .slice()
+                .reverse();
+              if (poseTimeline.length < 2) return null;
+              const latestDelta = [...poseTimeline].reverse()
+                .find((e) => e.analysis?.delta?.visual_changes)?.analysis.delta;
+              return (
+                <div className="glass px-4 pt-3 pb-3 mb-3 rise-in">
+                  <div className="section-label mb-2">{POSE_LABEL[filterPose]} over time</div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {poseTimeline.map((e) => (
+                      <div key={e.id} className="shrink-0 w-20">
+                        <img
+                          src={e.url}
+                          alt={`${POSE_LABEL[filterPose]} on ${format(parseISO(e.taken_at), "MMM d, yyyy")}`}
+                          className="w-20 h-28 object-cover rounded-md glass-inset"
+                        />
+                        <div className="mt-1 font-technical text-[10px] font-semibold text-muted-2">
+                          {format(parseISO(e.taken_at), "MMM d")}
+                        </div>
+                        {e.bodyfat_estimate != null && (
+                          <div className="font-technical text-[11px] font-extrabold text-ink">{e.bodyfat_estimate}%</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {latestDelta?.visual_changes && (
+                    <p className="mt-2 text-xs font-semibold text-secondary">
+                      <span className="text-muted-2">Latest read: </span>{latestDelta.visual_changes}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {visibleEntries.map((e, i) => {
@@ -547,35 +666,9 @@ export default function PhysiqueTracker({ hideHeader = false }) {
         )}
       </div>
 
-      {/* Thumb-zone upload — the single teal action upload trigger for the
-          populated view. It only renders once there is history; the empty state
-          owns its own thumb-zone CTA below, so the two never compete on one
-          screen. Pinned within the safe area above the dock on the shared
-          --floating-chrome-bottom offset (the dock-aligned offset for FLOATED
-          chrome — the prior --dock-clearance is an IN-FLOW padding token and left
-          the FAB grazing the dock). Hidden while an overlay owns the screen or a
-          shot is processing. The armed pose is surfaced both to assistive tech
-          (aria-label) and visibly on a neutral chip riding just above the FAB, so
-          the icon-only trigger still tells you which pose it will capture. */}
-      {!loadingEntries && !entriesError && entries.length > 0 && !showCompare && !editingEntry && !pending && !session && (
-        <div
-          className="fixed right-4 z-40 flex flex-col items-end gap-2 rise-in"
-          style={{ bottom: 'var(--floating-chrome-bottom)' }}
-        >
-          <span className="pill-value pill-value--sm font-semibold text-secondary">
-            {POSE_LABEL[pose]}
-          </span>
-          <Button
-            variant="volt"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
-            aria-label={`Upload ${POSE_LABEL[pose]} shot`}
-            className="h-14 w-14 !rounded-full !p-0"
-          >
-            {busy ? <Loader2 className="w-6 h-6 spin-loop" /> : <Camera className="w-6 h-6" />}
-          </Button>
-        </div>
-      )}
+      {/* Populated-view upload lives ON the pose card above (labeled button under
+          the pose selector) — the old icon-only floating camera FAB was the only
+          upload trigger and read as decoration, so it was folded into the card. */}
 
       {/* Empty-state thumb-zone upload — a labeled full-width teal action CTA
           pinned at the dock so the first-run upload trigger lands in the lower
@@ -700,7 +793,14 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !busy) closeReview(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Review shot</DialogTitle>
+            <DialogTitle>
+              Review shot
+              {batchTotal > 1 && (
+                <span className="ml-2 text-xs font-semibold text-muted-2 font-technical">
+                  {batchTotal - uploadQueue.length} of {batchTotal}
+                </span>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {pending && (
             <>

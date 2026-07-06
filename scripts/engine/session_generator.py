@@ -144,9 +144,10 @@ EXERCISES = [
     {"name": "Front Squat",            "pattern": "squat", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["quads", "core"],
      "sets": 3, "rep_target": "4-6",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
-    {"name": "Box Squat",              "pattern": "squat", "type": "COMPOUND_AXIAL",
+    {"name": "Pin Squat",              "pattern": "squat", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["quads", "glutes"],
-     "sets": 4, "rep_target": "3",    "rir_target": 2, "rest_seconds": 150, "is_primary": True},
+     "sets": 4, "rep_target": "3",    "rir_target": 2, "rest_seconds": 150, "is_primary": True,
+     "notes": "Pins at mid-squat sticking height. Dead-stop start every rep."},
     {"name": "Paused Squat",           "pattern": "squat", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["quads", "core"],
      "sets": 3, "rep_target": "3-5",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
@@ -171,9 +172,10 @@ EXERCISES = [
     {"name": "Romanian Deadlift",     "pattern": "hinge", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["hamstrings", "glutes"],
      "sets": 3, "rep_target": "6-8",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
-    {"name": "Trap Bar Deadlift",     "pattern": "hinge", "type": "COMPOUND_AXIAL",
-     "fatigue_cost": 3.5, "muscles": ["hamstrings", "quads", "back"],
-     "sets": 3, "rep_target": "5",    "rir_target": 2, "rest_seconds": 150, "is_primary": True},
+    {"name": "Deadlift (Volume)",     "pattern": "hinge", "type": "COMPOUND_AXIAL",
+     "fatigue_cost": 4.0, "muscles": ["hamstrings", "glutes", "back"],
+     "sets": 3, "rep_target": "5",    "rir_target": 2, "rest_seconds": 150, "is_primary": True,
+     "notes": "Conventional, straight bar. Submax volume for the standard pull."},
     {"name": "Sumo Deadlift",         "pattern": "hinge", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 3.5, "muscles": ["hamstrings", "glutes", "adductors"],
      "sets": 3, "rep_target": "3-5",  "rir_target": 2, "rest_seconds": 150, "is_primary": True},
@@ -356,7 +358,7 @@ BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
 # Squat has no dedicated assistance pool (its variants are knapsack primaries);
 # these are aimed at a flagged squat sticking point as an ADDED slot.
-SQUAT_ASSISTANCE    = ["Paused Squat", "Zercher Squat", "Box Squat", "Front Squat"]
+SQUAT_ASSISTANCE    = ["Paused Squat", "Zercher Squat", "Pin Squat", "Front Squat"]
 
 # Which sticking point each assistance variant fixes: name → (lift, region).
 # Drives weakness-aimed selection: "failed bench lockout" → Close-Grip. [COACH]
@@ -370,7 +372,7 @@ _ASSIST_TARGET = {
     "Deadlift (Speed/Light)": ("deadlift", "speed"),
     "Paused Squat":           ("squat", "bottom"),
     "Zercher Squat":          ("squat", "upper"),
-    "Box Squat":              ("squat", "mid"),
+    "Pin Squat":              ("squat", "mid"),
     "Front Squat":            ("squat", "back"),
 }
 
@@ -800,7 +802,7 @@ def _build_session(
 
     # Lower-split emphasis rotation: the squat-primary day drops the deadlift top
     # set (RDL fills hamstrings) and the hinge-primary day drops the squat top set
-    # (Front/Box Squat fills quads), so the alternation actually alternates.
+    # (Front/Pin Squat fills quads), so the alternation actually alternates.
     excluded_names: set = set()
     if split == "lower_squat_primary":
         excluded_names.add("Deadlift (Top Set)")

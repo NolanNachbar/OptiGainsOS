@@ -7,7 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle2, AlertTriangle, Clock, Timer } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Clock, Timer, Calculator } from "lucide-react";
+import CalculatorsModal from "@/components/CalculatorsModal";
 
 export default function WorkoutLoggingHeader({
   workoutTitle,
@@ -23,8 +24,10 @@ export default function WorkoutLoggingHeader({
   // Empty workout → Finish is a dead-end; render it inert until there's
   // something to log so only the Add CTA reads as the live coral action.
   canFinish = true,
+  weightUnit = "lbs",
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showCalculators, setShowCalculators] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const bottomBarRef = useRef(null);
 
@@ -219,6 +222,21 @@ export default function WorkoutLoggingHeader({
     </div>
   ) : null;
 
+  // Plate/1RM calculators — mid-workout is exactly when they're needed (next
+  // set's plate math during rest), and the global FAB that normally carries
+  // them is suppressed on logging routes. Quiet ghost icon so it never
+  // competes with the single live action (Skip mid-rest / Finish otherwise).
+  const calcButton = (
+    <Button
+      variant="ghost"
+      onClick={() => setShowCalculators(true)}
+      aria-label="Calculators"
+      className="min-h-[44px] min-w-[44px] px-0 lg:min-h-0 lg:h-9 lg:w-9 flex-shrink-0"
+    >
+      <Calculator className="w-4 h-4" />
+    </Button>
+  );
+
   // Cancel / Finish — Finish is the structural anchor (bordered when inert,
   // coral once it's the live next action). Cancel is a recessive text-only
   // escape hatch: no border box, no icon, muted ink, so the abort never reads
@@ -334,6 +352,7 @@ export default function WorkoutLoggingHeader({
             {/* Desktop-only action cluster + rest controls (top zone is fine
                 with a mouse; on mobile these live in the bottom bar). */}
             <div className="hidden lg:flex items-center gap-3">
+              {calcButton}
               {restControls(false)}
               {actionCluster}
             </div>
@@ -374,7 +393,8 @@ export default function WorkoutLoggingHeader({
                   flex-none and quiet (Finish is already `dim` while restRunning).
                   Once rest ends the no-rest branch restores Finish's prominence. */}
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {calcButton}
                   {restControls(false)}
                 </div>
                 <div className="flex-none">
@@ -386,12 +406,21 @@ export default function WorkoutLoggingHeader({
             <div className="flex items-center justify-between gap-2">
               {/* No rest active → carry the live elapsed timer here (a real
                   datum), never a dead static label. */}
-              {elapsedCluster}
+              <div className="flex items-center gap-2 min-w-0">
+                {calcButton}
+                {elapsedCluster}
+              </div>
               {actionCluster}
             </div>
           )}
         </div>
       </div>
+
+      <CalculatorsModal
+        isOpen={showCalculators}
+        onClose={() => setShowCalculators(false)}
+        weightUnit={weightUnit}
+      />
 
       {showConfirm && (
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>

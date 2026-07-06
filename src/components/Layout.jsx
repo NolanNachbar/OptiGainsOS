@@ -460,7 +460,6 @@ export default function Layout({ children, currentPageName }) {
           left: 18,
           right: 18,
           bottom: "calc(12px + env(safe-area-inset-bottom))",
-          transform: "translateZ(0)",
           gridTemplateColumns: `repeat(${dockItems.length}, minmax(0, 1fr))`,
         }}
       >

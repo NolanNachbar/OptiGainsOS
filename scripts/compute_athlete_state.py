@@ -457,6 +457,35 @@ def estimate_tdee(bodyweight_lb: float, avg_kcal_7d, weight_trend_lb_wk,
                           weeks_in_phase=weeks_in_phase)
 
 
+def compute_physique_bf_frac(rows, max_stale_days: int = 45, alpha: float = 0.3):
+    """Session-EWMA photo body-fat as a FRACTION, for the Forbes density (E10).
+
+    Per-shot photo BF is noisy and low-accuracy in absolute terms; the TREND is
+    the signal — which is exactly what the Forbes fat-mass term consumes. So:
+    average all shots of one session day (taken_at), then EWMA across sessions
+    (alpha per-session; [ENG] tunable, no literature anchor). Returns None when
+    there are no estimates or the newest session is older than max_stale_days
+    ([ENG] tunable), so estimate_tdee falls back to its DEFAULT_BODYFAT_FRAC
+    prior instead of trusting a stale photo.
+    """
+    by_day = {}
+    for r in rows or []:
+        d, bf = r.get("taken_at"), r.get("bodyfat_estimate")
+        if d and bf is not None:
+            by_day.setdefault(d, []).append(float(bf))
+    if not by_day:
+        return None
+    days = sorted(by_day)
+    newest = datetime.date.fromisoformat(days[-1][:10])
+    if (datetime.date.today() - newest).days > max_stale_days:
+        return None
+    ewma = None
+    for d in days:
+        session_bf = sum(by_day[d]) / len(by_day[d])
+        ewma = session_bf if ewma is None else ewma + alpha * (session_bf - ewma)
+    return round(ewma / 100.0, 4)
+
+
 # ── Recovery computation ──────────────────────────────────────────────────────
 
 def compute_recovery(recovery_rows: list, checkin: Optional[dict]) -> dict:
@@ -1170,15 +1199,24 @@ def main():
         # 4. Nutrition modulation (computed BEFORE the Kalman step so a caloric deficit
         #    can slow fatigue-clearance for THIS step — E9 wires this previously-dead
         #    output into the engine).
+        # Physique photo BF trend → Forbes density (E10). The bodyfat_frac hook on
+        # estimate_tdee existed but was never fed, so the composition term always
+        # ran on the 0.18 population prior regardless of what the photos showed.
+        _phys_rows = sb_get("physique_entries", {
+            "select": "taken_at,bodyfat_estimate", "created_by": f"eq.{USER_ID}",
+            "bodyfat_estimate": "not.is.null", "order": "taken_at.desc", "limit": "60"})
+        bf_frac_physique = compute_physique_bf_frac(_phys_rows)
         maintenance_kcal  = estimate_tdee(
             float(profile.get("current_weight") or 0),
             nutrition.get("avg_calories_7d"),
             nutrition.get("weight_trend_lbs_per_week"),
             fallback=float(profile.get("maintenance_kcal") or 3200),
+            bodyfat_frac=bf_frac_physique,
         )
         print(f"  TDEE (adaptive): {round(maintenance_kcal)} kcal  "
               f"(bw {profile.get('current_weight')}lb, intake {nutrition.get('avg_calories_7d')}, "
-              f"trend {nutrition.get('weight_trend_lbs_per_week')} lb/wk)")
+              f"trend {nutrition.get('weight_trend_lbs_per_week')} lb/wk, "
+              f"photo BF {f'{bf_frac_physique:.1%}' if bf_frac_physique is not None else 'n/a → prior'})")
         nutrition_mod_obj = NutritionModulator(maintenance_kcal=maintenance_kcal)
         avg_kcal          = float(nutrition.get("avg_calories_7d") or maintenance_kcal)
         nutrition_mod_out = nutrition_mod_obj.modulate(

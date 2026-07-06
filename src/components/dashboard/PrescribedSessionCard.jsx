@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Dumbbell, Activity, Waves, Zap, AlertTriangle, Check, Circle, ChevronDown, Plus,
 } from "lucide-react";
+import MorningCheckin from "@/components/dashboard/MorningCheckin";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useTodayGarminCardio } from "@/hooks/useTodayGarminCardio";
@@ -82,8 +89,42 @@ function CardioDoneToggle({ done, onToggle }) {
   );
 }
 
-export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false, programWorkout = null }) {
+export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false, programWorkout = null, todayCheckin = null }) {
   const { prescription } = useTodayPrescription(today);
+  const navigate = useNavigate();
+  // Check-in gate — the subjective check-in rides the start-workout flow (it is
+  // no longer a standalone row on Today). Starting a session with no check-in
+  // logged today opens the check-in sheet first; saving (or skipping) then
+  // continues into the logger. Holds {to, state} while the sheet is open.
+  const [checkinGate, setCheckinGate] = useState(null);
+  const beginSession = (to, state) => {
+    if (!todayCheckin?.energy) setCheckinGate({ to, state });
+    else navigate(to, state ? { state } : undefined);
+  };
+  const continueToSession = () => {
+    const gate = checkinGate;
+    setCheckinGate(null);
+    if (gate) navigate(gate.to, gate.state ? { state: gate.state } : undefined);
+  };
+  const checkinGateSheet = checkinGate && (
+    <Dialog open onOpenChange={(open) => { if (!open) setCheckinGate(null); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Quick check-in first</DialogTitle>
+        </DialogHeader>
+        {/* Inside the sheet the check-in IS the live step, so it keeps its
+            primary CTA; saving continues straight into the session. */}
+        <MorningCheckin today={today} existingCheckin={null} onComplete={continueToSession} />
+        <button
+          type="button"
+          onClick={continueToSession}
+          className="min-h-[44px] w-full text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+        >
+          Skip, straight to the session
+        </button>
+      </DialogContent>
+    </Dialog>
+  );
   // When today is a scheduled program day, route the session CTAs to the program
   // logger (source=program) so the workout completes the program day and drives
   // progression — instead of /quick-workout, which logs it as an ad-hoc session.
@@ -118,9 +159,12 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         );
       }
       return (
-        <Link to={programHref} className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
-          Begin program workout
-        </Link>
+        <>
+          <button type="button" onClick={() => beginSession(programHref)} className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
+            Begin program workout
+          </button>
+          {checkinGateSheet}
+        </>
       );
     }
     return (
@@ -337,26 +381,26 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             ghost link so logging a workout is never buried, without competing
             with the coral primary that owns the train days. */}
         {isRest && (
-          <Link to="/quick-workout" className="cta-ghost mt-3.5 w-full">
+          <button type="button" onClick={() => beginSession("/quick-workout")} className="cta-ghost mt-3.5 w-full">
             Log a workout
-          </Link>
+          </button>
         )}
 
         {/* Pre-train check-in + Begin Session — carry the prescribed lifts AND
             the pre-train note into the logger (saved as a PRE: session note). */}
         {!isRest && !loggedToday && (
           <>
-            <Link
-              to={programHref || "/quick-workout"}
-              state={programHref ? undefined : {
+            <button
+              type="button"
+              onClick={() => beginSession(programHref || "/quick-workout", programHref ? undefined : {
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
-              }}
+              })}
               className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full mt-3.5`}
             >
               Begin Session
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
-            </Link>
+            </button>
             {strength.length > 0 && (
               <div className="mt-2">
                 <button
@@ -387,6 +431,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             )}
           </>
         )}
+        {checkinGateSheet}
     </div>
   );
 }

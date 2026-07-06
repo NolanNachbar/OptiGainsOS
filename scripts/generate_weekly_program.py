@@ -1138,6 +1138,11 @@ def main():
     # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
     # on upper/cardio days rather than heavy leg days.
     quality_placed, long_placed = 0, 0
+    # Library auto-save dedup set: existing workout-library titles, fetched once
+    # per run. Generated sessions whose title isn't in the library yet get saved
+    # as reusable templates; re-runs and repeat titles no-op.
+    _lib_rows = sb_get("workouts", {"select": "title", "created_by": f"eq.{USER_ID}"})
+    library_titles = {str(r.get("title", "")).strip().lower() for r in (_lib_rows or [])}
     for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
 
@@ -1237,6 +1242,36 @@ def main():
 
         ok = sb_upsert("program_workouts", pw_row)
         print(f"    {'✓' if ok else '✗'}  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
+
+        # Auto-save each DISTINCT generated strength session into the workout
+        # library (`workouts` table) so engine programming is browsable/reusable
+        # there, not only in program_workouts. Dedup is by title (split +
+        # intensity suffix), so the library accumulates one template per session
+        # flavor instead of 7 new rows a week. Exercises are mapped to the
+        # library's manual-create shape ({name, sets, reps, rest_seconds, notes}).
+        if ok and exercises and title.strip().lower() not in library_titles:
+            lib_exercises = [{
+                "name": e.get("name", ""),
+                "sets": e.get("sets", 3),
+                "reps": str(e.get("reps") or e.get("rep_target") or "10"),
+                "rest_seconds": e.get("rest_seconds", 120),
+                "notes": " · ".join(x for x in [
+                    (f"RIR {e['rir_target']}" if e.get("rir_target") is not None else ""),
+                    str(e.get("notes") or ""),
+                ] if x),
+            } for e in exercises]
+            lib_ok = sb_insert("workouts", {
+                "created_by":       USER_ID,
+                "title":            title,
+                "description":      f"Engine-generated {split} session, auto-saved from the weekly program.",
+                "focus":            pw_row["focus"],
+                "duration_minutes": None,
+                "exercises":        lib_exercises,
+                "folder":           "Engine",
+            })
+            if lib_ok:
+                library_titles.add(title.strip().lower())
+                print(f"    + library: saved template '{title}'")
 
         # Advance rolling state
         recent_session_types.append(split)

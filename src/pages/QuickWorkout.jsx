@@ -403,6 +403,7 @@ export default function QuickWorkout() {
         }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending}
+        weightUnit={weightUnit}
         // The session clock must not tick before the Resume-vs-Start-Fresh
         // decision is made — a running timer behind the prompt reads as if a
         // session already started and contradicts the choice. Hold the header
