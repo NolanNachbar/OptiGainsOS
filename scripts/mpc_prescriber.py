@@ -394,23 +394,54 @@ def main():
         "limit": "21",
     })
     
-    def determine_split_from_log(log: dict) -> str:
-        exercises = log.get("exercises") or []
-        upper_keywords = ["bench", "press", "pull-up", "pulldown", "row", "curl", "raise", "fly", "push-up", "dip", "extension", "bicep", "tricep", "delt", "lats", "chest", "shoulder"]
-        lower_keywords = ["squat", "deadlift", "rdl", "lunges", "calf", "leg press", "leg extension", "hip thrust", "hamstring", "quad", "glute"]
-        upper_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in upper_keywords))
-        lower_count = sum(1 for ex in exercises if any(k in ex.get("name", "").lower() for k in lower_keywords))
-        if upper_count > lower_count:
-            return "upper_a"   # unified vocab with the weekly generator / _decide_split (F8)
-        elif lower_count > upper_count:
-            return "lower_squat_primary"
-        return ""
+    # Lower keywords are tested FIRST so "leg press" / "calf raise" / "leg extension"
+    # don't get miscounted as upper by "press" / "raise" / "extension". Lower days are
+    # further classified squat- vs hinge-primary by whichever compound pattern
+    # dominates, so the downstream alternation can rotate squat ↔ hinge instead of
+    # collapsing every lower day to "hinge". Mirrors classify_log_split in
+    # generate_weekly_program.py — keep the two in sync.
+    _LOWER_KW = ("squat", "deadlift", "rdl", "lunge", "calf", "leg press",
+                 "leg extension", "leg curl", "hamstring", "hip thrust", "glute",
+                 "trap bar", "good morning", "back extension", "nordic")
+    _UPPER_KW = ("bench", "press", "pull-up", "pullup", "pulldown", "row", "curl",
+                 "raise", "fly", "push-up", "pushup", "dip", "shrug", "overhead",
+                 "triceps", "tricep", "bicep", "lat ", "delt", "chest", "shoulder",
+                 "face pull", "neck")
+    _SQUAT_KW = ("squat",)
+    _HINGE_KW = ("deadlift", "rdl", "hinge", "hip thrust", "good morning",
+                 "back extension", "trap bar", "nordic")
 
-    recent_session_types = []
-    for log in reversed(workout_log_rows):
+    def determine_split_from_log(log: dict) -> str:
+        up = lo = squat = hinge = 0
+        for ex in (log.get("exercises") or []):
+            n = (ex.get("name") or "").lower()
+            if any(k in n for k in _LOWER_KW):
+                lo += 1
+                if any(k in n for k in _SQUAT_KW):
+                    squat += 1
+                elif any(k in n for k in _HINGE_KW):
+                    hinge += 1
+            elif any(k in n for k in _UPPER_KW):
+                up += 1
+        if lo == 0 and up == 0:
+            return ""
+        if up > lo:
+            return "upper_a"   # unified vocab with the weekly generator / _decide_split
+        return "lower_squat_primary" if squat >= hinge else "lower_hinge_primary"
+
+    # Dedup to one classification per calendar date, then order oldest→newest so
+    # _decide_split's reversed() lookback sees the true most-recent logged session.
+    _seen_dates = set()
+    _classified = []   # most-recent-first
+    for log in workout_log_rows:   # already ordered log_date.desc
+        d = log.get("log_date")
+        if d in _seen_dates:
+            continue
         split = determine_split_from_log(log)
         if split:
-            recent_session_types.append(split)
+            _seen_dates.add(d)
+            _classified.append(split)
+    recent_session_types = list(reversed(_classified))
 
     # Fallback to training prescription if no actual workouts have been logged
     if not recent_session_types:

@@ -17,6 +17,24 @@ import { useTodayGarminCardio } from "@/hooks/useTodayGarminCardio";
 const mi = (m) => (m ? (m / 1609.34).toFixed(1) : null);
 const mmss = (s) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : null);
 
+// Name a prescribed run by its type, not just its HR zone.
+const RUN_TYPE_LABEL = {
+  interval: "Intervals",
+  threshold: "Threshold",
+  tempo: "Tempo",
+  long: "Long run",
+  easy: "Easy run",
+  recovery: "Recovery run",
+};
+// Interval/threshold sessions are NOT one continuous run — reps with recovery
+// jogs. Showing "X mi" (duration ÷ pace) reads as a steady effort at race pace,
+// which is impossible. For those, lead with duration + pace and surface the rep
+// structure from notes instead of a bogus mileage number.
+const QUALITY_RUNS = new Set(["interval", "threshold", "tempo"]);
+// Drop the "Garmin Zx-Zy. " provenance prefix; keep the human structure text.
+const runStructure = (notes) =>
+  String(notes || "").replace(/^Garmin\s+[^.]*\.\s*/i, "").trim();
+
 // The engine's full daily session — computed by mpc_prescriber.py /
 // session_generator.py and written to training_prescription.prescription —
 // surfaced here for the first time. Previously the app discarded the engine's
@@ -321,16 +339,30 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
               kind: "run",
               name: `${run.zone} run`,
               icon: <Activity className="w-3.5 h-3.5 text-info shrink-0" />,
-              label: (
-                <>
-                  {run.zone} run · <span className="font-technical text-ink-secondary">{run.session_miles} mi</span>
-                  {run.pace && (
-                    <span className="text-ink-faint">
-                      {" · "}{run.pace}{/^\d+:\d{2}$/.test(String(run.pace)) ? "/mi" : ""}
+              label: (() => {
+                const rtype = String(run.run_type || "").toLowerCase();
+                const rname = RUN_TYPE_LABEL[rtype] || `${run.zone} run`;
+                const isQuality = QUALITY_RUNS.has(rtype);
+                const paceUnit = /^\d+:\d{2}$/.test(String(run.pace)) ? "/mi" : "";
+                const structure = runStructure(run.notes);
+                return (
+                  <span className="flex flex-col gap-0.5">
+                    <span>
+                      {rname}
+                      {isQuality
+                        ? (run.duration_minutes ? <span className="font-technical text-ink-secondary">{` · ~${run.duration_minutes} min`}</span> : null)
+                        : (run.session_miles ? <span className="font-technical text-ink-secondary">{` · ${run.session_miles} mi`}</span> : null)}
+                      {run.pace && <span className="text-ink-faint">{` · ${run.pace}${paceUnit}`}</span>}
                     </span>
-                  )}
-                </>
-              ),
+                    {structure && <span className="text-[11px] text-ink-faint leading-snug">{structure}</span>}
+                    {programHref && (
+                      <Link to={programHref} className="text-[11px] text-info hover:underline w-fit">
+                        View run details →
+                      </Link>
+                    )}
+                  </span>
+                );
+              })(),
             })}
             {swim && renderCardio({
               kind: "swim",

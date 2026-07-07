@@ -31,6 +31,57 @@ import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
 
+// Name a prescribed run by its type; drop the "Garmin Zx-Zy. " provenance prefix
+// from the notes so the interval/tempo structure shows on its own.
+const CARDIO_TYPE_LABEL = {
+  interval: "Intervals", threshold: "Threshold", tempo: "Tempo",
+  long: "Long run", easy: "Easy run", recovery: "Recovery run",
+};
+const cardioStructure = (notes) => String(notes || "").replace(/^Garmin\s+[^.]*\.\s*/i, "").trim();
+
+// Renders a program day's conditioning (run/swim) sessions. Reads the real
+// cardio_sessions shape (activity_type / run_type / zone / duration_minutes /
+// pace / notes) plus any run-named exercises. Shared by logging + view mode so
+// the run detail — type, pace, and rep structure — is visible either way.
+function CardioSessions({ programWorkout }) {
+  const runExercises = (programWorkout?.exercises || []).filter(isRunEx).map((ex) => ({
+    _name: ex.name, run_type: ex.run_type || null, zone: ex.zone || null,
+    duration_minutes: ex.duration_minutes || null, time_of_day: ex.time_of_day || null,
+    pace: ex.pace || null, notes: ex.notes || null,
+  }));
+  const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
+  if (allCardio.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="section-label">Conditioning</p>
+      {allCardio.map((c, i) => {
+        const rtype = String(c.run_type || "").toLowerCase();
+        const name = c._name || CARDIO_TYPE_LABEL[rtype] || (c.zone ? `${c.zone} ${c.activity_type || "run"}` : "Run");
+        const structure = cardioStructure(c.notes);
+        const meta = [
+          c.duration_minutes ? `${c.duration_minutes} min` : null,
+          c.pace ? `${c.pace}${/^\d+:\d{2}$/.test(String(c.pace)) ? "/mi" : ""}` : null,
+          c.zone || null,
+          c.time_of_day && c.time_of_day !== "anytime" ? c.time_of_day.toUpperCase() : null,
+        ].filter(Boolean).join(" · ");
+        return (
+          <div key={`cardio-${i}`} className="flex items-start justify-between px-3.5 py-3 glass-inset">
+            <div className="flex items-start gap-2.5">
+              <Activity className="w-4 h-4 text-carb mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[13.5px] font-bold text-ink">{name}</p>
+                {meta && <p className="font-technical text-[11px] font-semibold text-ink-muted">{meta}</p>}
+                {structure && <p className="text-[11px] text-ink-muted mt-0.5 leading-snug">{structure}</p>}
+              </div>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1 shrink-0">Cardio</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Epley e1RM scaling with progressive overload projection.
 // If last session hit target reps (or exceeded them), nudge the suggested weight
 // up by 2.5 lbs — the smallest standard plate increment.
@@ -1045,41 +1096,7 @@ export default function WorkoutDetail() {
             })}
 
             {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
-            {isProgramSource && (() => {
-              const runExercises = (programWorkout?.exercises || []).filter(isRunEx).map(ex => ({
-                title: ex.name,
-                duration_minutes: ex.duration_minutes || null,
-                time_of_day: ex.time_of_day || null,
-                zone: ex.zone || null,
-              }));
-              const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
-              return allCardio.length > 0 && (
-              <div className="space-y-2">
-                <p className="section-label">Conditioning</p>
-                {allCardio.map((c, i) => (
-                  <div
-                    key={`cardio-${i}`}
-                    className="flex items-center justify-between px-3.5 py-3 glass-inset"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Activity className="w-4 h-4 text-carb" />
-                      <div>
-                        <p className="text-[13.5px] font-bold text-ink">{c.title}</p>
-                        <p className="font-technical text-[11px] font-semibold text-ink-muted">
-                          {[
-                            c.duration_minutes ? `${c.duration_minutes} min` : null,
-                            c.time_of_day && c.time_of_day !== "anytime" ? c.time_of_day.toUpperCase() : null,
-                            c.zone || null,
-                          ].filter(Boolean).join(" · ")}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1">Cardio</span>
-                  </div>
-                ))}
-              </div>
-              );
-            })()}
+            {isProgramSource && <CardioSessions programWorkout={programWorkout} />}
 
             {/* Add Exercise Form */}
             <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />
@@ -1148,6 +1165,18 @@ export default function WorkoutDetail() {
               })}
             </CardContent>
           </Card>
+
+          {/* Conditioning — read-only run/swim detail (was missing from view mode,
+              so a two-a-day's run had no clickable detail). */}
+          {isProgramSource &&
+            (programWorkout?.cardio_sessions?.length > 0 ||
+              (programWorkout?.exercises || []).some(isRunEx)) && (
+            <Card className="mt-3">
+              <CardContent className="pt-4 pb-4">
+                <CardioSessions programWorkout={programWorkout} />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Sticky thumb-zone primary action — mobile only. Keeps "Start
               Logging" reachable after scrolling the exercise list. Clears the

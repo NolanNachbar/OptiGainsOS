@@ -661,10 +661,18 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float,
         last_upper = next((t for t in reversed(recent) if "upper" in t), "")
         return "upper_b" if "upper_a" in last_upper else "upper_a"
 
+    def _next_lower(recent: list) -> str:
+        """Alternate lower squat-primary / hinge-primary from the most-recent lower
+        session. After a squat-focused lower day, do hinge; after hinge, do squat.
+        Requires the log classifier to label lower days squat vs hinge accurately —
+        otherwise every lower day collapses to one variant."""
+        last_lower = next((t for t in reversed(recent) if "lower" in t), "")
+        return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
+
     # 2. Apply cellular overrides only if they don't violate the consecutive split guardrail
     if ampk > 0.55:
         if "upper" in last_strength:
-            return "lower_hinge_primary"
+            return _next_lower(recent_types)
         else:
             return _next_upper(recent_types)
 
@@ -675,8 +683,7 @@ def _decide_split(recent_types: list, ampk: float, mtorc1: float,
 
     # 3. Default alternating split logic based on the last strength session
     if "upper" in last_strength:
-        last_lower = next((t for t in reversed(recent_types) if "lower" in t), "")
-        return "lower_hinge_primary" if "squat" in last_lower else "lower_squat_primary"
+        return _next_lower(recent_types)
     elif "lower" in last_strength:
         return _next_upper(recent_types)
 
@@ -1269,7 +1276,25 @@ class SessionGenerator:
         # Retrieve VDOT
         vdot = vdot_zones.get("current_vdot", 45.0)
 
-        # Call module-level generate function
+        # Decide the ONE split that drives exercises AND the displayed title, so the
+        # two can never disagree (the old code built exercises from split_override but
+        # recomputed the label via a separate get_split() call — that's how a "Lower
+        # Hinge" title landed on all-upper lifts). Prefer alternation off what was
+        # actually LOGGED: that self-corrects after a deviation day (log upper → next
+        # day goes lower) instead of blindly repeating a stale weekly-plan split. Fall
+        # back to the weekly plan's split only when there's no recent log history.
+        _rt = recent_session_types or []
+        _ampk = float(cellular_state.get("ampk") or 0.20)
+        _mtorc1 = float(cellular_state.get("mtorc1") or 0.30)
+        if _rt:
+            resolved_split = _decide_split(_rt, _ampk, _mtorc1)
+        elif split_override in _SPLIT_KEYS:
+            resolved_split = split_override
+        else:
+            resolved_split = _decide_split(_rt, _ampk, _mtorc1)
+
+        # Call module-level generate function. Pass resolved_split as the authoritative
+        # override so the exercises are built from the exact split we'll label below.
         exercises, cardio = generate(
             action=mpc_action,
             intensity=mpc_intensity,
@@ -1286,7 +1311,7 @@ class SessionGenerator:
             weakness=weakness,
             blocked_exercises=blocked_exercises,
             preferred_exercises=preferred_exercises,
-            split_override=split_override,
+            split_override=resolved_split,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
@@ -1437,6 +1462,7 @@ class SessionGenerator:
                 except Exception:
                     session_miles = round(dur * 0.12, 1)
                 run_block = {
+                    "run_type": c.get("run_type", ""),
                     "zone": c.get("zone", "Z2"),
                     "session_miles": session_miles,
                     "pace": c.get("pace", ""),
@@ -1472,8 +1498,9 @@ class SessionGenerator:
         if cellular_state.get("interference_score", 0.0) > 0.5:
             warning = "High concurrent training load detected. Heavy AMPK activity may limit mTORC1 translation."
 
-        # Resolve split title or split key
-        split = get_split(mpc_action, mpc_intensity, sim_date, cellular_state, recent_session_types)
+        # Label with the SAME split the exercises were built from (resolved above),
+        # so the title and the lifts can never contradict each other.
+        split = resolved_split
 
         return {
             "session_type": session_type,
