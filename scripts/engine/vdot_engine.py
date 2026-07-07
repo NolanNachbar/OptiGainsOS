@@ -32,6 +32,14 @@ ZONE_INTERVAL_FRAC  = 0.98    # interval / race-pace: ~98% VO2max
 # Each soreness point × day reduces weekly mileage by 6%
 OMEGA_ORTHO = 0.06
 
+# Max avg→peak HR spread (bpm) for a run to count as STEADY-STATE for VDOT.
+# Interval/fartlek sessions average a fast work pace against an HR that's dragged
+# down by recovery jogs; HR-correcting that decoupled pair/HR pair yields a wildly
+# inflated VDOT (a 2-mile interval day read as VDOT 68). Steady continuous runs
+# hold HR near their session peak (small spread); intervals swing max well above
+# average. Runs above this spread are excluded from the VDOT estimate. [ENG-tunable]
+STEADY_HR_SPREAD_MAX = 25.0
+
 # Minimum reliable timed efforts before updating VDOT
 MIN_EFFORTS_FOR_UPDATE = 1
 
@@ -169,9 +177,17 @@ class VDOTEngine:
         """
         Deterministically (re)derive VDOT from recent Garmin runs.
 
-        `runs`: dicts with distance_meters, duration_seconds, avg_hr — newest
-        first. Each qualifying run (≥800 m, has HR) is HR-corrected via
-        `vdot_from_hr_effort`; VDOT is the mean over the most recent `window`.
+        `runs`: dicts with distance_meters, duration_seconds, avg_hr, max_hr —
+        newest first. Each qualifying run (≥800 m, has HR, STEADY-STATE) is
+        HR-corrected via `vdot_from_hr_effort`; VDOT is the MEDIAN over the most
+        recent `window`.
+
+        Two robustness guards keep a single bad reading from inflating VDOT:
+          1. Interval/fartlek runs are skipped — a large avg→peak HR spread means
+             the averaged pace and averaged HR are decoupled, which HR-correction
+             turns into a garbage-high VDOT (see STEADY_HR_SPREAD_MAX).
+          2. The window is aggregated by median, not mean, so any outlier that
+             still slips through can't drag the estimate.
 
         This is idempotent: it recomputes from source rows every call rather than
         accumulating, so re-running the daily compute on the same Garmin data
@@ -183,7 +199,12 @@ class VDOTEngine:
             dist = float(r.get("distance_meters") or 0)
             secs = float(r.get("duration_seconds") or 0)
             hr   = float(r.get("avg_hr") or 0)
+            rmax = float(r.get("max_hr") or 0)
             if dist < 800 or secs <= 0 or hr <= 0:
+                continue
+            # Skip non-steady efforts (intervals): averaged fast pace vs
+            # recovery-deflated avg HR HR-corrects into a bogus elite VDOT.
+            if rmax > 0 and (rmax - hr) > STEADY_HR_SPREAD_MAX:
                 continue
             v = vdot_from_hr_effort(dist, secs, hr, hr_max)
             if 20 <= v <= 85:
@@ -192,8 +213,11 @@ class VDOTEngine:
                 break
         if not ests:
             return None
+        ordered = sorted(ests)
+        n = len(ordered)
+        median = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2.0
         self._vdot_history = ests
-        self.vdot = round(sum(ests) / len(ests), 1)
+        self.vdot = round(median, 1)
         return self.vdot
 
     # ── Pace zones ────────────────────────────────────────────────────────────
