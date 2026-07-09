@@ -96,32 +96,43 @@ def apply_endurance_interference(landmarks_lc: dict, modality_km: dict,
 # ── Canonical per-muscle landmark PRIORS (sets/wk) ────────────────────────────
 # SINGLE SOURCE OF TRUTH for MEV/MAV/MRV. Replaces the old generic {6,12,18} /
 # {4,8,12} constants AND the duplicate per-muscle table that lived in
-# compute_athlete_state.MUSCLE_TARGETS (which now derives from this). [COACH]
-# Israetel-style per-muscle defaults; the Bayesian learner overrides per athlete.
-# Keyed in the LANDMARK vocab (the vocab the volume engine learns on).
+# compute_athlete_state.MUSCLE_TARGETS (which now derives from this).
+# [DISTILLED] Grounded in the Training-Science knowledge base
+# (30-Resources/Training-Science/concepts/Training Volume (MEV-MRV).md, distilled
+# from TNF): the productive weekly band is ~4-12 sets/muscle/week with ~10 a
+# practical ceiling and a ~4-set MEV floor — NOT the RP/Israetel 18-24 MRVs that
+# used to sit here. Fast-recovering, high-frequency muscles (calves, side delts)
+# carry a higher ceiling because TNF trains them often. These are PRIORS: the
+# Bayesian learner still raises MRV/MAV per-muscle when Nolan keeps responding
+# (some individuals respond well past the band), so the ceiling stays learnable.
+# DIRECT sets only (indirect work from presses/rows/deadlifts not counted).
 LANDMARK_PRIORS: dict[str, dict] = {
-    "chest":      {"mev": 8,  "mav": 14, "mrv": 20},
-    "upper_back": {"mev": 10, "mav": 16, "mrv": 22},
-    "lats":       {"mev": 10, "mav": 16, "mrv": 22},
-    "quads":      {"mev": 8,  "mav": 14, "mrv": 20},
-    "hamstrings": {"mev": 6,  "mav": 12, "mrv": 16},
-    "glutes":     {"mev": 6,  "mav": 12, "mrv": 16},
-    "shoulders":  {"mev": 6,  "mav": 12, "mrv": 18},
-    "triceps":    {"mev": 8,  "mav": 14, "mrv": 18},
-    "biceps":     {"mev": 8,  "mav": 14, "mrv": 20},
-    "calves":     {"mev": 8,  "mav": 16, "mrv": 24},
-    "core":       {"mev": 0,  "mav": 12, "mrv": 16},
-    # DIRECT sets only (indirect work from presses/rows/deadlifts not counted).
-    # All three recover fast and tolerate high frequency. "shoulders" above now
-    # means front/rear delt + overhead pressing; lateral-raise work counts here.
-    "side_delts": {"mev": 8,  "mav": 16, "mrv": 24},
-    "traps":      {"mev": 4,  "mav": 10, "mrv": 16},
-    "neck":       {"mev": 4,  "mav": 8,  "mrv": 12},
+    # Chest sits ABOVE the TNF band by Nolan's call (2026-07-08): frequent heavy
+    # bench is his priority and he responds to it — the concept's ceiling is
+    # individual/learnable, so a bench specialist carries a higher chest ceiling.
+    # This keeps ~5-7 heavy bench sets/session across his bench days.
+    "chest":      {"mev": 6, "mav": 12, "mrv": 16},
+    "upper_back": {"mev": 6, "mav": 10, "mrv": 14},   # back tolerates a touch more
+    "lats":       {"mev": 6, "mav": 10, "mrv": 14},
+    "quads":      {"mev": 6, "mav": 10, "mrv": 14},
+    "hamstrings": {"mev": 4, "mav": 8,  "mrv": 12},
+    "glutes":     {"mev": 4, "mav": 8,  "mrv": 12},
+    "shoulders":  {"mev": 4, "mav": 8,  "mrv": 12},   # front delts + OH pressing
+    "triceps":    {"mev": 4, "mav": 8,  "mrv": 12},
+    "biceps":     {"mev": 4, "mav": 8,  "mrv": 12},
+    "calves":     {"mev": 6, "mav": 10, "mrv": 16},   # fast recovery, high freq
+    "core":       {"mev": 0, "mav": 8,  "mrv": 12},
+    # Fast-recovering, high-frequency-tolerant; TNF trains them often, so a higher
+    # ceiling. "shoulders" above means front delt + overhead pressing; lateral-raise
+    # work counts under side_delts.
+    "side_delts": {"mev": 6, "mav": 10, "mrv": 16},
+    "traps":      {"mev": 4, "mav": 8,  "mrv": 12},
+    "neck":       {"mev": 3, "mav": 6,  "mrv": 10},
     # "chest" above is flat-press dominated (the bench work); upper_chest counts
     # incline pressing/fly work only. rear_delts split from "shoulders" — rows
     # feed them indirectly but direct work is what moves them.
-    "upper_chest": {"mev": 6, "mav": 12, "mrv": 18},
-    "rear_delts":  {"mev": 6, "mav": 12, "mrv": 18},
+    "upper_chest": {"mev": 5, "mav": 9,  "mrv": 12},   # a touch higher — incline is part of his bench work
+    "rear_delts":  {"mev": 4, "mav": 8,  "mrv": 12},
 }
 
 # Exercise-catalog muscle name -> canonical landmark vocab.
@@ -139,8 +150,9 @@ def _default_landmarks(muscle: str) -> dict:
     """Per-muscle priors (uppercase keys for the engine's internal use)."""
     p = LANDMARK_PRIORS.get(muscle)
     if p is None:
+        # Fallbacks in the same TNF-grounded band (isolation lower, compound higher).
         p = {"mev": 4, "mav": 8, "mrv": 12} if muscle in _ISOLATION_MUSCLES \
-            else {"mev": 6, "mav": 12, "mrv": 18}
+            else {"mev": 6, "mav": 10, "mrv": 14}
     return {"MEV": p["mev"], "MAV": p["mav"], "MRV": p["mrv"]}
 
 

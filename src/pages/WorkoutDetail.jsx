@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, isExerciseLiked, useToggleExerciseLike } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,6 +145,7 @@ export default function WorkoutDetail() {
 
   // Fetch user profile to get weight unit preference
   const { profile } = useProfile();
+  const toggleLike = useToggleExerciseLike();
   const weightUnit = profile?.weight_unit || 'lbs';
 
   // Exercise reactions (like/dislike per exercise)
@@ -175,6 +176,7 @@ export default function WorkoutDetail() {
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,
+    moveExercise,
     addExercise,
   } = useWorkoutExercises([]);
 
@@ -1090,6 +1092,11 @@ export default function WorkoutDetail() {
                     allExerciseNames={allHistoryExerciseNames}
                     onStartRestTimer={startRestTimer}
                     showRIR={profile?.show_rir ?? true}
+                    liked={isExerciseLiked(profile, exerciseLog.name)}
+                    onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exerciseLog.name })}
+                    onMoveUp={exerciseIndex > 0 ? () => moveExercise(exerciseIndex, exerciseIndex - 1) : null}
+                    onMoveDown={exerciseIndex < exerciseLogs.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1) : null}
+                    onMachineTaken={exerciseIndex < exerciseLogs.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1, 'machine_taken') : null}
                   />
                 </div>
               );

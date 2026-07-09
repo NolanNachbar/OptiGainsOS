@@ -77,6 +77,7 @@ MUSCLE_EMPHASIS: dict[str, float] = {
     "calves":      1.5,
     "rear_delts":  1.25,
     "biceps":      1.25,   # compounds under-stimulate biceps; add dedicated isolation
+    "forearms":    1.25,   # Nolan's call (2026-07-08): hit forearms directly, not just via grip holds
     "hamstrings":  1.15,   # hinge-dominant training can under-serve hamstring isolation
 }
 

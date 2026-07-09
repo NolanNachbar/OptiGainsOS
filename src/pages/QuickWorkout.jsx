@@ -3,7 +3,7 @@ import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, isExerciseLiked, useToggleExerciseLike } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,7 @@ export default function QuickWorkout() {
   const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
 
   const { profile } = useProfile();
+  const toggleLike = useToggleExerciseLike();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
   // On the empty canvas the insight starts as a compact coach chip; tapping it
@@ -194,6 +195,7 @@ export default function QuickWorkout() {
     updateExerciseNotes,
     updateExerciseName,
     replaceExercise: replaceExerciseRaw,
+    moveExercise,
     addExercise: addExerciseRaw,
   } = useWorkoutExercises(prescribedInitial);
 
@@ -683,6 +685,11 @@ export default function QuickWorkout() {
                 coachingPhase={coachingPhase}
                 onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
                 onStartRestTimer={startRestTimer}
+                liked={isExerciseLiked(profile, exercise.name)}
+                onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exercise.name })}
+                onMoveUp={exerciseIndex > 0 ? () => moveExercise(exerciseIndex, exerciseIndex - 1) : null}
+                onMoveDown={exerciseIndex < exercises.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1) : null}
+                onMachineTaken={exerciseIndex < exercises.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1, 'machine_taken') : null}
               />
             );
           })}

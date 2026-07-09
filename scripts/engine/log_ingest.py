@@ -120,7 +120,8 @@ GOAL_LIFTS = {
         "Competition Bench Press - Paused (Top Set)",
         "Competition Bench Press - Paused (Back-off)",
         # App session-generator names
-        "Bench Press (Daily Single)",
+        "Bench Press (Daily Single)",   # legacy name (pre-2026-07-08); kept so history maps
+        "Bench Press (Top Set)",
         "Bench Press (Back-off Vol)",
         "Bench Press (Back-off Int)",
     },

@@ -40,7 +40,7 @@ except ImportError:
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
-from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title
+from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title, split_muscles_for
 from engine.hypertrophy_volume import (HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS,
                                        apply_running_interference, apply_endurance_interference)
 from engine.allocator          import plan_week, default_goal_priorities
@@ -1138,6 +1138,19 @@ def main():
     # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
     # on upper/cardio days rather than heavy leg days.
     quality_placed, long_placed = 0, 0
+    # Convergent scheduler tally: how many times each muscle has been trained so far.
+    # SEED FROM ACTUAL RECENT TRAINING (recent_session_types is the real logged split
+    # history) so the selector reads what the athlete has already done — under-trained
+    # groups (e.g. legs) show a large remaining deficit and get programmed next, while
+    # muscles trained a lot recently show ~zero deficit. The selector also applies a
+    # recovery penalty so a just-trained region isn't repeated the next day. Together
+    # this is "read my data and program forward like a trainer." The loop keeps adding
+    # to this tally as it places each generated day.
+    week_muscle_counts: dict = {}
+    for _sp in recent_session_types:
+        for _m in split_muscles_for(_sp):
+            week_muscle_counts[_m] = week_muscle_counts.get(_m, 0) + 1
+    freq_targets_conv = plan.get("frequency_targets") or {}
     # Library auto-save dedup set: existing workout-library titles, fetched once
     # per run. Generated sessions whose title isn't in the library yet get saved
     # as reusable templates; re-runs and repeat titles no-op.
@@ -1174,7 +1187,18 @@ def main():
         # Decide the split first, then place the run adaptively around it (hard runs
         # off heavy leg days), tracking the weekly polarized budget.
         split = get_split(action, intensity, sim_day, sim_cellular, recent_session_types,
-                          split_framework=split_framework)
+                          split_framework=split_framework,
+                          frequency_targets=freq_targets_conv,
+                          week_muscle_counts=week_muscle_counts,
+                          muscle_emphasis=emphasis)
+        # Tally the muscles this lifting day trains so the next day's split converges
+        # to the remaining frequency deficit (rest/cardio days train nothing).
+        if split not in ("rest", "cardio"):
+            for _m in split_muscles_for(split):
+                week_muscle_counts[_m] = week_muscle_counts.get(_m, 0) + 1
+            recent_session_types.append(split)
+            if len(recent_session_types) > 7:
+                recent_session_types.pop(0)
         run_slot = pick_run_slot(split, action, quality_placed, long_placed)
         # Only consume the polarized budget when a CARDIO-producing action actually runs.
         # STRENGTH/LIGHT/CALISTHENICS call pick_run_slot but gen_session returns cardio=[],
@@ -1205,6 +1229,7 @@ def main():
             weakness=weakness,
             blocked_exercises=blocked_ex,
             preferred_exercises=preferred_ex,
+            split_override=split,   # honor the convergent split (title + session agree)
         )
 
         title = build_title(action, split, intensity)

@@ -35,12 +35,14 @@ from engine.log_ingest import canon
 # it deprioritizes accessories and surfaces in the brief instead. [ENG]
 EXVAL_SELECT_WEIGHT = 1.5
 CAUTION_PENALTY     = 8.0
-# Explicit athlete preference (user_profiles.exercise_preferences). A `preferred`
-# movement gets a fixed selection bonus large enough to clear the +2 is_primary tie
-# between equivalent variants (so RDL/Paused Squat win their slot) but BELOW the
-# +10 goal-lift bonus so it never displaces a competition lift. A `blocked` movement
-# is filtered out entirely — knapsack pool AND assistance pools — never programmed.
-PREFER_SELECT_WEIGHT = 4.0
+# Explicit athlete preference (user_profiles.exercise_preferences) — the "like"
+# button writes here. A `preferred` (liked) movement gets a fixed selection bonus
+# set to DECISIVELY win its muscle slot: it must beat is_primary (+2) AND a strong
+# learned exercise-value (EXVAL_SELECT_WEIGHT × posterior, up to ~±3), so that when
+# the engine needs an exercise for a muscle the athlete liked, it goes to a liked
+# one. Kept BELOW the +10 goal-lift bonus so it never displaces a competition lift.
+# A `blocked` movement is filtered out entirely — knapsack pool AND assistance pools.
+PREFER_SELECT_WEIGHT = 8.0
 
 # Per-session set scaling: a muscle's per-session sets = catalog default × (weekly
 # target / baseline weekly). The baseline is the weekly volume at which the catalog
@@ -94,10 +96,11 @@ def _is_cautioned(ex: dict, caution: dict) -> bool:
 
 EXERCISES = [
     # ── Bench (always included on upper days) ─────────────────────────────
-    {"name": "Bench Press (Daily Single)",  "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
+    {"name": "Bench Press (Top Set)",  "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 4.0, "muscles": ["chest", "triceps", "front_delt"],
-     "sets": 1, "rep_target": "1",   "rir_target": 1, "rest_seconds": 180,
-     "notes": "Build to today's heavy single.", "is_primary": True, "is_goal": True},
+     "sets": 1, "rep_target": "3",   "rir_target": 2, "rest_seconds": 180,
+     "notes": "Heavy top set (~85%), leave 2 in the tank. Frequent heavy bench, not a max single.",
+     "is_primary": True, "is_goal": True},
     {"name": "Bench Press (Back-off Vol)",  "pattern": "horizontal_push", "type": "COMPOUND_AXIAL",
      "fatigue_cost": 4.0, "muscles": ["chest", "triceps"],
      "sets": 5, "rep_target": "3",   "rir_target": 2, "progression": {"daily_min_pct": 0.85},
@@ -212,6 +215,12 @@ EXERCISES = [
      "notes": "Double-overhand static hold at lockout, ~10-20s, straps OFF. Builds the "
               "raw grip that's the real limiter on the conventional pull.",
      "is_assistance": True, "assist_for": "deadlift"},
+    {"name": "Wrist Curl",            "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["forearms"],
+     "sets": 2, "rep_target": "10-15", "rir_target": 0, "rest_seconds": 60,
+     "notes": "Direct forearm flexor work — seated, off the bench edge, full stretch at "
+              "the bottom. Reverse variation (extensors) rotates in weekly.",
+     "is_bodyweight": False},
 
     # ── Vertical pull ──────────────────────────────────────────────────────
     {"name": "Weighted Pull-up",  "pattern": "vertical_pull", "type": "COMPOUND_AXIAL",
@@ -629,12 +638,85 @@ def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss:
 
 # ── Split decision ────────────────────────────────────────────────────────────
 
+# Candidate split keys per framework, and each split's muscle set — used by the
+# convergent selector to score how well a day would close the weekly frequency
+# deficit. Reuses the same muscle lists the session builder trains for that split.
+_FRAMEWORK_SPLITS = {
+    "upper_lower": ["upper_a", "upper_b", "lower_squat_primary", "lower_hinge_primary"],
+    "full_body":   ["full_body_chest", "full_body_back", "full_body_sharms", "full_body_legs"],
+    "ppl":         ["push", "pull", "legs"],
+}
+_SPLIT_MUSCLES_FOR_SCORING = {
+    "upper_a": UPPER_A_MUSCLES, "upper_b": UPPER_B_MUSCLES,
+    "lower_squat_primary": LOWER_MUSCLES, "lower_hinge_primary": LOWER_MUSCLES,
+    "full_body_chest": FULL_BODY_CHEST, "full_body_back": FULL_BODY_BACK,
+    "full_body_sharms": FULL_BODY_SHARMS, "full_body_legs": FULL_BODY_LEGS,
+    "push": PUSH_MUSCLES, "pull": PULL_MUSCLES, "legs": LEGS_MUSCLES,
+}
+
+
+def _converge_split(recent_types, split_framework, frequency_targets,
+                    week_muscle_counts, muscle_emphasis=None):
+    """Program the next split the way a coach reading the logs would: train the
+    muscles that are (a) RECOVERED — not hammered in the last session or two — and
+    (b) most BEHIND their weekly frequency target. This is what makes it converge
+    to the athlete's data: after an upper day the upper muscles are freshly fatigued
+    (recovery≈0) so a lower day wins; a lagging muscle group that hasn't been trained
+    in days gets prioritised. Emphasis muscles are weighted up.
+
+    `recent_types` is oldest→newest (newest last) and includes real logged sessions,
+    so "trained upper today" is read directly. `week_muscle_counts` is seeded from
+    this week's actual training, so weekly volume already banked lowers the deficit.
+    """
+    candidates = _FRAMEWORK_SPLITS.get(split_framework, _FRAMEWORK_SPLITS["upper_lower"])
+    muscle_emphasis = muscle_emphasis or {}
+
+    # Per-muscle: how many sessions ago it was last trained (0 = the last session).
+    sessions_ago = {}
+    for i, t in enumerate(reversed(recent_types)):   # i=0 is the most recent session
+        for m in _SPLIT_MUSCLES_FOR_SCORING.get(t, []):
+            sessions_ago.setdefault(m, i)
+
+    def recovery_factor(m):
+        # Local recovery (training-science: fatigue is local, ~1-3 days to recover).
+        # Just trained → mostly off-limits; a session ago → partial; 2+ → recovered.
+        s = sessions_ago.get(m, 99)
+        if s <= 0:  return 0.10
+        if s == 1:  return 0.45
+        if s == 2:  return 0.80
+        return 1.0
+
+    def score(split):
+        s = 0.0
+        for m in _SPLIT_MUSCLES_FOR_SCORING.get(split, []):
+            deficit = float(frequency_targets.get(m, 0)) - float(week_muscle_counts.get(m, 0))
+            if deficit > 0:
+                s += deficit * recovery_factor(m) * float(muscle_emphasis.get(m, 1.0))
+        return s
+
+    # Highest recovered-and-lagging score wins. Tie-break: avoid repeating the most
+    # recent split.
+    prev = next((t for t in reversed(recent_types) if t in candidates), None)
+    return sorted(candidates, key=lambda sp: (score(sp), sp != prev), reverse=True)[0]
+
+
 def _decide_split(recent_types: list, ampk: float, mtorc1: float,
-                  split_framework: str = "upper_lower") -> str:
+                  split_framework: str = "upper_lower",
+                  frequency_targets: dict = None, week_muscle_counts: dict = None,
+                  muscle_emphasis: dict = None) -> str:
     """
     Upper vs lower based on AMPK interference + recent session balance.
     Supports split_framework: 'upper_lower' | 'ppl' | 'full_body'
+
+    When `frequency_targets` is supplied, the choice CONVERGES to the allocator's
+    per-muscle frequency targets (see _converge_split) instead of the fixed
+    alternation below — the split shape becomes an output of the targets + logs.
+    The alternation logic remains as the fallback when no targets are available.
     """
+    if frequency_targets:
+        return _converge_split(recent_types, split_framework, frequency_targets,
+                               week_muscle_counts or {}, muscle_emphasis)
+
     if split_framework == "full_body":
         # 4-day FBEOD rotation: Chest → Back → Shoulders/Arms → Legs. Advance from
         # the most-recent full-body focus; unknown/legacy history restarts at chest.
@@ -750,6 +832,71 @@ def _assistance_slot(name: str, wt: dict, intensity: float, readiness_z: float) 
 
 # ── Knapsack session builder ──────────────────────────────────────────────────
 
+_PUSH_PATTERNS = {"horizontal_push", "incline_push", "vertical_push", "dip"}
+_PULL_PATTERNS = {"vertical_pull", "horizontal_pull"}
+
+
+def _alternate_antagonists(exercises: list) -> list:
+    """Reorder so chest (push) and back (pull) COMPOUNDS alternate — bench, row,
+    incline, pull-up, dip — instead of stacking three chest movements in a row
+    (Nolan's call, 2026-07-08). Antagonist alternation also gives each muscle more
+    rest between its sets. A back-off / speed set stays attached to the lift it
+    backs off (it's the same movement, more sets — not a new exercise). Isolation
+    and lower-body work ('other') keeps its existing emphasis-nudged order and
+    follows the alternated compounds. Non-upper days have no push/pull compounds,
+    so their order is unchanged."""
+    units: list = []
+    for ex in exercises:
+        if ex.get("is_backoff") and units:
+            units[-1].append(ex)      # same lift as the unit above — keep together
+        else:
+            units.append([ex])
+
+    def kind(u):
+        p = u[0].get("pattern", "")
+        if p in _PUSH_PATTERNS: return "push"
+        if p in _PULL_PATTERNS: return "pull"
+        return "other"
+
+    push  = [u for u in units if kind(u) == "push"]
+    pull  = [u for u in units if kind(u) == "pull"]
+    other = list(u for u in units if kind(u) == "other")
+
+    # 0. One movement per pressing/pulling PATTERN per session. The bench complex
+    #    already supplies an incline (reverse-grip incline assistance); without this
+    #    the knapsack ALSO picks a second incline (incline DB) plus extra chest, which
+    #    is Nolan's "too much chest volume." Keep the first movement of each pattern
+    #    (bench assistance is added before the knapsack's redundant pick, so the liked
+    #    reverse-grip incline wins over the DB press). Dropped only from THIS session —
+    #    the movement stays available for other days. [ENG]
+    def _dedup_by_pattern(unit_list):
+        seen, kept = set(), []
+        for u in unit_list:
+            p = u[0].get("pattern", "")
+            if p and p in seen:
+                continue
+            seen.add(p)
+            kept.append(u)
+        return kept
+    push = _dedup_by_pattern(push)
+    pull = _dedup_by_pattern(pull)
+
+    # 1. Pair push with pull (bench, row, incline, pull-up, ...).
+    ordered, i, j = [], 0, 0
+    while i < len(push) and j < len(pull):
+        ordered.append(push[i]); i += 1     # lead with push (bench is the priority)
+        ordered.append(pull[j]); j += 1
+    # 2. Whichever side has extras (usually more push than pull): separate each
+    #    leftover compound with an isolation so two same-direction compounds are
+    #    never adjacent — no "three chest exercises in a row". Nothing is dropped.
+    for u in push[i:] + pull[j:]:
+        ordered.append(u)
+        if other:
+            ordered.append(other.pop(0))
+    ordered.extend(other)
+    return [ex for u in ordered for ex in u]
+
+
 def _build_session(
     split: str,
     intensity: float,
@@ -825,7 +972,7 @@ def _build_session(
         excluded_names.add("Back Squat (Top Set)")
         excluded_names.add("Deadlift (Top Set)")
         if split != "full_body_chest":
-            excluded_names.add("Bench Press (Daily Single)")
+            excluded_names.add("Bench Press (Top Set)")
 
     used_patterns: set = set()
     chosen_names: set = set()
@@ -913,8 +1060,8 @@ def _build_session(
     # UPPER_A/B muscle lists, but the knapsack may pick a compound (Dips, OHP) for
     # those slots; these supplements ensure a true isolation always appears too.
     _ISOLATION_SUPPLEMENTS = {
-        "upper_a":             [("triceps", "Triceps Pushdown")],
-        "upper_b":             [("triceps", "Triceps OH Extension")],
+        "upper_a":             [("triceps", "Triceps Pushdown"), ("forearms", "Wrist Curl")],
+        "upper_b":             [("triceps", "Triceps OH Extension"), ("forearms", "Wrist Curl")],
         "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         # Legs-focus full-body day earns the same guaranteed quad+ham isolations so
@@ -970,7 +1117,7 @@ def _build_session(
         exercises.append(scaled)
 
         # Bench daily single → always add appropriate back-off
-        if ex_copy.get("name") == "Bench Press (Daily Single)":
+        if ex_copy.get("name") == "Bench Press (Top Set)":
             bo_name = ("Bench Press (Back-off Int)"
                        if "intensity" in split or "hinge" in split
                        else "Bench Press (Back-off Vol)")
@@ -978,7 +1125,11 @@ def _build_session(
             chest_weekly = wt.get("chest", 0)
             if chest_weekly > 0:
                 baseline_weekly = BASELINE_WEEKLY_DEFAULT
-                volume_scalar = chest_weekly / baseline_weekly
+                # Cap at 1.0: the back-off never inflates past its base sets. A high
+                # weekly chest target is delivered by benching MORE OFTEN (frequency),
+                # not by dumping extra back-off sets into one session (low-per-session
+                # philosophy). Prevents the "chest piled every session" pattern. [ENG]
+                volume_scalar = min(1.0, chest_weekly / baseline_weekly)
                 bench_bo["sets"] = max(1, round(bench_bo.get("sets", 5) * volume_scalar))
             else:
                 bench_bo["sets"] = bench_bo.get("sets", 5)
@@ -1061,10 +1212,10 @@ def _build_session(
     # day's primary chest volume. Skipped on the chest-focus day (it already benches
     # heavy) and when bench is blocked.
     if (split.startswith("full_body") and split != "full_body_chest"
-            and canon("Bench Press (Daily Single)") not in blocked
-            and "Bench Press (Daily Single)" in _EX_BY_NAME
-            and not any(e.get("name") == "Bench Press (Daily Single)" for e in exercises)):
-        touch = _scale(copy.deepcopy(_EX_BY_NAME["Bench Press (Daily Single)"]),
+            and canon("Bench Press (Top Set)") not in blocked
+            and "Bench Press (Top Set)" in _EX_BY_NAME
+            and not any(e.get("name") == "Bench Press (Top Set)" for e in exercises)):
+        touch = _scale(copy.deepcopy(_EX_BY_NAME["Bench Press (Top Set)"]),
                        intensity, True, readiness_z)
         touch["sets"] = 1
         exercises.insert(0, touch)
@@ -1088,6 +1239,11 @@ def _build_session(
     # Sync chosen_names with all assistance/back-off slots appended above so
     # any future dedup checks (EN-05) see the full picture.
     chosen_names.update(e.get("name") for e in exercises if e.get("name"))
+
+    # Alternate chest/back compounds so we never stack three chest movements in a
+    # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
+    # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
+    exercises = _alternate_antagonists(exercises)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
@@ -1208,7 +1364,9 @@ def generate(
 
 def get_split(action: str, intensity: float, sim_date: date,
               cellular_state: dict = None, recent_session_types: list = None,
-              split_framework: str = "upper_lower") -> str:
+              split_framework: str = "upper_lower",
+              frequency_targets: dict = None, week_muscle_counts: dict = None,
+              muscle_emphasis: dict = None) -> str:
     if action == "REST":
         return "rest"
     if action == "CARDIO":
@@ -1217,7 +1375,16 @@ def get_split(action: str, intensity: float, sim_date: date,
     if recent_session_types is None: recent_session_types = []
     ampk   = float(cellular_state.get("ampk")   or 0.20)
     mtorc1 = float(cellular_state.get("mtorc1") or 0.30)
-    return _decide_split(recent_session_types, ampk, mtorc1, split_framework)
+    return _decide_split(recent_session_types, ampk, mtorc1, split_framework,
+                         frequency_targets=frequency_targets,
+                         week_muscle_counts=week_muscle_counts,
+                         muscle_emphasis=muscle_emphasis)
+
+
+def split_muscles_for(split: str) -> list:
+    """The muscle set a split trains (for tallying weekly frequency as the
+    convergent scheduler places each day)."""
+    return list(_SPLIT_MUSCLES_FOR_SCORING.get(split, []))
 
 
 def build_title(action: str, split: str, intensity: float) -> str:
@@ -1411,6 +1578,14 @@ class SessionGenerator:
                         except: pass
                     
                     load_pct = 1.0 / (1.0 + 0.0333 * (rep_val + rir))
+                    # Speed / back-off sets carry an intended sub-max ceiling
+                    # (progression.daily_min_pct). The Epley-from-RIR % can exceed it — a
+                    # reps-2 / RIR-4 speed pull solves to ~83%, not the documented ~65% — so
+                    # clamp to the intended %. Fixes "why is the speed work heavier than the
+                    # top set?" (speed pulls were coming out near the top set). [ENG]
+                    target_pct = (ex.get("progression") or {}).get("daily_min_pct")
+                    if target_pct:
+                        load_pct = min(load_pct, float(target_pct))
                     load_pct = load_pct * mpc_intensity * interference_atten
                     load_lbs = round((e1rm * load_pct) / 5.0) * 5.0
                     load_pct = round(load_pct, 3)

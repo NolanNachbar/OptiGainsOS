@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check, Heart, ChevronUp, ChevronDown, ChevronsDown } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
@@ -41,6 +41,11 @@ export default function ExerciseCard({
   workoutLogs = [],          // all historical logs for between-set coaching (Phase 3)
   coachingPhase = 1,         // from getCoachingPhase()
   onApplyCoachingSuggestion = null, // (exerciseIndex, setIndex, weight) => void
+  liked = false,            // exercise is in exercise_preferences.preferred
+  onToggleLike = null,      // () => void ; toggles the like (steers future programming)
+  onMoveUp = null,          // () => void ; null when already first
+  onMoveDown = null,        // () => void ; null when already last
+  onMachineTaken = null,    // () => void ; move down + tag "machine taken"
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -57,12 +62,24 @@ export default function ExerciseCard({
 
   // Select the value AND lift the field above the on-screen keyboard. Without the
   // scroll, focusing a bottom-row set input leaves it hidden behind the keyboard.
-  // ponytail: 250ms heuristic waits for the keyboard animation; swap for a
-  // visualViewport resize listener if the delay proves flaky on some devices.
+  // The on-screen keyboard opening fires a visualViewport resize; scroll THEN, so
+  // the field lands inside the shrunken (above-keyboard) viewport instead of
+  // guessing the animation duration (the old fixed 250ms timeout was flaky and
+  // left the input behind the keyboard). Fallback timeout covers desktop / an
+  // already-open keyboard where no resize fires.
   const handleInputFocus = (e) => {
     e.target.select();
     const el = e.target;
-    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+    const bringIntoView = () => el.scrollIntoView({ block: "center", behavior: "smooth" });
+    const vv = window.visualViewport;
+    if (vv) {
+      const onResize = () => { vv.removeEventListener("resize", onResize); bringIntoView(); };
+      vv.addEventListener("resize", onResize);
+      // Fallback if no resize fires (keyboard already open, or desktop).
+      setTimeout(() => { vv.removeEventListener("resize", onResize); bringIntoView(); }, 400);
+    } else {
+      setTimeout(bringIntoView, 250);
+    }
   };
 
   const dbEntry = lookupExercise(exercise.name);
@@ -234,6 +251,18 @@ export default function ExerciseCard({
                       {dbEntry.type}
                     </Badge>
                   )}
+                  {onToggleLike && (
+                    <button
+                      type="button"
+                      onClick={onToggleLike}
+                      aria-label={liked ? "Unlike this exercise" : "Like this exercise — the engine will program it more"}
+                      aria-pressed={liked}
+                      title={liked ? "Liked — programmed more often" : "Like — program this more often"}
+                      className="min-h-[32px] min-w-[32px] -my-1 flex items-center justify-center touch-manipulation"
+                    >
+                      <Heart className={`w-[18px] h-[18px] transition-colors ${liked ? "fill-brand text-brand" : "text-ink-faint hover:text-brand"}`} strokeWidth={2.5} />
+                    </button>
+                  )}
                 </div>
                 {/* Program targets */}
                 {isProgramMode && progressionTargets && (
@@ -281,6 +310,28 @@ export default function ExerciseCard({
             )}
           </div>
           <div className="flex items-center gap-1">
+            {(onMoveUp || onMoveDown) && (
+              <div className="flex flex-col -my-1">
+                <button
+                  type="button"
+                  onClick={onMoveUp || undefined}
+                  disabled={!onMoveUp}
+                  aria-label="Move exercise earlier"
+                  className="h-6 w-8 flex items-center justify-center text-ink-faint enabled:hover:text-ink disabled:opacity-30 touch-manipulation"
+                >
+                  <ChevronUp className="w-4 h-4" strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onMoveDown || undefined}
+                  disabled={!onMoveDown}
+                  aria-label="Move exercise later"
+                  className="h-6 w-8 flex items-center justify-center text-ink-faint enabled:hover:text-ink disabled:opacity-30 touch-manipulation"
+                >
+                  <ChevronDown className="w-4 h-4" strokeWidth={2.5} />
+                </button>
+              </div>
+            )}
             <div className="relative" ref={menuRef}>
             <Button
               variant="ghost"
@@ -312,6 +363,15 @@ export default function ExerciseCard({
                   <HelpCircle className="w-4 h-4" />
                   How to
                 </button>
+                {onMachineTaken && (
+                  <button
+                    onClick={() => { onMachineTaken(); setOpenMenu(false); }}
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  >
+                    <ChevronsDown className="w-4 h-4" />
+                    Machine taken — do later
+                  </button>
+                )}
                 {onReplaceExercise && (
                 <button
                   onClick={() => {
@@ -587,6 +647,18 @@ export default function ExerciseCard({
                     </button>
                   );
                 })}
+                {/* Free text on "Other": let the athlete type WHY when no bucket fits. */}
+                {tagField === 'failure_reason' && set.failure_reason === 'other' && (
+                  <input
+                    type="text"
+                    value={set.failure_note || ""}
+                    onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'failure_note', e.target.value)}
+                    onFocus={handleInputFocus}
+                    placeholder="What happened?"
+                    aria-label={`Set ${set.set_number} — what happened`}
+                    className="w-full mt-1 text-[12px] rounded-lg px-2.5 py-1.5 bg-transparent border border-charcoal-border text-ink placeholder:text-ink-faint focus:border-brand/50 focus:outline-none touch-manipulation"
+                  />
+                )}
               </div>
             )}
           </div>

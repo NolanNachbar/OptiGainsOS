@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys } from "@/lib/queryKeys";
@@ -17,6 +17,39 @@ export function useProfile() {
   });
 
   return { profile, isLoading, error };
+}
+
+// Is this exercise "liked" (in exercise_preferences.preferred)? Case-insensitive.
+export function isExerciseLiked(profile, exerciseName) {
+  const preferred = profile?.exercise_preferences?.preferred || [];
+  const target = String(exerciseName || "").toLowerCase();
+  return preferred.some((n) => String(n || "").toLowerCase() === target);
+}
+
+// Toggle an exercise's "like" — writes user_profiles.exercise_preferences.preferred.
+// The engine's session generator reads `preferred` and weights a liked movement to
+// win its muscle slot (PREFER_SELECT_WEIGHT), so liking steers future programming.
+export function useToggleExerciseLike() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ profile, exerciseName }) => {
+      if (!profile?.id || !exerciseName) return null;
+      const prefs = profile.exercise_preferences || { preferred: [], blocked: [] };
+      const preferred = Array.isArray(prefs.preferred) ? [...prefs.preferred] : [];
+      const target = String(exerciseName).toLowerCase();
+      const idx = preferred.findIndex((n) => String(n || "").toLowerCase() === target);
+      if (idx >= 0) preferred.splice(idx, 1);
+      else preferred.push(exerciseName);
+      const next = { ...prefs, preferred };
+      await db.entities.UserProfile.update(profile.id, { exercise_preferences: next });
+      return next;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.userProfile(user?.id) });
+    },
+  });
 }
 
 export function useAllFoodEntries() {
