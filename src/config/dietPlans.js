@@ -27,7 +27,9 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // ─── Food catalog ──────────────────────────────────────────────────────────────
 // per100g: macros per 100 g in the LOGGED state (cooked where noted; cooking
-// yield already applied to gramsPerUnit, e.g. ~1 lb raw chicken → ~340 g cooked).
+// yield already applied to gramsPerUnit, e.g. 1 lb raw chicken → 247 g cooked at
+// Nolan's measured 54.5% yield). Yields here are HIS, not the textbook ~75% —
+// get this wrong and every portion he checks off is silently mis-logged.
 // min/max: palatability bounds in grams per day — the "not too crazy" dials.
 // Raise a min to force variety; lower a max to cap monotony.
 // minServe: smallest portion worth cooking/plating — if the optimizer can't
@@ -43,7 +45,12 @@ export const FOOD_CATALOG = [
   { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, minServe: 50, step: 50,  purchase: { label: "12-count",       gramsPerUnit: 600,  price: 1.47 } },
   { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 4.87 } },
   { food: "Peanut Butter",         per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, role: "fat",     meal: "breakfast", timing: "anytime", min: 0,  max: 60,  minServe: 16,            purchase: { label: "40 oz jar",      gramsPerUnit: 1134, price: 3.98 } },
-  { food: "Chicken Breast",        per100g: { cal: 143, p: 26.2, c: 0.0,  f: 3.6 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 340,  price: 2.57 } },
+  // Cooked macros, derived from the tray label (19.6 p / 2.7 f per 100 g raw) and a
+  // MEASURED 54.5% cooking yield — Nolan weighs cooked, and his yield runs 53-56%,
+  // not the ~75% most databases assume. 1 lb raw (453 g) → 247 g cooked. Protein is
+  // conserved through cooking, so the same 88.8 g lands in less mass: 35.9 p per 100 g.
+  // The old row had RAW macros against a cooked weight and under-logged him by 1.37x.
+  { food: "Chicken Breast",        per100g: { cal: 188, p: 35.9, c: 0.0,  f: 4.9 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 247,  price: 2.48 } },
   { food: "Turkey 90/10",          per100g: { cal: 202, p: 23.4, c: 0.0,  f: 10.7 }, role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "1 lb roll",      gramsPerUnit: 341,  price: 4.94 } },
   { food: "Pasta (Cooked)",        per100g: { cal: 143, p: 5.0,  c: 29.3, f: 0.7 },  role: "carb",    meal: "lunch",     timing: "post",    min: 0,  max: 450, minServe: 100,           purchase: { label: "16 oz box",      gramsPerUnit: 1088, price: 0.98 } },
   { food: "Beef 85/15",            per100g: { cal: 289, p: 25.0, c: 0.0,  f: 20.2 }, role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "3 lb patties",   gramsPerUnit: 1021, price: 15.96 } },
