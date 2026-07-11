@@ -6,10 +6,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // garmin_activities (compute_athlete_state.py / mpc_prescriber.py). garmin-sync
 // never populated that table, so VDOT silently ran on stale/empty data.
 //
-// Invoked ON-DEMAND when the athlete checks a prescribed cardio session done
-// (see src/hooks/useCardioCompletions.js) — no cron. It is idempotent and pulls a
-// recent window, so it self-backfills: if the watch hasn't synced this run up to
-// Garmin Connect yet, the next "cardio done" tap catches it.
+// Runs on the daily cron (.github/workflows/daily-engine.yml), before the engine
+// computes, and ALSO on demand when the athlete checks a prescribed cardio session
+// done (see src/hooks/useCardioCompletions.js). The checkbox used to be the only
+// trigger, which assumed he always ticks it — he stopped on 2026-06-19, and
+// unprescribed cardio (a walk he just went on) never had a box to tick at all, so
+// garmin_activities went stale for three weeks while the watch recorded everything.
+// A sync that only fires when a human remembers to click something is not a sync.
+// Idempotent (dedups on activity_id), so the daily re-pull is free.
 //
 // Auth is identical to garmin-sync: a long-lived OAuth1 token cached in
 // garmin_tokens is exchanged for a short-lived OAuth2 bearer against
@@ -19,7 +23,11 @@ const CONNECTAPI = "https://connectapi.garmin.com";
 const UA = "GCM-iOS-5.7.2.1";
 const CONSUMER_KEY_FALLBACK = "fc3e99d2-118c-44b8-8ae3-03370dde24c0";
 const CONSUMER_SECRET_FALLBACK = "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF";
-const ACTIVITY_LIMIT = 20; // recent window — covers a week+ of training, dedup handles overlap
+// Recent window; dedup on activity_id makes the overlap free. 20 was too tight: a
+// day with a lift + a walk + a run burns 3 slots, so 20 could cover less than a
+// week — and the sync only ran on a manual checkbox tap, so gaps were permanent.
+// Now that it runs on the daily cron, a wider window costs one Garmin call.
+const ACTIVITY_LIMIT = 60;
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const USER_ID = Deno.env.get("USER_ID")!;

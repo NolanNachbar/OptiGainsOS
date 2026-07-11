@@ -6,9 +6,80 @@ on:
     - cron: "0 10 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+  # Gate: the engine's behavioral checks must pass before ANY job writes to the
+  # production database. A scheduling bug shipped and ran for days because this
+  # only ever ran when a human typed it.
+  validate:
+    name: Validate Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install python-dotenv numpy "scipy>=1.11"
+
+      # Must run with scripts/ as the cwd: the script importlib-loads
+      # "generate_weekly_program.py" by RELATIVE path, which resolves against the
+      # cwd (not the script dir), so it exits 1 when invoked from the repo root.
+      #
+      # The Supabase vars are deliberate placeholders, NOT secrets. Importing
+      # generate_weekly_program.py runs a module-level guard that hard-exits when
+      # they are unset; nothing here touches the network, and the checks are pure
+      # engine functions. Keeping them fake means this job also runs on fork PRs.
+      - name: Run convergence validation
+        working-directory: scripts
+        env:
+          SUPABASE_URL: "https://placeholder.invalid"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-not-a-real-key"
+        run: python3 validate_convergence_fixes.py
+
+  # Pull Garmin activities BEFORE the engine reads them. This used to be invoked
+  # only from the "cardio done" checkbox in the UI (useCardioCompletions.js), which
+  # assumed the athlete always ticks it. He stopped ticking on 2026-06-19, and
+  # UNPRESCRIBED cardio (a walk he just went on) never had a checkbox to tick at
+  # all — so garmin_activities went stale for three weeks while the watch happily
+  # recorded everything. The engine then read an empty cardio history and
+  # under-counted expenditure. A sync that only runs when a human remembers to
+  # click something is not a sync.
+  #
+  # Idempotent (dedups on activity_id), so a daily re-pull is free.
+  ingest:
+    name: Sync Garmin Activities
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke garmin-activities-sync
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -uo pipefail
+          RESP=$(curl -sS -w '\n%{http_code}' -X POST \
+            "${SUPABASE_URL}/functions/v1/garmin-activities-sync" \
+            -H "Authorization: Bearer ${SERVICE_KEY}" \
+            -H "Content-Type: application/json")
+          CODE=$(printf '%s' "$RESP" | tail -n1)
+          BODY=$(printf '%s' "$RESP" | sed '$d')
+          echo "HTTP $CODE — $BODY"
+          # A Garmin token expiry must not block the engine: the rest of the run is
+          # still valid on yesterday's activity data. Surface it loudly instead.
+          if [ "$CODE" != "200" ]; then
+            echo "::warning title=Garmin sync failed::HTTP $CODE — garmin_activities is stale. Re-seed garmin_tokens if this is a 401."
+          fi
+
   compute:
     name: Compute Athlete State
+    needs: [validate, ingest]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -30,7 +101,7 @@ jobs:
 
   prescribe:
     name: MPC Prescription
-    needs: compute
+    needs: [validate, compute]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -52,7 +123,7 @@ jobs:
 
   program:
     name: Re-anchor Weekly Program
-    needs: prescribe
+    needs: [validate, prescribe]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -78,3 +149,62 @@ jobs:
           USER_ID: ${{ secrets.USER_ID }}
           SKIP_STATE_REFRESH: "1"
         run: python scripts/generate_weekly_program.py
+
+  # A scheduled run that dies is invisible: a 28-minute failure on 2026-07-09 went
+  # unnoticed for two days. Surface every failure as a GitHub issue.
+  alert:
+    name: Alert on Failure
+    if: failure()
+    needs: [validate, compute, prescribe, program]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open or update the failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Daily Engine failed"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          R_VALIDATE: ${{ needs.validate.result }}
+          R_COMPUTE: ${{ needs.compute.result }}
+          R_PRESCRIBE: ${{ needs.prescribe.result }}
+          R_PROGRAM: ${{ needs.program.result }}
+        run: |
+          set -uo pipefail
+
+          BODY=$(cat <<EOF
+          The **Daily Engine** workflow failed on $(date -u '+%Y-%m-%d %H:%M UTC').
+
+          [View the failed run]($RUN_URL)
+
+          | job | result |
+          | --- | --- |
+          | validate  | \`$R_VALIDATE\` |
+          | compute   | \`$R_COMPUTE\` |
+          | prescribe | \`$R_PRESCRIBE\` |
+          | program   | \`$R_PROGRAM\` |
+
+          - A failed **validate** means the engine checks did not pass and the
+            production database write was correctly blocked. Fix the engine.
+          - A failed **compute / prescribe / program** means today's engine state
+            may be stale or half-written. Check the run log before the next cron.
+          EOF
+          )
+
+          gh label create engine-failure --color B60205 \
+            --description "Automated engine / CI failure" --force >/dev/null 2>&1 || true
+
+          EXISTING=$(gh issue list --state open --label engine-failure --json number,title \
+            --jq "[.[] | select(.title == \"$TITLE\")] | .[0].number // empty" 2>/dev/null || true)
+
+          if [ -n "${EXISTING:-}" ]; then
+            echo "Commenting on existing issue #$EXISTING"
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            echo "Opening a new failure issue"
+            gh issue create --title "$TITLE" --body "$BODY" --label engine-failure \
+              || gh issue create --title "$TITLE" --body "$BODY"
+          fi
