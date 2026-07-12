@@ -112,10 +112,14 @@ class NutritionModulator:
     TSB_GATE_GAIN             = 0.04   # per unit of deep negative form (fatigue)
     POOR_SLEEP_SCORE          = 60     # below this, multiply headroom by POOR_SLEEP_FACTOR
     POOR_SLEEP_FACTOR         = 0.70
-    CUT_PROTEIN_G_PER_LB      = 1.3    # 1.2-1.5 g/lb to retain muscle ON A CUT (TNF cutting philosophy)
+    CUT_PROTEIN_G_PER_LB      = 1.35   # 1.2-1.5 g/lb to retain muscle ON A CUT (TNF cutting philosophy)
     BASE_PROTEIN_G_PER_LB     = 1.0    # ~1 g/lb when not cutting
     MIN_FAT_G_PER_LB          = 0.33   # ~1/3 g/lb hormonal floor on fat (TNF); floored at 50g absolute
-    CARB_FLOOR_G_PER_DAY      = 25     # avg cut carbs/day; ×7 = the weekly budget that gets cycled
+    CARB_FLOOR_G_PER_DAY      = 30     # avg cut carbs/day; ×7 = the weekly budget that gets cycled
+    # On a cut the calorie target IS this floor (protein×4 + fat×9 + carbs×4), so these
+    # three constants ARE the prescription: at 183 lb they give 247p / 61f / 30c = 1657
+    # kcal, which is the TNF cutting protocol Nolan is running. Move one and you have
+    # moved his calorie target — they are not independent dials.
     CARB_PREWORKOUT_MIN_G     = 20     # min carbs on any real training day (pre-workout fuel)
 
     @staticmethod

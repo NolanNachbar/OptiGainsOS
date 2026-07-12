@@ -39,11 +39,11 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 // and the shopping list can never disagree about price.
 export const FOOD_CATALOG = [
   // role: protein | carb | fat | dairy | fruit | veg  (drives carb-cycling + fills)
-  { food: "Bananas",               per100g: { cal: 89,  p: 1.1,  c: 22.8, f: 0.3 },  role: "fruit",   meal: "breakfast", timing: "pre",     min: 70, max: 140, minServe: 50,            purchase: { label: "lb",             gramsPerUnit: 453,  price: 0.50 } },
+  { food: "Bananas",               per100g: { cal: 89,  p: 1.1,  c: 22.8, f: 0.3 },  role: "fruit",   meal: "breakfast", timing: "pre",     min: 0,  max: 140, minServe: 50,            purchase: { label: "lb",             gramsPerUnit: 453,  price: 0.50 } },
   { food: "Rice Bar",              per100g: { cal: 409, p: 4.5,  c: 77.3, f: 11.4 }, role: "carb",    meal: "breakfast", timing: "pre",     min: 0,  max: 44,  minServe: 22, step: 22,  purchase: { label: "8-count box",    gramsPerUnit: 176,  price: 2.78 } },
   { food: "Oats (Dry)",            per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  role: "carb",    meal: "breakfast", timing: "post",    min: 0,  max: 120, minServe: 40,            purchase: { label: "42 oz",          gramsPerUnit: 1191, price: 4.18 } },
-  { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, minServe: 50, step: 50,  purchase: { label: "12-count",       gramsPerUnit: 600,  price: 1.47 } },
-  { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 4.87 } },
+  { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, minServe: 50, step: 50,  purchase: { label: "60-count",       gramsPerUnit: 3000, price: 7.13 } },
+  { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 6.17 } },
   { food: "Peanut Butter",         per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, role: "fat",     meal: "breakfast", timing: "anytime", min: 0,  max: 60,  minServe: 16,            purchase: { label: "40 oz jar",      gramsPerUnit: 1134, price: 3.98 } },
   // Cooked macros, derived from the tray label (19.6 p / 2.7 f per 100 g raw) and a
   // MEASURED 54.5% cooking yield — Nolan weighs cooked, and his yield runs 53-56%,
@@ -52,13 +52,18 @@ export const FOOD_CATALOG = [
   // The old row had RAW macros against a cooked weight and under-logged him by 1.37x.
   { food: "Chicken Breast",        per100g: { cal: 188, p: 35.9, c: 0.0,  f: 4.9 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 247,  price: 2.48 } },
   { food: "Turkey 90/10",          per100g: { cal: 202, p: 23.4, c: 0.0,  f: 10.7 }, role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "1 lb roll",      gramsPerUnit: 341,  price: 4.94 } },
+  // Cheapest protein Nolan can buy ($0.025/g P, undercutting chicken). Cooked macros
+  // at an ASSUMED 65% yield — his chicken runs 54.5%, well under textbook, so this is
+  // probably optimistic. Weigh a loin raw and cooked and correct gramsPerUnit; until
+  // then these portions are approximate and the shopping list will under-buy.
+  { food: "Pork Loin",             per100g: { cal: 198, p: 32.2, c: 0.0,  f: 7.7 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 300, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 295,  price: 2.37 } },
   { food: "Pasta (Cooked)",        per100g: { cal: 143, p: 5.0,  c: 29.3, f: 0.7 },  role: "carb",    meal: "lunch",     timing: "post",    min: 0,  max: 450, minServe: 100,           purchase: { label: "16 oz box",      gramsPerUnit: 1088, price: 0.98 } },
   { food: "Beef 85/15",            per100g: { cal: 289, p: 25.0, c: 0.0,  f: 20.2 }, role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "3 lb patties",   gramsPerUnit: 1021, price: 15.96 } },
-  { food: "Tilapia",               per100g: { cal: 107, p: 20.2, c: 0.0,  f: 1.8 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "1 lb frozen",    gramsPerUnit: 340,  price: 6.28 } },
+  { food: "Tilapia",               per100g: { cal: 107, p: 20.2, c: 0.0,  f: 1.8 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "4 lb bag",       gramsPerUnit: 1360, price: 15.72 } },
   { food: "Salmon",                per100g: { cal: 155, p: 23.4, c: 0.0,  f: 6.0 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "2 lb frozen",    gramsPerUnit: 680,  price: 10.87 } },
   { food: "Potatoes",              per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  role: "carb",    meal: "dinner",    timing: "anytime", min: 0,  max: 400, minServe: 150,           purchase: { label: "5 lb bag",       gramsPerUnit: 2268, price: 2.94 } },
-  { food: "Cottage Cheese",        per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  role: "dairy",   meal: "dinner",    timing: "anytime", min: 0,  max: 500, minServe: 100,           purchase: { label: "24 oz tub",      gramsPerUnit: 680,  price: 2.24 } },
-  { food: "Greek Yogurt",          per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 300, minServe: 100,           purchase: { label: "32 oz tub",      gramsPerUnit: 907,  price: 2.94 }, creami: true },
+  { food: "Cottage Cheese",        per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  role: "dairy",   meal: "dinner",    timing: "anytime", min: 0,  max: 500, minServe: 100,           purchase: { label: "24 oz tub",      gramsPerUnit: 680,  price: 2.87 } },
+  { food: "Greek Yogurt",          per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 300, minServe: 100,           purchase: { label: "32 oz tub",      gramsPerUnit: 907,  price: 3.28 }, creami: true },
   { food: "2% Milk",               per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 500, minServe: 120,           purchase: { label: "half gallon",    gramsPerUnit: 1890, price: 1.98 }, creami: true },
   { food: "Strawberries (Frozen)", per100g: { cal: 36,  p: 0.4,  c: 9.3,  f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, minServe: 50,            purchase: { label: "48 oz bag",      gramsPerUnit: 1361, price: 7.62 }, creami: true },
   { food: "Blueberries (Frozen)",  per100g: { cal: 57,  p: 0.0,  c: 13.6, f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, minServe: 50,            purchase: { label: "16 oz bag",      gramsPerUnit: 454,  price: 3.12 }, creami: true },
@@ -73,7 +78,7 @@ export const FIXED_ITEMS = [
     food: "Gold Standard 100% Whey (Milk Chocolate)",
     grams: 31, per100g: { cal: 387, p: 77.4, c: 9.7, f: 4.8 },
     role: "protein", meal: "breakfast", timing: "post", creami: true,
-    purchase: { label: "5 lb tub", gramsPerUnit: 2270, price: 79.98 },
+    purchase: { label: "5 lb bag", gramsPerUnit: 2270, price: 96.28 },
   },
   {
     food: "Nutricost Dextrose",
