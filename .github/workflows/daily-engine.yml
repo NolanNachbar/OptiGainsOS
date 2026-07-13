@@ -141,7 +141,11 @@ jobs:
       # drifting until the Monday cron. SKIP_STATE_REFRESH=1 because the compute
       # + prescribe jobs above already refreshed engine state this run; the
       # generator's already_ran guard makes a same-week re-run re-allocate only
-      # (no double-counted learners).
+      # (no double-counted learners). This step re-anchors program_workouts for
+      # today AFTER prescribe already ran mpc_prescriber above, which would leave
+      # training_prescription (Today card) stale against the fresh plan — so this
+      # script re-runs mpc_prescriber itself at the end (resync_todays_prescription,
+      # unconditional, not gated by SKIP_STATE_REFRESH) to close that gap.
       - name: Re-anchor weekly program to logs
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

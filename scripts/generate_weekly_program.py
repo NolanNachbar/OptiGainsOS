@@ -456,33 +456,51 @@ def muscle_quality_slopes(log_rows: list) -> dict:
 
 # ── Daily-state refresh ────────────────────────────────────────────────────────
 
-def refresh_athlete_state():
-    """Recompute athlete_state + engine_params + training_prescription before
-    generating, so a standalone `python generate_weekly_program.py` run isn't
-    reading stale engine output.
+def _run_engine_script(script: str):
+    import subprocess
+    path = os.path.join(SCRIPT_DIR, script)
+    print(f"  ── refreshing state: {script} ──")
+    result = subprocess.run([sys.executable, path], cwd=SCRIPT_DIR)
+    if result.returncode != 0:
+        raise SystemExit(
+            f"State refresh failed: {script} exited {result.returncode}. "
+            f"Aborting before generation to avoid writing a program off stale state."
+        )
 
-    The generator only READS engine_params (VDOT, Kalman, guardrail), athlete_state
-    (vdot_zones, fatigue), and training_prescription — all written by the daily
-    engine (compute_athlete_state.py → mpc_prescriber.py). Run as fresh
-    subprocesses to mirror the daily-engine workflow and avoid module-global
-    bleed (TODAY/USER_ID are module-level in those scripts).
+
+def refresh_athlete_state():
+    """Recompute athlete_state + engine_params before generating, so a standalone
+    `python generate_weekly_program.py` run isn't reading stale engine output.
+
+    Only compute_athlete_state.py runs here. mpc_prescriber.py deliberately does
+    NOT run in this pre-generation step — see resync_todays_prescription() below,
+    which runs it AFTER the week (including today) is written.
 
     Set SKIP_STATE_REFRESH=1 to opt out (e.g. the daily-engine workflow, which
-    already runs both steps itself).
+    already runs both steps itself in the correct order).
     """
     if os.environ.get("SKIP_STATE_REFRESH"):
         print("  SKIP_STATE_REFRESH set — using existing engine state")
         return
-    import subprocess
-    for script in ("compute_athlete_state.py", "mpc_prescriber.py"):
-        path = os.path.join(SCRIPT_DIR, script)
-        print(f"  ── refreshing state: {script} ──")
-        result = subprocess.run([sys.executable, path], cwd=SCRIPT_DIR)
-        if result.returncode != 0:
-            raise SystemExit(
-                f"State refresh failed: {script} exited {result.returncode}. "
-                f"Aborting before generation to avoid writing a program off stale state."
-            )
+    _run_engine_script("compute_athlete_state.py")
+
+
+def resync_todays_prescription():
+    """Re-run mpc_prescriber.py after program_workouts is (re)written.
+
+    mpc_prescriber.py inherits today's split from program_workouts (F8:
+    "Inheriting planned split for today") so the Today card never contradicts
+    the weekly plan — program_workouts is the source of truth, training_prescription
+    defers to it. Whenever THIS script writes a fresh program_workouts row for
+    today, training_prescription is stale until something re-runs mpc_prescriber.
+
+    Unlike refresh_athlete_state(), this is NOT gated on SKIP_STATE_REFRESH: the
+    daily-engine cron runs prescribe (mpc_prescriber) BEFORE program (this script,
+    with SKIP_STATE_REFRESH=1 because compute+prescribe already ran) — so the cron
+    hits the identical staleness gap this function exists to close, just once a
+    day instead of on every manual run. It must run unconditionally, every time.
+    """
+    _run_engine_script("mpc_prescriber.py")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -1367,6 +1385,8 @@ def main():
 
     print(f"\n  Step count: {step_count} → {new_step}")
     print(f"\n✓  Done — {len(days_to_generate)} days written")
+
+    resync_todays_prescription()
 
 
 if __name__ == "__main__":
