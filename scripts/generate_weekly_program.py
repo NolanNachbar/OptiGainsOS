@@ -40,7 +40,9 @@ except ImportError:
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
-from engine.session_generator  import generate as gen_session, get_split, build_title, pick_run_slot, split_from_title, split_muscles_for
+from engine.session_generator  import (generate as gen_session, get_split, build_title,
+                                       pick_run_slot, split_from_title, split_muscles_for,
+                                       classify_log_split, week_muscle_counts_from_logs)
 from engine.hypertrophy_volume import (HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS,
                                        apply_running_interference, apply_endurance_interference)
 from engine.allocator          import plan_week, default_goal_priorities
@@ -90,7 +92,19 @@ def _headers(extra=None):
     return h
 
 def sb_get(table, params):
-    qs  = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}" for k, v in params.items())
+    # Scope EVERY read to this athlete by default. The engine authenticates with the
+    # service-role key, which BYPASSES RLS — so a read that forgets `created_by`
+    # silently returns every user's rows, and the seeded dev athlete
+    # (athlete@local.test) lives in this same database. The `user_profiles` read below
+    # was doing exactly that: `{"select": "*", "limit": "1"}` across two profiles, so
+    # which athlete's maintenance_kcal and exercise preferences the weekly program used
+    # came down to unordered row order. The sibling helpers in mpc_prescriber.py and
+    # compute_athlete_state.py already default this; this one did not. A caller may
+    # still override created_by explicitly (params wins).
+    if not USER_ID:
+        raise RuntimeError("sb_get: USER_ID is unset — refusing an unscoped read")
+    query = {"created_by": f"eq.{USER_ID}", **params}
+    qs  = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}" for k, v in query.items())
     url = f"{SUPABASE_URL}/rest/v1/{table}?{qs}"
     req = urllib.request.Request(url, headers=_headers())
     try:
@@ -160,15 +174,31 @@ def sb_upsert_engine(row):
         return False
 
 def resolve_user_id():
-    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by&limit=1"
+    """Fallback when the USER_ID env var is absent (CI passes it as a secret).
+
+    This used to be `user_profiles?select=created_by&limit=1` — UNORDERED, with no
+    filter. The seeded dev athlete (athlete@local.test) has a profile row in this same
+    database, so that query could silently resolve to the WRONG athlete and run the
+    entire engine against a test fixture's training history. Refuse to guess: if more
+    than one profile exists we cannot know which one is meant, so fail loudly and make
+    the caller set USER_ID.
+    """
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by"
     req = urllib.request.Request(url, headers=_headers())
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             rows = json.loads(resp.read())
-            if rows:
-                return rows[0]["created_by"]
     except Exception as e:
         print(f"ERROR: Could not resolve USER_ID: {e}")
+        sys.exit(1)
+    ids = sorted({r["created_by"] for r in rows if r.get("created_by")})
+    if len(ids) == 1:
+        return ids[0]
+    if not ids:
+        print("ERROR: no user_profiles rows — cannot resolve USER_ID.")
+    else:
+        print(f"ERROR: {len(ids)} athletes in user_profiles; refusing to guess which "
+              f"one this run is for. Set the USER_ID env var explicitly.")
     sys.exit(1)
 
 
@@ -180,6 +210,21 @@ ACTION_TSS = {
     # No DELOAD (programming failure, not a tool) — matches the daily prescriber.
 }
 DEADLINE = datetime.date(2026, 8, 31)
+
+# What each action is WORTH toward each goal. Kept byte-identical to
+# mpc_prescriber.PST_READINESS_VALUE / STRENGTH_PROGRESS_VALUE / GOAL_REWARD_SCALE —
+# validate_convergence_fixes.py asserts the two stay in sync, because the last time
+# these two scorers drifted apart the weekly program silently disagreed with the daily
+# card for days.
+PST_READINESS_VALUE = {
+    "CARDIO": 1.0, "TWO_A_DAY": 0.9, "CALISTHENICS": 0.85, "MIXED": 0.7,
+    "LIGHT": 0.4, "STRENGTH": 0.15, "REST": 0.0,
+}
+STRENGTH_PROGRESS_VALUE = {
+    "STRENGTH": 1.0, "TWO_A_DAY": 0.7, "MIXED": 0.6,
+    "CALISTHENICS": 0.25, "LIGHT": 0.2, "CARDIO": 0.1, "REST": 0.0,
+}
+GOAL_REWARD_SCALE = 3.0
 
 def deadline_weights():
     days_left = max(0, (DEADLINE - TODAY).days)
@@ -200,11 +245,23 @@ def simulate_and_score(kalman, action, load_history, w_pst, w_str):
             acwr = (sum(win[-7:])/7.0) / (sum(win)/len(win) + 1e-5)
             max_acwr = max(max_acwr, acwr)
     f    = snaps[-1]
+    # The dual goal-readiness reward. WITHOUT this the score is a function of the
+    # action's TSS LOAD and nothing else — every other term below depends only on the
+    # simulated trajectory, and `fs`'s (w_pst*0.6 + w_str*0.4) factor is the same scalar
+    # for every action, so w_pst/w_str algebraically CANCEL in the argmax. The result:
+    # the scorer was monotone in load, TWO_A_DAY has the highest load (120), and the
+    # weekly program prescribed a two-a-day nearly every day while the deadline weights
+    # did nothing. mpc_prescriber.score_trajectory already carried this term; this
+    # function claimed to "mirror" it and did not.
+    goal_term = GOAL_REWARD_SCALE * (
+        w_pst * PST_READINESS_VALUE.get(action, 0.3)
+        + w_str * STRENGTH_PROGRESS_VALUE.get(action, 0.3)
+    )
     fs   = f["fitness"] * (w_pst * 0.6 + w_str * 0.4)
     tb   = max(0.0, f["tsb"]) * 0.4
     fp   = 0.08 * (max(0.0, f["fatigue"] - 8.0) ** 2)
     ap   = 2.00 * (max(0.0, max_acwr - 1.3) ** 2)
-    return round(fs + tb - fp - ap, 4)
+    return round(goal_term + fs + tb - fp - ap, 4)
 
 def select_action(kalman, load_history, acwr, overreaching):
     # Matches the daily prescriber's athlete preferences: NO intensity downscaling
@@ -563,25 +620,12 @@ def main():
     # The freshness signal MUST reflect what Nolan did, not what was prescribed —
     # he routinely deviates (e.g. logged UPPER on a day the MPC prescribed lower),
     # and feeding _decide_split the prescription instead of the log is exactly how
-    # it scheduled upper-on-upper. Lower keywords are checked first so "leg press"
-    # / "calf raise" don't get miscounted as upper by "press"/"raise".
-    _LOWER_KW = ("squat", "deadlift", "rdl", "lunge", "calf", "leg press",
-                 "leg extension", "leg curl", "hamstring", "hip thrust", "glute")
-    _UPPER_KW = ("bench", "press", "pull-up", "pullup", "pulldown", "row", "curl",
-                 "raise", "fly", "push-up", "pushup", "dip", "shrug", "overhead",
-                 "triceps", "bicep", "lat ")
-
-    def classify_log_split(exercises) -> str | None:
-        up = lo = 0
-        for ex in (exercises or []):
-            n = (ex.get("name") or "").lower()
-            if any(k in n for k in _LOWER_KW):
-                lo += 1
-            elif any(k in n for k in _UPPER_KW):
-                up += 1
-        if up == 0 and lo == 0:
-            return None
-        return "upper_a" if up > lo else "lower_squat_primary"
+    # it scheduled upper-on-upper.
+    #
+    # classify_log_split now comes from engine.session_generator so this script and
+    # mpc_prescriber read history identically. The local copy that used to live here
+    # could only ever emit "upper_a" or "lower_squat_primary", so the scheduler was
+    # blind to hinge days and pull-led upper days and had nothing to alternate off.
 
     # Prefer real logs (deduped to one per date, most-recent-first), classify each,
     # then put oldest→newest so _decide_split's reversed() lookback sees the true
@@ -1138,18 +1182,21 @@ def main():
     # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
     # on upper/cardio days rather than heavy leg days.
     quality_placed, long_placed = 0, 0
-    # Convergent scheduler tally: how many times each muscle has been trained so far.
-    # SEED FROM ACTUAL RECENT TRAINING (recent_session_types is the real logged split
-    # history) so the selector reads what the athlete has already done — under-trained
-    # groups (e.g. legs) show a large remaining deficit and get programmed next, while
-    # muscles trained a lot recently show ~zero deficit. The selector also applies a
-    # recovery penalty so a just-trained region isn't repeated the next day. Together
-    # this is "read my data and program forward like a trainer." The loop keeps adding
-    # to this tally as it places each generated day.
-    week_muscle_counts: dict = {}
-    for _sp in recent_session_types:
-        for _m in split_muscles_for(_sp):
-            week_muscle_counts[_m] = week_muscle_counts.get(_m, 0) + 1
+    # Convergent scheduler tally: how many sessions each muscle has had THIS CALENDAR
+    # WEEK. Under-trained groups show a remaining deficit and get programmed next;
+    # groups already at their weekly frequency target show none. The selector also
+    # applies a recovery penalty so a just-trained region isn't repeated the next day.
+    # Together that is "read my data and program forward like a trainer." The loop
+    # below keeps adding to this tally as it places each generated day.
+    #
+    # This MUST be scoped to the current week, because frequency_targets are per-week.
+    # It used to be seeded from recent_session_types — a rolling SEVEN-SESSION window
+    # that crosses week boundaries — so by mid-week every muscle had been counted 3-4
+    # times against a target of 3, every deficit went negative, every split scored
+    # exactly 0.000, and the winner fell out of the candidate list's declaration order.
+    # That is what programmed an Upper day the day after an Upper day.
+    _week_start = TODAY - datetime.timedelta(days=TODAY.weekday())
+    week_muscle_counts = week_muscle_counts_from_logs(workout_log_rows, _week_start)
     freq_targets_conv = plan.get("frequency_targets") or {}
     # Library auto-save dedup set: existing workout-library titles, fetched once
     # per run. Generated sessions whose title isn't in the library yet get saved
@@ -1196,9 +1243,6 @@ def main():
         if split not in ("rest", "cardio"):
             for _m in split_muscles_for(split):
                 week_muscle_counts[_m] = week_muscle_counts.get(_m, 0) + 1
-            recent_session_types.append(split)
-            if len(recent_session_types) > 7:
-                recent_session_types.pop(0)
         run_slot = pick_run_slot(split, action, quality_placed, long_placed)
         # Only consume the polarized budget when a CARDIO-producing action actually runs.
         # STRENGTH/LIGHT/CALISTHENICS call pick_run_slot but gen_session returns cardio=[],

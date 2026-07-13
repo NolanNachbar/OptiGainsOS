@@ -654,19 +654,44 @@ _SPLIT_MUSCLES_FOR_SCORING = {
     "push": PUSH_MUSCLES, "pull": PULL_MUSCLES, "legs": LEGS_MUSCLES,
 }
 
+# Upper A and Upper B train the SAME 11 muscles, and both lower days the same 5
+# (see the muscle-list comment above — the variants differ in ORDER and emphasis,
+# not coverage). So a scorer reasoning over per-muscle frequency deficits cannot
+# tell the variants apart: score(upper_a) == score(upper_b) by construction, and
+# ranking raw splits just hands the win to whichever sits first in the candidate
+# list. Decide in two steps instead: pick the REGION from the data, then pick the
+# emphasis VARIANT by alternating off the last session actually logged in it.
+SPLIT_REGION = {
+    "upper_a": "upper",             "upper_b": "upper",
+    "lower_squat_primary": "lower", "lower_hinge_primary": "lower",
+}
+
+# Selection-time bias so upper_a/upper_b actually diverge on which compound wins
+# a shared muscle slot (press-led vs. pull-led), not just isolation supplements.
+_PUSH_PATTERNS = {"horizontal_push", "incline_push", "vertical_push", "dip"}
+_PULL_PATTERNS = {"horizontal_pull", "vertical_pull", "carry"}
+_UPPER_VARIANT_PATTERN_BIAS = {
+    "upper_a": {**{p: 1.5 for p in _PUSH_PATTERNS}, **{p: -1.5 for p in _PULL_PATTERNS}},
+    "upper_b": {**{p: -1.5 for p in _PUSH_PATTERNS}, **{p: 1.5 for p in _PULL_PATTERNS}},
+}
+
 
 def _converge_split(recent_types, split_framework, frequency_targets,
                     week_muscle_counts, muscle_emphasis=None):
-    """Program the next split the way a coach reading the logs would: train the
-    muscles that are (a) RECOVERED — not hammered in the last session or two — and
-    (b) most BEHIND their weekly frequency target. This is what makes it converge
-    to the athlete's data: after an upper day the upper muscles are freshly fatigued
-    (recovery≈0) so a lower day wins; a lagging muscle group that hasn't been trained
-    in days gets prioritised. Emphasis muscles are weighted up.
+    """Program the next split the way a coach reading the logs would.
 
-    `recent_types` is oldest→newest (newest last) and includes real logged sessions,
-    so "trained upper today" is read directly. `week_muscle_counts` is seeded from
-    this week's actual training, so weekly volume already banked lowers the deficit.
+    Two steps:
+      1. REGION — train what is most RECOVERED and most BEHIND its weekly frequency
+         target. After an upper day the upper muscles are freshly fatigued, so a
+         lower day wins; a group that hasn't been trained in days gets priority.
+      2. VARIANT — within the winning region, run the emphasis that wasn't run last
+         time (press-led ↔ pull-led upper, squat- ↔ hinge-primary lower), read off
+         the real logged history via classify_log_split.
+
+    `recent_types` is oldest→newest (newest last) and holds real logged sessions.
+    `week_muscle_counts` MUST be THIS CALENDAR WEEK's sessions per muscle. Seeding it
+    from a rolling N-session window instead pushes every count past its weekly target,
+    drives all deficits negative, and collapses every score to zero.
     """
     candidates = _FRAMEWORK_SPLITS.get(split_framework, _FRAMEWORK_SPLITS["upper_lower"])
     muscle_emphasis = muscle_emphasis or {}
@@ -680,24 +705,63 @@ def _converge_split(recent_types, split_framework, frequency_targets,
     def recovery_factor(m):
         # Local recovery (training-science: fatigue is local, ~1-3 days to recover).
         # Just trained → mostly off-limits; a session ago → partial; 2+ → recovered.
+        # TUNABLE prior, not a research constant.
         s = sessions_ago.get(m, 99)
         if s <= 0:  return 0.10
         if s == 1:  return 0.45
         if s == 2:  return 0.80
         return 1.0
 
-    def score(split):
-        s = 0.0
-        for m in _SPLIT_MUSCLES_FOR_SCORING.get(split, []):
+    def deficit_score(split):
+        """MEAN per-muscle recovered deficit. Mean, not sum: an 11-muscle upper day
+        must not outscore a 5-muscle lower day purely for covering more muscles."""
+        muscles = _SPLIT_MUSCLES_FOR_SCORING.get(split, [])
+        if not muscles:
+            return 0.0
+        total = 0.0
+        for m in muscles:
             deficit = float(frequency_targets.get(m, 0)) - float(week_muscle_counts.get(m, 0))
             if deficit > 0:
-                s += deficit * recovery_factor(m) * float(muscle_emphasis.get(m, 1.0))
-        return s
+                total += deficit * recovery_factor(m) * float(muscle_emphasis.get(m, 1.0))
+        return total / len(muscles)
 
-    # Highest recovered-and-lagging score wins. Tie-break: avoid repeating the most
-    # recent split.
-    prev = next((t for t in reversed(recent_types) if t in candidates), None)
-    return sorted(candidates, key=lambda sp: (score(sp), sp != prev), reverse=True)[0]
+    def recovery_score(split):
+        """How rested a split's muscles are, ignoring the weekly target."""
+        muscles = _SPLIT_MUSCLES_FOR_SCORING.get(split, [])
+        if not muscles:
+            return 0.0
+        return sum(recovery_factor(m) * float(muscle_emphasis.get(m, 1.0))
+                   for m in muscles) / len(muscles)
+
+    scored = {sp: deficit_score(sp) for sp in candidates}
+
+    # Once every muscle has met its weekly frequency target, every deficit clamps to
+    # zero and the deficit signal carries NO information. The old code still ran
+    # sorted() over it, so the winner fell out of the candidate list's declaration
+    # order — that is exactly how an Upper day got programmed the day after an Upper
+    # day. When the week is saturated, fall through to recovery and train whatever is
+    # freshest, which is what a coach would do.
+    if max(scored.values(), default=0.0) <= 0.0:
+        key = recovery_score
+    else:
+        key = lambda sp: scored[sp]
+
+    # Rank REGIONS, not raw splits — variants of a region share a muscle set, so they
+    # always tie and the winner would again be decided by list position.
+    regions: dict = {}
+    for sp in candidates:
+        regions.setdefault(SPLIT_REGION.get(sp, sp), []).append(sp)   # ppl/full_body: split IS the region
+
+    best_region = max(regions, key=lambda r: max(key(sp) for sp in regions[r]))
+    variants = regions[best_region]
+    if len(variants) < 2:
+        return variants[0]
+
+    # Alternate the emphasis off the last session actually LOGGED in this region.
+    last = next((t for t in reversed(recent_types) if t in variants), None)
+    if last is None:
+        return variants[0]
+    return variants[(variants.index(last) + 1) % len(variants)]
 
 
 def _decide_split(recent_types: list, ampk: float, mtorc1: float,
@@ -974,6 +1038,12 @@ def _build_session(
         if split != "full_body_chest":
             excluded_names.add("Bench Press (Top Set)")
 
+    # Upper A/B share the same 11-muscle domain (see UPPER_A/B_MUSCLES comment) so
+    # the knapsack alone always converges on the same compound per muscle. Bias
+    # press patterns on A and pull patterns on B so the two variants actually read
+    # as press-led vs. pull-led, not just a reordered isolation supplement.
+    bias = _UPPER_VARIANT_PATTERN_BIAS.get(split, {})
+
     used_patterns: set = set()
     chosen_names: set = set()
     slots: list = []
@@ -1011,6 +1081,7 @@ def _build_session(
         # so a note never silently drops a competition lift.
         def _sel_key(ex):
             score = _priority_score(ex)
+            score += bias.get(ex.get("pattern", ""), 0.0)
             if exercise_values:
                 value = float(exercise_values.get(canon(ex.get("name", "")), 0.0))
                 score += EXVAL_SELECT_WEIGHT * max(-3.0, min(3.0, value))
@@ -1387,6 +1458,82 @@ def split_muscles_for(split: str) -> list:
     return list(_SPLIT_MUSCLES_FOR_SCORING.get(split, []))
 
 
+# ── Log classification ───────────────────────────────────────────────────────
+# ONE classifier, shared by mpc_prescriber and generate_weekly_program. They used to
+# carry separate, non-identical copies, and the weekly generator's could only ever
+# return "upper_a" or "lower_squat_primary" — so the scheduler literally could not
+# see that a hinge day or a pull-led upper day had happened, and the emphasis
+# alternation had nothing to alternate off.
+# Lower keywords are checked FIRST so "leg press" / "calf raise" / "leg extension"
+# aren't miscounted as upper by "press" / "raise" / "extension".
+_LOWER_KW = ("squat", "deadlift", "rdl", "lunge", "calf", "leg press",
+             "leg extension", "leg curl", "hamstring", "hip thrust", "glute",
+             "trap bar", "good morning", "back extension", "nordic",
+             "leg raise", "crunch", "plank", "ab ")
+_UPPER_KW = ("bench", "press", "pull-up", "pullup", "pulldown", "row", "curl",
+             "raise", "fly", "push-up", "pushup", "dip", "shrug", "overhead",
+             "triceps", "tricep", "bicep", "lat ", "delt", "chest", "shoulder",
+             "face pull", "neck", "skull")
+_SQUAT_KW = ("squat",)
+_HINGE_KW = ("deadlift", "rdl", "hinge", "hip thrust", "good morning",
+             "back extension", "trap bar", "nordic")
+# Press-led vs pull-led, for the Upper A / Upper B emphasis. Pull is tested first so
+# "Face Pull" and "Pulldown" aren't swallowed by the "press" substring.
+_PULL_KW  = ("pull-up", "pullup", "chin", "pulldown", "row", "curl", "shrug",
+             "face pull", "rear delt", "lat ")
+_PRESS_KW = ("bench", "press", "dip", "fly", "skull", "triceps", "tricep",
+             "pushdown", "lateral raise", "overhead", "push-up", "pushup")
+
+
+def classify_log_split(exercises) -> str | None:
+    """Classify a LOGGED session into one of the four upper_lower splits.
+    Returns None when the session has no recognisable lifting content."""
+    up = lo = squat = hinge = press = pull = 0
+    for ex in (exercises or []):
+        n = (ex.get("name") or "").lower()
+        if any(k in n for k in _LOWER_KW):
+            lo += 1
+            if any(k in n for k in _SQUAT_KW):     squat += 1
+            elif any(k in n for k in _HINGE_KW):   hinge += 1
+        elif any(k in n for k in _UPPER_KW):
+            up += 1
+            if any(k in n for k in _PULL_KW):      pull += 1
+            elif any(k in n for k in _PRESS_KW):   press += 1
+    if up == 0 and lo == 0:
+        return None
+    if up > lo:
+        return "upper_a" if press >= pull else "upper_b"   # A leads with pressing, B with pulling
+    return "lower_squat_primary" if squat >= hinge else "lower_hinge_primary"
+
+
+def week_muscle_counts_from_logs(workout_log_rows, week_start) -> dict:
+    """{muscle: sessions trained THIS CALENDAR WEEK}, for the convergent scheduler's
+    frequency deficit. Counted off the real exercise→muscle map, so it reflects what
+    was actually trained rather than assuming a logged session hit every muscle its
+    split nominally covers.
+
+    `frequency_targets` are per-week, so this MUST be scoped to the current week.
+    Seeding it from a rolling N-session window (the old behaviour) counts sessions
+    from previous weeks against this week's target, drives every deficit negative,
+    and collapses the whole score to zero.
+    """
+    from engine.muscle_map import hypertrophy_muscles
+
+    counts: dict = {}
+    seen_dates = set()
+    for row in (workout_log_rows or []):
+        d = str(row.get("log_date") or "")
+        if not d or d < str(week_start) or d in seen_dates:
+            continue
+        seen_dates.add(d)
+        hit = set()
+        for ex in (row.get("exercises") or []):
+            hit.update(hypertrophy_muscles(ex.get("name") or ""))
+        for m in hit:
+            counts[m] = counts.get(m, 0) + 1
+    return counts
+
+
 def build_title(action: str, split: str, intensity: float) -> str:
     if action == "REST":    return "Rest Day"
     if action == "CARDIO":  return "Cardio"
@@ -1426,6 +1573,9 @@ class SessionGenerator:
         blocked_exercises: set = None,
         preferred_exercises: set = None,
         split_override: str = None,
+        frequency_targets: dict = None,
+        week_muscle_counts: dict = None,
+        muscle_emphasis: dict = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1446,19 +1596,32 @@ class SessionGenerator:
         # Decide the ONE split that drives exercises AND the displayed title, so the
         # two can never disagree (the old code built exercises from split_override but
         # recomputed the label via a separate get_split() call — that's how a "Lower
-        # Hinge" title landed on all-upper lifts). Prefer alternation off what was
-        # actually LOGGED: that self-corrects after a deviation day (log upper → next
-        # day goes lower) instead of blindly repeating a stale weekly-plan split. Fall
-        # back to the weekly plan's split only when there's no recent log history.
+        # Hinge" title landed on all-upper lifts). Decide off what was actually LOGGED:
+        # that self-corrects after a deviation day (log upper → next day goes lower)
+        # instead of blindly repeating a stale weekly-plan split.
+        #
+        # When frequency_targets are supplied, this takes the SAME convergent path the
+        # weekly generator uses (_converge_split), so the Today card and the Train tab
+        # cannot prescribe different sessions for the same day. Previously the caller
+        # passed no targets, so the daily card silently fell through to the naive A/B
+        # alternation branch while the weekly plan converged — two engines, two answers.
+        # split_override is the split the weekly program already planned for today. It
+        # is only consulted when there is NO logged history to decide from — with logs
+        # present, the log-driven decision wins, because it self-corrects after a
+        # deviation day. The old code spelled this as `if _rt: ... elif split_override:
+        # ... else: <same call as the if>`, which made the elif UNREACHABLE (the if and
+        # else arms were identical, so the override never fired even on a cold start)
+        # while still printing "Inheriting planned split for today". Say it once.
         _rt = recent_session_types or []
         _ampk = float(cellular_state.get("ampk") or 0.20)
         _mtorc1 = float(cellular_state.get("mtorc1") or 0.30)
-        if _rt:
-            resolved_split = _decide_split(_rt, _ampk, _mtorc1)
-        elif split_override in _SPLIT_KEYS:
+        if not _rt and split_override in _SPLIT_KEYS:
             resolved_split = split_override
         else:
-            resolved_split = _decide_split(_rt, _ampk, _mtorc1)
+            resolved_split = _decide_split(_rt, _ampk, _mtorc1,
+                                           frequency_targets=frequency_targets,
+                                           week_muscle_counts=week_muscle_counts,
+                                           muscle_emphasis=muscle_emphasis)
 
         # Call module-level generate function. Pass resolved_split as the authoritative
         # override so the exercises are built from the exact split we'll label below.
