@@ -52,6 +52,31 @@ export function useToggleExerciseLike() {
   });
 }
 
+// Active exercise_shot_notes for the user, as a lowercased-name -> shot_note
+// lookup. Hand-populated (Nolan sets which exercises are "content-worthy"),
+// so this just reads what exists — no inference.
+export function useExerciseShotNotes() {
+  const { user } = useAuth();
+
+  const { data: notes = [], isLoading, error } = useQuery({
+    queryKey: queryKeys.exerciseShotNotes(user?.id),
+    queryFn: async () => {
+      const rows = await db.entities.ExerciseShotNote.filter({ created_by: user.id, active: true });
+      return rows || [];
+    },
+    enabled: !!user,
+  });
+
+  // Strip trailing "(Top Set)" / "(Back-off Vol)" / "(3-count)" style annotations
+  // so one seeded row (e.g. "Bench Press") covers every logged variant of that
+  // lift (e.g. "Bench Press (Back-off Vol)") instead of needing a row per variant.
+  const normalize = (name) => String(name || "").toLowerCase().replace(/\s*\([^)]*\)\s*$/, "").trim();
+
+  const byName = new Map(notes.map((n) => [normalize(n.exercise_name), n.shot_note]));
+
+  return { shotNoteFor: (exerciseName) => byName.get(normalize(exerciseName)) || null, isLoading, error };
+}
+
 export function useAllFoodEntries() {
   const { user } = useAuth();
 
