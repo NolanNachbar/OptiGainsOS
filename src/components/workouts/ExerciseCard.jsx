@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check, Heart, ChevronUp, ChevronDown, ChevronsDown } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check, Heart, GripVertical, Camera } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
@@ -43,9 +43,9 @@ export default function ExerciseCard({
   onApplyCoachingSuggestion = null, // (exerciseIndex, setIndex, weight) => void
   liked = false,            // exercise is in exercise_preferences.preferred
   onToggleLike = null,      // () => void ; toggles the like (steers future programming)
-  onMoveUp = null,          // () => void ; null when already first
-  onMoveDown = null,        // () => void ; null when already last
-  onMachineTaken = null,    // () => void ; move down + tag "machine taken"
+  dragHandleProps = null,  // { attributes, listeners } from useSortable, spread onto the drag handle
+  showShotList = false,     // "Shot list" toggle state, lifted from the workout page
+  shotNote = null,          // recommended-shot text for this exercise, or null if none defined
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -310,27 +310,16 @@ export default function ExerciseCard({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {(onMoveUp || onMoveDown) && (
-              <div className="flex flex-col -my-1">
-                <button
-                  type="button"
-                  onClick={onMoveUp || undefined}
-                  disabled={!onMoveUp}
-                  aria-label="Move exercise earlier"
-                  className="h-6 w-8 flex items-center justify-center text-ink-faint enabled:hover:text-ink disabled:opacity-30 touch-manipulation"
-                >
-                  <ChevronUp className="w-4 h-4" strokeWidth={2.5} />
-                </button>
-                <button
-                  type="button"
-                  onClick={onMoveDown || undefined}
-                  disabled={!onMoveDown}
-                  aria-label="Move exercise later"
-                  className="h-6 w-8 flex items-center justify-center text-ink-faint enabled:hover:text-ink disabled:opacity-30 touch-manipulation"
-                >
-                  <ChevronDown className="w-4 h-4" strokeWidth={2.5} />
-                </button>
-              </div>
+            {dragHandleProps && (
+              <button
+                type="button"
+                {...dragHandleProps.attributes}
+                {...dragHandleProps.listeners}
+                aria-label="Drag to reorder exercise"
+                className="h-9 w-8 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation cursor-grab active:cursor-grabbing"
+              >
+                <GripVertical className="w-4 h-4" strokeWidth={2.5} />
+              </button>
             )}
             <div className="relative" ref={menuRef}>
             <Button
@@ -342,7 +331,7 @@ export default function ExerciseCard({
               <MoreVertical className="w-5 h-5" />
             </Button>
             {openMenu && (
-              <div className="absolute right-0 top-9 glass-elevated rounded-xl overflow-hidden py-1 z-20 min-w-[160px] text-ink">
+              <div className="absolute right-0 top-9 glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-20 min-w-[160px] text-ink">
                 <button
                   onClick={() => {
                     setEditingNotes(true);
@@ -363,15 +352,6 @@ export default function ExerciseCard({
                   <HelpCircle className="w-4 h-4" />
                   How to
                 </button>
-                {onMachineTaken && (
-                  <button
-                    onClick={() => { onMachineTaken(); setOpenMenu(false); }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
-                  >
-                    <ChevronsDown className="w-4 h-4" />
-                    Machine taken — do later
-                  </button>
-                )}
                 {onReplaceExercise && (
                 <button
                   onClick={() => {
@@ -455,6 +435,17 @@ export default function ExerciseCard({
             <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+        )}
+
+        {/* Shot list — recommended shot for this exercise, only when the workout-level
+            toggle is on and a shot_note is defined (most exercises won't have one). */}
+        {showShotList && shotNote && (
+          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
+              <Camera className="w-3.5 h-3.5" />
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>
           </div>
         )}
 

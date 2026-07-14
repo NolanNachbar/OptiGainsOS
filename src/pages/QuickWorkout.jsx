@@ -13,7 +13,10 @@ import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { Dumbbell, Pencil, Check, Brain, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
+import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
@@ -199,6 +202,16 @@ export default function QuickWorkout() {
     addExercise: addExerciseRaw,
   } = useWorkoutExercises(prescribedInitial);
 
+  // Drag-to-reorder exercises. Items are keyed by their current index (stable
+  // for the duration of a drag; a reorder itself changes indices, which is fine
+  // since dnd-kit only needs identity to hold still mid-gesture).
+  const dragSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const handleExerciseDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    moveExercise(Number(active.id), Number(over.id));
+  };
+
   // Wrapper for addExercise that autofills weight from last performance or insight suggestion
   const addExercise = (exerciseName) => {
     const suggestion = insightSuggestions[exerciseName.toLowerCase()];
@@ -316,7 +329,7 @@ export default function QuickWorkout() {
 
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
-      const today = format(new Date(), "yyyy-MM-dd");
+      const today = getTodayString(profile?.timezone);
       const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
 
       // 1. Create the Workout entity
@@ -664,35 +677,43 @@ export default function QuickWorkout() {
 
         {/* Exercise List */}
         <div className="space-y-4">
-          {exercises.map((exercise, exerciseIndex) => {
-            const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exercise.name);
-            return (
-              <ExerciseCard
-                key={exerciseIndex}
-                exercise={exercise}
-                exerciseIndex={exerciseIndex}
-                weightUnit={weightUnit}
-                onUpdateSet={updateSetData}
-                onAddSet={addSet}
-                onRemoveSet={removeSet}
-                onRemoveExercise={removeExercise}
-                onUpdateNotes={updateExerciseNotes}
-                onUpdateName={updateExerciseName}
-                onReplaceExercise={replaceExercise}
-                lastPerformance={lastPerformance}
-                allExerciseNames={allHistoryExerciseNames}
-                workoutLogs={allWorkoutLogs}
-                coachingPhase={coachingPhase}
-                onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
-                onStartRestTimer={startRestTimer}
-                liked={isExerciseLiked(profile, exercise.name)}
-                onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exercise.name })}
-                onMoveUp={exerciseIndex > 0 ? () => moveExercise(exerciseIndex, exerciseIndex - 1) : null}
-                onMoveDown={exerciseIndex < exercises.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1) : null}
-                onMachineTaken={exerciseIndex < exercises.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1, 'machine_taken') : null}
-              />
-            );
-          })}
+          <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleExerciseDragEnd}>
+            <SortableContext
+              items={exercises.map((_, i) => String(i))}
+              strategy={verticalListSortingStrategy}
+            >
+              {exercises.map((exercise, exerciseIndex) => {
+                const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exercise.name);
+                return (
+                  <SortableExerciseRow key={exerciseIndex} id={String(exerciseIndex)} exerciseIndex={exerciseIndex}>
+                    {(dragHandleProps) => (
+                      <ExerciseCard
+                        exercise={exercise}
+                        exerciseIndex={exerciseIndex}
+                        weightUnit={weightUnit}
+                        onUpdateSet={updateSetData}
+                        onAddSet={addSet}
+                        onRemoveSet={removeSet}
+                        onRemoveExercise={removeExercise}
+                        onUpdateNotes={updateExerciseNotes}
+                        onUpdateName={updateExerciseName}
+                        onReplaceExercise={replaceExercise}
+                        lastPerformance={lastPerformance}
+                        allExerciseNames={allHistoryExerciseNames}
+                        workoutLogs={allWorkoutLogs}
+                        coachingPhase={coachingPhase}
+                        onApplyCoachingSuggestion={handleApplyCoachingSuggestion}
+                        onStartRestTimer={startRestTimer}
+                        liked={isExerciseLiked(profile, exercise.name)}
+                        onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exercise.name })}
+                        dragHandleProps={dragHandleProps}
+                      />
+                    )}
+                  </SortableExerciseRow>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
 
           {/* Add Exercise Form */}
           <AddExerciseForm

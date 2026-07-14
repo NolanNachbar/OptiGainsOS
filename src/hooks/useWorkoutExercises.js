@@ -118,19 +118,14 @@ export function useWorkoutExercises(initialExercises = []) {
     }));
   }, []);
 
-  // Reorder an exercise within the session — e.g. a machine is taken, so do the
-  // next movement now and come back. When reason === 'machine_taken' we stamp a
-  // note so the engine's notes_parser can see the equipment-driven reorder (same
-  // learning channel as a swap). Order is otherwise just the sequence performed.
-  const moveExercise = useCallback((fromIndex, toIndex, reason = null) => {
+  // Reorder an exercise within the session (drag-and-drop). Order is just the
+  // sequence performed.
+  const moveExercise = useCallback((fromIndex, toIndex) => {
     setExercises(prev => {
       if (fromIndex === toIndex || toIndex < 0 || toIndex >= prev.length) return prev;
       const updated = [...prev];
       const [moved] = updated.splice(fromIndex, 1);
-      const tagged = reason === 'machine_taken'
-        ? { ...moved, notes: [moved.notes, 'Moved — machine taken'].filter(Boolean).join(' · ') }
-        : moved;
-      updated.splice(toIndex, 0, tagged);
+      updated.splice(toIndex, 0, moved);
       return updated;
     });
   }, []);

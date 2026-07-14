@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useProfile, isExerciseLiked, useToggleExerciseLike } from "@/hooks/useUserQueries";
+import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
@@ -131,6 +134,7 @@ export default function WorkoutDetail() {
   const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
   const [resumeSession, setResumeSession] = useState(null); // session data to offer resume for
+  const [showShotList, setShowShotList] = useState(false); // "Shot list" toggle — off by default, per-exercise shot notes
   const workoutCardRef = useRef(null);
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
@@ -146,6 +150,7 @@ export default function WorkoutDetail() {
   // Fetch user profile to get weight unit preference
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
+  const { shotNoteFor } = useExerciseShotNotes();
   const weightUnit = profile?.weight_unit || 'lbs';
 
   // Exercise reactions (like/dislike per exercise)
@@ -182,6 +187,16 @@ export default function WorkoutDetail() {
 
   // All exercise names in current workout (to avoid duplicates when replacing)
   const allExerciseNames = exerciseLogs.map(e => e.name);
+
+  // Drag-to-reorder exercises. Items are keyed by their current index (stable
+  // for the duration of a drag; a reorder itself changes indices, which is fine
+  // since dnd-kit only needs identity to hold still mid-gesture).
+  const dragSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const handleExerciseDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    moveExercise(Number(active.id), Number(over.id));
+  };
 
   // Fetch all workout logs for exercise history and autofill
   const { data: allWorkoutLogs = [] } = useQuery({
@@ -613,7 +628,7 @@ export default function WorkoutDetail() {
         // wrapped as { program }); the cycle is also recomputed authoritatively
         // inside useLogProgramWorkout, so this is only a best-effort hint.
         const activeProgram = queryClient.getQueryData(['program', enrollment.program_id]);
-        const todayWorkout = activeProgram ? getTodayProgramWorkout(enrollment, activeProgram.workouts || []) : null;
+        const todayWorkout = activeProgram ? getTodayProgramWorkout(enrollment, activeProgram.workouts || [], profile?.timezone) : null;
         const workoutCycle = todayWorkout?.cycle;
 
         logProgramWorkout.mutate(
@@ -920,6 +935,21 @@ export default function WorkoutDetail() {
                 {isLogging && (
                   <Badge variant="slate">Logging Active</Badge>
                 )}
+                {isLogging && (
+                  <button
+                    type="button"
+                    onClick={() => setShowShotList((v) => !v)}
+                    aria-pressed={showShotList}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+                      showShotList
+                        ? 'bg-brand/[0.16] border-brand/40 text-brand'
+                        : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
+                    }`}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    Shot list
+                  </button>
+                )}
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
                 <div className="flex items-center gap-2 shrink-0 lg:hidden">
@@ -1054,53 +1084,63 @@ export default function WorkoutDetail() {
               </div>
             )}
 
-            {exerciseLogs.map((exerciseLog, exerciseIndex) => {
-              const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
-              const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
-              const targets = programEx ? progressionTargetsMap[programEx.name] : null;
-              return (
-                <div
-                  key={exerciseIndex}
-                  data-tutorial={exerciseIndex === 0 ? "exercise-card" : undefined}
-                  // Scroll the card (and the active set row it contains) clear of
-                  // the floating Cancel/Finish bar when focus/scrollIntoView lands
-                  // here, matching the bar's measured footprint.
-                  className="scroll-mb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:scroll-mb-0"
-                >
-                  <ExerciseCard
-                    exercise={exerciseLog}
-                    exerciseIndex={exerciseIndex}
-                    weightUnit={weightUnit}
-                    onUpdateSet={(exIdx, setIdx, field, value) => {
-                      updateSetData(exIdx, setIdx, field, value);
-                    }}
-                    onAddSet={addSet}
-                    onRemoveSet={removeSet}
-                    onRemoveExercise={removeExercise}
-                    onUpdateNotes={updateExerciseNotes}
-                    onUpdateName={updateExerciseName}
-                    originalExercise={workout.exercises[exerciseIndex]}
-                    lastPerformance={lastPerformance}
-                    programExercise={programEx}
-                    progressionTargets={targets}
-                    onReplaceExercise={handleReplaceExercise}
-                    dayFocus={workout.focus || "Full Body"}
-                    goal={profile?.primary_goal || "general_fitness"}
-                    fitnessLevel={profile?.fitness_level || "intermediate"}
-                    equipment={profile?.available_equipment || []}
-                    currentWeekExerciseNames={allExerciseNames}
-                    allExerciseNames={allHistoryExerciseNames}
-                    onStartRestTimer={startRestTimer}
-                    showRIR={profile?.show_rir ?? true}
-                    liked={isExerciseLiked(profile, exerciseLog.name)}
-                    onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exerciseLog.name })}
-                    onMoveUp={exerciseIndex > 0 ? () => moveExercise(exerciseIndex, exerciseIndex - 1) : null}
-                    onMoveDown={exerciseIndex < exerciseLogs.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1) : null}
-                    onMachineTaken={exerciseIndex < exerciseLogs.length - 1 ? () => moveExercise(exerciseIndex, exerciseIndex + 1, 'machine_taken') : null}
-                  />
-                </div>
-              );
-            })}
+            <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleExerciseDragEnd}>
+              <SortableContext
+                items={exerciseLogs.map((_, i) => String(i))}
+                strategy={verticalListSortingStrategy}
+              >
+                {exerciseLogs.map((exerciseLog, exerciseIndex) => {
+                  const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
+                  const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
+                  const targets = programEx ? progressionTargetsMap[programEx.name] : null;
+                  return (
+                    <SortableExerciseRow
+                      key={exerciseIndex}
+                      id={String(exerciseIndex)}
+                      exerciseIndex={exerciseIndex}
+                      // Scroll the card (and the active set row it contains) clear of
+                      // the floating Cancel/Finish bar when focus/scrollIntoView lands
+                      // here, matching the bar's measured footprint.
+                      className="scroll-mb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:scroll-mb-0"
+                    >
+                      {(dragHandleProps) => (
+                        <ExerciseCard
+                          exercise={exerciseLog}
+                          exerciseIndex={exerciseIndex}
+                          weightUnit={weightUnit}
+                          onUpdateSet={(exIdx, setIdx, field, value) => {
+                            updateSetData(exIdx, setIdx, field, value);
+                          }}
+                          onAddSet={addSet}
+                          onRemoveSet={removeSet}
+                          onRemoveExercise={removeExercise}
+                          onUpdateNotes={updateExerciseNotes}
+                          onUpdateName={updateExerciseName}
+                          originalExercise={workout.exercises[exerciseIndex]}
+                          lastPerformance={lastPerformance}
+                          programExercise={programEx}
+                          progressionTargets={targets}
+                          onReplaceExercise={handleReplaceExercise}
+                          dayFocus={workout.focus || "Full Body"}
+                          goal={profile?.primary_goal || "general_fitness"}
+                          fitnessLevel={profile?.fitness_level || "intermediate"}
+                          equipment={profile?.available_equipment || []}
+                          currentWeekExerciseNames={allExerciseNames}
+                          allExerciseNames={allHistoryExerciseNames}
+                          onStartRestTimer={startRestTimer}
+                          showRIR={profile?.show_rir ?? true}
+                          liked={isExerciseLiked(profile, exerciseLog.name)}
+                          onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exerciseLog.name })}
+                          dragHandleProps={dragHandleProps}
+                          showShotList={showShotList}
+                          shotNote={shotNoteFor(exerciseLog.name)}
+                        />
+                      )}
+                    </SortableExerciseRow>
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
 
             {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
             {isProgramSource && <CardioSessions programWorkout={programWorkout} />}
