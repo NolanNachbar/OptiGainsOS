@@ -5,6 +5,7 @@ export const queryKeys = {
   // User profile
   userProfile: (userId) => ['userProfile', userId],
   hasProfile: (userId) => ['hasProfile', userId],
+  exerciseShotNotes: (userId) => ['exerciseShotNotes', userId],
 
   // Workouts
   workouts: () => ['workouts'],
