@@ -105,6 +105,17 @@ const parseRepTarget = (repTarget) => {
   return m ? parseInt(m[1], 10) : (parseInt(s, 10) || 8);
 };
 
+// Engine-generated workouts carry the RIR target in the exercise notes ("RIR 2",
+// "RIR 3 · ..."). No RIR in notes → 0, matching how scaleWeightToReps treats reps.
+const parseRirFromNotes = (notes) => {
+  const m = String(notes || '').match(/RIR\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : 0;
+};
+
+// "Back Squat (Top Set)" / "Back Squat (Back-off)" → "back squat"
+const baseLiftName = (name) =>
+  String(name || '').toLowerCase().replace(/\s*\([^)]*\)\s*$/, '').trim();
+
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
   const ms = Date.now() - new Date(startTimeStr).getTime();
@@ -431,27 +442,48 @@ export default function WorkoutDetail() {
           };
         });
       } else {
-        // Standard mode: autofill with last used weight, scaled to target reps via Epley
-        initialLogs = workout.exercises?.map((exercise, index) => {
+        // Standard mode: autofill with last used weight, scaled to target reps via Epley.
+        // Two passes: first compute each exercise's own-history suggestion, then
+        // derive back-off weights from the SAME DAY's top set instead of the
+        // back-off's own logged history. History-based back-off fill self-
+        // perpetuates bad data (a back-off once logged at top-set weight keeps
+        // getting suggested at top-set weight forever); anchoring to the top
+        // set's e1RM with the back-off's reps+RIR gives the intended drop
+        // (e.g. top 3@RIR2 vs back-off 5@RIR3 → ~92% of top weight).
+        const suggestions = workout.exercises?.map((exercise) => {
           const lastPerf = getLastExercisePerformance(allWorkoutLogs, exercise.name);
           const targetReps = parseRepTarget(exercise.reps);
-          const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
+          const weight = lastPerf?.lastWeight && lastPerf?.lastReps
             ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
             : lastPerf?.lastWeight || 0;
-
-          return {
-            name: exercise.name,
-            exercise_index: index,
-            sets: Array.from({ length: resolveSetCount(exercise.sets) }, (_, setIndex) => ({
-              set_number: setIndex + 1,
-              reps: targetReps,
-              weight: scaledWeight,
-              completed: false,
-              rpe: null,
-              set_type: 'working',
-            })),
-          };
+          return { exercise, targetReps, weight };
         }) || [];
+
+        for (const s of suggestions) {
+          if (!/\(back-?off/i.test(s.exercise.name)) continue;
+          const top = suggestions.find(
+            (t) => t !== s &&
+              /\(top set\)/i.test(t.exercise.name) &&
+              baseLiftName(t.exercise.name) === baseLiftName(s.exercise.name)
+          );
+          if (!top?.weight) continue;
+          const topE1rm = top.weight * (1 + 0.0333 * (top.targetReps + parseRirFromNotes(top.exercise.notes)));
+          const boPct = 1 + 0.0333 * (s.targetReps + parseRirFromNotes(s.exercise.notes));
+          s.weight = Math.round((topE1rm / boPct) / 2.5) * 2.5;
+        }
+
+        initialLogs = suggestions.map((s, index) => ({
+          name: s.exercise.name,
+          exercise_index: index,
+          sets: Array.from({ length: resolveSetCount(s.exercise.sets) }, (_, setIndex) => ({
+            set_number: setIndex + 1,
+            reps: s.targetReps,
+            weight: s.weight,
+            completed: false,
+            rpe: null,
+            set_type: 'working',
+          })),
+        }));
       }
 
       setExerciseLogs(initialLogs);
