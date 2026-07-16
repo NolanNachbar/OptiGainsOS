@@ -714,6 +714,46 @@ export default function WorkoutDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldAutoStart]);
 
+  // When a "(Top Set)" set is logged, cascade the ACTUAL performance into the
+  // matching "(Back-off)" exercise: back-off weight = top set's e1RM (from what
+  // was really lifted, not the autofill suggestion) scaled to the back-off's
+  // reps + RIR. Only untouched (uncompleted) back-off sets are overwritten, so
+  // a back-off already logged or hand-edited mid-session stays as entered.
+  const handleUpdateSet = (exIdx, setIdx, field, value) => {
+    updateSetData(exIdx, setIdx, field, value);
+
+    if (field !== 'completed' || value !== true) return;
+    setExerciseLogs(prev => {
+      const top = prev[exIdx];
+      if (!top || !/\(top set\)/i.test(top.name)) return prev;
+      const set = top.sets?.[setIdx];
+      const weight = Number(set?.weight);
+      const reps = Number(set?.reps);
+      if (!weight || !reps) return prev;
+
+      const boIdx = prev.findIndex(
+        (ex) => /\(back-?off/i.test(ex.name) && baseLiftName(ex.name) === baseLiftName(top.name)
+      );
+      if (boIdx < 0) return prev;
+
+      const notesFor = (name) => workout?.exercises?.find((e) => e.name === name)?.notes;
+      const topRir = set.rir ?? parseRirFromNotes(notesFor(top.name));
+      const e1rm = weight * (1 + 0.0333 * (reps + topRir));
+      const boNotesRir = parseRirFromNotes(notesFor(prev[boIdx].name));
+
+      return prev.map((ex, i) => i !== boIdx ? ex : {
+        ...ex,
+        sets: ex.sets.map((s) => {
+          if (s.completed) return s;
+          const boReps = Number(s.reps) || reps;
+          const boRir = s.rir ?? boNotesRir;
+          const boWeight = Math.round((e1rm / (1 + 0.0333 * (boReps + boRir))) / 2.5) * 2.5;
+          return { ...s, weight: boWeight };
+        }),
+      });
+    });
+  };
+
   // Replace an exercise with a chosen alternative.
   const handleReplaceExercise = (oldName, newExercise) => {
     setExerciseLogs(prev => prev.map(ex => {
@@ -1151,9 +1191,7 @@ export default function WorkoutDetail() {
                           exercise={exerciseLog}
                           exerciseIndex={exerciseIndex}
                           weightUnit={weightUnit}
-                          onUpdateSet={(exIdx, setIdx, field, value) => {
-                            updateSetData(exIdx, setIdx, field, value);
-                          }}
+                          onUpdateSet={handleUpdateSet}
                           onAddSet={addSet}
                           onRemoveSet={removeSet}
                           onRemoveExercise={removeExercise}
