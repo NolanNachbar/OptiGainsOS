@@ -74,7 +74,14 @@ export function useExerciseShotNotes() {
 
   const byName = new Map(notes.map((n) => [normalize(n.exercise_name), n.shot_note]));
 
-  return { shotNoteFor: (exerciseName) => byName.get(normalize(exerciseName)) || null, isLoading, error };
+  if (error) console.error("exercise_shot_notes fetch failed:", error.message || error);
+
+  return {
+    shotNoteFor: (exerciseName) => byName.get(normalize(exerciseName)) || null,
+    noteCount: notes.length,
+    isLoading,
+    error,
+  };
 }
 
 export function useAllFoodEntries() {

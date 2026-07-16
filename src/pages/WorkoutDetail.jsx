@@ -150,7 +150,7 @@ export default function WorkoutDetail() {
   // Fetch user profile to get weight unit preference
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
-  const { shotNoteFor } = useExerciseShotNotes();
+  const { shotNoteFor, noteCount: shotNoteCount, isLoading: shotNotesLoading, error: shotNotesError } = useExerciseShotNotes();
   const weightUnit = profile?.weight_unit || 'lbs';
 
   // Exercise reactions (like/dislike per exercise)
@@ -949,6 +949,17 @@ export default function WorkoutDetail() {
                     <Camera className="w-3.5 h-3.5" />
                     Shot list
                   </button>
+                )}
+                {/* Diagnostic status while the toggle is on — a silent fetch failure
+                    or an empty result otherwise looks identical to "feature missing". */}
+                {isLogging && showShotList && (shotNotesError || shotNotesLoading || shotNoteCount === 0) && (
+                  <span className="text-[11px] font-semibold text-warn self-center">
+                    {shotNotesError
+                      ? `Shot notes failed to load: ${shotNotesError.message || String(shotNotesError)}`
+                      : shotNotesLoading
+                        ? "Loading shot notes…"
+                        : "No shot notes found for this account"}
+                  </span>
                 )}
               </div>
               {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
