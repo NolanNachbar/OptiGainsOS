@@ -28,6 +28,37 @@ const POSES = [
 ];
 const POSE_LABEL = Object.fromEntries(POSES.map((p) => [p.key, p.label]));
 
+// The Groq vision model has a low per-minute token budget shared across the
+// whole account (8000 TPM) — one analysis call burns ~5800, so two uploads
+// back-to-back in a batch routinely trip it. The edge function can't wait out
+// the limit itself (it just forwards Groq's 429 as its own 502), so retry
+// here instead of surfacing an error mid-batch. Groq's error body includes
+// "try again in Ns" — honor that instead of guessing.
+const RATE_LIMIT_MAX_RETRIES = 3;
+
+async function invokeAnalyzePhysique(payload, onStatus) {
+  for (let attempt = 0; attempt <= RATE_LIMIT_MAX_RETRIES; attempt++) {
+    const { data, error } = await supabase.functions.invoke("analyze-physique", { body: payload });
+    if (!error) return { data, error: null };
+
+    let bodyText = "";
+    try { bodyText = await error.context?.text?.(); } catch { /* body already consumed */ }
+    const isRateLimit = /rate_limit_exceeded|Groq vision error 429/i.test(bodyText || "");
+    if (!isRateLimit || attempt === RATE_LIMIT_MAX_RETRIES) {
+      let message = bodyText;
+      try { message = JSON.parse(bodyText)?.error || bodyText; } catch { /* not JSON */ }
+      return { data: null, error: message ? new Error(message) : error };
+    }
+
+    const waitMatch = bodyText.match(/try again in ([\d.]+)s/i);
+    const waitSec = waitMatch ? Math.ceil(parseFloat(waitMatch[1])) + 1 : 30;
+    for (let s = waitSec; s > 0; s--) {
+      onStatus?.(`Groq is rate-limited — retrying in ${s}s…`);
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+}
+
 export default function PhysiqueTracker({ hideHeader = false }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -193,11 +224,12 @@ export default function PhysiqueTracker({ hideHeader = false }) {
       if (upErr) throw upErr;
 
       setStatus(isVideo ? "Saving…" : "Analyzing physique…");
-      const { data, error: fnErr } = await supabase.functions.invoke("analyze-physique", {
+      const { data, error: fnErr } = await invokeAnalyzePhysique(
         // taken_at = local date so all of one evening's shots share a day (UTC
         // would split a late session across two days and mis-average it).
-        body: { path, media_type: isVideo ? "video" : "photo", pose, taken_at: format(new Date(), "yyyy-MM-dd") },
-      });
+        { path, media_type: isVideo ? "video" : "photo", pose, taken_at: format(new Date(), "yyyy-MM-dd") },
+        setStatus,
+      );
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
 

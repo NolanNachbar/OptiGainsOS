@@ -25,8 +25,9 @@ const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...CORS } });
 
 function extractJSON(raw: string): Record<string, unknown> | null {
-  try { return JSON.parse(raw); } catch { /* */ }
-  const m = raw.match(/\{[\s\S]*\}/);
+  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  try { return JSON.parse(cleaned); } catch { /* */ }
+  const m = cleaned.match(/\{[\s\S]*\}/);
   if (m) { try { return JSON.parse(m[0]); } catch { /* */ } }
   return null;
 }
@@ -79,11 +80,15 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.2,
+        temperature: isVision ? 0.7 : 0.2,
         max_tokens: 1200,
         // Vision models are flakier with forced json_object; rely on extractJSON
         // there. Text path keeps the hard JSON constraint.
-        ...(isVision ? {} : { response_format: { type: "json_object" } }),
+        ...(isVision
+          // qwen3.6-27b is a thinking model — without this it can burn the
+          // whole max_tokens budget on a <think> block and never emit JSON.
+          ? { reasoning_effort: "none", top_p: 0.8 }
+          : { response_format: { type: "json_object" } }),
       }),
     });
     if (!resp.ok) return json({ error: `Groq error ${resp.status}: ${(await resp.text()).slice(0, 300)}` }, 502);

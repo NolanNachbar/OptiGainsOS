@@ -26,8 +26,11 @@ const json = (obj: unknown, status = 200) =>
   });
 
 function extractJSON(raw: string): Record<string, unknown> | null {
-  try { return JSON.parse(raw); } catch { /* */ }
-  const m = raw.match(/\{[\s\S]*\}/);
+  // Strip a leaked <think>...</think> block (reasoning models sometimes emit
+  // one even with reasoning_effort:"none") before looking for the JSON object.
+  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  try { return JSON.parse(cleaned); } catch { /* */ }
+  const m = cleaned.match(/\{[\s\S]*\}/);
   if (m) { try { return JSON.parse(m[0]); } catch { /* */ } }
   return null;
 }
@@ -144,8 +147,12 @@ Deno.serve(async (req) => {
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: GROQ_VISION_MODEL,
-        temperature: 0.2,
-        max_tokens: 700,
+        temperature: 0.7,
+        top_p: 0.8,
+        max_tokens: 900,
+        // qwen3.6-27b is a thinking model — without this it burns the whole
+        // max_tokens budget on a <think> block and never emits the JSON.
+        reasoning_effort: "none",
         messages: [{
           role: "user",
           content: [
@@ -158,15 +165,23 @@ Deno.serve(async (req) => {
         }],
       }),
     });
-    if (!resp.ok) return json({ error: `Groq vision error ${resp.status}: ${(await resp.text()).slice(0, 300)}` }, 502);
+    if (!resp.ok) {
+      const errText = (await resp.text()).slice(0, 500);
+      console.error("Groq vision error", resp.status, errText);
+      return json({ error: `Groq vision error ${resp.status}: ${errText}` }, 502);
+    }
     const d = await resp.json() as { choices: Array<{ message: { content: string } }> };
     raw = d.choices[0].message.content.trim();
   } catch (err) {
+    console.error("Groq vision fetch threw", err);
     return json({ error: String(err) }, 502);
   }
 
   const analysis = extractJSON(raw);
-  if (!analysis) return json({ error: "could not parse vision output", raw }, 500);
+  if (!analysis) {
+    console.error("Could not parse vision output", raw);
+    return json({ error: "could not parse vision output", raw }, 500);
+  }
 
   const bf = typeof analysis.bodyfat_estimate === "number" ? analysis.bodyfat_estimate : null;
   const { data, error } = await supabase.from("physique_entries").insert({
@@ -185,6 +200,7 @@ Deno.serve(async (req) => {
       const dup = await existingEntry();
       if (dup) return json({ stored: true, analyzed: dup.bodyfat_estimate != null, entry: dup, deduped: true });
     }
+    console.error("physique_entries insert failed", error);
     return json({ error: error.message }, 500);
   }
 
