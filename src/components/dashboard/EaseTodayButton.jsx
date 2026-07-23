@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useUserQueries";
+import { getTodayString } from "@/utils/dateUtils";
 import { Button } from "@/components/ui/button";
 import { BatteryLow, Check } from "lucide-react";
 
@@ -9,10 +11,14 @@ import { BatteryLow, Check } from "lucide-react";
 // the day. Coarse and deliberate — for a genuinely rough day, not daily use.
 export default function EaseTodayButton() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [isCut, setIsCut] = useState(false);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  // Keys the nutrition_overrides row the engine reads for "today". Must be the
+  // athlete's calendar day — a UTC date rolls over at 6pm Mountain and would
+  // write the override onto tomorrow, silently doing nothing for today.
+  const today = getTodayString(profile?.timezone);
 
   const load = useCallback(async () => {
     if (!user?.id) return;

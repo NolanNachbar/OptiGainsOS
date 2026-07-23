@@ -65,9 +65,34 @@ def pick_volume_test_muscle(landmarks_db: dict, emphasis: dict | None = None) ->
                key=lambda m: (-float(emphasis.get(m, 1.0)), int(landmarks_db[m].get("n_obs", 0))))
 
 
-def can_schedule(active: dict | None, phase: str | None) -> bool:
-    """One test at a time; never during a cut."""
-    return active is None and (phase or "").lower() != "cut"
+def can_schedule(active: dict | None, phase: str | None = None) -> bool:
+    """One volume-tolerance test at a time. Volume tests DO run during a cut.
+
+    This used to also refuse while `phase == "cut"`. The reasoning was sound in
+    isolation: on an energy deficit you cannot separate "recovery-limited at this
+    volume" from "the deficit is masking my response."
+
+    But it interacted catastrophically with update_mrv. On a cut the MRV learner has
+    exactly two paths, and BOTH were closed:
+      - the DOWN-ratchet is suppressed on a cut, by design (F9);
+      - the UP-ratchet needs `weekly_sets + 1 > mrv_mean`, and the allocator programs
+        roughly half of MRV, so it only ever becomes true DURING a volume-test ramp
+        (ramp_target is what pushes a muscle above MAV toward its ceiling).
+    Blocking the ramp therefore closed the last remaining path. The athlete has been on
+    an open-ended cut since 2026-06-07; every landmark stayed pinned to its population
+    prior for the 34 days since, 10 of 16 muscles reached n_obs=0, the weekly set
+    targets never changed, and the program was byte-identical week after week.
+
+    The deficit confound is ASYMMETRIC: a deficit can HIDE a response, it cannot
+    manufacture one. A muscle that keeps progressing while under-fed has demonstrably
+    tolerated that volume — conservative, valid evidence. Only a STALL is ambiguous,
+    and that case is already handled: update_mrv refuses to ratchet DOWN on a cut, and
+    inflates the observation variance by CUT_OBS_VAR_MULT so a cut-week update nudges
+    rather than lurches. Those two guards are what make probing safe while cutting.
+
+    `phase` is retained for call-site compatibility and is deliberately unused.
+    """
+    return active is None
 
 
 def schedule_volume_test(muscle: str, mrv_mean: float, today_iso: str) -> dict:

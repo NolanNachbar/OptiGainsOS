@@ -1,23 +1,15 @@
-name: Generate Weekly Program
+name: Tests
 
+# Gate engine changes BEFORE they reach main and get picked up by the scheduled
+# workflows that write to the production database.
 on:
-  # Run every Sunday at 11pm MT (05:00 UTC Monday) — programs the following week
-  schedule:
-    - cron: "0 5 * * 1"
-  # Manual trigger — run anytime to program remaining days of current week
-  workflow_dispatch:
-    inputs:
-      days_ahead:
-        description: "Number of days to generate (0 = rest of this week)"
-        required: false
-        default: "0"
+  push:
+  pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  # Gate: the engine's behavioral checks must pass before the generator writes to
-  # the production database.
   validate:
     name: Validate Engine
     runs-on: ubuntu-latest
@@ -39,7 +31,8 @@ jobs:
       # The Supabase vars are deliberate placeholders, NOT secrets. Importing
       # generate_weekly_program.py runs a module-level guard that hard-exits when
       # they are unset; nothing here touches the network, and the checks are pure
-      # engine functions.
+      # engine functions. Using fakes keeps this job runnable on fork PRs, which
+      # never receive repository secrets.
       - name: Run convergence validation
         working-directory: scripts
         env:
@@ -47,35 +40,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: "placeholder-not-a-real-key"
         run: python3 validate_convergence_fixes.py
 
-  generate:
-    name: Generate Program Workouts
-    needs: validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install python-dotenv numpy "scipy>=1.11"
-
-      - name: Generate weekly program
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          USER_ID: ${{ secrets.USER_ID }}
-          DAYS_AHEAD: ${{ github.event.inputs.days_ahead || '0' }}
-        run: python scripts/generate_weekly_program.py
-
-  # A weekly cron that dies is invisible until the schedule is already wrong.
-  # Surface every failure as a GitHub issue.
+  # A red X on a PR is already visible, but a broken push to main is not — and main
+  # is what the daily cron runs. Only alert for main: fork PRs get a read-only
+  # GITHUB_TOKEN and could not open an issue anyway.
   alert:
     name: Alert on Failure
-    if: failure()
-    needs: [validate, generate]
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -86,27 +57,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          TITLE: "Generate Weekly Program failed"
+          TITLE: "Engine tests failing on main"
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          R_VALIDATE: ${{ needs.validate.result }}
-          R_GENERATE: ${{ needs.generate.result }}
+          SHA: ${{ github.sha }}
         run: |
           set -uo pipefail
 
           BODY=$(cat <<EOF
-          The **Generate Weekly Program** workflow failed on $(date -u '+%Y-%m-%d %H:%M UTC').
+          The engine validation checks are **failing on \`main\`** as of $(date -u '+%Y-%m-%d %H:%M UTC').
 
+          Commit: \`$SHA\`
           [View the failed run]($RUN_URL)
 
-          | job | result |
-          | --- | --- |
-          | validate | \`$R_VALIDATE\` |
-          | generate | \`$R_GENERATE\` |
-
-          - A failed **validate** means the engine checks did not pass and the
-            production database write was correctly blocked. Fix the engine.
-          - A failed **generate** means next week's program may be missing or
-            partially written. Re-run via workflow_dispatch once fixed.
+          The scheduled **Daily Engine** and **Generate Weekly Program** workflows run
+          from \`main\` and gate their database writes on these same checks, so they
+          will now refuse to write until this is fixed. Today's engine state will go
+          stale until then.
           EOF
           )
 

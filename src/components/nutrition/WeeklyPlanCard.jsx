@@ -121,7 +121,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   // remaining budget (that day's engine target minus what's already eaten).
   const week = useMemo(() => {
     const sched = activeEnrollment && program
-      ? getProgramSchedule(activeEnrollment, program.workouts || [])
+      ? getProgramSchedule(activeEnrollment, program.workouts || [], profile?.timezone)
       : [];
     const trainSet = new Set(sched.filter((e) => (e.exercises || []).length > 0).map((e) => e.date));
     const haveSched = trainSet.size > 0;

@@ -35,7 +35,9 @@ sys.path.insert(0, _SCRIPT_DIR)
 # numpy guard because compute_strength always runs and this needs no numpy.
 from engine.log_ingest import (normalize_workout_logs, goal_histories, GOAL_TARGETS,
                                proximity_fatigue_factor, EFFORT_COST_PRIOR)
-from engine.tdee import estimate_tdee as _estimate_tdee, ewma_trend as _ewma_trend
+from engine.tdee import (estimate_tdee as _estimate_tdee, ewma_trend as _ewma_trend,
+                         learned_intake_bias, energy_density_kcal_per_lb,
+                         KG_PER_LB, DEFAULT_BODYFAT_FRAC)
 from engine.sleep_debt import sleep_debt_hours, is_poor_night
 from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
@@ -443,7 +445,8 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
 
 def estimate_tdee(bodyweight_lb: float, avg_kcal_7d, weight_trend_lb_wk,
                   fallback: float = 3200.0, bodyfat_frac=None,
-                  intake_bias: float = 1.0, weeks_in_phase=None) -> float:
+                  intake_bias: float = 1.0, weeks_in_phase=None,
+                  log_coverage: float = 1.0) -> float:
     """
     Adaptive maintenance estimate from intake + trend bodyweight (E10 / MacroFactor +
     Hall-NIDDK style). Delegates to engine.tdee, which replaces the old single fixed
@@ -451,10 +454,11 @@ def estimate_tdee(bodyweight_lb: float, avg_kcal_7d, weight_trend_lb_wk,
     (Forbes) energy density, a learned-intake-bias trend anchor, an early-transient
     discount, and a trust BLEND + sanity CLAMP (the signal is anchored, never discarded).
     `weight_trend_lb_wk` should be the EWMA-trend slope (de-noised) from compute_nutrition.
+    `log_coverage` is the logged fraction of the intake window (see engine.tdee).
     """
     return _estimate_tdee(bodyweight_lb, avg_kcal_7d, weight_trend_lb_wk, fallback,
                           bodyfat_frac=bodyfat_frac, intake_bias=intake_bias,
-                          weeks_in_phase=weeks_in_phase)
+                          weeks_in_phase=weeks_in_phase, log_coverage=log_coverage)
 
 
 def compute_physique_bf_frac(rows, max_stale_days: int = 45, alpha: float = 0.3):
@@ -651,11 +655,26 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
         by_date[d]["cal"]     += float(e.get("calories") or 0)
         by_date[d]["protein"] += float(e.get("protein_grams") or 0)
 
-    dates_desc = sorted(by_date.keys(), reverse=True)
-    recent_7   = dates_desc[:7]
+    # Calendar-anchored window over the 7 COMPLETE days before today. Two bugs died here:
+    #
+    #  1. `sorted(by_date)[:7]` took the 7 most recent dates THAT HAD ENTRIES, so a week
+    #     with three logged days silently reached back three calendar weeks for the rest.
+    #     Unlogged days vanished instead of being counted as unknown, which made a spotty
+    #     log look like a complete one and hid the gap from every downstream consumer.
+    #  2. It included TODAY, a partial day. Running the engine at 08:00 averaged in a
+    #     one-meal day and dragged mean intake down every single morning.
+    #
+    # An unlogged day is a day with NO intake information — it is not a 0-kcal day (that
+    # would understate intake even worse), and it is not a day that resembled the days he
+    # did log. So keep the mean over logged days, but publish `log_coverage_7d` next to it
+    # so estimate_tdee can discount an incomplete window instead of trusting it blindly.
+    anchor  = datetime.date.fromisoformat(TODAY)
+    window  = [(anchor - datetime.timedelta(days=i)).isoformat() for i in range(1, 8)]
+    logged  = [d for d in window if d in by_date]
+    log_coverage = round(len(logged) / len(window), 3)
 
-    avg_cal     = round(sum(by_date[d]["cal"]     for d in recent_7) / max(len(recent_7), 1))
-    avg_protein = round(sum(by_date[d]["protein"] for d in recent_7) / max(len(recent_7), 1))
+    avg_cal     = round(sum(by_date[d]["cal"]     for d in logged) / len(logged)) if logged else 0
+    avg_protein = round(sum(by_date[d]["protein"] for d in logged) / len(logged)) if logged else 0
 
     calorie_adherence = round(min(avg_cal / calorie_target, 1.0), 2) if calorie_target else None
 
@@ -711,6 +730,8 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
         "calorie_target":          round(calorie_target),
         "protein_target":          round(protein_target),
         "calorie_adherence":       calorie_adherence,
+        "log_coverage_7d":         log_coverage,
+        "days_logged_7d":          len(logged),
         "weight_trend_lbs_per_week": weight_trend,
         "on_track":                on_track,
     }
@@ -731,18 +752,31 @@ def compute_training_load_tss(workout_logs: list, recovery_rows: list,
     preserved; its extra cost just becomes visible to the allocator. `effort_coeff`
     is a learnable per-person prior threaded from engine params.
     """
-    today_str = TODAY
+    # The Kalman steps ONCE PER CALENDAR DAY, and the daily cron fires at 10:00 UTC —
+    # 4am Mountain, BEFORE the athlete has trained. So the load for today's step is the
+    # load he actually incurred YESTERDAY, the last completed training day.
+    #
+    # This used to read `log_date == TODAY`, which at 4am matches nothing: u_t was 0.0
+    # every single day. The Garmin branch below never rescued it either (there are zero
+    # recovery_metrics rows carrying training_load_acute), so the filter was driven with
+    # ZERO training load for its entire life — fitness and fatigue never accumulated,
+    # fatigue never crossed FATIGUE_THRESHOLD, and the MPC therefore saw a permanently
+    # fresh athlete and kept selecting the highest-load action. Meanwhile
+    # compute_observation_y already looked back PERF_OBS_MAX_AGE_DAYS=1, so the filter
+    # was observing yesterday's performance while being told nothing had caused it.
+    # Reference the same day both places.
+    load_day = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=1)).isoformat()
 
-    # Check Garmin acute load for today
+    # Garmin's measured acute load for that day, if we have it (already reflects effort).
     for r in recovery_rows:
-        if r.get("date", "") == today_str and r.get("training_load_acute"):
-            # Garmin reports a cumulative ATL; approximate today's TSS as delta
+        if r.get("date", "") == load_day and r.get("training_load_acute"):
             return min(float(r["training_load_acute"]), 150.0)
 
-    # Fallback: sum volume from today's workout logs
-    today_tss = 0.0
+    # Fallback: sum volume from that day's workout logs. Summing (not taking the first)
+    # so a genuine two-a-day contributes both sessions.
+    day_tss = 0.0
     for log in workout_logs:
-        if log.get("log_date", "") != today_str:
+        if log.get("log_date", "") != load_day:
             continue
         sets = [s for ex in (log.get("exercises") or [])
                 for s in (ex.get("sets") or [])]
@@ -752,9 +786,9 @@ def compute_training_load_tss(workout_logs: list, recovery_rows: list,
         base_tss = min(session_vol / 100.0, 150.0)
         # E2: proximity-to-failure scales fatigue AFTER the volume cap, so two
         # equally-high-volume sessions still differ by how close to failure they ran.
-        today_tss += base_tss * proximity_fatigue_factor(sets, effort_coeff)
+        day_tss += base_tss * proximity_fatigue_factor(sets, effort_coeff)
 
-    return round(today_tss, 1)
+    return round(day_tss, 1)
 
 
 def compute_manual_cardio_tss(completions: list, prescribed_cardio: list) -> float:
@@ -1136,9 +1170,18 @@ def main():
     if _ENGINE_AVAILABLE:
         print("\nRunning adaptive engine...")
 
-        # 1. Load yesterday's engine params
+        # 1. Load yesterday's engine params.
+        # `date=lt.TODAY` is load-bearing, not decoration. Without it a SECOND run on
+        # the same day reads back the row THIS script just wrote, so kalman.step()
+        # applies today's load on top of an already-stepped state, rls.accumulate()
+        # buffers the same point twice, and guardrail.record_state() appends the day
+        # twice. That is not hypothetical: generate-weekly-program.yml (05:00 UTC Mon)
+        # shells out to this script via refresh_athlete_state(), and daily-engine.yml
+        # runs it again at 10:00 UTC the same day — so fatigue was double-stepped every
+        # Monday, plus on every workflow_dispatch and every job retry.
         prev_params = sb_get("engine_params", {
             "select": "*",
+            "date":   f"lt.{TODAY}",
             "order":  "date.desc",
             "limit":  "1",
         })
@@ -1206,17 +1249,49 @@ def main():
             "select": "taken_at,bodyfat_estimate", "created_by": f"eq.{USER_ID}",
             "bodyfat_estimate": "not.is.null", "order": "taken_at.desc", "limit": "60"})
         bf_frac_physique = compute_physique_bf_frac(_phys_rows)
+
+        # Learned under-report correction. `learned_intake_bias` shipped in engine/tdee.py
+        # but nothing ever called it, so intake_bias sat at its 1.0 default and the
+        # energy-balance term took the food log at face value forever. It is a bounded
+        # [1.0, 1.5] per-person nudge reconciling LOGGED intake with the intake the trend
+        # weight IMPLIES. Anchor expenditure on the bodyweight prior, NOT on a log-derived
+        # TDEE — using the latter would make the bias justify the very log it is correcting.
+        _bw          = float(profile.get("current_weight") or 0)
+        _avg_kcal_7d = nutrition.get("avg_calories_7d")
+        _trend       = nutrition.get("weight_trend_lbs_per_week")
+        _coverage    = float(nutrition.get("log_coverage_7d") or 0.0)
+        _days_logged = nutrition.get("days_logged_7d") or 0
+        _prev_bias   = float((prev.get("nutrition_state") or {}).get("intake_bias") or 1.0)
+
+        intake_bias = _prev_bias
+        if _bw > 0 and _avg_kcal_7d and _trend is not None and _coverage > 0:
+            _bf_frac = bf_frac_physique if bf_frac_physique is not None else DEFAULT_BODYFAT_FRAC
+            _density = energy_density_kcal_per_lb(_bw * KG_PER_LB * _bf_frac)
+            intake_bias = learned_intake_bias(
+                mean_intake=float(_avg_kcal_7d),
+                expenditure_est=_bw * 15.5,
+                daily_rate_lb=float(_trend) / 7.0,
+                density_kcal_per_lb=_density,
+                prev_bias=_prev_bias,
+            )
+
         maintenance_kcal  = estimate_tdee(
-            float(profile.get("current_weight") or 0),
-            nutrition.get("avg_calories_7d"),
-            nutrition.get("weight_trend_lbs_per_week"),
+            _bw,
+            _avg_kcal_7d,
+            _trend,
             fallback=float(profile.get("maintenance_kcal") or 3200),
             bodyfat_frac=bf_frac_physique,
+            intake_bias=intake_bias,
+            log_coverage=_coverage,
         )
         print(f"  TDEE (adaptive): {round(maintenance_kcal)} kcal  "
-              f"(bw {profile.get('current_weight')}lb, intake {nutrition.get('avg_calories_7d')}, "
-              f"trend {nutrition.get('weight_trend_lbs_per_week')} lb/wk, "
+              f"(bw {_bw}lb, intake {_avg_kcal_7d} over {_days_logged}/7 d, "
+              f"bias {intake_bias:.2f}, trend {_trend} lb/wk, "
               f"photo BF {f'{bf_frac_physique:.1%}' if bf_frac_physique is not None else 'n/a → prior'})")
+        if _coverage < 1.0:
+            print(f"  ⚠️  intake logged {_days_logged}/7 days (coverage {_coverage:.0%}) — "
+                  f"energy-balance TDEE down-weighted toward the bodyweight prior. "
+                  f"Log every day to sharpen it.")
         nutrition_mod_obj = NutritionModulator(maintenance_kcal=maintenance_kcal)
         avg_kcal          = float(nutrition.get("avg_calories_7d") or maintenance_kcal)
         nutrition_mod_out = nutrition_mod_obj.modulate(
@@ -1311,8 +1386,11 @@ def main():
         # TNF 4-6 week duration cap. Dormant until a cut phase with a start is logged.
         weeks_in_cut = None
         try:
+            # created_by filter is load-bearing: a stale duplicate user id holds a second
+            # copy of the diet_phases rows, and without it the open-phase lookup can read
+            # the wrong athlete's cut start.
             _dp = sb_get("diet_phases", {
-                "select": "*",
+                "select": "*", "created_by": f"eq.{USER_ID}",
                 "end_date": "is.null", "order": "created_at.desc", "limit": "1",
             })
             if _dp:
@@ -1365,10 +1443,13 @@ def main():
         # he cut / maintain / bulk for his goals?). Advisory — he accepts (sets
         # training_phase) or rejects. Uses latest physique bodyfat when available.
         from engine.phase_recommender import recommend_phase
-        _bf_rows = sb_get("physique_entries", {
-            "select": "bodyfat_estimate", "created_by": f"eq.{USER_ID}",
-            "bodyfat_estimate": "not.is.null", "order": "taken_at.desc", "limit": "1"})
-        _bodyfat = (_bf_rows[0].get("bodyfat_estimate") if _bf_rows else None)
+        # Reuse the SESSION-EWMA photo bodyfat the TDEE path already computes, rather than
+        # re-fetching one arbitrary row. `order=taken_at.desc limit 1` tie-breaks ARBITRARILY
+        # among shots from the same session, and per-shot vision BF is pose-dependent: one
+        # 2026-06-07 session read 18% front-relaxed and 10% front-flexed off the same body.
+        # Since REVERSE_BF is 12%, that single row decided cut-vs-bulk on a coin flip
+        # between a 10 and an 18. The session mean + cross-session EWMA is the actual signal.
+        _bodyfat = round(bf_frac_physique * 100.0, 1) if bf_frac_physique is not None else None
         from engine.allocator import default_goal_priorities
         # Single source of truth for the default split (E1: hypertrophy-primary).
         _goal_prio = profile.get("goal_priorities") or default_goal_priorities(
@@ -1379,6 +1460,10 @@ def main():
             bodyfat=float(_bodyfat) if _bodyfat is not None else None,
             goal_priorities=_goal_prio,
             current_phase=nutrition.get("phase"),
+            # The 4-6 week duration cap. nutrition_modulator already eases the DEFICIT at
+            # week 6; without this the phase recommender kept saying "cut" while the
+            # modulator was quietly backing the calories out — the two disagreed.
+            weeks_in_cut=weeks_in_cut,
         )
         _pr = nutrition["phase_recommendation"]
         print(f"  Phase recommendation: {_pr['phase'].upper()} ({_pr['confidence']}) — {_pr['rationale']}")
@@ -1442,6 +1527,15 @@ def main():
             "cellular_state": cellular.to_dict(),
             "vdot_state":     vdot_eng.to_dict(),
             "guardrail_state": guardrail_dict,
+            # Learned nutrition params. intake_bias is a slow nudge (gain 0.2), so it only
+            # converges if it is carried across runs — recomputing it from 1.0 every day
+            # would pin it near 1.0 forever and the learner would never actually learn.
+            "nutrition_state": {
+                "intake_bias":     intake_bias,
+                "log_coverage_7d": _coverage,
+                "days_logged_7d":  _days_logged,
+                "maintenance_kcal": round(maintenance_kcal),
+            },
             "computed_at":    datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         ok_engine = sb_upsert("engine_params", engine_params_row)

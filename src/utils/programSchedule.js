@@ -1,4 +1,5 @@
 import { addDays, differenceInCalendarDays, format, isBefore, isEqual, parseISO, parse } from "date-fns";
+import { getTodayString } from "@/utils/dateUtils";
 
 const CARDIO_ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
 
@@ -60,7 +61,7 @@ function getDayOffset(dayIndex, cycleLength) {
  *   completed:         boolean,
  * }
  */
-export function getProgramSchedule(enrollment, workouts) {
+export function getProgramSchedule(enrollment, workouts, timezone) {
   if (!enrollment || !workouts?.length) return [];
 
   const startDate = enrollment.start_date || enrollment.started_at;
@@ -135,7 +136,10 @@ export function getProgramSchedule(enrollment, workouts) {
   const currentDayIndex = enrollment.current_day_index || enrollment.current_day || 1;
 
   const entries = [];
-  const today = format(new Date(), "yyyy-MM-dd");
+  // Schedule dates are plain calendar days, so "today" must be resolved in the
+  // athlete's timezone — the browser's (or UTC) rolls over at the wrong instant
+  // and marks tomorrow's row as isCurrent.
+  const today = getTodayString(timezone);
 
   const pushEntry = (date, activeWorkout, cycle, dayIndex) => {
     // Check if this specific workout (cycle + day_index) is completed
@@ -209,11 +213,11 @@ export function getProgramSchedule(enrollment, workouts) {
 /**
  * Return today's program workout if one is scheduled for today.
  */
-export function getTodayProgramWorkout(enrollment, workouts) {
+export function getTodayProgramWorkout(enrollment, workouts, timezone) {
   if (!enrollment || !workouts?.length) return null;
 
-  const today = format(new Date(), "yyyy-MM-dd");
-  const entries = getProgramSchedule(enrollment, workouts);
+  const today = getTodayString(timezone);
+  const entries = getProgramSchedule(enrollment, workouts, timezone);
 
   // Return today's workout only (whether complete or incomplete)
   const todayEntry = entries.find((e) => e.date === today);

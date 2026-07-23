@@ -9,6 +9,13 @@ const USER_ID    = Deno.env.get("USER_ID")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
+// Vault-aware daily brief (Daily-Brief-Vault-Sync-and-Shot-List-Spec.md, feature 1):
+// one extra fetch of 20-Areas/Money/Now.md via the GitHub Contents API, using a
+// fine-grained read-only PAT stored as a Supabase secret. No new cron, no clone.
+const GITHUB_PAT   = Deno.env.get("VAULT_GITHUB_PAT") ?? "";
+const VAULT_REPO   = "NolanNachbar/NolanBrain";
+const NOW_MD_PATH  = "20-Areas/Money/Now.md";
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function sb(table: string) {
@@ -170,6 +177,60 @@ function fmtTasks(tasks: Array<Record<string, unknown>>): string {
   return lines.join("\n");
 }
 
+// ── Vault sync: Now.md ────────────────────────────────────────────────────────
+
+type NowMd = { body: string; updatedDate: string | null; staleDays: number | null };
+
+async function fetchNowMd(today: string): Promise<NowMd | null> {
+  if (!GITHUB_PAT) {
+    console.warn("VAULT_GITHUB_PAT not set — skipping Now.md fetch");
+    return null;
+  }
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${VAULT_REPO}/contents/${NOW_MD_PATH}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${GITHUB_PAT}`,
+          "Accept":        "application/vnd.github.raw+json",
+          "User-Agent":    "optigains-daily-brief",
+        },
+      },
+    );
+    if (!resp.ok) {
+      console.warn(`Now.md fetch failed: ${resp.status} ${await resp.text()}`);
+      return null;
+    }
+    const raw = await resp.text();
+
+    // Strip frontmatter, pull `updated:` out of it for the staleness check.
+    const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    const frontmatter = fmMatch?.[1] ?? "";
+    const body = (fmMatch?.[2] ?? raw).trim();
+    const updatedMatch = frontmatter.match(/^updated:\s*(\S+)/m);
+    const updatedDate = updatedMatch?.[1] ?? null;
+
+    let staleDays: number | null = null;
+    if (updatedDate) {
+      const diffMs = new Date(today).getTime() - new Date(updatedDate).getTime();
+      staleDays = Math.round(diffMs / 86400000);
+    }
+
+    return { body, updatedDate, staleDays };
+  } catch (err) {
+    console.warn("Now.md fetch threw:", String(err));
+    return null;
+  }
+}
+
+function fmtBuildFocus(nowMd: NowMd | null): string {
+  if (!nowMd) return "(Now.md unavailable this run — skip this section, don't invent one.)";
+  const staleNote = nowMd.staleDays != null && nowMd.staleDays >= 2
+    ? `\n[Now.md is ${nowMd.staleDays} days old — flag it's due for a refresh instead of repeating it as fresh.]`
+    : "";
+  return `${nowMd.body}${staleNote}`;
+}
+
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
 const CARDIO_PROGRAM = `
@@ -236,6 +297,7 @@ function buildPrompt(data: {
   skills:       Array<Record<string, unknown>>;
   tasks:        Array<Record<string, unknown>>;
   goals:        Array<Record<string, unknown>>;
+  nowMd:        NowMd | null;
   today:        string;
   dayOfWeek:    string;
 }): string {
@@ -315,6 +377,10 @@ function buildPrompt(data: {
   lines.push(`\n=== TODAY'S PLANNED TO-DO (from your plan + the second brain) ===`);
   lines.push(fmtTasks(data.tasks));
   lines.push(`[These are Nolan's committed recurring actions toward his business, career, and training goals. Every pending [ ] item must appear in today_actions. [x]=done, [~]=skipped — do not re-list those.]`);
+
+  lines.push(`\n=== TODAY'S BUILD FOCUS (from Now.md in the second brain — hand-maintained, updated same-day when a decision changes) ===`);
+  lines.push(fmtBuildFocus(data.nowMd));
+  lines.push(`[This is the standing content/business lane list, separate from the recurring to-do above. Reconcile against TODAY'S PLANNED TO-DO — don't nag about a lane that's already logged as done today. Fold anything actionable into today_actions only if it isn't already covered there.]`);
 
   if (hasState) {
     // ── Primary data source: computed athlete state ───────────────────────
@@ -441,6 +507,7 @@ Deno.serve(async (req) => {
     prescriptionRes,
     tasksRes,
     goalsRes,
+    nowMd,
   ] = await Promise.all([
     supabase.from("athlete_state").select("*").eq("created_by", USER_ID).eq("date", today).limit(1).maybeSingle(),
     sb("user_profiles").limit(1).single(),
@@ -454,6 +521,7 @@ Deno.serve(async (req) => {
       .eq("created_by", USER_ID).eq("date", today)
       .order("sort_order", { ascending: true }),
     sb("athlete_goals").eq("active", true).order("priority", { ascending: false }),
+    fetchNowMd(today),
   ]);
 
   const state        = athleteStateRes.data as Record<string, unknown> | null;
@@ -478,6 +546,7 @@ Deno.serve(async (req) => {
     skills:     (skillsRes.data as Array<Record<string, unknown>>) || [],
     tasks:      (tasksRes.data as Array<Record<string, unknown>>) || [],
     goals:      (goalsRes.data as Array<Record<string, unknown>>) || [],
+    nowMd,
     today,
     dayOfWeek,
   });

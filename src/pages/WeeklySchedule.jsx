@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useEnrollments } from "@/hooks/useProgramQueries";
+import { useProfile } from "@/hooks/useUserQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 
@@ -177,6 +178,7 @@ export default function WeeklySchedule() {
     setShowCompleted(false);
   };
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
+  const { profile } = useProfile();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekDateStrs = weekDays.map(d => format(d, "yyyy-MM-dd"));
@@ -202,8 +204,8 @@ export default function WeeklySchedule() {
 
   const programEntries = useMemo(() => {
     if (!activeEnrollment?.program?.workouts) return [];
-    return getProgramSchedule(activeEnrollment, activeEnrollment.program.workouts);
-  }, [activeEnrollment]);
+    return getProgramSchedule(activeEnrollment, activeEnrollment.program.workouts, profile?.timezone);
+  }, [activeEnrollment, profile?.timezone]);
 
   const getEntriesForDay = (date) => {
     const dateStr = format(date, "yyyy-MM-dd");

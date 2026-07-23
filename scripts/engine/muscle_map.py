@@ -94,19 +94,63 @@ EXERCISE_MUSCLE_MAP: dict[str, list[str]] = {
     "preacher curl":     ["biceps"],
     "hammer curl":       ["biceps"],
     "incline curl":      ["biceps"],
+    # MUST outrank the bare "curl" catch-all below (the keyword list is sorted
+    # longest-first, and a shorter keyword contained in an already-matched longer
+    # one is suppressed). Without these, "Hamstring Curl" and "Wrist Curl" fell
+    # through to "curl" and credited BICEPS — a leg day was funding arm volume,
+    # and that number fed the weekly frequency deficit and the MRV learner.
+    "hamstring curl":    ["hamstrings"],
+    "leg curls":         ["hamstrings"],
+    "lying leg curl":    ["hamstrings"],
+    "seated leg curl":   ["hamstrings"],
+    "wrist curl":        ["forearms"],
     "curl":              ["biceps"],
     "ohp":               ["shoulders", "triceps"],
     "plank":             ["abs"],
     "crunch":            ["abs"],
     "ab wheel":          ["abs"],
     "hanging leg":       ["abs"],
+    "sit up":            ["abs"],
     "leg raise":         ["abs"],
+    # "leg press calf ..." / "... calf press" are CALF work done on the leg-press
+    # machine. These outrank "leg press" so the movement doesn't also bank quad and
+    # glute volume it never trained.
+    "leg press calf":    ["calves"],
+    "calf press":        ["calves"],
+    "calf raises (leg press)": ["calves"],
+    "calf machine shrug": ["traps"],
     "calf raise":        ["calves"],
     "seated calf":       ["calves"],
+    # Grip / adductor work. Neither has a landmark in hypertrophy_volume.MUSCLES, so
+    # _ANALYSIS_TO_LANDMARK maps them to nothing — but naming them here stops the
+    # keyword fallthrough that used to credit BICEPS for a Wrist Curl / Barbell Hold.
+    "barbell hold":      ["forearms"],
+    "adductor":          ["adductors"],
+    # Bench and incline-press variants the athlete actually logs. Without these,
+    # "Reverse Grip Incline Smith Machine Press" and "Larsen Press" mapped to NOTHING,
+    # so his heaviest pressing accessories contributed zero chest/triceps volume and
+    # zero response signal to the MRV learner.
+    "larsen press":         ["chest", "triceps"],
+    "reverse grip incline": ["upper_chest", "triceps"],
+    "smith machine incline": ["upper_chest", "triceps"],
+    "incline smith":        ["upper_chest", "triceps"],
+    "smith machine shoulder press": ["shoulders", "triceps"],
 }
 
+# Exercise names arrive with hyphens ("Pull-up", "Push-Up Pyramid", "Chest-supported
+# Row") but the keywords above are space-separated, and a raw substring test never
+# matches across that. That is why "Weighted Pull-up" and "Push-ups" mapped to NOTHING
+# — the engine's own programmed pull-ups contributed no lat/bicep volume and no MRV
+# signal at all. Normalize BOTH sides: lowercase, hyphens and underscores to spaces,
+# collapse runs of whitespace.
+def _norm(s: str) -> str:
+    return " ".join((s or "").lower().replace("-", " ").replace("_", " ").split())
+
+
 # Longest keyword first so "romanian deadlift" wins over "deadlift".
-_MUSCLE_KEYWORDS = sorted(EXERCISE_MUSCLE_MAP.keys(), key=len, reverse=True)
+_MUSCLE_KEYWORDS = sorted((_norm(k) for k in EXERCISE_MUSCLE_MAP), key=len, reverse=True)
+# Keyword lookup is by NORMALIZED key, so hyphenated keys ("t-bar row") still resolve.
+_NORM_MUSCLE_MAP = {_norm(k): v for k, v in EXERCISE_MUSCLE_MAP.items()}
 
 # Analysis-vocab → landmark-vocab. A muscle absent here is already landmark-vocab.
 # "back" splits to both lat-dominant and upper-back-dominant landmarks since the
@@ -116,6 +160,14 @@ _ANALYSIS_TO_LANDMARK: dict[str, list[str]] = {
     "back":       ["upper_back", "lats"],
     "abs":        ["core"],
     "lower_back": [],  # no dedicated landmark
+    # No landmark in hypertrophy_volume.MUSCLES, so there is nothing to learn or fund
+    # for these yet — they resolve to no landmark rather than being silently attributed
+    # to a neighbouring muscle. NOTE: athlete_profile.MUSCLE_EMPHASIS boosts "forearms"
+    # to 1.25, but with no landmark the allocator can never fund it; direct forearm work
+    # stays pinned at 1 set. Adding a real forearms landmark needs MEV/MAV/MRV priors,
+    # which is a deliberate call, not something to guess at here.
+    "forearms":   [],
+    "adductors":  [],
 }
 
 # Soreness check-in regions (daily_readiness.soreness_snapshot keys) → landmarks.
@@ -136,15 +188,19 @@ SORENESS_REGION_MUSCLES: dict[str, list[str]] = {
 def get_muscles(exercise_name: str) -> list[str]:
     """Analysis-vocab muscles trained by an exercise (keyword substring match).
     A keyword contained in an already-matched longer keyword is suppressed, so
-    "neck curl" doesn't also credit biceps via "curl", and "romanian deadlift"
-    doesn't credit back via "deadlift" — longest match truly wins."""
-    name = (exercise_name or "").lower()
+    "neck curl" doesn't also credit biceps via "curl", "hamstring curl" doesn't
+    credit biceps either, and "romanian deadlift" doesn't credit back via
+    "deadlift" — longest match truly wins.
+
+    The name is normalized (hyphens to spaces) before matching, so "Weighted
+    Pull-up" resolves against the "pull up" keyword."""
+    name = _norm(exercise_name)
     found: set[str] = set()
     matched: list[str] = []
     for kw in _MUSCLE_KEYWORDS:
         if kw in name and not any(kw in prev for prev in matched):
             matched.append(kw)
-            found.update(EXERCISE_MUSCLE_MAP[kw])
+            found.update(_NORM_MUSCLE_MAP[kw])
     return list(found)
 
 

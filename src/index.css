@@ -230,7 +230,15 @@
      folds in env(safe-area-inset-bottom), so a bar moving from
      `calc(var(--dock-clearance) + 12px)` to this token must NOT re-add the inset
      (it's included here) or the safe-area is double-counted. */
-  --floating-chrome-bottom: calc(var(--dock-total-height) + env(safe-area-inset-bottom) + 12px);
+  /* Height the software keyboard is covering, published by Layout.jsx from
+     window.visualViewport. 0px whenever no keyboard is up, so every consumer below
+     is unaffected on desktop and Android. iOS resolves `position: fixed` against the
+     LAYOUT viewport, which the keyboard scrolls rather than shrinks — so without
+     subtracting this, every bottom-anchored bar drifts up into the middle of the
+     screen while the keyboard is open. Any NEW fixed bottom chrome must fold this in
+     too, or it will float mid-screen during set entry. */
+  --keyboard-inset: 0px;
+  --floating-chrome-bottom: calc(var(--dock-total-height) + env(safe-area-inset-bottom) + 12px + var(--keyboard-inset));
 
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: 'Manrope', system-ui, sans-serif;

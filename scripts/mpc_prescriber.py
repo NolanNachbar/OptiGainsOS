@@ -50,7 +50,9 @@ except ImportError:
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
-from engine.session_generator  import SessionGenerator
+from engine.session_generator  import (SessionGenerator, classify_log_split,
+                                       week_muscle_counts_from_logs)
+from engine.athlete_profile    import MUSCLE_EMPHASIS
 
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY", "")
@@ -394,40 +396,12 @@ def main():
         "limit": "21",
     })
     
-    # Lower keywords are tested FIRST so "leg press" / "calf raise" / "leg extension"
-    # don't get miscounted as upper by "press" / "raise" / "extension". Lower days are
-    # further classified squat- vs hinge-primary by whichever compound pattern
-    # dominates, so the downstream alternation can rotate squat ↔ hinge instead of
-    # collapsing every lower day to "hinge". Mirrors classify_log_split in
-    # generate_weekly_program.py — keep the two in sync.
-    _LOWER_KW = ("squat", "deadlift", "rdl", "lunge", "calf", "leg press",
-                 "leg extension", "leg curl", "hamstring", "hip thrust", "glute",
-                 "trap bar", "good morning", "back extension", "nordic")
-    _UPPER_KW = ("bench", "press", "pull-up", "pullup", "pulldown", "row", "curl",
-                 "raise", "fly", "push-up", "pushup", "dip", "shrug", "overhead",
-                 "triceps", "tricep", "bicep", "lat ", "delt", "chest", "shoulder",
-                 "face pull", "neck")
-    _SQUAT_KW = ("squat",)
-    _HINGE_KW = ("deadlift", "rdl", "hinge", "hip thrust", "good morning",
-                 "back extension", "trap bar", "nordic")
-
+    # classify_log_split lives in engine.session_generator so this script and
+    # generate_weekly_program read history through the SAME classifier. They used to
+    # keep separate copies that disagreed, which is one reason the Today card and the
+    # Train tab could prescribe different sessions for the same day.
     def determine_split_from_log(log: dict) -> str:
-        up = lo = squat = hinge = 0
-        for ex in (log.get("exercises") or []):
-            n = (ex.get("name") or "").lower()
-            if any(k in n for k in _LOWER_KW):
-                lo += 1
-                if any(k in n for k in _SQUAT_KW):
-                    squat += 1
-                elif any(k in n for k in _HINGE_KW):
-                    hinge += 1
-            elif any(k in n for k in _UPPER_KW):
-                up += 1
-        if lo == 0 and up == 0:
-            return ""
-        if up > lo:
-            return "upper_a"   # unified vocab with the weekly generator / _decide_split
-        return "lower_squat_primary" if squat >= hinge else "lower_hinge_primary"
+        return classify_log_split(log.get("exercises")) or ""
 
     # Dedup to one classification per calendar date, then order oldest→newest so
     # _decide_split's reversed() lookback sees the true most-recent logged session.
@@ -571,10 +545,15 @@ def main():
     week_start = (datetime.date.today()
                   - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
     _wp = sb_get("weekly_plans", {
-        "select": "set_targets,week_start", "order": "week_start.desc", "limit": "1"})
+        "select": "set_targets,frequency_targets,week_start", "order": "week_start.desc", "limit": "1"})
     weekly_set_targets = None
+    # Per-muscle weekly SESSION targets. Feeding these to the generator is what puts
+    # the daily card on the same convergent scheduler as the weekly program; without
+    # them it silently falls back to naive A/B alternation and the two disagree.
+    weekly_freq_targets = None
     if _wp and str(_wp[0].get("week_start")) == week_start:
         weekly_set_targets = _wp[0].get("set_targets") or None
+        weekly_freq_targets = _wp[0].get("frequency_targets") or None
         if weekly_set_targets:
             print(f"  Using LEARNED weekly plan from weekly_plans ({week_start})")
 
@@ -696,6 +675,14 @@ def main():
         if _today_split:
             print(f"  Inheriting planned split for today: {_today_split}")
 
+    # Sessions-per-muscle already banked THIS CALENDAR WEEK, counted off the real
+    # exercise→muscle map. Together with weekly_freq_targets this is what the
+    # convergent scheduler subtracts to get each muscle's remaining deficit.
+    _week_muscle_counts = week_muscle_counts_from_logs(workout_log_rows, week_start)
+    if weekly_freq_targets:
+        print(f"  Convergent split: freq targets for {len(weekly_freq_targets)} muscles, "
+              f"{len(_week_muscle_counts)} trained so far this week")
+
     prescription = generator.generate(
         banister_state  = banister_state,
         interference    = interference,
@@ -719,6 +706,9 @@ def main():
         blocked_exercises = _blocked_ex,
         preferred_exercises = _preferred_ex,
         split_override = _today_split,
+        frequency_targets = weekly_freq_targets,
+        week_muscle_counts = _week_muscle_counts,
+        muscle_emphasis = MUSCLE_EMPHASIS,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

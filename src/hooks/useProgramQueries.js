@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys, invalidatePrograms } from "@/lib/queryKeys";
 import { updateProgressionState } from "@/utils/programProgression";
 import { normalizeCardioSession, getProgramSchedule } from "@/utils/programSchedule";
+import { useProfile } from "@/hooks/useUserQueries";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -240,6 +241,7 @@ export function useEnrollInProgram() {
 
 export function useLogProgramWorkout() {
   const queryClient = useQueryClient();
+  const { profile } = useProfile();
 
   return useMutation({
     mutationFn: async ({ enrollmentId, programWorkoutId, exerciseLogs, enrollment, workoutCycle }) => {
@@ -255,7 +257,7 @@ export function useLogProgramWorkout() {
       // lines up with what getProgramSchedule compares against (off-calendar
       // users otherwise key completions to the wrong cycle and "today" never
       // shows as done).
-      const scheduleEntry = getProgramSchedule(enrollment, allProgramWorkouts)
+      const scheduleEntry = getProgramSchedule(enrollment, allProgramWorkouts, profile?.timezone)
         .find((e) => e.programWorkoutId === programWorkoutId && e.isCurrent);
       const actualCycle = scheduleEntry?.cycle || workoutCycle || enrollment.current_cycle || 1;
       const actualDayIndex = scheduleEntry?.dayIndex || programWorkout.day_index;

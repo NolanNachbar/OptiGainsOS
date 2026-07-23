@@ -93,11 +93,11 @@ export default function Today() {
     // flip it back to active.
     const active = enrollments.find((e) => e.status === "active");
     if (!active) return null;
-    const entry = getTodayProgramWorkout(active, active.program?.workouts);
+    const entry = getTodayProgramWorkout(active, active.program?.workouts, profile?.timezone);
     return entry
       ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId }
       : null;
-  }, [enrollments]);
+  }, [enrollments, profile?.timezone]);
 
   // Subjective readiness check-in for today (ported from Dashboard). When a
   // COMPLETED row exists (energy logged), MorningCheckin renders its read-only

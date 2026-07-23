@@ -28,10 +28,22 @@ from engine.log_ingest import canon, ALIASES
 from engine.muscle_map import get_muscles, hypertrophy_muscles
 
 # ── Keyword lexicons ([ENG], extend freely) ───────────────────────────────────
+# "pull" is a MOVEMENT PATTERN in a lifting log, not an injury: pull day, pull-up,
+# pulldown, face pull — all of which this engine programs by name. It used to sit in
+# _PAIN_WORDS *and* in the severity-2 escalation list below, so a note like "Great
+# pull day, lat pulldown was smooth" registered as SHARP PAIN and hard-vetoed lats,
+# upper_back and biceps. Bare "pulled" is no better ("pulled 405" is a deadlift).
+# Match the injury sense explicitly instead.
 _PAIN_WORDS   = ("pain", "hurt", "hurts", "tweak", "tweaked", "strain", "strained",
-                 "pull", "pulled", "ache", "achy", "cranky", "pinch", "pinched",
+                 "pulled a", "pulled my", "pulled something", "muscle pull",
+                 "ache", "achy", "cranky", "pinch", "pinched",
                  "impinge", "sharp", "injur", "inflam", "tendon", "stiff",
                  "tight", "sore")
+# "tight" is also the standard bracing cue ("kept my back tight", "stayed tight off
+# the chest"). Those are technique notes, not complaints. When "tight" is the ONLY
+# pain word in a clause and the clause reads as a bracing cue, it isn't pain.
+_BRACE_IDIOMS = ("kept", "keep", "keeping", "stay tight", "stayed tight",
+                 "brace", "braced", "bracing", "tight off", "stayed", "tight bar")
 _JOINT_WORDS  = ("shoulder", "elbow", "wrist", "knee", "hip", "lower back", "low back",
                  "back", "neck", "ankle", "bicep tendon", "lat")
 _EASY_WORDS   = ("too easy", "too light", "felt easy", "felt light", "easy", "light",
@@ -220,11 +232,21 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
         cl_pain = _has(cl, _PAIN_WORDS)
         if not cl_pain:
             continue
+        # A clause whose ONLY pain signal is "tight", phrased as a bracing cue, is
+        # technique talk ("kept my back tight"), not a complaint. Don't back off sets
+        # and don't veto the movement for it.
+        if set(cl_pain) == {"tight"} and any(b in cl for b in _BRACE_IDIOMS):
+            continue
         pain.extend(cl_pain)
         targets.update(_muscle_from_text(cl))
         if not exercise:
             targets.update(_exercises_from_text(cl))
-        if any(w in cl for w in ("sharp", "injur", "strain", "pull", "pinch")):
+        # Bare "pull" is deliberately NOT here — see the _PAIN_WORDS note. It is a
+        # movement pattern, and escalating it to severity 2 hard-vetoed the exercise and
+        # permanently tanked its value posterior in learners.exercise_reward. The
+        # INJURY sense ("pulled a muscle") is a strain, so it escalates like one.
+        if any(w in cl for w in ("sharp", "injur", "strain", "pinch",
+                                 "pulled a", "muscle pull")):
             sev = 2
     if pain:
         if exercise and not targets:

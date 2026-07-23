@@ -57,3 +57,7 @@ ui-audit/round-*/
 
 # Scratch/probe tooling (local only)
 ui-audit/_probe/
+
+# Python bytecode — build artifacts, never source
+__pycache__/
+*.pyc

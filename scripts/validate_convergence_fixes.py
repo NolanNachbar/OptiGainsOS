@@ -12,7 +12,12 @@ from engine.learners import update_mrv, exercise_reward, OBS_VAR
 from engine.athlete_profile import clamp_rep_range, per_session_muscle_cap
 from engine.allocator import frequency_targets, default_goal_priorities
 from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
-from engine.session_generator import split_from_title, build_title
+from engine.session_generator import (split_from_title, build_title, _converge_split,
+                                      classify_log_split, week_muscle_counts_from_logs,
+                                      split_muscles_for)
+from engine.muscle_map import get_muscles, hypertrophy_muscles
+from engine.notes_parser import parse_workout_notes
+from engine.hypertrophy_volume import MUSCLES as LANDMARK_MUSCLES
 
 PASS, FAIL = "✓ PASS", "✗ FAIL"
 _results = []
@@ -490,6 +495,421 @@ _both = parse_set_failures(_both_logs, today_iso="2026-06-17")
 check("SP both fields → failure_reason wins, stale sticking_point not double-counted",
       "bench" in _both["technical_miss_lifts"]
       and _both["weakness"].get("bench", {}).get("mentions") == 1)
+
+
+# ── SPLIT: the convergent scheduler must not program a region back-to-back ───
+# Shipped bug (2026-07-11): the Train tab prescribed "Upper B — Pull" on the Saturday
+# after a logged Upper day. Root cause chain, each pinned below:
+#   1. week_muscle_counts was seeded from a rolling 7-SESSION window, not the calendar
+#      week, so by mid-week every count exceeded its weekly target;
+#   2. every deficit therefore went negative, every split scored exactly 0.000;
+#   3. sorted() over an all-zero score fell through to _FRAMEWORK_SPLITS list order;
+#   4. and the weekly generator's log classifier could only emit "upper_a" /
+#      "lower_squat_primary", so it could not see hinge days or pull-led upper days.
+_FREQ = {"core": 1, "lats": 3, "neck": 3, "chest": 3, "quads": 3, "traps": 3,
+         "biceps": 3, "calves": 3, "glutes": 3, "triceps": 3, "shoulders": 3,
+         "hamstrings": 3, "rear_delts": 3, "side_delts": 3, "upper_back": 3,
+         "upper_chest": 3}
+_UPPER_LOG = [{"name": n} for n in (
+    "Bench Press (Top Set)", "Weighted Pull-up", "Chest-Supported Row",
+    "Overhead Press (BB)", "Dip Pyramid", "Lateral Raise", "Bicep Curl")]
+_SQUAT_LOG = [{"name": n} for n in (
+    "Back Squat (Top Set)", "Back Squat (Back-off)", "Paused Squat",
+    "Hip Thrust", "Calf Raise", "Leg Extension")]
+_HINGE_LOG = [{"name": n} for n in (
+    "Deadlift (Top Set)", "Deficit Deadlift", "Romanian Deadlift from Deficit",
+    "Hip Thrust", "Calf Raise", "Hamstring Curl")]
+
+check("SPLIT classifier reads a squat-primary lower day",
+      classify_log_split(_SQUAT_LOG) == "lower_squat_primary",
+      classify_log_split(_SQUAT_LOG))
+check("SPLIT classifier reads a hinge-primary lower day (old one collapsed both to squat)",
+      classify_log_split(_HINGE_LOG) == "lower_hinge_primary",
+      classify_log_split(_HINGE_LOG))
+check("SPLIT classifier reads a press-led upper day as upper_a",
+      classify_log_split(_UPPER_LOG) == "upper_a",
+      classify_log_split(_UPPER_LOG))
+check("SPLIT classifier returns None on a session with no lifting content",
+      classify_log_split([{"name": "Easy Run"}]) is None)
+
+# week_muscle_counts must be scoped to the CALENDAR WEEK, not a rolling window.
+_rows = [{"log_date": "2026-07-10", "exercises": _UPPER_LOG},   # this week
+         {"log_date": "2026-07-09", "exercises": _SQUAT_LOG},   # this week
+         {"log_date": "2026-06-30", "exercises": _UPPER_LOG}]   # LAST week — must not count
+_wmc = week_muscle_counts_from_logs(_rows, "2026-07-06")
+check("SPLIT week_muscle_counts excludes sessions from previous weeks",
+      _wmc.get("chest", 0) == 1,
+      f"chest counted {_wmc.get('chest', 0)}x (2 upper logs, but one is last week)")
+
+# THE HEADLINE: upper logged yesterday → today must be lower, even when the week's
+# frequency targets are already saturated and every deficit has clamped to zero.
+_recent = ["lower_hinge_primary", "upper_a", "upper_a", "lower_hinge_primary",
+           "upper_a", "lower_squat_primary", "upper_a"]          # newest last = UPPER
+_saturated = {m: 9 for m in _FREQ}                                # every target blown
+_pick = _converge_split(_recent, "upper_lower", _FREQ, _saturated)
+check("SPLIT saturated week does NOT program upper the day after upper",
+      _pick.startswith("lower"), f"picked {_pick}")
+check("SPLIT saturated week alternates the lower variant off the last logged lower",
+      _pick == "lower_hinge_primary",                             # last lower was squat
+      f"picked {_pick}")
+
+# Score must be a MEAN, not a sum: an 11-muscle upper day must not beat a 5-muscle
+# lower day just for covering more muscles when both are equally behind and rested.
+_fresh = {}                                                       # nothing trained yet
+_rested = ["lower_squat_primary"]                                 # only lower is fatigued
+_pick2 = _converge_split(_rested, "upper_lower", _FREQ, _fresh)
+check("SPLIT bigger split does not win on muscle count alone",
+      _pick2.startswith("upper"), f"picked {_pick2}")
+
+# A full week must rotate, never stacking a region.
+_hist, _tally = list(_recent), {}
+_week = []
+for _ in range(7):
+    _sp = _converge_split(_hist, "upper_lower", _FREQ, _tally)
+    _week.append(_sp)
+    for _m in split_muscles_for(_sp):
+        _tally[_m] = _tally.get(_m, 0) + 1
+    _hist.append(_sp)
+    if len(_hist) > 7:
+        _hist.pop(0)
+_regions = ["upper" if "upper" in s else "lower" for s in _week]
+_b2b = sum(1 for i in range(1, len(_regions)) if _regions[i] == _regions[i - 1])
+check("SPLIT a generated week never stacks the same region twice in a row",
+      _b2b == 0, " → ".join(_week))
+check("SPLIT a generated week uses BOTH upper variants (emphasis actually rotates)",
+      {"upper_a", "upper_b"}.issubset(set(_week)), " → ".join(_week))
+
+
+# ── MAP: every exercise the athlete actually logs must map to the right muscles ──
+# Shipped bug (2026-07-11): muscle_map's keys are space-separated ("pull up", "leg
+# curl") but the catalog names are hyphenated ("Pull-up") or differently worded
+# ("Hamstring Curl"). Raw substring matching therefore MISSED them, and "Hamstring
+# Curl" fell through to the bare "curl" key and credited BICEPS. A leg day funded arm
+# volume; pull-ups and push-ups contributed nothing at all. This feeds
+# week_muscle_counts_from_logs (the convergent split's input) AND the MRV learner.
+_LOWER_LM = {"quads", "hamstrings", "glutes", "calves"}
+# Real exercise names taken verbatim from the athlete's workout_logs.
+_REAL_EXERCISES = [
+    "Ab Crunch Machine", "Adductor", "Back Squat (Top Set)", "Barbell Curl",
+    "Barbell Hold", "Barbell Shrug", "Bench Press (Top Set)", "Bicep Curl",
+    "Cable Lateral Raise", "Calf Machine Shrugs", "Calf Raise", "Chest-Supported Row",
+    "Close Grip Bench Press", "Conventional Deadlift", "Decline DB skull crusher",
+    "Deficit Deadlift", "Dip Pyramid", "Face Pull", "Front Squat", "Hamstring Curl",
+    "Hanging Leg Raise", "Hip Thrust", "Incline DB Press", "Larsen Press",
+    "Lat Pulldown", "Lateral Raise", "Leg Extension", "Leg press Calf Raises",
+    "Loaded Standing Calf Raises", "Low-to-High Cable Fly", "Machine Incline Press",
+    "Neck Curl", "Neck Extension", "Overhead Press (BB)", "Paused Squat", "Pin Squat",
+    "Preacher Curl", "Pull-Up Pyramid", "Push-Up Pyramid", "RDL",
+    "Reverse Grip Incline Smith Machine Press", "Romanian Deadlift", "Seated Leg Curl",
+    "Sit-Up Pyramid", "Smith machine shoulder press", "Triceps OH Extension",
+    "Weighted Dip", "Weighted Pull-up", "Wrist Curl", "Zercher Squat",
+]
+_unmapped = [n for n in _REAL_EXERCISES if not get_muscles(n)]
+check("MAP every real logged exercise resolves to at least one muscle",
+      not _unmapped, f"unmapped: {_unmapped}" if _unmapped else f"{len(_REAL_EXERCISES)} names")
+
+check("MAP a hyphenated name matches a space-separated keyword (Pull-up → back/biceps)",
+      set(hypertrophy_muscles("Weighted Pull-up")) == {"lats", "upper_back", "biceps"},
+      str(hypertrophy_muscles("Weighted Pull-up")))
+check("MAP Push-Up Pyramid credits chest/triceps (was: nothing)",
+      set(hypertrophy_muscles("Push-Up Pyramid")) == {"chest", "triceps"},
+      str(hypertrophy_muscles("Push-Up Pyramid")))
+check("MAP Hamstring Curl is a LEG movement, not biceps",
+      hypertrophy_muscles("Hamstring Curl") == ["hamstrings"],
+      str(hypertrophy_muscles("Hamstring Curl")))
+check("MAP Wrist Curl never credits biceps",
+      "biceps" not in hypertrophy_muscles("Wrist Curl"),
+      str(get_muscles("Wrist Curl")))
+check("MAP the bare 'curl' catch-all still works for real arm work",
+      hypertrophy_muscles("Bicep Curl") == ["biceps"])
+check("MAP no leg movement leaks into an upper-body landmark",
+      not [n for n in _REAL_EXERCISES
+           if any(k in n.lower() for k in ("squat", "hamstring", "leg extension", "adductor"))
+           and (set(hypertrophy_muscles(n)) - _LOWER_LM - {"core"})],
+      "checked squat/hamstring/leg-extension/adductor names")
+check("MAP every emitted landmark is a real landmark muscle",
+      all(m in LANDMARK_MUSCLES for n in _REAL_EXERCISES for m in hypertrophy_muscles(n)))
+
+
+# ── NOTES: "pull" is a movement pattern, not an injury ───────────────────────
+# Shipped bug: "pull" sat in _PAIN_WORDS *and* in the severity-2 escalation list, so
+# "Great pull day, lat pulldown was smooth" registered as SHARP PAIN and hard-vetoed
+# lats/upper_back/biceps — on movements this engine programs by name (Face Pull,
+# Weighted Pull-up, Pull-up Pyramid).
+def _caution(note):
+    r = parse_workout_notes([{"log_date": "2026-07-10", "notes": note, "exercises": []}])
+    return (r.get("caution") if isinstance(r, dict) else {}) or {}
+
+for _note in ("Great pull day, lat pulldown was smooth",
+              "Pull-ups felt great today, added weight",
+              "Face pulls were smooth",
+              "I pulled 405 for an easy triple"):
+    check(f"NOTES no phantom injury from {_note[:34]!r}", not _caution(_note),
+          str(_caution(_note)))
+check("NOTES 'kept my back tight' is a bracing cue, not pain",
+      not _caution("Kept my back tight all session"),
+      str(_caution("Kept my back tight all session")))
+
+# The genuine-pain path MUST still fire — that is the whole point of the parser.
+check("NOTES genuine soft pain still detected", bool(_caution("my shoulders kinda hurt")))
+check("NOTES sharp pain still escalates to severity 2",
+      any(v.get("severity") == 2 for v in _caution("Sharp pain in my left knee on squats").values()))
+check("NOTES a strain still escalates to severity 2",
+      any(v.get("severity") == 2 for v in _caution("I think I strained my hamstring").values()))
+check("NOTES the INJURY sense of pull still escalates ('pulled a muscle')",
+      any(v.get("severity") == 2 for v in _caution("Pulled a muscle in my lower back").values()),
+      str(_caution("Pulled a muscle in my lower back")))
+
+
+# ── MPC: the two action scorers must not drift apart ─────────────────────────
+# Shipped bug: generate_weekly_program.simulate_and_score had NO action-dependent term,
+# so w_pst/w_str cancelled in the argmax, the score was monotone in TSS load, and
+# TWO_A_DAY (the highest load) won nearly every day. mpc_prescriber.score_trajectory
+# already carried the goal term; the weekly one claimed to "mirror" it and did not.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("gwp", "generate_weekly_program.py")
+_gwp = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_gwp)
+import mpc_prescriber as _mpc
+
+check("MPC weekly and daily scorers share PST_READINESS_VALUE",
+      _gwp.PST_READINESS_VALUE == _mpc.PST_READINESS_VALUE)
+check("MPC weekly and daily scorers share STRENGTH_PROGRESS_VALUE",
+      _gwp.STRENGTH_PROGRESS_VALUE == _mpc.STRENGTH_PROGRESS_VALUE)
+check("MPC weekly and daily scorers share GOAL_REWARD_SCALE",
+      _gwp.GOAL_REWARD_SCALE == _mpc.GOAL_REWARD_SCALE)
+check("MPC weekly and daily scorers share ACTION_TSS",
+      _gwp.ACTION_TSS == _mpc.ACTION_TSS)
+
+# The deadline weights must actually STEER the choice. If the goal term is ever dropped
+# again they cancel out and this goes flat.
+_k = _gwp.BanisterKalman()
+_pst_heavy = {a: _gwp.simulate_and_score(_k, a, [50] * 28, 0.9, 0.1) for a in _gwp.ACTION_TSS}
+_str_heavy = {a: _gwp.simulate_and_score(_k, a, [50] * 28, 0.1, 0.9) for a in _gwp.ACTION_TSS}
+check("MPC deadline weights actually change the ranking (goal term is live)",
+      max(_pst_heavy, key=_pst_heavy.get) != max(_str_heavy, key=_str_heavy.get)
+      or _pst_heavy != _str_heavy,
+      f"pst-heavy top={max(_pst_heavy, key=_pst_heavy.get)}, "
+      f"str-heavy top={max(_str_heavy, key=_str_heavy.get)}")
+check("MPC a STRENGTH-weighted deadline scores STRENGTH above CARDIO",
+      _str_heavy["STRENGTH"] > _str_heavy["CARDIO"],
+      f"STRENGTH={_str_heavy['STRENGTH']}, CARDIO={_str_heavy['CARDIO']}")
+check("MPC a PST-weighted deadline scores CARDIO above STRENGTH",
+      _pst_heavy["CARDIO"] > _pst_heavy["STRENGTH"],
+      f"CARDIO={_pst_heavy['CARDIO']}, STRENGTH={_pst_heavy['STRENGTH']}")
+
+
+# ── CUT: an open-ended cut must not freeze the MRV learner ───────────────────
+# Shipped bug (2026-07-11): can_schedule() refused to start a volume-tolerance test
+# while phase == "cut". On a cut the learner has only two paths, and BOTH were shut:
+# the DOWN-ratchet is suppressed by design (F9), and the UP-ratchet needs
+# `weekly_sets + 1 > mrv_mean`, which only becomes true DURING a ramp. So blocking the
+# ramp closed the last path. The athlete cut open-endedly from 2026-06-07; every
+# landmark stayed pinned to its population prior for 34 days (10 of 16 muscles at
+# n_obs=0) and the program was byte-identical every week.
+from engine.controlled_tests import (can_schedule, pick_volume_test_muscle,
+                                     schedule_volume_test, ramp_target, step_volume_test,
+                                     RAMP_WEEKS)
+from engine.learners import apply_mrv_observation
+from engine.athlete_profile import MUSCLE_EMPHASIS
+
+check("CUT a volume-tolerance test CAN be scheduled while cutting", can_schedule(None, "cut"))
+check("CUT still only one test at a time", not can_schedule({"test_type": "volume_tolerance"}, "cut"))
+check("CUT still only one test at a time, off a cut too", not can_schedule({"x": 1}, None))
+
+# The full ramp → observation chain must actually move the posterior ON A CUT.
+_LM = {"side_delts": {"mev": 6, "mav": 10, "mrv": 16, "mrv_mean": 16.0,
+                      "mrv_var": 9.0, "n_obs": 0, "mature": False}}
+_tm = pick_volume_test_muscle(_LM, MUSCLE_EMPHASIS)
+check("CUT the probe targets an unobserved, high-emphasis muscle", _tm == "side_delts", str(_tm))
+
+_test, _obs = schedule_volume_test(_tm, _LM[_tm]["mrv_mean"], "2026-07-13"), None
+_targets = []
+for _ in range(RAMP_WEEKS + 1):
+    _t = ramp_target(_test, _LM).get(_tm)
+    if _t is None:
+        break
+    _targets.append(_t)
+    _test, _obs = step_volume_test(_test, muscle_slope=0.8, soreness_avg=3.0, week_sets=_t)
+    if _obs:
+        break
+check("CUT the ramp actually RAISES the weekly set target week over week",
+      _targets == sorted(_targets) and len(set(_targets)) > 1,
+      " → ".join(f"{t:.0f}" for t in _targets))
+check("CUT the ramp pushes the muscle above its MAV (where MRV becomes observable)",
+      max(_targets) > _LM[_tm]["mav"], f"max {max(_targets):.0f} vs MAV {_LM[_tm]['mav']}")
+check("CUT a completed ramp emits an MRV observation", bool(_obs), str(_obs))
+
+_n_before = _LM[_tm]["n_obs"]
+_upd = apply_mrv_observation(_LM[_tm], _obs["obs"], _obs["obs_var"], 18)
+check("CUT the MRV posterior actually records the observation (was frozen for 34 days)",
+      _upd["n_obs"] > _n_before, f"n_obs {_n_before} → {_upd['n_obs']}")
+
+# A STALL under a deficit stays ambiguous — we must NOT ratchet MRV down on a cut.
+_sore_row = {"mev": 6, "mav": 12, "mrv": 16, "mrv_mean": 16.0, "mrv_var": 9.0,
+             "n_obs": 3, "mature": False}
+_cut_stall = update_mrv(dict(_sore_row), 14, -0.5, 8.0, 18, phase="cut")
+_off_stall = update_mrv(dict(_sore_row), 14, -0.5, 8.0, 18, phase=None)
+check("CUT a stall+sore week does NOT ratchet MRV down on a cut (deficit masking)",
+      _cut_stall["mrv_mean"] == _sore_row["mrv_mean"],
+      f"{_sore_row['mrv_mean']} → {_cut_stall['mrv_mean']}")
+check("CUT the same stall+sore week DOES ratchet down off a cut",
+      _off_stall["mrv_mean"] < _sore_row["mrv_mean"],
+      f"{_sore_row['mrv_mean']} → {_off_stall['mrv_mean']}")
+
+
+# ── E14: the food log is not taken at face value ──────────────────────────────
+# Three coupled bugs let a spotty food log quietly drive the whole nutrition engine:
+# the intake window skipped unlogged days, the coverage was never reported, and the
+# learned under-report correction was built but never called.
+import datetime as _dt
+import compute_athlete_state as _cas
+from engine.tdee import energy_density_kcal_per_lb as _density, KG_PER_LB as _KGLB
+
+_cas.TODAY = "2026-07-11"
+# Nolan's real July log: 5 of the 7 days before today. 07-03/04/05 were never logged.
+_food = [{"date": d, "calories": k, "protein_grams": 200} for d, k in {
+    "2026-07-10": 1516, "2026-07-09": 1557, "2026-07-08": 1530,
+    "2026-07-07": 1417, "2026-07-06": 1669,
+    "2026-07-02": 1882, "2026-07-01": 996,     # outside the 7-day window
+}.items()]
+_wts = [{"recorded_date": d, "weight": w} for d, w in [
+    ("2026-07-06", 188.0), ("2026-07-07", 187.8), ("2026-07-08", 184.6),
+    ("2026-07-09", 183.0), ("2026-07-10", 183.3)]]
+_nut = _cas.compute_nutrition(_food, _wts, {"daily_calorie_goal": 1500, "diet_phase": "cut"})
+
+check("E14 the intake window is calendar-anchored, not 'last 7 dates with entries'",
+      _nut["days_logged_7d"] == 5, f"{_nut['days_logged_7d']}/7 days in 07-04..07-10")
+check("E14 unlogged days are surfaced as coverage, not silently skipped",
+      abs(_nut["log_coverage_7d"] - 5 / 7) < 1e-3, f"coverage {_nut['log_coverage_7d']:.0%}")
+check("E14 TODAY (a partial day) is excluded from the mean",
+      "2026-07-11" not in {e["date"] for e in _food} or _nut["days_logged_7d"] == 5)
+# A day with no food log is UNKNOWN intake, not a 0-kcal day: zero-filling would understate
+# intake even worse than skipping. The mean stays over logged days; coverage carries the doubt.
+check("E14 an unlogged day is not zero-filled into the mean",
+      _nut["avg_calories_7d"] > 1400, f"avg {_nut['avg_calories_7d']} kcal (not dragged toward 0)")
+
+# Coverage scales trust in the energy-balance term CONTINUOUSLY — a weight, not a revival
+# of the old hard gate. Half-logged weeks lean on the bodyweight prior instead of reading a
+# gap-riddled log as genuine starvation and spiralling the calorie target down.
+_bw, _prior_bw = 184.0, round(184.0 * 15.5)
+_lo_cov = _tdee(_bw, 1538, -1.0, bodyfat_frac=0.15, intake_bias=1.5, log_coverage=0.0)
+_hi_cov = _tdee(_bw, 1538, -1.0, bodyfat_frac=0.15, intake_bias=1.5, log_coverage=1.0)
+check("E14 zero coverage falls back to the bodyweight prior (nothing is discarded)",
+      _lo_cov == _prior_bw, f"{_lo_cov} == prior {_prior_bw}")
+check("E14 full coverage trusts the energy-balance estimate",
+      _hi_cov < _lo_cov, f"cov 1.0 → {_hi_cov} vs cov 0.0 → {_lo_cov}")
+check("E14 coverage is a continuous weight, not a gate (partial → between the two)",
+      _lo_cov > _tdee(_bw, 1538, -1.0, bodyfat_frac=0.15, intake_bias=1.5,
+                      log_coverage=0.71) > _hi_cov)
+check("E14 an under-logged week no longer reads as a starvation TDEE",
+      _tdee(_bw, 1538, -1.0, bodyfat_frac=0.15, intake_bias=1.0, log_coverage=1.0)
+      < _tdee(_bw, 1538, -1.0, bodyfat_frac=0.15, intake_bias=1.5, log_coverage=0.71))
+
+# The bias is a nudge (gain 0.2) — it ONLY converges if prev_bias is carried across runs.
+_b, _d15 = 1.0, _density(_bw * _KGLB * 0.15)
+for _ in range(30):
+    _b = learned_intake_bias(mean_intake=1538, expenditure_est=_bw * 15.5,
+                             daily_rate_lb=-1.0 / 7.0, density_kcal_per_lb=_d15, prev_bias=_b)
+check("E14 the intake bias learns across runs (was re-seeded to 1.0 every day)",
+      _b > 1.4, f"1.00 → {_b:.2f} over 30 runs")
+_one_shot = learned_intake_bias(mean_intake=1538, expenditure_est=_bw * 15.5,
+                                daily_rate_lb=-1.0 / 7.0, density_kcal_per_lb=_d15, prev_bias=1.0)
+check("E14 a single run barely moves it — persistence is load-bearing, not cosmetic",
+      _one_shot < 1.15, f"one run: 1.00 → {_one_shot:.2f}")
+
+# ── E15: photo bodyfat is a session signal, never a single shot ───────────────
+# Per-shot vision BF is pose-dependent: one 2026-06-07 session read 18% relaxed and 10%
+# flexed off the same body. `order=taken_at.desc limit 1` tie-breaks arbitrarily among
+# same-day shots, so with REVERSE_BF at 12% the cut/bulk call was a coin flip.
+from engine.phase_recommender import recommend_phase as _rec
+_session = [{"taken_at": "2026-06-15", "bodyfat_estimate": b} for b in (15, 10, 10, 18)]
+_goals = {"pst": 0.25, "strength": 0.3, "hypertrophy": 0.45}
+_phases = {_rec(weight_trend=-1.0, days_to_deadline=51, bodyfat=b,
+                goal_priorities=_goals, current_phase="cut")["phase"]
+           for b in (10, 15, 18)}
+check("E15 a single arbitrary shot could swing the phase call (the bug)",
+      len(_phases) > 1, f"same session → {sorted(_phases)}")
+_bf_frac = _cas.compute_physique_bf_frac(_session, max_stale_days=99999)
+_bf_pct = round(_bf_frac * 100.0, 1)
+check("E15 the session mean lands between the pose extremes, not on one of them",
+      10 < _bf_pct < 18, f"{_bf_pct}% from shots 15/10/10/18")
+check("E15 the phase call is now deterministic for a given session",
+      len({_rec(weight_trend=-1.0, days_to_deadline=51, bodyfat=_bf_pct,
+                goal_priorities=_goals, current_phase="cut")["phase"] for _ in range(5)}) == 1)
+# Order must not matter — that was the whole defect.
+check("E15 shot order within a session cannot change the estimate",
+      _cas.compute_physique_bf_frac(list(reversed(_session)), max_stale_days=99999) == _bf_frac)
+
+
+# ---------------------------------------------------------------------------
+# E16 — hysteretic phase band (10 <-> 18) + TNF 4-6 week duration cap.
+#
+# The old band was STATIC, so it had a dead zone: at 13.5% BF (below CUT_ABOVE,
+# above BULK_BELOW) it read "maintain" regardless of travel direction. A cut aimed
+# at 10% would therefore be told to stop the moment it dropped under 18% — the
+# engine could never drive the athlete from 13.5% to his 10% target.
+# ---------------------------------------------------------------------------
+print("\n--- E16: hysteretic phase band + deficit duration cap ---")
+from engine.phase_recommender import MAX_DEFICIT_WEEKS, REVERSE_BF, BF_CUT_ABOVE, BF_BULK_BELOW
+
+check("E16 the athlete's stated band is 10 <-> 18",
+      (REVERSE_BF, BF_BULK_BELOW, BF_CUT_ABOVE) == (10.0, 10.0, 18.0),
+      f"reverse/bulk-below {REVERSE_BF}/{BF_BULK_BELOW}, cut-above {BF_CUT_ABOVE}")
+
+# The dead zone: mid-band, direction of travel must decide the call.
+_mid = dict(weight_trend=-0.5, days_to_deadline=51, goal_priorities=_goals, bodyfat=13.5)
+check("E16 a running cut mid-band KEEPS CUTTING (the dead-zone bug)",
+      _rec(**_mid, current_phase="cut", weeks_in_cut=4.9)["phase"] == "cut",
+      "13.5% BF, wk 4.9 → cut (old static band said 'maintain' and stalled the cut)")
+check("E16 a running bulk mid-band KEEPS GAINING",
+      _rec(**_mid, current_phase="bulk")["phase"] == "bulk")
+check("E16 from maintain, mid-band still reads maintain (band intact where it belongs)",
+      _rec(**_mid, current_phase="maintain")["phase"] == "maintain")
+
+# Far thresholds still terminate each phase.
+check("E16 a cut ENDS when it reaches the 10% target, and reverse-diets out",
+      (lambda r: r["phase"] in ("maintain", "bulk") and r["reverse_diet"])(
+          _rec(weight_trend=-0.5, days_to_deadline=51, bodyfat=9.5,
+               goal_priorities=_goals, current_phase="cut", weeks_in_cut=3.0)))
+check("E16 a bulk ENDS when it reaches the 18% ceiling",
+      _rec(weight_trend=0.4, days_to_deadline=None, bodyfat=18.5,
+           goal_priorities=_goals, current_phase="bulk")["phase"] == "cut")
+
+# TNF rule 5 — the duration cap outranks an unmet bodyfat target.
+_capped = _rec(weight_trend=-0.5, days_to_deadline=51, bodyfat=13.5,
+               goal_priorities=_goals, current_phase="cut", weeks_in_cut=MAX_DEFICIT_WEEKS)
+check("E16 the 4-6wk cap ends the cut even with the bodyfat target UNMET",
+      _capped["phase"] != "cut" and _capped["reverse_diet"],
+      f"wk {MAX_DEFICIT_WEEKS} at 13.5% (target 10%) → {_capped['phase']}, reverse={_capped['reverse_diet']}")
+check("E16 the cap fires with NO photo at all (it is unconditional)",
+      (lambda r: r["phase"] != "cut" and r["reverse_diet"])(
+          _rec(weight_trend=-0.5, days_to_deadline=51, bodyfat=None,
+               goal_priorities=_goals, current_phase="cut", weeks_in_cut=7.0)))
+check("E16 one week short of the cap the cut still runs",
+      _rec(weight_trend=-0.5, days_to_deadline=51, bodyfat=13.5,
+           goal_priorities=_goals, current_phase="cut",
+           weeks_in_cut=MAX_DEFICIT_WEEKS - 1)["phase"] == "cut")
+check("E16 the cap is dormant when not cutting (a bulk is not capped)",
+      _rec(weight_trend=0.3, days_to_deadline=None, bodyfat=13.5,
+           goal_priorities=_goals, current_phase="bulk", weeks_in_cut=9.0)["phase"] == "bulk")
+
+# The cap must agree with the one nutrition_modulator already enforces, or the
+# phase recommender says "cut" while the modulator quietly backs the calories out.
+import engine.nutrition_modulator as _nm, inspect as _insp
+check("E16 the phase cap matches the deficit cap in nutrition_modulator",
+      "weeks_in_cut) >= 6" in _insp.getsource(_nm).replace("float(", ""),
+      f"both gate at {MAX_DEFICIT_WEEKS:.0f} weeks")
+
+# Nolan's live state on 2026-07-11: cut opened 2026-06-07.
+_wk = (_dt.date(2026, 7, 11) - _dt.date(2026, 6, 7)).days / 7.0
+check("E16 Nolan is 4.9wk in on 2026-07-11 — still cutting, cap not yet reached",
+      _rec(weight_trend=-0.52, days_to_deadline=51, bodyfat=13.5, goal_priorities=_goals,
+           current_phase="cut", weeks_in_cut=_wk)["phase"] == "cut", f"{_wk:.1f} weeks")
+_wk19 = (_dt.date(2026, 7, 19) - _dt.date(2026, 6, 7)).days / 7.0
+check("E16 the block auto-ends on 2026-07-19 (6.0wk) and flips to reverse",
+      (lambda r: r["reverse_diet"] and r["phase"] == "maintain")(
+          _rec(weight_trend=-0.52, days_to_deadline=43, bodyfat=13.5, goal_priorities=_goals,
+               current_phase="cut", weeks_in_cut=_wk19)), f"{_wk19:.1f} weeks")
 
 
 print()

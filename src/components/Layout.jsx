@@ -122,6 +122,30 @@ export default function Layout({ children, currentPageName }) {
   const stripScrollRef = useRef(null);
   const [stripOverflows, setStripOverflows] = useState(false);
 
+  // iOS resolves `position: fixed` against the LAYOUT viewport, and the software
+  // keyboard does not shrink it — it SCROLLS it. So bottom-anchored chrome (the
+  // dock, the workout logging action bar, the Profile save bar) stays glued to a
+  // viewport bottom that is now behind the keyboard, and drifts up into the middle
+  // of the visible area. Publish the keyboard's inset so those bars can subtract it
+  // and stay pinned to the VISUAL viewport bottom, where the user actually is.
+  // Resolves to 0px with no keyboard, so it's a no-op on desktop and on Android
+  // (which resizes the layout viewport instead of scrolling it).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;   // --keyboard-inset stays at its 0px :root default
+    const updateKeyboardInset = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty("--keyboard-inset", `${inset}px`);
+    };
+    updateKeyboardInset();
+    vv.addEventListener("resize", updateKeyboardInset);
+    vv.addEventListener("scroll", updateKeyboardInset);
+    return () => {
+      vv.removeEventListener("resize", updateKeyboardInset);
+      vv.removeEventListener("scroll", updateKeyboardInset);
+    };
+  }, []);
+
   useEffect(() => {
     const updateHeaderHeight = () => {
       const mobileHeader = mobileHeaderRef.current;
@@ -459,7 +483,9 @@ export default function Layout({ children, currentPageName }) {
           position: "fixed",
           left: 18,
           right: 18,
-          bottom: "calc(12px + env(safe-area-inset-bottom))",
+          // --keyboard-inset keeps the dock glued to the VISUAL viewport bottom on
+          // iOS instead of drifting to mid-screen while the keyboard is open.
+          bottom: "calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset))",
           gridTemplateColumns: `repeat(${dockItems.length}, minmax(0, 1fr))`,
         }}
       >

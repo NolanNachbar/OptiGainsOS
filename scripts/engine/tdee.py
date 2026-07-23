@@ -100,13 +100,23 @@ def adaptive_tdee(mean_intake, daily_rate_lb, density_kcal_per_lb, intake_bias: 
 
 
 def estimate_tdee(bodyweight_lb, avg_kcal, weight_trend_lb_wk, fallback: float = 3200.0,
-                  bodyfat_frac=None, intake_bias: float = 1.0, weeks_in_phase=None) -> float:
+                  bodyfat_frac=None, intake_bias: float = 1.0, weeks_in_phase=None,
+                  log_coverage: float = 1.0) -> float:
     """Composition-aware adaptive maintenance estimate (E10).
 
     Anchors on the trend-weight signal via the Forbes energy density and a learned intake
     bias, blended with a weak bodyweight prior. The old 25% trust GATE (which discarded
     incomplete logs and fell back to the prior) is replaced by a trust BLEND + a sanity
     CLAMP that bounds — but never discards — the energy-balance signal.
+
+    `log_coverage` (0-1) is the fraction of the intake window that was actually logged. It
+    scales trust in the energy-balance term CONTINUOUSLY — it is a weight, not a revival of
+    the old gate: at coverage 0 the estimate is the bodyweight prior, at 1 it is the full
+    blend, and nothing is ever thrown away. This matters because `avg_kcal` is a mean over
+    LOGGED days only, so an incomplete window reports the intake of the days he felt like
+    logging. Without this the energy-balance branch reads a half-logged week as a genuine
+    starvation-level intake and drags TDEE down, which then lowers the calorie target —
+    a spiral that punishes the athlete for the logging gap rather than surfacing it.
     """
     tdee_prior = bodyweight_lb * 15.5 if (bodyweight_lb and bodyweight_lb > 0) else float(fallback)
     try:
@@ -119,7 +129,9 @@ def estimate_tdee(bodyweight_lb, avg_kcal, weight_trend_lb_wk, fallback: float =
             density = energy_density_kcal_per_lb(fat_mass_kg, weeks_in_phase)
             daily_rate_lb = float(weight_trend_lb_wk) / 7.0
             tdee_eb = adaptive_tdee(avg_kcal, daily_rate_lb, density, intake_bias)
-            blended = TDEE_EB_BLEND * tdee_eb + (1.0 - TDEE_EB_BLEND) * tdee_prior
+            cov = max(0.0, min(1.0, float(log_coverage)))
+            eb_weight = TDEE_EB_BLEND * cov
+            blended = eb_weight * tdee_eb + (1.0 - eb_weight) * tdee_prior
             lo, hi = 0.5 * tdee_prior, 1.6 * tdee_prior   # clamp, not gate
             return round(max(lo, min(hi, blended)))
     except (TypeError, ValueError):

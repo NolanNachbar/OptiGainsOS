@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useUserQueries";
+import { getTodayString } from "@/utils/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Check, X, Brain, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,6 +11,7 @@ import { Link } from "react-router-dom";
 // it to your diet phase, reject dismisses. Reads athlete_state.nutrition.phase_recommendation.
 export default function PhaseRecommendationCard() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [rec, setRec] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   const [dismissed, setDismissed] = useState(false);
@@ -17,13 +20,16 @@ export default function PhaseRecommendationCard() {
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    const today = new Date().toISOString().slice(0, 10);
+    // athlete_state is keyed by the athlete's calendar day. A UTC date rolls over
+    // at 6pm Mountain and would read tomorrow's row, which has no recommendation
+    // yet — the card would just vanish for the rest of the evening.
+    const today = getTodayString(profile?.timezone);
     const { data } = await supabase
       .from("athlete_state").select("nutrition")
       .eq("created_by", user.id).eq("date", today).limit(1).maybeSingle();
     const r = data?.nutrition?.phase_recommendation;
     if (r) { setRec(r); setCurrentPhase(r.current_phase); }
-  }, [user]);
+  }, [user, profile?.timezone]);
 
   useEffect(() => { load(); }, [load]);
 

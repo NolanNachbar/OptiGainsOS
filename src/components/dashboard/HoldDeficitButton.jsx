@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useUserQueries";
+import { getTodayString } from "@/utils/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Flame, Check } from "lucide-react";
 
@@ -15,11 +17,15 @@ const OVERRIDABLE_EASE_GATES = ["strength_dropping", "manual_ease", "recovery_cr
 
 export default function HoldDeficitButton() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [isCut, setIsCut] = useState(false);
   const [rec, setRec] = useState(null);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  // Keys both the athlete_state read and the nutrition_overrides write. Must be
+  // the athlete's calendar day — a UTC date rolls over at 6pm Mountain, so the
+  // card would read tomorrow's (empty) state and write the override onto it.
+  const today = getTodayString(profile?.timezone);
 
   const load = useCallback(async () => {
     if (!user?.id) return;

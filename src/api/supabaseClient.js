@@ -53,6 +53,7 @@ class DatabaseAdapter {
       WaterLog: this.createEntity('water_logs'),
       DailyBrief: this.createEntity('daily_briefs'),
       CaptureInbox: this.createEntity('capture_inbox'),
+      ExerciseShotNote: this.createEntity('exercise_shot_notes'),
     };
   }
 
