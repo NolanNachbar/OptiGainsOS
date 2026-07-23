@@ -1358,9 +1358,13 @@ export default function WorkoutDetail() {
         </div>{/* end two-column flex */}
       </div>
 
-      {/* Resume previous session prompt */}
-      <Dialog open={!!resumeSession} onOpenChange={(open) => { if (!open) handleDismissResume(); }}>
-        <DialogContent className="max-w-sm">
+      {/* Resume previous session prompt. Dismissing via scrim tap must NOT cancel
+          the real in-progress session (that used to fire handleDismissResume, so
+          an accidental tap outside the dialog silently discarded the workout) —
+          onOpenChange is a no-op here; only the explicit "Start Fresh" button may
+          cancel it. */}
+      <Dialog open={!!resumeSession} onOpenChange={() => {}}>
+        <DialogContent className="max-w-sm" hideClose>
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>

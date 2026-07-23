@@ -758,9 +758,11 @@ export default function QuickWorkout() {
         )}
       </div>
 
-      {/* Resume previous session prompt */}
-      <Dialog open={!!resumeSession} onOpenChange={(open) => { if (!open) handleDismissResume(); }}>
-        <DialogContent sheetMinHeight="">
+      {/* Resume previous session prompt. onOpenChange is a no-op — dismissing via
+          scrim tap must not silently cancel the real in-progress session; only
+          the explicit "Start Fresh" button may do that. */}
+      <Dialog open={!!resumeSession} onOpenChange={() => {}}>
+        <DialogContent sheetMinHeight="" hideClose>
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>

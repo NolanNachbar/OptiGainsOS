@@ -33,11 +33,20 @@ export function AuthProvider({ children }) {
     };
     init();
 
-    // Listen for auth changes
+    // Listen for auth changes. A backgrounded phone (screen lock) can deliver a
+    // transient null session right as the token refreshes on resume — only an
+    // explicit SIGNED_OUT means the athlete actually logged out. Every other
+    // event only updates `user` when it carries a real session, so a flaky
+    // refresh can never bounce an in-progress workout back to the login screen.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const u = session?.user ?? null;
-        setUser(u);
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          return;
+        }
+        if (session?.user) {
+          setUser(session.user);
+        }
       }
     );
 

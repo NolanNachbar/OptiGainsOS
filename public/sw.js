@@ -1,5 +1,5 @@
 // Bump this on every deploy so the worker reinstalls and old caches are evicted.
-const CACHE_NAME = "optigains-v2";
+const CACHE_NAME = "optigains-v3";
 
 // Cap runtime-cached assets so hashed bundles don't accumulate forever.
 const MAX_RUNTIME_ENTRIES = 60;
