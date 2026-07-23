@@ -98,9 +98,15 @@ def _resolve_user_id() -> str:
     sys.exit(1)
 
 
-if not USER_ID:
-    USER_ID = _resolve_user_id()
-    print(f"  Resolved USER_ID from DB: {USER_ID}")
+def _ensure_user_id():
+    # Resolving USER_ID makes a live network call, which must never fire just
+    # from importing this module — validate_convergence_fixes.py (and CI's
+    # placeholder-credential test run) imports it for its pure functions, not
+    # to run the estimator.
+    global USER_ID
+    if not USER_ID:
+        USER_ID = _resolve_user_id()
+        print(f"  Resolved USER_ID from DB: {USER_ID}")
 
 # ── Supabase REST helpers ─────────────────────────────────────────────────────
 
@@ -1572,4 +1578,5 @@ def main():
 
 
 if __name__ == "__main__":
+    _ensure_user_id()
     main()
