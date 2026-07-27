@@ -1323,7 +1323,8 @@ def _build_session(
     out = []
     for e in exercises:
         pm = (e.get("muscles") or [None])[0]
-        apply_philosophy(e, (weekly_set_targets or {}).get(pm, 0))
+        pm_weekly = (weekly_set_targets or {}).get(pm, 0)
+        apply_philosophy(e, pm_weekly, _session_sets(pm, pm_weekly, split) if pm else None)
         # Pain back-off: a sharp (severity-2) flag on this movement or its muscle
         # trims an accessory to a single set; a strength lift is left intact but
         # annotated so the brief surfaces it (never auto-drop a comp lift on a note).

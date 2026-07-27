@@ -45,7 +45,7 @@ from engine.session_generator  import (generate as gen_session, get_split, build
                                        classify_log_split, week_muscle_counts_from_logs)
 from engine.hypertrophy_volume import (HypertrophyVolumeEngine, MUSCLES as MUSCLE_GROUPS,
                                        apply_running_interference, apply_endurance_interference)
-from engine.allocator          import plan_week, default_goal_priorities
+from engine.allocator          import plan_week, default_goal_priorities, marginal_value
 from engine.nutrition_modulator import ETA_DEFICIT
 from engine.athlete_profile    import MUSCLE_EMPHASIS
 from engine.hypertrophy_volume import LANDMARK_PRIORS
@@ -1113,6 +1113,11 @@ def main():
     # to the systemic r_phase scalar in recovery_budget to avoid double-counting.
     apply_endurance_interference(landmarks_lc, modality_km)
 
+    # Snapshot pre-probe landmarks so plan_week can also be run WITHOUT the bump
+    # below — needed to tell whether the probe actually got funded through the
+    # shared budget or needs an explicit top-up (see F14/Change-3 after plan_week).
+    landmarks_lc_unprobed = {m: dict(v) for m, v in landmarks_lc.items()}
+
     # Exploration probe (F3): raise the probed muscle's MRV ceiling by the delta so
     # the allocator actually funds the extra set this week (capped at prior+2). This
     # is the wiring that was missing — the delta used to land in a discarded dict.
@@ -1154,6 +1159,48 @@ def main():
         print(f"  E9 deficit coupling: deficit_ratio={_deficit_ratio:.2f} → "
               f"recovery_cost_mult={recovery_cost_mult:.3f}")
     weekly_targets = {m: int(v) for m, v in plan["set_targets"].items()}
+
+    # F14/Change-3: when the recovery budget binds near ΣMEV (e.g. deep into a cut),
+    # step 2 of allocate() never gets to spend on marginal value at all, so raising
+    # the probed muscle's MRV ceiling above is a no-op — the probe needs volume it
+    # was never going to get from the shared budget. Detect that (funded == the
+    # no-probe baseline) and, if so, explicitly move the probe's sets from whichever
+    # OTHER muscle currently sits at the lowest marginal value — budget-neutral
+    # (ΣweeklyTargets unchanged) so this doesn't loosen the recovery-gated budget,
+    # it just guarantees the probe is actually visible instead of silently dropped.
+    if exploration_delta:
+        baseline_plan = plan_week(landmarks_lc_unprobed, tsb_now, phase_now, goal_prio,
+                                   deadline_mult, days_available=6, vdot_gap=vdot_gap,
+                                   learned_freq=learned_freq, muscle_emphasis=emphasis,
+                                   recovery_cost_mult=recovery_cost_mult)
+        baseline_targets = {m: int(v) for m, v in baseline_plan["set_targets"].items()}
+        weights = plan.get("weights") or {}
+        for mm, extra in exploration_delta.items():
+            extra = int(extra)
+            if mm not in weekly_targets or extra <= 0:
+                continue
+            got = weekly_targets[mm] - baseline_targets.get(mm, weekly_targets[mm])
+            still_owed = extra - max(0, got)
+            if still_owed <= 0:
+                continue
+            # Pick donor(s): the muscle(s) with the lowest marginal value at their
+            # CURRENTLY funded level, excluding the probed muscle itself and never
+            # taking a muscle below its own MEV.
+            for _ in range(still_owed):
+                donor, donor_v = None, None
+                for m in weekly_targets:
+                    if m == mm or weekly_targets[m] <= int(landmarks_lc.get(m, {}).get("mev", 0)):
+                        continue
+                    v = marginal_value(weekly_targets[m], weights.get(m, 0.0), landmarks_lc.get(m, {}),
+                                        recovery_cost_mult)
+                    if donor_v is None or v < donor_v:
+                        donor, donor_v = m, v
+                if donor is None:
+                    break  # nothing left to donate from without breaching a MEV floor
+                weekly_targets[donor] -= 1
+                weekly_targets[mm] += 1
+            print(f"  Exploration top-up: {mm} +{still_owed} set(s) "
+                  f"(budget-neutral, probe wasn't reaching the shared budget)")
 
     print(f"\n  Reserve score: {reserve_score:.2f}  |  ACWR: {acwr_global:.2f}")
     print(f"  Allocator budget: {plan['budget']} sets  |  goal_prio: {goal_prio}  pst_mult: {pst_mult:.2f}")

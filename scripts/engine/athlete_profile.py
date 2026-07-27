@@ -97,14 +97,22 @@ def is_strength_movement(ex: dict) -> bool:
     )
 
 
-def accessory_set_cap(weekly_target: int) -> int:
+def accessory_set_cap(weekly_target: int, session_target: int = None) -> int:
     """
     Per-session set cap for an accessory given the muscle's weekly target.
 
-    Low weekly target → 1 set; otherwise the 2-set cap. Volume above that is
-    delivered by training the muscle again later in the week (frequency), not by
-    adding sets here.
+    `session_target` (weekly_target / expected frequency, from session_generator's
+    `_session_sets`) is the real per-session share of the weekly allocation — use
+    it directly so a muscle's cap actually tracks week-to-week changes in its
+    weekly target instead of collapsing every target below 8 to the same 1 set
+    and every target at/above 8 to the same 2 sets. Volume above the 1-2 range is
+    still delivered by training the muscle again later in the week (frequency),
+    not by adding more sets here — this only restores the variation the binary
+    cutoff was throwing away.
     """
+    if session_target is not None:
+        return max(MIN_ACCESSORY_SETS_PER_EXERCISE,
+                    min(session_target, MAX_ACCESSORY_SETS_PER_EXERCISE))
     if weekly_target and weekly_target >= 8:
         return MAX_ACCESSORY_SETS_PER_EXERCISE
     return MIN_ACCESSORY_SETS_PER_EXERCISE
@@ -135,7 +143,7 @@ def clamp_rep_range(rep_target, ceiling: int = PREFERRED_REP_CEILING,
     return f"{lo}-{hi}" if lo != hi else str(hi)
 
 
-def apply_philosophy(ex: dict, weekly_target: int = 0) -> dict:
+def apply_philosophy(ex: dict, weekly_target: int = 0, session_target: int = None) -> dict:
     """
     Enforce the low-volume / high-intensity rule on a fully-built exercise dict
     (called AFTER intensity/readiness scaling so it has the final say).
@@ -158,7 +166,7 @@ def apply_philosophy(ex: dict, weekly_target: int = 0) -> dict:
         return ex
 
     # Accessory: 1-2 sets, to failure.
-    cap = accessory_set_cap(weekly_target)
+    cap = accessory_set_cap(weekly_target, session_target)
     if ex.get("sets"):
         ex["sets"] = max(MIN_ACCESSORY_SETS_PER_EXERCISE, min(int(ex["sets"]), cap))
     if ex.get("rir_target") is not None:

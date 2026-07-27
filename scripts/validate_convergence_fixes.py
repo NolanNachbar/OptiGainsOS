@@ -912,6 +912,52 @@ check("E16 the block auto-ends on 2026-07-19 (6.0wk) and flips to reverse",
                current_phase="cut", weeks_in_cut=_wk19)), f"{_wk19:.1f} weeks")
 
 
+# ── F14: program-content stagnation fix (2026-07-27) ──────────────────────────
+# apply_philosophy's accessory cap used to collapse every weekly_target < 8 to a
+# flat 1 set and every target >= 8 to a flat 2 — nothing in the 1-7 range ever
+# showed a visible change. session_target (weekly_target / expected frequency)
+# now drives the cap directly, so adjacent weekly targets can produce different
+# per-session sets.
+from engine.athlete_profile import accessory_set_cap, apply_philosophy
+check("F14 accessory cap tracks session_target, not just weekly_target>=8",
+      accessory_set_cap(5, session_target=1) == 1 and accessory_set_cap(7, session_target=2) == 2,
+      f"cap(5,1)={accessory_set_cap(5, session_target=1)} cap(7,2)={accessory_set_cap(7, session_target=2)}")
+check("F14 accessory cap still ceilings at 2 regardless of session_target",
+      accessory_set_cap(20, session_target=5) == 2)
+check("F14 accessory cap floors at 1 even with session_target=0",
+      accessory_set_cap(0, session_target=0) == 1)
+check("F14 accessory cap falls back to the old binary rule with no session_target",
+      accessory_set_cap(3) == 1 and accessory_set_cap(8) == 2)
+_ex_lo = apply_philosophy({"sets": 3, "rir_target": 2}, weekly_target=4, session_target=1)
+_ex_hi = apply_philosophy({"sets": 3, "rir_target": 2}, weekly_target=8, session_target=2)
+check("F14 apply_philosophy actually varies sets between two real weekly targets",
+      _ex_lo["sets"] != _ex_hi["sets"], f"target4→{_ex_lo['sets']} target8→{_ex_hi['sets']}")
+
+# update_mrv: previously only >=7 soreness ever moved the posterior down, and a
+# responding-but-budget-capped muscle (weekly_sets+1 <= mean) never accumulated
+# any evidence (n_obs stuck at 0). Two new paths: a moderate-soreness stall now
+# nudges the mean down (softly), and a responding/recoverable-but-capped week
+# ticks n_obs / shrinks variance without moving the mean.
+_row0 = {"mrv_mean": 16.0, "mrv_var": 9.0, "n_obs": 0, "mev": 6, "mav": 14}
+_moderate_stall = update_mrv(_row0, weekly_sets=8, e1rm_slope=-0.1, soreness_avg=5.5,
+                              prior_mrv=16.0, phase=None)
+check("F14 a moderate-soreness stall now moves the posterior (was frozen before)",
+      _moderate_stall["mrv_mean"] < 16.0, f"mean→{_moderate_stall['mrv_mean']}")
+check("F14 a moderate-soreness stall still counts as an observation",
+      _moderate_stall["n_obs"] == 1)
+_dead_zone = update_mrv(_row0, weekly_sets=8, e1rm_slope=0.2, soreness_avg=2.0,
+                          prior_mrv=16.0, phase=None)
+check("F14 a responding-but-budget-capped week ticks n_obs without moving the mean",
+      _dead_zone["n_obs"] == 1 and _dead_zone["mrv_mean"] == 16.0,
+      f"n_obs={_dead_zone['n_obs']} mean={_dead_zone['mrv_mean']}")
+check("F14 that same tick still shrinks the variance (evidence accumulates)",
+      _dead_zone["mrv_var"] < 9.0)
+_on_cut_dead_zone = update_mrv(_row0, weekly_sets=8, e1rm_slope=-0.1, soreness_avg=5.5,
+                                 prior_mrv=16.0, phase="cut")
+check("F14 the moderate-soreness down-drift is still suppressed on a cut (F9 unchanged)",
+      _on_cut_dead_zone["mrv_mean"] == 16.0 and _on_cut_dead_zone["n_obs"] == 0)
+
+
 print()
 if all(_results):
     print(f"ALL {len(_results)} CHECKS PASSED")

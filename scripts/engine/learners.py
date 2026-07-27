@@ -29,6 +29,13 @@ IMMATURE_HEADROOM = 4  # [ENG] F1 keystone: while a muscle is still immature, le
                        #       before maturity — beyond +headroom needs a designed test.
 CUT_OBS_VAR_MULT = 2.0  # [ENG] F9: during a cut, down-weight the (energy-deficit-masked)
                         #       e1RM signal rather than trusting it at face value
+STALL_OBS_VAR_MULT = 2.0  # [ENG] F14: a moderate-soreness stall is a real but noisier
+                        #       down-signal than the SOR_HI ratchet — down-weight it
+MEV_TICK_VAR_DECAY = 0.97  # [ENG] F14: a responding-but-below-mean week is genuine
+                        #       tolerance evidence even though it can't move the mean
+                        #       (would wrongly drag MRV down) — it still counts toward
+                        #       maturity and tightens the CI a touch, so n_obs isn't
+                        #       stuck at 0 forever on a budget-bound athlete.
 MESOCYCLE_MIN_OBS = 8   # [ENG] C8/E5: a hypertrophy-VOLUME parameter (MRV) may not be
                         #       declared MATURE on fewer than a mesocycle of weekly
                         #       observations, no matter how fast its credible interval
@@ -68,6 +75,7 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
 
     obs = None
     obs_var_eff = obs_var
+    mev_tick = False   # F14: evidence-only tick — tightens the CI without moving the mean
     if weekly_sets and weekly_sets > 0 and e1rm_slope is not None:
         responding  = e1rm_slope > 0
         recoverable = soreness_avg <= SOR_OK
@@ -87,11 +95,32 @@ def update_mrv(row: dict, weekly_sets: float, e1rm_slope, soreness_avg: float,
             # F9: never ratchet MRV DOWN on a cut — you can't separate recovery-limited
             # from deficit masking without a deload (and there is none by design).
             obs = weekly_sets - 1          # recovery cost too high here → soft MRV lower
+        elif (not responding) and SOR_OK < soreness_avg < SOR_HI and not on_cut:
+            # F14: a stall with MODERATE (not yet extreme) soreness is a real but
+            # noisier down-signal than the SOR_HI ratchet above — previously only
+            # soreness >= 7 moved anything down, so a budget-bound athlete sitting
+            # well under MRV every week (never sore enough to trip that threshold)
+            # left the posterior frozen indefinitely. Down-weighted and, like the
+            # ratchet above, still only a downward pull — fatigue-safe.
+            obs = weekly_sets
+            obs_var_eff = obs_var * STALL_OBS_VAR_MULT
+        elif responding and recoverable:
+            # F14: responding-and-recoverable but weekly_sets+1 <= mean — the classic
+            # dead zone when the recovery budget funds well under the prior MRV. This
+            # genuinely IS evidence the athlete tolerates this volume, but feeding it
+            # as a mean-moving observation would wrongly drag MRV down toward however
+            # little was funded. Instead just tick the evidence counter and tighten
+            # the CI slightly, so maturity (which needs n_obs, not just mean movement)
+            # becomes reachable instead of frozen at n_obs=0 forever.
+            mev_tick = True
 
     if obs is not None:
         K = min(var / (var + obs_var_eff), K_MAX)
         mean = mean + K * (obs - mean)
         var  = var * (1 - K)
+        n   += 1
+    elif mev_tick:
+        var *= MEV_TICK_VAR_DECAY
         n   += 1
 
     # E5/C8: the CI must separate from the prior AND clear a mesocycle of observations.
