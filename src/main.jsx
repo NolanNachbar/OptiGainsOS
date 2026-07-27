@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { isWorkoutActive, onWorkoutActiveChange } from '@/lib/workoutSessionFlag'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -24,10 +25,25 @@ if ('serviceWorker' in navigator) {
         // WorkoutDetail/QuickWorkout), so a reload just re-shows the real Resume
         // prompt instead of losing anything.
         let reloading = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        const doReload = () => {
           if (reloading) return;
           reloading = true;
           window.location.reload();
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          // Never yank a set out from under him: if a workout is in progress
+          // (including one merely paused behind a locked screen), hold the
+          // reload until it ends instead of firing immediately.
+          if (isWorkoutActive()) {
+            const stopWatching = onWorkoutActiveChange(() => {
+              if (!isWorkoutActive()) {
+                stopWatching();
+                doReload();
+              }
+            });
+            return;
+          }
+          doReload();
         });
         // Long-lived PWA sessions poll for a waiting update whenever the app comes
         // back into view (screen unlock, app switch back) instead of only once at

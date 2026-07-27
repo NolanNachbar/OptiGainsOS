@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { setWorkoutActive } from "@/lib/workoutSessionFlag";
 
 /**
  * Manages a workout_sessions row in Supabase so in-progress workouts
@@ -45,6 +46,10 @@ export function useWorkoutSession() {
       console.error("Error checking for active workout session:", error);
       return null;
     }
+    // No active session found: clear a stale flag left over from a
+    // crash/force-quit that never hit completeSession/cancelSession, so a
+    // pending update isn't stuck deferring forever.
+    if (!data) setWorkoutActive(false);
     return data || null;
   };
 
@@ -74,6 +79,7 @@ export function useWorkoutSession() {
     }
 
     sessionIdRef.current = data.id;
+    setWorkoutActive(true);
     return data;
   };
 
@@ -100,6 +106,7 @@ export function useWorkoutSession() {
     const id = sessionIdRef.current;
     if (!id) return;
     sessionIdRef.current = null;
+    setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
       .update({ status: "completed" })
@@ -126,6 +133,7 @@ export function useWorkoutSession() {
     const id = sessionIdRef.current;
     if (!id) return;
     sessionIdRef.current = null;
+    setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
       .update({ status: "cancelled" })
@@ -138,6 +146,7 @@ export function useWorkoutSession() {
    */
   const restoreSession = (sessionId) => {
     sessionIdRef.current = sessionId;
+    setWorkoutActive(true);
   };
 
   return {

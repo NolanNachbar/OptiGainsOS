@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,9 @@ export default function ExerciseCard({
   const [showCues, setShowCues] = useState(false);
   const [cuesInfo, setCuesInfo] = useState(undefined); // undefined=loading, null=none, object=loaded
   const menuRef = useRef(null);
+  const menuTriggerRef = useRef(null);
+  const menuContentRef = useRef(null);
+  const [menuStyle, setMenuStyle] = useState({});
   const nudgeTimerRef = useRef(null);
 
   // Select the value AND lift the field above the on-screen keyboard. Without the
@@ -111,12 +115,47 @@ export default function ExerciseCard({
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (openMenu && menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenu(false);
-      }
+      if (!openMenu) return;
+      const inTrigger = menuTriggerRef.current?.contains(e.target);
+      const inMenu = menuContentRef.current?.contains(e.target);
+      if (!inTrigger && !inMenu) setOpenMenu(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenu]);
+
+  // The dropdown is portaled to <body> (fixed positioning, flips up if it
+  // won't fit below) so it can never be clipped by a scroll container or
+  // buried under the sticky logging action bar the way an `absolute`-positioned
+  // menu anchored inside the card could be — this is the same pattern
+  // combobox.jsx uses for the same class of bug.
+  useEffect(() => {
+    if (!openMenu || !menuTriggerRef.current) return;
+    const MENU_H = 236; // 5 rows max, roughly — used only for the flip decision
+    const updatePosition = () => {
+      if (!menuTriggerRef.current) return;
+      const rect = menuTriggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const flipUp = spaceBelow < MENU_H && rect.top > spaceBelow;
+      setMenuStyle(
+        flipUp
+          ? { bottom: window.innerHeight - rect.top + 4, right: window.innerWidth - rect.right }
+          : { top: rect.bottom + 4, right: window.innerWidth - rect.right }
+      );
+    };
+    let rafId = null;
+    const onScroll = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updatePosition);
+    };
+    updatePosition();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", updatePosition);
+    };
   }, [openMenu]);
 
   // Clear nudge timer on unmount to prevent setState on unmounted component
@@ -325,13 +364,18 @@ export default function ExerciseCard({
             <Button
               variant="ghost"
               size="icon"
+              ref={menuTriggerRef}
               onClick={() => setOpenMenu(!openMenu)}
               className="h-9 w-9"
             >
               <MoreVertical className="w-5 h-5" />
             </Button>
-            {openMenu && (
-              <div className="absolute right-0 top-9 glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-20 min-w-[160px] text-ink">
+            {openMenu && createPortal(
+              <div
+                ref={menuContentRef}
+                style={menuStyle}
+                className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
+              >
                 <button
                   onClick={() => {
                     setEditingNotes(true);
@@ -386,7 +430,8 @@ export default function ExerciseCard({
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
                 </button>
-              </div>
+              </div>,
+              document.body
             )}
             </div>
           </div>
