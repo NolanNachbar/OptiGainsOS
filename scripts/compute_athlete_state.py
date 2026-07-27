@@ -1415,14 +1415,19 @@ def main():
         # the severe-crash recovery valve on a cut (the other half is HRV).
         poor_sleep_days = _consecutive_poor_sleep(recovery_rows)
 
-        # Manual escape valves: did he tap "ease today" (fuel a rough day) or "hold
-        # the hard deficit" (override the auto-ease and run the full deficit)?
+        # Manual escape valves: did he tap "ease today" (fuel a rough day), "hold
+        # the hard deficit" (override the auto-ease and run the full deficit), or
+        # "manual" (typed in his own calorie/protein target, MacroFactor-style —
+        # this outranks the recovery-gated math entirely, applied below).
         _ov_rows = sb_get("nutrition_overrides", {
-            "select": "action", "created_by": f"eq.{USER_ID}",
+            "select": "action,manual_calorie_target,manual_protein_g", "created_by": f"eq.{USER_ID}",
             "date": f"eq.{datetime.date.today().isoformat()}", "limit": "1"})
-        _ov_action = _ov_rows[0].get("action") if _ov_rows else None
+        _ov = _ov_rows[0] if _ov_rows else {}
+        _ov_action = _ov.get("action")
         ease_today = _ov_action == "ease"
         push_today = _ov_action == "push"
+        manual_cal = _ov.get("manual_calorie_target") if _ov_action == "manual" else None
+        manual_protein = _ov.get("manual_protein_g") if _ov_action == "manual" else None
 
         nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
             "overreaching":  overreach_out.get("overreaching"),
@@ -1441,6 +1446,23 @@ def main():
             "force_full_deficit": push_today,
         })
         _rec = nutrition["recommended_intake"]
+        # Manual target wins outright: he outranks the algorithm the same way
+        # force_full_deficit does, but for the number itself, not just the gates.
+        # Macro floors (protein/fat/carb) from the recovery-gated calc are kept as
+        # metadata only when he didn't also override protein.
+        if manual_cal:
+            _rec["calorie_target"] = int(manual_cal)
+            if manual_protein:
+                _rec["protein_g"] = int(manual_protein)
+            _maint = _rec.get("maintenance_kcal") or 0
+            _rec["kcal_deficit"] = round(_maint - manual_cal)
+            _rec["deficit_ratio"] = round(_rec["kcal_deficit"] / _maint, 3) if _maint else 0.0
+            _rec["gates"] = ["manual_override"]
+            _rec["rationale"] = (
+                f"You set this manually: {int(manual_cal)} kcal"
+                + (f" / {int(manual_protein)}g protein" if manual_protein else "")
+                + " — overriding the engine's recovery-gated target."
+            )
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "
               f"deficit={round(_rec['deficit_ratio']*100)}%  "
               f"gates={_rec['gates'] or ['clear']}")

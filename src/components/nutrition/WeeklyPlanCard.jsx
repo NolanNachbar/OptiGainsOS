@@ -10,13 +10,14 @@ import { getProgramSchedule } from "@/utils/programSchedule";
 import { getTodayString } from "@/utils/dateUtils";
 import { invalidateFood } from "@/lib/queryKeys";
 import { buildDayEntries, buildShoppingList, entriesCost } from "@/config/dietPlans";
-import { Cpu, Dumbbell, Moon, ShoppingCart, Check, ChevronDown, ChevronUp, Sparkles, Flame, Snowflake } from "lucide-react";
+import { Cpu, Dumbbell, Moon, ShoppingCart, Check, ChevronDown, ChevronUp, Sparkles, Flame, Snowflake, SlidersHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 
 const GATE_LABEL = {
   overreaching: "Overreaching", hrv_suppressed: "HRV low", rhr_elevated: "RHR high",
-  poor_sleep: "Poor sleep",
+  poor_sleep: "Poor sleep", manual_override: "Manual",
 };
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"];
@@ -70,7 +71,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   // ONE source of truth for today's targets — the same hook the daily log rings
   // use (engine recovery-gated target → profile goal). Days the engine hasn't
   // scored yet fall back to these numbers.
-  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut } = useDailyTargets(today);
+  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut, manualOverride } = useDailyTargets(today);
 
   const phaseRaw = (activePhase?.phase_type || "").toLowerCase();
   const isBulk = phaseRaw.includes("bulk") || phaseRaw.includes("surplus");
@@ -90,19 +91,33 @@ export default function WeeklyPlanCard({ bare = false }) {
   const { data: dayContext } = useQuery({
     queryKey: ["week-plan-day-context", today, user?.id],
     queryFn: async () => {
-      const [statesRes, eatenRes] = await Promise.all([
+      const [statesRes, eatenRes, overridesRes] = await Promise.all([
         supabase.from("athlete_state").select("date, nutrition")
           .eq("created_by", user.id).in("date", dates),
         supabase.from("food_entries").select("date, calories, protein_grams, fats_grams")
           .eq("created_by", user.id).in("date", dates).eq("planned", false),
+        supabase.from("nutrition_overrides").select("date, action, manual_calorie_target, manual_protein_g")
+          .eq("created_by", user.id).in("date", dates),
       ]);
       if (statesRes.error) throw statesRes.error;
       if (eatenRes.error) throw eatenRes.error;
+      if (overridesRes.error) throw overridesRes.error;
       const targets = {};
       for (const s of statesRes.data || []) {
         const cal = s.nutrition?.recommended_intake?.calorie_target;
         const pro = s.nutrition?.recommended_intake?.protein_g ?? s.nutrition?.protein_target;
         if (cal) targets[s.date] = { calories: Math.round(cal), protein: pro ? Math.round(pro) : null };
+      }
+      const overrides = {};
+      // A manual override beats whatever the engine wrote for that day — same
+      // priority order as useDailyTargets, just applied across the whole week.
+      for (const o of overridesRes.data || []) {
+        if (o.action !== "manual" || !o.manual_calorie_target) continue;
+        overrides[o.date] = true;
+        targets[o.date] = {
+          calories: Math.round(o.manual_calorie_target),
+          protein: o.manual_protein_g ? Math.round(o.manual_protein_g) : (targets[o.date]?.protein ?? null),
+        };
       }
       const eaten = {};
       for (const e of eatenRes.data || []) {
@@ -111,7 +126,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         d.protein += e.protein_grams || 0;
         d.fats += e.fats_grams || 0;
       }
-      return { targets, eaten };
+      return { targets, eaten, overrides };
     },
     enabled: !!user && !!calTarget,
     staleTime: 60 * 1000,
@@ -129,12 +144,14 @@ export default function WeeklyPlanCard({ bare = false }) {
     return dates.map((d) => {
       // Without a program we can't know rest days; default to training (full fuel).
       const trainingDay = haveSched ? trainSet.has(d) : true;
+      const overridden = !!dayContext?.overrides?.[d];
       const dayTarget = dayContext?.targets?.[d]?.calories || calTarget;
       // Per-day engine protein is raw athlete_state — clamp it through the same
       // cut rule (1.3–1.5 g/lb) as useDailyTargets so no path bypasses the floor.
+      // A manually-typed protein number is his call — don't clamp it back down.
       let dayProtein = dayContext?.targets?.[d]?.protein || proteinTarget;
       const weightLb = profileWeightLb(profile);
-      if (isCut && dayProtein) dayProtein = clampCutProtein(dayProtein, weightLb);
+      if (isCut && dayProtein && !overridden) dayProtein = clampCutProtein(dayProtein, weightLb);
       // Hard floor the optimizer may ease down to when the calorie wall binds.
       const dayProteinFloor = isCut && weightLb ? Math.round(CUT_PROTEIN_HARD_FLOOR_PER_LB * weightLb) : null;
       const eatenCal = dayContext?.eaten?.[d]?.calories || 0;
@@ -152,7 +169,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             aggressiveCut,
           })
         : [];
-      return { date: d, trainingDay, target: dayTarget, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
+      return { date: d, trainingDay, target: dayTarget, overridden, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
     });
   }, [dates, dayContext, calTarget, proteinTarget, fatTarget, isCut, profile, aggressiveCut, activeEnrollment, program]);
 
@@ -181,6 +198,49 @@ export default function WeeklyPlanCard({ bare = false }) {
     });
   };
   const checkedCount = shopping.items.filter((it) => checked[it.food]).length;
+
+  // Manual override (MacroFactor-style "Algorithm" vs "Manual"): he types his
+  // own calorie/protein target for the week, it beats the engine everywhere
+  // (this card, the daily rings) instantly. Backed by the same nutrition_overrides
+  // row the daily ease/push escape valves use — one more `action` value.
+  const weekOverridden = week.some((d) => d.overridden);
+  const [showOverride, setShowOverride] = useState(false);
+  const [overrideCal, setOverrideCal] = useState("");
+  const [overrideProtein, setOverrideProtein] = useState("");
+  const openOverride = () => {
+    setOverrideCal(String(Math.round(calTarget || 0)));
+    setOverrideProtein(proteinTarget ? String(Math.round(proteinTarget)) : "");
+    setShowOverride(true);
+  };
+
+  const setOverride = useMutation({
+    mutationFn: async ({ clear }) => {
+      if (clear) {
+        await supabase.from("nutrition_overrides").delete()
+          .eq("created_by", user.id).in("date", dates).eq("action", "manual");
+        return { cleared: true };
+      }
+      const cal = parseInt(overrideCal, 10);
+      if (!cal || cal <= 0) throw new Error("Enter a calorie target");
+      const protein = overrideProtein ? parseInt(overrideProtein, 10) : null;
+      const rows = dates.map((date) => ({
+        created_by: user.id, date, action: "manual",
+        manual_calorie_target: cal, manual_protein_g: protein,
+      }));
+      const { error } = await supabase.from("nutrition_overrides")
+        .upsert(rows, { onConflict: "created_by,date" });
+      if (error) throw error;
+      return { cleared: false, cal };
+    },
+    onSuccess: ({ cleared, cal }) => {
+      qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
+      qc.invalidateQueries({ queryKey: ["nutrition-override"] });
+      qc.invalidateQueries({ queryKey: ["athlete-state-nutrition"] });
+      setShowOverride(false);
+      toast.success(cleared ? "Back to the engine's target" : `Week set to ${cal} kcal/day manually`);
+    },
+    onError: (e) => toast.error(e.message || "Couldn't save the override"),
+  });
 
   const approve = useMutation({
     mutationFn: async () => {
@@ -239,13 +299,29 @@ export default function WeeklyPlanCard({ bare = false }) {
             {calTarget ? Math.round(calTarget).toLocaleString() : "—"}
           </div>
           <div className="text-[9px] uppercase tracking-widest text-ink-muted font-bold mt-1">
-            kcal / day{engineSet ? " · engine-set" : ""}
+            kcal / day{manualOverride ? " · manual" : engineSet ? " · engine-set" : ""}
           </div>
         </div>
       </div>
 
+      {/* ── Manual-override banner — stands in for the recovery-gated block
+          below, since that rationale describes the ENGINE's number, which the
+          header is no longer showing. ── */}
+      {manualOverride && (
+        <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+            <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Manual target</span>
+          </div>
+          <p className="text-xs text-ink-secondary leading-relaxed mt-1">
+            You set this week's target by hand — the engine's recovery-gated number is
+            overridden until you clear it.
+          </p>
+        </div>
+      )}
+
       {/* ── Recovery-gated rationale ── */}
-      {engineSet && rec && (
+      {!manualOverride && engineSet && rec && (
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
@@ -451,17 +527,78 @@ export default function WeeklyPlanCard({ bare = false }) {
           behind the CTA, bg-[var(--color-bg)]/95 silently dropped its alpha
           (Tailwind can't inject /95 into a raw var()), leaving no real backing. */}
       <div className="sticky bottom-0 px-5 pb-4 pt-3 glass-sheet border-t hairline">
-        <button
-          onClick={() => approve.mutate()}
-          disabled={approve.isPending || allRows.length === 0}
-          className="cta-action w-full disabled:opacity-60 active:scale-[0.98]"
-        >
-          {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => approve.mutate()}
+            disabled={approve.isPending || allRows.length === 0}
+            className="cta-action flex-1 disabled:opacity-60 active:scale-[0.98]"
+          >
+            {approve.isPending ? "Loading week…" : <><Check className="w-4 h-4" /> Approve &amp; load the week</>}
+          </button>
+          <button
+            onClick={openOverride}
+            className="glass-interactive shrink-0 min-h-[44px] px-4 rounded-xl border border-charcoal-border flex items-center gap-1.5 text-xs font-bold text-ink-secondary active:scale-[0.98]"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {weekOverridden ? "Editing" : "Override"}
+          </button>
+        </div>
         <p className="text-[10px] text-ink-muted text-center mt-2 flex items-center justify-center gap-1">
           <Flame className="w-3 h-3" /> Pre-fills your log as check-off items · portions auto-adjust to each day's target
         </p>
       </div>
+
+      {/* ── Manual override — MacroFactor's "Algorithm vs Manual" toggle. Sets
+          the week's calorie/protein target by hand instead of the engine's
+          recovery-gated number; the day plan above rebuilds around it. ── */}
+      <Dialog open={showOverride} onOpenChange={setShowOverride}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manual target</DialogTitle>
+          </DialogHeader>
+          <div className="px-5 pb-5 space-y-4">
+            <p className="text-xs text-ink-muted leading-relaxed">
+              Set your own kcal/day for this week — it overrides the engine's target
+              everywhere (this plan, the daily rings) until you clear it.
+            </p>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Calories / day</span>
+              <input
+                type="number" inputMode="numeric" value={overrideCal}
+                onChange={(e) => setOverrideCal(e.target.value)}
+                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-gold"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day (optional)</span>
+              <input
+                type="number" inputMode="numeric" value={overrideProtein}
+                placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
+                onChange={(e) => setOverrideProtein(e.target.value)}
+                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
+              />
+            </label>
+            <div className="flex gap-2 pt-1">
+              {weekOverridden && (
+                <button
+                  onClick={() => setOverride.mutate({ clear: true })}
+                  disabled={setOverride.isPending}
+                  className="glass-interactive flex-1 min-h-[44px] rounded-xl border border-charcoal-border text-xs font-bold text-ink-secondary disabled:opacity-60"
+                >
+                  Use engine target
+                </button>
+              )}
+              <button
+                onClick={() => setOverride.mutate({ clear: false })}
+                disabled={setOverride.isPending}
+                className="cta-action flex-1 disabled:opacity-60"
+              >
+                {setOverride.isPending ? "Saving…" : "Set for this week"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

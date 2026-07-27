@@ -85,15 +85,37 @@ export function useDailyTargets(date) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Manual override (MacroFactor-style): a typed-in target beats the engine
+  // instantly, client-side — no waiting for tomorrow's 4am compute. The nightly
+  // engine also honors it (compute_athlete_state.py), so this stays in sync
+  // once the cron catches up; this query just closes the gap for "right now."
+  const { data: overrideRow } = useQuery({
+    queryKey: ["nutrition-override", date, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("nutrition_overrides")
+        .select("action, manual_calorie_target, manual_protein_g")
+        .eq("created_by", user.id)
+        .eq("date", date)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!date,
+    staleTime: 30 * 1000,
+  });
+  const manualCal = overrideRow?.action === "manual" ? overrideRow.manual_calorie_target : null;
+  const manualProtein = overrideRow?.action === "manual" ? overrideRow.manual_protein_g : null;
+
   const nutrition = stateRow?.nutrition || null;
   const recommended = nutrition?.recommended_intake || null;
 
-  const engineCal = recommended?.calorie_target ?? nutrition?.calorie_target ?? null;
+  const engineCal = manualCal ?? recommended?.calorie_target ?? nutrition?.calorie_target ?? null;
   // The engine writes its real recommendation as recommended_intake.protein_g;
   // the top-level protein_target is just the profile goal echoed back, so it
   // comes last.
   const engineProtein =
-    recommended?.protein_g ?? recommended?.protein_target ?? nutrition?.protein_target ?? null;
+    manualProtein ?? recommended?.protein_g ?? recommended?.protein_target ?? nutrition?.protein_target ?? null;
 
   const profCal = profile?.daily_calorie_goal || null;
   const profProtein = profile?.daily_protein_goal || null;
@@ -118,8 +140,10 @@ export function useDailyTargets(date) {
   const phaseType = (activePhase?.phase_type || "").toLowerCase();
   const isCut = phaseType.includes("cut") || phaseType.includes("deficit");
   const weightLb = profileWeightLb(profile);
+  // A manually-typed protein number is his call, not the engine's — don't clamp
+  // it back into the cut band, that would defeat the point of overriding.
   if (isCut && weightLb) {
-    protein = clampCutProtein(protein, weightLb);
+    if (!manualProtein) protein = clampCutProtein(protein, weightLb);
     fats = Math.round(Math.max(fats, 50, weightLb / 3));
     carbs = Math.max(0, Math.round((calories - protein * 4 - fats * 9) / 4));
   }
@@ -140,6 +164,9 @@ export function useDailyTargets(date) {
     // (usePlannedDayRebalance) or fit plans to a calorie wall (optimizeDay)
     // must never push the day's protein below it.
     proteinFloor: isCut && weightLb ? Math.round(CUT_PROTEIN_HARD_FLOOR_PER_LB * weightLb) : null,
+    // He typed this number in himself (nutrition_overrides.action = 'manual'),
+    // outranking both the engine rec and the profile goal.
+    manualOverride: !!manualCal,
     // True only for the recovery-gated recommendation; the engine's top-level
     // calorie_target is just the profile goal echoed back, which doesn't earn
     // the "engine-set" badge.
