@@ -526,22 +526,28 @@ export default function ProgramDetail() {
           </CardContent>
         </Card>
 
-        {/* Next week's engine-generated plan — staged, not applied, until
+        {/* This week's engine-generated plan — staged, not applied, until
             approved (his call, 2026-07-27: mirrors reviewing the diet plan
-            before it loads). Only the owner reviews their own engine output. */}
+            before it loads). Only the owner reviews their own engine output.
+            Note: week_start is the week that just began (generation runs
+            Sunday night), not the week after — the copy below must say so,
+            since program_workouts already carries forward last week's actual
+            sessions onto these dates as the default (see F15 carry-forward
+            in generate_weekly_program.py) until this is approved. */}
         {isOwner && pending?.rows?.length > 0 && (
           <Card className="mb-6 rise-in border-[0.5px] border-brand/30">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-brand" />
                 <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">
-                  Next week's plan is ready
+                  This week's plan is ready
                 </span>
               </div>
               <p className="text-sm text-ink-secondary mb-3">
                 {pending.rows.filter((r) => (r.exercises || []).length > 0).length} training day
                 {pending.rows.filter((r) => (r.exercises || []).length > 0).length === 1 ? "" : "s"} generated
-                for the week of {pending.week_start} &middot; your current schedule keeps running until you approve it.
+                for the week of {pending.week_start} &middot; you're currently running last week's sessions on these
+                dates until you approve the new plan.
               </p>
               <Button
                 variant="volt"
@@ -552,7 +558,7 @@ export default function ProgramDetail() {
               >
                 {approvePendingMutation.isPending
                   ? "Applying…"
-                  : <><Check className="w-4 h-4 mr-2" /> Approve &amp; load next week</>}
+                  : <><Check className="w-4 h-4 mr-2" /> Approve &amp; load this week</>}
               </Button>
             </CardContent>
           </Card>

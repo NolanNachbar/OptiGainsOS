@@ -1438,6 +1438,54 @@ def main():
     }, conflict_cols="program_id")
     print(f"\n  {'✓' if pend_ok else '✗'}  staged {len(pending_rows)} days for approval (week_start={week_start})")
 
+    # F15 carry-forward: program_workouts is what mpc_prescriber.py and
+    # compute_athlete_state.py read for TODAY, and it's keyed by scheduled_date.
+    # If we only ever wrote program_workouts_pending, an un-approved week would
+    # leave program_workouts with NO rows for these dates at all — not "last
+    # week's schedule keeps running" (what the UI tells him) but a silent gap
+    # that starves the prescriber and distorts planned-volume-driven carb
+    # targets. So: default each of this week's dates to last week's APPROVED
+    # session for the same weekday, unchanged. Approval later overwrites these
+    # placeholders (same program_id+scheduled_date conflict key) with the real
+    # engine output. Unapproved genuinely means "same workouts as last week."
+    _carry_src = sb_get("program_workouts", {
+        "select": "scheduled_date,title,focus,exercises,cardio_sessions,duration_minutes",
+        "created_by": f"eq.{USER_ID}", "program_id": f"eq.{program_id}",
+        "scheduled_date": f"gte.{(days_to_generate[0] - datetime.timedelta(days=7)).isoformat()}",
+    }) or []
+    _carry_by_date = {str(r.get("scheduled_date")): r for r in _carry_src}
+    _already_present = {
+        str(r.get("scheduled_date")) for r in _carry_src
+        if str(r.get("scheduled_date")) >= days_to_generate[0].isoformat()
+    }
+    carried = 0
+    for sim_day in days_to_generate:
+        if sim_day.isoformat() in _already_present:
+            # A row for this exact date already exists — either a prior
+            # approval or a prior carry-forward. Never clobber it: if it's
+            # approved real content, overwriting would regress the schedule;
+            # if it's an earlier carry-forward, leaving it is a no-op.
+            continue
+        src = _carry_by_date.get((sim_day - datetime.timedelta(days=7)).isoformat())
+        if not src:
+            continue  # nothing to carry (e.g. first week ever) — leave as-is
+        sb_upsert("program_workouts", {
+            "program_id":       program_id,
+            "created_by":       USER_ID,
+            "title":            src.get("title"),
+            "focus":            src.get("focus"),
+            "week_number":      current_week,
+            "day_index":        sim_day.weekday() + 1,
+            "day_of_week":      sim_day.weekday(),
+            "scheduled_date":   sim_day.isoformat(),
+            "exercises":        src.get("exercises"),
+            "cardio_sessions":  src.get("cardio_sessions"),
+            "duration_minutes": src.get("duration_minutes"),
+        })
+        carried += 1
+    print(f"  carried forward {carried}/{len(days_to_generate)} day(s) of last week's approved plan "
+          f"as the default until this week is approved")
+
     # ── 8. Save all engine state ──────────────────────────────────────────────
     new_step = step_count + 1
     save_engine_state(
