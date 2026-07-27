@@ -1268,6 +1268,11 @@ def main():
     # as reusable templates; re-runs and repeat titles no-op.
     _lib_rows = sb_get("workouts", {"select": "title", "created_by": f"eq.{USER_ID}"})
     library_titles = {str(r.get("title", "")).strip().lower() for r in (_lib_rows or [])}
+    # F15: the generated week is staged for Nolan's approval, not applied straight
+    # to program_workouts (his call, 2026-07-27 — mirrors reviewing the diet plan
+    # before it loads: nothing about his ACTUAL schedule changes until he taps
+    # approve in the UI). Collected here, written as one row after the loop.
+    pending_rows = []
     for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
 
@@ -1374,8 +1379,9 @@ def main():
             "duration_minutes": None,
         }
 
-        ok = sb_upsert("program_workouts", pw_row)
-        print(f"    {'✓' if ok else '✗'}  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
+        pending_rows.append(pw_row)
+        ok = True
+        print(f"    staged  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
 
         # Auto-save each DISTINCT generated strength session into the workout
         # library (`workouts` table) so engine programming is browsable/reusable
@@ -1419,6 +1425,18 @@ def main():
         kalman.step(projected_tss, None)
         load_history.append(projected_tss)
         guardrail.record_state(overreach["fatigue_state"])
+
+    # F15: stage the whole week as one row, replacing any still-unapproved plan
+    # from a prior run — always the freshest engine state wins, approval is
+    # binary (this week's plan or last week's), never a merge of both.
+    pend_ok = sb_upsert("program_workouts_pending", {
+        "program_id":   program_id,
+        "created_by":   USER_ID,
+        "week_start":   week_start,
+        "rows":         pending_rows,
+        "generated_at": datetime.datetime.utcnow().isoformat(),
+    }, conflict_cols="program_id")
+    print(f"\n  {'✓' if pend_ok else '✗'}  staged {len(pending_rows)} days for approval (week_start={week_start})")
 
     # ── 8. Save all engine state ──────────────────────────────────────────────
     new_step = step_count + 1
