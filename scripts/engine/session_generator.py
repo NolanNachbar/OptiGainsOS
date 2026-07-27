@@ -1606,17 +1606,22 @@ class SessionGenerator:
         # cannot prescribe different sessions for the same day. Previously the caller
         # passed no targets, so the daily card silently fell through to the naive A/B
         # alternation branch while the weekly plan converged — two engines, two answers.
-        # split_override is the split the weekly program already planned for today. It
-        # is only consulted when there is NO logged history to decide from — with logs
-        # present, the log-driven decision wins, because it self-corrects after a
-        # deviation day. The old code spelled this as `if _rt: ... elif split_override:
-        # ... else: <same call as the if>`, which made the elif UNREACHABLE (the if and
-        # else arms were identical, so the override never fired even on a cold start)
-        # while still printing "Inheriting planned split for today". Say it once.
+        # split_override is the split the weekly program already planned for today
+        # (program_workouts.title, what the Train tab reads) — honor it whenever it's
+        # given, same as the module-level generate() below (F8). It used to be gated
+        # behind `not _rt` (no recent session history), which meant it was silently
+        # unreachable for any athlete with actual training logs: mpc_prescriber.py
+        # would print "Inheriting planned split for today: X" and then immediately
+        # ignore it, re-deriving a DIFFERENT split from log history via _decide_split.
+        # That's how Today (this classmethod) and Train (program_workouts.title,
+        # written by the module-level generate() which always honors the override)
+        # ended up showing different splits for the same day — not a sync-timing
+        # bug, a genuine override-vs-log-derivation conflict. Only fall through to
+        # _decide_split when there's truly no plan for today (cold start / no row).
         _rt = recent_session_types or []
         _ampk = float(cellular_state.get("ampk") or 0.20)
         _mtorc1 = float(cellular_state.get("mtorc1") or 0.30)
-        if not _rt and split_override in _SPLIT_KEYS:
+        if split_override in _SPLIT_KEYS:
             resolved_split = split_override
         else:
             resolved_split = _decide_split(_rt, _ampk, _mtorc1,

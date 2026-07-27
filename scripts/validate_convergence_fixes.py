@@ -14,7 +14,7 @@ from engine.allocator import frequency_targets, default_goal_priorities
 from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
 from engine.session_generator import (split_from_title, build_title, _converge_split,
                                       classify_log_split, week_muscle_counts_from_logs,
-                                      split_muscles_for)
+                                      split_muscles_for, SessionGenerator)
 from engine.muscle_map import get_muscles, hypertrophy_muscles
 from engine.notes_parser import parse_workout_notes
 from engine.hypertrophy_volume import MUSCLES as LANDMARK_MUSCLES
@@ -396,6 +396,24 @@ check("rep clamp: heavy 3-5 passes through", clamp_rep_range("3-5") == "3-5")
 ok8 = all(split_from_title(build_title("STRENGTH", s, 1.0)) == s
           for s in ("upper_a", "upper_b", "lower_squat_primary", "lower_hinge_primary"))
 check("F8 split_from_title round-trips the planned split", ok8)
+
+
+# ── F16: SessionGenerator.generate() honors split_override even WITH log history ──
+# Regression test for the Today/Train mismatch: the classmethod used to gate
+# split_override behind `not recent_session_types`, a condition that's
+# unreachable for any athlete with real training logs, so it always silently
+# re-derived the split from log history instead — Today and Train disagreed
+# on the same day. recent_session_types below is deliberately non-empty and
+# points the OTHER direction (lower) from the override (upper_a).
+_out16 = SessionGenerator().generate(
+    banister_state={}, interference={"ampk": 0.20, "mtorc1": 0.30}, overreach={},
+    acwr=1.0, strength={}, latest_pst={}, nutrition_mod={}, vdot_zones={},
+    mileage_cap=0.0, mpc_action="STRENGTH", mpc_intensity=1.0,
+    recent_session_types=["lower_hinge_primary", "lower_squat_primary"],
+    split_override="upper_a",
+)
+check("F16 split_override wins over log-derived split even with session history",
+      _out16.get("split") == "upper_a", f"got {_out16.get('split')!r}")
 
 
 # ── F13: single low-severity pain note de-prioritises, doesn't veto ───────────
