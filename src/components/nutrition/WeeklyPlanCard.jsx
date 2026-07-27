@@ -71,7 +71,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   // ONE source of truth for today's targets — the same hook the daily log rings
   // use (engine recovery-gated target → profile goal). Days the engine hasn't
   // scored yet fall back to these numbers.
-  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut, manualOverride } = useDailyTargets(today);
+  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut, manualOverride, carbWindows } = useDailyTargets(today);
 
   const phaseRaw = (activePhase?.phase_type || "").toLowerCase();
   const isBulk = phaseRaw.includes("bulk") || phaseRaw.includes("surplus");
@@ -351,6 +351,24 @@ export default function WeeklyPlanCard({ bare = false }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Carb timing: today's carb target split around session(s) — empty
+          on a rest day, so nothing renders. ── */}
+      {(carbWindows || []).length > 0 && (
+        <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+            <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Carb Timing</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {carbWindows.map((w) => (
+              <div key={w.label} className="text-xs text-ink-secondary">
+                <span className="font-technical text-ink">{w.grams}g</span> {w.label}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

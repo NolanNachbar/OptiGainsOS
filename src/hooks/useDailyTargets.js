@@ -173,5 +173,8 @@ export function useDailyTargets(date) {
     engineSet: !!recommended?.calorie_target,
     nutrition,                // raw athlete_state.nutrition (rationale, gates…)
     recommended,              // raw recommended_intake (deficit_ratio, gates…)
+    // Today's carb-timing split (pre/post, or pre/between/post on a two-a-day) —
+    // empty on a rest day, since there's no session to time carbs around.
+    carbWindows: nutrition?.carb_windows || [],
   };
 }

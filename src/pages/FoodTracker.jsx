@@ -44,6 +44,41 @@ const getDefaultMealType = () => {
   return "dinner";
 };
 
+// Retroactive-log fallback clock times (Nolan's call, 2026-07-27): "logging it
+// earlier" needs SOME time to stamp eaten_at with, and a manual time picker is
+// one more tap he doesn't want — so a logged-earlier entry gets its meal
+// type's default clock time instead. [ENG]
+const MEAL_DEFAULT_TIME = { breakfast: "08:00", lunch: "12:30", snack: "15:30", dinner: "19:00" };
+
+// eaten_at for a new food_entries row: "now" stamps the actual moment; "earlier"
+// (he's logging something he ate a while ago) falls back to the meal type's
+// default clock time on the entry's date, since MealFactor-style retroactive
+// logging happens with no reliable actual-time input.
+const getEatenAt = (loggingMode, mealType, dateStr) => {
+  if (loggingMode !== "earlier") return new Date().toISOString();
+  const time = MEAL_DEFAULT_TIME[mealType] || MEAL_DEFAULT_TIME.snack;
+  return new Date(`${dateStr}T${time}:00`).toISOString();
+};
+
+// "Eating it right now" vs "logging it earlier" segmented toggle — governs
+// eaten_at on the entries this dialog creates.
+const LoggingModeToggle = ({ value, onChange }) => (
+  <div className="inline-flex rounded-lg surface-2 p-0.5 text-xs">
+    {[["now", "Eating now"], ["earlier", "Logging earlier"]].map(([id, label]) => (
+      <button
+        key={id}
+        type="button"
+        onClick={() => onChange(id)}
+        className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
+          value === id ? "bg-gold/15 text-gold" : "text-ink-muted"
+        }`}
+      >
+        {label}
+      </button>
+    ))}
+  </div>
+);
+
 // Hue-coded macro line for search-result rows. Each macro owns its system hue
 // (kcal=gold, P=coral, C=carb, F=fat) so the result list reads with the same
 // color grammar as the summary tiles. Dot separators stay faint ink.
@@ -185,6 +220,10 @@ export default function FoodTracker() {
   const [mealPhoto, setMealPhoto] = useState(null); // { dataUrl, previewUrl }
   const [estMealItems, setEstMealItems] = useState(null);  // estimated items (null until estimated)
   const [mealMealType, setMealMealType] = useState(getDefaultMealType());
+  // "Eating it right now" vs "logging it earlier" — governs eaten_at on every
+  // food_entries insert below. Shared across the manual/meal-estimator flows;
+  // defaults to "now" since that's the common case.
+  const [loggingMode, setLoggingMode] = useState("now");
   const [isEstimatingMeal, setIsEstimatingMeal] = useState(false);
   const [isLoggingMeal, setIsLoggingMeal] = useState(false);
   const mealPhotoInputRef = useRef(null);
@@ -634,6 +673,7 @@ export default function FoodTracker() {
     setEstMealItems(null);
     setMealPhoto((p) => { if (p?.previewUrl) URL.revokeObjectURL(p.previewUrl); return null; });
     setMealMealType(getDefaultMealType());
+    setLoggingMode("now");
   };
 
   const pickMealPhoto = async (ev) => {
@@ -678,6 +718,7 @@ export default function FoodTracker() {
       // ONE atomic multi-row insert (not a per-item loop): all-or-nothing, so a
       // mid-batch network failure can't leave a partial log that a retry would
       // then double-insert.
+      const eatenAt = getEatenAt(loggingMode, mealMealType, selectedDate);
       const rows = estMealItems.map((it) => ({
         food_name: it.food_name,
         meal_type: mealMealType,
@@ -689,6 +730,7 @@ export default function FoodTracker() {
         fats_grams: it.fats,
         date: selectedDate,
         created_by: user.id,
+        eaten_at: eatenAt,
       }));
       const { error } = await supabase.from("food_entries").insert(rows);
       if (error) throw error;
@@ -829,7 +871,8 @@ const handleSaveMealTemplate = () => {
         carbs_grams: data.carbs_grams,
         fats_grams: data.fats_grams,
         date: selectedDate,
-        created_by: user.id
+        created_by: user.id,
+        eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
       });
     },
     onSuccess: () => {
@@ -941,6 +984,7 @@ const handleSaveMealTemplate = () => {
     setServingHint(null);
     setIsUsdaFood(false);
     setSearchQuery("");
+    setLoggingMode("now");
     setGenericResults([]); setBrandedResults([]);
     setEditingEntry(null);
     setIsEstimatedFood(false);
@@ -2055,6 +2099,10 @@ const handleSaveMealTemplate = () => {
                           />
                         </div>
 
+                        <div>
+                          <LoggingModeToggle value={loggingMode} onChange={setLoggingMode} />
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="meal_type">Meal Type</Label>
@@ -2386,6 +2434,9 @@ const handleSaveMealTemplate = () => {
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <LoggingModeToggle value={loggingMode} onChange={setLoggingMode} />
+              </div>
               <div className="flex items-center justify-between gap-2">
                 <Label>Add to</Label>
                 <Select value={mealMealType} onValueChange={setMealMealType}>

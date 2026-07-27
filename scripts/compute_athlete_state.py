@@ -989,6 +989,67 @@ def _glycogen_demand(user_id: str):
     return round(today_d, 2), round(week_d, 2)
 
 
+def _carb_windows(user_id: str, carb_target_g):
+    """
+    Split today's carb target into timing windows around today's scheduled
+    session(s) — pre-workout / post-workout on a single-session day, or
+    pre-AM / between / post-PM on a two-a-day. Rest days get no windows;
+    there's no session to time carbs around. Split percentages are engineering
+    defaults, not a researched protocol. [ENG]
+
+    A two-a-day's post-PM window gets extra weight when TOMORROW is also a
+    training day — top off glycogen tonight rather than split it evenly,
+    since there's back-to-back demand coming. (The originally-sketched <4h
+    same-day gap-merge rule is dormant: generate_weekly_program.py already
+    enforces >=6h between a two-a-day's own AM/PM sessions by design, so that
+    gap never occurs under engine-generated plans.)
+    """
+    if not carb_target_g:
+        return []
+    today = datetime.date.today()
+    tomorrow = today + datetime.timedelta(days=1)
+    try:
+        rows = sb_get("program_workouts", {
+            "select": "scheduled_date,exercises,cardio_sessions",
+            "created_by": f"eq.{user_id}",
+            "scheduled_date": f"gte.{today.isoformat()}",
+            "order": "scheduled_date.asc",
+            "limit": "7",
+        }) or []
+    except Exception:
+        return []
+
+    def _session_flags(row):
+        if not row:
+            return False, False
+        has_lift = any(int(e.get("sets") or 0) > 0 for e in (row.get("exercises") or []))
+        has_cardio = any(float(c.get("duration_minutes") or 0) > 0 for c in (row.get("cardio_sessions") or []))
+        return has_lift, has_cardio
+
+    today_row = next((r for r in rows if str(r.get("scheduled_date") or "")[:10] == today.isoformat()), None)
+    tomorrow_row = next((r for r in rows if str(r.get("scheduled_date") or "")[:10] == tomorrow.isoformat()), None)
+    has_lift, has_cardio = _session_flags(today_row)
+    tomorrow_lift, tomorrow_cardio = _session_flags(tomorrow_row)
+    tomorrow_trains = tomorrow_lift or tomorrow_cardio
+
+    if not has_lift and not has_cardio:
+        return []  # rest day — nothing to time carbs around
+
+    if has_lift and has_cardio:
+        pre_pct, mid_pct, post_pct = (0.30, 0.20, 0.50) if tomorrow_trains else (0.35, 0.25, 0.40)
+        return [
+            {"label": "Pre-AM session", "grams": round(carb_target_g * pre_pct)},
+            {"label": "Between sessions", "grams": round(carb_target_g * mid_pct)},
+            {"label": "Post-PM session", "grams": round(carb_target_g * post_pct)},
+        ]
+
+    pre_pct, post_pct = 0.55, 0.45
+    return [
+        {"label": "Pre-workout", "grams": round(carb_target_g * pre_pct)},
+        {"label": "Post-workout", "grams": round(carb_target_g * post_pct)},
+    ]
+
+
 def _consecutive_poor_sleep(recovery_rows: list, threshold: int = 60) -> int:
     """
     Count consecutive most-recent poor nights. Half of the severe-crash recovery valve
@@ -1524,6 +1585,7 @@ def main():
         print(f"  Deficit rec: target={_rec['calorie_target']} kcal  "
               f"deficit={round(_rec['deficit_ratio']*100)}%  "
               f"gates={_rec['gates'] or ['clear']}")
+        nutrition["carb_windows"] = _carb_windows(USER_ID, _rec.get("carb_target_g"))
 
         # 8b. Diet-phase recommendation (engine acts as the coaching team: should
         # he cut / maintain / bulk for his goals?). Advisory — he accepts (sets

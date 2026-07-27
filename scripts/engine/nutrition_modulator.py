@@ -121,6 +121,20 @@ class NutritionModulator:
     # kcal, which is the TNF cutting protocol Nolan is running. Move one and you have
     # moved his calorie target — they are not independent dials.
     CARB_PREWORKOUT_MIN_G     = 20     # min carbs on any real training day (pre-workout fuel)
+    # Non-cut (bulk/maintain) carb cycling (Nolan's call, 2026-07-27): the SAME
+    # deficit-neutral mechanism as the cut branch below — carbs move to hard days,
+    # WEEKLY total held exactly flat — but blended toward flat instead of chasing
+    # demand all the way to near-zero on a rest day. There's no deficit forcing a
+    # rest day toward zero carbs when there's no deficit at all; the point is
+    # emphasis, not scarcity. CARB_CYCLE_BLEND_NONCUT is a linear blend
+    # (0=identical every day, 1=fully demand-proportional, same shape as the cut's
+    # k=1) rather than the exponent form (share = glyco_d^k / Σglyco_i^k) sketched
+    # originally: this call only has today's demand + the week's total, not a full
+    # per-day series to normalize an exponent against, and the blend is the exact
+    # same interpolation in spirit while staying provably weekly-total-preserving
+    # from just those two aggregates (Σ_day share_day = 1 for any blend value).
+    # At 0.5 a rest day floors at (1 − 0.5) × (1/7) ≈ half the flat per-day share. [ENG]
+    CARB_CYCLE_BLEND_NONCUT   = 0.5
 
     @staticmethod
     def _clamp(x, lo, hi):
@@ -281,10 +295,37 @@ class NutritionModulator:
             calorie_target = round(self.maintenance_kcal - kcal_deficit)
             deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
         else:
-            # Non-cut: conventional capped target-deficit model.
+            # Non-cut: conventional capped target-deficit model. Computed exactly as
+            # before — this is the flat baseline the carb cycling below redistributes
+            # around, not replaces.
             deficit_ratio = round(target * headroom, 3)
             kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
             calorie_target = round(self.maintenance_kcal - kcal_deficit)
+
+            # Non-cut carb cycling (Nolan's call, 2026-07-27): same demand-weighted
+            # redistribution as the cut branch above, blended toward flat (see
+            # CARB_CYCLE_BLEND_NONCUT) since there's no deficit pushing a rest day
+            # toward near-zero carbs — just emphasis on hard days. `baseline_carbs`
+            # is the exact remainder useDailyTargets.js already derives today
+            # (calories − protein×4 − fat×9)/4, so this reproduces today's flat
+            # output whenever glyco data is missing or the blend is 0. The week's
+            # carb total — and by construction the week's average calorie target —
+            # is unchanged; only which day carries them moves.
+            if bw > 0:
+                baseline_carbs = max(0, round((calorie_target - protein_g * 4 - fat_floor_g * 9) / 4))
+                glyco_today_nc = float(signals.get("glyco_today") or 0.0)
+                glyco_week_nc  = float(signals.get("glyco_week") or 0.0)
+                weekly_carb_total = baseline_carbs * 7
+                raw_share = (glyco_today_nc / glyco_week_nc) if glyco_week_nc > 0 else (1.0 / 7)
+                blended_share = (self.CARB_CYCLE_BLEND_NONCUT * raw_share
+                                  + (1 - self.CARB_CYCLE_BLEND_NONCUT) * (1.0 / 7))
+                carb_target_g = round(weekly_carb_total * blended_share)
+                # Calorie target flexes with the day's carb allocation (mirrors the
+                # cut branch) — the swing nets to zero across the week since
+                # Σ blended_share = 1 for any blend value.
+                calorie_target += (carb_target_g - baseline_carbs) * 4
+                kcal_deficit = round(self.maintenance_kcal - calorie_target)
+                deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
 
         if not gates:
             rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
