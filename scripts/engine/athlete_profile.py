@@ -77,9 +77,18 @@ MUSCLE_EMPHASIS: dict[str, float] = {
     "calves":      1.5,
     "rear_delts":  1.25,
     "biceps":      1.25,   # compounds under-stimulate biceps; add dedicated isolation
+    "triceps":     1.25,   # same gap as biceps: pressing fatigues triceps without isolating them
     "forearms":    1.25,   # Nolan's call (2026-07-08): hit forearms directly, not just via grip holds
     "hamstrings":  1.15,   # hinge-dominant training can under-serve hamstring isolation
 }
+
+
+# Clark Kent's stated weekly cadence per JOINT ACTION (not muscle) — 4-6 hard
+# sets/week of e.g. horizontal_push, independent of how many OTHER joint
+# actions also hit chest as a synergist that week. A LEARNABLE wide prior from
+# his coaching source, not a fixed law — [COACH] range, [ENG] would be a single
+# tunable number if/when this needs to feed the allocator directly.
+CLARK_KENT_JOINT_ACTION_TARGET = (4, 6)   # [COACH] (low, high) hard sets/joint-action/week
 
 
 def is_strength_movement(ex: dict) -> bool:

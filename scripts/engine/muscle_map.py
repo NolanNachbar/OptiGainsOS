@@ -14,6 +14,19 @@ vocab so the volume engine, exploration bandit, and orchestrator all agree.
 
 from engine.hypertrophy_volume import MUSCLES as LANDMARK_MUSCLES
 
+# Secondary-mover set credit for hypertrophy VOLUME counting (compute_hypertrophy).
+# Every EXERCISE_MUSCLE_MAP entry lists its primary mover first by convention
+# (e.g. "overhead press": ["shoulders", "triceps"] — shoulders is the target,
+# triceps is a synergist). Counting a synergist set as a full set double-books
+# volume: Bench Press alone credits a full chest set AND a full triceps set,
+# so pressing days alone can push triceps to apparent MRV before any direct
+# triceps or vertical-press (OHP) work is even logged, which then reads to the
+# allocator as "triceps is already maxed" and suppresses more pressing.
+# Half-credit for indirect/synergist volume is Israetel's Core Volume Model
+# convention (RP hypertrophy system); this is a LEARNABLE wide prior like the
+# other [ENG] constants in this codebase, not a fixed law.
+SECONDARY_MUSCLE_CREDIT = 0.5   # [ENG] fraction of a set credited to synergist movers
+
 # ── Exercise name keyword → analysis-vocab muscles ────────────────────────────
 # Moved verbatim from compute_athlete_state.py so both the daily compute and the
 # weekly orchestrator share one definition (was duplicated/at risk of drift).
@@ -152,6 +165,85 @@ _MUSCLE_KEYWORDS = sorted((_norm(k) for k in EXERCISE_MUSCLE_MAP), key=len, reve
 # Keyword lookup is by NORMALIZED key, so hyphenated keys ("t-bar row") still resolve.
 _NORM_MUSCLE_MAP = {_norm(k): v for k, v in EXERCISE_MUSCLE_MAP.items()}
 
+# ── Joint-action taxonomy (Clark Kent) ────────────────────────────────────────
+# Clark Kent's stated volume unit isn't the muscle, it's the JOINT ACTION —
+# chest-press and chest-fly are counted separately even though both hit
+# "chest", at a 4-6 sets/joint-action/week cadence (see athlete_profile
+# CLARK_KENT_JOINT_ACTION_TARGET). Reuses the same pattern vocabulary as
+# session_generator.EXERCISES ("horizontal_push", "hinge", …) so a logged set
+# and a programmed slot count the same way. Keyed on the SAME keywords as
+# EXERCISE_MUSCLE_MAP (one keyword table, two things it's looked up for) so
+# the two vocabularies can't drift out of sync with each other. [COACH]
+JOINT_ACTION_MAP: dict[str, str] = {
+    "romanian deadlift": "hinge", "rdl": "hinge", "good morning": "hinge",
+    "nordic curl": "hinge", "leg curl": "isolation_lower",
+    "hip thrust": "hip_thrust", "glute bridge": "hip_thrust",
+    "cable kickback": "isolation_lower", "bulgarian split": "squat",
+    "leg extension": "isolation_lower", "leg press": "squat",
+    "hack squat": "squat", "lunge": "squat", "step up": "squat",
+    "squat": "squat", "deadlift": "hinge",
+    "incline bench press": "incline_push",
+    "low-to-high cable fly": "isolation_upper", "low to high cable fly": "isolation_upper",
+    "incline bench": "incline_push", "incline press": "incline_push",
+    "incline dumbbell": "incline_push", "incline db": "incline_push",
+    "incline fly": "isolation_upper", "low-to-high": "isolation_upper",
+    "low to high": "isolation_upper", "decline bench": "horizontal_push",
+    "bench press": "horizontal_push", "bench": "horizontal_push",
+    "flat bench": "horizontal_push", "dumbbell press": "horizontal_push",
+    "chest fly": "isolation_upper", "cable fly": "isolation_upper",
+    "pec fly": "isolation_upper", "close grip": "horizontal_push",
+    "skull crusher": "isolation_upper", "tricep pushdown": "isolation_upper",
+    "tricep extension": "isolation_upper", "overhead tricep": "isolation_upper",
+    "tricep": "isolation_upper", "dip": "dip",
+    "push up": "horizontal_push", "pushup": "horizontal_push",
+    "overhead press": "vertical_push", "military press": "vertical_push",
+    "shoulder press": "vertical_push", "lateral raise": "isolation_upper",
+    "face pull": "isolation_upper", "rear delt fly": "isolation_upper",
+    "reverse fly": "isolation_upper", "reverse pec": "isolation_upper",
+    "upright row": "isolation_upper", "shrug": "isolation_upper",
+    "neck curl": "isolation_upper", "neck extension": "isolation_upper",
+    "neck flexion": "isolation_upper", "neck harness": "isolation_upper",
+    "barbell row": "horizontal_pull", "bent over row": "horizontal_pull",
+    "pendlay row": "horizontal_pull", "t-bar row": "horizontal_pull",
+    "chest supported": "horizontal_pull", "seal row": "horizontal_pull",
+    "pull up": "vertical_pull", "pullup": "vertical_pull",
+    "chin up": "vertical_pull", "chinup": "vertical_pull",
+    "lat pulldown": "vertical_pull", "seated row": "horizontal_pull",
+    "cable row": "horizontal_pull", "row": "horizontal_pull",
+    "preacher curl": "isolation_upper", "hammer curl": "isolation_upper",
+    "incline curl": "isolation_upper", "hamstring curl": "isolation_lower",
+    "leg curls": "isolation_lower", "lying leg curl": "isolation_lower",
+    "seated leg curl": "isolation_lower", "wrist curl": "isolation_upper",
+    "curl": "isolation_upper", "ohp": "vertical_push",
+    "plank": "isolation_lower", "crunch": "isolation_lower",
+    "ab wheel": "isolation_lower", "hanging leg": "isolation_lower",
+    "sit up": "isolation_lower", "leg raise": "isolation_lower",
+    "leg press calf": "isolation_lower", "calf press": "isolation_lower",
+    "calf raises (leg press)": "isolation_lower", "calf machine shrug": "isolation_upper",
+    "calf raise": "isolation_lower", "seated calf": "isolation_lower",
+    "barbell hold": "carry", "adductor": "isolation_lower",
+    "larsen press": "horizontal_push", "reverse grip incline": "incline_push",
+    "smith machine incline": "incline_push", "incline smith": "incline_push",
+    "smith machine shoulder press": "vertical_push",
+}
+_NORM_JOINT_ACTION_MAP = {_norm(k): v for k, v in JOINT_ACTION_MAP.items()}
+# Keyword coverage must match EXERCISE_MUSCLE_MAP exactly — a key present in one
+# but not the other silently drops that exercise from one of the two volume
+# counts. Fail loud at import time instead of at 2am three months from now.
+assert set(_NORM_JOINT_ACTION_MAP) == set(_NORM_MUSCLE_MAP), (
+    "JOINT_ACTION_MAP and EXERCISE_MUSCLE_MAP keyword sets have drifted apart"
+)
+
+
+def get_joint_action(exercise_name: str) -> str | None:
+    """The single joint action an exercise trains (longest-keyword-match, same
+    convention as get_muscles). None if the name matches nothing."""
+    name = _norm(exercise_name)
+    for kw in _MUSCLE_KEYWORDS:
+        if kw in name:
+            return _NORM_JOINT_ACTION_MAP[kw]
+    return None
+
 # Analysis-vocab → landmark-vocab. A muscle absent here is already landmark-vocab.
 # "back" splits to both lat-dominant and upper-back-dominant landmarks since the
 # rows/pulldowns/pulls that map to "back" train both. traps/side_delts/neck/
@@ -202,6 +294,24 @@ def get_muscles(exercise_name: str) -> list[str]:
             matched.append(kw)
             found.update(_NORM_MUSCLE_MAP[kw])
     return list(found)
+
+
+def get_muscle_credit(exercise_name: str) -> dict:
+    """Analysis-vocab muscles trained by an exercise, weighted by primary
+    (1.0) vs synergist (SECONDARY_MUSCLE_CREDIT) per the first-listed-is-
+    primary convention in EXERCISE_MUSCLE_MAP. For hypertrophy VOLUME
+    counting (compute_hypertrophy) — get_muscles() stays unweighted for
+    plain membership checks (deviation tracking, session pattern dedup)."""
+    name = _norm(exercise_name)
+    matched: list[str] = []
+    credit: dict[str, float] = {}
+    for kw in _MUSCLE_KEYWORDS:
+        if kw in name and not any(kw in prev for prev in matched):
+            matched.append(kw)
+            for i, m in enumerate(_NORM_MUSCLE_MAP[kw]):
+                weight = 1.0 if i == 0 else SECONDARY_MUSCLE_CREDIT
+                credit[m] = max(credit.get(m, 0.0), weight)
+    return credit
 
 
 def hypertrophy_muscles(exercise_name: str) -> list[str]:

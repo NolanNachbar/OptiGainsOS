@@ -715,6 +715,7 @@ def main():
         frequency_targets = weekly_freq_targets,
         week_muscle_counts = _week_muscle_counts,
         muscle_emphasis = MUSCLE_EMPHASIS,
+        joint_action_volume = today_state.get("joint_action_volume") or {},
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

@@ -28,6 +28,7 @@ from datetime import date
 from engine.vdot_engine import VDOTEngine
 from engine.athlete_profile import apply_philosophy, MUSCLE_EMPHASIS
 from engine.log_ingest import canon
+from engine.muscle_map import get_joint_action
 
 # How strongly the learned exercise-value posterior (learners.exercise_value) and
 # note-caution shift exercise selection. Caution stays BELOW the goal-lift bonus
@@ -43,6 +44,17 @@ CAUTION_PENALTY     = 8.0
 # one. Kept BELOW the +10 goal-lift bonus so it never displaces a competition lift.
 # A `blocked` movement is filtered out entirely — knapsack pool AND assistance pools.
 PREFER_SELECT_WEIGHT = 8.0
+
+# Gap #4 (OHP-vs-bench redundancy): compute_joint_action_volume() counts weekly
+# hard sets PER JOINT ACTION (Clark Kent's counting unit), independent of
+# muscle-level credit — a bench-heavy week reads as chest/triceps "covered" even
+# when vertical_push (OHP) sits at zero, because muscle-level selection never
+# saw the two patterns as distinct. This boost makes an under-target joint
+# action's own exercises win their muscle slot instead of losing every tiebreak
+# to whichever pattern already dominates that muscle. Kept below PREFER (+8) —
+# an explicit like still wins — but above EXVAL (±3 max) so it isn't drowned out
+# by a mild learned-value edge for the over-represented pattern. [ENG]
+JOINT_ACTION_UNDER_TARGET_BOOST = 5.0
 
 # Per-session set scaling: a muscle's per-session sets = catalog default × (weekly
 # target / baseline weekly). The baseline is the weekly volume at which the catalog
@@ -900,7 +912,7 @@ _PUSH_PATTERNS = {"horizontal_push", "incline_push", "vertical_push", "dip"}
 _PULL_PATTERNS = {"vertical_pull", "horizontal_pull"}
 
 
-def _alternate_antagonists(exercises: list) -> list:
+def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
     """Reorder so chest (push) and back (pull) COMPOUNDS alternate — bench, row,
     incline, pull-up, dip — instead of stacking three chest movements in a row
     (Nolan's call, 2026-07-08). Antagonist alternation also gives each muscle more
@@ -908,7 +920,17 @@ def _alternate_antagonists(exercises: list) -> list:
     backs off (it's the same movement, more sets — not a new exercise). Isolation
     and lower-body work ('other') keeps its existing emphasis-nudged order and
     follows the alternated compounds. Non-upper days have no push/pull compounds,
-    so their order is unchanged."""
+    so their order is unchanged.
+
+    EXCEPT: on full-body days the focus muscle is often a squat/hinge/isolation
+    ('other') movement — quads on a legs-focus day, shoulders on a sharms-focus
+    day — and it would otherwise get buried behind every push/pull compound,
+    defeating the day's whole point (Clark Kent: the focus muscle leads the
+    SESSION, not just its own tier). If `focus_muscle`'s unit is in 'other',
+    pull it out and place it first, ahead of the push/pull pairing. Bench still
+    leads when push IS the focus (or push always leads pull per the rule above,
+    e.g. bench-as-technique-practice) — this only rescues the case that rule
+    doesn't cover."""
     units: list = []
     for ex in exercises:
         if ex.get("is_backoff") and units:
@@ -945,6 +967,22 @@ def _alternate_antagonists(exercises: list) -> list:
     push = _dedup_by_pattern(push)
     pull = _dedup_by_pattern(pull)
 
+    # Pull the focus muscle's unit out of whichever bucket it landed in — 'other'
+    # (squat/hinge/isolation days) most often, but also push/pull when the day's
+    # focus IS a press or pull movement (e.g. shoulders-focus full-body: OHP is
+    # push-classified same as the bench technique touch, and without this it
+    # loses the lead purely because the touch set happens to already be first
+    # in `exercises` before this reorder runs).
+    focus_lead = None
+    if focus_muscle:
+        for bucket in (push, pull, other):
+            for idx, u in enumerate(bucket):
+                if (u[0].get("muscles") or [None])[0] == focus_muscle:
+                    focus_lead = bucket.pop(idx)
+                    break
+            if focus_lead:
+                break
+
     # 1. Pair push with pull (bench, row, incline, pull-up, ...).
     ordered, i, j = [], 0, 0
     while i < len(push) and j < len(pull):
@@ -958,7 +996,10 @@ def _alternate_antagonists(exercises: list) -> list:
         if other:
             ordered.append(other.pop(0))
     ordered.extend(other)
-    return [ex for u in ordered for ex in u]
+    result = [ex for u in ordered for ex in u]
+    if focus_lead:
+        result = list(focus_lead) + result
+    return result
 
 
 def _build_session(
@@ -973,6 +1014,7 @@ def _build_session(
     weakness: dict = None,
     blocked: set = None,
     preferred: set = None,
+    joint_action_volume: dict = None,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -992,6 +1034,7 @@ def _build_session(
     # name list (used for the assistance pools) down to the permitted variants.
     blocked   = blocked or set()
     preferred = preferred or set()
+    joint_action_volume = joint_action_volume or {}
     def _allowed(names):
         return [n for n in names if canon(n) not in blocked]
     split_map = {
@@ -1014,6 +1057,17 @@ def _build_session(
     relevant, freq_map = split_map.get(split, (UPPER_MUSCLES, UPPER_FREQ))
     if not wt:
         wt = {m: 12 for m in relevant}
+
+    # Clark Kent's method: the day's designated focus muscle gets its priority
+    # movement placed FIRST in the session (front-loaded, not just nudged up a
+    # fatigue tier). Each split's muscle list is already ordered by domain
+    # emphasis (FULL_BODY_CHEST starts "chest", FULL_BODY_LEGS starts "quads",
+    # UPPER_B_MUSCLES starts "lats", …) — the first entry IS the focus muscle
+    # for every split EXCEPT the two lower splits, which share one LOWER_MUSCLES
+    # list (["quads", "hamstrings", ...]) and differentiate by which goal lift
+    # is excluded, not by list order — so they need an explicit override. [COACH]
+    _FOCUS_OVERRIDE = {"lower_squat_primary": "quads", "lower_hinge_primary": "hamstrings"}
+    focus_muscle = _FOCUS_OVERRIDE.get(split) or (relevant[0] if relevant else None)
 
     # Patterns that may repeat (not subject to compound-pattern uniqueness constraint)
     _REPEATABLE_PATTERNS = {"isolation_upper", "isolation_lower"}
@@ -1087,6 +1141,10 @@ def _build_session(
                 score += EXVAL_SELECT_WEIGHT * max(-3.0, min(3.0, value))
             if preferred and canon(ex.get("name", "")) in preferred:
                 score += PREFER_SELECT_WEIGHT
+            if joint_action_volume:
+                jpat = get_joint_action(ex.get("name", ""))
+                if jpat and (joint_action_volume.get(jpat) or {}).get("below_target"):
+                    score += JOINT_ACTION_UNDER_TARGET_BOOST
             if _is_cautioned(ex, caution):
                 score -= CAUTION_PENALTY
             return score
@@ -1170,7 +1228,15 @@ def _build_session(
         # Capped at 1.9 so the max isolation key (1.0 + 1.9 = 2.9) can never reach
         # the lightest compound (3.0) — the compound/isolation boundary is preserved.
         nudge = min(1.9, max(0.0, MUSCLE_EMPHASIS.get(muscle, 1.0) - 1.0))
-        return fc + nudge
+        # Goal Top Sets/Daily Singles keep Nolan's own fresh-first rule untouched
+        # (competition lifts always lead, regardless of the day's focus muscle) —
+        # sorted as a separate, higher tier. Within the non-goal tier, the focus
+        # muscle's slot leads: +6.0 clears the widest non-goal compound spread
+        # (~3.0-5.0 fatigue_cost) so it can't be out-ranked by another muscle's
+        # heavier compound.
+        is_goal_tier = 1 if ex.get("is_goal") else 0
+        focus_bonus = 6.0 if (muscle == focus_muscle and not ex.get("is_goal")) else 0.0
+        return (is_goal_tier, fc + nudge + focus_bonus)
     slots.sort(key=_order_key, reverse=True)
 
     exercises = []
@@ -1314,7 +1380,7 @@ def _build_session(
     # Alternate chest/back compounds so we never stack three chest movements in a
     # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
     # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
-    exercises = _alternate_antagonists(exercises)
+    exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
@@ -1363,6 +1429,7 @@ def generate(
     blocked_exercises: set = None,
     preferred_exercises: set = None,
     split_override: str = None,
+    joint_action_volume: dict = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -1426,6 +1493,7 @@ def generate(
         weakness=weakness,
         blocked=blocked_exercises,
         preferred=preferred_exercises,
+        joint_action_volume=joint_action_volume,
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)
@@ -1577,6 +1645,7 @@ class SessionGenerator:
         frequency_targets: dict = None,
         week_muscle_counts: dict = None,
         muscle_emphasis: dict = None,
+        joint_action_volume: dict = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1648,6 +1717,7 @@ class SessionGenerator:
             blocked_exercises=blocked_exercises,
             preferred_exercises=preferred_exercises,
             split_override=resolved_split,
+            joint_action_volume=joint_action_volume,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore

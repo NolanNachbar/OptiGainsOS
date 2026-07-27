@@ -42,7 +42,16 @@ from engine.sleep_debt import sleep_debt_hours, is_poor_night
 from engine.strength_progression import process_strength_progression
 # Single source of truth for exercise/region → muscle mapping (shared with the
 # weekly orchestrator so per-muscle slopes and soreness never disagree).
-from engine.muscle_map import EXERCISE_MUSCLE_MAP, get_muscles
+from engine.muscle_map import EXERCISE_MUSCLE_MAP, get_muscles, get_muscle_credit, get_joint_action
+from engine.athlete_profile import CLARK_KENT_JOINT_ACTION_TARGET
+from engine.log_ingest import GOAL_LIFTS
+
+# Flat set of every logged-name variant of the big-three competition lifts (Top
+# Set / Back-off, CSV-era and app-era names) — the one goal-lift identity table
+# the codebase already uses elsewhere (log_ingest.goal_histories), reused here
+# so hypertrophy volume and goal-lift tracking can never define "goal lift"
+# two different ways.
+_GOAL_LIFT_NAMES: set = {name for names in GOAL_LIFTS.values() for name in names}
 # Canonical per-muscle volume landmarks (single source; no numpy needed).
 from engine.hypertrophy_volume import LANDMARK_PRIORS as _LANDMARK_PRIORS
 
@@ -298,21 +307,30 @@ def compute_hypertrophy(workout_logs: list) -> dict:
     today = datetime.date.today()
     week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
 
-    muscle_sets: dict[str, int] = {}
+    muscle_sets: dict[str, float] = {}
 
     for log in workout_logs:
         if log.get("log_date", "") < week_start:
             continue
         for ex in log.get("exercises", []) or []:
-            muscles = get_muscles(ex.get("name", ""))
+            # Goal-lift sets (Top Set/Back-off on the big three) are submaximal
+            # strength work by design — RIR 1-2, never taken to failure — not a
+            # hypertrophy stimulus set. Your logs carry no real per-set RIR (see
+            # log_ingest.FAILURE_RIR), so a literal RIR-threshold gate would be
+            # a no-op; goal-lift identity is the one signal actually present in
+            # the data that distinguishes "trained for strength" from "trained
+            # to failure for size." Nolan's call, 2026-07-27. [COACH]
+            if ex.get("name", "") in _GOAL_LIFT_NAMES:
+                continue
+            credit = get_muscle_credit(ex.get("name", ""))
             sets = ex.get("sets", []) or []
             # Count sets that have either weight or reps data
             hard_sets = len([s for s in sets if s.get("weight") or s.get("reps")])
             if not hard_sets:
                 continue
-            for muscle in muscles:
+            for muscle, weight in credit.items():
                 if muscle in MUSCLE_TARGETS:
-                    muscle_sets[muscle] = muscle_sets.get(muscle, 0) + hard_sets
+                    muscle_sets[muscle] = muscle_sets.get(muscle, 0) + hard_sets * weight
 
     # Always include the primary tracked muscles even if 0 sets
     ALWAYS_SHOW = {"quads", "hamstrings", "chest", "back", "shoulders", "rear_delts", "biceps", "triceps"}
@@ -323,7 +341,7 @@ def compute_hypertrophy(workout_logs: list) -> dict:
         if muscle not in MUSCLE_TARGETS:
             continue
         t = MUSCLE_TARGETS[muscle]
-        sets = muscle_sets.get(muscle, 0)
+        sets = round(muscle_sets.get(muscle, 0), 1)
         fatigue_score = round(min(sets / max(t["mrv"], 1), 1.0), 2)
 
         result[muscle] = {
@@ -334,6 +352,45 @@ def compute_hypertrophy(workout_logs: list) -> dict:
             "fatigue_score": fatigue_score,
         }
 
+    return result
+
+
+def compute_joint_action_volume(workout_logs: list) -> dict:
+    """Weekly hard-set count per JOINT ACTION (Clark Kent's counting unit — see
+    athlete_profile.CLARK_KENT_JOINT_ACTION_TARGET), independent of muscle-level
+    credit. This is the volume signal for gap #4 (OHP-vs-bench redundancy): a
+    joint action reads as "already covered" only when ITS OWN pattern hit
+    target, never because a different pattern happened to hit the same muscle
+    as a synergist — a bench-heavy week doesn't suppress OHP just because both
+    train chest/triceps, since horizontal_push and vertical_push are counted
+    separately. Full credit (no SECONDARY_MUSCLE_CREDIT weighting) — a set
+    either performed this joint action or it didn't."""
+    today = datetime.date.today()
+    week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
+
+    pattern_sets: dict[str, int] = {}
+    for log in workout_logs:
+        if log.get("log_date", "") < week_start:
+            continue
+        for ex in log.get("exercises", []) or []:
+            pattern = get_joint_action(ex.get("name", ""))
+            if not pattern:
+                continue
+            sets = ex.get("sets", []) or []
+            hard_sets = len([s for s in sets if s.get("weight") or s.get("reps")])
+            if not hard_sets:
+                continue
+            pattern_sets[pattern] = pattern_sets.get(pattern, 0) + hard_sets
+
+    lo, hi = CLARK_KENT_JOINT_ACTION_TARGET
+    result: dict[str, dict] = {}
+    for pattern, sets in sorted(pattern_sets.items()):
+        result[pattern] = {
+            "weekly_sets": sets,
+            "target_low": lo,
+            "target_high": hi,
+            "below_target": sets < lo,
+        }
     return result
 
 
@@ -1149,9 +1206,10 @@ def main():
 
     print("\nComputing metrics...")
 
-    strength    = compute_strength(workout_logs)
-    hypertrophy = compute_hypertrophy(workout_logs)
-    fatigue     = compute_fatigue(workout_logs, recovery_rows)
+    strength      = compute_strength(workout_logs)
+    hypertrophy   = compute_hypertrophy(workout_logs)
+    joint_action  = compute_joint_action_volume(workout_logs)
+    fatigue       = compute_fatigue(workout_logs, recovery_rows)
     recovery    = compute_recovery(recovery_rows, checkin)
     endurance   = compute_endurance(recovery_rows, pst_tests)
     nutrition   = compute_nutrition(food_entries, weight_entries, profile)
@@ -1579,6 +1637,7 @@ def main():
         "date":                 TODAY,
         "strength":             strength,
         "hypertrophy":          hypertrophy,
+        "joint_action_volume":  joint_action,
         "fatigue":              fatigue,
         "recovery":             recovery,
         "endurance":            endurance,

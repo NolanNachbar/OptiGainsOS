@@ -1140,6 +1140,11 @@ def main():
     goal_prio = profile.get("goal_priorities") or default_goal_priorities(profile.get("training_phase"))
     emphasis  = profile.get("muscle_emphasis") or MUSCLE_EMPHASIS
     vdot_gap  = float(vdot_zones.get("vdot_gap") or 0.0)
+    # Gap #4: per-joint-action weekly volume (Clark Kent counting unit), read-only
+    # diagnostic until now — session_generator uses `below_target` patterns to
+    # break exercise-selection ties toward the underserved pattern (e.g. OHP over
+    # yet another bench variant when vertical_push reads zero for the week).
+    joint_action_volume = latest_athlete.get("joint_action_volume") or {}
 
     # E9: feed the nutrition modulator's deficit (the driver of its previously-dead
     # mrv_adj = base·(1 − ETA·deficit_ratio)) into the allocator's recovery-cost term
@@ -1344,6 +1349,7 @@ def main():
             blocked_exercises=blocked_ex,
             preferred_exercises=preferred_ex,
             split_override=split,   # honor the convergent split (title + session agree)
+            joint_action_volume=joint_action_volume,
         )
 
         title = build_title(action, split, intensity)
