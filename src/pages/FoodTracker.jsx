@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles } from "lucide-react";
+import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -1332,6 +1332,25 @@ const handleSaveMealTemplate = () => {
                 </div>
               );
             })()}
+
+            {/* Carb timing: today's carb target split around session(s) — same
+                data WeeklyPlanCard surfaces, mirrored here since this is the
+                page people actually check while eating. Empty on a rest day. */}
+            {(targets.carbWindows || []).length > 0 && (
+              <div className="glass px-4 sm:px-5 py-3.5">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+                  <span className="section-label">Carb Timing</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {targets.carbWindows.map((w) => (
+                    <div key={w.label} className="text-xs text-ink-secondary">
+                      <span className="font-technical text-ink">{w.grams}g</span> {w.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quick-action grid removed: Barcode lives in the Add dialog (Scan)
                 and Recipes in the More sheet, so search owns the one Add path and

@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
@@ -24,7 +24,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { StatRing, MetricTile, SectionLabel, MiniRing, SegmentedControl } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
@@ -81,6 +81,63 @@ export default function Today() {
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
+
+  // Actual (not target) carbs eaten around today's session(s) — pulled straight
+  // from the logged food_entries.eaten_at/carbs_grams, never the engine's static
+  // carb-window target. If today's session hasn't actually been logged yet, the
+  // AM/PM split falls back to the assumed pattern: lift in the morning, run/
+  // cardio in the afternoon (a completed session's real start_time overrides it).
+  const { allFoodEntries } = useAllFoodEntries();
+  const { data: todaySessions = [] } = useQuery({
+    queryKey: ["workoutSessionsToday", today, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("workout_sessions")
+        .select("start_time, end_time, status")
+        .eq("created_by", user.id)
+        .eq("status", "completed")
+        .gte("start_time", `${today}T00:00:00`)
+        .lt("start_time", `${today}T23:59:59.999`)
+        .order("start_time", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!today,
+  });
+
+  const carbTimingToday = useMemo(() => {
+    const hasLift = (prescription?.strength_block?.length > 0)
+      || (prescription?.calisthenics_block && Object.keys(prescription.calisthenics_block).length > 0);
+    const hasRun = !!(prescription?.run_block || prescription?.swim_block);
+    if (!hasLift && !hasRun) return null;
+
+    const atHour = (h) => { const d = new Date(`${today}T00:00:00`); d.setHours(h, 0, 0, 0); return d; };
+    const sessions = [];
+    if (hasLift) sessions.push({ label: "Lift", defaultHour: 8 });
+    if (hasRun) sessions.push({ label: prescription?.run_block ? "Run" : "Swim", defaultHour: 16 });
+
+    // Match logged completed sessions to slots in chronological order — the
+    // earlier logged session fills the AM slot, the later one the PM slot,
+    // mirroring the assumption used when nothing's logged yet.
+    sessions.forEach((s, i) => {
+      const logged = todaySessions[i];
+      s.time = logged ? new Date(logged.start_time) : atHour(s.defaultHour);
+    });
+    sessions.sort((a, b) => a.time - b.time);
+
+    const dayStart = new Date(`${today}T00:00:00`);
+    const dayEnd = new Date(`${today}T23:59:59.999`);
+    const todaysEntries = (allFoodEntries || []).filter((e) => e.date === today && e.eaten_at);
+    const carbsBetween = (from, to) => todaysEntries
+      .filter((e) => { const t = new Date(e.eaten_at); return t >= from && t < to; })
+      .reduce((sum, e) => sum + (Number(e.carbs_grams) || 0), 0);
+
+    return sessions.map((s, i) => ({
+      label: s.label,
+      pre: Math.round(carbsBetween(i === 0 ? dayStart : sessions[i - 1].time, s.time)),
+      post: Math.round(carbsBetween(s.time, i === sessions.length - 1 ? dayEnd : sessions[i + 1].time)),
+    }));
+  }, [prescription, todaySessions, allFoodEntries, today]);
 
   // Today's scheduled program workout (if the athlete is enrolled in a program
   // and the schedule lands a workout on today). When present, the session CTA
@@ -447,6 +504,28 @@ export default function Today() {
                 gates its CTA on todayCheckin (no check-in yet → check-in sheet
                 first, then straight into the logger). */}
             <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} />
+          </div>
+        )}
+
+        {/* Actual carbs eaten pre/post each session, from the real food log —
+            not the engine's target. Empty on a rest day (carbTimingToday null). */}
+        {carbTimingToday && carbTimingToday.length > 0 && (
+          <div className="lg:col-start-1 lg:col-span-8 rise-in-2 glass px-4 sm:px-5 py-3.5 mt-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+              <span className="section-label">
+                Carbs Around Today's Session{carbTimingToday.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {carbTimingToday.map((s) => (
+                <div key={s.label} className="text-xs text-ink-secondary">
+                  <span className="font-semibold text-ink">{s.label}:</span>{" "}
+                  <span className="font-technical text-ink">{s.pre}g</span> pre ·{" "}
+                  <span className="font-technical text-ink">{s.post}g</span> post
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
