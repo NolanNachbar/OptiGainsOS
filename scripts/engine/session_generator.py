@@ -1177,7 +1177,7 @@ def _build_session(
             baseline_weekly = _baseline_weekly(muscle)
             volume_scalar = weekly / baseline_weekly
             ex_copy["sets"] = max(1, round(ex_copy.get("sets", 3) * volume_scalar))
-            
+
         slots.append((ex_copy, muscle))
 
     # Isolation supplements: add targeted isolation work for muscles that only
@@ -1188,9 +1188,13 @@ def _build_session(
     # the specific isolation exercise. Biceps / triceps are covered by the full
     # UPPER_A/B muscle lists, but the knapsack may pick a compound (Dips, OHP) for
     # those slots; these supplements ensure a true isolation always appears too.
+    # Forearms is deliberately NOT in UPPER_A/B_MUSCLES — it's outside the
+    # session's muscle domain, so it isn't added as an automatic bolt-on here;
+    # doing so was exactly the kind of unrequested 12th-muscle padding that
+    # inflated Upper B to 15 exercises (Nolan, 2026-07-29).
     _ISOLATION_SUPPLEMENTS = {
-        "upper_a":             [("triceps", "Triceps Pushdown"), ("forearms", "Wrist Curl")],
-        "upper_b":             [("triceps", "Triceps OH Extension"), ("forearms", "Wrist Curl")],
+        "upper_a":             [("triceps", "Triceps Pushdown")],
+        "upper_b":             [("triceps", "Triceps OH Extension")],
         "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
         # Legs-focus full-body day earns the same guaranteed quad+ham isolations so
@@ -1199,8 +1203,17 @@ def _build_session(
         "upper_volume":        [("triceps", "Triceps Pushdown")],   # legacy
         "upper_intensity":     [("triceps", "Triceps OH Extension")],  # legacy
     }
+    # The knapsack's own pick for a muscle may already BE a true isolation
+    # (e.g. Triceps Pushdown for triceps) — in that case the supplement was
+    # duplicating it under a different name (Triceps Pushdown + Triceps OH
+    # Extension both showing up for one muscle), which is more of the same
+    # unrequested padding. Only fire the supplement when the knapsack's own
+    # pick for that muscle was a compound. [COACH]
+    _muscle_type = {m: e.get("type") for e, m in slots}
     for iso_muscle, iso_name in _ISOLATION_SUPPLEMENTS.get(split, []):
         if iso_name in chosen_names or iso_name not in _EX_BY_NAME:
+            continue
+        if _muscle_type.get(iso_muscle) == "ISOLATION":
             continue
         if canon(iso_name) in blocked:
             continue
@@ -1253,8 +1266,20 @@ def _build_session(
 
         exercises.append(scaled)
 
-        # Bench daily single → always add appropriate back-off
-        if ex_copy.get("name") == "Bench Press (Top Set)":
+        # A goal lift (bench/squat/deadlift) only earns its full back-off +
+        # assistance stack when its muscle is the day's designated FOCUS —
+        # e.g. bench on a chest-focus upper day, squat on the squat-primary
+        # lower day. When the knapsack's +10 is_goal bonus wins a goal lift a
+        # slot on a day NOT about that muscle (bench winning the chest slot on
+        # a pull-focus upper day), it's a single technique-touch set instead —
+        # this used to unconditionally pile on 2-3 extra exercises regardless
+        # of focus, which is exactly the "random exercises thrown in" bloat
+        # Nolan flagged (2026-07-29): a pull day carrying a full bench
+        # back-off + assistance stack it has no business carrying. [COACH]
+        is_focus_slot = (muscle == focus_muscle)
+
+        # Bench daily single → add back-off + assistance only on the chest-focus day
+        if ex_copy.get("name") == "Bench Press (Top Set)" and is_focus_slot:
             bo_name = ("Bench Press (Back-off Int)"
                        if "intensity" in split or "hinge" in split
                        else "Bench Press (Back-off Vol)")
@@ -1283,9 +1308,8 @@ def _build_session(
                     _assistance_slot(bench_assist, wt, intensity, readiness_z))
 
         # Deadlift top set → build the conventional 500 via SUBMAX assistance,
-        # aimed at the flagged weak point ("off the floor" → Deficit/Paused) else
-        # the weekly rotation.
-        if ex_copy.get("name") == "Deadlift (Top Set)":
+        # only on the day deadlift/hamstrings is actually the focus.
+        if ex_copy.get("name") == "Deadlift (Top Set)" and is_focus_slot:
             _dl_pool = _allowed(DEADLIFT_ASSISTANCE)
             if _dl_pool:
                 dl_assist = _pick_assistance("deadlift", _dl_pool, weakness, assist_week)
@@ -1299,8 +1323,8 @@ def _build_session(
                     and not any(e.get("name") == _grip for e in exercises)):
                 exercises.append(_assistance_slot(_grip, wt, intensity, readiness_z))
 
-        # Back Squat top set → add back-off when intensity allows
-        if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:
+        # Back Squat top set → add back-off when intensity allows and quads is the focus
+        if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90 and is_focus_slot:
             backoff = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
             quads_weekly = wt.get("quads", 0)
             if quads_weekly > 0:
@@ -1312,11 +1336,13 @@ def _build_session(
             exercises.append(_scale(backoff, intensity, readiness_z=readiness_z))
 
         # Generic: goal "Top Set" exercises → add back-off when intensity warrants
-        # (catches any future goal Top Set exercises beyond bench/squat)
+        # and its muscle is the day's focus (catches any future goal Top Set
+        # exercises beyond bench/squat)
         elif (ex_copy.get("is_goal")
               and "Top Set" in ex_copy.get("name", "")
               and intensity >= 0.85
-              and ex_copy.get("name") != "Back Squat (Top Set)"):
+              and ex_copy.get("name") != "Back Squat (Top Set)"
+              and is_focus_slot):
             backoff_name = ex_copy["name"].replace("Top Set", "Back-off")
             if backoff_name in _EX_BY_NAME:
                 backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
