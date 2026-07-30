@@ -25,6 +25,11 @@
 const r1 = (n) => Math.round(n * 10) / 10;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// The plan targets the engine's macro FLOOR plus this margin, rather than the
+// floor exactly — a pure hit-the-number optimizer can land a few grams under
+// on a quantized day (whole eggs, whole rice bars) with no slack to recover.
+export const FLOOR_BUFFER_PCT = 0.03;
+
 // ─── Food catalog ──────────────────────────────────────────────────────────────
 // per100g: macros per 100 g in the LOGGED state (cooked where noted; cooking
 // yield already applied to gramsPerUnit, e.g. 1 lb raw chicken → 247 g cooked at
@@ -44,7 +49,10 @@ export const FOOD_CATALOG = [
   { food: "Oats (Dry)",            per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  role: "carb",    meal: "breakfast", timing: "post",    min: 0,  max: 120, minServe: 40,            purchase: { label: "42 oz",          gramsPerUnit: 1191, price: 4.18 } },
   { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, minServe: 50, step: 50,  purchase: { label: "60-count",       gramsPerUnit: 3000, price: 7.13 } },
   { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 6.17 } },
-  { food: "Peanut Butter",         per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, role: "fat",     meal: "breakfast", timing: "anytime", min: 0,  max: 60,  minServe: 16,            purchase: { label: "40 oz jar",      gramsPerUnit: 1134, price: 3.98 } },
+  // max capped 60->40: at 60g PB alone carried 32g fat, blowing well past the 64g
+  // fat floor and dragging total calories up with it. 40g still clears the floor
+  // once combined with eggs/cottage cheese, with less of the overshoot.
+  { food: "Peanut Butter",         per100g: { cal: 656, p: 21.9, c: 18.8, f: 53.1 }, role: "fat",     meal: "breakfast", timing: "anytime", min: 0,  max: 40,  minServe: 16,            purchase: { label: "40 oz jar",      gramsPerUnit: 1134, price: 3.98 } },
   // Cooked macros, derived from the tray label (19.6 p / 2.7 f per 100 g raw) and a
   // MEASURED 54.5% cooking yield — Nolan weighs cooked, and his yield runs 53-56%,
   // not the ~75% most databases assume. 1 lb raw (453 g) → 247 g cooked. Protein is
@@ -62,9 +70,12 @@ export const FOOD_CATALOG = [
   { food: "Tilapia",               per100g: { cal: 107, p: 20.2, c: 0.0,  f: 1.8 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "4 lb bag",       gramsPerUnit: 1360, price: 15.72 } },
   { food: "Salmon",                per100g: { cal: 155, p: 23.4, c: 0.0,  f: 6.0 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "2 lb frozen",    gramsPerUnit: 680,  price: 10.87 } },
   { food: "Potatoes",              per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  role: "carb",    meal: "dinner",    timing: "anytime", min: 0,  max: 400, minServe: 150,           purchase: { label: "5 lb bag",       gramsPerUnit: 2268, price: 2.94 } },
-  { food: "Cottage Cheese",        per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  role: "dairy",   meal: "dinner",    timing: "anytime", min: 0,  max: 500, minServe: 100,           purchase: { label: "24 oz tub",      gramsPerUnit: 680,  price: 2.87 } },
-  { food: "Greek Yogurt",          per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 300, minServe: 100,           purchase: { label: "32 oz tub",      gramsPerUnit: 907,  price: 3.28 }, creami: true },
-  { food: "2% Milk",               per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 500, minServe: 120,           purchase: { label: "half gallon",    gramsPerUnit: 1890, price: 1.98 }, creami: true },
+  // Creami minServe is raised to 250 g (not the usual "real serving" size) so
+  // that whenever the optimizer includes it, there's enough for an actual Ninja
+  // Creami batch — water fills the rest of the ~470 g tub, uncounted/free.
+  { food: "Cottage Cheese",        per100g: { cal: 81,  p: 11.5, c: 4.4,  f: 2.2 },  role: "dairy",   meal: "dinner",    timing: "anytime", min: 0,  max: 500, minServe: 250,           purchase: { label: "24 oz tub",      gramsPerUnit: 680,  price: 2.87 }, creami: true },
+  { food: "Greek Yogurt",          per100g: { cal: 59,  p: 10.0, c: 4.1,  f: 0.0 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 300, minServe: 250,           purchase: { label: "32 oz tub",      gramsPerUnit: 907,  price: 3.28 }, creami: true },
+  { food: "2% Milk",               per100g: { cal: 54,  p: 3.3,  c: 5.0,  f: 2.1 },  role: "dairy",   meal: "snack",     timing: "anytime", min: 0,  max: 500, minServe: 250,           purchase: { label: "half gallon",    gramsPerUnit: 1890, price: 1.98 }, creami: true },
   { food: "Strawberries (Frozen)", per100g: { cal: 36,  p: 0.4,  c: 9.3,  f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, minServe: 50,            purchase: { label: "48 oz bag",      gramsPerUnit: 1361, price: 7.62 }, creami: true },
   { food: "Blueberries (Frozen)",  per100g: { cal: 57,  p: 0.0,  c: 13.6, f: 0.0 },  role: "fruit",   meal: "snack",     timing: "anytime", min: 0,  max: 150, minServe: 50,            purchase: { label: "16 oz bag",      gramsPerUnit: 454,  price: 3.12 }, creami: true },
   { food: "Cucumber",              per100g: { cal: 15,  p: 0.7,  c: 3.6,  f: 0.1 },  role: "veg",     meal: "snack",     timing: "anytime", min: 0,  max: 300, minServe: 100,           purchase: { label: "each",           gramsPerUnit: 300,  price: 0.85 } },
@@ -114,6 +125,9 @@ export function scaleItem(item, { date, mealOverride } = {}) {
     role: item.role,
     timing: item.timing,
     creami: !!item.creami,
+    // Cost at APPROVAL time, in cents — so a later price edit in FOOD_CATALOG
+    // doesn't retroactively change what a past logged day cost.
+    cost_usd: item.purchase ? Math.round((grams / item.purchase.gramsPerUnit) * item.purchase.price * 100) / 100 : null,
     ...(date ? { date } : {}),
     planned: true,
   };
@@ -139,6 +153,11 @@ export function optimizeDay({
   trainingDay = true,
   restCarbFactor = 0.5,
   aggressiveCut = false,
+  // Manual per-day override, e.g. { "Cottage Cheese": 250 } — forces at least
+  // that many grams of a named food in regardless of cost-optimality (Nolan's
+  // "cost-driven by default, manual override when I want it" call). Bypasses
+  // the food's normal `max` too, since a forced amount is his explicit ask.
+  foodMins = {},
 } = {}) {
   const fixed = FIXED_ITEMS
     .filter((f) => trainingDay || !f.trainingOnly)
@@ -147,7 +166,10 @@ export function optimizeDay({
   const vars = FOOD_CATALOG.map((f) => {
     const isTimedCarb = f.role === "carb" && f.timing !== "anytime";
     const maxG = trainingDay || !isTimedCarb ? f.max : f.max * restCarbFactor;
-    return { ...f, portion: (f.min || 0) / 100, minPortion: (f.min || 0) / 100, maxPortion: maxG / 100, cost: price100(f) };
+    const forcedG = foodMins[f.food] || 0;
+    const minG = Math.max(f.min || 0, forcedG);
+    const maxPortion = Math.max(maxG, forcedG) / 100;
+    return { ...f, portion: minG / 100, minPortion: minG / 100, maxPortion, cost: price100(f) };
   });
 
   // Aggressive-cut carb policy: carbs are workout fuel ONLY. Pre-timed carbs
@@ -407,8 +429,13 @@ export function optimizeDay({
 // Full day → array of food_entries rows for `date`: the cheapest food mix that
 // hits the engine's targets, fixed staples included. This is the "approve the
 // plan → write the day into the log" payload; rows are flagged planned:true.
-export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, proteinFloor = null, fatTarget = null, aggressiveCut = false } = {}) {
-  const plan = optimizeDay({ calorieTarget, proteinTarget, proteinFloor, fatTarget, trainingDay, aggressiveCut });
+export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, proteinFloor = null, fatTarget = null, aggressiveCut = false, foodMins = {}, floorBufferPct = FLOOR_BUFFER_PCT } = {}) {
+  // Buffer the floor, not the ceiling: calories/protein get a small margin above
+  // the engine's number; the fat floor and hard protein floor stay exact (those
+  // are already conservative "don't dip below this" numbers, not targets to pad).
+  const bufferedCalorieTarget = calorieTarget ? Math.round(calorieTarget * (1 + floorBufferPct)) : calorieTarget;
+  const bufferedProteinTarget = proteinTarget ? Math.round(proteinTarget * (1 + floorBufferPct)) : proteinTarget;
+  const plan = optimizeDay({ calorieTarget: bufferedCalorieTarget, proteinTarget: bufferedProteinTarget, proteinFloor, fatTarget, trainingDay, aggressiveCut, foodMins });
   const rows = plan.map((it) => scaleItem(it, { date }));
   // Carry the optimizer's warning flags through so the UI can surface them.
   if (plan.proteinShortfall) rows.proteinShortfall = plan.proteinShortfall;

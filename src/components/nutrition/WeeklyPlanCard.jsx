@@ -9,7 +9,7 @@ import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { getTodayString } from "@/utils/dateUtils";
 import { invalidateFood } from "@/lib/queryKeys";
-import { buildDayEntries, buildShoppingList, entriesCost } from "@/config/dietPlans";
+import { buildDayEntries, buildShoppingList, entriesCost, FOOD_CATALOG } from "@/config/dietPlans";
 import { Cpu, Dumbbell, Moon, ShoppingCart, Check, ChevronDown, ChevronUp, Sparkles, Flame, Snowflake, SlidersHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO, addDays } from "date-fns";
@@ -51,6 +51,11 @@ const sumRows = (rows) =>
   );
 
 const groceryStorageKey = (weekStart) => `optigains.grocery.${weekStart}`;
+
+// Manual "force this day" dropdown is scoped to the creami-tagged dairy foods —
+// the concrete case this exists for. The underlying foodMins mechanism (dietPlans.js)
+// isn't limited to these, but a wide-open food picker isn't needed yet.
+const FORCEABLE_FOODS = FOOD_CATALOG.filter((f) => f.creami && f.role === "dairy").map((f) => f.food);
 
 // `bare` drops the card's own glass chrome — used when it renders inside an
 // already-glass container (the Fuel page's week-plan modal).
@@ -96,7 +101,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           .eq("created_by", user.id).in("date", dates),
         supabase.from("food_entries").select("date, calories, protein_grams, fats_grams")
           .eq("created_by", user.id).in("date", dates).eq("planned", false),
-        supabase.from("nutrition_overrides").select("date, action, manual_calorie_target, manual_protein_g")
+        supabase.from("nutrition_overrides").select("date, action, manual_calorie_target, manual_protein_g, food_mins")
           .eq("created_by", user.id).in("date", dates),
       ]);
       if (statesRes.error) throw statesRes.error;
@@ -109,9 +114,13 @@ export default function WeeklyPlanCard({ bare = false }) {
         if (cal) targets[s.date] = { calories: Math.round(cal), protein: pro ? Math.round(pro) : null };
       }
       const overrides = {};
+      const foodMins = {};
       // A manual override beats whatever the engine wrote for that day — same
       // priority order as useDailyTargets, just applied across the whole week.
       for (const o of overridesRes.data || []) {
+        // food_mins is independent of `action` — a forced food can sit on an
+        // otherwise engine-set or ease/push day, not just a manual-target day.
+        if (o.food_mins && Object.keys(o.food_mins).length) foodMins[o.date] = o.food_mins;
         if (o.action !== "manual" || !o.manual_calorie_target) continue;
         overrides[o.date] = true;
         targets[o.date] = {
@@ -126,7 +135,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         d.protein += e.protein_grams || 0;
         d.fats += e.fats_grams || 0;
       }
-      return { targets, eaten, overrides };
+      return { targets, eaten, overrides, foodMins };
     },
     enabled: !!user && !!calTarget,
     staleTime: 60 * 1000,
@@ -167,6 +176,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             proteinFloor: dayProteinFloor ? Math.max(0, dayProteinFloor - eatenProtein) : null,
             fatTarget: fatTarget ? Math.max(0, fatTarget - eatenFats) : null,
             aggressiveCut,
+            foodMins: dayContext?.foodMins?.[d] || {},
           })
         : [];
       return { date: d, trainingDay, target: dayTarget, overridden, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
@@ -242,6 +252,25 @@ export default function WeeklyPlanCard({ bare = false }) {
     onError: (e) => toast.error(e.message || "Couldn't save the override"),
   });
 
+  // Manual per-day "force this food" override (e.g. force a Creami-sized
+  // Cottage Cheese portion) — plan stays cost-driven everywhere else.
+  const [forceFood, setForceFood] = useState("");
+  const [forceGrams, setForceGrams] = useState("250");
+  const setFoodMin = useMutation({
+    mutationFn: async ({ date, food, grams }) => {
+      const food_mins = food ? { [food]: grams } : null;
+      const { error } = await supabase.from("nutrition_overrides")
+        .upsert({ created_by: user.id, date, food_mins }, { onConflict: "created_by,date" });
+      if (error) throw error;
+      return { cleared: !food };
+    },
+    onSuccess: ({ cleared }) => {
+      qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
+      toast.success(cleared ? "Force-food cleared" : "This day will force that food in");
+    },
+    onError: (e) => toast.error(e.message || "Couldn't save the override"),
+  });
+
   const approve = useMutation({
     mutationFn: async () => {
       // Idempotent: clear any prior planned rows for these dates, then load fresh.
@@ -257,6 +286,7 @@ export default function WeeklyPlanCard({ bare = false }) {
         date: e.date, planned: true, created_by: user.id,
         // Carry the workout-timing window so the log can badge pre/post meals.
         tag: e.timing && e.timing !== "anytime" ? e.timing : null,
+        cost_usd: e.cost_usd ?? null,
       }));
       await Promise.all(rows.map((r) => db.entities.FoodEntry.create(r)));
       return rows.length;
@@ -430,6 +460,42 @@ export default function WeeklyPlanCard({ bare = false }) {
               {` · plan fills ${openDayData.totals.calories.toLocaleString()}`}
               {openDayData.cost > 0 && ` · ≈ $${openDayData.cost.toFixed(2)}`}
             </span>
+          </div>
+          {/* ── Force a food into this day (e.g. a Creami-sized cottage cheese
+              portion) — cost-driven everywhere else, this is the manual override. ── */}
+          <div className="flex items-center gap-1.5 px-3.5 py-2 border-b hairline text-[11px]">
+            <Snowflake className="w-3 h-3 text-carb shrink-0" />
+            <select
+              value={forceFood}
+              onChange={(e) => setForceFood(e.target.value)}
+              className="glass-inset rounded px-1.5 py-1 text-ink bg-transparent"
+            >
+              <option value="">Force a food…</option>
+              {FORCEABLE_FOODS.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <input
+              type="number"
+              value={forceGrams}
+              onChange={(e) => setForceGrams(e.target.value)}
+              className="glass-inset rounded px-1.5 py-1 w-14 text-ink bg-transparent font-technical"
+            />
+            <span className="text-ink-muted">g</span>
+            <button
+              onClick={() => forceFood && setFoodMin.mutate({ date: openDayData.date, food: forceFood, grams: parseInt(forceGrams, 10) || 250 })}
+              disabled={!forceFood || setFoodMin.isPending}
+              className="glass-interactive min-h-[28px] px-2 rounded text-[10px] uppercase tracking-wider font-bold text-brand active:scale-[0.97] disabled:opacity-40"
+            >
+              Set
+            </button>
+            {dayContext?.foodMins?.[openDayData.date] && (
+              <button
+                onClick={() => setFoodMin.mutate({ date: openDayData.date, food: null, grams: null })}
+                disabled={setFoodMin.isPending}
+                className="glass-interactive min-h-[28px] px-2 rounded text-[10px] uppercase tracking-wider font-bold text-ink-muted active:scale-[0.97]"
+              >
+                Clear
+              </button>
+            )}
           </div>
           {openDayData.rows.length === 0 ? (
             <p className="px-3.5 py-3 text-xs text-ink-muted">

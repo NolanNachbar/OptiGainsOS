@@ -1197,6 +1197,11 @@ const handleSaveMealTemplate = () => {
                         {Math.round(planFit.plannedCal)} kcal planned
                       </span>
                     )}
+                    {totals.cost > 0 && (
+                      <span className="font-technical text-[11px] font-semibold text-ink-muted">
+                        ≈ ${totals.cost.toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-5 md:gap-8">
                     {/* Calorie ring — kcal owns gold */}
@@ -1425,6 +1430,7 @@ const handleSaveMealTemplate = () => {
               ].map(({ mealType, label }) => {
                 const entries = mealGroups[mealType];
                 const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
+                const mealCost = entries.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
                 const hasEntries = entries.length > 0;
                 return (
                   <section key={mealType} className="glass overflow-hidden">
@@ -1437,11 +1443,12 @@ const handleSaveMealTemplate = () => {
                       <div className="flex items-center gap-2.5">
                         {/* Desktop legend for the per-row macro grid — one per section, hue encodes identity */}
                         {hasEntries && (
-                          <div className="hidden sm:grid grid-cols-4 gap-1.5 text-right text-[9px] uppercase tracking-wider font-semibold text-ink-faint w-[136px]">
+                          <div className="hidden sm:grid grid-cols-5 gap-1.5 text-right text-[9px] uppercase tracking-wider font-semibold text-ink-faint w-[170px]">
                             <span>Cal</span>
                             <span>P</span>
                             <span>C</span>
                             <span>F</span>
+                            <span>$</span>
                           </div>
                         )}
                         {/* kcal owns gold — matches the ring + trend grammar. The
@@ -1451,6 +1458,11 @@ const handleSaveMealTemplate = () => {
                         {hasEntries && (
                           <span className="pill-value font-technical text-gold">
                             {mealCals} <span className="text-[9.5px] font-semibold text-gold/70">kcal</span>
+                          </span>
+                        )}
+                        {mealCost > 0 && (
+                          <span className="font-technical text-[10px] font-semibold text-ink-muted">
+                            ${mealCost.toFixed(2)}
                           </span>
                         )}
                         {hasEntries && (
@@ -1533,6 +1545,9 @@ const handleSaveMealTemplate = () => {
                                 {entry.serving_size != null && (
                                   <span className="text-ink-muted">· {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}</span>
                                 )}
+                                {entry.cost_usd != null && (
+                                  <span className="text-ink-muted">· ${entry.cost_usd.toFixed(2)}</span>
+                                )}
                               </div>
                               {/* Desktop: serving line under the name */}
                               {entry.serving_size != null && (
@@ -1542,11 +1557,12 @@ const handleSaveMealTemplate = () => {
                               )}
                             </div>
                             {/* Desktop: per-column macro grid (one legend per section covers identity) */}
-                            <div className={`hidden sm:grid shrink-0 grid-cols-4 gap-1.5 w-[136px] text-right items-center font-technical tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
+                            <div className={`hidden sm:grid shrink-0 grid-cols-5 gap-1.5 w-[170px] text-right items-center font-technical tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
                               <span className="text-xs font-bold text-gold">{entry.calories}</span>
                               <span className="text-xs font-bold text-coral">{entry.protein_grams}</span>
                               <span className="text-xs font-bold text-carb">{entry.carbs_grams}</span>
                               <span className="text-xs font-bold text-fat">{entry.fats_grams}</span>
+                              <span className="text-xs font-bold text-ink-muted">{entry.cost_usd != null ? `$${entry.cost_usd.toFixed(2)}` : "—"}</span>
                             </div>
                             {/* Edit/delete each get a full 44px target; on mobile
                                 they're spaced apart (gap-2) so the paired icons

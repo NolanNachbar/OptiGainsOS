@@ -11,7 +11,8 @@ export function calculateMacros(foodEntries) {
     protein: acc.protein + (entry.protein_grams || 0),
     carbs: acc.carbs + (entry.carbs_grams || 0),
     fats: acc.fats + (entry.fats_grams || 0),
-  }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+    cost: acc.cost + (entry.cost_usd || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fats: 0, cost: 0 });
 }
 
 /**
