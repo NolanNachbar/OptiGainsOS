@@ -27,12 +27,17 @@ functions (via the `USER_ID` Supabase secret) both read and write **only** the
 real athlete's UUID. The test account holds a frozen snapshot from late June 2026
 and nothing writes to it any more.
 
-The trap: `athlete@local.test` has its own copies of some `garmin_activities`
-rows, with the same Garmin `activity_id`s as the real account. Query
-`garmin_activities` without a `created_by` filter and every one of those looks
-like a duplicated workout. It is not — the engine filters by `created_by` and
-never sees them, and there are zero true duplicates within the real account.
+The trap: `athlete@local.test` holds its own byte-identical copies of the real
+account's rows — `garmin_activities` with the same Garmin `activity_id`s, and 56
+`workout_logs` rows on 56 dates that all also exist on the real account. Query
+either table without a `created_by` filter and every one of those looks like a
+duplicated workout. None of them are. The engine filters by `created_by` and
+never sees them, RLS keeps them out of the browser, and there are zero true
+duplicates within the real account (one double-submit on 2026-06-22 aside).
 Always filter by `created_by` before concluding the data is corrupt.
+
+This keeps getting re-discovered. Details and the other closed findings are in
+`KNOWN_NON_ISSUES.md`.
 
 # React + Vite
 
