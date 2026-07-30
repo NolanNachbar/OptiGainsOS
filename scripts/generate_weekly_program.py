@@ -75,6 +75,13 @@ SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABA
 USER_ID      = os.environ.get("USER_ID", "")
 TODAY        = datetime.date.today()
 
+# How far past the end of the current week to keep date-pinned coverage. One full
+# extra week means a single missed Monday cron run degrades to slightly stale
+# programming rather than to raw base templates. Rows are upserted by
+# (program_id, scheduled_date), so next week's rows are simply rewritten with
+# fresher state on the following run. [ENG] tunable.
+COVERAGE_BUFFER_DAYS = 7
+
 if not all([SUPABASE_URL, SUPABASE_KEY]):
     print("ERROR: Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY")
     sys.exit(1)
@@ -517,7 +524,12 @@ def main():
     if days_ahead_env > 0:
         days_to_generate = [TODAY + datetime.timedelta(days=i) for i in range(days_ahead_env)]
     else:
-        days_remaining   = 6 - TODAY.weekday()
+        # Generate to the end of the current week PLUS a buffer week. Stopping at the
+        # week edge left zero margin: one failed or delayed Monday cron exposed the
+        # base-template fallback (which for program bfea3f30 is byte-identical filler),
+        # a Sunday workflow_dispatch computed days_remaining=0 and wrote a single day,
+        # and browsing ahead in WeeklySchedule already fell through to the filler.
+        days_remaining   = 6 - TODAY.weekday() + COVERAGE_BUFFER_DAYS
         days_to_generate = [TODAY + datetime.timedelta(days=i) for i in range(days_remaining + 1)]
 
     print(f"=== generate_weekly_program  {TODAY} ===")
