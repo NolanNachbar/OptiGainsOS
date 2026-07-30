@@ -26,6 +26,7 @@ import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
 import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
+import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
 
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
@@ -113,7 +114,7 @@ export default function QuickWorkout() {
   const restTimerRef = useRef(null);
   const restTimerEndRef = useRef(null);
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, cancelSession, restoreSession } = useWorkoutSession();
 
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
@@ -251,10 +252,15 @@ export default function QuickWorkout() {
     checkForActiveSession({}).then((session) => {
       if (session) {
         const ageMs = Date.now() - new Date(session.start_time).getTime();
-        if (ageMs >= 8 * 60 * 60 * 1000) {
-          autoFinishSession(session.id);
-          createSession({ exercises: prescribedInitial, startTime });
+        // Recent session: drop straight back into it. No dialog, no new session,
+        // nothing discarded. See STALE_SESSION_MS.
+        if (ageMs < STALE_SESSION_MS) {
+          restoreSession(session.id);
+          setExercises(session.exercises || []);
+          setStartTime(new Date(session.start_time).getTime());
         } else {
+          // Stale: ask. Never auto-finish — that marked it completed without
+          // ever writing a workout_logs row, destroying the logged sets.
           setResumeSession(session);
         }
       } else {

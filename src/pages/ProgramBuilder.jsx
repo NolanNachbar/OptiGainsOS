@@ -441,9 +441,10 @@ export default function ProgramBuilder() {
       description: program.description,
       focus: program.goal,
       num_cycles: program.num_cycles,
-      cycle_length: program.cycle_length,
       schema_version: 2,
-      // Keep v1 fields for backward compat (not used in v2)
+      // No `cycle_length` column exists on `programs` — writing it 400s the whole
+      // insert/update. days_per_week is the persisted cycle length; every reader
+      // already falls back to it (`program.cycle_length || program.days_per_week`).
       duration_weeks: program.num_cycles,
       days_per_week: program.cycle_length,
     };

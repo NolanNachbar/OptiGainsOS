@@ -10,6 +10,17 @@
  * localStorage's own `storage` event only fires in OTHER tabs, not the tab
  * that made the change, so pair it with a same-tab custom event.
  */
+/**
+ * How old an in-progress session must be before we stop auto-resuming it and
+ * ask instead. Anything newer restores silently: a workout must never appear to
+ * restart because the phone locked or the tab reloaded mid-set.
+ *
+ * A full day, not the old 8h — and the old 8h branch *auto-finished* the
+ * session, marking it completed while never writing a workout_logs row, which
+ * silently destroyed the logged sets. Nothing auto-finishes now.
+ */
+export const STALE_SESSION_MS = 24 * 60 * 60 * 1000;
+
 const KEY = "optigains-workout-active";
 const EVENT = "optigains-workout-flag-changed";
 

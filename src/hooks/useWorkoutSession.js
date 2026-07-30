@@ -19,6 +19,29 @@ export function useWorkoutSession() {
    * Pass workoutId for regular workouts, programWorkoutId for program mode,
    * or neither for quick workouts.
    */
+  /**
+   * Is there ANY in-progress session for this user, on any workout?
+   *
+   * Deliberately unscoped. The workout-scoped `checkForActiveSession` below must
+   * never be the thing that decides the cross-cutting "workout active" flag: if
+   * he is mid-program-workout and opens Quick Workout, the scoped query matches
+   * nothing, and clearing the flag off that result releases a pending
+   * service-worker reload straight into a live session.
+   */
+  const hasAnyActiveSession = async () => {
+    if (!user) return false;
+    const { data, error } = await supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("created_by", user.id)
+      .eq("status", "in_progress")
+      .limit(1);
+    // Fail closed: on a network error assume a workout IS live rather than
+    // risk clearing the flag and reloading on top of him.
+    if (error) return true;
+    return (data || []).length > 0;
+  };
+
   const checkForActiveSession = async ({ workoutId, programWorkoutId } = {}) => {
     if (!user) return null;
 
@@ -46,10 +69,15 @@ export function useWorkoutSession() {
       console.error("Error checking for active workout session:", error);
       return null;
     }
-    // No active session found: clear a stale flag left over from a
-    // crash/force-quit that never hit completeSession/cancelSession, so a
-    // pending update isn't stuck deferring forever.
-    if (!data) setWorkoutActive(false);
+    // No session for THIS workout. That alone says nothing about whether a
+    // workout is live — he may be mid-session on a different one. Only clear the
+    // stale-flag leftover (crash/force-quit that never hit
+    // completeSession/cancelSession) once an unscoped check confirms there is no
+    // in-progress session anywhere.
+    if (!data) {
+      const anyLive = await hasAnyActiveSession();
+      if (!anyLive) setWorkoutActive(false);
+    }
     return data || null;
   };
 

@@ -444,7 +444,9 @@ export function useDeleteEnrollment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => db.entities.ProgramEnrollment.update(id, { status: "cancelled" }),
+    // `program_enrollments_status_check` allows only active | completed | paused.
+    // "cancelled" violated it, so every cancel silently 400'd.
+    mutationFn: (id) => db.entities.ProgramEnrollment.update(id, { status: "completed" }),
     onSuccess: () => {
       invalidatePrograms(queryClient);
     },

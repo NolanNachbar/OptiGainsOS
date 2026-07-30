@@ -31,6 +31,7 @@ import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
 
@@ -150,7 +151,7 @@ export default function WorkoutDetail() {
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, cancelSession, restoreSession } = useWorkoutSession();
 
   // Detect program source from URL params
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -259,14 +260,25 @@ export default function WorkoutDetail() {
     }
     const workoutId = urlParams.get('id');
     checkForActiveSession({ workoutId, programWorkoutId }).then((session) => {
-      if (session) {
-        const ageMs = Date.now() - new Date(session.start_time).getTime();
-        if (ageMs >= 8 * 60 * 60 * 1000) {
-          autoFinishSession(session.id);
-        } else {
-          setResumeSession(session);
-        }
+      if (!session) return;
+      const ageMs = Date.now() - new Date(session.start_time).getTime();
+      // A live session is NEVER restarted or discarded. Set the phone down
+      // mid-set, come back, reload: we drop straight back into logging with the
+      // saved sets, no dialog and no confirmation. An empty `exercises` (started
+      // logging but hasn't completed a set yet) restores too — the init effect
+      // below reseeds the template and `isLogging` stays true.
+      if (ageMs < STALE_SESSION_MS) {
+        restoreSession(session.id);
+        setExerciseLogs(session.exercises || []);
+        setStartTime(new Date(session.start_time).getTime());
+        setPreWorkoutNotes(session.notes || "");
+        setIsLogging(true);
+        return;
       }
+      // Older than a day: silently resuming would be wrong (he's here for a new
+      // workout), but auto-finishing threw the logged sets away with no
+      // workout_logs row ever written. Ask instead.
+      setResumeSession(session);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
