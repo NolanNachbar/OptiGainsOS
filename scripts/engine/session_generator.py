@@ -580,10 +580,14 @@ def pick_run_slot(split: str, action: str, quality_placed: int, long_placed: int
     is_lower = "lower" in (split or "")
     if is_lower:
         return "easy"                       # leg day → aerobic only
-    if quality_placed == 0:
-        return "threshold"                  # first eligible day gets the tempo work
-    if quality_placed == 1:
-        return "interval"                   # second eligible day gets the VO2 work
+    # `max_quality` comes from allocator.build_run_plan's hard-run count, which scales
+    # with the PST readiness gap. It was previously accepted and ignored, so the week
+    # always got exactly threshold + interval no matter what the plan asked for.
+    if quality_placed < max_quality:
+        # First eligible day gets the tempo work, the next the VO2 work, alternating
+        # after that so a larger quality allowance stays polarized rather than
+        # stacking one modality.
+        return "threshold" if quality_placed % 2 == 0 else "interval"
     if long_placed < max_long:
         return "long"                       # then the long aerobic run
     return "easy"
@@ -764,7 +768,19 @@ def _converge_split(recent_types, split_framework, frequency_targets,
     for sp in candidates:
         regions.setdefault(SPLIT_REGION.get(sp, sp), []).append(sp)   # ppl/full_body: split IS the region
 
-    best_region = max(regions, key=lambda r: max(key(sp) for sp in regions[r]))
+    # ANTI-REPEAT. `recovery_factor` only *discounts* a just-trained muscle (0.10);
+    # it does not exclude it, so a large enough frequency deficit still outscores the
+    # penalty and the same region gets programmed twice running (this is what
+    # produced 07-25 Lower B → 07-26 Lower A from a single generation run).
+    # Mirrors the `last_strength` guard in the `_decide_split` fallback below.
+    # Skipped when only one region exists (full_body), which has nothing to alternate.
+    eligible = regions
+    last_type = recent_types[-1] if recent_types else None
+    last_region = SPLIT_REGION.get(last_type, last_type) if last_type else None
+    if last_region and len(regions) > 1 and last_region in regions:
+        eligible = {r: v for r, v in regions.items() if r != last_region}
+
+    best_region = max(eligible, key=lambda r: max(key(sp) for sp in eligible[r]))
     variants = regions[best_region]
     if len(variants) < 2:
         return variants[0]

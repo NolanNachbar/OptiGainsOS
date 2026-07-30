@@ -141,7 +141,10 @@ formula would violate one, the formula is rewritten, not the constraint.
      drift check, since physiology changes slowly.
    - Probe magnitude is bounded to a recovery-safe range and never overrides the
      recovery-cost guardrail or the slow-tissue backstop. A probe halts if fatigue
-     signals fire (hazard gate, currently `exploration_manager` at hazard_score > 0.6).
+     signals fire (guardrail gate: SystemGuardrail.check_overreaching fatigue_state != NORMAL).
+     NOTE: this previously read "hazard_score > 0.6". No hazard score was ever
+     implemented, and 0.6 traces to no source — it was fabricated. The real gate is
+     the guardrail overreach detector, wired in generate_weekly_program.py.
    - Probe and evaluation window is one mesocycle (8-12 weeks) so a hypertrophy signal
      can clear noise before the posterior updates.
 

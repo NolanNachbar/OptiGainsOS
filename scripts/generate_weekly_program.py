@@ -1075,10 +1075,18 @@ def main():
     #   - Eligible muscles are those whose MRV posterior is still WIDE (not yet mature =
     #     Clues/Patterns phase). As posteriors converge to Established the eligible set
     #     shrinks and exploration decays toward zero (aggressive early, near-silent once
-    #     converged). The +1-set magnitude is a bounded, recovery-safe probe; the hazard
-    #     halt (exploration_manager caller guard, hazard_score > 0.6) still applies.
+    #     converged). The +1-set magnitude is a bounded, recovery-safe probe.
+    #   - Suppressed while the fatigue guardrail is not NORMAL. The spec used to cite a
+    #     "hazard_score > 0.6" halt; no hazard score was ever implemented anywhere in
+    #     the engine and that 0.6 appears in no source (Science.md's own pseudocode
+    #     uses 0.8). Rather than invent a threshold, gate on SystemGuardrail's real,
+    #     already-calibrated overreach detector — same intent, grounded constants.
     _test_running = bool(active_test and active_test.get("test_type") == "volume_tolerance")
-    if not already_ran and not _test_running:
+    _fatigue_state = guardrail.check_overreaching([], [], acwr_global)["fatigue_state"]
+    _fatigue_halt = _fatigue_state != "NORMAL"
+    if _fatigue_halt:
+        print(f"  Exploration probe suppressed — guardrail fatigue_state={_fatigue_state}.")
+    if not already_ran and not _test_running and not _fatigue_halt:
         _eligible = {m for m in MUSCLE_GROUPS if not (landmarks_db.get(m) or {}).get("mature")}
         exploration_delta = exploration_manager.get_exploration_delta(step_count, eligible=_eligible)
         if exploration_delta:
@@ -1252,6 +1260,16 @@ def main():
     # quality/long runs have been placed so the week hits ~2 quality + 1 long, landed
     # on upper/cardio days rather than heavy leg days.
     quality_placed, long_placed = 0, 0
+    # ...and how many of each the allocator's polarized plan actually asked for.
+    # `plan["run_plan"]` (allocator.build_run_plan) scales the hard-run count with the
+    # PST readiness gap; it used to be written to weekly_plans.run_plan and read by
+    # nothing, while pick_run_slot ran on hardcoded 2-quality/1-long defaults. Wire it
+    # through so the PST target has a real lever.
+    _run_plan = plan.get("run_plan") or []
+    max_quality = sum(int(r.get("count", 0)) for r in _run_plan
+                      if r.get("intensity") == "hard") or 2
+    max_long = sum(int(r.get("count", 0)) for r in _run_plan
+                   if r.get("type") == "long") or 1
     # Convergent scheduler tally: how many sessions each muscle has had THIS CALENDAR
     # WEEK. Under-trained groups show a remaining deficit and get programmed next;
     # groups already at their weekly frequency target show none. The selector also
@@ -1318,7 +1336,8 @@ def main():
         if split not in ("rest", "cardio"):
             for _m in split_muscles_for(split):
                 week_muscle_counts[_m] = week_muscle_counts.get(_m, 0) + 1
-        run_slot = pick_run_slot(split, action, quality_placed, long_placed)
+        run_slot = pick_run_slot(split, action, quality_placed, long_placed,
+                                 max_quality=max_quality, max_long=max_long)
         # Only consume the polarized budget when a CARDIO-producing action actually runs.
         # STRENGTH/LIGHT/CALISTHENICS call pick_run_slot but gen_session returns cardio=[],
         # so counting them here phantom-exhaust the quality/long slots before real CARDIO days.
@@ -1375,7 +1394,13 @@ def main():
             "program_id":       program_id,
             "created_by":       USER_ID,
             "title":            title,
-            "focus":            "strength" if action not in ("CARDIO",) else "cardio",
+            # Every lifting day was hardcoded "strength" regardless of what the
+            # engine was actually optimising, so the label carried no information
+            # (118/118 rows read "strength"). Derive it from the dominant goal
+            # weight instead — with the live {hypertrophy .40, strength .30,
+            # pst .30} this reads "hypertrophy", which is what it is.
+            "focus":            "cardio" if action == "CARDIO" else (
+                max(goal_prio, key=goal_prio.get) if goal_prio else "strength"),
             "week_number":      current_week,
             "day_index":        day_index,
             "day_of_week":      sim_day.weekday(),

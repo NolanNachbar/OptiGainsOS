@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 validate_convergence_fixes.py — behavioral checks for the CONVERGENCE_AUDIT fixes.
@@ -426,7 +427,12 @@ check("F13 sharp (sev≥2) pain note still hard-vetoes", hard <= -1.5, f"reward 
 
 # ── F2: fallback slope is scale-comparable to e1RM (not raw weight×reps ~60) ──
 import importlib.util
-_spec = importlib.util.spec_from_file_location("gwp", "generate_weekly_program.py")
+# Resolve relative to THIS file, not the CWD — the bare relative path only
+# resolved when the validator happened to be run from inside scripts/, so every
+# check below F2 was silently unreachable from a repo-root run.
+_spec = importlib.util.spec_from_file_location(
+    "gwp", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "generate_weekly_program.py"))
 _gwp = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_gwp)
 _rows = [{"date": d, "exercise": "Neck Curl", "weight": w, "reps": 12, "rir": 0}
          for d, w in [("2026-05-01", 45), ("2026-05-08", 50), ("2026-05-15", 55), ("2026-05-22", 60)]]
@@ -685,7 +691,9 @@ check("NOTES the INJURY sense of pull still escalates ('pulled a muscle')",
 # TWO_A_DAY (the highest load) won nearly every day. mpc_prescriber.score_trajectory
 # already carried the goal term; the weekly one claimed to "mirror" it and did not.
 import importlib.util as _ilu
-_spec = _ilu.spec_from_file_location("gwp", "generate_weekly_program.py")
+_spec = _ilu.spec_from_file_location(
+    "gwp", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "generate_weekly_program.py"))
 _gwp = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_gwp)
 import mpc_prescriber as _mpc
 
