@@ -1188,6 +1188,14 @@ export default function WorkoutDetail() {
                   const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
                   const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
                   const targets = programEx ? progressionTargetsMap[programEx.name] : null;
+                  // Match the template entry BY NAME, like programEx above. This was
+                  // `workout.exercises[exerciseIndex]` — a positional lookup into an
+                  // array that removeExercise never filters. Delete exercise 2 and
+                  // exercise 3 slides into index 2 while the template at index 2 is
+                  // still the deleted one, so the dead exercise's notes AND its
+                  // target sets x reps (ExerciseCard renders both from this prop)
+                  // reappear on the exercise below it.
+                  const originalEx = workout?.exercises?.find(e => e.name === exerciseLog.name) || null;
                   return (
                     <SortableExerciseRow
                       key={exerciseIndex}
@@ -1209,7 +1217,7 @@ export default function WorkoutDetail() {
                           onRemoveExercise={removeExercise}
                           onUpdateNotes={updateExerciseNotes}
                           onUpdateName={updateExerciseName}
-                          originalExercise={workout.exercises[exerciseIndex]}
+                          originalExercise={originalEx}
                           lastPerformance={lastPerformance}
                           programExercise={programEx}
                           progressionTargets={targets}
