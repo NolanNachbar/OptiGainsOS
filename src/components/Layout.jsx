@@ -130,19 +130,39 @@ export default function Layout({ children, currentPageName }) {
   // and stay pinned to the VISUAL viewport bottom, where the user actually is.
   // Resolves to 0px with no keyboard, so it's a no-op on desktop and on Android
   // (which resizes the layout viewport instead of scrolling it).
+  // iOS fires visualViewport `resize` DURING the keyboard's open/close animation,
+  // so a reading can land on a half-retracted keyboard and then never be corrected
+  // — no further event arrives once the animation settles. That latched inset is
+  // what strands the logging action bar in the middle of the screen. Every event
+  // therefore schedules a settle re-measure (next frame + after the ~250ms
+  // animation), and a blur schedules one too, since dismissing the keyboard by
+  // scrolling does not reliably emit a final resize.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;   // --keyboard-inset stays at its 0px :root default
-    const updateKeyboardInset = () => {
+    let rafId = null;
+    let timerId = null;
+    const measure = () => {
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       document.documentElement.style.setProperty("--keyboard-inset", `${inset}px`);
+    };
+    const updateKeyboardInset = () => {
+      measure();
+      if (rafId) cancelAnimationFrame(rafId);
+      if (timerId) clearTimeout(timerId);
+      rafId = requestAnimationFrame(measure);
+      timerId = setTimeout(measure, 300);
     };
     updateKeyboardInset();
     vv.addEventListener("resize", updateKeyboardInset);
     vv.addEventListener("scroll", updateKeyboardInset);
+    window.addEventListener("focusout", updateKeyboardInset);
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (timerId) clearTimeout(timerId);
       vv.removeEventListener("resize", updateKeyboardInset);
       vv.removeEventListener("scroll", updateKeyboardInset);
+      window.removeEventListener("focusout", updateKeyboardInset);
     };
   }, []);
 
