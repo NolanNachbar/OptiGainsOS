@@ -1069,6 +1069,7 @@ def _build_session(
     preferred: set = None,
     joint_action_volume: dict = None,
     target_exercises: int = None,
+    spec_muscle: str = None,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -1121,7 +1122,13 @@ def _build_session(
     # list (["quads", "hamstrings", ...]) and differentiate by which goal lift
     # is excluded, not by list order — so they need an explicit override. [COACH]
     _FOCUS_OVERRIDE = {"lower_squat_primary": "quads", "lower_hinge_primary": "hamstrings"}
-    focus_muscle = _FOCUS_OVERRIDE.get(split) or (relevant[0] if relevant else None)
+    # An active specialization block outranks both: its protocol puts the priority
+    # muscle first in every session that trains it (SPEC_specialization_test.md).
+    # Only when the muscle is actually in this split's domain — a side-delt block
+    # does not reorder a lower day around a muscle that day never trains.
+    focus_muscle = ((spec_muscle if spec_muscle in relevant else None)
+                    or _FOCUS_OVERRIDE.get(split)
+                    or (relevant[0] if relevant else None))
 
     # Patterns that may repeat (not subject to compound-pattern uniqueness constraint)
     _REPEATABLE_PATTERNS = {"isolation_upper", "isolation_lower"}
@@ -1671,6 +1678,7 @@ def generate(
     joint_action_volume: dict = None,
     phase: str = None,
     session_size_learned: float = None,
+    spec_muscle: str = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -1736,6 +1744,7 @@ def generate(
         preferred=preferred_exercises,
         joint_action_volume=joint_action_volume,
         target_exercises=target_exercises_per_session(split, phase, session_size_learned),
+        spec_muscle=spec_muscle,
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)

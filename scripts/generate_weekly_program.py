@@ -56,7 +56,15 @@ FALLBACK_OBS_VAR = 18.0   # [ENG] ~2× passive e1RM OBS_VAR
 from engine.controlled_tests   import (
     get_active, pick_volume_test_muscle, can_schedule, schedule_volume_test,
     ramp_target, step_volume_test, should_schedule_pst, schedule_pst_diagnostic,
+    can_schedule_specialization, schedule_specialization_test,
+    step_specialization_test, spec_focus_muscle, spec_locked_muscles,
 )
+
+# First specialization subject (Nolan, 2026-08-04): side delts on the FREQUENCY
+# arm, against rear delts as the matched control — same session, same equipment,
+# and untouched by the mandatory-isolation change that raised side-delt frequency.
+SPEC_FIRST_MUSCLE  = "side_delts"   # [COACH]
+SPEC_FIRST_CONTROL = "rear_delts"   # [COACH]
 from engine.strength_progression import StrengthProgressionRegistry, compute_trend_slope
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS, canon
 from engine.notes_parser         import parse_workout_notes
@@ -1062,9 +1070,16 @@ def main():
     # feeds a LOW-noise observation to the learner. One test at a time, never on a cut.
     phase_test = (latest_athlete.get("nutrition") or {}).get("phase")
     tests = sb_get("controlled_tests", {"select": "*", "created_by": f"eq.{USER_ID}",
-                   "status": "eq.active", "test_type": "eq.volume_tolerance",
+                   "status": "eq.active",
+                   "test_type": "in.(volume_tolerance,specialization)",
                    "order": "created_at.desc", "limit": "1"})
     active_test = get_active(tests)
+    # A specialization block is a one-off designed study, not a recurring loop like
+    # the volume-tolerance probe: schedule the first one, then never auto-schedule
+    # another. The next subject is a decision Nolan makes, not a scheduler default.
+    _spec_ever_scheduled = bool(sb_get("controlled_tests", {
+        "select": "id", "created_by": f"eq.{USER_ID}",
+        "test_type": "eq.specialization", "limit": "1"}))
     if active_test and active_test.get("test_type") == "volume_tolerance" and not already_ran:
         tm = (active_test.get("baseline") or {}).get("muscle")
         sv = soreness_muscle.get(tm, [])
@@ -1087,6 +1102,53 @@ def main():
         else:
             active_test = updated
             print(f"  Volume-tolerance test active: {tm} (ramp week {updated['baseline']['week']})")
+    elif active_test and active_test.get("test_type") == "specialization" and not already_ran:
+        _b = active_test.get("baseline") or {}
+        _sm, _cm = _b.get("muscle"), _b.get("control")
+        updated, obs = step_specialization_test(active_test, perf_slopes.get(_sm),
+                                                perf_slopes.get(_cm))
+        sb_patch("controlled_tests", {"id": f"eq.{active_test['id']}"},
+                 {"status": updated["status"], "baseline": updated["baseline"],
+                  "result": updated.get("result")})
+        if obs:
+            r = updated["result"]
+            print(f"  Specialization test COMPLETE: {_sm} ({r['arm']}) vs {_cm} — "
+                  f"contrast {r['contrast']} over {r['weeks']} wk"
+                  + (" [e1RM proxy, not circumference]" if r["proxy_readout"] else "")
+                  + (" [INCONCLUSIVE: missing slopes]" if r["inconclusive"] else ""))
+            active_test = None
+        else:
+            active_test = updated
+            print(f"  Specialization test active: {_sm} ({_b.get('arm')}) vs {_cm} "
+                  f"(week {updated['baseline']['week']}/{_b.get('weeks_total')})")
+    elif can_schedule_specialization(active_test, phase_test) and not already_ran \
+            and not _spec_ever_scheduled:
+        # First subject: side delts, FREQUENCY arm (Nolan, 2026-08-04). The
+        # intervention is already live — MANDATORY_ISOLATION_MUSCLES puts a lateral
+        # raise in every session, taking side delts from ~2-3x/wk to 6-7x/wk — so
+        # week 1 changes no programming. This row exists to stamp the start state,
+        # hold the control, and stop the bandit from touching either muscle.
+        # Control is rear delts: same session, same equipment, left at its normal
+        # frequency because nothing in the mandatory-isolation change touched it.
+        # Stamped at schedule time so the readout cannot be chosen after the fact.
+        # No tape-measure input exists in the app, so the start state is the e1RM
+        # slope and weekly set count for both arms — a strength proxy, flagged as
+        # such on the result row.
+        _start = {"slopes": {SPEC_FIRST_MUSCLE: perf_slopes.get(SPEC_FIRST_MUSCLE),
+                             SPEC_FIRST_CONTROL: perf_slopes.get(SPEC_FIRST_CONTROL)},
+                  "sets": {SPEC_FIRST_MUSCLE: prev_targets.get(SPEC_FIRST_MUSCLE),
+                           SPEC_FIRST_CONTROL: prev_targets.get(SPEC_FIRST_CONTROL)}}
+        sb_insert("controlled_tests", {
+            **schedule_specialization_test(SPEC_FIRST_MUSCLE, SPEC_FIRST_CONTROL,
+                                           TODAY.isoformat(), arm="frequency",
+                                           readout="e1rm", start=_start),
+            "created_by": USER_ID})
+        active_test = {"test_type": "specialization",
+                       "baseline": {"muscle": SPEC_FIRST_MUSCLE,
+                                    "control": SPEC_FIRST_CONTROL,
+                                    "arm": "frequency", "week": 1}}
+        print(f"  Scheduled specialization test: {SPEC_FIRST_MUSCLE} frequency "
+              f"vs {SPEC_FIRST_CONTROL} (readout e1RM proxy — no tape input exists)")
     elif can_schedule(active_test, phase_test) and not already_ran:
         tm = pick_volume_test_muscle(landmarks_db, profile.get("muscle_emphasis") or MUSCLE_EMPHASIS)
         if tm:
@@ -1116,7 +1178,14 @@ def main():
     if _fatigue_halt:
         print(f"  Exploration probe suppressed — guardrail fatigue_state={_fatigue_state}.")
     if not already_ran and not _test_running and not _fatigue_halt:
-        _eligible = {m for m in MUSCLE_GROUPS if not (landmarks_db.get(m) or {}).get("mature")}
+        # A running specialization block locks BOTH its arms out of the bandit. A
+        # +1-set probe on the control would destroy the contrast the block exists to
+        # measure; one on the specialized muscle would confound the arm under test.
+        _locked = spec_locked_muscles(active_test)
+        if _locked:
+            print(f"  Exploration locked out of {sorted(_locked)} — specialization block active.")
+        _eligible = {m for m in MUSCLE_GROUPS
+                     if not (landmarks_db.get(m) or {}).get("mature") and m not in _locked}
         exploration_delta = exploration_manager.get_exploration_delta(step_count, eligible=_eligible)
         if exploration_delta:
             print(f"  Exploration probe ({len(_eligible)} immature eligible): {exploration_delta}")
@@ -1400,6 +1469,7 @@ def main():
             joint_action_volume=joint_action_volume,
             phase=phase_now,               # a cut shrinks the session, not the sets
             session_size_learned=session_size_learned,
+            spec_muscle=spec_focus_muscle(active_test),
         )
 
         title = build_title(action, split, intensity)
@@ -1555,7 +1625,10 @@ def main():
         progression_registry, exploration_manager, None,  # MILP synthesis_engine retired (allocator owns targets)
         weekly_targets=weekly_targets, step_count=new_step,
         extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate,
-                         "session_size": session_size_learned},
+                         "session_size": session_size_learned,
+                         # so the daily card honors the same placement rule without
+                         # re-querying controlled_tests (mirrors session_size)
+                         "spec_muscle": spec_focus_muscle(active_test)},
         last_explored=new_last_explored,
     )
 

@@ -107,6 +107,126 @@ def schedule_volume_test(muscle: str, mrv_mean: float, today_iso: str) -> dict:
     }
 
 
+# ── Specialization tests (SPEC_specialization_test.md) ────────────────────────
+# A volume-tolerance test looks for a CEILING on one muscle and needs no control.
+# A specialization test is a CONTRAST: train one muscle far harder than a matched
+# comparator for a block and read the difference. Different question, so the phase
+# gate, the completion rule and the observation all differ from volume_tolerance.
+
+SPEC_WEEKS       = 6      # [ENG] block length before the contrast is read out
+SPEC_MIN_WEEKS   = 4      # [ENG] refuse to read out earlier than this
+
+
+def can_schedule_specialization(active: dict | None, phase: str | None = None) -> bool:
+    """One test at a time, and NOT during a cut.
+
+    Deliberately the opposite call from `can_schedule`. That function allows volume
+    tests on a cut because the deficit confound is asymmetric — a deficit can hide a
+    response, not manufacture one — and blocking it closed the last path for MRV to
+    move. Neither argument transfers here. A specialization block raises total weekly
+    volume, which fights the session-size work directly, and its readout is a
+    hypertrophy contrast, which a deficit genuinely can erase for both arms at once.
+    """
+    return active is None and (phase or "").lower() != "cut"
+
+
+def schedule_specialization_test(muscle: str, control: str, today_iso: str,
+                                 arm: str = "frequency", readout: str = "e1rm",
+                                 start: dict | None = None,
+                                 weeks: int = SPEC_WEEKS,
+                                 sets_per_ex: int = 1) -> dict:
+    """A new active specialization test row.
+
+    `arm` names the variable under test and is recorded at schedule time so the
+    readout cannot be reinterpreted afterward:
+      "frequency"    — sessions per week on the muscle (the side-delt test)
+      "volume"       — weekly sets, the Ethier variable
+      "sets_per_ex"  — 1 vs 2-3 per station, the arm Nolan volunteered for
+    Only one arm moves per block; the others are pinned at their current values.
+    """
+    return {
+        "test_type": "specialization",
+        "target_key": f"spec.{muscle}",
+        "status": "active",
+        "started_at": today_iso,
+        "baseline": {"muscle": muscle, "control": control, "arm": arm,
+                     "week": 1, "weeks_total": int(weeks),
+                     "sets_per_ex": int(sets_per_ex), "readout": readout,
+                     "start": start or {},
+                     "spec_slopes": [], "control_slopes": []},
+    }
+
+
+def spec_focus_muscle(active: dict | None) -> str | None:
+    """The muscle an active specialization block wants placed first in the session.
+    Ethier's protocol puts the priority muscle first; `_build_session` already has
+    a focus slot, so the block just overrides who owns it."""
+    if not active or active.get("test_type") != "specialization":
+        return None
+    return (active.get("baseline") or {}).get("muscle") or None
+
+
+def spec_locked_muscles(active: dict | None) -> set:
+    """Muscles the exploration bandit must not probe while a block runs.
+
+    Both arms, not just the probed one. A +1-set probe on the CONTROL would quietly
+    destroy the contrast the block exists to measure, and a probe on the specialized
+    muscle would confound the arm under test with a volume bump."""
+    if not active or active.get("test_type") != "specialization":
+        return set()
+    b = active.get("baseline") or {}
+    return {m for m in (b.get("muscle"), b.get("control")) if m}
+
+
+def step_specialization_test(active: dict, spec_slope, control_slope) -> tuple:
+    """Record this week's two slopes, then advance (or complete the block).
+
+    Returns (updated_row, observation_or_None). The observation is the CONTRAST —
+    mean spec slope minus mean control slope over the block — in the same
+    {"key","obs","obs_var","complete"} shape `step_volume_test` emits.
+
+    Note the contrast is recorded, not fed to a landmark learner. There is no
+    frequency landmark for it to update; inventing one to consume this would be
+    fabricating a rule the engine does not have. The result row is the finding.
+    """
+    b = dict(active.get("baseline") or {})
+    b["spec_slopes"] = list(b.get("spec_slopes") or [])
+    b["control_slopes"] = list(b.get("control_slopes") or [])
+    if spec_slope is not None:
+        b["spec_slopes"].append(float(spec_slope))
+    if control_slope is not None:
+        b["control_slopes"].append(float(control_slope))
+
+    week = int(b.get("week", 1))
+    weeks_total = int(b.get("weeks_total", SPEC_WEEKS))
+    row = dict(active)
+
+    if week < max(SPEC_MIN_WEEKS, weeks_total):
+        b["week"] = week + 1
+        row["baseline"] = b
+        return row, None
+
+    def _mean(xs):
+        return (sum(xs) / len(xs)) if xs else None
+
+    s_mean, c_mean = _mean(b["spec_slopes"]), _mean(b["control_slopes"])
+    contrast = None if (s_mean is None or c_mean is None) else round(s_mean - c_mean, 4)
+    m = b.get("muscle")
+    row["baseline"] = b
+    row["status"] = "complete"
+    row["result"] = {
+        "arm": b.get("arm"), "muscle": m, "control": b.get("control"),
+        "weeks": week, "readout": b.get("readout"),
+        "spec_slope_mean": s_mean, "control_slope_mean": c_mean,
+        "contrast": contrast,
+        # honesty flag: e1RM slope is a strength proxy for a hypertrophy question.
+        "proxy_readout": b.get("readout") != "circumference",
+        "inconclusive": contrast is None,
+    }
+    return row, {"key": f"spec.{m}", "muscle": m, "obs": contrast,
+                 "obs_var": TEST_OBS_VAR, "complete": True}
+
+
 def ramp_target(active: dict, landmarks_lc: dict) -> dict:
     """During a volume-tolerance ramp, return {muscle: boosted_mrv} so the
     allocator allocates more to the probed muscle (MAV + step·week, capped).

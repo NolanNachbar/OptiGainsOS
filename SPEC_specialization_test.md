@@ -148,7 +148,19 @@ as the readout and note in the result that it is a proxy.
 
 1. Session-size fix, mandatory isolations, and the session-size learner: shipped
    2026-08-04.
-2. Add the tape-measure check-in field, or accept the e1RM-only readout.
-3. Schedule the side-delt frequency test (above) — Nolan wants this started now,
-   not deferred.
+2. Readout: accepted the e1RM proxy for now. No tape-measure check-in field
+   exists, so the result row carries `proxy_readout: true` and says so out loud
+   rather than passing strength off as hypertrophy. Adding the field later
+   upgrades the readout without changing the test object.
+3. Side-delt frequency test: built 2026-08-04. `controlled_tests.py` gains
+   `schedule_specialization_test` / `step_specialization_test` /
+   `can_schedule_specialization` / `spec_focus_muscle` / `spec_locked_muscles`;
+   `generate_weekly_program.py` schedules it on the next weekly run, steps it each
+   week, locks both arms out of the exploration bandit, and stamps the priority
+   muscle into `synthesis_state.spec_muscle` so the daily card places it first too.
+   Requires `migrations/add_specialization_test_type.sql` — the original CHECK
+   constraint on `controlled_tests.test_type` does not list `specialization` and
+   the insert fails without it.
+   It auto-schedules ONCE. After this block completes, the next subject is a
+   decision, not a scheduler default.
 4. The weekly-volume and sets-per-exercise arms follow, one at a time.

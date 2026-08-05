@@ -720,6 +720,10 @@ def main():
         # and the weekly plan agree on how big the session is.
         session_size_learned = (((guardrail_dict or {}).get("synthesis_state")
                                  or {}).get("session_size")),
+        # An active specialization block places its priority muscle first; the
+        # weekly generator stamps it here so the daily card agrees.
+        spec_muscle = (((guardrail_dict or {}).get("synthesis_state")
+                        or {}).get("spec_muscle")),
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────
