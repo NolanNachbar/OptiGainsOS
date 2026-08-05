@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
+import { useLogWeight } from "@/hooks/useWeighIn";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,6 +234,8 @@ export default function Profile({ hideHeader }) {
   // change has flipped isDirty — never on the initial settle.
   const showSaveBar = isDirty && editableSectionOpen;
 
+  const logWeight = useLogWeight();
+
   const updateProfileMutation = useMutation({
     mutationFn: async ({ profileData, weightToLog }) => {
       if (profile) {
@@ -241,12 +244,10 @@ export default function Profile({ hideHeader }) {
         await db.entities.UserProfile.create({ ...profileData, created_by: user.id });
       }
       if (weightToLog) {
-        await db.entities.BodyWeightEntry.create({
-          weight: parseFloat(weightToLog),
-          recorded_date: format(new Date(), "yyyy-MM-dd"),
-          notes: null,
-          created_by: user.id,
-        });
+        // Shared write path so a weight already logged today (check-in, Progress)
+        // is updated rather than duplicated. syncProfile is off because
+        // profileData above already carries current_weight.
+        await logWeight.mutateAsync({ weight: weightToLog, syncProfile: false });
       }
     },
     onSuccess: (_, { formSnapshot, weightToLog }) => {

@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useUserQueries";
+import { useLogWeight, useTodayBodyWeight } from "@/hooks/useWeighIn";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -85,6 +88,20 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
 
   const todayStr = today || getTodayString();
 
+  // Weigh-in rides the check-in: one pre-session stop collects readiness AND
+  // bodyweight, so the engine's weight trend gets a reading on every training
+  // day without a second modal. Optional — an empty field writes nothing and
+  // never blocks starting the session.
+  const { profile } = useProfile();
+  const { todayWeight } = useTodayBodyWeight(todayStr);
+  const logWeight = useLogWeight();
+  const weightUnit = profile?.weight_unit || "lbs";
+  const [typedWeight, setTypedWeight] = useState(null);
+  // Derived, not synced by effect: until the athlete types, the field mirrors
+  // today's logged entry (arriving async), so re-opening the check-in shows the
+  // weight already on record rather than an empty box that reads as "not done".
+  const weight = typedWeight ?? (todayWeight?.weight != null ? String(todayWeight.weight) : "");
+
   const cycleSoreness = (group) => {
     setSoreness(prev => ({ ...prev, [group]: (prev[group] + 1) % 4 }));
   };
@@ -132,16 +149,56 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           .upsert(sorenessRows, { onConflict: "created_by,date,muscle_group" });
         if (sorenessError) throw sorenessError;
       }
+
+      // Weight goes last and swallows its own failure: readiness is already
+      // committed by this point, so a weigh-in error must not report the
+      // check-in as failed (or block the athlete from starting the session).
+      const raw = String(weight).trim();
+      if (raw !== "") {
+        const parsed = parseFloat(raw);
+        // Junk in the field reports back as a failed weigh-in rather than a
+        // silent no-op that toasts plain success.
+        if (!(parsed > 0)) return { weightFailed: true };
+        // parseFloat both sides: numeric columns can come back as strings, and a
+        // string/number compare would re-write an unchanged weight every save.
+        if (parsed !== parseFloat(todayWeight?.weight)) {
+          try {
+            await logWeight.mutateAsync({ weight: parsed, date: todayStr });
+          } catch {
+            return { weightFailed: true };
+          }
+        }
+      }
+      return { weightFailed: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["dailyReadiness", todayStr, user?.id] });
       queryClient.invalidateQueries({ queryKey: ["soreness", todayStr, user?.id] });
-      toast.success("Morning check-in saved");
+      if (result?.weightFailed) toast.warning("Check-in saved, weight didn't log");
+      else toast.success("Morning check-in saved");
       setEditing(false);
       onComplete?.();
     },
     onError: () => toast.error("Failed to save check-in"),
   });
+
+  // Readiness already logged but no weigh-in yet — the completed card asks for
+  // the weight on its own, so the pre-session gate can still collect it without
+  // making him redo energy/mood/soreness.
+  const saveWeightOnly = async () => {
+    const parsed = parseFloat(String(weight).trim());
+    if (!(parsed > 0)) {
+      toast.error("Enter a valid weight");
+      return;
+    }
+    try {
+      await logWeight.mutateAsync({ weight: parsed, date: todayStr });
+      toast.success("Weight logged");
+      onComplete?.();
+    } catch {
+      toast.error("Failed to log weight");
+    }
+  };
 
   if (existingCheckin?.energy && !editing) {
     const soreGroups = Object.entries(existingCheckin.soreness_snapshot || {})
@@ -183,6 +240,14 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
               <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Mood</div>
               <div className="hero-metric text-2xl text-ink">{existingCheckin.mood}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
+            {todayWeight?.weight != null && (
+              <div className="text-center">
+                <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Weight</div>
+                <div className="hero-metric text-2xl text-ink tabular-nums">
+                  {todayWeight.weight}<span className="text-xs font-semibold text-muted-2"> {weightUnit}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex-1">
@@ -203,6 +268,40 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
             )}
           </div>
         </div>
+        {todayWeight?.weight == null && (
+          <div className="px-4 pb-4">
+            <p className="section-label mb-2">Weigh-in</p>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  step="0.1"
+                  enterKeyHint="done"
+                  placeholder={profile?.current_weight != null ? String(profile.current_weight) : "--"}
+                  value={weight}
+                  onChange={(e) => setTypedWeight(e.target.value)}
+                  className="type-display tabular-nums text-xl h-12 pr-11"
+                  aria-label={`Bodyweight in ${weightUnit}`}
+                />
+                <span
+                  className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-medium text-ink-faint"
+                  aria-hidden="true"
+                >
+                  {weightUnit}
+                </span>
+              </div>
+              <Button
+                variant={coralCta ? "volt" : "ghost"}
+                size="lg"
+                onClick={saveWeightOnly}
+                disabled={logWeight.isPending || !weight}
+              >
+                {logWeight.isPending ? "Saving…" : "Log"}
+              </Button>
+            </div>
+          </div>
+        )}
         {existingCheckin.notes && (
           <div className="px-4 pb-4">
             <p className="text-xs font-semibold text-muted-2 italic border-l-2 hairline pl-3">"{existingCheckin.notes}"</p>
@@ -219,6 +318,40 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
         <NumberPicker label="Energy" value={energy} onChange={setEnergy} />
         <div className="w-px border-l hairline" />
         <NumberPicker label="Mood" value={mood} onChange={setMood} />
+      </div>
+
+      {/* Weigh-in — quiet, optional, and inline. Not a NumberPicker: bodyweight
+          is a measured decimal, not a 1-10 self-report. */}
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <p className="section-label">Weigh-in</p>
+          <p className="text-[10px] font-semibold text-faint mt-0.5">
+            {todayWeight?.weight != null
+              ? `Logged today: ${todayWeight.weight} ${weightUnit}`
+              : profile?.current_weight != null
+                ? `Last: ${profile.current_weight} ${weightUnit}`
+                : "Optional"}
+          </p>
+        </div>
+        <div className="relative w-32">
+          <Input
+            type="text"
+            inputMode="decimal"
+            step="0.1"
+            enterKeyHint="done"
+            placeholder="--"
+            value={weight}
+            onChange={(e) => setTypedWeight(e.target.value)}
+            className="type-display tabular-nums text-xl h-12 pr-11 text-right"
+            aria-label={`Bodyweight in ${weightUnit}`}
+          />
+          <span
+            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-medium text-ink-faint"
+            aria-hidden="true"
+          >
+            {weightUnit}
+          </span>
+        </div>
       </div>
 
       {/* Muscle soreness */}

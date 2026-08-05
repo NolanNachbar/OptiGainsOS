@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
+import { useLogWeight } from "@/hooks/useWeighIn";
 import { db } from "@/api/supabaseClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateProfile, invalidateBodyWeight } from "@/lib/queryKeys";
 import { calculateFormulaTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ACTIVITY_LEVELS, SEX_OPTIONS } from "@/lib/constants";
 
 export default function StatsSetupModal({ open, onOpenChange }) {
-  const { user } = useAuth();
   const { profile } = useProfile();
   const queryClient = useQueryClient();
 
@@ -27,6 +25,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
   const [heightCm, setHeightCm] = useState("");
   const [activityLevel, setActivityLevel] = useState("");
   const [weight, setWeight] = useState("");
+  const logWeight = useLogWeight();
   const [proteinPerLb, setProteinPerLb] = useState(0.8);
 
   // Pre-fill from existing profile data when modal opens
@@ -90,12 +89,10 @@ export default function StatsSetupModal({ open, onOpenChange }) {
       await db.entities.UserProfile.update(profile.id, updates);
 
       if (weight) {
-        await db.entities.BodyWeightEntry.create({
-          weight: parseFloat(weight),
-          recorded_date: format(new Date(), "yyyy-MM-dd"),
-          notes: null,
-          created_by: user.id,
-        });
+        // Shared write path so a weight already logged today (check-in, Progress)
+        // is updated rather than duplicated. syncProfile is off because the
+        // profile update above already sets current_weight.
+        await logWeight.mutateAsync({ weight, syncProfile: false });
       }
 
       // Auto-calculate and save macro goals if we have enough data

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
+import { useLogWeight } from "@/hooks/useWeighIn";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,6 @@ import { toast } from "sonner";
 
 // ─── Weight Tab ────────────────────────────────────────────────────────────────
 function WeightTab() {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const { profile } = useProfile();
   const { weightEntries } = useBodyWeightEntries();
@@ -37,12 +37,14 @@ function WeightTab() {
   const [confirmId, setConfirmId] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const HISTORY_PAGE_SIZE = 7;
+  const logWeight = useLogWeight();
 
   const add = useMutation({
     mutationFn: async () => {
-      return await db.entities.BodyWeightEntry.create({
-        weight: parseFloat(weight), recorded_date: date,
-        notes: notes || null, created_by: user.id,
+      // Shared write path: re-logging a date that already has an entry updates
+      // it instead of adding a second row for the same day.
+      return await logWeight.mutateAsync({
+        weight, date, notes: notes || null,
       });
     },
     onSuccess: () => {

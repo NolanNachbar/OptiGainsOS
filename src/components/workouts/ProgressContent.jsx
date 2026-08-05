@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateWorkoutLogs, invalidateBodyWeight } from "@/lib/queryKeys";
 import { useProfile, useBodyWeightEntries } from "@/hooks/useUserQueries";
+import { useLogWeight } from "@/hooks/useWeighIn";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrendingUp, Dumbbell, Calendar, ChevronDown, ChevronUp, Trash2, Scale, BarChart3, Brain } from "lucide-react";
@@ -31,6 +32,7 @@ export function ProgressContent() {
   const [newWeight, setNewWeight] = useState("");
   const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0]);
   const [weightNotes, setWeightNotes] = useState("");
+  const logWeight = useLogWeight();
 
   const { profile } = useProfile();
 
@@ -66,11 +68,12 @@ export function ProgressContent() {
       if (!newWeight || !weightDate) {
         throw new Error("Weight and date are required");
       }
-      return await db.entities.BodyWeightEntry.create({
-        weight: parseFloat(newWeight),
-        recorded_date: weightDate,
+      // Shared write path: re-logging a date that already has an entry updates
+      // it instead of adding a second row for the same day.
+      return await logWeight.mutateAsync({
+        weight: newWeight,
+        date: weightDate,
         notes: weightNotes,
-        created_by: user.id,
       });
     },
     onSuccess: () => {

@@ -13,6 +13,7 @@ import {
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useTodayGarminCardio } from "@/hooks/useTodayGarminCardio";
+import { useTodayBodyWeight } from "@/hooks/useWeighIn";
 
 const mi = (m) => (m ? (m / 1609.34).toFixed(1) : null);
 const mmss = (s) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : null);
@@ -115,8 +116,17 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // logged today opens the check-in sheet first; saving (or skipping) then
   // continues into the logger. Holds {to, state} while the sheet is open.
   const [checkinGate, setCheckinGate] = useState(null);
+  // The weigh-in rides the same gate, and gates independently: a day where
+  // energy/mood were already logged but the scale wasn't still stops here, or
+  // training days would silently pass with no weight for the trend.
+  // isFetching too, not just isLoading: after a weigh-in the query is
+  // invalidated while this card is unmounted, so on the next visit it briefly
+  // serves the stale "no entry" value. Gating on that would re-ask for a weight
+  // already on record.
+  const { todayWeight, isLoading: weightLoading, isFetching: weightFetching } = useTodayBodyWeight(today);
+  const needsWeight = !weightLoading && !weightFetching && todayWeight?.weight == null;
   const beginSession = (to, state) => {
-    if (!todayCheckin?.energy) setCheckinGate({ to, state });
+    if (!todayCheckin?.energy || needsWeight) setCheckinGate({ to, state });
     else navigate(to, state ? { state } : undefined);
   };
   const continueToSession = () => {
@@ -128,11 +138,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     <Dialog open onOpenChange={(open) => { if (!open) setCheckinGate(null); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Quick check-in first</DialogTitle>
+          <DialogTitle>
+            {todayCheckin?.energy ? "Weigh in first" : "Quick check-in first"}
+          </DialogTitle>
         </DialogHeader>
         {/* Inside the sheet the check-in IS the live step, so it keeps its
-            primary CTA; saving continues straight into the session. */}
-        <MorningCheckin today={today} existingCheckin={null} onComplete={continueToSession} />
+            primary CTA; saving continues straight into the session. Passing the
+            existing row means a day that only needs the weigh-in shows the
+            logged summary plus a weight field, not the whole form again. */}
+        <MorningCheckin today={today} existingCheckin={todayCheckin} onComplete={continueToSession} />
         <button
           type="button"
           onClick={continueToSession}

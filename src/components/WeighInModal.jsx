@@ -1,10 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
-import { db } from "@/api/supabaseClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { invalidateBodyWeight, invalidateProfile } from "@/lib/queryKeys";
-import { format } from "date-fns";
+import { useLogWeight } from "@/hooks/useWeighIn";
 import { Scale, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,38 +13,13 @@ import {
 } from "@/components/ui/dialog";
 
 export default function WeighInModal({ open, onOpenChange }) {
-  const { user } = useAuth();
   const { profile } = useProfile();
-  const queryClient = useQueryClient();
   const [weight, setWeight] = useState("");
 
   const weightUnit = profile?.weight_unit || "lbs";
   const lastWeight = profile?.current_weight;
 
-  const weighInMutation = useMutation({
-    mutationFn: async (weightData) => {
-      const entry = await db.entities.BodyWeightEntry.create({
-        weight: parseFloat(weightData.weight),
-        recorded_date: format(new Date(), "yyyy-MM-dd"),
-        notes: null,
-        created_by: user.id,
-      });
-      if (profile?.id) {
-        await db.entities.UserProfile.update(profile.id, { current_weight: parseFloat(weightData.weight) });
-      }
-      return entry;
-    },
-    onSuccess: () => {
-      toast.success("Weight logged");
-      onOpenChange(false);
-      setWeight("");
-      invalidateBodyWeight(queryClient);
-      invalidateProfile(queryClient);
-    },
-    onError: () => {
-      toast.error("Failed to log weight");
-    },
-  });
+  const weighInMutation = useLogWeight();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -56,7 +27,17 @@ export default function WeighInModal({ open, onOpenChange }) {
       toast.error("Please enter a valid weight");
       return;
     }
-    weighInMutation.mutate({ weight });
+    weighInMutation.mutate(
+      { weight },
+      {
+        onSuccess: () => {
+          toast.success("Weight logged");
+          onOpenChange(false);
+          setWeight("");
+        },
+        onError: () => toast.error("Failed to log weight"),
+      }
+    );
   };
 
   return (
