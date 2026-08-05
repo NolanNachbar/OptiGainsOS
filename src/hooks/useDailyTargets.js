@@ -27,6 +27,31 @@ import { useProfile } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
 
 const DEFAULTS = { calories: 2000, protein: 150, carbs: 200, fats: 65 };
+
+/**
+ * Rescale the engine's carb-timing windows to a carb total.
+ *
+ * Windows arrive as {label, pct, grams}. `pct` is the engine's split shape;
+ * `grams` was sized off its own carb_target_g, which is not always the carb
+ * number this hook ends up showing. Falls back to the engine's grams when a
+ * window predates `pct` or the total is unusable.
+ */
+function scaleCarbWindows(windows, totalCarbs) {
+  const rows = Array.isArray(windows) ? windows : [];
+  if (!rows.length) return [];
+  const total = Number(totalCarbs);
+  if (!Number.isFinite(total) || total <= 0) return rows;
+  if (!rows.every((w) => Number.isFinite(Number(w?.pct)))) return rows;
+
+  let assigned = 0;
+  return rows.map((w, i) => {
+    // Last window absorbs the residual so the strip sums to `total` exactly.
+    const grams = i === rows.length - 1 ? Math.max(0, Math.round(total) - assigned)
+                                        : Math.round(total * Number(w.pct));
+    assigned += grams;
+    return { ...w, grams };
+  });
+}
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // ── Shared cut-rule constants/helpers ──────────────────────────────────────────
@@ -175,6 +200,11 @@ export function useDailyTargets(date) {
     recommended,              // raw recommended_intake (deficit_ratio, gates…)
     // Today's carb-timing split (pre/post, or pre/between/post on a two-a-day) —
     // empty on a rest day, since there's no session to time carbs around.
-    carbWindows: nutrition?.carb_windows || [],
+    // Rescaled to the carb total THIS hook displays: the engine sizes its grams
+    // off recommended_intake.carb_target_g, but `carbs` above is the calorie
+    // remainder after the cut clamps on protein and fat, so the two drift apart
+    // on a cut. Scale by `pct` and let the last window absorb the rounding
+    // residual, so the strip always sums to the number shown above it.
+    carbWindows: scaleCarbWindows(nutrition?.carb_windows, carbs),
   };
 }

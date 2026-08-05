@@ -983,6 +983,67 @@ _on_cut_dead_zone = update_mrv(_row0, weekly_sets=8, e1rm_slope=-0.1, soreness_a
 check("F14 the moderate-soreness down-drift is still suppressed on a cut (F9 unchanged)",
       _on_cut_dead_zone["mrv_mean"] == 16.0 and _on_cut_dead_zone["n_obs"] == 0)
 
+# ── F15: carb-timing windows follow the ACTUAL split (2026-08-05) ─────────────
+# _carb_windows used to branch on "today has a lift AND has cardio", which is a
+# different question from "the day was split into two sessions".
+# evaluate_two_a_day_split() decides that separately and only stamps time_of_day
+# when the halves are genuinely pulled apart, so a combined lift+cardio block was
+# rendering a "Between sessions" window for a between that does not exist.
+import datetime as _dt
+import compute_athlete_state as _cas
+
+_today_iso = _dt.date.today().isoformat()
+_tomorrow_iso = (_dt.date.today() + _dt.timedelta(days=1)).isoformat()
+
+def _windows_for(exercises, cardio, tomorrow=None, target=100):
+    rows = [{"scheduled_date": _today_iso, "exercises": exercises, "cardio_sessions": cardio}]
+    if tomorrow:
+        rows.append({"scheduled_date": _tomorrow_iso, "exercises": tomorrow, "cardio_sessions": []})
+    _orig = _cas.sb_get
+    _cas.sb_get = lambda table, params: rows
+    try:
+        return _cas._carb_windows("u", target)
+    finally:
+        _cas.sb_get = _orig
+
+_LIFT_AM = [{"sets": 3, "time_of_day": "am"}]
+_LIFT_PM = [{"sets": 3, "time_of_day": "pm"}]
+_LIFT_NO = [{"sets": 3}]
+_CARDIO_AM = [{"duration_minutes": 40, "time_of_day": "am"}]
+_CARDIO_PM = [{"duration_minutes": 40, "time_of_day": "pm"}]
+_CARDIO_NO = [{"duration_minutes": 40}]
+
+_split = _windows_for(_LIFT_AM, _CARDIO_PM)
+check("F15 a genuine two-a-day still gets three windows",
+      len(_split) == 3, f"{[w['label'] for w in _split]}")
+check("F15 those windows name the modality, not AM/PM",
+      _split[0]["label"] == "Pre-lift" and _split[-1]["label"] == "Post-cardio",
+      f"{_split[0]['label']} … {_split[-1]['label']}")
+check("F15 a COMBINED lift+cardio block gets two windows, not a phantom 'between'",
+      len(_windows_for(_LIFT_AM, _CARDIO_AM)) == 2,
+      f"{[w['label'] for w in _windows_for(_LIFT_AM, _CARDIO_AM)]}")
+check("F15 unstamped lift+cardio rows read as ONE block (conservative default)",
+      len(_windows_for(_LIFT_NO, _CARDIO_NO)) == 2)
+check("F15 window order follows the stamps, so a flipped day flips the labels",
+      [w["label"] for w in _windows_for(_LIFT_PM, _CARDIO_AM)][0] == "Pre-cardio")
+check("F15 a rest day still gets no windows",
+      _windows_for([], []) == [] and _windows_for([{"sets": 0}], []) == [])
+check("F15 lift-only and cardio-only days are labelled distinctly",
+      _windows_for(_LIFT_NO, [])[0]["label"] == "Pre-lift"
+      and _windows_for([], _CARDIO_NO)[0]["label"] == "Pre-cardio")
+_tomorrow_on = _windows_for(_LIFT_AM, _CARDIO_PM, tomorrow=_LIFT_NO)
+check("F15 back-to-back demand shifts carbs to the final window",
+      _tomorrow_on[-1]["grams"] > _split[-1]["grams"],
+      f"{_split[-1]['grams']}g → {_tomorrow_on[-1]['grams']}g when tomorrow trains")
+# The client rescales off `pct` because it owns the carb TOTAL (calorie remainder
+# after its own cut clamps); absolute grams here can disagree with what it shows.
+check("F15 every window carries a pct for the client to rescale from",
+      all("pct" in w for w in _split))
+for _case, _w in (("two-a-day", _split), ("single session", _windows_for(_LIFT_NO, []))):
+    check(f"F15 the {_case} split's percentages sum to exactly 1",
+          abs(sum(w["pct"] for w in _w) - 1.0) < 1e-9,
+          f"sum={sum(w['pct'] for w in _w)}")
+
 
 print()
 if all(_results):

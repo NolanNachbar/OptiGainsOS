@@ -992,17 +992,31 @@ def _glycogen_demand(user_id: str):
 def _carb_windows(user_id: str, carb_target_g):
     """
     Split today's carb target into timing windows around today's scheduled
-    session(s) — pre-workout / post-workout on a single-session day, or
-    pre-AM / between / post-PM on a two-a-day. Rest days get no windows;
-    there's no session to time carbs around. Split percentages are engineering
-    defaults, not a researched protocol. [ENG]
+    session(s) — pre / post on a single-session day, or pre / between / post on
+    a genuine two-a-day. Rest days get no windows; there's no session to time
+    carbs around. Split percentages are engineering defaults, not a researched
+    protocol. [ENG]
 
-    A two-a-day's post-PM window gets extra weight when TOMORROW is also a
-    training day — top off glycogen tonight rather than split it evenly,
-    since there's back-to-back demand coming. (The originally-sketched <4h
-    same-day gap-merge rule is dormant: generate_weekly_program.py already
-    enforces >=6h between a two-a-day's own AM/PM sessions by design, so that
-    gap never occurs under engine-generated plans.)
+    "Genuine two-a-day" means the lift and the cardio are stamped with DIFFERENT
+    `time_of_day` values. This used to branch on "the day has a lift AND has
+    cardio", which is a different question: evaluate_two_a_day_split() in
+    generate_weekly_program.py decides separately whether the two halves are
+    actually pulled apart, and only stamps time_of_day when they are. On a
+    combined day the app was showing a "Between sessions" window for a between
+    that does not exist. Rows carrying no stamps at all (hand-created, or staged
+    before the stamping existed) read as one block — the conservative call, since
+    nothing in the data says there are two sessions.
+
+    Labels name the MODALITY rather than AM/PM, because "eat 25g between
+    sessions" does not tell you which side of the run it belongs on. Order comes
+    off the stamps, so this stays correct if lift-before-endurance ever flips.
+
+    The final window gets extra weight when TOMORROW is also a training day —
+    top off glycogen tonight rather than split it evenly, since there's
+    back-to-back demand coming. (The originally-sketched <4h same-day gap-merge
+    rule is dormant: generate_weekly_program.py already enforces >=6h between a
+    two-a-day's own halves by design, so that gap never occurs under
+    engine-generated plans.)
     """
     if not carb_target_g:
         return []
@@ -1019,35 +1033,68 @@ def _carb_windows(user_id: str, carb_target_g):
     except Exception:
         return []
 
-    def _session_flags(row):
-        if not row:
-            return False, False
-        has_lift = any(int(e.get("sets") or 0) > 0 for e in (row.get("exercises") or []))
-        has_cardio = any(float(c.get("duration_minutes") or 0) > 0 for c in (row.get("cardio_sessions") or []))
-        return has_lift, has_cardio
+    def _real_lifts(row):
+        return [e for e in ((row or {}).get("exercises") or []) if int(e.get("sets") or 0) > 0]
+
+    def _real_cardio(row):
+        return [c for c in ((row or {}).get("cardio_sessions") or [])
+                if float(c.get("duration_minutes") or 0) > 0]
+
+    def _tods(items):
+        """The distinct time_of_day stamps on a set of session items, unstamped dropped."""
+        return {str(i.get("time_of_day") or "").strip().lower() for i in items} - {""}
 
     today_row = next((r for r in rows if str(r.get("scheduled_date") or "")[:10] == today.isoformat()), None)
     tomorrow_row = next((r for r in rows if str(r.get("scheduled_date") or "")[:10] == tomorrow.isoformat()), None)
-    has_lift, has_cardio = _session_flags(today_row)
-    tomorrow_lift, tomorrow_cardio = _session_flags(tomorrow_row)
-    tomorrow_trains = tomorrow_lift or tomorrow_cardio
 
-    if not has_lift and not has_cardio:
+    lifts, cardio = _real_lifts(today_row), _real_cardio(today_row)
+    tomorrow_trains = bool(_real_lifts(tomorrow_row) or _real_cardio(tomorrow_row))
+
+    if not lifts and not cardio:
         return []  # rest day — nothing to time carbs around
 
-    if has_lift and has_cardio:
-        pre_pct, mid_pct, post_pct = (0.30, 0.20, 0.50) if tomorrow_trains else (0.35, 0.25, 0.40)
-        return [
-            {"label": "Pre-AM session", "grams": round(carb_target_g * pre_pct)},
-            {"label": "Between sessions", "grams": round(carb_target_g * mid_pct)},
-            {"label": "Post-PM session", "grams": round(carb_target_g * post_pct)},
-        ]
+    lift_tods, cardio_tods = _tods(lifts), _tods(cardio)
+    # Split only when both halves are stamped AND the stamps disagree. Equal
+    # stamps (both "am") mean one block that happens to contain both, which is
+    # exactly the combined day the old has_lift-and-has_cardio test misread.
+    is_split = bool(lifts and cardio and lift_tods and cardio_tods
+                    and not (lift_tods & cardio_tods))
 
-    pre_pct, post_pct = 0.55, 0.45
-    return [
-        {"label": "Pre-workout", "grams": round(carb_target_g * pre_pct)},
-        {"label": "Post-workout", "grams": round(carb_target_g * post_pct)},
-    ]
+    # "am" sorts before "pm", which is the order the generator stamps (E13
+    # lift-before-endurance). Comparing the stamps rather than assuming the lift
+    # is first keeps the labels honest if that ever changes.
+    lift_label, cardio_label = "lift", "cardio"
+    if is_split:
+        first, second = ((lift_label, cardio_label)
+                         if min(lift_tods) <= min(cardio_tods)
+                         else (cardio_label, lift_label))
+        pre_pct, mid_pct, post_pct = (0.30, 0.20, 0.50) if tomorrow_trains else (0.35, 0.25, 0.40)
+        return _windows([
+            (f"Pre-{first}", pre_pct),
+            (f"Between (post-{first}, pre-{second})", mid_pct),
+            (f"Post-{second}", post_pct),
+        ], carb_target_g)
+
+    # One block: a lift, a cardio session, or both done together.
+    what = (f"{lift_label}+{cardio_label}" if lifts and cardio
+            else (lift_label if lifts else cardio_label))
+    return _windows([(f"Pre-{what}", 0.55), (f"Post-{what}", 0.45)], carb_target_g)
+
+
+def _windows(split, carb_target_g):
+    """
+    Materialize (label, fraction) pairs into window rows.
+
+    Carries `pct` alongside `grams` because the two numbers have different
+    owners. The engine owns the SHAPE of the split; the UI owns the carb TOTAL,
+    since useDailyTargets re-derives carbs as the calorie remainder after its own
+    cut clamps on protein and fat (which can sit above the engine's floors) plus
+    the dextrose-overshoot term. Absolute grams computed here therefore did not
+    always sum to the carb number displayed right above them. The client rescales
+    off `pct`; `grams` stays for any consumer reading the state row directly.
+    """
+    return [{"label": label, "pct": round(frac, 4), "grams": round(carb_target_g * frac)}
+            for label, frac in split]
 
 
 def _consecutive_poor_sleep(recovery_rows: list, threshold: int = 60) -> int:
