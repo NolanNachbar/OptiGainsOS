@@ -1898,6 +1898,7 @@ class SessionGenerator:
         muscle_emphasis: dict = None,
         joint_action_volume: dict = None,
         session_size_learned: float = None,
+        spec_muscle: str = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1972,6 +1973,7 @@ class SessionGenerator:
             joint_action_volume=joint_action_volume,
             phase=phase,
             session_size_learned=session_size_learned,
+            spec_muscle=spec_muscle,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore

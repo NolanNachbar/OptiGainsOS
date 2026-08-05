@@ -1069,24 +1069,29 @@ def main():
     # Actively probe a muscle's MRV by ramping it above MAV; a completed ramp
     # feeds a LOW-noise observation to the learner. One test at a time, never on a cut.
     phase_test = (latest_athlete.get("nutrition") or {}).get("phase")
+    # Both types are fetched, and each steps on its own. They used to share one
+    # `active_test` slot with limit=1, which silently broke the moment a second type
+    # existed: the newest row won the slot and the other test simply stopped
+    # advancing (a calves ramp froze at week 2 the day the side-delt block started).
     tests = sb_get("controlled_tests", {"select": "*", "created_by": f"eq.{USER_ID}",
                    "status": "eq.active",
                    "test_type": "in.(volume_tolerance,specialization)",
-                   "order": "created_at.desc", "limit": "1"})
-    active_test = get_active(tests)
+                   "order": "created_at.desc", "limit": "5"})
+    active_vol  = get_active([t for t in tests if t.get("test_type") == "volume_tolerance"])
+    active_spec = get_active([t for t in tests if t.get("test_type") == "specialization"])
     # A specialization block is a one-off designed study, not a recurring loop like
     # the volume-tolerance probe: schedule the first one, then never auto-schedule
     # another. The next subject is a decision Nolan makes, not a scheduler default.
     _spec_ever_scheduled = bool(sb_get("controlled_tests", {
         "select": "id", "created_by": f"eq.{USER_ID}",
         "test_type": "eq.specialization", "limit": "1"}))
-    if active_test and active_test.get("test_type") == "volume_tolerance" and not already_ran:
-        tm = (active_test.get("baseline") or {}).get("muscle")
+    if active_vol and not already_ran:
+        tm = (active_vol.get("baseline") or {}).get("muscle")
         sv = soreness_muscle.get(tm, [])
         avg_sore = (sum(sv) / len(sv)) if sv else 0.0
-        updated, obs = step_volume_test(active_test, perf_slopes.get(tm),
+        updated, obs = step_volume_test(active_vol, perf_slopes.get(tm),
                                         avg_sore, prev_targets.get(tm) or 0)
-        sb_patch("controlled_tests", {"id": f"eq.{active_test['id']}"},
+        sb_patch("controlled_tests", {"id": f"eq.{active_vol['id']}"},
                  {"status": updated["status"], "baseline": updated["baseline"],
                   "result": updated.get("result")})
         if obs and tm in landmarks_db:
@@ -1098,16 +1103,29 @@ def main():
                 "mrv_var": upd["mrv_var"], "n_obs": upd["n_obs"], "mature": upd["mature"],
             }, conflict_cols="created_by,muscle")
             print(f"  Volume-tolerance test COMPLETE: {tm} → MRV obs {obs['obs']} (mature={upd['mature']})")
-            active_test = None
+            active_vol = None
         else:
-            active_test = updated
+            active_vol = updated
             print(f"  Volume-tolerance test active: {tm} (ramp week {updated['baseline']['week']})")
-    elif active_test and active_test.get("test_type") == "specialization" and not already_ran:
-        _b = active_test.get("baseline") or {}
+    elif can_schedule(active_vol, phase_test) and not already_ran:
+        tm = pick_volume_test_muscle(landmarks_db, profile.get("muscle_emphasis") or MUSCLE_EMPHASIS)
+        # never probe a muscle an active specialization block is measuring
+        if tm and tm in spec_locked_muscles(active_spec):
+            tm = None
+        if tm:
+            sb_insert("controlled_tests", {
+                **schedule_volume_test(tm, float(landmarks_db[tm].get("mrv_mean", 18)), TODAY.isoformat()),
+                "created_by": USER_ID})
+            active_vol = {"test_type": "volume_tolerance", "baseline": {"muscle": tm, "week": 1}}
+            print(f"  Scheduled volume-tolerance test: {tm}")
+
+    # ── 6a-spec. Specialization block (independent of the volume probe above) ──
+    if active_spec and not already_ran:
+        _b = active_spec.get("baseline") or {}
         _sm, _cm = _b.get("muscle"), _b.get("control")
-        updated, obs = step_specialization_test(active_test, perf_slopes.get(_sm),
+        updated, obs = step_specialization_test(active_spec, perf_slopes.get(_sm),
                                                 perf_slopes.get(_cm))
-        sb_patch("controlled_tests", {"id": f"eq.{active_test['id']}"},
+        sb_patch("controlled_tests", {"id": f"eq.{active_spec['id']}"},
                  {"status": updated["status"], "baseline": updated["baseline"],
                   "result": updated.get("result")})
         if obs:
@@ -1116,12 +1134,14 @@ def main():
                   f"contrast {r['contrast']} over {r['weeks']} wk"
                   + (" [e1RM proxy, not circumference]" if r["proxy_readout"] else "")
                   + (" [INCONCLUSIVE: missing slopes]" if r["inconclusive"] else ""))
-            active_test = None
+            active_spec = None
         else:
-            active_test = updated
+            active_spec = updated
             print(f"  Specialization test active: {_sm} ({_b.get('arm')}) vs {_cm} "
                   f"(week {updated['baseline']['week']}/{_b.get('weeks_total')})")
-    elif can_schedule_specialization(active_test, phase_test) and not already_ran \
+    elif can_schedule_specialization(active_vol, phase_test,
+                                     SPEC_FIRST_MUSCLE, SPEC_FIRST_CONTROL) \
+            and not already_ran \
             and not _spec_ever_scheduled:
         # First subject: side delts, FREQUENCY arm (Nolan, 2026-08-04). The
         # intervention is already live — MANDATORY_ISOLATION_MUSCLES puts a lateral
@@ -1141,22 +1161,15 @@ def main():
         sb_insert("controlled_tests", {
             **schedule_specialization_test(SPEC_FIRST_MUSCLE, SPEC_FIRST_CONTROL,
                                            TODAY.isoformat(), arm="frequency",
-                                           readout="e1rm", start=_start),
+                                           readout="e1rm", start=_start,
+                                           phase=phase_test),
             "created_by": USER_ID})
-        active_test = {"test_type": "specialization",
+        active_spec = {"test_type": "specialization",
                        "baseline": {"muscle": SPEC_FIRST_MUSCLE,
                                     "control": SPEC_FIRST_CONTROL,
                                     "arm": "frequency", "week": 1}}
         print(f"  Scheduled specialization test: {SPEC_FIRST_MUSCLE} frequency "
               f"vs {SPEC_FIRST_CONTROL} (readout e1RM proxy — no tape input exists)")
-    elif can_schedule(active_test, phase_test) and not already_ran:
-        tm = pick_volume_test_muscle(landmarks_db, profile.get("muscle_emphasis") or MUSCLE_EMPHASIS)
-        if tm:
-            sb_insert("controlled_tests", {
-                **schedule_volume_test(tm, float(landmarks_db[tm].get("mrv_mean", 18)), TODAY.isoformat()),
-                "created_by": USER_ID})
-            active_test = {"test_type": "volume_tolerance", "baseline": {"muscle": tm, "week": 1}}
-            print(f"  Scheduled volume-tolerance test: {tm}")
 
     # ── 6a-probe. Exploration probe (E8: bounded self-experimentation) ────────
     # Now that the landmark posteriors and any active controlled test are known, fire at
@@ -1172,7 +1185,7 @@ def main():
     #     the engine and that 0.6 appears in no source (Science.md's own pseudocode
     #     uses 0.8). Rather than invent a threshold, gate on SystemGuardrail's real,
     #     already-calibrated overreach detector — same intent, grounded constants.
-    _test_running = bool(active_test and active_test.get("test_type") == "volume_tolerance")
+    _test_running = bool(active_vol)
     _fatigue_state = guardrail.check_overreaching([], [], acwr_global)["fatigue_state"]
     _fatigue_halt = _fatigue_state != "NORMAL"
     if _fatigue_halt:
@@ -1181,7 +1194,7 @@ def main():
         # A running specialization block locks BOTH its arms out of the bandit. A
         # +1-set probe on the control would destroy the contrast the block exists to
         # measure; one on the specialized muscle would confound the arm under test.
-        _locked = spec_locked_muscles(active_test)
+        _locked = spec_locked_muscles(active_spec)
         if _locked:
             print(f"  Exploration locked out of {sorted(_locked)} — specialization block active.")
         _eligible = {m for m in MUSCLE_GROUPS
@@ -1234,8 +1247,8 @@ def main():
 
     # Active volume-tolerance test → raise the probed muscle's MRV ceiling so the
     # allocator ramps its volume above MAV this week.
-    if active_test and active_test.get("test_type") == "volume_tolerance":
-        for mm, boosted in ramp_target(active_test, landmarks_lc).items():
+    if active_vol:
+        for mm, boosted in ramp_target(active_vol, landmarks_lc).items():
             if mm in landmarks_lc:
                 landmarks_lc[mm]["mrv"] = max(landmarks_lc[mm]["mrv"], boosted)
     tsb_now   = float((latest_athlete.get("fatigue") or {}).get("tsb") or 0.0)
@@ -1469,7 +1482,7 @@ def main():
             joint_action_volume=joint_action_volume,
             phase=phase_now,               # a cut shrinks the session, not the sets
             session_size_learned=session_size_learned,
-            spec_muscle=spec_focus_muscle(active_test),
+            spec_muscle=spec_focus_muscle(active_spec),
         )
 
         title = build_title(action, split, intensity)
@@ -1628,7 +1641,7 @@ def main():
                          "session_size": session_size_learned,
                          # so the daily card honors the same placement rule without
                          # re-querying controlled_tests (mirrors session_size)
-                         "spec_muscle": spec_focus_muscle(active_test)},
+                         "spec_muscle": spec_focus_muscle(active_spec)},
         last_explored=new_last_explored,
     )
 

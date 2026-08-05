@@ -117,24 +117,64 @@ SPEC_WEEKS       = 6      # [ENG] block length before the contrast is read out
 SPEC_MIN_WEEKS   = 4      # [ENG] refuse to read out earlier than this
 
 
-def can_schedule_specialization(active: dict | None, phase: str | None = None) -> bool:
-    """One test at a time, and NOT during a cut.
+def can_schedule_specialization(active: dict | None, phase: str | None = None,
+                                muscle: str | None = None,
+                                control: str | None = None) -> bool:
+    """One test at a time. Runs during a cut (Nolan, 2026-08-04).
 
-    Deliberately the opposite call from `can_schedule`. That function allows volume
-    tests on a cut because the deficit confound is asymmetric — a deficit can hide a
-    response, not manufacture one — and blocking it closed the last path for MRV to
-    move. Neither argument transfers here. A specialization block raises total weekly
-    volume, which fights the session-size work directly, and its readout is a
-    hypertrophy contrast, which a deficit genuinely can erase for both arms at once.
+    This first refused while `phase == "cut"`, on the grounds that a block raises
+    total weekly volume and a deficit can erase a hypertrophy contrast for both arms
+    at once. Nolan overrode it, and the override holds up for the arm actually
+    running: FREQUENCY costs no extra volume — the lateral raise is already in every
+    session and rides outside the exercise count — so the session-size objection does
+    not apply to it. He has also been cutting open-ended since 2026-06-07, so a
+    cut-gate here is not a delay, it is a cancellation.
+
+    The confound is real and does not go away. It is handled at readout instead of at
+    scheduling: the comparison is spec vs a matched CONTROL trained in the same
+    deficit, so an energy-availability effect hits both arms and cancels out of the
+    contrast. What a deficit can still do is shrink the contrast toward zero, which
+    makes a null result weak evidence rather than strong evidence. `result` carries
+    the phase for exactly that reason.
+
+    Note the VOLUME and SETS_PER_EX arms do add volume and do fight the session-size
+    work. When one of those is scheduled, revisit this — the reasoning above is
+    arm-specific, not a blanket clearance.
+
+    Concurrency: one test per MUSCLE SET, not one test globally. A specialization
+    block may run alongside an active volume-tolerance ramp when the two touch
+    disjoint muscles. The one-at-a-time rule exists so two probes cannot confound
+    each other's readout, and probes on disjoint muscles cannot: a calves ramp does
+    not enter a side-delt vs rear-delt contrast. Requiring global exclusivity instead
+    meant the side-delt block could not start for two more weeks behind a calves ramp
+    it has nothing to do with, and Nolan asked for it started now (2026-08-04).
+
+    What this does NOT license is two probes on the same muscle, or on a muscle and
+    its own control — those still collide, and the overlap check refuses them.
+
+    `phase` is retained for call-site compatibility and for the result stamp.
     """
-    return active is None and (phase or "").lower() != "cut"
+    if active is None:
+        return True
+    if active.get("test_type") == "specialization":
+        return False       # never two specialization blocks
+    return not (_test_muscles(active) & {muscle, control} if muscle else True)
+
+
+def _test_muscles(test: dict | None) -> set:
+    """Every muscle an active test touches, whatever its type."""
+    if not test:
+        return set()
+    b = test.get("baseline") or {}
+    return {m for m in (b.get("muscle"), b.get("control")) if m}
 
 
 def schedule_specialization_test(muscle: str, control: str, today_iso: str,
                                  arm: str = "frequency", readout: str = "e1rm",
                                  start: dict | None = None,
                                  weeks: int = SPEC_WEEKS,
-                                 sets_per_ex: int = 1) -> dict:
+                                 sets_per_ex: int = 1,
+                                 phase: str | None = None) -> dict:
     """A new active specialization test row.
 
     `arm` names the variable under test and is recorded at schedule time so the
@@ -153,6 +193,9 @@ def schedule_specialization_test(muscle: str, control: str, today_iso: str,
                      "week": 1, "weeks_total": int(weeks),
                      "sets_per_ex": int(sets_per_ex), "readout": readout,
                      "start": start or {},
+                     # stamped because a deficit shrinks the contrast toward zero:
+                     # a null read on a cut is weak evidence, not strong evidence
+                     "phase_at_start": phase,
                      "spec_slopes": [], "control_slopes": []},
     }
 
@@ -218,6 +261,7 @@ def step_specialization_test(active: dict, spec_slope, control_slope) -> tuple:
         "arm": b.get("arm"), "muscle": m, "control": b.get("control"),
         "weeks": week, "readout": b.get("readout"),
         "spec_slope_mean": s_mean, "control_slope_mean": c_mean,
+        "phase_at_start": b.get("phase_at_start"),
         "contrast": contrast,
         # honesty flag: e1RM slope is a strength proxy for a hypertrophy question.
         "proxy_readout": b.get("readout") != "circumference",
