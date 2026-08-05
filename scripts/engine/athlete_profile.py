@@ -47,6 +47,104 @@ def per_session_muscle_cap(muscle: str) -> int:
             else MAX_ACCESSORY_SETS_PER_MUSCLE_PER_SESSION)
 STRENGTH_RIR_FLOOR                = 1    # [ENG] strength work stays submaximal (don't grind singles)
 
+# ── Session SIZE (exercise count) ─────────────────────────────────────────────
+# The knobs above bound sets PER EXERCISE. Nothing bounded exercises PER SESSION,
+# and the two constraints do not imply each other. `_build_session` created one
+# slot per muscle in the split's domain unconditionally, and UPPER_A/B_MUSCLES has
+# 11 entries — so an upper day was 11 slots before the isolation supplement and the
+# goal lift's back-off + assistance stack, landing at 13-15. That is the "14
+# exercises" Nolan flagged (2026-08-04); the earlier fix for the same complaint
+# (2026-07-29) deleted forearms from the muscle list, which treats the symptom.
+#
+# Volume reduction could not shrink it either: a low weekly target scales the
+# chosen exercise's SETS down (floor 1) but the slot survives, so a cut turned a
+# 14-exercise session into a 14-exercise session with fewer sets each. Nolan's
+# call (2026-08-04): 1 set per exercise is often exactly right — the count of
+# STATIONS is what gasses him, not the sets on any one of them. So the cut lever
+# is the exercise count, and sets-per-exercise stays where it is.
+#
+# The target is a TOTAL exercise count for the session (the number
+# generate_weekly_program prints as "N exercises"), and it is a learnable prior,
+# not a fixed rule: deviation_tracker measures how many exercises he actually runs
+# vs how many were prescribed and learners.update_session_size walks the target
+# toward his revealed preference, bounded by the floor/ceiling below. The SEED
+# value is a starting point, not a claim about optimal session size. [ENG]
+#
+# The seeds come from TBJP's own template, not from a guess. Episode 03 states the
+# session shape directly ([[TBJP EDUCATION SERIES - EPISODE.03]], vault line 34-35):
+#
+#   Upper: chest compound, shoulder compound, tricep compound, lat compound,
+#          upper-back thickness, side-delt isolation, tricep isolation,
+#          bicep isolation                                         → 8 exercises
+#   Lower: hamstring curl, quad compound, quad isolation, calf raise → 4 exercises
+#
+# so the target is per split TYPE, not one number for the whole week (Nolan,
+# 2026-08-04). A single number made lower days run as long as upper days, which
+# TBJP's template never does. Lower is seeded at 5 rather than 4 because his
+# lower days also carry a deadlift or squat goal lift the template doesn't.
+TARGET_EXERCISES_PER_SESSION      = 8     # [ENG] default when the split is unknown
+TARGET_EXERCISES_BY_SPLIT_TYPE    = {     # [ENG] seeds; the learner moves these
+    "upper":     8,
+    "lower":     5,
+    "full_body": 8,
+}
+MIN_EXERCISES_PER_SESSION         = 4     # [ENG] floor the learner may not cross
+MAX_EXERCISES_PER_SESSION         = 12    # [ENG] ceiling the learner may not cross
+TARGET_EXERCISES_CUT_MULT         = 0.75  # [ENG] a cut shrinks the session, not the sets
+
+# ── Mandatory isolations ──────────────────────────────────────────────────────
+# Nolan's call (2026-08-04): every session carries at least one bicep, one tricep
+# and one side-delt isolation, and they do NOT count against the exercise target —
+# they go on top. That is not padding, it is the TBJP template: the last three
+# slots of his upper day are exactly side-delt iso, tricep iso, bicep iso, at one
+# working set each. One set of curls is not what gasses him; a fifth compound is.
+#
+# Exempting them from the count is what makes the two rules compatible. Counted,
+# a 5-exercise lower day would be three-fifths arm work; uncounted, it is the leg
+# template plus the arm/delt tail TBJP puts at the end of the session anyway.
+MANDATORY_ISOLATION_MUSCLES       = ("side_delts", "triceps", "biceps")  # [COACH]
+
+# A goal lift's top set and its back-off are ONE exercise for counting purposes
+# (Nolan, 2026-08-04) — and TBJP agrees: "load and back off" is his term for two
+# sets of one movement, not two movements (Episode 04). Only the back-off row is
+# exempt; the top set still counts.
+
+
+def split_type(split: str | None) -> str:
+    """Coarse split family ('upper' / 'lower' / 'full_body') for a split name.
+    Public because session_generator needs the same classification to decide which
+    sessions owe a calf raise."""
+    s = (split or "").lower()
+    if s.startswith("full_body"):
+        return "full_body"
+    if s.startswith("lower") or s in ("legs", "lower_body"):
+        return "lower"
+    return "upper"
+
+
+_split_type = split_type  # internal alias, pre-existing call sites
+
+
+def target_exercises_per_session(split: str | None = None,
+                                 phase: str | None = None,
+                                 learned: float | None = None) -> int:
+    """Countable exercises to program in one session. Mandatory isolations and a
+    goal lift's back-off row sit outside this count. `learned` (from
+    learners.update_session_size) is a whole-week scalar: it shifts every split
+    type by the same delta off its seed, so the learner converges on how big
+    Nolan's sessions want to be without flattening upper and lower into each
+    other. A cut scales the result down — that is the phase lever, in place of
+    trimming sets."""
+    seed = TARGET_EXERCISES_BY_SPLIT_TYPE.get(_split_type(split),
+                                              TARGET_EXERCISES_PER_SESSION)
+    base = float(seed)
+    if learned:
+        base += float(learned) - float(TARGET_EXERCISES_PER_SESSION)
+    if (phase or "").lower() == "cut":
+        base *= TARGET_EXERCISES_CUT_MULT
+    return int(max(MIN_EXERCISES_PER_SESSION,
+                   min(MAX_EXERCISES_PER_SESSION, round(base))))
+
 # ── Rep-range philosophy ──────────────────────────────────────────────────────
 # Nolan trains EVERYTHING — including isolation (traps, side delts, neck, calves)
 # — in a heavy, sub-10-rep band; he only goes higher when a machine is literally

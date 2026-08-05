@@ -62,7 +62,7 @@ from engine.log_ingest           import normalize_workout_logs, populate_registr
 from engine.notes_parser         import parse_workout_notes
 from engine.failure_reasons       import parse_set_failures, format_sticking_summary
 from engine.deviation_tracker    import track_deviations
-from engine.learners             import update_exercise_value, exercise_reward
+from engine.learners             import update_exercise_value, exercise_reward, update_session_size
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
 from engine.exploration_manager  import ControlledExplorationManager
 from engine.resource_allocator   import (
@@ -876,6 +876,23 @@ def main():
         "order": "scheduled_date.desc"})
     deviations = track_deviations(prescribed_rows, workout_log_rows, today_iso=TODAY.isoformat())
 
+    # ── Session-size learner (2026-08-04) ─────────────────────────────────────
+    # How many exercises Nolan actually runs vs how many were prescribed. Until
+    # now nothing consumed this: the deviation votes only re-ranked WHICH
+    # movements filled a fixed slot count, so no amount of him cutting the card
+    # short could shrink the session. The target walks toward his revealed size
+    # and feeds athlete_profile.target_exercises_per_session on the next build.
+    session_size_learned = ((engine.get("guardrail_state") or {})
+                            .get("synthesis_state") or {}).get("session_size")
+    if not already_ran:
+        _new_size = update_session_size(session_size_learned, deviations.get("session_size"))
+        if _new_size is not None:
+            _ss = deviations["session_size"]
+            print(f"  Session size: prescribed {_ss['prescribed_mean']} → "
+                  f"logged {_ss['logged_mean']} (n={_ss['n']}) — "
+                  f"target {session_size_learned or 'seed'} → {_new_size}")
+            session_size_learned = _new_size
+
     _ev_rows = sb_get("athlete_params", {
         "select": "*", "created_by": f"eq.{USER_ID}", "param_key": "eq.exercise_values"})
     ev_meta = ((_ev_rows[0].get("meta") if _ev_rows else None) or {})
@@ -1381,6 +1398,8 @@ def main():
             preferred_exercises=preferred_ex,
             split_override=split,   # honor the convergent split (title + session agree)
             joint_action_volume=joint_action_volume,
+            phase=phase_now,               # a cut shrinks the session, not the sets
+            session_size_learned=session_size_learned,
         )
 
         title = build_title(action, split, intensity)
@@ -1535,7 +1554,8 @@ def main():
         USER_ID, kalman_pre, guardrail_pre, volume_engine,
         progression_registry, exploration_manager, None,  # MILP synthesis_engine retired (allocator owns targets)
         weekly_targets=weekly_targets, step_count=new_step,
-        extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate},
+        extra_synthesis={"split_framework": split_framework, "compliance_rate": compliance_rate,
+                         "session_size": session_size_learned},
         last_explored=new_last_explored,
     )
 

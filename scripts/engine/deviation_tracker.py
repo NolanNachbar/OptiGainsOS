@@ -25,6 +25,24 @@ from engine.log_ingest import canon, canon_tokens
 from engine.muscle_map import get_muscles
 
 
+def _counts_toward_size(name: str) -> bool:
+    """Does this exercise count against the session-size target?
+
+    False for the mandatory bicep/tricep/side-delt isolations and for a goal
+    lift's back-off row — both sit outside the target by design, so both sides of
+    the prescribed-vs-logged comparison must ignore them. Matched on name because
+    a workout LOG carries no is_* tags, only what was written down. Imported
+    lazily so this module keeps its no-heavy-dependency import surface.
+    """
+    from engine.session_generator import MANDATORY_ISOLATION_POOL
+    # canon() normalizes spacing/aliases but PRESERVES case, so match lowercased.
+    c = canon(name or "").lower()
+    if "back off" in c or "backoff" in c or "back-off" in c:
+        return False
+    exempt = {canon(n).lower() for pool in MANDATORY_ISOLATION_POOL.values() for n in pool}
+    return c not in exempt
+
+
 def _logged_names(log: dict) -> dict:
     """canon name → completed working-set count for one logged workout."""
     out: dict[str, int] = {}
@@ -86,7 +104,10 @@ def track_deviations(program_workouts: list, workout_logs: list,
     program_workouts: rows {scheduled_date, exercises:[{name, sets}]}.
     workout_logs:     rows {log_date, exercises:[{name, sets:[...]}]}.
     """
-    out = {"chosen": {}, "dropped": {}, "set_delta": {}, "events": []}
+    out = {"chosen": {}, "dropped": {}, "set_delta": {}, "events": [],
+           "session_size": {"logged_mean": None, "prescribed_mean": None, "n": 0}}
+    _size_logged: list = []
+    _size_prescribed: list = []
 
     cutoff = None
     if today_iso:
@@ -116,6 +137,21 @@ def track_deviations(program_workouts: list, workout_logs: list,
         # an exercise he bailed on entirely (0 completed sets) was not chosen
         logged = {n: c for n, c in _logged_names(log).items() if c > 0}
         prescribed = _prescribed_names(pw)
+
+        # Session SIZE signal: how many exercises he actually ran vs how many were
+        # on the card. Counts only, independent of WHICH movements — the exercise
+        # -value learner already owns identity. Collected per matched date and
+        # averaged over the window (a single day's skip is noise: pain, equipment,
+        # a short session; a persistent gap is a preference).
+        #
+        # Both sides count only COUNTABLE rows (Nolan, 2026-08-04). The mandatory
+        # bicep/tricep/side-delt isolations and a goal lift's back-off ride outside
+        # the exercise target by design, so counting them here would let a skipped
+        # lateral raise on a leg day read as "wanted fewer stations" and shrink the
+        # COMPOUND budget — a lever he never pulled. Filtering both sides by the
+        # same rule keeps the learner measuring the thing the target controls.
+        _size_logged.append(sum(1 for n in logged if _counts_toward_size(n)))
+        _size_prescribed.append(sum(1 for n in prescribed if _counts_toward_size(n)))
 
         # exact + near-identical name matches each consume their prescribed slot
         matched = {n: n for n in logged if n in prescribed}
@@ -157,4 +193,10 @@ def track_deviations(program_workouts: list, workout_logs: list,
 
     # informational only — not consumed by exercise_reward
     out["set_delta"] = {n: round(sum(v) / len(v), 2) for n, v in _delta_acc.items() if v}
+    if _size_logged:
+        out["session_size"] = {
+            "logged_mean":     round(sum(_size_logged) / len(_size_logged), 2),
+            "prescribed_mean": round(sum(_size_prescribed) / len(_size_prescribed), 2),
+            "n":               len(_size_logged),
+        }
     return out

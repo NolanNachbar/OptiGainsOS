@@ -259,6 +259,54 @@ def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
     return round(r, 4)
 
 
+# ── Session size (exercises per session) ──────────────────────────────────────
+# Deviation data already told the engine WHICH exercises Nolan reaches for and
+# which he skips, but nothing consumed the plain COUNT — so weeks of him cutting a
+# 14-exercise card down to 6 only ever re-ranked which movements filled the same 14
+# slots (2026-08-04 audit). This learner closes that loop: the target session size
+# walks toward the size he actually runs.
+#
+# EWMA rather than a per-week jump, and gated on a minimum sample, because a single
+# short week is noise — pain, equipment, a missed session. Bounds come from
+# athlete_profile so the philosophy stays in one file.
+SIZE_MIN_N   = 3      # [ENG] matched prescribed-vs-logged days before trusting the signal
+SIZE_GAIN    = 0.30   # [ENG] EWMA weight on the observed mean (slow, multi-week convergence)
+SIZE_MAX_STEP = 1.5   # [ENG] cap one week's movement so a fluke week can't lurch the target
+
+
+def update_session_size(current: float | None, session_size: dict) -> float | None:
+    """Walk the target exercises-per-session toward what Nolan actually ran.
+
+    `session_size` is deviation_tracker's {"logged_mean","prescribed_mean","n"}.
+    Returns the new target, or None when there isn't enough evidence to move (the
+    caller keeps the existing value / the athlete_profile seed).
+
+    It learns from the GAP (logged minus prescribed), not from the logged count
+    directly, and deviation_tracker filters BOTH sides to countable rows only (a
+    goal lift's back-off and the three mandatory isolations ride outside the
+    target, so they are excluded from both counts). The gap then measures the one
+    thing the target controls — did he run more or fewer countable stations than
+    he was given — and a skipped lateral raise can no longer masquerade as a
+    request for fewer compounds. The returned
+    value is a whole-week scalar, applied against every split type's own seed by
+    athlete_profile.target_exercises_per_session.
+    """
+    from engine.athlete_profile import (TARGET_EXERCISES_PER_SESSION,
+                                        MIN_EXERCISES_PER_SESSION,
+                                        MAX_EXERCISES_PER_SESSION)
+    s = session_size or {}
+    n = int(s.get("n") or 0)
+    observed = s.get("logged_mean")
+    given = s.get("prescribed_mean")
+    if n < SIZE_MIN_N or observed is None or given is None:
+        return None
+    base = float(current) if current else float(TARGET_EXERCISES_PER_SESSION)
+    step = SIZE_GAIN * (float(observed) - float(given))
+    step = max(-SIZE_MAX_STEP, min(SIZE_MAX_STEP, step))
+    return round(max(MIN_EXERCISES_PER_SESSION,
+                     min(MAX_EXERCISES_PER_SESSION, base + step)), 2)
+
+
 def exercise_value(meta: dict, exercise: str) -> float:
     """Learned value for an exercise (0 if never observed)."""
     try:

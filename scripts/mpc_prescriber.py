@@ -716,6 +716,10 @@ def main():
         week_muscle_counts = _week_muscle_counts,
         muscle_emphasis = MUSCLE_EMPHASIS,
         joint_action_volume = today_state.get("joint_action_volume") or {},
+        # Same learned session size the weekly generator used, so the Today card
+        # and the weekly plan agree on how big the session is.
+        session_size_learned = (((guardrail_dict or {}).get("synthesis_state")
+                                 or {}).get("session_size")),
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

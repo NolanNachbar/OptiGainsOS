@@ -26,7 +26,11 @@ import copy
 from datetime import date
 
 from engine.vdot_engine import VDOTEngine
-from engine.athlete_profile import apply_philosophy, MUSCLE_EMPHASIS
+from engine.athlete_profile import (apply_philosophy, MUSCLE_EMPHASIS,
+                                    target_exercises_per_session,
+                                    MANDATORY_ISOLATION_MUSCLES,
+                                    MIN_EXERCISES_PER_SESSION,
+                                    split_type as _split_type_of)
 from engine.log_ingest import canon
 from engine.muscle_map import get_joint_action
 
@@ -441,6 +445,39 @@ LOWER_MUSCLES = ["quads", "hamstrings", "glutes", "calves", "core"]
 UPPER_FREQ = {"chest": 5, "upper_back": 3, "lats": 3, "shoulders": 3, "triceps": 4, "biceps": 3,
               "side_delts": 4, "traps": 3, "neck": 3, "upper_chest": 3, "rear_delts": 3}
 LOWER_FREQ = {"quads": 3, "hamstrings": 3, "glutes": 3, "calves": 3, "core": 3}
+
+# Guaranteed isolation slots — added when the knapsack didn't already select the
+# specific isolation exercise. Biceps / triceps are covered by the full UPPER_A/B
+# muscle lists, but the knapsack may pick a compound (Dips, OHP) for those slots;
+# these supplements ensure a true isolation always appears too. Forearms is
+# deliberately NOT in UPPER_A/B_MUSCLES — it's outside the session's muscle domain,
+# so it isn't added as an automatic bolt-on; doing so was exactly the kind of
+# unrequested 12th-muscle padding that inflated Upper B to 15 exercises (Nolan,
+# 2026-07-29). Module-scope so _build_session can reserve budget for these before
+# it decides how many muscle slots the day can afford.
+ISOLATION_SUPPLEMENTS = {
+    "upper_a":             [("triceps", "Triceps Pushdown")],
+    "upper_b":             [("triceps", "Triceps OH Extension")],
+    "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+    "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+    # Legs-focus full-body day earns the same guaranteed quad+ham isolations so
+    # it reads like the FBEOD "Legs Focus" template, not one squat + calves.
+    "full_body_legs":      [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
+    "upper_volume":        [("triceps", "Triceps Pushdown")],   # legacy
+    "upper_intensity":     [("triceps", "Triceps OH Extension")],  # legacy
+}
+
+# Mandatory-isolation pools. One movement from each pool lands in EVERY session,
+# on top of the exercise-count target (see athlete_profile.MANDATORY_ISOLATION_MUSCLES).
+# Two entries per muscle so consecutive sessions rotate rather than grinding the
+# same movement — the same deterministic week/day rotation _pick_assistance uses.
+# TBJP's own picks for these three slots are a cable lateral raise, a single-arm
+# pushdown and a cable curl (Episode 03, ~line 500-510); the pools mirror that.
+MANDATORY_ISOLATION_POOL = {
+    "side_delts": ["Lateral Raise", "Cable Lateral Raise"],
+    "triceps":    ["Triceps Pushdown", "Triceps OH Extension"],
+    "biceps":     ["Bicep Curl", "Hammer Curl"],
+}
 
 PUSH_MUSCLES = ["chest", "shoulders", "triceps", "side_delts", "upper_chest"]
 PULL_MUSCLES = ["upper_back", "lats", "biceps", "traps", "neck", "rear_delts"]
@@ -1031,6 +1068,7 @@ def _build_session(
     blocked: set = None,
     preferred: set = None,
     joint_action_volume: dict = None,
+    target_exercises: int = None,
 ) -> list:
     """
     Knapsack session builder. For each muscle relevant to this split:
@@ -1113,6 +1151,67 @@ def _build_session(
     # press patterns on A and pull patterns on B so the two variants actually read
     # as press-led vs. pull-led, not just a reordered isolation supplement.
     bias = _UPPER_VARIANT_PATTERN_BIAS.get(split, {})
+
+    # ── Session-size budget ───────────────────────────────────────────────────
+    # `relevant` is the split's full muscle DOMAIN, and the loop below used to make
+    # a slot for every entry unconditionally — 11 muscles on upper, before the
+    # isolation supplement and the goal lift's back-off + assistance stack. Budget
+    # the muscle slots against the day's total exercise target instead.
+    #
+    # What is NOT dropped, in priority order:
+    #   1. any muscle carrying a goal lift for this split (the SBD work is
+    #      truncation-immune — _priority_score's +10 must not be undone here),
+    #   2. the day's focus muscle,
+    #   3. the remaining muscles in the split domain's OWN order. That order is
+    #      authored emphasis-first per day and is the only thing that distinguishes
+    #      upper_a from upper_b — they hold the same 11 muscles, permuted (:432).
+    #      Ranking the survivors by weekly set target instead would pick the same
+    #      winners on both days and collapse the two upper sessions into one, and
+    #      it drops biceps from the PULL day while keeping chest there (chest
+    #      carries the bench goal lift, so it outranks on volume everywhere).
+    #      Weekly target enters only as a demotion: a muscle the allocator gave
+    #      nothing this week goes to the back regardless of where it sits in the
+    #      domain list.
+    #
+    # A muscle that loses its slot on this day does NOT get its sets pushed onto
+    # another day: per-exercise sets come from `weekly / _baseline_weekly(muscle)`,
+    # not from a per-session frequency divisor, so dropping the slot genuinely
+    # lowers that muscle's weekly volume. That is the intended trade — fewer,
+    # harder stations rather than the same volume smeared wider. [COACH]
+    target_exercises = int(target_exercises or 0)
+    if target_exercises > 0 and len(relevant) > 1:
+        _goal_muscles = {
+            (e.get("muscles") or [""])[0] for e in EXERCISES
+            if e.get("is_goal")
+            and e.get("name") not in excluded_names
+            and canon(e.get("name", "")) not in blocked
+            and (e.get("muscles") or [""])[0] in relevant
+        }
+        # No slack reserved for ISOLATION_SUPPLEMENTS or the goal lift's back-off:
+        # those additions are conditional and the pattern-diversity / dedup filters
+        # eat roughly as many slots as they add, so reserving for them undershot the
+        # target by exactly one on every split tested. The tail trim below is the
+        # real binder; this budget just has to stop the 11-muscle blowout.
+        # No second clamp here: target_exercises_per_session already bounded the
+        # target by MIN/MAX. Re-flooring it with MIN_EXERCISES_PER_SESSION made the
+        # constant do two unrelated jobs and would quietly raise a lower-day cut
+        # budget back above what the cut multiplier decided.
+        _n_slots = target_exercises
+        if _n_slots < len(relevant):
+            # calves are protected on lower and full-body days for the same reason
+            # the trim below protects them: TBJP's lower template ends with a calf
+            # raise, and calves sit last in every leg domain list, so an unprotected
+            # calves entry loses its slot before it ever becomes an exercise.
+            _calf_protected = _split_type_of(split) in ("lower", "full_body")
+            _protected = [m for m in relevant
+                          if m in _goal_muscles or m == focus_muscle
+                          or (_calf_protected and m == "calves")]
+            _rest = [m for m in relevant if m not in _protected]
+            # stable sort on "allocator gave this muscle nothing" only — everything
+            # else keeps the domain list's own emphasis order
+            _rest.sort(key=lambda m: 1 if float(wt.get(m, 0) or 0) <= 0 else 0)
+            _keep = set(_protected) | set(_rest[:max(0, _n_slots - len(_protected))])
+            relevant = [m for m in relevant if m in _keep]
 
     used_patterns: set = set()
     chosen_names: set = set()
@@ -1208,17 +1307,9 @@ def _build_session(
     # session's muscle domain, so it isn't added as an automatic bolt-on here;
     # doing so was exactly the kind of unrequested 12th-muscle padding that
     # inflated Upper B to 15 exercises (Nolan, 2026-07-29).
-    _ISOLATION_SUPPLEMENTS = {
-        "upper_a":             [("triceps", "Triceps Pushdown")],
-        "upper_b":             [("triceps", "Triceps OH Extension")],
-        "lower_squat_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
-        "lower_hinge_primary": [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
-        # Legs-focus full-body day earns the same guaranteed quad+ham isolations so
-        # it reads like the FBEOD "Legs Focus" template, not one squat + calves.
-        "full_body_legs":      [("quads", "Leg Extension"), ("hamstrings", "Hamstring Curl")],
-        "upper_volume":        [("triceps", "Triceps Pushdown")],   # legacy
-        "upper_intensity":     [("triceps", "Triceps OH Extension")],  # legacy
-    }
+    # Hoisted to module scope (ISOLATION_SUPPLEMENTS) so the session-size budget
+    # can reserve slots for these before the muscle loop runs.
+    _ISOLATION_SUPPLEMENTS = ISOLATION_SUPPLEMENTS
     # The knapsack's own pick for a muscle may already BE a true isolation
     # (e.g. Triceps Pushdown for triceps) — in that case the supplement was
     # duplicating it under a different name (Triceps Pushdown + Triceps OH
@@ -1238,8 +1329,57 @@ def _build_session(
         iso_baseline = BASELINE_WEEKLY_SMALL
         iso_scalar = max(0.5, iso_weekly / iso_baseline if iso_weekly > 0 else 0.5)
         iso_ex["sets"] = max(1, round(iso_ex.get("sets", 2) * iso_scalar))
+        # Trim-protected: these rows exist precisely to guarantee a true isolation
+        # appears for a muscle whose knapsack pick was a compound (see :450). Letting
+        # the session-size trim delete them defeats the whole point — it is what
+        # stripped Hamstring Curl off full_body_legs. They still COUNT against the
+        # target; they just can't be the thing that gets cut to meet it.
+        iso_ex["is_iso_supplement"] = True
         chosen_names.add(iso_name)
         slots.append((iso_ex, iso_muscle))
+
+    # ── Mandatory isolations (bicep / tricep / side delt, every session) ───────
+    # Nolan, 2026-08-04: "I do think I need at least one bicep, tricep, and
+    # lateral delt isolation exercise per workout", and they ride on top of the
+    # exercise count rather than competing with it. So this runs AFTER the
+    # session-size budget has already picked the compounds, and the results are
+    # tagged `is_mandatory_iso` so the tail trim below skips them.
+    #
+    # This also fixes the collateral damage from the first cut of the session-size
+    # work: budgeting muscle slots stripped the isolation tail off the upper day
+    # entirely, which is the opposite of the TBJP template — his upper session
+    # ENDS with side-delt, tricep and bicep isolation. Fewer compounds, not fewer
+    # arms. [COACH]
+    for _m_muscle in MANDATORY_ISOLATION_MUSCLES:
+        _pool = [n for n in MANDATORY_ISOLATION_POOL.get(_m_muscle, [])
+                 if n in _EX_BY_NAME and canon(n) not in blocked
+                 and n not in excluded_names]
+        if not _pool:
+            continue
+        # Already have a true isolation for this muscle? Then the requirement is
+        # satisfied — but TAG that slot rather than just moving on. Otherwise the
+        # guarantee depends on where the movement came from: a Bicep Curl the
+        # knapsack picked would count against the target and stay trimmable, while
+        # an identical one appended here would not, and the trim would delete the
+        # knapsack's version and leave the session with no bicep work at all.
+        _existing = next((e for e, m in slots
+                          if m == _m_muscle and e.get("type") == "ISOLATION"), None)
+        if _existing is not None:
+            _existing["is_mandatory_iso"] = True
+            continue
+        _pick = next((n for n in _pool if n not in chosen_names), None)
+        if _pick is None:
+            continue
+        # deterministic rotation across the pool, same shape as _pick_assistance
+        _rot = [n for n in _pool if n not in chosen_names]
+        _pick = _rot[assist_week % len(_rot)]
+        _m_ex = copy.deepcopy(_EX_BY_NAME[_pick])
+        _m_weekly = wt.get(_m_muscle, 0)
+        _m_scalar = max(0.5, _m_weekly / BASELINE_WEEKLY_SMALL if _m_weekly > 0 else 0.5)
+        _m_ex["sets"] = max(1, round(_m_ex.get("sets", 1) * _m_scalar))
+        _m_ex["is_mandatory_iso"] = True
+        chosen_names.add(_pick)
+        slots.append((_m_ex, _m_muscle))
 
     # Sort by fatigue_cost descending (compounds first), with a priority nudge so
     # emphasised muscles (side delts, upper chest, traps, …) LEAD the isolation
@@ -1419,6 +1559,63 @@ def _build_session(
     # any future dedup checks (EN-05) see the full picture.
     chosen_names.update(e.get("name") for e in exercises if e.get("name"))
 
+    # Session-size backstop. The muscle-slot budget above cannot predict how many
+    # extra slots the goal lift's back-off + assistance stack, the full-body bench
+    # touch, or a weak-point accessory will add — those are conditional and are
+    # appended after the loop. So enforce the target on the FINAL list, trimming
+    # from the tail (the list is already sorted heaviest-first, so the tail is the
+    # lightest isolation work) and never touching a goal lift, its back-off or
+    # assistance, or the focus muscle's own slot.
+    #
+    # What COUNTS is not len(exercises). Two rows are exempt (Nolan, 2026-08-04):
+    # a goal lift's back-off, because top set + back-off is one movement done twice
+    # and TBJP calls that pair one exercise; and the mandatory bicep/tricep/side-delt
+    # isolations, which ride on top of the target by design. So the trim measures
+    # only the countable rows, and it can never remove an exempt one — otherwise
+    # the exemption would be self-defeating.
+    def _countable(e):
+        return not (e.get("is_backoff") or e.get("is_mandatory_iso"))
+
+    # A calf raise is the last slot of TBJP's lower template ([[TBJP EDUCATION
+    # SERIES - EPISODE.03]], line 34-35), and calves sit last in LOWER_MUSCLES
+    # (:442), so the tail trim ate them on every lower and leg-focused session.
+    # It is a countable exercise — it does not ride on top of the target like the
+    # arm isolations — but it must not be the row that gets cut to meet the target.
+    # Something earlier in the domain order gives up the slot instead.
+    _calf_day = _split_type_of(split) in ("lower", "full_body")
+
+    if target_exercises > 0 and sum(1 for e in exercises if _countable(e)) > target_exercises:
+        def _trim_protected(e):
+            return bool(e.get("is_goal") or e.get("is_backoff") or e.get("is_assistance")
+                        or e.get("is_mandatory_iso") or e.get("is_iso_supplement")
+                        or (_calf_day and "calves" in (e.get("muscles") or []))
+                        or (e.get("muscles") or [None])[0] == focus_muscle)
+        _over = sum(1 for e in exercises if _countable(e)) - target_exercises
+        for i in range(len(exercises) - 1, -1, -1):
+            if _over <= 0:
+                break
+            if _trim_protected(exercises[i]):
+                continue
+            exercises.pop(i)
+            _over -= 1
+
+        # Second pass: goal-lift ASSISTANCE only, and only if the first pass could
+        # not get there. A hinge day stacks Deficit Deadlift and Barbell Hold on top
+        # of the deadlift itself, and with those permanently protected the cut target
+        # was unreachable — the session came out at 6 countable against a target of 4,
+        # which is the gassing shape the whole change exists to stop. The goal lift
+        # and its back-off are never touched, so the day keeps its purpose; it just
+        # sheds the supporting work first, which is what a cut is for.
+        if _over > 0:
+            for i in range(len(exercises) - 1, -1, -1):
+                if _over <= 0:
+                    break
+                e = exercises[i]
+                if not e.get("is_assistance") or e.get("is_goal") or e.get("is_backoff"):
+                    continue
+                exercises.pop(i)
+                _over -= 1
+
     # Alternate chest/back compounds so we never stack three chest movements in a
     # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
     # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
@@ -1472,6 +1669,8 @@ def generate(
     preferred_exercises: set = None,
     split_override: str = None,
     joint_action_volume: dict = None,
+    phase: str = None,
+    session_size_learned: float = None,
 ) -> tuple:
     """
     Generate (exercises, cardio_sessions) for one training day.
@@ -1536,6 +1735,7 @@ def generate(
         blocked=blocked_exercises,
         preferred=preferred_exercises,
         joint_action_volume=joint_action_volume,
+        target_exercises=target_exercises_per_session(split, phase, session_size_learned),
     )
     cardio = (_build_cardio(sim_date, intensity, ampk, recent_run_tss,
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)
@@ -1688,6 +1888,7 @@ class SessionGenerator:
         week_muscle_counts: dict = None,
         muscle_emphasis: dict = None,
         joint_action_volume: dict = None,
+        session_size_learned: float = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1760,6 +1961,8 @@ class SessionGenerator:
             preferred_exercises=preferred_exercises,
             split_override=resolved_split,
             joint_action_volume=joint_action_volume,
+            phase=phase,
+            session_size_learned=session_size_learned,
         )
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
