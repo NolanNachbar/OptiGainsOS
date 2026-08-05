@@ -16,6 +16,7 @@ import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
+import PendingWeekBanner from "@/components/program/PendingWeekBanner";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -152,7 +153,12 @@ export default function Today() {
     if (!active) return null;
     const entry = getTodayProgramWorkout(active, active.program?.workouts, profile?.timezone);
     return entry
-      ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId }
+      // `exercises` rides along so the prescription card can render the APPROVED
+      // movement list rather than a second, independently-selected one. Today and
+      // the Train tab then read the same source for "which lifts" (program_workouts);
+      // the engine still owns sets/reps/RIR/load on top of it.
+      ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId,
+          exercises: entry.exercises || [] }
       : null;
   }, [enrollments, profile?.timezone]);
 
@@ -500,6 +506,14 @@ export default function Today() {
             keeps its Begin Session a ghost so there's never a second teal. */}
         {!(activeSession && !prescription) && (
           <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
+            {/* Today's session is pinned to the approved plan, so an unapproved
+                week means this card is showing last week's session. Say so here
+                rather than only on the Schedule tab — this is the screen he
+                opens first. */}
+            <PendingWeekBanner
+              programId={enrollments.find((e) => e.status === "active")?.program_id}
+              className="mb-3"
+            />
             {/* The subjective check-in now rides the Begin Session flow: the card
                 gates its CTA on todayCheckin (no check-in yet → check-in sheet
                 first, then straight into the logger). */}

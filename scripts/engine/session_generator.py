@@ -1899,6 +1899,7 @@ class SessionGenerator:
         joint_action_volume: dict = None,
         session_size_learned: float = None,
         spec_muscle: str = None,
+        planned_exercises: list = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -1975,6 +1976,48 @@ class SessionGenerator:
             session_size_learned=session_size_learned,
             spec_muscle=spec_muscle,
         )
+
+        # ── The approved plan owns SELECTION; today owns AUTOREGULATION ───────
+        # Everything above re-picks the movements from scratch. The weekly
+        # generator already picked them, Nolan approved that list, and it is what
+        # the Train tab renders off program_workouts — so re-picking here is two
+        # engines answering the same question, and Today and Train showed
+        # different exercises for the same day (2026-08-05: 8 movements vs 9, only
+        # 5 shared). Same class of bug as the split_override conflict documented
+        # above, one layer deeper: selection instead of the split label.
+        #
+        # So when today's approved plan has lifts, the plan's movement list wins
+        # outright. Every daily layer below — soreness trim, cut back-off trim,
+        # interference back-off, e1RM load assignment — still runs, unchanged, on
+        # those movements. The daily engine decides how hard, never what.
+        #
+        # Rows are rebuilt from the EXERCISES catalog so the downstream layers see
+        # the fields they read (`muscles`, `is_backoff`, `progression`, `type`),
+        # which a stored plan row doesn't carry; the plan's own sets / rep_target /
+        # rir_target / rest_seconds then override the catalog defaults, since those
+        # are already philosophy-applied. A name the catalog doesn't know passes
+        # through as-is rather than being dropped.
+        #
+        # Deliberately NOT substituted: a day the MPC turned into rest or pure
+        # cardio (no `exercises` to replace), and a plan with no lifts of its own.
+        # Both mean the plan and today disagree about whether to lift at all, which
+        # is the MPC's call, not the plan's. `blocked` still filters — a lift he
+        # blocked after the plan was approved must not come back through it.
+        if planned_exercises and exercises:
+            _blocked = {canon(n) for n in (blocked_exercises or set())}
+            _pinned = []
+            for _p in planned_exercises:
+                _name = (_p or {}).get("name")
+                if not _name or canon(_name) in _blocked:
+                    continue
+                _row = copy.deepcopy(_EX_BY_NAME.get(_name) or _p)
+                for _k in ("sets", "rep_target", "rir_target", "rest_seconds", "notes"):
+                    if _p.get(_k) is not None:
+                        _row[_k] = _p[_k]
+                _row["name"] = _name
+                _pinned.append(_row)
+            if _pinned:
+                exercises = _pinned
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
         # this morning (his own input, not engine sandbagging). Sore ≥2/5 drops a

@@ -194,8 +194,35 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
 
   const action = prescription.mpc_action;
   const p = prescription.prescription || {};
-  const strength = p.strength_block || [];
-  const cal = p.calisthenics_block || {};
+  const cal0 = p.calisthenics_block || {};
+  // ── One owner for "which lifts": the approved plan ────────────────────────
+  // mpc_prescriber pins today's prescription to program_workouts.exercises, so
+  // in steady state strength_block already equals the plan. It can't on the day
+  // a new week is approved, though — the prescription was computed at 4am
+  // against the plan that was live then, and the next compute is tomorrow. So
+  // join here too: movements come from the plan, and the engine's row for that
+  // movement supplies the autoregulated sets/reps/RIR/load. A planned lift the
+  // prescription has no row for falls back to the plan's own rep/RIR targets
+  // with no load. Today and the Train tab therefore render the same list the
+  // moment a plan changes, not a compute cycle later.
+  const planned = (action === "REST" ? [] : (programWorkout?.exercises || []))
+    .filter((e) => (e.sets || 0) > 0);
+  const engineByName = new Map((p.strength_block || []).map((ex) => [ex.name, ex]));
+  const strength = planned.length
+    ? planned.map((e) => engineByName.get(e.name) || {
+        name: e.name,
+        sets: e.sets,
+        reps: e.rep_target,
+        rir: e.rir_target,
+        load_lbs: 0,
+        rest_seconds: e.rest_seconds,
+        notes: e.notes,
+      })
+    : (p.strength_block || []);
+  // When the plan owns the list, its calisthenics movements are already IN that
+  // list — keeping the prescription's separate block would render pull-ups twice
+  // under two different names.
+  const cal = planned.length ? {} : cal0;
   const run = p.run_block;
   const swim = p.swim_block;
   const interference = prescription.interference || {};

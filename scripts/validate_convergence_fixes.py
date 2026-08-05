@@ -1045,6 +1045,66 @@ for _case, _w in (("two-a-day", _split), ("single session", _windows_for(_LIFT_N
           f"sum={sum(w['pct'] for w in _w)}")
 
 
+# ── F16: the approved plan owns exercise SELECTION (2026-08-05) ───────────────
+# Today renders training_prescription; the Train tab renders program_workouts.
+# Both used to generate their own exercise list and agreed only when their shared
+# inputs happened to agree — on 2026-08-05 the same day was 8 movements on Today
+# and 9 in the plan, only 5 of them shared. mpc_prescriber now passes the plan's
+# exercises into SessionGenerator.generate(planned_exercises=…), which replaces
+# selection and leaves every autoregulation layer (soreness, cut, interference,
+# e1RM load) running on top. This gates that the daily engine can never invent a
+# movement the plan doesn't contain.
+print("\n--- F16: daily prescription pinned to the approved plan ---")
+from engine.session_generator import SessionGenerator as _SG
+
+_PLAN = [
+    {"name": "Bench Press (Top Set)", "sets": 1, "rep_target": "3", "rir_target": 2, "rest_seconds": 180},
+    {"name": "Chest-Supported Row", "sets": 3, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 120},
+    {"name": "Lateral Raise", "sets": 3, "rep_target": "12-15", "rir_target": 0, "rest_seconds": 45},
+]
+
+def _presc(action="STRENGTH", **kw):
+    return _SG().generate(
+        banister_state={}, interference={}, overreach={}, acwr=1.0,
+        strength={"Bench (paused comp)": {"current_e1rm": 300}}, latest_pst={},
+        nutrition_mod={}, vdot_zones={}, mileage_cap=20.0,
+        mpc_action=action, mpc_intensity=1.0, split_override="upper_a", **kw)
+
+_free = _presc()
+_pin = _presc(planned_exercises=_PLAN)
+_pin_names = [e["name"] for e in _pin["strength_block"]]
+_plan_names = {e["name"] for e in _PLAN}
+
+check("F16 an unpinned session really would have differed (the bug is reachable)",
+      {e["name"] for e in _free["strength_block"]} != _plan_names,
+      f"unpinned={[e['name'] for e in _free['strength_block']]}")
+check("F16 the prescription programs no movement outside the approved plan",
+      set(_pin_names) <= _plan_names, f"got {_pin_names}")
+check("F16 every planned lift survives into the prescription",
+      _plan_names <= set(_pin_names), f"missing {_plan_names - set(_pin_names)}")
+check("F16 the plan's order is preserved", _pin_names == [e["name"] for e in _PLAN])
+# Selection is pinned; the daily numbers are still the engine's. The bench top set
+# must come back with a real e1RM-derived load, which the stored plan row has no
+# column for at all — that's the half the daily path still owns.
+_bench = next(e for e in _pin["strength_block"] if e["name"] == "Bench Press (Top Set)")
+check("F16 pinned lifts still get today's autoregulated load", _bench["load_lbs"] > 0,
+      f"load_lbs={_bench['load_lbs']}")
+check("F16 pinned lifts keep the plan's rep/RIR targets",
+      str(_bench["reps"]) == "3" and int(_bench["rir"]) == 2,
+      f"reps={_bench['reps']} rir={_bench['rir']}")
+# A lift blocked after the plan was approved must not come back through it.
+_blocked = _presc(planned_exercises=_PLAN, blocked_exercises={"lateral raise"})
+check("F16 a newly blocked lift is not resurrected by an old plan",
+      "Lateral Raise" not in [e["name"] for e in _blocked["strength_block"]])
+# No plan for today (cold start, or a rest day in the plan) must not blank the
+# session — the daily generator still owns the fallback.
+check("F16 no plan falls back to the generated session",
+      [e["name"] for e in _presc(planned_exercises=[])["strength_block"]]
+      == [e["name"] for e in _free["strength_block"]])
+check("F16 a REST day stays empty regardless of the plan",
+      _presc(action="REST", planned_exercises=_PLAN)["strength_block"] == [])
+
+
 print()
 if all(_results):
     print(f"ALL {len(_results)} CHECKS PASSED")

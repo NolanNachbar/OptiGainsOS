@@ -88,6 +88,13 @@ export function useApprovePendingProgramWeek(programId) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.program(programId) });
       qc.invalidateQueries({ queryKey: ["program-pending", programId] });
+      // The Schedule tab and the Today card both read the week off enrollments,
+      // not the single-program query — without this they keep rendering the
+      // pre-approval plan until a refetch happens to fire.
+      // Prefix only — queryKeys.enrollments(userId) is ['enrollments', userId]
+      // and invalidation matches element-wise, so passing it without the id
+      // would match nothing.
+      qc.invalidateQueries({ queryKey: ["enrollments"] });
     },
   });
 }

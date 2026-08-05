@@ -669,10 +669,11 @@ def main():
     # to classify the split independently, from different log views, and could fight).
     from engine.session_generator import split_from_title
     _today_plan = sb_get("program_workouts", {
-        "select": "cardio_sessions,title", "created_by": f"eq.{USER_ID}",
+        "select": "cardio_sessions,title,exercises", "created_by": f"eq.{USER_ID}",
         "scheduled_date": f"eq.{TODAY}", "limit": "1"})
     _today_run_slot = None
     _today_split = None
+    _today_planned_ex = None
     if _today_plan:
         _cs = _today_plan[0].get("cardio_sessions") or []
         if _cs:
@@ -680,6 +681,14 @@ def main():
         _today_split = split_from_title(_today_plan[0].get("title"))
         if _today_split:
             print(f"  Inheriting planned split for today: {_today_split}")
+        # The approved plan's movement list, not just its split label. Today's card
+        # renders training_prescription and the Train tab renders program_workouts;
+        # letting the daily generator re-pick meant the two showed different
+        # exercises for the same day. The plan owns which lifts, today owns how hard.
+        _today_planned_ex = [e for e in (_today_plan[0].get("exercises") or [])
+                             if int(e.get("sets") or 0) > 0]
+        if _today_planned_ex:
+            print(f"  Inheriting {len(_today_planned_ex)} planned exercises for today")
 
     # Sessions-per-muscle already banked THIS CALENDAR WEEK, counted off the real
     # exercise→muscle map. Together with weekly_freq_targets this is what the
@@ -724,6 +733,7 @@ def main():
         # weekly generator stamps it here so the daily card agrees.
         spec_muscle = (((guardrail_dict or {}).get("synthesis_state")
                         or {}).get("spec_muscle")),
+        planned_exercises = _today_planned_ex,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

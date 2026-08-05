@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useEnrollments } from "@/hooks/useProgramQueries";
+import PendingWeekBanner from "@/components/program/PendingWeekBanner";
 import { useProfile } from "@/hooks/useUserQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
@@ -306,6 +307,8 @@ export default function WeeklySchedule() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-6">
+      <PendingWeekBanner programId={activeEnrollment?.program_id} className="mb-3" />
+
       {/* Week nav */}
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
         <button
