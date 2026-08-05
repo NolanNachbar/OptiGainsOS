@@ -2003,6 +2003,7 @@ class SessionGenerator:
         # Both mean the plan and today disagree about whether to lift at all, which
         # is the MPC's call, not the plan's. `blocked` still filters — a lift he
         # blocked after the plan was approved must not come back through it.
+        selection_pinned = False
         if planned_exercises and exercises:
             _blocked = {canon(n) for n in (blocked_exercises or set())}
             _pinned = []
@@ -2018,6 +2019,7 @@ class SessionGenerator:
                 _pinned.append(_row)
             if _pinned:
                 exercises = _pinned
+                selection_pinned = True
 
         # Per-muscle soreness → trim sets on a muscle the athlete logged as sore
         # this morning (his own input, not engine sandbagging). Sore ≥2/5 drops a
@@ -2143,7 +2145,15 @@ class SessionGenerator:
                 else ex.get("notes", ""),
             }
 
-            if is_cal:
+            # A pinned session is the approved plan, whole. Splitting pull-ups and
+            # push-ups off into calisthenics_block would mean the plan's list lives
+            # in two places, so strength_block no longer equals the plan and the
+            # Train tab's single list has no one block to match. The UI already
+            # drops calisthenics_block whenever it renders the plan, so keeping it
+            # here would only ever render the same movement twice or not at all.
+            # `is_cal` still stands above, where it governs the interference
+            # back-off: calisthenics stay AMPK-prioritised either way.
+            if is_cal and not selection_pinned:
                 key = "pullups" if "pull-up" in name.lower() else ("pushups" if "push-up" in name.lower() else ("situps" if "sit-up" in name.lower() else "other"))
                 if key != "other":
                     rep_val = 10
