@@ -94,7 +94,11 @@ export default function Today() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("workout_sessions")
-        .select("start_time, end_time, status")
+        // No end_time column on workout_sessions (and nothing here reads one) —
+        // selecting it 400'd the whole query, so todaySessions was always empty
+        // and carb timing silently fell back to the assumed 8am/4pm split even
+        // after a session was logged.
+        .select("start_time, status")
         .eq("created_by", user.id)
         .eq("status", "completed")
         .gte("start_time", `${today}T00:00:00`)
