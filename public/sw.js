@@ -89,13 +89,17 @@ self.addEventListener("push", (event) => {
     payload = { title: "OptiGainsOS", body: event.data.text() };
   }
   const { title, body, url = BASE + "dashboard", icon = BASE + "optigains-icon.svg" } = payload;
+  // Edge functions send app-relative paths ("/physique", "/"). On GitHub Pages the
+  // app is served under a sub-path, so a bare "/foo" 404s. Rebase anything that
+  // isn't already under BASE.
+  const target = url.startsWith(BASE) ? url : BASE + String(url).replace(/^\/+/, "");
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
       badge: BASE + "optigains-icon.svg",
-      data: { url },
+      data: { url: target },
       vibrate: [200, 100, 200],
     })
   );

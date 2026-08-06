@@ -629,17 +629,27 @@ def pick_run_slot(split: str, action: str, quality_placed: int, long_placed: int
         return "long"                       # then the long aerobic run
     return "easy"
 
+# `note` is used when VDOT is validated by a real timed effort. `hr_note` is the
+# fallback when it isn't: prescribe by HR zone and effort, never by a pace number
+# derived from an HR-corrected estimate (which is how the engine came to prescribe
+# 6x800 at 5:46/mi — faster than 1.5-mile goal race pace). See the VDOT block in
+# compute_athlete_state.py.
 _SLOT_SPEC = {
     "interval":  {"zone": "Z4-Z5", "base_dur": 45, "pace_key": "interval_pace",
-                  "note": "Intervals. 6x800m or 5x1km w/ 90s jog. Target {pace}/mi."},
+                  "note": "Intervals. 6x800m or 5x1km w/ 90s jog. Target {pace}/mi.",
+                  "hr_note": "Intervals. 6x800m or 5x1km w/ 90s jog. Run each rep at hard-but-repeatable effort (Z4-Z5, ~3k-5k race effort) — hold the SAME pace on the last rep as the first. Note the split you actually hold."},
     "threshold": {"zone": "Z3-Z4", "base_dur": 40, "pace_key": "threshold_pace",
-                  "note": "Threshold. 20-25 min continuous or 3x8 min cruise. Target {pace}/mi."},
+                  "note": "Threshold. 20-25 min continuous or 3x8 min cruise. Target {pace}/mi.",
+                  "hr_note": "Threshold. 20-25 min continuous or 3x8 min cruise. Comfortably hard — the fastest pace you could hold for an hour. Keep HR in Z3-Z4."},
     "long":      {"zone": "Z2",    "base_dur": 80, "pace_key": "easy_pace",
-                  "note": "Long aerobic run. Conversational. Target {pace}/mi."},
+                  "note": "Long aerobic run. Conversational. Target {pace}/mi.",
+                  "hr_note": "Long aerobic run. Conversational the whole way — keep HR in Z2, let pace fall where it must."},
     "easy":      {"zone": "Z2",    "base_dur": 50, "pace_key": "easy_pace",
-                  "note": "Aerobic base. Nasal breathing. Target {pace}/mi."},
+                  "note": "Aerobic base. Nasal breathing. Target {pace}/mi.",
+                  "hr_note": "Aerobic base. Nasal breathing, HR in Z2. If you can't nasal-breathe it, slow down."},
     "recovery":  {"zone": "Z1",    "base_dur": 30, "pace_key": "recovery_pace",
-                  "note": "Keep HR in Z1 on your watch — let pace fall where it must (~{pace}/mi or slower). Walk if HR drifts up."},
+                  "note": "Keep HR in Z1 on your watch — let pace fall where it must (~{pace}/mi or slower). Walk if HR drifts up.",
+                  "hr_note": "Keep HR in Z1 on your watch — let pace fall where it must. Walk if HR drifts up."},
 }
 
 
@@ -670,8 +680,15 @@ def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss:
     slot = _RUN_SLOTS[idx]
     spec = _SLOT_SPEC[slot]
 
-    paces = VDOTEngine(current_vdot=float(vdot) if vdot else 45.0).pace_zones()
-    pace = paces.get(spec["pace_key"], "—")
+    # vdot is None when no real timed effort has validated it. Prescribe by HR/effort
+    # rather than inventing a pace off an unvalidated estimate.
+    if vdot:
+        paces = VDOTEngine(current_vdot=float(vdot)).pace_zones()
+        pace  = paces.get(spec["pace_key"], "—")
+        note  = spec["note"].format(pace=pace)
+    else:
+        pace  = None
+        note  = spec["hr_note"] + " (No timed 1.5-mile on file — log one to unlock pace targets.)"
 
     soreness_scalar = max(0.6, 1.0 - 0.1 * quad_soreness_avg)
     readiness_scale = 1.0 + 0.1 * readiness_z
@@ -685,7 +702,7 @@ def _build_cardio(sim_date: date, intensity: float, ampk: float, recent_run_tss:
         "zone":            spec["zone"],
         "duration_minutes": duration,
         "pace":            pace,
-        "notes":           f"Garmin {spec['zone']}. " + spec["note"].format(pace=pace),
+        "notes":           f"Garmin {spec['zone']}. " + note,
     }]
 
 
@@ -1914,8 +1931,9 @@ class SessionGenerator:
         # Build readiness_z
         readiness_z = float(overreach.get("hrv_z_3d") or 0.0)
 
-        # Retrieve VDOT
-        vdot = vdot_zones.get("current_vdot", 45.0)
+        # Retrieve VDOT — but only if a real timed effort validated it. Unvalidated
+        # (HR-corrected estimate) → None, and the run layer prescribes by HR zone.
+        vdot = vdot_zones.get("current_vdot", 45.0) if vdot_zones.get("validated") else None
 
         # Decide the ONE split that drives exercises AND the displayed title, so the
         # two can never disagree (the old code built exercises from split_override but

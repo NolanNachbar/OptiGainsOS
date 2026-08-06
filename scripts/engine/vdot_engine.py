@@ -154,23 +154,43 @@ class VDOTEngine:
         self.vdot         = current_vdot
         self.base_mileage = base_mileage   # baseline weekly miles
         self._vdot_history: list = []      # rolling list of computed VDOTs
+        # True only when VDOT came from a real timed all-out effort. An
+        # HR-corrected estimate off easy runs is a guess and must NOT be turned
+        # into a pace target — that is how the engine came to prescribe 800s
+        # faster than 1.5-mile goal race pace (2026-08-06).
+        self.validated    = False
+        self.last_effort_date = None   # date of the last logged timed effort
 
     # ── VDOT update ───────────────────────────────────────────────────────────
 
-    def record_effort(self, distance_m: float, time_secs: float):
+    def record_effort(self, distance_m: float, time_secs: float, effort_date=None):
         """
         Record a timed run and update VDOT.
         Only valid for efforts ≥ 800m (shorter runs don't reflect aerobic capacity).
+
+        `effort_date` makes this idempotent: the daily compute re-reads the same
+        latest PST row every morning, and without the guard it would append the
+        same effort to the rolling history over and over.
         """
         if distance_m < 800:
+            return
+        if effort_date is not None and str(effort_date) == str(self.last_effort_date):
             return
         new_vdot = vdot_from_effort(distance_m, time_secs)
         if new_vdot < 20 or new_vdot > 85:
             return   # sanity check — outside human range
+        # First real effort discards any HR-corrected estimates sitting in the
+        # history — averaging a measurement against guesses re-imports the bias
+        # this whole gate exists to remove.
+        if not self.validated:
+            self._vdot_history = []
         self._vdot_history.append(new_vdot)
         # Rolling 3-effort average for noise resistance
         recent     = self._vdot_history[-3:]
         self.vdot  = round(sum(recent) / len(recent), 1)
+        self.validated = True
+        if effort_date is not None:
+            self.last_effort_date = str(effort_date)
 
     def set_from_recent_runs(self, runs: list, hr_max: float,
                              window: int = 4) -> Optional[float]:
@@ -218,6 +238,7 @@ class VDOTEngine:
         median = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2.0
         self._vdot_history = ests
         self.vdot = round(median, 1)
+        self.validated = False    # estimate, not a measurement
         return self.vdot
 
     # ── Pace zones ────────────────────────────────────────────────────────────
@@ -241,6 +262,7 @@ class VDOTEngine:
 
         return {
             "current_vdot":      self.vdot,
+            "validated":         self.validated,
             "target_vdot":       target_vdot,
             "vdot_gap":          round(target_vdot - self.vdot, 1),
             "pst_required_vdots": pst_vdots,
@@ -294,6 +316,8 @@ class VDOTEngine:
             "vdot":          self.vdot,
             "base_mileage":  self.base_mileage,
             "vdot_history":  self._vdot_history[-10:],
+            "validated":     self.validated,
+            "last_effort_date": self.last_effort_date,
         }
 
     @classmethod
@@ -303,4 +327,6 @@ class VDOTEngine:
             base_mileage=d.get("base_mileage", 15.0),
         )
         obj._vdot_history = d.get("vdot_history", [])
+        obj.validated     = bool(d.get("validated", False))
+        obj.last_effort_date = d.get("last_effort_date")
         return obj

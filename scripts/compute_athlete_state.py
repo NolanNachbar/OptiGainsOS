@@ -672,15 +672,27 @@ def compute_endurance(recovery_rows: list, pst_tests: list) -> dict:
             "situps":       t.get("situps"),
             "pullups":      t.get("pullups"),
             "run_seconds":  t.get("run_seconds"),
+            "plank_seconds": t.get("plank_seconds"),
         }
 
-        # PST targets (BUD/S competitive minimums)
+        # PST targets (BUD/S competitive minimums), plus the forearm plank.
+        #
+        # Plank added 2026-08-06 (Nolan's call). It is one of the three events
+        # actually SCORED at Navy OCS (push-ups, forearm plank, 1.5-mile run) and
+        # was the only scored event missing from this set. See
+        #   BBrain/10-Projects/OptiGains/Navy OCS Fitness Standards - Research 2026-08-05.md
+        #
+        # [TUNABLE — UNVERIFIED] The official PRT plank scoring tables (Guide-5A,
+        # Dec 2025) are Akamai-blocked and were never retrieved, so the target and
+        # competitive times below are PLACEHOLDERS, not sourced standards. Replace
+        # them once the real table for a male, age 20-24 is in hand.
         PST_TARGETS = {
-            "swim_seconds": {"target": 540, "competitive": 480, "lower_is_better": True},
-            "run_seconds":  {"target": 570, "competitive": 540, "lower_is_better": True},
-            "pushups":      {"target": 100, "lower_is_better": False},
-            "situps":       {"target": 100, "lower_is_better": False},
-            "pullups":      {"target": 20,  "lower_is_better": False},
+            "swim_seconds":  {"target": 540, "competitive": 480, "lower_is_better": True},
+            "run_seconds":   {"target": 570, "competitive": 540, "lower_is_better": True},
+            "pushups":       {"target": 100, "lower_is_better": False},
+            "situps":        {"target": 100, "lower_is_better": False},
+            "pullups":       {"target": 20,  "lower_is_better": False},
+            "plank_seconds": {"target": 180, "competitive": 240, "lower_is_better": False},
         }
 
         readiness_pcts = []
@@ -688,11 +700,11 @@ def compute_endurance(recovery_rows: list, pst_tests: list) -> dict:
             val = t.get(field)
             if val is None:
                 continue
+            comp = cfg.get("competitive", cfg["target"])
             if cfg["lower_is_better"]:
-                comp = cfg.get("competitive", cfg["target"])
                 pct = min(comp / val * 100, 100) if val > 0 else 0
             else:
-                pct = min(val / cfg["target"] * 100, 100)
+                pct = min(val / comp * 100, 100)
             readiness_pcts.append(pct)
 
         if readiness_pcts:
@@ -1490,21 +1502,53 @@ def main():
         print(f"  Cellular: AMPK={cellular_out['ampk']:.3f}  mTORC1={cellular_out['mtorc1']:.3f}  "
               f"interference={cellular_out['interference_level']}")
 
-        # 7. VDOT: derive from real Garmin runs (HR-corrected for effort).
-        # Garmin run data lives in garmin_activities with avg_hr, so submax base
-        # runs can be effort-corrected via HR instead of being mistaken for max
-        # efforts (which would lowball VDOT).
-        hr_max = max(
-            float(max((float(r.get("max_hr") or 0) for r in garmin_runs), default=0)),
-            round(208.0 - 0.7 * float(profile.get("age") or 25)),
-        )
-        new_vdot = vdot_eng.set_from_recent_runs(garmin_runs, hr_max)
-        if new_vdot is not None:
-            print(f"  VDOT derived from {len(garmin_runs)} Garmin runs "
-                  f"(HRmax={hr_max:.0f}) → VDOT={new_vdot}")
+        # 7. VDOT. A real timed effort is the ONLY thing that validates it.
+        #
+        # Nolan's call, 2026-08-06: the HR-corrected estimate off easy Garmin runs
+        # was producing VDOT ~55 against a target of ~51, i.e. the engine believed
+        # he had already beaten both run targets and prescribed above them (6x800
+        # at 5:46/mi, faster than 1.5-mile goal race pace). HR-correction of submax
+        # base runs is an ESTIMATE, not a measurement, and it inherits every error
+        # in the HRmax guess below. So it no longer unlocks pace prescriptions.
+        #
+        # Precedence: logged timed effort > HR-corrected estimate. Either way we
+        # carry `validated` forward so the run layer knows whether the pace numbers
+        # are trustworthy; when they aren't, sessions fall back to HR-zone
+        # prescription (see session_generator._build_cardio).
+        #
+        # HRmax: prefer OBSERVED max over the age formula. The old code took the
+        # max() of the two, which inflates HRmax whenever the formula overshoots
+        # his real max — and an inflated HRmax deflates %HRmax, which inflates the
+        # derived VDOT. Formula is the fallback only when no Garmin max_hr exists.
+        observed_hr_max = float(max((float(r.get("max_hr") or 0) for r in garmin_runs), default=0))
+        age = float(profile.get("age") or 25)
+        hr_max = observed_hr_max if observed_hr_max > 0 else round(208.0 - 0.7 * age)
+
+        # A logged PST 1.5-mile is a real all-out timed effort: 2414 m.
+        timed_effort = None
+        for t in pst_tests:                       # newest first
+            secs = t.get("run_seconds")
+            if secs:
+                timed_effort = (float(secs), t.get("test_date") or t.get("date"))
+                break
+
+        vdot_validated = False
+        if timed_effort:
+            vdot_eng.record_effort(2414.0, timed_effort[0], effort_date=timed_effort[1])
+            vdot_validated = True
+            print(f"  VDOT from logged 1.5-mile time trial "
+                  f"({timed_effort[0]:.0f}s on {timed_effort[1]}) → VDOT={vdot_eng.vdot}")
         else:
-            print(f"  VDOT: no qualifying Garmin runs; holding VDOT={vdot_eng.vdot}")
-        vdot_zones_out = vdot_eng.pace_zones()
+            new_vdot = vdot_eng.set_from_recent_runs(garmin_runs, hr_max)
+            if new_vdot is not None:
+                print(f"  VDOT ESTIMATE from {len(garmin_runs)} Garmin runs "
+                      f"(HRmax={hr_max:.0f}) → VDOT={new_vdot} [UNVALIDATED — "
+                      f"log a timed 1.5-mile to unlock pace targets]")
+            else:
+                print(f"  VDOT: no qualifying Garmin runs; holding VDOT={vdot_eng.vdot} "
+                      f"[UNVALIDATED]")
+
+        vdot_zones_out = vdot_eng.pace_zones()   # carries `validated` through
         print(f"  VDOT: {vdot_zones_out['current_vdot']} (target {vdot_zones_out['target_vdot']}, "
               f"gap {vdot_zones_out['vdot_gap']})")
 

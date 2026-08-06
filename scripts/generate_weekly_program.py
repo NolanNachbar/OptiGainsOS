@@ -593,7 +593,10 @@ def main():
     latest_athlete = athlete_rows[0] if athlete_rows else {}
     cellular_state  = latest_athlete.get("cellular") or latest_athlete.get("cellular_state") or {}
     vdot_zones      = latest_athlete.get("vdot_zones") or {}
-    vdot            = latest_athlete.get("vdot") or vdot_zones.get("current_vdot")
+    # Only a timed-effort-validated VDOT may drive pace prescriptions; otherwise the
+    # weekly runs go out as HR-zone work. See compute_athlete_state.py step 7.
+    vdot            = (latest_athlete.get("vdot") or vdot_zones.get("current_vdot")) \
+                      if vdot_zones.get("validated") else None
     
     # Load profile to obtain maintenance_kcal
     profile_rows = sb_get("user_profiles", {"select": "*", "limit": "1"})
