@@ -13,8 +13,15 @@ Polarized distribution: 80% easy (≤70% VO2max), 20% threshold+ (≥88% VO2max)
 This maximizes aerobic adaptation while limiting joint/CNS stress that would
 blunt concurrent strength gains.
 """
+import datetime
 import math
 from typing import Optional
+
+# Max gap (days) between two timed efforts for them to be averaged together.
+# Inside a block, averaging absorbs GPS and pacing noise. Across a long layoff or
+# a full training block it just lags real fitness change, so older efforts are
+# dropped instead. [ENG-tunable]
+EFFORT_BLOCK_DAYS = 21
 
 # PST targets (Nolan-specific, Aug 31 2026 deadline)
 PST_RUN_TARGETS = {
@@ -184,6 +191,20 @@ class VDOTEngine:
         # this whole gate exists to remove.
         if not self.validated:
             self._vdot_history = []
+        # The rolling-3 average exists to absorb GPS/pacing noise between efforts
+        # in the SAME training block. Across a long gap it does the opposite: it
+        # drags a genuine improvement halfway back to a months-old time (a 10:00
+        # then a 9:30 would read as VDOT 46.3, worse than the 9:30 alone), which
+        # understates fitness and inflates vdot_gap into the PST multiplier. Past
+        # EFFORT_BLOCK_DAYS the old efforts are a different athlete; drop them.
+        if effort_date is not None and self.last_effort_date:
+            try:
+                gap = (datetime.date.fromisoformat(str(effort_date)[:10])
+                       - datetime.date.fromisoformat(str(self.last_effort_date)[:10])).days
+                if abs(gap) > EFFORT_BLOCK_DAYS:
+                    self._vdot_history = []
+            except ValueError:
+                pass
         self._vdot_history.append(new_vdot)
         # Rolling 3-effort average for noise resistance
         recent     = self._vdot_history[-3:]
