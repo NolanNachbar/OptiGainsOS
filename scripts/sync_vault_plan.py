@@ -86,10 +86,17 @@ def _req(method, path, body=None, extra_headers=None):
 
 
 def _resolve_user_id():
-    rows = _req("GET", "user_profiles?select=created_by&limit=1")
-    if rows:
-        return rows[0]["created_by"]
-    print("ERROR: USER_ID not set and no user_profiles row found.")
+    """Refuse to guess between the real athlete and the seeded dev/test profile —
+    the service-role key bypasses RLS, so an unordered `limit=1` is a coin flip."""
+    rows = _req("GET", "user_profiles?select=created_by")
+    ids  = sorted({r["created_by"] for r in rows if r.get("created_by")})
+    if len(ids) == 1:
+        return ids[0]
+    if not ids:
+        print("ERROR: USER_ID not set and no user_profiles row found.")
+    else:
+        print(f"ERROR: {len(ids)} athletes in user_profiles; refusing to guess. "
+              f"Set the USER_ID env var explicitly.")
     sys.exit(1)
 
 

@@ -90,8 +90,16 @@ TODAY = datetime.date.today().isoformat()
 
 
 def _resolve_user_id() -> str:
-    """Look up the single user's ID from user_profiles when USER_ID env var is not set."""
-    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by&limit=1"
+    """Fallback when the USER_ID env var is absent (CI passes it as a secret).
+
+    This used to be `user_profiles?select=created_by&limit=1` — UNORDERED and
+    unfiltered. There are two profiles in this database: the real athlete and a
+    seeded dev/test account, and the service-role key bypasses RLS, so that query
+    could silently resolve to the test fixture and run the whole engine against
+    its training history. Refuse to guess: fail loudly and make the caller set
+    USER_ID. (Matches resolve_user_id() in generate_weekly_program.py.)
+    """
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by"
     req = urllib.request.Request(url, headers={
         "apikey":        SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -99,11 +107,17 @@ def _resolve_user_id() -> str:
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             rows = json.loads(resp.read())
-            if rows:
-                return rows[0]["created_by"]
     except Exception as e:
         print(f"ERROR: Could not resolve USER_ID from user_profiles: {e}")
-    print("ERROR: USER_ID not set and no user_profiles row found.")
+        sys.exit(1)
+    ids = sorted({r["created_by"] for r in rows if r.get("created_by")})
+    if len(ids) == 1:
+        return ids[0]
+    if not ids:
+        print("ERROR: USER_ID not set and no user_profiles row found.")
+    else:
+        print(f"ERROR: {len(ids)} athletes in user_profiles; refusing to guess which "
+              f"one this run is for. Set the USER_ID env var explicitly.")
     sys.exit(1)
 
 

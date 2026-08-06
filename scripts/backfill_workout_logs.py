@@ -61,10 +61,14 @@ def sb_get(table, params):
 
 
 def resolve_user_id():
-    rows = sb_get("user_profiles", {"select": "created_by", "limit": "1"})
-    if rows:
-        return rows[0]["created_by"]
-    print("ERROR: could not resolve USER_ID"); sys.exit(1)
+    """Refuse to guess between the real athlete and the seeded dev/test profile —
+    the service-role key bypasses RLS, so an unordered `limit=1` is a coin flip."""
+    rows = sb_get("user_profiles", {"select": "created_by"})
+    ids  = sorted({r["created_by"] for r in rows if r.get("created_by")})
+    if len(ids) == 1:
+        return ids[0]
+    print(f"ERROR: could not resolve USER_ID ({len(ids)} profiles found); "
+          f"set the USER_ID env var explicitly."); sys.exit(1)
 
 
 def build_logs(rows, user_id):

@@ -66,7 +66,10 @@ if not all([SUPABASE_URL, SUPABASE_KEY]):
 
 
 def _resolve_user_id() -> str:
-    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by&limit=1"
+    """Fallback when USER_ID is unset. Two profiles live in this database (the real
+    athlete and a seeded dev/test account) and the service-role key bypasses RLS,
+    so an unordered `limit=1` could resolve to the test fixture. Refuse to guess."""
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by"
     req = urllib.request.Request(url, headers={
         "apikey":        SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -74,10 +77,14 @@ def _resolve_user_id() -> str:
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             rows = json.loads(resp.read())
-            if rows:
-                return rows[0]["created_by"]
     except Exception as e:
         print(f"ERROR: Could not resolve USER_ID: {e}")
+        sys.exit(1)
+    ids = sorted({r["created_by"] for r in rows if r.get("created_by")})
+    if len(ids) == 1:
+        return ids[0]
+    print(f"ERROR: {len(ids)} athletes in user_profiles; refusing to guess. "
+          f"Set the USER_ID env var explicitly.")
     sys.exit(1)
 
 

@@ -67,10 +67,21 @@ def sync_garmin():
             "Prefer": "resolution=merge-duplicates" # Upsert behavior
         }
         
-        # We get the first user profile to resolve the UID (Personal OS model)
-        user_res = requests.get(f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by&limit=1", headers=headers)
-        user_id = user_res.json()[0]['created_by']
-        
+        # Resolve the UID (Personal OS model). Prefer the pinned USER_ID; only fall
+        # back to the DB when exactly one profile exists. Two live here (the real
+        # athlete and a seeded dev/test account) and the service-role key bypasses
+        # RLS, so the old unordered `limit=1` could file Garmin recovery data under
+        # the test fixture.
+        user_id = os.getenv("USER_ID")
+        if not user_id:
+            user_res = requests.get(f"{SUPABASE_URL}/rest/v1/user_profiles?select=created_by", headers=headers)
+            ids = sorted({r['created_by'] for r in user_res.json() if r.get('created_by')})
+            if len(ids) != 1:
+                print(f"Error: {len(ids)} user_profiles rows; set USER_ID explicitly.")
+                sys.exit(1)
+            user_id = ids[0]
+
+
         payload["created_by"] = user_id
         
         print(f"Pushing to Supabase for user {user_id}...")
