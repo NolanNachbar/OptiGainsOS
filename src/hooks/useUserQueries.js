@@ -5,6 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys } from "@/lib/queryKeys";
 import { format, subDays } from "date-fns";
 
+// One shared empty array, so "no rows" keeps a stable identity across renders
+// and doesn't retrigger every memo downstream of it.
+const NO_ROWS = [];
+
 export function useProfile() {
   const { user } = useAuth();
 
@@ -130,7 +134,7 @@ export function useCustomFoods() {
 export function useFoodPortions() {
   const { user } = useAuth();
 
-  const { data: portions = [], isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: queryKeys.foodPortions(user?.id),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -139,15 +143,23 @@ export function useFoodPortions() {
         .eq('created_by', user.id)
         .order('sort_order', { ascending: true });
       // A missing table (migration not yet applied) degrades to "no portions"
-      // rather than taking the whole food log down with it.
+      // rather than taking the whole food log down with it. `failed` keeps that
+      // empty list distinguishable from a genuinely portion-less account —
+      // writers must never reconcile-delete against an empty list they only got
+      // because the read broke.
       if (error) {
         console.warn('food_portions unavailable:', error.message);
-        return [];
+        return { rows: [], failed: true };
       }
-      return data || [];
+      return { rows: data || [], failed: false };
     },
     enabled: !!user,
   });
+
+  const portions = data?.rows || NO_ROWS;
+  // Unresolved counts as unavailable too: a query still in flight has the same
+  // empty-list-that-means-nothing problem as one that errored.
+  const portionsUnavailable = !data || data.failed;
 
   const portionsByFood = useMemo(() => {
     const map = {};
@@ -158,7 +170,7 @@ export function useFoodPortions() {
     return map;
   }, [portions]);
 
-  return { portions, portionsByFood, isLoading, error };
+  return { portions, portionsByFood, portionsUnavailable, isLoading };
 }
 
 export function useBodyWeightEntries() {

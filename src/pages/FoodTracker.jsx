@@ -259,6 +259,11 @@ export default function FoodTracker() {
   // write straight through for a saved food; for a new one they're held here and
   // flushed the moment it's saved.
   const [activeFoodId, setActiveFoodId] = useState(null);
+  // True once the athlete has actually touched the portion list in this form.
+  // syncPortions reconciles by deletion, so it must only ever run against a list
+  // he edited — never against one that merely happens to be empty because the
+  // read hadn't landed.
+  const [portionsDirty, setPortionsDirty] = useState(false);
   const [portionDraft, setPortionDraft] = useState({ label: "", grams: "" });
   const [portionsExpanded, setPortionsExpanded] = useState(false);
   // Copy a previous day's log forward.
@@ -433,6 +438,11 @@ export default function FoodTracker() {
     daily_carbs_goal: DEFAULT_GOALS.carbs,
     daily_fats_goal: DEFAULT_GOALS.fats,
   });
+  // Fiber sits outside goalForm on purpose: the TDEE auto-calculate and
+  // MacroGoalsEditor both replace that object wholesale, and fiber isn't part of
+  // the calorie split they're solving. Empty string means "no goal set" — the
+  // DRI ratio then supplies one.
+  const [fiberGoal, setFiberGoal] = useState("");
   const [goalFormInitialized, setGoalFormInitialized] = useState(false);
   const [proteinPerLb, setProteinPerLb] = useState(0.8);
 
@@ -444,6 +454,7 @@ export default function FoodTracker() {
         daily_carbs_goal: profile.daily_carbs_goal || DEFAULT_GOALS.carbs,
         daily_fats_goal: profile.daily_fats_goal || DEFAULT_GOALS.fats,
       });
+      setFiberGoal(profile.daily_fiber_goal ? String(profile.daily_fiber_goal) : "");
       // Initialize protein multiplier from saved goal / current weight, or default by goal
       const goals = Array.isArray(profile.primary_goal) ? profile.primary_goal : [profile.primary_goal || ''];
       const isHighProteinGoal = goals.some(g => {
@@ -538,7 +549,18 @@ export default function FoodTracker() {
   }, [baseMacros, isUsdaFood]);
 
   const { customFoods } = useCustomFoods();
-  const { portionsByFood } = useFoodPortions();
+  const { portionsByFood, portionsUnavailable } = useFoodPortions();
+
+  // The portion query resolves after a food can already be picked. A food chosen
+  // in that window would sit on an empty list: its named units missing from the
+  // picker, and an empty list is exactly what a save would reconcile-delete
+  // against. Adopt the server's list the moment it lands, unless the form is
+  // holding edits that haven't been written yet.
+  useEffect(() => {
+    if (!activeFoodId || portionsDirty || portionsUnavailable) return;
+    const server = portionsByFood[activeFoodId];
+    if (server) setActivePortions((prev) => (prev === server ? prev : server));
+  }, [activeFoodId, portionsByFood, portionsDirty, portionsUnavailable]);
   // Favorites first, then alphabetical. A starred food stops sinking out of
   // reach the moment it hasn't been eaten in a week.
   const sortedCustomFoods = useMemo(() => {
@@ -577,9 +599,16 @@ export default function FoodTracker() {
       // holding now that there's a row to hang them off.
       if (saved?.id) {
         setActiveFoodId(saved.id);
-        syncPortions(saved.id, activePortions).catch((e) =>
-          toast.error(`Saved the food, but its portions didn't stick: ${e.message}`)
-        );
+        // Only when he edited them here. An untouched form's list is a copy of
+        // the server's at best and empty at worst, and syncing it would delete
+        // portions he never asked to lose.
+        if (portionsDirty) {
+          syncPortions(saved.id, activePortions)
+            .then(() => setPortionsDirty(false))
+            .catch((e) =>
+              toast.error(`Saved the food, but its portions didn't stick: ${e.message}`)
+            );
+        }
       }
     },
   });
@@ -736,6 +765,7 @@ export default function FoodTracker() {
     );
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
+    setPortionsDirty(false);
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
@@ -783,6 +813,7 @@ export default function FoodTracker() {
     // no portions until the athlete saves them to My Foods.
     setActiveFoodId(food.id || null);
     setActivePortions(food.id ? (portionsByFood[food.id] || []) : []);
+    setPortionsDirty(false);
 
     // Set default amount: 100 for g/ml, otherwise 1
     const defaultAmount = ['g', 'ml'].includes(originalUnit) ? 100 : 1;
@@ -1155,6 +1186,7 @@ const handleSaveMealTemplate = () => {
     );
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
+    setPortionsDirty(false);
     // Recover grams-per-unit from the total weight the entry recorded, so editing
     // a logged serving still shows what it weighs.
     setFoodServingSizeGrams(
@@ -1244,11 +1276,18 @@ const handleSaveMealTemplate = () => {
   // property of the food, not of the entry being logged, so it shouldn't wait on
   // whether this particular log gets submitted.
   const persistPortions = (next) => {
+    // Without a trustworthy read of what's already stored, a write would
+    // reconcile against a list that only looks empty and delete real rows.
+    if (portionsUnavailable) {
+      toast.error("Can't load this food's portions right now, so they can't be edited yet.");
+      return;
+    }
     setActivePortions(next);
+    setPortionsDirty(true);
     if (activeFoodId) {
-      syncPortions(activeFoodId, next).catch((e) =>
-        toast.error(`Couldn't save the portion: ${e.message}`)
-      );
+      syncPortions(activeFoodId, next)
+        .then(() => setPortionsDirty(false))
+        .catch((e) => toast.error(`Couldn't save the portion: ${e.message}`));
     }
   };
 
@@ -1298,6 +1337,7 @@ const handleSaveMealTemplate = () => {
     setServingHint(null);
     setIsUsdaFood(false);
     setActivePortions([]);
+    setPortionsDirty(false);
     setActiveFoodId(null);
     setPortionDraft({ label: "", grams: "" });
     setPortionsExpanded(false);
@@ -1338,6 +1378,7 @@ const handleSaveMealTemplate = () => {
     setBaseMacros(baseMacroValues);
     setActiveFoodId(null);
     setActivePortions([]);
+    setPortionsDirty(false);
     setNewFood({
       ...newFood,
       food_name: food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
@@ -1386,6 +1427,8 @@ const handleSaveMealTemplate = () => {
           carbs_grams: entry.carbs_grams,
           fats_grams: entry.fats_grams,
           fiber_grams: entry.fiber_grams ?? null,
+          // Eating it again costs the same as eating it the first time.
+          cost_usd: entry.cost_usd ?? null,
           date: selectedDate,
           created_by: user.id,
           // Copies are logged against the meal's usual clock time, not the
@@ -3264,6 +3307,8 @@ const handleSaveMealTemplate = () => {
               setProteinPerLb={setProteinPerLb}
               goalForm={goalForm}
               setGoalForm={setGoalForm}
+              fiberGoal={fiberGoal}
+              setFiberGoal={setFiberGoal}
               navigate={navigate}
               setShowGoalsModal={setShowGoalsModal}
               setShowStatsModal={setShowStatsModal}
@@ -3279,6 +3324,9 @@ const handleSaveMealTemplate = () => {
                 daily_protein_goal: parseInt(goalForm.daily_protein_goal) || 0,
                 daily_carbs_goal:   parseInt(goalForm.daily_carbs_goal)   || 0,
                 daily_fats_goal:    parseInt(goalForm.daily_fats_goal)    || 0,
+                // Null clears it and hands fiber back to the DRI ratio, which is
+                // a real choice — don't coerce a blank field to 0 g of fiber.
+                daily_fiber_goal:   fiberGoal === "" ? null : (parseInt(fiberGoal) || null),
               })}
             >
               {updateGoalsMutation.isPending
@@ -3783,6 +3831,7 @@ function GoalsFormContent({
   activePhase, tdee, profile, latestWeight,
   proteinPerLb, setProteinPerLb,
   goalForm, setGoalForm,
+  fiberGoal, setFiberGoal,
   navigate, setShowGoalsModal, setShowStatsModal,
 }) {
 
@@ -3895,6 +3944,30 @@ function GoalsFormContent({
       {/* Save Goals lives in the dialog's pinned non-scrolling footer (parent),
           so the primary action stays reachable without scrolling the form. */}
       <MacroGoalsEditor values={goalForm} onChange={setGoalForm} />
+
+      {/* Fiber is deliberately not part of the macro split above — it's already
+          counted inside carbs, so giving it a slider there would double-count
+          the calories. Left blank it follows the DRI's 14 g per 1000 kcal
+          (Institute of Medicine, 2005), which scales with the calorie target
+          instead of sitting at a fixed number through a cut. */}
+      <div className="glass-inset rounded-xl p-4 space-y-2">
+        <Label htmlFor="fiber-goal">Fiber goal (g/day)</Label>
+        <Input
+          id="fiber-goal"
+          type="number"
+          min="0"
+          step="1"
+          inputMode="numeric"
+          value={fiberGoal}
+          onChange={(e) => setFiberGoal(e.target.value)}
+          placeholder={String(Math.round(((parseInt(goalForm.daily_calorie_goal) || 0) / 1000) * 14))}
+        />
+        <p className="text-xs text-ink-faint">
+          Leave blank to track 14 g per 1,000 kcal (
+          {Math.round(((parseInt(goalForm.daily_calorie_goal) || 0) / 1000) * 14)} g at your current
+          calorie target).
+        </p>
+      </div>
     </div>
   );
 }
