@@ -99,11 +99,107 @@ export const FIXED_ITEMS = [
   },
 ];
 
-const price100 = (f) => (f.purchase.price / f.purchase.gramsPerUnit) * 100;
+// A food swapped in by hand has no purchase row, so it has no real $/100 g. It
+// still needs a cost, because every raise/shed stage in the optimizer sorts by
+// cost — a 0 would make the unpriced food the cheapest thing on the menu and it
+// would win every fill. The catalog median makes it sort mid-pack instead, so a
+// swapped-in food is chosen on macro fit rather than on a fake price. Tunable.
+const UNPRICED_COST_100 = (() => {
+  const priced = FOOD_CATALOG.filter((f) => f.purchase)
+    .map((f) => (f.purchase.price / f.purchase.gramsPerUnit) * 100)
+    .sort((a, b) => a - b);
+  return priced.length ? priced[Math.floor(priced.length / 2)] : 0.5;
+})();
+
+const price100 = (f) => (f.purchase ? (f.purchase.price / f.purchase.gramsPerUnit) * 100 : UNPRICED_COST_100);
 
 const PURCHASE_BY_FOOD = Object.fromEntries(
   [...FOOD_CATALOG, ...FIXED_ITEMS].map((f) => [f.food, f.purchase])
 );
+
+// ─── Hand-swapped foods ──────────────────────────────────────────────────────
+// The day-only swap ("replace 2% milk with the cottage cheese I already bought")
+// puts a food the catalog has never seen into the solve. The optimizer is
+// gram-based end to end (per100g + portion = grams/100), so anything entering it
+// MUST have a per-100 g basis — a food logged only as "1 serving" cannot be
+// portioned and can't be swapped in until it has a gram weight.
+
+// A custom_foods row → per-100g macros, or null when the row carries no gram
+// basis at all. Two ways to get one: an explicit serving_grams, or a row whose
+// serving is already expressed in grams.
+export function derivePer100g(food) {
+  if (!food) return null;
+  const macros = (grams) => {
+    if (!grams || grams <= 0) return null;
+    const k = 100 / grams;
+    return {
+      cal: (food.calories || 0) * k,
+      p: (food.protein_grams || 0) * k,
+      c: (food.carbs_grams || 0) * k,
+      f: (food.fats_grams || 0) * k,
+    };
+  };
+  if (food.serving_grams > 0) return macros(food.serving_grams);
+  const unit = String(food.serving_unit || "").trim().toLowerCase();
+  if (["g", "gram", "grams"].includes(unit)) return macros(food.serving_size);
+  return null;
+}
+
+// Grams in one serving of a custom food, or null if it has no gram basis.
+export function servingGrams(food) {
+  if (!food) return null;
+  if (food.serving_grams > 0) return food.serving_grams;
+  const unit = String(food.serving_unit || "").trim().toLowerCase();
+  if (["g", "gram", "grams"].includes(unit) && food.serving_size > 0) return food.serving_size;
+  return null;
+}
+
+// One food may not carry more than this much of a day on its own — without a
+// ceiling a cheap-sorting swapped-in food can eat the whole calorie budget.
+// Tunable; ~600 kcal is a large single-food serving, not a dietary rule.
+const SWAP_MAX_KCAL = 600;
+const clampG = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// Macro split → the optimizer's `role`. Role drives which stage may raise a food
+// (protein anchor / fat floor / calorie fillers), so it has to be honest about
+// what the food mostly is. Only the three macro roles are assigned: dairy/fruit/
+// veg are catalog curation calls, not something derivable from macros.
+function roleFromMacros({ cal, p, c, f }) {
+  const kcal = Math.max(1, cal);
+  if (p * 4 >= kcal * 0.4) return "protein";
+  if (f * 9 >= kcal * 0.45) return "fat";
+  if (c * 4 >= kcal * 0.4) return "carb";
+  return "protein";
+}
+
+/**
+ * A custom/catalog food + its serving size → a FOOD_CATALOG-shaped variable the
+ * optimizer can size freely. Bounded rather than forced: `min` puts it in at one
+ * real serving (a swap that makes the food vanish is the worst outcome), `max`
+ * caps it, and the solver picks the grams in between — which is what "redo the
+ * custom amounts for that food included" means.
+ *
+ * Returns null when the food has no gram basis.
+ */
+export function swapCatalogItem(food, { meal = "snack", timing = "anytime" } = {}) {
+  const per100g = derivePer100g(food);
+  const base = servingGrams(food);
+  if (!per100g || !base || !(per100g.cal > 0)) return null;
+  const min = clampG(Math.round(base), 20, 250);
+  const kcalCap = (SWAP_MAX_KCAL / per100g.cal) * 100;
+  const max = clampG(Math.round(kcalCap), min * 2, 1000);
+  return {
+    food: food.food_name,
+    per100g,
+    role: roleFromMacros(per100g),
+    meal,
+    timing,
+    min,
+    max,
+    minServe: min,
+    swapped: true,
+  };
+}
 
 // One plan item → a fully-scaled food_entries-shaped object (macros for the
 // whole serving, grams in serving_size). `planned: true` flags it as a not-yet-
@@ -158,12 +254,29 @@ export function optimizeDay({
   // "cost-driven by default, manual override when I want it" call). Bypasses
   // the food's normal `max` too, since a forced amount is his explicit ask.
   foodMins = {},
+  // Day-only hand swaps. `excludeFoods` drops named catalog foods from the menu
+  // entirely; `extraFoods` are swapCatalogItem()-shaped rows added as ordinary
+  // bounded variables. Both come from nutrition_overrides.food_swaps.
+  excludeFoods = [],
+  extraFoods = [],
 } = {}) {
   const fixed = FIXED_ITEMS
     .filter((f) => trainingDay || !f.trainingOnly)
     .map((f) => ({ ...f, portion: f.grams / 100, fixed: true }));
 
-  const vars = FOOD_CATALOG.map((f) => {
+  const excluded = new Set(excludeFoods);
+  // A swap INTO a food the catalog already has keeps the catalog row rather than
+  // adding a second variable for the same food — two vars for one food would
+  // double-count it and break the by-identity stage membership checks below.
+  const menu = FOOD_CATALOG.filter((f) => !excluded.has(f.food));
+  const present = new Set(menu.map((f) => f.food));
+  for (const extra of extraFoods) {
+    if (!extra || present.has(extra.food) || excluded.has(extra.food)) continue;
+    present.add(extra.food);
+    menu.push(extra);
+  }
+
+  const vars = menu.map((f) => {
     const isTimedCarb = f.role === "carb" && f.timing !== "anytime";
     const maxG = trainingDay || !isTimedCarb ? f.max : f.max * restCarbFactor;
     const forcedG = foodMins[f.food] || 0;
@@ -429,13 +542,13 @@ export function optimizeDay({
 // Full day → array of food_entries rows for `date`: the cheapest food mix that
 // hits the engine's targets, fixed staples included. This is the "approve the
 // plan → write the day into the log" payload; rows are flagged planned:true.
-export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, proteinFloor = null, fatTarget = null, aggressiveCut = false, foodMins = {}, floorBufferPct = FLOOR_BUFFER_PCT } = {}) {
+export function buildDayEntries({ date, trainingDay = true, calorieTarget, proteinTarget = null, proteinFloor = null, fatTarget = null, aggressiveCut = false, foodMins = {}, excludeFoods = [], extraFoods = [], floorBufferPct = FLOOR_BUFFER_PCT } = {}) {
   // Buffer the floor, not the ceiling: calories/protein get a small margin above
   // the engine's number; the fat floor and hard protein floor stay exact (those
   // are already conservative "don't dip below this" numbers, not targets to pad).
   const bufferedCalorieTarget = calorieTarget ? Math.round(calorieTarget * (1 + floorBufferPct)) : calorieTarget;
   const bufferedProteinTarget = proteinTarget ? Math.round(proteinTarget * (1 + floorBufferPct)) : proteinTarget;
-  const plan = optimizeDay({ calorieTarget: bufferedCalorieTarget, proteinTarget: bufferedProteinTarget, proteinFloor, fatTarget, trainingDay, aggressiveCut, foodMins });
+  const plan = optimizeDay({ calorieTarget: bufferedCalorieTarget, proteinTarget: bufferedProteinTarget, proteinFloor, fatTarget, trainingDay, aggressiveCut, foodMins, excludeFoods, extraFoods });
   const rows = plan.map((it) => scaleItem(it, { date }));
   // Carry the optimizer's warning flags through so the UI can surface them.
   if (plan.proteinShortfall) rows.proteinShortfall = plan.proteinShortfall;
@@ -451,6 +564,13 @@ export function entriesCost(entryRows) {
     if (!u) return s;
     return s + (e.serving_size / u.gramsPerUnit) * u.price;
   }, 0);
+}
+
+// How many rows entriesCost had no pricing for. A hand-swapped food has no
+// purchase row, so the day's cost silently understates — the UI marks the number
+// approximate rather than showing a total that looks like it dropped.
+export function entriesUnpriced(entryRows) {
+  return entryRows.filter((e) => !PURCHASE_BY_FOOD[e.food_name]).length;
 }
 
 // ─── Shopping list ───────────────────────────────────────────────────────────

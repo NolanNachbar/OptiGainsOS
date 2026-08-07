@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, useCustomFoods } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
-import { useDailyTargets, clampCutProtein, profileWeightLb, CUT_PROTEIN_HARD_FLOOR_PER_LB } from "@/hooks/useDailyTargets";
-import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
-import { getProgramSchedule } from "@/utils/programSchedule";
+import { useDailyTargets } from "@/hooks/useDailyTargets";
+import { useDayPlanContext } from "@/hooks/useDayPlanContext";
+import { resolveDayPlan } from "@/utils/dayPlan";
 import { getTodayString } from "@/utils/dateUtils";
 import { invalidateFood } from "@/lib/queryKeys";
-import { buildDayEntries, buildShoppingList, entriesCost, FOOD_CATALOG } from "@/config/dietPlans";
+import { buildShoppingList, FOOD_CATALOG } from "@/config/dietPlans";
 import { Cpu, Dumbbell, Moon, ShoppingCart, Check, ChevronDown, ChevronUp, Sparkles, Flame, Snowflake, SlidersHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO, addDays } from "date-fns";
@@ -23,10 +23,6 @@ const GATE_LABEL = {
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"];
 const MEAL_LABEL = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
 
-// A day needs at least this much un-eaten budget before we bother planning food
-// into it — below this, portions would shrink past edible.
-const MIN_DAY_BUDGET = 150;
-
 // A compact P / C / F micro-bar (MacroFactor style — protein-anchored).
 function MacroBar({ p, c, f }) {
   const pc = p * 4, cc = c * 4, fc = f * 9;
@@ -38,17 +34,6 @@ function MacroBar({ p, c, f }) {
     </div>
   );
 }
-
-const sumRows = (rows) =>
-  rows.reduce(
-    (t, e) => ({
-      calories: t.calories + (e.calories || 0),
-      protein: t.protein + (e.protein_grams || 0),
-      carbs: t.carbs + (e.carbs_grams || 0),
-      fats: t.fats + (e.fats_grams || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fats: 0 }
-  );
 
 const groceryStorageKey = (weekStart) => `optigains.grocery.${weekStart}`;
 
@@ -64,9 +49,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   const { profile } = useProfile();
   const qc = useQueryClient();
   const { activePhase } = useDietPhase();
-  const { enrollments } = useEnrollments();
-  const activeEnrollment = (enrollments || []).find((e) => e.status === "active");
-  const { program } = useProgram(activeEnrollment?.program_id);
+  const { customFoods } = useCustomFoods();
 
   const today = getTodayString(profile?.timezone);
   const [showShopping, setShowShopping] = useState(false);
@@ -93,95 +76,25 @@ export default function WeeklyPlanCard({ bare = false }) {
   // Per-date context, batched: the engine's target where it has scored the day,
   // plus whatever has ALREADY been eaten on each day. Both feed the per-day
   // budget so the plan never stacks on top of food that's already logged.
-  const { data: dayContext } = useQuery({
-    queryKey: ["week-plan-day-context", today, user?.id],
-    queryFn: async () => {
-      const [statesRes, eatenRes, overridesRes] = await Promise.all([
-        supabase.from("athlete_state").select("date, nutrition")
-          .eq("created_by", user.id).in("date", dates),
-        supabase.from("food_entries").select("date, calories, protein_grams, fats_grams")
-          .eq("created_by", user.id).in("date", dates).eq("planned", false),
-        supabase.from("nutrition_overrides").select("date, action, manual_calorie_target, manual_protein_g, food_mins")
-          .eq("created_by", user.id).in("date", dates),
-      ]);
-      if (statesRes.error) throw statesRes.error;
-      if (eatenRes.error) throw eatenRes.error;
-      if (overridesRes.error) throw overridesRes.error;
-      const targets = {};
-      for (const s of statesRes.data || []) {
-        const cal = s.nutrition?.recommended_intake?.calorie_target;
-        const pro = s.nutrition?.recommended_intake?.protein_g ?? s.nutrition?.protein_target;
-        if (cal) targets[s.date] = { calories: Math.round(cal), protein: pro ? Math.round(pro) : null };
-      }
-      const overrides = {};
-      const foodMins = {};
-      // A manual override beats whatever the engine wrote for that day — same
-      // priority order as useDailyTargets, just applied across the whole week.
-      for (const o of overridesRes.data || []) {
-        // food_mins is independent of `action` — a forced food can sit on an
-        // otherwise engine-set or ease/push day, not just a manual-target day.
-        if (o.food_mins && Object.keys(o.food_mins).length) foodMins[o.date] = o.food_mins;
-        if (o.action !== "manual" || !o.manual_calorie_target) continue;
-        overrides[o.date] = true;
-        targets[o.date] = {
-          calories: Math.round(o.manual_calorie_target),
-          protein: o.manual_protein_g ? Math.round(o.manual_protein_g) : (targets[o.date]?.protein ?? null),
-        };
-      }
-      const eaten = {};
-      for (const e of eatenRes.data || []) {
-        const d = (eaten[e.date] ||= { calories: 0, protein: 0, fats: 0 });
-        d.calories += e.calories || 0;
-        d.protein += e.protein_grams || 0;
-        d.fats += e.fats_grams || 0;
-      }
-      return { targets, eaten, overrides, foodMins };
-    },
-    enabled: !!user && !!calTarget,
-    staleTime: 60 * 1000,
-  });
+  const { dayContext, isTrainingDay } = useDayPlanContext(dates, { enabled: !!calTarget });
 
   // The week: each day carb-cycled by the program schedule and fitted to ITS OWN
   // remaining budget (that day's engine target minus what's already eaten).
-  const week = useMemo(() => {
-    const sched = activeEnrollment && program
-      ? getProgramSchedule(activeEnrollment, program.workouts || [], profile?.timezone)
-      : [];
-    const trainSet = new Set(sched.filter((e) => (e.exercises || []).length > 0).map((e) => e.date));
-    const haveSched = trainSet.size > 0;
-
-    return dates.map((d) => {
-      // Without a program we can't know rest days; default to training (full fuel).
-      const trainingDay = haveSched ? trainSet.has(d) : true;
-      const overridden = !!dayContext?.overrides?.[d];
-      const dayTarget = dayContext?.targets?.[d]?.calories || calTarget;
-      // Per-day engine protein is raw athlete_state — clamp it through the same
-      // cut rule (1.3–1.5 g/lb) as useDailyTargets so no path bypasses the floor.
-      // A manually-typed protein number is his call — don't clamp it back down.
-      let dayProtein = dayContext?.targets?.[d]?.protein || proteinTarget;
-      const weightLb = profileWeightLb(profile);
-      if (isCut && dayProtein && !overridden) dayProtein = clampCutProtein(dayProtein, weightLb);
-      // Hard floor the optimizer may ease down to when the calorie wall binds.
-      const dayProteinFloor = isCut && weightLb ? Math.round(CUT_PROTEIN_HARD_FLOOR_PER_LB * weightLb) : null;
-      const eatenCal = dayContext?.eaten?.[d]?.calories || 0;
-      const eatenProtein = dayContext?.eaten?.[d]?.protein || 0;
-      const eatenFats = dayContext?.eaten?.[d]?.fats || 0;
-      const budget = Math.max(0, (dayTarget || 0) - eatenCal);
-      const rows = budget >= MIN_DAY_BUDGET
-        ? buildDayEntries({
-            date: d,
-            trainingDay,
-            calorieTarget: budget,
-            proteinTarget: dayProtein ? Math.max(0, dayProtein - eatenProtein) : null,
-            proteinFloor: dayProteinFloor ? Math.max(0, dayProteinFloor - eatenProtein) : null,
-            fatTarget: fatTarget ? Math.max(0, fatTarget - eatenFats) : null,
-            aggressiveCut,
-            foodMins: dayContext?.foodMins?.[d] || {},
-          })
-        : [];
-      return { date: d, trainingDay, target: dayTarget, overridden, eatenCal, budget, rows, totals: sumRows(rows), cost: entriesCost(rows) };
-    });
-  }, [dates, dayContext, calTarget, proteinTarget, fatTarget, isCut, profile, aggressiveCut, activeEnrollment, program]);
+  const week = useMemo(
+    () => dates.map((d) => resolveDayPlan({
+      date: d,
+      trainingDay: isTrainingDay(d),
+      dayContext,
+      calTarget,
+      proteinTarget,
+      fatTarget,
+      isCut,
+      profile,
+      aggressiveCut,
+      customFoods,
+    })),
+    [dates, dayContext, isTrainingDay, calTarget, proteinTarget, fatTarget, isCut, profile, aggressiveCut, customFoods]
+  );
 
   const allRows = useMemo(() => week.flatMap((d) => d.rows), [week]);
   const shopping = useMemo(() => buildShoppingList(allRows), [allRows]);
@@ -243,7 +156,7 @@ export default function WeeklyPlanCard({ bare = false }) {
       return { cleared: false, cal };
     },
     onSuccess: ({ cleared, cal }) => {
-      qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
+      qc.invalidateQueries({ queryKey: ["day-plan-context"] });
       qc.invalidateQueries({ queryKey: ["nutrition-override"] });
       qc.invalidateQueries({ queryKey: ["athlete-state-nutrition"] });
       setShowOverride(false);
@@ -265,7 +178,7 @@ export default function WeeklyPlanCard({ bare = false }) {
       return { cleared: !food };
     },
     onSuccess: ({ cleared }) => {
-      qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
+      qc.invalidateQueries({ queryKey: ["day-plan-context"] });
       toast.success(cleared ? "Force-food cleared" : "This day will force that food in");
     },
     onError: (e) => toast.error(e.message || "Couldn't save the override"),
@@ -293,7 +206,7 @@ export default function WeeklyPlanCard({ bare = false }) {
     },
     onSuccess: (n) => {
       invalidateFood(qc);
-      qc.invalidateQueries({ queryKey: ["week-plan-day-context"] });
+      qc.invalidateQueries({ queryKey: ["day-plan-context"] });
       toast.success(`Loaded ${n} planned items across the week, check them off as you eat.`);
     },
     onError: () => toast.error("Couldn't load the plan"),

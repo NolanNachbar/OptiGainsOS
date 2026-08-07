@@ -22,6 +22,8 @@ import { calculateMacroSplit, getBestTDEE, calculatePhaseCalories } from "@/util
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { usePlannedDayRebalance } from "@/hooks/usePlannedDayRebalance";
+import { useDayPlanContext } from "@/hooks/useDayPlanContext";
+import { useFoodSwap } from "@/hooks/useFoodSwap";
 import { DEFAULT_GOALS } from "@/lib/constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame } from "lucide-react";
+import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame, ArrowLeftRight } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -47,6 +49,7 @@ import MealTemplates, { SaveAsTemplateDialog } from "@/components/nutrition/Meal
 import StatsSetupModal from "@/components/nutrition/StatsSetupModal";
 import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
+import SwapFoodDialog from "@/components/nutrition/SwapFoodDialog";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 
 const getDefaultMealType = () => {
@@ -1410,6 +1413,54 @@ const handleSaveMealTemplate = () => {
   const planFit = usePlannedDayRebalance(selectedDate, foodEntries, targets.calories, targets.proteinFloor);
   const plannedCount = planFit.plannedCount;
 
+  // ── Swap a planned food ────────────────────────────────────────────────────
+  // A plan row is a suggestion, not an order: swapping one out re-solves THIS
+  // day (today only) through the same optimizer the week plan uses, so the
+  // replacement's grams — and every other row's — are recomputed around it.
+  const swapDates = useMemo(() => [selectedDate], [selectedDate]);
+  const { dayContext, isTrainingDay } = useDayPlanContext(swapDates, { enabled: !!targets.calories });
+  const [swapEntry, setSwapEntry] = useState(null);
+  const eatenTotals = useMemo(() => ({
+    calories: eatenEntries.reduce((s, e) => s + (e.calories || 0), 0),
+    protein: eatenEntries.reduce((s, e) => s + (e.protein_grams || 0), 0),
+    fats: eatenEntries.reduce((s, e) => s + (e.fats_grams || 0), 0),
+  }), [eatenEntries]);
+
+  const foodSwap = useFoodSwap({
+    date: selectedDate,
+    dayContext,
+    trainingDay: isTrainingDay(selectedDate),
+    calTarget: targets.calories,
+    proteinTarget: targets.protein,
+    fatTarget: targets.fats,
+    isCut: targets.isCut,
+    profile,
+    aggressiveCut: targets.aggressiveCut,
+    customFoods,
+    eatenOverride: eatenTotals,
+  });
+
+  const revertSwap = (displaced) => {
+    foodSwap.mutate({ original: displaced, replacement: null }, {
+      onSuccess: () => { setSwapEntry(null); toast.success(`${displaced} is back on today's plan`); },
+      onError: (e) => toast.error(e.message || "Revert failed"),
+    });
+  };
+
+  const runSwap = (replacement) => {
+    const original = swapEntry?.food_name;
+    foodSwap.mutate({ original, replacement }, {
+      onSuccess: ({ plan }) => {
+        setSwapEntry(null);
+        const row = plan.rows.find((r) => r.food_name === replacement);
+        toast.success(row
+          ? `Swapped in ${replacement} — ${row.serving_size} g`
+          : `${original} removed; ${replacement} didn't fit today's budget`);
+      },
+      onError: (e) => toast.error(e.message || "Swap failed"),
+    });
+  };
+
   // ── Copy a previous day forward ────────────────────────────────────────────
   // The recents list handles one food at a time; this handles "yesterday again",
   // which is most of a repeatable diet.
@@ -2151,6 +2202,16 @@ const handleSaveMealTemplate = () => {
                                 tucks its edit/delete icons under the '+'. Desktop has
                                 no FAB, so the reservation collapses to 0. */}
                             <div className="shrink-0 flex items-center justify-end gap-2 sm:gap-0.5 pr-14 lg:pr-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 [transition-timing-function:var(--ease)]">
+                              {entry.planned && (
+                                <button
+                                  onClick={() => setSwapEntry(entry)}
+                                  aria-label={`Swap out ${entry.food_name}`}
+                                  title="Swap this for another food"
+                                  className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
+                                >
+                                  <ArrowLeftRight className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
+                                </button>
+                              )}
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
                                 <Pencil className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                               </button>
@@ -3809,6 +3870,18 @@ Oats,389,17,66,7,100g`}</pre>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Swap a planned food out for something already in the fridge */}
+      <SwapFoodDialog
+        open={!!swapEntry}
+        onOpenChange={(o) => { if (!o) setSwapEntry(null); }}
+        entry={swapEntry}
+        customFoods={customFoods}
+        swaps={dayContext?.foodSwaps?.[selectedDate] || {}}
+        onSwap={runSwap}
+        onRevert={revertSwap}
+        pending={foodSwap.isPending}
+      />
 
       {/* Barcode scanner — full-screen overlay, mobile only */}
       <BarcodeScanner
