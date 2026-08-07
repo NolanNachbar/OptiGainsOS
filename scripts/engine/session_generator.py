@@ -381,6 +381,21 @@ _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press",
                        "Incline Bench Press", "Weighted Dip"]
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
+
+# Chest hypertrophy press pool. The bench top set is a STRENGTH movement — 1-3 reps
+# at RIR 2 — and Nolan's call (2026-08-07) is that it is not a hypertrophy stimulus
+# at that prescription. Bench wins the chest slot on the knapsack's +10 is_goal
+# bonus, which spends the slot and leaves the day with no chest press that actually
+# grows anything on every day chest is not the focus muscle. These three are the
+# movements he named; rotated deterministically by ISO week so each accrues its own
+# e1RM history. [COACH]
+CHEST_HYPERTROPHY_PRESS = ["Reverse Grip Incline Smith Machine Press",
+                           "Incline DB Press", "Weighted Dip"]
+
+# Patterns that count as a chest press for the "does this session already have one"
+# check. Excludes the bench top set and its back-offs by flag, not by name, so any
+# future goal press is handled too.
+_CHEST_PRESS_PATTERNS = ("horizontal_push", "incline_push", "dip")
 # Squat has no dedicated assistance pool (its variants are knapsack primaries);
 # these are aimed at a flagged squat sticking point as an ADDED slot.
 SQUAT_ASSISTANCE    = ["Paused Squat", "Zercher Squat", "Pin Squat", "Front Squat"]
@@ -575,7 +590,7 @@ def _clean(ex: dict) -> dict:
     return {k: v for k, v in ex.items()
             if k not in ("pattern", "muscles", "is_primary", "is_backoff", "is_goal",
                          "type", "fatigue_cost", "is_assistance", "assist_for",
-                         "is_bodyweight")}
+                         "is_bodyweight", "is_chest_press")}
 
 
 def interference_attenuation(ampk, interference_score):
@@ -973,6 +988,53 @@ def _assistance_slot(name: str, wt: dict, intensity: float, readiness_z: float) 
     if weekly > 0:
         baseline = BASELINE_WEEKLY_SMALL if pm in ("triceps", "biceps") else BASELINE_WEEKLY_DEFAULT
         ex["sets"] = max(1, round(ex.get("sets", 3) * weekly / baseline))
+    return _scale(ex, intensity, False, readiness_z)
+
+
+def _is_chest_press(e: dict) -> bool:
+    """A pressing movement that trains chest or upper chest for hypertrophy.
+
+    Deliberately excludes the goal press and its back-offs: those are the strength
+    prescription (heavy triples at RIR 2) and are the reason a session can look like
+    it has chest work while having none that grows anything.
+    """
+    return bool(
+        e.get("pattern") in _CHEST_PRESS_PATTERNS
+        and any(m in ("chest", "upper_chest") for m in (e.get("muscles") or []))
+        and not e.get("is_goal") and not e.get("is_backoff")
+    )
+
+
+def _chest_press_slot(name: str, wt: dict, intensity: float, readiness_z: float) -> dict:
+    """Build a chest hypertrophy press row.
+
+    Two of the three pool members ("Reverse Grip Incline Smith Machine Press",
+    "Weighted Dip") also live in BENCH_ASSISTANCE and carry is_assistance. Here the
+    movement is NOT bench assistance — it is the day's chest hypertrophy work — so
+    that flag is stripped: is_assistance would route it down apply_philosophy's
+    strength branch (multi-set at RIR 2, the exact prescription that isn't growing
+    anything) and would make it the first row the cut-day trim deletes.
+
+    The reverse-grip smith press lists triceps first in the pool because it was
+    authored as a lockout aid. Used as a chest press its primary mover is the upper
+    chest, which is what muscle_map already credits it for, so reorder the local copy
+    to match — it drives both the set sizing here and apply_philosophy's cap later.
+    """
+    ex = copy.deepcopy(_EX_BY_NAME[name])
+    ex.pop("is_assistance", None)
+    ex.pop("assist_for", None)
+    ex.pop("is_primary", None)
+    ex["is_chest_press"] = True
+
+    muscles = list(ex.get("muscles") or [])
+    chest_first = ([m for m in muscles if m in ("chest", "upper_chest")]
+                   + [m for m in muscles if m not in ("chest", "upper_chest")])
+    ex["muscles"] = chest_first
+
+    pm = (chest_first or ["chest"])[0]
+    weekly = wt.get(pm, 0)
+    if weekly > 0:
+        ex["sets"] = max(1, round(ex.get("sets", 3) * weekly / BASELINE_WEEKLY_DEFAULT))
     return _scale(ex, intensity, False, readiness_z)
 
 
@@ -1644,6 +1706,34 @@ def _build_session(
     # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
     # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
     exercises = _alternate_antagonists(exercises, focus_muscle)
+
+    # Chest hypertrophy press. Every day that benches gets one pressing movement
+    # actually prescribed for growth (1-2 sets to failure at 8-10 after the philosophy
+    # pass) on top of the bench top set, which is strength work. Skipped when the
+    # session already carries a chest press — on a chest-focus day the bench assistance
+    # slot is usually one of these, and on Upper A the knapsack often wins the
+    # upper-chest slot with Incline DB Press. In practice it fires on the days chest
+    # lost its slot to bench's is_goal bonus. [COACH]
+    #
+    # Runs LAST, deliberately — after both the trim and the antagonist pass, because
+    # each of those removes rows and an earlier check counted chest presses that were
+    # about to disappear. The trim deleted them outright; _alternate_antagonists then
+    # dropped what was left to one movement per pressing pattern, and on every
+    # full-body day that meant the bench technique single evicted the Push-up Pyramid
+    # sharing its horizontal_push pattern. Both left the day reading as though it had
+    # chest work while ending with none. Like the mandatory arm isolations, this row
+    # rides on top of target_exercises instead of competing for a slot: it is one
+    # working set or two. The antagonist pass re-runs afterward so the press is placed
+    # against the day's pulls rather than tacked onto the end.
+    if (any(e.get("name") == "Bench Press (Top Set)" for e in exercises)
+            and not any(_is_chest_press(e) for e in exercises)):
+        _press_pool = [n for n in _allowed(CHEST_HYPERTROPHY_PRESS)
+                       if n in _EX_BY_NAME and n not in {e.get("name") for e in exercises}]
+        if _press_pool:
+            exercises.append(
+                _chest_press_slot(_press_pool[assist_week % len(_press_pool)],
+                                  wt, intensity, readiness_z))
+            exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
