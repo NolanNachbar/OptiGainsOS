@@ -540,7 +540,10 @@ export default function ExerciseCard({
           const prescribedWeight = set.set_type === 'daily_min'
             ? progressionTargets?.dailyMin
             : progressionTargets?.workingWeight;
-          const prescribedReps = parseInt(programExercise?.rep_target) || 0;
+          // A back-off set's target is its own reps, not the exercise's headline
+          // rep_target (the top set's) — comparing a 5-rep back-off against a
+          // 3-rep target flags every made set as a miss.
+          const prescribedReps = (set.set_label ? Number(set.reps) : parseInt(programExercise?.rep_target)) || 0;
           const missed = isMissedSet(set, { weight: prescribedWeight, reps: prescribedReps });
           // Two tag modes, miss wins: a missed set tags WHY (failure_reason → nutrition +
           // programming); a MADE near-failure set (RIR ≤ 1) tags WHERE it stalled
@@ -551,8 +554,20 @@ export default function ExerciseCard({
             : (hardMake || set.sticking_point) ? 'sticking_point' : null;
           const reasonKeys = tagField === 'failure_reason' ? reasonsForExercise(exercise.name)
             : tagField === 'sticking_point' ? stickingPointReasons(exercise.name) : [];
+          // A merged lift (heavy top set, then back-offs) is one exercise whose
+          // sets are not all the same prescription. Head each block once so the
+          // card reads the way the lift is written, without inventing a second
+          // exercise row for the back-offs.
+          const blockLabel = set.set_label
+            && (setIndex === 0 || exercise.sets[setIndex - 1]?.set_label !== set.set_label)
+            ? set.set_label : null;
           return (
           <div key={setIndex}>
+            {blockLabel && (
+              <div className="pt-2 pb-1 text-[10px] font-technical font-bold uppercase tracking-wider text-ink-faint">
+                {blockLabel}
+              </div>
+            )}
             <div
               className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
                 isActive

@@ -428,24 +428,52 @@ export default function WorkoutDetail() {
           const targets = progressionTargetsMap[ex.name];
           const numSets = resolveSetCount(ex.sets);
 
-          // Get last performance for autofill
-          const lastPerf = getLastExercisePerformance(allWorkoutLogs, ex.name);
+          // Get last performance for autofill. A merged lift is logged under its
+          // base name ("Bench Press") but everything before the merge was logged
+          // under the variant names it was built from, so fall back to those —
+          // otherwise every merged lift shows an empty history and seeds at zero.
+          const lastPerf = getLastExercisePerformance(allWorkoutLogs, ex.name)
+            || (ex.components || []).reduce(
+                 (found, c) => found || getLastExercisePerformance(allWorkoutLogs, c), null);
 
           const targetReps = parseRepTarget(ex.rep_target);
           const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
             ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
             : lastPerf?.lastWeight || 0;
 
-          // All sets default to working type at working weight
-          const sets = Array.from({ length: numSets }, (_, setIndex) => ({
-            set_number: setIndex + 1,
-            reps: targetReps,
-            weight: targets?.workingWeight || scaledWeight,
-            completed: false,
-            rpe: null,
-            rir: ex.rir_target ?? null,
-            set_type: 'working',
-          }));
+          // A lift the engine merged (heavy top set, then back-offs) arrives as ONE
+          // exercise carrying a set_scheme: blocks of sets that each have their own
+          // reps, RIR and load. Seed straight from the blocks so the card shows the
+          // prescription as written instead of flattening it to one uniform target.
+          // Everything else has no scheme and keeps the uniform seed.
+          const scheme = Array.isArray(ex.set_scheme) ? ex.set_scheme : null;
+          const sets = scheme
+            ? scheme.flatMap((block) => {
+                const blockReps = parseRepTarget(block.rep_target ?? ex.rep_target);
+                const blockWeight = block.load_lbs
+                  || (lastPerf?.lastWeight && lastPerf?.lastReps
+                      ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, blockReps)
+                      : targets?.workingWeight || scaledWeight);
+                return Array.from({ length: Number(block.sets) || 1 }, () => ({
+                  reps: blockReps,
+                  weight: blockWeight,
+                  completed: false,
+                  rpe: null,
+                  rir: block.rir_target ?? ex.rir_target ?? null,
+                  set_type: block.set_type || 'working',
+                  set_label: block.label || null,
+                }));
+              }).map((s, setIndex) => ({ ...s, set_number: setIndex + 1 }))
+            // All sets default to working type at working weight
+            : Array.from({ length: numSets }, (_, setIndex) => ({
+                set_number: setIndex + 1,
+                reps: targetReps,
+                weight: targets?.workingWeight || scaledWeight,
+                completed: false,
+                rpe: null,
+                rir: ex.rir_target ?? null,
+                set_type: 'working',
+              }));
 
           return {
             name: ex.name,

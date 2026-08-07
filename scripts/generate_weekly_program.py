@@ -1602,17 +1602,46 @@ def main():
         "scheduled_date": f"gte.{(days_to_generate[0] - datetime.timedelta(days=7)).isoformat()}",
     }) or []
     _carry_by_date = {str(r.get("scheduled_date")): r for r in _carry_src}
-    _already_present = {
-        str(r.get("scheduled_date")) for r in _carry_src
-        if str(r.get("scheduled_date")) >= days_to_generate[0].isoformat()
-    }
-    carried = 0
+
+    # Auto-apply (Nolan's call, 2026-08-07, replacing the approve-first gate):
+    # a freshly generated day goes STRAIGHT into program_workouts unless he has
+    # already touched that date. The gate cost him a real session — the generator
+    # ran, staged a corrected plan, and he trained the old one because the approve
+    # tap hadn't happened yet, and workout_sessions snapshots exercises at start,
+    # so approving afterwards couldn't fix it. Review moves to after the fact.
+    #
+    # "Touched" is deliberately broad: any session started (whatever its status)
+    # or anything logged on that date. Never rewrite a day he has trained or is
+    # mid-way through — the log is ground truth and the plan must keep matching
+    # what he actually did. The pending row above is still written, so the UI's
+    # review screen and the approval path keep working unchanged.
+    _touched = set()
+    for _tbl, _sel, _key in (("workout_sessions", "started_at", "started_at"),
+                             ("workout_logs", "log_date", "log_date")):
+        for _r in (sb_get(_tbl, {
+            "select": _sel, "created_by": f"eq.{USER_ID}",
+            f"{_key}": f"gte.{days_to_generate[0].isoformat()}",
+        }) or []):
+            _v = str(_r.get(_key) or "")[:10]
+            if _v:
+                _touched.add(_v)
+
+    applied, carried, skipped = 0, 0, 0
+    _fresh_by_date = {r["scheduled_date"]: r for r in pending_rows}
     for sim_day in days_to_generate:
-        if sim_day.isoformat() in _already_present:
-            # A row for this exact date already exists — either a prior
-            # approval or a prior carry-forward. Never clobber it: if it's
-            # approved real content, overwriting would regress the schedule;
-            # if it's an earlier carry-forward, leaving it is a no-op.
+        iso = sim_day.isoformat()
+        if iso in _touched:
+            skipped += 1
+            continue
+        row = _fresh_by_date.get(iso)
+        if row:
+            sb_upsert("program_workouts", dict(row))
+            applied += 1
+            continue
+        # No fresh row for this date (e.g. beyond what was generated): fall back
+        # to last week's same weekday, as before, and never clobber what's there.
+        if iso in {str(r.get("scheduled_date")) for r in _carry_src
+                   if str(r.get("scheduled_date")) >= days_to_generate[0].isoformat()}:
             continue
         src = _carry_by_date.get((sim_day - datetime.timedelta(days=7)).isoformat())
         if not src:
@@ -1625,14 +1654,15 @@ def main():
             "week_number":      current_week,
             "day_index":        sim_day.weekday() + 1,
             "day_of_week":      sim_day.weekday(),
-            "scheduled_date":   sim_day.isoformat(),
+            "scheduled_date":   iso,
             "exercises":        src.get("exercises"),
             "cardio_sessions":  src.get("cardio_sessions"),
             "duration_minutes": src.get("duration_minutes"),
         })
         carried += 1
-    print(f"  carried forward {carried}/{len(days_to_generate)} day(s) of last week's approved plan "
-          f"as the default until this week is approved")
+    print(f"  applied {applied}/{len(days_to_generate)} day(s) live "
+          f"({skipped} left alone — already trained or in progress"
+          + (f", {carried} carried from last week" if carried else "") + ")")
 
     # ── 8. Save all engine state ──────────────────────────────────────────────
     new_step = step_count + 1

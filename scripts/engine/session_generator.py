@@ -596,8 +596,23 @@ _SCHEME_FIELDS = ("sets", "rep_target", "rir_target", "rest_seconds", "notes",
                   "soreness_note", "cut_note")
 
 
+# Only these trailing parentheticals name a BLOCK OF SETS of one lift. Others
+# ("(BB)", "(DB)") name a different exercise sharing a stem, and merging or
+# renaming those would quietly turn the barbell press into "Overhead Press" and
+# let it absorb the dumbbell one.
+_VARIANT_WORDS = ("top set", "back-off", "backoff", "speed", "volume", "daily single")
+
+
+def _is_variant_suffix(name: str) -> bool:
+    m = re.search(r"\(([^)]*)\)\s*$", name or "")
+    return bool(m) and m.group(1).strip().lower().startswith(_VARIANT_WORDS)
+
+
 def _base_lift(name: str) -> str:
-    """"Bench Press (Back-off Vol)" → "Bench Press"."""
+    """"Bench Press (Back-off Vol)" → "Bench Press". Equipment qualifiers such as
+    "Overhead Press (BB)" are left alone — they are not set variants."""
+    if not _is_variant_suffix(name):
+        return (name or "").strip()
     return _VARIANT_SUFFIX.sub("", name or "").strip()
 
 
