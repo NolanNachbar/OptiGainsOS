@@ -6,13 +6,21 @@ import { format } from "date-fns";
  * @returns {Object} Object with calories, protein, carbs, and fats totals
  */
 export function calculateMacros(foodEntries) {
-  return foodEntries.reduce((acc, entry) => ({
+  const totals = foodEntries.reduce((acc, entry) => ({
     calories: acc.calories + (entry.calories || 0),
     protein: acc.protein + (entry.protein_grams || 0),
     carbs: acc.carbs + (entry.carbs_grams || 0),
     fats: acc.fats + (entry.fats_grams || 0),
+    // Null fiber means "unknown for this food", not zero — it still contributes
+    // nothing to the total, but fiberEntries counts how many entries actually
+    // reported it, so the caller can tell a real total from a partial one.
+    fiber: acc.fiber + (entry.fiber_grams || 0),
+    fiberEntries: acc.fiberEntries + (entry.fiber_grams != null ? 1 : 0),
     cost: acc.cost + (entry.cost_usd || 0),
-  }), { calories: 0, protein: 0, carbs: 0, fats: 0, cost: 0 });
+  }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0, fiberEntries: 0, cost: 0 });
+  // Complete only when every entry reported fiber. An empty day counts as
+  // complete — there's nothing missing from it.
+  return { ...totals, fiberKnown: totals.fiberEntries === foodEntries.length };
 }
 
 /**
@@ -34,6 +42,7 @@ export function getRecentFoods(entries, limit = 10) {
         protein_grams: entry.protein_grams,
         carbs_grams: entry.carbs_grams,
         fats_grams: entry.fats_grams,
+        fiber_grams: entry.fiber_grams,
         meal_type: entry.meal_type,
         serving_size: entry.serving_size,
       });
@@ -112,16 +121,55 @@ export function isServingLikeUnit(unit) {
 }
 
 /**
+ * Normalize a food's portions into a { lowercased label -> grams } lookup.
+ *
+ * Accepts the array of rows from food_portions, an already-built map, or
+ * null/undefined. Every helper below takes portions in any of those shapes so
+ * callers never have to remember which one they're holding.
+ */
+export function portionsMap(portions) {
+  if (!portions) return {};
+  if (Array.isArray(portions)) {
+    const map = {};
+    for (const p of portions) {
+      const label = String(p?.label || "").toLowerCase().trim();
+      const grams = Number(p?.grams);
+      if (label && Number.isFinite(grams) && grams > 0) map[label] = grams;
+    }
+    return map;
+  }
+  return portions;
+}
+
+/** Portion labels a food defines, in the order they should appear in a picker. */
+export function portionLabels(portions) {
+  if (Array.isArray(portions)) {
+    return portions
+      .filter((p) => p?.label && Number(p?.grams) > 0)
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((p) => String(p.label).toLowerCase().trim());
+  }
+  return Object.keys(portionsMap(portions));
+}
+
+/**
  * Grams for `amount` of `unit`, given the food's own serving weight.
  *
  * Returns null when the mass genuinely isn't knowable — a serving-like unit on a
  * food with no recorded serving weight, or a unit that isn't in the table. Callers
  * decide what to do with that; nothing here invents a 100 g serving.
  */
-export function gramsForAmount(amount, unit, servingGrams) {
+export function gramsForAmount(amount, unit, servingGrams, portions) {
   const qty = Number(amount);
   if (!Number.isFinite(qty)) return null;
   const u = String(unit || "").toLowerCase().trim();
+
+  // A portion the food itself defines outranks everything below it. This is what
+  // makes a food-specific "cup" beat the generic 240 g water constant.
+  const portionGrams = Number(portionsMap(portions)[u]);
+  if (Number.isFinite(portionGrams) && portionGrams > 0) return qty * portionGrams;
+
   if (isServingLikeUnit(u)) {
     const g = Number(servingGrams);
     return Number.isFinite(g) && g > 0 ? qty * g : null;
@@ -143,10 +191,10 @@ export function baseQuantityForUnit(unit) {
  * serving_grams), it falls back to the plain quantity ratio, which is what the
  * app did before serving weights existed.
  */
-export function scaleFromBase({ amount, unit, baseUnit, servingGrams }) {
+export function scaleFromBase({ amount, unit, baseUnit, servingGrams, portions }) {
   const baseQty = baseQuantityForUnit(baseUnit);
-  const targetGrams = gramsForAmount(amount, unit, servingGrams);
-  const baseGrams = gramsForAmount(baseQty, baseUnit, servingGrams);
+  const targetGrams = gramsForAmount(amount, unit, servingGrams, portions);
+  const baseGrams = gramsForAmount(baseQty, baseUnit, servingGrams, portions);
   if (targetGrams != null && baseGrams != null && baseGrams > 0) {
     return targetGrams / baseGrams;
   }
@@ -165,24 +213,32 @@ const formatGrams = (g) => `${Math.round(g * 10) / 10} g`;
  * The line under the amount picker: what the selected unit actually weighs.
  * Returns null when there's nothing true to say.
  */
-export function formatServingHint({ amount, unit, servingGrams, household }) {
+export function formatServingHint({ amount, unit, servingGrams, portions, household }) {
   const parts = [];
   const u = String(unit || "").toLowerCase().trim();
-  const perUnit = gramsForAmount(1, u, servingGrams);
+  const map = portionsMap(portions);
+  const perUnit = gramsForAmount(1, u, servingGrams, map);
+  const isNamedPortion = map[u] > 0;
 
-  if (isServingLikeUnit(u)) {
+  if (isServingLikeUnit(u) || isNamedPortion) {
     if (perUnit != null) {
       parts.push(`1 ${u} (${formatGrams(perUnit)})`);
-      const total = gramsForAmount(amount, u, servingGrams);
+      const total = gramsForAmount(amount, u, servingGrams, map);
       if (total != null && Number(amount) !== 1) {
         parts.push(`${trimNumber(amount)} ${u} = ${formatGrams(total)}`);
       }
     }
   } else if (u === "g" || u === "ml") {
-    const g = Number(servingGrams);
-    if (Number.isFinite(g) && g > 0) parts.push(`1 serving (${formatGrams(g)})`);
+    // In grams, the useful reminder is what the food's own portions weigh.
+    const named = portionLabels(portions);
+    if (named.length) {
+      parts.push(named.map((l) => `1 ${l} (${formatGrams(map[l])})`).join(", "));
+    } else {
+      const g = Number(servingGrams);
+      if (Number.isFinite(g) && g > 0) parts.push(`1 serving (${formatGrams(g)})`);
+    }
   } else {
-    const total = gramsForAmount(amount, u, servingGrams);
+    const total = gramsForAmount(amount, u, servingGrams, map);
     if (total != null) parts.push(`${trimNumber(amount)} ${u} = ${formatGrams(total)}`);
   }
 
@@ -201,7 +257,10 @@ export function formatEntryServing(entry) {
   if (String(entry.serving_size) === "1" && !unit) return null;
   const base = `${entry.serving_size}${unit}`;
   const g = Number(entry.serving_grams);
-  if (isServingLikeUnit(entry.serving_unit) && Number.isFinite(g) && g > 0) {
+  const u = String(entry.serving_unit || "").toLowerCase().trim();
+  // Any unit that isn't already a weight gets its weight spelled out: servings,
+  // pieces, and named portions like 'slice' all leave the mass unsaid otherwise.
+  if (u !== "g" && u !== "ml" && Number.isFinite(g) && g > 0) {
     return `${base} (${formatGrams(g)})`;
   }
   return base;
@@ -216,12 +275,13 @@ export function rescaleIngredient(ingredient, newServingSize, currentUnit) {
   const baseUnit = ingredient._base_serving_unit || ingredient.serving_unit || "g";
   const unit = currentUnit || ingredient.serving_unit || "g";
   const servingGrams = ingredient._serving_grams ?? null;
+  const portions = ingredient._portions ?? null;
 
   const newGrams =
-    gramsForAmount(newServingSize, unit, servingGrams) ??
+    gramsForAmount(newServingSize, unit, servingGrams, portions) ??
     newServingSize * (UNIT_TO_GRAMS[unit] || 1);
   const baseGrams =
-    gramsForAmount(baseServing, baseUnit, servingGrams) ??
+    gramsForAmount(baseServing, baseUnit, servingGrams, portions) ??
     baseServing * (UNIT_TO_GRAMS[baseUnit] || 1);
   const ratio = baseGrams > 0 ? newGrams / baseGrams : 0;
 

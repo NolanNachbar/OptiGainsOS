@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile, useAllFoodEntries, useCustomFoods, useBodyWeightEntries } from "@/hooks/useUserQueries";
+import { useProfile, useAllFoodEntries, useCustomFoods, useFoodPortions, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import {
   calculateMacros,
@@ -15,6 +15,8 @@ import {
   scaleFromBase,
   formatServingHint,
   formatEntryServing,
+  portionsMap,
+  portionLabels,
 } from "@/utils/nutritionUtils";
 import { calculateMacroSplit, getBestTDEE, calculatePhaseCalories } from "@/utils/coachingUtils";
 import { useDietPhase } from "@/hooks/useDietPhase";
@@ -28,8 +30,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame } from "lucide-react";
-import { queryKeys, invalidateCustomFoods, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
-import { format } from "date-fns";
+import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
+import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -118,6 +120,33 @@ const GHOST_DASHED =
 // goals" affordance swaps this for a teal action-hover instead.
 const GHOST_DASHED_HOVER = "hover:text-ink hover:border-charcoal-borderSoft";
 
+// The units every food gets for free. A food that defines its own portion under
+// one of these names (a cup of flour is 120 g, not the 240 g water constant)
+// replaces the entry rather than sitting beside it.
+// Star a saved food to float it to the top of My Foods. Sits beside the row's
+// select button rather than inside it — nesting buttons is invalid HTML and the
+// star would swallow the click that picks the food.
+const FavoriteToggle = ({ food, onToggle }) => (
+  <button
+    type="button"
+    onClick={(e) => { e.stopPropagation(); onToggle({ id: food.id, is_favorite: !food.is_favorite }); }}
+    aria-label={food.is_favorite ? `Unfavorite ${food.food_name}` : `Favorite ${food.food_name}`}
+    aria-pressed={!!food.is_favorite}
+    className="px-3 py-3 min-h-[44px] shrink-0 text-ink-faint hover:text-gold transition-colors duration-200 [transition-timing-function:var(--ease)]"
+  >
+    <Star className={`w-4 h-4 ${food.is_favorite ? "fill-gold text-gold" : ""}`} />
+  </button>
+);
+
+const GENERIC_UNITS = [
+  { value: "g", label: "grams" },
+  { value: "oz", label: "oz" },
+  { value: "cup", label: "cup(s)" },
+  { value: "tbsp", label: "tbsp" },
+  { value: "tsp", label: "tsp" },
+  { value: "ml", label: "ml" },
+];
+
 // Downscale a captured photo before upload. Phones shoot multi-MB full-res
 // images that blow the edge function's ~10MB cap and crawl on weak connections,
 // so cap the long edge and re-encode as JPEG. Falls back to the raw data URL if
@@ -203,12 +232,15 @@ export default function FoodTracker() {
     protein_grams: 0,
     carbs_grams: 0,
     fats_grams: 0,
+    // Null, not 0: a food whose fiber nobody knows is not a zero-fiber food.
+    fiber_grams: null,
   });
   const [baseMacros, setBaseMacros] = useState({
     calories: 0,
     protein_grams: 0,
     carbs_grams: 0,
     fats_grams: 0,
+    fiber_grams: null,
   });
   // What one serving/piece of the selected food weighs, in grams. Set from
   // whichever source the food came from: USDA serving size, a custom food's
@@ -219,6 +251,23 @@ export default function FoodTracker() {
   // The unit baseMacros are expressed in. 'g'/'ml' means per 100; anything else
   // means per 1. USDA/barcode foods are always per 100 g.
   const [baseUnit, setBaseUnit] = useState('g');
+  // The selected food's own named portions: [{ id?, label, grams }]. They become
+  // units in the picker and outrank the generic conversion table, which is what
+  // makes 'cup' mean this food's cup rather than a cup of water.
+  const [activePortions, setActivePortions] = useState([]);
+  // The custom_foods row the form is editing, when there is one. Portion edits
+  // write straight through for a saved food; for a new one they're held here and
+  // flushed the moment it's saved.
+  const [activeFoodId, setActiveFoodId] = useState(null);
+  const [portionDraft, setPortionDraft] = useState({ label: "", grams: "" });
+  const [portionsExpanded, setPortionsExpanded] = useState(false);
+  // Copy a previous day's log forward.
+  const [showCopyDayDialog, setShowCopyDayDialog] = useState(false);
+  const [copyFromDate, setCopyFromDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd"));
+  const [copySelection, setCopySelection] = useState({});
+  // Descriptive intake stats window, in days.
+  const [statsWindow, setStatsWindow] = useState(7);
+  const [showIntakeStats, setShowIntakeStats] = useState(false);
   // Extra descriptive text from the source, e.g. USDA's "2/3 cup" household
   // serving or an AI estimate's serving description. Appended to the hint.
   const [servingHint, setServingHint] = useState(null);
@@ -357,6 +406,7 @@ export default function FoodTracker() {
       unit: newFood.serving_unit,
       baseUnit,
       servingGrams: foodServingSizeGrams,
+      portions: activePortions,
     });
     setNewFood(prev => ({
       ...prev,
@@ -364,8 +414,12 @@ export default function FoodTracker() {
       protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
       fats_grams: Math.round(baseMacros.fats_grams * scale * 10) / 10,
+      // Unknown fiber scales to unknown fiber, never to zero.
+      fiber_grams: baseMacros.fiber_grams == null
+        ? null
+        : Math.round(baseMacros.fiber_grams * scale * 10) / 10,
     }));
-  }, [newFood.serving_amount, newFood.serving_unit, baseMacros, baseUnit, foodServingSizeGrams]);
+  }, [newFood.serving_amount, newFood.serving_unit, baseMacros, baseUnit, foodServingSizeGrams, activePortions]);
 
   const { profile } = useProfile();
   const { weightEntries } = useBodyWeightEntries();
@@ -484,11 +538,26 @@ export default function FoodTracker() {
   }, [baseMacros, isUsdaFood]);
 
   const { customFoods } = useCustomFoods();
+  const { portionsByFood } = useFoodPortions();
+  // Favorites first, then alphabetical. A starred food stops sinking out of
+  // reach the moment it hasn't been eaten in a week.
+  const sortedCustomFoods = useMemo(() => {
+    return [...customFoods].sort((a, b) => {
+      if (!!a.is_favorite !== !!b.is_favorite) return a.is_favorite ? -1 : 1;
+      return (a.food_name || "").localeCompare(b.food_name || "");
+    });
+  }, [customFoods]);
   const matchingCustomFoods = searchQuery.length >= 2
-    ? customFoods.filter((f) =>
+    ? sortedCustomFoods.filter((f) =>
         f.food_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
+
+  const toggleFavoriteFoodMutation = useMutation({
+    mutationFn: ({ id, is_favorite }) => db.entities.CustomFood.update(id, { is_favorite }),
+    onSuccess: () => invalidateCustomFoods(queryClient),
+    onError: () => toast.error("Couldn't update favorite"),
+  });
 
   // Save custom food mutation (fire-and-forget)
   const saveCustomFoodMutation = useMutation({
@@ -502,7 +571,17 @@ export default function FoodTracker() {
       }
       return db.entities.CustomFood.create({ ...food, created_by: user.id });
     },
-    onSuccess: () => invalidateCustomFoods(queryClient),
+    onSuccess: (saved) => {
+      invalidateCustomFoods(queryClient);
+      // A food's portions are part of the food. Flush whatever the form is
+      // holding now that there's a row to hang them off.
+      if (saved?.id) {
+        setActiveFoodId(saved.id);
+        syncPortions(saved.id, activePortions).catch((e) =>
+          toast.error(`Saved the food, but its portions didn't stick: ${e.message}`)
+        );
+      }
+    },
   });
 
   // Build the custom-food payload from the current form. Stored macros are per
@@ -516,6 +595,7 @@ export default function FoodTracker() {
       unit,
       baseUnit,
       servingGrams: foodServingSizeGrams,
+      portions: activePortions,
     });
     return {
       food_name: newFood.food_name,
@@ -526,7 +606,48 @@ export default function FoodTracker() {
       protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
       fats_grams: Math.round(baseMacros.fats_grams * scale * 10) / 10,
+      fiber_grams: baseMacros.fiber_grams == null
+        ? null
+        : Math.round(baseMacros.fiber_grams * scale * 10) / 10,
     };
+  };
+
+  /**
+   * Write the form's portion list to food_portions for a saved food.
+   *
+   * Portions can be typed before the food exists, so this runs after the custom
+   * food is saved and reconciles: rows that vanished from the form are deleted,
+   * new ones are inserted, and changed weights are updated. Labels are the
+   * identity, matching the unique index on (custom_food_id, lower(label)).
+   */
+  const syncPortions = async (foodId, portions) => {
+    if (!foodId || !user) return;
+    const existing = await db.entities.FoodPortion.filter({ custom_food_id: foodId });
+    const wanted = (portions || []).filter((p) => p.label && Number(p.grams) > 0);
+    const wantedByLabel = new Map(wanted.map((p) => [p.label.toLowerCase().trim(), p]));
+
+    for (const row of existing) {
+      const label = String(row.label || "").toLowerCase().trim();
+      const match = wantedByLabel.get(label);
+      if (!match) {
+        await db.entities.FoodPortion.delete(row.id);
+      } else if (Number(row.grams) !== Number(match.grams)) {
+        await db.entities.FoodPortion.update(row.id, { grams: Number(match.grams) });
+      }
+      wantedByLabel.delete(label);
+    }
+
+    let order = existing.length;
+    for (const p of wantedByLabel.values()) {
+      await db.entities.FoodPortion.create({
+        created_by: user.id,
+        custom_food_id: foodId,
+        label: p.label.toLowerCase().trim(),
+        grams: Number(p.grams),
+        sort_order: order++,
+      });
+    }
+    invalidateFoodPortions(queryClient);
   };
 
   const handleImportFoodsCSV = (e) => {
@@ -592,6 +713,9 @@ export default function FoodTracker() {
       protein_grams: Math.round(((entry.protein_grams || 0) / safeScale) * 10) / 10,
       carbs_grams: Math.round(((entry.carbs_grams || 0) / safeScale) * 10) / 10,
       fats_grams: Math.round(((entry.fats_grams || 0) / safeScale) * 10) / 10,
+      fiber_grams: entry.fiber_grams == null
+        ? null
+        : Math.round(((entry.fiber_grams || 0) / safeScale) * 10) / 10,
     };
 
     // Grams per single unit, recovered from the total weight the entry recorded.
@@ -605,6 +729,13 @@ export default function FoodTracker() {
     setIsUsdaFood(false);
     setServingHint(null);
     setBaseMacros(baseMacroValues);
+    // A logged entry doesn't carry the food's portion list; if the same food is
+    // saved in My Foods, pick its portions back up by name.
+    const savedMatch = customFoods.find(
+      (f) => f.food_name.toLowerCase() === String(entry.food_name || "").toLowerCase()
+    );
+    setActiveFoodId(savedMatch?.id || null);
+    setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
@@ -614,6 +745,7 @@ export default function FoodTracker() {
       protein_grams: entry.protein_grams || 0,
       carbs_grams: entry.carbs_grams || 0,
       fats_grams: entry.fats_grams || 0,
+      fiber_grams: entry.fiber_grams ?? null,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
@@ -632,6 +764,9 @@ export default function FoodTracker() {
       protein_grams: Math.round(((food.protein_grams || 0) / safeScale) * 10) / 10,
       carbs_grams: Math.round(((food.carbs_grams || 0) / safeScale) * 10) / 10,
       fats_grams: Math.round(((food.fats_grams || 0) / safeScale) * 10) / 10,
+      fiber_grams: food.fiber_grams == null
+        ? null
+        : Math.round(((food.fiber_grams || 0) / safeScale) * 10) / 10,
     };
 
     // What one serving of this food weighs, if it was ever recorded. Null stays
@@ -644,6 +779,10 @@ export default function FoodTracker() {
     setIsUsdaFood(false);
     setServingHint(null);
     setBaseMacros(baseMacroValues);
+    // Synthetic foods (AI estimates, label scans) have no row yet — no id, and
+    // no portions until the athlete saves them to My Foods.
+    setActiveFoodId(food.id || null);
+    setActivePortions(food.id ? (portionsByFood[food.id] || []) : []);
 
     // Set default amount: 100 for g/ml, otherwise 1
     const defaultAmount = ['g', 'ml'].includes(originalUnit) ? 100 : 1;
@@ -658,6 +797,7 @@ export default function FoodTracker() {
       protein_grams: Math.round(baseMacroValues.protein_grams * defaultScale * 10) / 10,
       carbs_grams: Math.round(baseMacroValues.carbs_grams * defaultScale * 10) / 10,
       fats_grams: Math.round(baseMacroValues.fats_grams * defaultScale * 10) / 10,
+      fiber_grams: baseMacroValues.fiber_grams,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
@@ -689,6 +829,7 @@ export default function FoodTracker() {
         protein_grams: est.protein,
         carbs_grams: est.carbs,
         fats_grams: est.fats,
+        fiber_grams: est.fiber ?? null,
       });
       setServingHint(est.serving_description ? `Estimated for ${est.serving_description}` : null);
       setIsEstimatedFood(true);
@@ -821,6 +962,7 @@ export default function FoodTracker() {
         protein_grams: est.protein,
         carbs_grams: est.carbs,
         fats_grams: est.fats,
+        fiber_grams: est.fiber ?? null,
       });
       setServingHint(est.serving_description ? `Label: ${est.serving_description}` : null);
       setIsEstimatedFood(true);
@@ -902,7 +1044,12 @@ const handleSaveMealTemplate = () => {
   // Total grams this entry represents, resolved now so the log stays readable
   // even if the food's definition changes later. Null when genuinely unknown.
   const entryServingGrams = (data) =>
-    gramsForAmount(parseFloat(data.serving_amount) || 1, data.serving_unit, foodServingSizeGrams);
+    gramsForAmount(
+      parseFloat(data.serving_amount) || 1,
+      data.serving_unit,
+      foodServingSizeGrams,
+      activePortions
+    );
 
   const addFoodMutation = useMutation({
     mutationFn: async (data) => {
@@ -916,6 +1063,7 @@ const handleSaveMealTemplate = () => {
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
         fats_grams: data.fats_grams,
+        fiber_grams: data.fiber_grams ?? null,
         date: selectedDate,
         created_by: user.id,
         eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
@@ -967,6 +1115,7 @@ const handleSaveMealTemplate = () => {
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
         fats_grams: data.fats_grams,
+        fiber_grams: data.fiber_grams ?? null,
         date: selectedDate,
       });
     },
@@ -995,9 +1144,17 @@ const handleSaveMealTemplate = () => {
       protein_grams: Math.round(((entry.protein_grams || 0) / safeScale) * 10) / 10,
       carbs_grams: Math.round(((entry.carbs_grams || 0) / safeScale) * 10) / 10,
       fats_grams: Math.round(((entry.fats_grams || 0) / safeScale) * 10) / 10,
+      fiber_grams: entry.fiber_grams == null
+        ? null
+        : Math.round(((entry.fiber_grams || 0) / safeScale) * 10) / 10,
     };
     setIsUsdaFood(false);
     setBaseUnit(unit);
+    const savedMatch = customFoods.find(
+      (f) => f.food_name.toLowerCase() === String(entry.food_name || "").toLowerCase()
+    );
+    setActiveFoodId(savedMatch?.id || null);
+    setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     // Recover grams-per-unit from the total weight the entry recorded, so editing
     // a logged serving still shows what it weighs.
     setFoodServingSizeGrams(
@@ -1016,6 +1173,7 @@ const handleSaveMealTemplate = () => {
       protein_grams: entry.protein_grams || 0,
       carbs_grams: entry.carbs_grams || 0,
       fats_grams: entry.fats_grams || 0,
+      fiber_grams: entry.fiber_grams ?? null,
     });
     setSelectedDate(entry.date || format(new Date(), "yyyy-MM-dd"));
     setEditingEntry(entry);
@@ -1032,8 +1190,8 @@ const handleSaveMealTemplate = () => {
   const changeServingUnit = (value) => {
     if (value === newFood.serving_unit) return;
     const amount = parseFloat(newFood.serving_amount) || 0;
-    const fromPerUnit = gramsForAmount(1, newFood.serving_unit, foodServingSizeGrams);
-    const toPerUnit = gramsForAmount(1, value, foodServingSizeGrams);
+    const fromPerUnit = gramsForAmount(1, newFood.serving_unit, foodServingSizeGrams, activePortions);
+    const toPerUnit = gramsForAmount(1, value, foodServingSizeGrams, activePortions);
 
     if (fromPerUnit != null && toPerUnit > 0) {
       const newAmount = Math.round(((amount * fromPerUnit) / toPerUnit) * 100) / 100;
@@ -1049,6 +1207,9 @@ const handleSaveMealTemplate = () => {
       protein_grams: Math.round((parseFloat(newFood.protein_grams) || 0) * 10) / 10,
       carbs_grams: Math.round((parseFloat(newFood.carbs_grams) || 0) * 10) / 10,
       fats_grams: Math.round((parseFloat(newFood.fats_grams) || 0) * 10) / 10,
+      fiber_grams: newFood.fiber_grams == null
+        ? null
+        : Math.round((parseFloat(newFood.fiber_grams) || 0) * 10) / 10,
     });
     setBaseUnit(value);
     setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
@@ -1060,8 +1221,54 @@ const handleSaveMealTemplate = () => {
     amount: parseFloat(newFood.serving_amount) || 0,
     unit: newFood.serving_unit,
     servingGrams: foodServingSizeGrams,
+    portions: activePortions,
     household: servingHint,
   });
+
+  // Portion labels this food defines, offered as units in the picker.
+  const activePortionLabels = useMemo(() => portionLabels(activePortions), [activePortions]);
+  const activePortionMap = useMemo(() => portionsMap(activePortions), [activePortions]);
+  // The generic units, minus any the food has already redefined — a food that
+  // says "cup = 130 g" must not also offer the 240 g water constant under the
+  // same name, and two SelectItems can't share a value anyway.
+  const genericUnitOptions = useMemo(
+    () => GENERIC_UNITS.filter((u) => !activePortionMap[u.value]),
+    [activePortionMap]
+  );
+  const showServingLikeUnits =
+    foodServingSizeGrams > 0 || isServingLikeUnit(newFood.serving_unit) || isServingLikeUnit(baseUnit);
+
+  // Portions live in local state until the food is saved (syncPortions flushes
+  // them once there's an id), so they can be typed before the food exists. Once
+  // the food does exist, every edit writes straight through — a portion is a
+  // property of the food, not of the entry being logged, so it shouldn't wait on
+  // whether this particular log gets submitted.
+  const persistPortions = (next) => {
+    setActivePortions(next);
+    if (activeFoodId) {
+      syncPortions(activeFoodId, next).catch((e) =>
+        toast.error(`Couldn't save the portion: ${e.message}`)
+      );
+    }
+  };
+
+  const addPortionDraft = () => {
+    const label = String(portionDraft.label || "").trim().toLowerCase();
+    const grams = parseFloat(portionDraft.grams);
+    if (!label) return toast.error("Name the portion first (slice, loaf, scoop…)");
+    if (!Number.isFinite(grams) || grams <= 0) return toast.error("Portion needs a gram weight");
+    if (activePortionMap[label]) return toast.error(`"${label}" is already a portion of this food`);
+    persistPortions([...activePortions, { label, grams, sort_order: activePortions.length }]);
+    setPortionDraft({ label: "", grams: "" });
+  };
+
+  const removePortion = (label) => {
+    const target = String(label).toLowerCase();
+    persistPortions(activePortions.filter((p) => String(p.label).toLowerCase() !== target));
+    // Logging in a unit that no longer exists would silently lose its gram
+    // weight, so fall back to grams.
+    if (String(newFood.serving_unit).toLowerCase() === target) changeServingUnit("g");
+  };
 
   // Scale from the stored base macros to what's currently on screen. Shared by
   // the macro inputs so a typed total converts back to a base value correctly.
@@ -1070,6 +1277,7 @@ const handleSaveMealTemplate = () => {
     unit: newFood.serving_unit,
     baseUnit,
     servingGrams: foodServingSizeGrams,
+    portions: activePortions,
   });
 
   const resetForm = () => {
@@ -1082,12 +1290,17 @@ const handleSaveMealTemplate = () => {
       protein_grams: 0,
       carbs_grams: 0,
       fats_grams: 0,
+      fiber_grams: null,
     });
-    setBaseMacros({ calories: 0, protein_grams: 0, carbs_grams: 0, fats_grams: 0 });
+    setBaseMacros({ calories: 0, protein_grams: 0, carbs_grams: 0, fats_grams: 0, fiber_grams: null });
     setFoodServingSizeGrams(null);
     setBaseUnit("serving");
     setServingHint(null);
     setIsUsdaFood(false);
+    setActivePortions([]);
+    setActiveFoodId(null);
+    setPortionDraft({ label: "", grams: "" });
+    setPortionsExpanded(false);
     setSearchQuery("");
     setLoggingMode("now");
     setGenericResults([]); setBrandedResults([]);
@@ -1103,6 +1316,8 @@ const handleSaveMealTemplate = () => {
       protein_grams: Math.round(food.protein * 10) / 10,
       carbs_grams: Math.round(food.carbs * 10) / 10,
       fats_grams: Math.round(food.fats * 10) / 10,
+      // USDA reports fiber for most foods; null when it doesn't.
+      fiber_grams: food.fiber == null ? null : Math.round(food.fiber * 10) / 10,
     };
     // MacroFactor-style defaults: when the food has a real serving size,
     // start at "1 serving" (the hint shows its gram equivalent + household
@@ -1121,6 +1336,8 @@ const handleSaveMealTemplate = () => {
     setServingHint(food.householdServing || null);
     setIsUsdaFood(true);
     setBaseMacros(baseMacroValues);
+    setActiveFoodId(null);
+    setActivePortions([]);
     setNewFood({
       ...newFood,
       food_name: food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
@@ -1130,6 +1347,9 @@ const handleSaveMealTemplate = () => {
       protein_grams: Math.round(baseMacroValues.protein_grams * initialScale * 10) / 10,
       carbs_grams: Math.round(baseMacroValues.carbs_grams * initialScale * 10) / 10,
       fats_grams: Math.round(baseMacroValues.fats_grams * initialScale * 10) / 10,
+      fiber_grams: baseMacroValues.fiber_grams == null
+        ? null
+        : Math.round(baseMacroValues.fiber_grams * initialScale * 10) / 10,
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
@@ -1146,6 +1366,99 @@ const handleSaveMealTemplate = () => {
   // off can then never blow the budget.
   const planFit = usePlannedDayRebalance(selectedDate, foodEntries, targets.calories, targets.proteinFloor);
   const plannedCount = planFit.plannedCount;
+
+  // ── Copy a previous day forward ────────────────────────────────────────────
+  // The recents list handles one food at a time; this handles "yesterday again",
+  // which is most of a repeatable diet.
+  const copySourceEntries = allFoodEntries.filter((e) => e.date === copyFromDate);
+
+  const copyDayMutation = useMutation({
+    mutationFn: async (entries) => {
+      for (const entry of entries) {
+        await db.entities.FoodEntry.create({
+          food_name: entry.food_name,
+          meal_type: entry.meal_type,
+          serving_size: entry.serving_size,
+          serving_unit: entry.serving_unit,
+          serving_grams: entry.serving_grams ?? null,
+          calories: entry.calories,
+          protein_grams: entry.protein_grams,
+          carbs_grams: entry.carbs_grams,
+          fats_grams: entry.fats_grams,
+          fiber_grams: entry.fiber_grams ?? null,
+          date: selectedDate,
+          created_by: user.id,
+          // Copies are logged against the meal's usual clock time, not the
+          // moment of copying, so eaten_at stays meaningful.
+          eaten_at: getEatenAt("earlier", entry.meal_type, selectedDate),
+        });
+      }
+      return entries.length;
+    },
+    onSuccess: (count) => {
+      invalidateFood(queryClient);
+      setShowCopyDayDialog(false);
+      setCopySelection({});
+      toast.success(`Copied ${count} ${count === 1 ? "entry" : "entries"} to ${selectedDate}`);
+    },
+    onError: (e) => toast.error(`Couldn't copy the day: ${e.message}`),
+  });
+
+  // ── Descriptive intake stats ───────────────────────────────────────────────
+  // Averages over days actually logged, not over the calendar window: dividing
+  // by 7 when only 4 days were logged reports a deficit that never happened.
+  const intakeStats = useMemo(() => {
+    const start = format(subDays(parseISO(selectedDate), statsWindow - 1), "yyyy-MM-dd");
+    const inWindow = allFoodEntries.filter(
+      (e) => e.date >= start && e.date <= selectedDate && !e.planned
+    );
+    const byDate = {};
+    for (const e of inWindow) {
+      if (!byDate[e.date]) {
+        byDate[e.date] = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0, fiberKnown: true };
+      }
+      const d = byDate[e.date];
+      d.calories += e.calories || 0;
+      d.protein += e.protein_grams || 0;
+      d.carbs += e.carbs_grams || 0;
+      d.fats += e.fats_grams || 0;
+      d.fiber += e.fiber_grams || 0;
+      if (e.fiber_grams == null) d.fiberKnown = false;
+    }
+    const days = Object.values(byDate);
+    if (!days.length) return null;
+
+    const mean = (pick) => days.reduce((s, d) => s + pick(d), 0) / days.length;
+    const avgCalories = Math.round(mean((d) => d.calories));
+    const avgProtein = Math.round(mean((d) => d.protein));
+    const avgCarbs = Math.round(mean((d) => d.carbs));
+    const avgFats = Math.round(mean((d) => d.fats));
+    const fiberDays = days.filter((d) => d.fiberKnown);
+    const macroCals = avgProtein * 4 + avgCarbs * 4 + avgFats * 9;
+
+    return {
+      daysLogged: days.length,
+      windowDays: statsWindow,
+      avgCalories,
+      avgProtein,
+      avgCarbs,
+      avgFats,
+      // Only average fiber over days where every entry reported it — a day with
+      // one unknown food understates, and a silent understatement is worse than
+      // an absent number.
+      avgFiber: fiberDays.length
+        ? Math.round((fiberDays.reduce((s, d) => s + d.fiber, 0) / fiberDays.length) * 10) / 10
+        : null,
+      fiberCompleteDays: fiberDays.length,
+      split: macroCals > 0
+        ? {
+            protein: Math.round(((avgProtein * 4) / macroCals) * 100),
+            carbs: Math.round(((avgCarbs * 4) / macroCals) * 100),
+            fats: Math.round(((avgFats * 9) / macroCals) * 100),
+          }
+        : null,
+    };
+  }, [allFoodEntries, selectedDate, statsWindow]);
 
   const mealGroups = {
     breakfast: foodEntries.filter(e => e.meal_type === "breakfast"),
@@ -1436,6 +1749,23 @@ const handleSaveMealTemplate = () => {
                           </div>
                         );
                       })}
+                      {/* Fiber sits below the macro bars, not among them: it's
+                          already counted inside carbs, so giving it a bar would
+                          double-draw the same grams. An incomplete day says so
+                          rather than reporting a total it can't stand behind. */}
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <span className="text-[10.5px] font-bold text-secondary w-3.5 shrink-0">Fb</span>
+                        <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
+                          <span className="text-[10px] text-ink-faint truncate">
+                            fiber{targets.fiberIsDefault ? ' · 14 g / 1000 kcal' : ''}
+                          </span>
+                          <span className="font-technical text-[10.5px] font-bold whitespace-nowrap shrink-0 tabular-nums text-secondary">
+                            {Math.round(totals.fiber || 0)}
+                            <span className="opacity-60">/{targets.fiber}g</span>
+                            {!totals.fiberKnown && <span className="opacity-60 ml-1">+ unknown</span>}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1487,6 +1817,103 @@ const handleSaveMealTemplate = () => {
                         ? 'fits remaining budget'
                         : `exceeds what’s left by ${Math.max(0, planFit.plannedCal - planFit.remaining).toLocaleString()} kcal, edit or remove items.`}
                 </span>
+              </div>
+            )}
+
+            {/* Repeat a day, and see what the last week actually looked like.
+                The recents list handles one food; most of a repeatable diet is
+                "the same as yesterday". */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="dim"
+                size="sm"
+                onClick={() => {
+                  // Default to the most recent logged day before this one, so
+                  // the dialog opens on something rather than an empty date.
+                  const prior = allFoodEntries
+                    .map((e) => e.date)
+                    .filter((d) => d < selectedDate)
+                    .sort()
+                    .pop();
+                  setCopyFromDate(prior || format(subDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
+                  setCopySelection({});
+                  setShowCopyDayDialog(true);
+                }}
+              >
+                <Bookmark className="w-3.5 h-3.5 mr-1.5" /> Copy a day
+              </Button>
+              <Button variant="dim" size="sm" onClick={() => setShowIntakeStats((v) => !v)}>
+                <Calculator className="w-3.5 h-3.5 mr-1.5" /> Intake stats
+                {showIntakeStats ? <ChevronUp className="w-3.5 h-3.5 ml-1.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-1.5" />}
+              </Button>
+            </div>
+
+            {showIntakeStats && (
+              <div className="glass px-4 sm:px-5 py-3.5">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="section-label">Intake stats</span>
+                  <div className="flex items-center gap-1">
+                    {[7, 14, 28].map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        onClick={() => setStatsWindow(w)}
+                        className={`font-technical text-[10.5px] font-bold px-2 py-1 ${
+                          statsWindow === w ? "text-ink glass-inset" : "text-ink-faint hover:text-ink-secondary"
+                        }`}
+                      >
+                        {w}d
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {!intakeStats ? (
+                  <p className="text-xs text-ink-muted">Nothing logged in the last {statsWindow} days.</p>
+                ) : (
+                  <>
+                    {/* Averaged over days actually logged, not over the calendar
+                        window — dividing by 28 when 9 days were logged reports a
+                        deficit that never happened. */}
+                    <p className="text-[10.5px] text-ink-muted mb-2">
+                      Average of {intakeStats.daysLogged} logged {intakeStats.daysLogged === 1 ? "day" : "days"} out of the last {intakeStats.windowDays}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { label: 'Calories', value: intakeStats.avgCalories, unit: '', hue: 'text-gold' },
+                        { label: 'Protein', value: intakeStats.avgProtein, unit: 'g', hue: 'text-coral' },
+                        { label: 'Carbs', value: intakeStats.avgCarbs, unit: 'g', hue: 'text-carb' },
+                        { label: 'Fats', value: intakeStats.avgFats, unit: 'g', hue: 'text-fat' },
+                      ].map(({ label, value, unit, hue }) => (
+                        <div key={label} className="glass-inset px-2 py-2 text-center">
+                          <div className="text-xs text-ink-muted font-medium">{label}</div>
+                          <div className={`font-technical font-semibold text-sm ${hue}`}>{value}{unit}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] text-ink-secondary">
+                      {intakeStats.split && (
+                        <span>
+                          Split{' '}
+                          <span className="font-technical text-ink">
+                            {intakeStats.split.protein}/{intakeStats.split.carbs}/{intakeStats.split.fats}
+                          </span>{' '}
+                          P/C/F by calories
+                        </span>
+                      )}
+                      <span>
+                        Fiber{' '}
+                        {intakeStats.avgFiber == null ? (
+                          <span className="text-ink-faint">not fully logged on any day</span>
+                        ) : (
+                          <>
+                            <span className="font-technical text-ink">{intakeStats.avgFiber}g</span>
+                            <span className="text-ink-faint"> over {intakeStats.fiberCompleteDays} complete {intakeStats.fiberCompleteDays === 1 ? "day" : "days"}</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -2000,10 +2427,13 @@ const handleSaveMealTemplate = () => {
                                 <Star className="w-3 h-3" /> My Foods
                               </div>
                               {matchingCustomFoods.map((food) => (
-                                <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                  <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                                  <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
-                                </button>
+                                <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
+                                  <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
+                                    <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                    <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
+                                  </button>
+                                  <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
+                                </div>
                               ))}
                             </>
                           )}
@@ -2158,11 +2588,14 @@ const handleSaveMealTemplate = () => {
                             </button>
                             {myFoodsExpanded && (
                               <div className="md:max-h-36 md:overflow-y-auto">
-                                {customFoods.map((food) => (
-                                  <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                    <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                                    <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
-                                  </button>
+                                {sortedCustomFoods.map((food) => (
+                                  <div key={food.id} className="flex items-center hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
+                                    <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
+                                      <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                      <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
+                                    </button>
+                                    <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
+                                  </div>
                                 ))}
                               </div>
                             )}
@@ -2276,21 +2709,26 @@ const handleSaveMealTemplate = () => {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  {/* The food's own portions come first — they're the
+                                      only units here whose gram weight this food
+                                      actually vouches for. */}
+                                  {activePortionLabels.map((label) => (
+                                    <SelectItem key={label} value={label}>
+                                      {label} ({activePortionMap[label]}g)
+                                    </SelectItem>
+                                  ))}
                                   {/* Serving-like units only appear when the food's own
                                       weight backs them up, or when it's already stored
                                       that way. Otherwise "1 serving" means nothing. */}
-                                  {(foodServingSizeGrams > 0 || isServingLikeUnit(newFood.serving_unit) || isServingLikeUnit(baseUnit)) && (
-                                    <>
-                                      <SelectItem value="serving">serving(s)</SelectItem>
-                                      <SelectItem value="piece">piece(s)</SelectItem>
-                                    </>
+                                  {showServingLikeUnits && !activePortionMap.serving && (
+                                    <SelectItem value="serving">serving(s)</SelectItem>
                                   )}
-                                  <SelectItem value="g">grams</SelectItem>
-                                  <SelectItem value="oz">oz</SelectItem>
-                                  <SelectItem value="cup">cup(s)</SelectItem>
-                                  <SelectItem value="tbsp">tbsp</SelectItem>
-                                  <SelectItem value="tsp">tsp</SelectItem>
-                                  <SelectItem value="ml">ml</SelectItem>
+                                  {showServingLikeUnits && !activePortionMap.piece && (
+                                    <SelectItem value="piece">piece(s)</SelectItem>
+                                  )}
+                                  {genericUnitOptions.map((u) => (
+                                    <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -2330,6 +2768,71 @@ const handleSaveMealTemplate = () => {
                           </div>
                         )}
 
+                        {/* Named portions. One food, many honest units: a slice is
+                            62 g and a loaf is 800 g, and both beat any generic
+                            table because this food defined them. */}
+                        {!isUsdaFood && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setPortionsExpanded((v) => !v)}
+                              className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary hover:text-ink"
+                            >
+                              {portionsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              Portions
+                              {activePortions.length > 0 && (
+                                <span className="font-technical text-ink-faint">({activePortions.length})</span>
+                              )}
+                            </button>
+
+                            {portionsExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {activePortions.length === 0 && (
+                                  <p className="text-[10.5px] text-ink-muted">
+                                    Weigh one and name it. "slice = 62 g" turns every future log into a count.
+                                  </p>
+                                )}
+                                {activePortions.map((p) => (
+                                  <div key={p.label} className="flex items-center gap-2 glass-inset px-2 py-1.5">
+                                    <span className="text-xs text-ink flex-1">{p.label}</span>
+                                    <span className="font-technical text-xs font-semibold text-ink-secondary">{p.grams}g</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removePortion(p.label)}
+                                      aria-label={`Remove ${p.label} portion`}
+                                      className="text-ink-faint hover:text-coral"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="slice"
+                                    value={portionDraft.label}
+                                    onChange={(e) => setPortionDraft((d) => ({ ...d, label: e.target.value }))}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPortionDraft(); } }}
+                                    className="flex-1"
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="g"
+                                    value={portionDraft.grams}
+                                    onChange={(e) => setPortionDraft((d) => ({ ...d, grams: e.target.value }))}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPortionDraft(); } }}
+                                    className="w-20"
+                                    min="0"
+                                    step="1"
+                                  />
+                                  <Button type="button" variant="outline" size="sm" onClick={addPortionDraft}>
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {(isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0) && (
                           <>
                           <p className="section-label">Total for {newFood.serving_amount} {newFood.serving_unit}</p>
@@ -2339,6 +2842,9 @@ const handleSaveMealTemplate = () => {
                               { label: 'Protein', value: newFood.protein_grams, unit: 'g', hue: 'text-coral' },
                               { label: 'Carbs', value: newFood.carbs_grams, unit: 'g', hue: 'text-carb' },
                               { label: 'Fats', value: newFood.fats_grams, unit: 'g', hue: 'text-fat' },
+                              ...(newFood.fiber_grams != null && newFood.fiber_grams !== ''
+                                ? [{ label: 'Fiber', value: newFood.fiber_grams, unit: 'g', hue: 'text-ink-secondary' }]
+                                : []),
                             ].map(({ label, value, unit, hue }) => (
                               <div key={label} className="glass-inset px-2 py-2 text-center">
                                 <div className="text-xs text-ink-muted font-medium">{label}</div>
@@ -2444,6 +2950,36 @@ const handleSaveMealTemplate = () => {
                                   }
                                 } else {
                                   setBaseMacros({ ...baseMacros, fats_grams: raw });
+                                }
+                              }}
+                              className="mt-1"
+                              min="0"
+                              step="0.1"
+                            />
+                          </div>
+
+                          {/* Fiber is optional and stays null when blank. Blank
+                              means unknown, which is not the same as zero — the
+                              daily average only counts days where every entry
+                              reported it. */}
+                          <div>
+                            <Label htmlFor="fiber">Fiber (g)</Label>
+                            <Input
+                              id="fiber"
+                              type="number"
+                              placeholder="optional"
+                              value={(isUsdaFood ? newFood.fiber_grams : baseMacros.fiber_grams) ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const blank = raw === "";
+                                if (isUsdaFood) {
+                                  setNewFood(prev => ({ ...prev, fiber_grams: blank ? null : raw }));
+                                  if (!blank && currentScale > 0) {
+                                    setBaseMacros(prev => ({ ...prev, fiber_grams: Math.round((parseFloat(raw) || 0) / currentScale * 10) / 10 }));
+                                  }
+                                  if (blank) setBaseMacros(prev => ({ ...prev, fiber_grams: null }));
+                                } else {
+                                  setBaseMacros({ ...baseMacros, fiber_grams: blank ? null : raw });
                                 }
                               }}
                               className="mt-1"
@@ -2853,10 +3389,13 @@ const handleSaveMealTemplate = () => {
                 <>
                   <div className="section-label px-3 py-1.5 bg-charcoal-elevated sticky top-0">My Foods</div>
                   {matchingCustomFoods.map((food) => (
-                    <button key={food.id} onClick={() => selectCustomFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                      <div className="font-medium text-ink text-sm">{food.food_name}</div>
-                      <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
-                    </button>
+                    <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
+                      <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
+                        <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                        <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
+                      </button>
+                      <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
+                    </div>
                   ))}
                 </>
               )}
@@ -2925,18 +3464,20 @@ const handleSaveMealTemplate = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(foodServingSizeGrams > 0 || isServingLikeUnit(newFood.serving_unit) || isServingLikeUnit(baseUnit)) && (
-                      <>
-                        <SelectItem value="serving">serving(s)</SelectItem>
-                        <SelectItem value="piece">piece(s)</SelectItem>
-                      </>
+                    {activePortionLabels.map((label) => (
+                      <SelectItem key={label} value={label}>
+                        {label} ({activePortionMap[label]}g)
+                      </SelectItem>
+                    ))}
+                    {showServingLikeUnits && !activePortionMap.serving && (
+                      <SelectItem value="serving">serving(s)</SelectItem>
                     )}
-                    <SelectItem value="g">grams</SelectItem>
-                    <SelectItem value="oz">oz</SelectItem>
-                    <SelectItem value="cup">cup(s)</SelectItem>
-                    <SelectItem value="tbsp">tbsp</SelectItem>
-                    <SelectItem value="tsp">tsp</SelectItem>
-                    <SelectItem value="ml">ml</SelectItem>
+                    {showServingLikeUnits && !activePortionMap.piece && (
+                      <SelectItem value="piece">piece(s)</SelectItem>
+                    )}
+                    {genericUnitOptions.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -3108,6 +3649,91 @@ const handleSaveMealTemplate = () => {
           onOpenChange={setShowStatsModal}
         />
       )}
+
+      {/* Copy a previous day forward */}
+      <Dialog open={showCopyDayDialog} onOpenChange={setShowCopyDayDialog}>
+        <DialogContent className="max-w-lg flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Copy a day to {selectedDate}</DialogTitle>
+            <DialogDescription>
+              Pick a day, then pick what carries over. Nothing is moved — the source day keeps its entries.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div>
+            <Label htmlFor="copy-from">Copy from</Label>
+            <Input
+              id="copy-from"
+              type="date"
+              value={copyFromDate}
+              max={format(new Date(), "yyyy-MM-dd")}
+              onChange={(e) => { setCopyFromDate(e.target.value); setCopySelection({}); }}
+              className="mt-1"
+            />
+          </div>
+
+          {copySourceEntries.length === 0 ? (
+            <p className="text-xs text-ink-muted">Nothing was logged on {copyFromDate}.</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="section-label">{copySourceEntries.length} entries</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-brand underline"
+                    onClick={() => setCopySelection(Object.fromEntries(copySourceEntries.map((e) => [e.id, true])))}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-ink-muted underline"
+                    onClick={() => setCopySelection({})}
+                  >
+                    None
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-64 overflow-y-auto border border-charcoal-border rounded-lg divide-y divide-charcoal-border">
+                {copySourceEntries.map((entry) => (
+                  <label key={entry.id} className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-charcoal-elevated">
+                    <input
+                      type="checkbox"
+                      checked={!!copySelection[entry.id]}
+                      onChange={(e) => setCopySelection((prev) => ({ ...prev, [entry.id]: e.target.checked }))}
+                      className="shrink-0"
+                    />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm text-ink truncate">{entry.food_name}</span>
+                      <span className="block text-[10.5px] text-ink-muted">
+                        {entry.meal_type} · {formatEntryServing(entry)}
+                      </span>
+                    </span>
+                    <span className="font-technical text-xs font-semibold text-gold shrink-0">
+                      {Math.round(entry.calories || 0)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+
+          <Button
+            onClick={() => copyDayMutation.mutate(copySourceEntries.filter((e) => copySelection[e.id]))}
+            disabled={
+              copyDayMutation.isPending ||
+              !copySourceEntries.some((e) => copySelection[e.id])
+            }
+          >
+            {copyDayMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Copying…</>
+            ) : (
+              <>Copy {copySourceEntries.filter((e) => copySelection[e.id]).length} to {selectedDate}</>
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* Food CSV Format Guide */}
       <Dialog open={showFoodFormatGuide} onOpenChange={setShowFoodFormatGuide}>

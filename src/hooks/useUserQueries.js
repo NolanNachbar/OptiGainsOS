@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -117,6 +118,47 @@ export function useCustomFoods() {
   });
 
   return { customFoods, isLoading, error };
+}
+
+/**
+ * Every portion the user has defined, grouped by custom food id.
+ *
+ * One query rather than one per food: this is a single-user vault app, the whole
+ * table is a few dozen rows, and the logging modal needs a food's portions the
+ * instant it's picked with no loading state in between.
+ */
+export function useFoodPortions() {
+  const { user } = useAuth();
+
+  const { data: portions = [], isLoading, error } = useQuery({
+    queryKey: queryKeys.foodPortions(user?.id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('food_portions')
+        .select('*')
+        .eq('created_by', user.id)
+        .order('sort_order', { ascending: true });
+      // A missing table (migration not yet applied) degrades to "no portions"
+      // rather than taking the whole food log down with it.
+      if (error) {
+        console.warn('food_portions unavailable:', error.message);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const portionsByFood = useMemo(() => {
+    const map = {};
+    for (const p of portions) {
+      if (!map[p.custom_food_id]) map[p.custom_food_id] = [];
+      map[p.custom_food_id].push(p);
+    }
+    return map;
+  }, [portions]);
+
+  return { portions, portionsByFood, isLoading, error };
 }
 
 export function useBodyWeightEntries() {

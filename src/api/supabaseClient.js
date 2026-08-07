@@ -26,6 +26,7 @@ class DatabaseAdapter {
       DietPhase: this.createEntity('diet_phases'),
       WeeklyCheckin: this.createEntity('weekly_checkins'),
       CustomFood: this.createEntity('custom_foods'),
+      FoodPortion: this.createEntity('food_portions'),
       Friendship: this.createEntity('friendships'),
       SharedWorkout: this.createEntity('shared_workouts'),
       SharedWorkoutReaction: this.createEntity('shared_workout_reactions'),

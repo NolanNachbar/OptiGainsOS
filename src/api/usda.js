@@ -42,6 +42,14 @@ function mapFood(food) {
   const carbs    = findByNumber(205)      || findByName('carbohydrate');
   const fats     = findByNumber(204)      || findByName('total lipid') || findByName('fat');
 
+  // 291 = Fiber, total dietary. Null rather than 0 when USDA doesn't report it,
+  // so an unknown never gets logged as a confident zero.
+  const rawFiber = nutrients.find(
+    (n) => n.nutrientNumber === '291' || n.number === '291' ||
+      (n.nutrientName || n.nutrient?.name || '').toLowerCase().includes('fiber, total dietary')
+  );
+  const fiber = rawFiber ? (rawFiber.value ?? rawFiber.amount ?? null) : null;
+
   // USDA serving units arrive as FDC codes ('GRM', 'MLT') or free text ('g',
   // 'ml', 'GM'…). Normalize to 'g'/'ml' so unit defaults don't misfire.
   const rawUnit = String(food.servingSizeUnit || 'g').trim().toLowerCase();
@@ -62,6 +70,7 @@ function mapFood(food) {
     protein,
     carbs,
     fats,
+    fiber,
   };
 }
 

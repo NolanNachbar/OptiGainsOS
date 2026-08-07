@@ -41,6 +41,7 @@ export const queryKeys = {
 
   // Custom Foods
   customFoods: (userId) => ['customFoods', userId],
+  foodPortions: (userId) => ['foodPortions', userId],
 
   // Diet Phases
   dietPhases: (userId) => ['dietPhases', userId],
@@ -139,6 +140,10 @@ export const invalidateBodyWeight = (queryClient) => {
 
 export const invalidateCustomFoods = (queryClient) => {
   queryClient.invalidateQueries({ queryKey: ['customFoods'] });
+};
+
+export const invalidateFoodPortions = (queryClient) => {
+  queryClient.invalidateQueries({ queryKey: ['foodPortions'] });
 };
 
 export const invalidateRecipes = (queryClient) => {

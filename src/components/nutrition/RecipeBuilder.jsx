@@ -11,8 +11,10 @@ import {
   rescaleIngredient,
   stripBaseFields,
   ingredientFromUSDA,
+  portionLabels,
+  portionsMap,
 } from "@/utils/nutritionUtils";
-import { useAllFoodEntries, useCustomFoods } from "@/hooks/useUserQueries";
+import { useAllFoodEntries, useCustomFoods, useFoodPortions } from "@/hooks/useUserQueries";
 import { getRecentFoods } from "@/utils/nutritionUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -564,7 +566,15 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SERVING_UNITS.map((unit) => (
+              {/* This ingredient's own portions first; a generic unit it has
+                  redefined drops out rather than offering two gram weights
+                  under one name. */}
+              {portionLabels(ingredient._portions).map((label) => (
+                <SelectItem key={label} value={label} className="text-xs">
+                  {label}
+                </SelectItem>
+              ))}
+              {SERVING_UNITS.filter((unit) => !portionsMap(ingredient._portions)[unit]).map((unit) => (
                 <SelectItem key={unit} value={unit} className="text-xs">
                   {unit}
                 </SelectItem>
@@ -829,6 +839,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
   const { allFoodEntries } = useAllFoodEntries();
   const recentFoods = getRecentFoods(allFoodEntries, 8);
   const { customFoods } = useCustomFoods();
+  const { portionsByFood } = useFoodPortions();
 
   // Filter custom foods when searching
   const matchingCustomFoods = searchQuery.length >= 2
@@ -906,6 +917,9 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
         // Carried so rescaling a serving-based ingredient to grams is exact
         // rather than falling back to the 100 g-per-serving assumption.
         _serving_grams: food.serving_grams ?? null,
+        // The food's own named portions, so rescaling a "slice" here uses this
+        // food's 62 g rather than the generic table (which has no slice at all).
+        _portions: portionsByFood[food.id] || [],
         calories: Math.round(food.calories),
         protein_grams: Math.round((food.protein_grams || 0) * 10) / 10,
         carbs_grams: Math.round((food.carbs_grams || 0) * 10) / 10,

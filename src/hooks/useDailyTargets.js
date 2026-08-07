@@ -178,11 +178,19 @@ export function useDailyTargets(date) {
     isCut &&
     ((recommended?.deficit_ratio || 0) >= 0.2 || Math.abs(activePhase?.weekly_rate || 0) >= 1.5);
 
+  // Fiber. His own number if he set one, otherwise the DRI's 14 g per 1000 kcal
+  // (Institute of Medicine, 2005), which is where every "25 g / 38 g a day"
+  // figure comes from. Scaling it to the calorie target is the point: fiber need
+  // tracks intake, so it should fall on a cut rather than sit at a fixed number.
+  const fiber = profile?.daily_fiber_goal || Math.round((calories / 1000) * 14);
+
   return {
     calories,
     protein,
     carbs,
     fats,
+    fiber,
+    fiberIsDefault: !profile?.daily_fiber_goal,
     isCut,
     aggressiveCut,
     // Hard cut floor (1.2 g/lb). Consumers that rescale already-written rows
