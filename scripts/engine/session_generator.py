@@ -1673,8 +1673,16 @@ def _build_session(
         # back-off + assistance stack it has no business carrying. [COACH]
         is_focus_slot = (muscle == focus_muscle)
 
-        # Bench daily single → add back-off + assistance only on the chest-focus day
-        if ex_copy.get("name") == "Bench Press (Top Set)" and is_focus_slot:
+        # Bench daily single → the back-off sets attach EVERY time bench is
+        # programmed; the assistance movement stays gated to the chest-focus day.
+        # The 2026-07-29 bloat complaint was about a pull day carrying extra
+        # EXERCISES it had no business carrying, and the assistance slot is still
+        # exactly that. The back-off is not: since the merge (2026-08-07) it is
+        # more sets of a movement already on the card, not a new row. Gating it
+        # left Nolan with a lone 3-rep top set as his whole bench prescription on
+        # any day chest was not the focus, which is the "one set of bench as my
+        # only chest volume" he trained and objected to.
+        if ex_copy.get("name") == "Bench Press (Top Set)":
             bo_name = ("Bench Press (Back-off Int)"
                        if "intensity" in split or "hinge" in split
                        else "Bench Press (Back-off Vol)")
@@ -1696,7 +1704,7 @@ def _build_session(
             # sticking point ("failed lockout" → Reverse Grip Incline Smith; "off the chest" →
             # Larsen/dip), else the deterministic ISO-week rotation so every variant
             # still accrues its own e1RM history.
-            _bench_pool = _allowed(BENCH_ASSISTANCE)
+            _bench_pool = _allowed(BENCH_ASSISTANCE) if is_focus_slot else []
             if _bench_pool:
                 bench_assist = _pick_assistance("bench", _bench_pool, weakness, assist_week)
                 exercises.append(
@@ -1718,8 +1726,10 @@ def _build_session(
                     and not any(e.get("name") == _grip for e in exercises)):
                 exercises.append(_assistance_slot(_grip, wt, intensity, readiness_z))
 
-        # Back Squat top set → add back-off when intensity allows and quads is the focus
-        if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90 and is_focus_slot:
+        # Back Squat top set → back-off whenever intensity allows, focus or not
+        # (same reasoning as bench above: it is sets of a movement already on the
+        # card, not an extra exercise).
+        if ex_copy.get("name") == "Back Squat (Top Set)" and intensity >= 0.90:
             backoff = copy.deepcopy(_EX_BY_NAME["Back Squat (Back-off)"])
             quads_weekly = wt.get("quads", 0)
             if quads_weekly > 0:
@@ -1736,8 +1746,7 @@ def _build_session(
         elif (ex_copy.get("is_goal")
               and "Top Set" in ex_copy.get("name", "")
               and intensity >= 0.85
-              and ex_copy.get("name") != "Back Squat (Top Set)"
-              and is_focus_slot):
+              and ex_copy.get("name") != "Back Squat (Top Set)"):
             backoff_name = ex_copy["name"].replace("Top Set", "Back-off")
             if backoff_name in _EX_BY_NAME:
                 backoff = copy.deepcopy(_EX_BY_NAME[backoff_name])
