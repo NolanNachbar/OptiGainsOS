@@ -4,7 +4,18 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useAllFoodEntries, useCustomFoods, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
-import { calculateMacros, getDailyCalorieTrend, getRecentFoods, UNIT_TO_GRAMS } from "@/utils/nutritionUtils";
+import {
+  calculateMacros,
+  getDailyCalorieTrend,
+  getRecentFoods,
+  UNIT_TO_GRAMS,
+  isServingLikeUnit,
+  gramsForAmount,
+  baseQuantityForUnit,
+  scaleFromBase,
+  formatServingHint,
+  formatEntryServing,
+} from "@/utils/nutritionUtils";
 import { calculateMacroSplit, getBestTDEE, calculatePhaseCalories } from "@/utils/coachingUtils";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
@@ -199,13 +210,20 @@ export default function FoodTracker() {
     carbs_grams: 0,
     fats_grams: 0,
   });
-  // Set when a USDA/barcode food is selected — stores the food's serving size in grams
-  // so "serving" unit scales correctly. Null for manual/custom/recent foods.
+  // What one serving/piece of the selected food weighs, in grams. Set from
+  // whichever source the food came from: USDA serving size, a custom food's
+  // saved serving_grams, an AI estimate, a label scan, or typed by hand.
+  // Null means unknown — never substitute a default, or a serving silently
+  // becomes 100 g.
   const [foodServingSizeGrams, setFoodServingSizeGrams] = useState(null);
-  // Human-readable serving equivalence, e.g. "1 serving = 55 g · 2/3 cup (55g)".
+  // The unit baseMacros are expressed in. 'g'/'ml' means per 100; anything else
+  // means per 1. USDA/barcode foods are always per 100 g.
+  const [baseUnit, setBaseUnit] = useState('g');
+  // Extra descriptive text from the source, e.g. USDA's "2/3 cup" household
+  // serving or an AI estimate's serving description. Appended to the hint.
   const [servingHint, setServingHint] = useState(null);
-  // True when the selected food came from USDA/barcode (baseMacros = per 100g).
-  // False for manual entry and custom/recent foods (baseMacros = per 1 unit).
+  // True when the selected food came from USDA/barcode. Only affects which
+  // source-specific UI shows; the scaling math reads baseUnit instead.
   const [isUsdaFood, setIsUsdaFood] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   // AI "describe a food" macro estimate (estimate-food-macros edge function).
@@ -328,22 +346,18 @@ export default function FoodTracker() {
 
   // Update displayed macros when serving amount or unit changes.
   //
-  // USDA/barcode foods: baseMacros is per 100g — convert any unit to grams then divide by 100.
-  // Manual/custom/recent: baseMacros is per 1 unit — g/ml use amount/100, everything else amount×1.
+  // Gram-canonical scaling: convert both the stored base quantity and the amount
+  // the athlete typed into grams, then take the ratio. Works across a unit change
+  // for any food whose serving weight is known. Falls back to the plain quantity
+  // ratio when it isn't (older custom foods saved before serving_grams existed).
   useEffect(() => {
     if (baseMacros.calories <= 0 && baseMacros.protein_grams <= 0) return;
-    const amount = newFood.serving_amount || 0;
-    const unit = newFood.serving_unit;
-    let scale;
-    if (isUsdaFood) {
-      const isServingLike = unit === 'serving' || unit === 'piece';
-      const gramsPerUnit = isServingLike
-        ? (foodServingSizeGrams ?? 100)
-        : (UNIT_TO_GRAMS[unit] ?? 1);
-      scale = (amount * gramsPerUnit) / 100;
-    } else {
-      scale = ['g', 'ml'].includes(unit) ? amount / 100 : amount;
-    }
+    const scale = scaleFromBase({
+      amount: newFood.serving_amount || 0,
+      unit: newFood.serving_unit,
+      baseUnit,
+      servingGrams: foodServingSizeGrams,
+    });
     setNewFood(prev => ({
       ...prev,
       calories: Math.round(baseMacros.calories * scale),
@@ -351,7 +365,7 @@ export default function FoodTracker() {
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
       fats_grams: Math.round(baseMacros.fats_grams * scale * 10) / 10,
     }));
-  }, [newFood.serving_amount, newFood.serving_unit, baseMacros, isUsdaFood, foodServingSizeGrams]);
+  }, [newFood.serving_amount, newFood.serving_unit, baseMacros, baseUnit, foodServingSizeGrams]);
 
   const { profile } = useProfile();
   const { weightEntries } = useBodyWeightEntries();
@@ -491,22 +505,23 @@ export default function FoodTracker() {
     onSuccess: () => invalidateCustomFoods(queryClient),
   });
 
-  // Build the custom-food payload from the current form. USDA baseMacros are
-  // per 100g, so non-g/ml units need converting to per-1-unit before saving.
+  // Build the custom-food payload from the current form. Stored macros are per
+  // 100 g/ml or per 1 of any other unit, so convert from whatever unit the
+  // current baseMacros are in. serving_grams rides along so the food knows what
+  // one serving of it weighs the next time it's logged.
   const buildCustomFoodPayload = () => {
     const unit = newFood.serving_unit;
-    let scale = 1;
-    if (isUsdaFood && !['g', 'ml'].includes(unit)) {
-      const isServingLike = unit === 'serving' || unit === 'piece';
-      const gramsPerUnit = isServingLike
-        ? (foodServingSizeGrams ?? 100)
-        : (UNIT_TO_GRAMS[unit] ?? 1);
-      scale = gramsPerUnit / 100;
-    }
+    const scale = scaleFromBase({
+      amount: baseQuantityForUnit(unit),
+      unit,
+      baseUnit,
+      servingGrams: foodServingSizeGrams,
+    });
     return {
       food_name: newFood.food_name,
-      serving_size: ['g', 'ml'].includes(unit) ? 100 : 1,
+      serving_size: baseQuantityForUnit(unit),
       serving_unit: unit,
+      serving_grams: foodServingSizeGrams ?? null,
       calories: Math.round(baseMacros.calories * scale),
       protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
@@ -579,8 +594,16 @@ export default function FoodTracker() {
       fats_grams: Math.round(((entry.fats_grams || 0) / safeScale) * 10) / 10,
     };
 
-    setFoodServingSizeGrams(null);
+    // Grams per single unit, recovered from the total weight the entry recorded.
+    const perUnitGrams =
+      entry.serving_grams > 0 && originalAmount > 0 && isServingLikeUnit(originalUnit)
+        ? entry.serving_grams / originalAmount
+        : null;
+
+    setFoodServingSizeGrams(perUnitGrams);
+    setBaseUnit(originalUnit);
     setIsUsdaFood(false);
+    setServingHint(null);
     setBaseMacros(baseMacroValues);
     setNewFood({
       ...newFood,
@@ -611,13 +634,20 @@ export default function FoodTracker() {
       fats_grams: Math.round(((food.fats_grams || 0) / safeScale) * 10) / 10,
     };
 
-    setFoodServingSizeGrams(null);
+    // What one serving of this food weighs, if it was ever recorded. Null stays
+    // null: the picker then offers grams and says nothing it can't back up.
+    const savedServingGrams = Number(food.serving_grams);
+    setFoodServingSizeGrams(
+      Number.isFinite(savedServingGrams) && savedServingGrams > 0 ? savedServingGrams : null
+    );
+    setBaseUnit(originalUnit);
     setIsUsdaFood(false);
+    setServingHint(null);
     setBaseMacros(baseMacroValues);
-    
+
     // Set default amount: 100 for g/ml, otherwise 1
     const defaultAmount = ['g', 'ml'].includes(originalUnit) ? 100 : 1;
-    const defaultScale = ['g', 'ml'].includes(originalUnit) ? 1 : 1; // 100/100 or 1/1
+    const defaultScale = 1; // 100 of a per-100 food, or 1 of a per-1 food
 
     setNewFood({
       ...newFood,
@@ -646,10 +676,15 @@ export default function FoodTracker() {
       if (error) throw new Error(await fnErrorMessage(error));
       const est = data?.estimate;
       if (!est) throw new Error(data?.error || "No estimate returned");
+      // The estimator returns the weight it assumed; keep it so the picker can
+      // show "1 serving (Xg)" and the athlete can weigh against it.
+      const estGrams = Number(est.serving_grams);
+      const hasGrams = Number.isFinite(estGrams) && estGrams > 0;
       selectCustomFood({
         food_name: est.food_name,
         serving_size: 1,
         serving_unit: "serving",
+        serving_grams: hasGrams ? estGrams : null,
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -775,10 +810,13 @@ export default function FoodTracker() {
       const est = data?.estimate;
       if (!est) throw new Error(data?.error || "Could not read the label");
       // Prefill the single-item form like a custom food (totals are per serving).
+      // The label's own gram figure comes along so the serving isn't abstract.
+      const labelGrams = Number(est.serving_grams);
       selectCustomFood({
         food_name: labelName.trim() || "Scanned product",
         serving_size: 1,
         serving_unit: "serving",
+        serving_grams: Number.isFinite(labelGrams) && labelGrams > 0 ? labelGrams : null,
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -810,6 +848,8 @@ export default function FoodTracker() {
     serving_size: `${newFood.serving_amount} ${newFood.serving_unit}`,
     serving_amount: newFood.serving_amount,
     serving_unit: newFood.serving_unit,
+    // Total grams, so applying this template later logs a real weight.
+    serving_grams: entryServingGrams(newFood),
     calories: Math.round(newFood.calories),
     protein_grams: Number(newFood.protein_grams) || 0,
     carbs_grams: Number(newFood.carbs_grams) || 0,
@@ -859,6 +899,11 @@ const handleSaveMealTemplate = () => {
   setShowSaveTemplateDialog(true);
 };
 
+  // Total grams this entry represents, resolved now so the log stays readable
+  // even if the food's definition changes later. Null when genuinely unknown.
+  const entryServingGrams = (data) =>
+    gramsForAmount(parseFloat(data.serving_amount) || 1, data.serving_unit, foodServingSizeGrams);
+
   const addFoodMutation = useMutation({
     mutationFn: async (data) => {
       await db.entities.FoodEntry.create({
@@ -866,6 +911,7 @@ const handleSaveMealTemplate = () => {
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
         serving_unit: data.serving_unit,
+        serving_grams: entryServingGrams(data),
         calories: Math.round(data.calories),
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
@@ -916,6 +962,7 @@ const handleSaveMealTemplate = () => {
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
         serving_unit: data.serving_unit,
+        serving_grams: entryServingGrams(data),
         calories: Math.round(data.calories),
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
@@ -950,7 +997,14 @@ const handleSaveMealTemplate = () => {
       fats_grams: Math.round(((entry.fats_grams || 0) / safeScale) * 10) / 10,
     };
     setIsUsdaFood(false);
-    setFoodServingSizeGrams(null);
+    setBaseUnit(unit);
+    // Recover grams-per-unit from the total weight the entry recorded, so editing
+    // a logged serving still shows what it weighs.
+    setFoodServingSizeGrams(
+      entry.serving_grams > 0 && amount > 0 && isServingLikeUnit(unit)
+        ? entry.serving_grams / amount
+        : null
+    );
     setServingHint(null);
     setBaseMacros(baseMacroValues);
     setNewFood({
@@ -968,6 +1022,56 @@ const handleSaveMealTemplate = () => {
     setShowAddDialog(true);
   };
 
+  // Switching the unit on the logging form.
+  //
+  // When the weight of one unit is known on both sides, the food itself doesn't
+  // change — only how it's described — so the amount is restated to preserve mass.
+  // When it isn't (a custom food with no recorded serving weight), no honest
+  // conversion exists, so the stored base macros are rebased onto the new unit and
+  // the totals on screen stay put for the athlete to correct.
+  const changeServingUnit = (value) => {
+    if (value === newFood.serving_unit) return;
+    const amount = parseFloat(newFood.serving_amount) || 0;
+    const fromPerUnit = gramsForAmount(1, newFood.serving_unit, foodServingSizeGrams);
+    const toPerUnit = gramsForAmount(1, value, foodServingSizeGrams);
+
+    if (fromPerUnit != null && toPerUnit > 0) {
+      const newAmount = Math.round(((amount * fromPerUnit) / toPerUnit) * 100) / 100;
+      setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
+      return;
+    }
+
+    // Land on the quantity the new unit is naturally described in (100 g, or 1 of
+    // anything else) so the amount, the totals and the "per X" label all agree.
+    const newAmount = baseQuantityForUnit(value);
+    setBaseMacros({
+      calories: Math.round(parseFloat(newFood.calories) || 0),
+      protein_grams: Math.round((parseFloat(newFood.protein_grams) || 0) * 10) / 10,
+      carbs_grams: Math.round((parseFloat(newFood.carbs_grams) || 0) * 10) / 10,
+      fats_grams: Math.round((parseFloat(newFood.fats_grams) || 0) * 10) / 10,
+    });
+    setBaseUnit(value);
+    setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
+  };
+
+  // "1 serving (62 g)" under the amount picker. Null when there's nothing
+  // truthful to say about what the selected unit weighs.
+  const servingEquivalence = formatServingHint({
+    amount: parseFloat(newFood.serving_amount) || 0,
+    unit: newFood.serving_unit,
+    servingGrams: foodServingSizeGrams,
+    household: servingHint,
+  });
+
+  // Scale from the stored base macros to what's currently on screen. Shared by
+  // the macro inputs so a typed total converts back to a base value correctly.
+  const currentScale = scaleFromBase({
+    amount: parseFloat(newFood.serving_amount) || 0,
+    unit: newFood.serving_unit,
+    baseUnit,
+    servingGrams: foodServingSizeGrams,
+  });
+
   const resetForm = () => {
     setNewFood({
       food_name: "",
@@ -981,6 +1085,7 @@ const handleSaveMealTemplate = () => {
     });
     setBaseMacros({ calories: 0, protein_grams: 0, carbs_grams: 0, fats_grams: 0 });
     setFoodServingSizeGrams(null);
+    setBaseUnit("serving");
     setServingHint(null);
     setIsUsdaFood(false);
     setSearchQuery("");
@@ -1003,18 +1108,17 @@ const handleSaveMealTemplate = () => {
     // start at "1 serving" (the hint shows its gram equivalent + household
     // text like "2/3 cup (55g)"). Without one, fall back to 100 g/ml.
     const hasRealServing = !!food.servingSize;
-    const servingG = food.servingSize || 100;
+    const servingG = food.servingSize || null;
     const fallbackUnit = food.servingSizeUnit === 'ml' ? 'ml' : 'g';
     const unit = hasRealServing ? 'serving' : fallbackUnit;
     const amount = hasRealServing ? 1 : 100;
     const initialScale = (hasRealServing ? servingG : 100) / 100;
 
+    // Null when USDA has no serving data. The picker then stays on grams and the
+    // "serving" option is hidden, rather than quietly calling 100 g a serving.
     setFoodServingSizeGrams(servingG);
-    setServingHint(
-      hasRealServing
-        ? `1 serving = ${Math.round(servingG)} ${food.servingSizeUnit || 'g'}${food.householdServing ? ` · ${food.householdServing}` : ''}`
-        : null
-    );
+    setBaseUnit('g');
+    setServingHint(food.householdServing || null);
     setIsUsdaFood(true);
     setBaseMacros(baseMacroValues);
     setNewFood({
@@ -1542,17 +1646,17 @@ const handleSaveMealTemplate = () => {
                                 <span className="text-carb">{entry.carbs_grams}C</span>
                                 <span className="text-ink-faint">·</span>
                                 <span className="text-fat">{entry.fats_grams}F</span>
-                                {entry.serving_size != null && (
-                                  <span className="text-ink-muted">· {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}</span>
+                                {formatEntryServing(entry) && (
+                                  <span className="text-ink-muted">· {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}</span>
                                 )}
                                 {entry.cost_usd != null && (
                                   <span className="text-ink-muted">· ${entry.cost_usd.toFixed(2)}</span>
                                 )}
                               </div>
                               {/* Desktop: serving line under the name */}
-                              {entry.serving_size != null && (
+                              {formatEntryServing(entry) && (
                                 <span className="hidden sm:block text-[10px] font-technical mt-0.5 font-semibold text-ink-muted">
-                                  {entry.serving_size}{entry.serving_unit ? ` ${entry.serving_unit}` : ''}{entry.planned ? ' · planned' : ''}
+                                  {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
                                 </span>
                               )}
                             </div>
@@ -2009,13 +2113,9 @@ const handleSaveMealTemplate = () => {
                                 {/* add-food-dialog-3: never render a bare "1" — show
                                     the amount WITH its unit, or omit when there's no
                                     unit and the amount is the meaningless default 1. */}
-                                {(() => {
-                                  const unit = entry.serving_unit ? ` ${entry.serving_unit}` : '';
-                                  const showServing = entry.serving_size != null && !(String(entry.serving_size) === '1' && !unit);
-                                  return showServing ? (
-                                    <div className="text-[11px] text-ink-muted font-technical tabular-nums">{entry.serving_size}{unit}</div>
-                                  ) : null;
-                                })()}
+                                {formatEntryServing(entry) && (
+                                  <div className="text-[11px] text-ink-muted font-technical tabular-nums">{formatEntryServing(entry)}</div>
+                                )}
                                 <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
                               </button>
                             ))}
@@ -2170,43 +2270,65 @@ const handleSaveMealTemplate = () => {
                               />
                               <Select
                                 value={newFood.serving_unit}
-                                onValueChange={(value) => {
-                                  if (isUsdaFood) {
-                                    // Convert amount so the same mass is preserved across unit switches
-                                    const isServingLike = (u) => u === 'serving' || u === 'piece';
-                                    const fromG = isServingLike(newFood.serving_unit)
-                                      ? newFood.serving_amount * (foodServingSizeGrams ?? 100)
-                                      : newFood.serving_amount * (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                                    const toPerUnit = isServingLike(value)
-                                      ? (foodServingSizeGrams ?? 100)
-                                      : (UNIT_TO_GRAMS[value] ?? 1);
-                                    const newAmount = Math.round((fromG / toPerUnit) * 100) / 100;
-                                    setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
-                                  } else {
-                                    setNewFood(prev => ({ ...prev, serving_unit: value }));
-                                  }
-                                }}
+                                onValueChange={changeServingUnit}
                               >
                                 <SelectTrigger className="flex-1">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="serving">serving(s)</SelectItem>
+                                  {/* Serving-like units only appear when the food's own
+                                      weight backs them up, or when it's already stored
+                                      that way. Otherwise "1 serving" means nothing. */}
+                                  {(foodServingSizeGrams > 0 || isServingLikeUnit(newFood.serving_unit) || isServingLikeUnit(baseUnit)) && (
+                                    <>
+                                      <SelectItem value="serving">serving(s)</SelectItem>
+                                      <SelectItem value="piece">piece(s)</SelectItem>
+                                    </>
+                                  )}
                                   <SelectItem value="g">grams</SelectItem>
                                   <SelectItem value="oz">oz</SelectItem>
                                   <SelectItem value="cup">cup(s)</SelectItem>
                                   <SelectItem value="tbsp">tbsp</SelectItem>
                                   <SelectItem value="tsp">tsp</SelectItem>
                                   <SelectItem value="ml">ml</SelectItem>
-                                  <SelectItem value="piece">piece(s)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
-                            {servingHint && (isUsdaFood || isEstimatedFood) && (
-                              <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingHint}</p>
+                            {servingEquivalence && (
+                              <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
                             )}
                           </div>
                         </div>
+
+                        {/* The weight of one serving. This is the number that was
+                            missing: without it a homemade food's "serving" is a
+                            guess, and every unit conversion from it is too. */}
+                        {isServingLikeUnit(newFood.serving_unit) && (
+                          <div>
+                            <Label htmlFor="serving_grams">
+                              Weight of 1 {newFood.serving_unit} (g)
+                            </Label>
+                            <Input
+                              id="serving_grams"
+                              type="number"
+                              placeholder="e.g. 62"
+                              value={foodServingSizeGrams ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const g = parseFloat(raw);
+                                setFoodServingSizeGrams(raw === "" || !Number.isFinite(g) || g <= 0 ? null : g);
+                              }}
+                              className="mt-1"
+                              min="0"
+                              step="1"
+                            />
+                            <p className="text-[10.5px] text-ink-muted mt-1">
+                              {foodServingSizeGrams > 0
+                                ? "Saved with the food, so grams and servings stay interchangeable."
+                                : "Optional. Weigh one serving once and every log after it is exact."}
+                            </p>
+                          </div>
+                        )}
 
                         {(isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0) && (
                           <>
@@ -2231,7 +2353,7 @@ const handleSaveMealTemplate = () => {
                           Edit base values,{' '}
                           {isUsdaFood
                             ? `per ${newFood.serving_unit}`
-                            : (({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[newFood.serving_unit] || 'per serving')}
+                            : (({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[baseUnit] || 'per serving')}
                           {isUsdaFood ? ' (total above scales with amount)' : ''}
                         </p>
                         <div className="grid grid-cols-2 gap-4">
@@ -2246,11 +2368,8 @@ const handleSaveMealTemplate = () => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
                                   setNewFood(prev => ({ ...prev, calories: raw }));
-                                  if (raw !== '') {
-                                    const isServingLike = newFood.serving_unit === 'serving' || newFood.serving_unit === 'piece';
-                                    const gpU = isServingLike ? (foodServingSizeGrams ?? 100) : (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                                    const scale = (parseFloat(newFood.serving_amount) || 0) * gpU / 100;
-                                    if (scale > 0) setBaseMacros(prev => ({ ...prev, calories: Math.round((parseFloat(raw) || 0) / scale) }));
+                                  if (raw !== '' && currentScale > 0) {
+                                    setBaseMacros(prev => ({ ...prev, calories: Math.round((parseFloat(raw) || 0) / currentScale) }));
                                   }
                                 } else {
                                   setBaseMacros({ ...baseMacros, calories: raw });
@@ -2272,11 +2391,8 @@ const handleSaveMealTemplate = () => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
                                   setNewFood(prev => ({ ...prev, protein_grams: raw }));
-                                  if (raw !== '') {
-                                    const isServingLike = newFood.serving_unit === 'serving' || newFood.serving_unit === 'piece';
-                                    const gpU = isServingLike ? (foodServingSizeGrams ?? 100) : (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                                    const scale = (parseFloat(newFood.serving_amount) || 0) * gpU / 100;
-                                    if (scale > 0) setBaseMacros(prev => ({ ...prev, protein_grams: Math.round((parseFloat(raw) || 0) / scale * 10) / 10 }));
+                                  if (raw !== '' && currentScale > 0) {
+                                    setBaseMacros(prev => ({ ...prev, protein_grams: Math.round((parseFloat(raw) || 0) / currentScale * 10) / 10 }));
                                   }
                                 } else {
                                   setBaseMacros({ ...baseMacros, protein_grams: raw });
@@ -2299,11 +2415,8 @@ const handleSaveMealTemplate = () => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
                                   setNewFood(prev => ({ ...prev, carbs_grams: raw }));
-                                  if (raw !== '') {
-                                    const isServingLike = newFood.serving_unit === 'serving' || newFood.serving_unit === 'piece';
-                                    const gpU = isServingLike ? (foodServingSizeGrams ?? 100) : (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                                    const scale = (parseFloat(newFood.serving_amount) || 0) * gpU / 100;
-                                    if (scale > 0) setBaseMacros(prev => ({ ...prev, carbs_grams: Math.round((parseFloat(raw) || 0) / scale * 10) / 10 }));
+                                  if (raw !== '' && currentScale > 0) {
+                                    setBaseMacros(prev => ({ ...prev, carbs_grams: Math.round((parseFloat(raw) || 0) / currentScale * 10) / 10 }));
                                   }
                                 } else {
                                   setBaseMacros({ ...baseMacros, carbs_grams: raw });
@@ -2326,11 +2439,8 @@ const handleSaveMealTemplate = () => {
                                 const raw = e.target.value;
                                 if (isUsdaFood) {
                                   setNewFood(prev => ({ ...prev, fats_grams: raw }));
-                                  if (raw !== '') {
-                                    const isServingLike = newFood.serving_unit === 'serving' || newFood.serving_unit === 'piece';
-                                    const gpU = isServingLike ? (foodServingSizeGrams ?? 100) : (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                                    const scale = (parseFloat(newFood.serving_amount) || 0) * gpU / 100;
-                                    if (scale > 0) setBaseMacros(prev => ({ ...prev, fats_grams: Math.round((parseFloat(raw) || 0) / scale * 10) / 10 }));
+                                  if (raw !== '' && currentScale > 0) {
+                                    setBaseMacros(prev => ({ ...prev, fats_grams: Math.round((parseFloat(raw) || 0) / currentScale * 10) / 10 }));
                                   }
                                 } else {
                                   setBaseMacros({ ...baseMacros, fats_grams: raw });
@@ -2809,38 +2919,48 @@ const handleSaveMealTemplate = () => {
                 />
                 <Select
                   value={newFood.serving_unit}
-                  onValueChange={(value) => {
-                    if (isUsdaFood) {
-                      const isServingLike = (u) => u === 'serving' || u === 'piece';
-                      const fromG = isServingLike(newFood.serving_unit)
-                        ? newFood.serving_amount * (foodServingSizeGrams ?? 100)
-                        : newFood.serving_amount * (UNIT_TO_GRAMS[newFood.serving_unit] ?? 1);
-                      const toPerUnit = isServingLike(value)
-                        ? (foodServingSizeGrams ?? 100)
-                        : (UNIT_TO_GRAMS[value] ?? 1);
-                      const newAmount = Math.round((fromG / toPerUnit) * 100) / 100;
-                      setNewFood(prev => ({ ...prev, serving_unit: value, serving_amount: newAmount }));
-                    } else {
-                      setNewFood(prev => ({ ...prev, serving_unit: value }));
-                    }
-                  }}
+                  onValueChange={changeServingUnit}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="serving">serving(s)</SelectItem>
+                    {(foodServingSizeGrams > 0 || isServingLikeUnit(newFood.serving_unit) || isServingLikeUnit(baseUnit)) && (
+                      <>
+                        <SelectItem value="serving">serving(s)</SelectItem>
+                        <SelectItem value="piece">piece(s)</SelectItem>
+                      </>
+                    )}
                     <SelectItem value="g">grams</SelectItem>
                     <SelectItem value="oz">oz</SelectItem>
                     <SelectItem value="cup">cup(s)</SelectItem>
                     <SelectItem value="tbsp">tbsp</SelectItem>
                     <SelectItem value="tsp">tsp</SelectItem>
                     <SelectItem value="ml">ml</SelectItem>
-                    <SelectItem value="piece">piece(s)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {servingEquivalence && (
+                <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+              )}
             </div>
+            {isServingLikeUnit(newFood.serving_unit) && (
+              <div>
+                <Label>Weight of 1 {newFood.serving_unit} (g)</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 62"
+                  value={foodServingSizeGrams ?? ""}
+                  onChange={(e) => {
+                    const g = parseFloat(e.target.value);
+                    setFoodServingSizeGrams(e.target.value === "" || !Number.isFinite(g) || g <= 0 ? null : g);
+                  }}
+                  className="mt-1"
+                  min="0"
+                  step="1"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -903,6 +903,9 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
         food_name: food.food_name,
         serving_size: food.serving_size || 1,
         serving_unit: food.serving_unit || "serving",
+        // Carried so rescaling a serving-based ingredient to grams is exact
+        // rather than falling back to the 100 g-per-serving assumption.
+        _serving_grams: food.serving_grams ?? null,
         calories: Math.round(food.calories),
         protein_grams: Math.round((food.protein_grams || 0) * 10) / 10,
         carbs_grams: Math.round((food.carbs_grams || 0) * 10) / 10,

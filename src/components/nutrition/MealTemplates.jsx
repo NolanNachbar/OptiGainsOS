@@ -357,6 +357,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           meal_type: item.meal_type || template.meal_type || "snack",
           serving_size: amount,
           serving_unit: unit,
+          serving_grams: item.serving_grams ?? null,
           calories: item.calories,
           protein_grams: item.protein_grams,
           carbs_grams: item.carbs_grams,

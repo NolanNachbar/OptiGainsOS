@@ -102,6 +102,111 @@ export const UNIT_TO_GRAMS = {
   serving: 100,
 };
 
+// Units that mean "one of whatever this food comes in" rather than a fixed
+// physical quantity. Their gram weight is a property of the food, not of the
+// unit, so it has to come from the food's own serving_grams.
+const SERVING_LIKE_UNITS = new Set(["serving", "serving(s)", "servings", "piece", "pieces"]);
+
+export function isServingLikeUnit(unit) {
+  return SERVING_LIKE_UNITS.has(String(unit || "").toLowerCase().trim());
+}
+
+/**
+ * Grams for `amount` of `unit`, given the food's own serving weight.
+ *
+ * Returns null when the mass genuinely isn't knowable — a serving-like unit on a
+ * food with no recorded serving weight, or a unit that isn't in the table. Callers
+ * decide what to do with that; nothing here invents a 100 g serving.
+ */
+export function gramsForAmount(amount, unit, servingGrams) {
+  const qty = Number(amount);
+  if (!Number.isFinite(qty)) return null;
+  const u = String(unit || "").toLowerCase().trim();
+  if (isServingLikeUnit(u)) {
+    const g = Number(servingGrams);
+    return Number.isFinite(g) && g > 0 ? qty * g : null;
+  }
+  const factor = UNIT_TO_GRAMS[u];
+  return factor == null ? null : qty * factor;
+}
+
+/** The quantity of `unit` that a food's stored base macros describe: 100 g/ml, else 1. */
+export function baseQuantityForUnit(unit) {
+  return ["g", "ml"].includes(String(unit || "").toLowerCase().trim()) ? 100 : 1;
+}
+
+/**
+ * Scale factor from a food's stored base macros to `amount` of `unit`.
+ *
+ * Both sides are converted to grams whenever that's possible, so switching units
+ * preserves mass. When the gram weight is unknown (an older custom food with no
+ * serving_grams), it falls back to the plain quantity ratio, which is what the
+ * app did before serving weights existed.
+ */
+export function scaleFromBase({ amount, unit, baseUnit, servingGrams }) {
+  const baseQty = baseQuantityForUnit(baseUnit);
+  const targetGrams = gramsForAmount(amount, unit, servingGrams);
+  const baseGrams = gramsForAmount(baseQty, baseUnit, servingGrams);
+  if (targetGrams != null && baseGrams != null && baseGrams > 0) {
+    return targetGrams / baseGrams;
+  }
+  return baseQty > 0 ? (Number(amount) || 0) / baseQty : 0;
+}
+
+const trimNumber = (n) => {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "";
+  return String(Math.round(v * 100) / 100);
+};
+
+const formatGrams = (g) => `${Math.round(g * 10) / 10} g`;
+
+/**
+ * The line under the amount picker: what the selected unit actually weighs.
+ * Returns null when there's nothing true to say.
+ */
+export function formatServingHint({ amount, unit, servingGrams, household }) {
+  const parts = [];
+  const u = String(unit || "").toLowerCase().trim();
+  const perUnit = gramsForAmount(1, u, servingGrams);
+
+  if (isServingLikeUnit(u)) {
+    if (perUnit != null) {
+      parts.push(`1 ${u} (${formatGrams(perUnit)})`);
+      const total = gramsForAmount(amount, u, servingGrams);
+      if (total != null && Number(amount) !== 1) {
+        parts.push(`${trimNumber(amount)} ${u} = ${formatGrams(total)}`);
+      }
+    }
+  } else if (u === "g" || u === "ml") {
+    const g = Number(servingGrams);
+    if (Number.isFinite(g) && g > 0) parts.push(`1 serving (${formatGrams(g)})`);
+  } else {
+    const total = gramsForAmount(amount, u, servingGrams);
+    if (total != null) parts.push(`${trimNumber(amount)} ${u} = ${formatGrams(total)}`);
+  }
+
+  if (household) parts.push(household);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+/**
+ * How a logged entry's amount reads in the day's list: "1 serving (62 g)".
+ * The gram figure only appears for serving-like units, where it's the part the
+ * unit alone can't tell you. Returns null when there's nothing worth showing.
+ */
+export function formatEntryServing(entry) {
+  if (!entry || entry.serving_size == null) return null;
+  const unit = entry.serving_unit ? ` ${entry.serving_unit}` : "";
+  if (String(entry.serving_size) === "1" && !unit) return null;
+  const base = `${entry.serving_size}${unit}`;
+  const g = Number(entry.serving_grams);
+  if (isServingLikeUnit(entry.serving_unit) && Number.isFinite(g) && g > 0) {
+    return `${base} (${formatGrams(g)})`;
+  }
+  return base;
+}
+
 /**
  * Scale ingredient macros based on stored base values, accounting for unit changes.
  * If currentUnit differs from the base unit, converts both to grams before computing ratio.
@@ -110,9 +215,14 @@ export function rescaleIngredient(ingredient, newServingSize, currentUnit) {
   const baseServing = ingredient._base_serving_size || ingredient.serving_size;
   const baseUnit = ingredient._base_serving_unit || ingredient.serving_unit || "g";
   const unit = currentUnit || ingredient.serving_unit || "g";
+  const servingGrams = ingredient._serving_grams ?? null;
 
-  const newGrams = newServingSize * (UNIT_TO_GRAMS[unit] || 1);
-  const baseGrams = baseServing * (UNIT_TO_GRAMS[baseUnit] || 1);
+  const newGrams =
+    gramsForAmount(newServingSize, unit, servingGrams) ??
+    newServingSize * (UNIT_TO_GRAMS[unit] || 1);
+  const baseGrams =
+    gramsForAmount(baseServing, baseUnit, servingGrams) ??
+    baseServing * (UNIT_TO_GRAMS[baseUnit] || 1);
   const ratio = baseGrams > 0 ? newGrams / baseGrams : 0;
 
   return {
