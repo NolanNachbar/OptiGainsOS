@@ -1056,6 +1056,13 @@ for _case, _w in (("two-a-day", _split), ("single session", _windows_for(_LIFT_N
 # movement the plan doesn't contain.
 print("\n--- F17: daily prescription pinned to the approved plan ---")
 from engine.session_generator import SessionGenerator as _SG
+from engine.session_generator import _base_lift as _bl
+
+# A lift and its back-off sets leave the generator as ONE exercise named for the
+# base lift (2026-08-07), so a plan row stored as "Bench Press (Top Set)" comes
+# back as "Bench Press". Compare on the base name: that keeps this gate testing
+# what it was written to test — the plan owns SELECTION, and no movement the plan
+# doesn't contain can appear — without it failing on the rename alone.
 
 _PLAN = [
     {"name": "Bench Press (Top Set)", "sets": 1, "rep_target": "3", "rir_target": 2, "rest_seconds": 180},
@@ -1077,21 +1084,21 @@ def _presc(action="STRENGTH", **kw):
 
 _free = _presc()
 _pin = _presc(planned_exercises=_PLAN)
-_pin_names = [e["name"] for e in _pin["strength_block"]]
-_plan_names = {e["name"] for e in _PLAN}
+_pin_names = [_bl(e["name"]) for e in _pin["strength_block"]]
+_plan_names = {_bl(e["name"]) for e in _PLAN}
 
 check("F17 an unpinned session really would have differed (the bug is reachable)",
-      {e["name"] for e in _free["strength_block"]} != _plan_names,
+      {_bl(e["name"]) for e in _free["strength_block"]} != _plan_names,
       f"unpinned={[e['name'] for e in _free['strength_block']]}")
 check("F17 the prescription programs no movement outside the approved plan",
       set(_pin_names) <= _plan_names, f"got {_pin_names}")
 check("F17 every planned lift survives into the prescription",
       _plan_names <= set(_pin_names), f"missing {_plan_names - set(_pin_names)}")
-check("F17 the plan's order is preserved", _pin_names == [e["name"] for e in _PLAN])
+check("F17 the plan's order is preserved", _pin_names == [_bl(e["name"]) for e in _PLAN])
 # Selection is pinned; the daily numbers are still the engine's. The bench top set
 # must come back with a real e1RM-derived load, which the stored plan row has no
 # column for at all — that's the half the daily path still owns.
-_bench = next(e for e in _pin["strength_block"] if e["name"] == "Bench Press (Top Set)")
+_bench = next(e for e in _pin["strength_block"] if _bl(e["name"]) == "Bench Press")
 check("F17 pinned lifts still get today's autoregulated load", _bench["load_lbs"] > 0,
       f"load_lbs={_bench['load_lbs']}")
 check("F17 pinned lifts keep the plan's rep/RIR targets",
