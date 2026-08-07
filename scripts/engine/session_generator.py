@@ -23,6 +23,7 @@ automatically. No special-cased action branches beyond REST and pure CARDIO.
 """
 
 import copy
+import re
 from datetime import date
 
 from engine.vdot_engine import VDOTEngine
@@ -585,6 +586,85 @@ def _scale(ex: dict, intensity: float, is_primary: bool = False,
     return ex
 
 
+_VARIANT_SUFFIX = re.compile(r"\s*\([^)]*\)\s*$")
+
+# Per-group fields carried into a set_scheme entry, if the row has them. Named
+# rather than "everything else" so a future engine tag doesn't silently become
+# part of the athlete-facing scheme.
+_SCHEME_FIELDS = ("sets", "rep_target", "rir_target", "rest_seconds", "notes",
+                  "reps", "rir", "load_lbs", "load_pct", "progression",
+                  "soreness_note", "cut_note")
+
+
+def _base_lift(name: str) -> str:
+    """"Bench Press (Back-off Vol)" → "Bench Press"."""
+    return _VARIANT_SUFFIX.sub("", name or "").strip()
+
+
+def _variant_label(name: str) -> str:
+    """The parenthetical, as the athlete-facing name for one block of sets."""
+    m = re.search(r"\(([^)]*)\)\s*$", name or "")
+    return m.group(1).strip() if m else "Working"
+
+
+def _merge_lift_variants(rows: list) -> list:
+    """Collapse the (Top Set) / (Back-off) / (Speed Work) rows of ONE lift into a
+    single exercise carrying a `set_scheme`.
+
+    The engine builds a top set and its back-offs as separate catalog entries so
+    every upstream layer (selection, scaling, cut trim, load assignment) can treat
+    them as the different prescriptions they are. That is an engine-internal
+    detail, and leaking it produced a session listing "Bench Press (Top Set)" as
+    its own movement — Nolan's 2026-08-07 call: it should be one exercise, a heavy
+    top set followed by back-off sets, the way a lifter would write it.
+
+    Only CONSECUTIVE rows of the same base lift merge, so this never reorders a
+    session or pulls a lift out of the alternation the pass before it just built.
+    A lone variant row still merges (into a one-block scheme) — a single set
+    labelled "Top Set" with nothing under it was the most visible half of the bug.
+    `components` records the catalog names so the merge can be undone exactly when
+    an approved plan is fed back through the daily engine."""
+    merged: list = []
+    for row in rows:
+        name = row.get("name") or ""
+        base = _base_lift(name)
+        prev = merged[-1] if merged else None
+        if prev is not None and prev["_base"] == base and base != name:
+            block = {k: row[k] for k in _SCHEME_FIELDS if row.get(k) is not None}
+            block["label"] = _variant_label(name)
+            block["set_type"] = "backoff"
+            prev["set_scheme"].append(block)
+            prev["components"].append(name)
+            prev["sets"] = (prev.get("sets") or 0) + (row.get("sets") or 0)
+            continue
+        head = dict(row)
+        head["_base"] = base
+        block = {k: row[k] for k in _SCHEME_FIELDS if row.get(k) is not None}
+        block["label"] = _variant_label(name)
+        # A first block is only a "top set" when the row actually named itself one;
+        # otherwise this is an ordinary movement that merged with nothing.
+        block["set_type"] = "top_set" if "top set" in name.lower() else "working"
+        head["set_scheme"] = [block]
+        head["components"] = [name]
+        merged.append(head)
+
+    out = []
+    for m in merged:
+        m.pop("_base", None)
+        # A movement with no variant suffix at all ("Lateral Raise") gains nothing
+        # from a one-block scheme; leave it exactly as it was so nothing downstream
+        # has to special-case it. A LONE suffixed row still gets renamed and given
+        # a scheme — "Bench Press (Top Set)", one set, nothing under it, is the
+        # half of this bug Nolan actually trained.
+        if _base_lift(m.get("name") or "") == (m.get("name") or ""):
+            m.pop("set_scheme", None)
+            m.pop("components", None)
+        else:
+            m["name"] = _base_lift(m.get("name") or "")
+        out.append(m)
+    return out
+
+
 def _clean(ex: dict) -> dict:
     """Strip internal engine tags before writing to DB."""
     return {k: v for k, v in ex.items()
@@ -1043,16 +1123,34 @@ def _chest_press_slot(name: str, wt: dict, intensity: float, readiness_z: float)
 _PUSH_PATTERNS = {"horizontal_push", "incline_push", "vertical_push", "dip"}
 _PULL_PATTERNS = {"vertical_pull", "horizontal_pull"}
 
+# Which chain a movement trains, for alternation purposes. Pattern alone only
+# classifies COMPOUNDS — every isolation falls through to "other" and gets
+# appended in bucket order, which is how a row landed straight into a curl and a
+# face pull (all three are back-chain work; Nolan trained it 2026-08-07 and it
+# was three pulling movements in a row). Primary muscle closes that gap: a curl
+# is pull-chain whether or not its pattern is.
+_PUSH_MUSCLES = {"chest", "upper_chest", "front_delt", "side_delt", "side_delts",
+                 "shoulders", "triceps"}
+_PULL_MUSCLES = {"back", "lats", "upper_back", "rear_delt", "rear_delts",
+                 "biceps", "traps", "forearms"}
+_LEG_MUSCLES  = {"quads", "hamstrings", "glutes", "calves", "adductors", "abductors"}
+_CORE_MUSCLES = {"abs", "core", "obliques", "lower_back"}
+
+# Tie-break order when two chains have equally many movements left. Push first
+# keeps the bench-leads rule from the old pairing loop.
+_CHAIN_PRIORITY = ("push", "pull", "legs", "core", "other")
+
 
 def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
-    """Reorder so chest (push) and back (pull) COMPOUNDS alternate — bench, row,
-    incline, pull-up, dip — instead of stacking three chest movements in a row
-    (Nolan's call, 2026-07-08). Antagonist alternation also gives each muscle more
-    rest between its sets. A back-off / speed set stays attached to the lift it
-    backs off (it's the same movement, more sets — not a new exercise). Isolation
-    and lower-body work ('other') keeps its existing emphasis-nudged order and
-    follows the alternated compounds. Non-upper days have no push/pull compounds,
-    so their order is unchanged.
+    """Reorder so no two consecutive movements train the same chain — push, pull,
+    legs, core (Nolan's call, 2026-07-08; extended past compounds 2026-08-07 after
+    a session put pull-up, row, curl and face pull back to back). Antagonist
+    alternation also gives each muscle more rest between its sets. Reorder only:
+    nothing is substituted, and the only movements dropped are duplicate pressing
+    /pulling PATTERNS, as before. A back-off / speed set stays attached to the lift
+    it backs off (it's the same movement, more sets — not a new exercise). A day
+    whose work is all one chain (lower body) comes out in its existing
+    emphasis-nudged order, since there is nothing to alternate with.
 
     EXCEPT: on full-body days the focus muscle is often a squat/hinge/isolation
     ('other') movement — quads on a legs-focus day, shoulders on a sharms-focus
@@ -1071,14 +1169,21 @@ def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
             units.append([ex])
 
     def kind(u):
+        """Chain this unit trains. Pattern wins when it names one (a compound's
+        pattern is the more reliable signal), then primary muscle, which is the
+        only thing an isolation has."""
         p = u[0].get("pattern", "")
         if p in _PUSH_PATTERNS: return "push"
         if p in _PULL_PATTERNS: return "pull"
+        m = (u[0].get("muscles") or [None])[0]
+        if m in _PUSH_MUSCLES: return "push"
+        if m in _PULL_MUSCLES: return "pull"
+        if m in _LEG_MUSCLES:  return "legs"
+        if m in _CORE_MUSCLES: return "core"
         return "other"
 
-    push  = [u for u in units if kind(u) == "push"]
-    pull  = [u for u in units if kind(u) == "pull"]
-    other = list(u for u in units if kind(u) == "other")
+    push = [u for u in units if kind(u) == "push"]
+    pull = [u for u in units if kind(u) == "pull"]
 
     # 0. One movement per pressing/pulling PATTERN per session. The bench complex
     #    already supplies an incline (reverse-grip incline assistance); without this
@@ -1087,13 +1192,20 @@ def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
     #    (bench assistance is added before the knapsack's redundant pick, so the liked
     #    reverse-grip incline wins over the DB press). Dropped only from THIS session —
     #    the movement stays available for other days. [ENG]
+    #    Only PRESSING/PULLING patterns are deduped. The push/pull buckets now also
+    #    hold isolation work (classified by muscle above), and two isolations can
+    #    legitimately share a pattern — deduping those would silently drop a
+    #    movement the knapsack chose.
+    _COMPOUND_PATTERNS = _PUSH_PATTERNS | _PULL_PATTERNS
+
     def _dedup_by_pattern(unit_list):
         seen, kept = set(), []
         for u in unit_list:
             p = u[0].get("pattern", "")
-            if p and p in seen:
-                continue
-            seen.add(p)
+            if p in _COMPOUND_PATTERNS:
+                if p in seen:
+                    continue
+                seen.add(p)
             kept.append(u)
         return kept
     push = _dedup_by_pattern(push)
@@ -1105,33 +1217,59 @@ def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
     # push-classified same as the bench technique touch, and without this it
     # loses the lead purely because the touch set happens to already be first
     # in `exercises` before this reorder runs).
+    chains = {c: [] for c in _CHAIN_PRIORITY}
+    chains["push"] = push
+    chains["pull"] = pull
+    for u in units:
+        k = kind(u)
+        if k not in ("push", "pull"):
+            chains[k].append(u)
+
     focus_lead = None
     if focus_muscle:
-        for bucket in (push, pull, other):
-            for idx, u in enumerate(bucket):
+        for c in _CHAIN_PRIORITY:
+            for idx, u in enumerate(chains[c]):
                 if (u[0].get("muscles") or [None])[0] == focus_muscle:
-                    focus_lead = bucket.pop(idx)
+                    focus_lead = chains[c].pop(idx)
                     break
             if focus_lead:
                 break
 
-    # 1. Pair push with pull (bench, row, incline, pull-up, ...).
-    ordered, i, j = [], 0, 0
-    while i < len(push) and j < len(pull):
-        ordered.append(push[i]); i += 1     # lead with push (bench is the priority)
-        ordered.append(pull[j]); j += 1
-    # 2. Whichever side has extras (usually more push than pull): separate each
-    #    leftover compound with an isolation so two same-direction compounds are
-    #    never adjacent — no "three chest exercises in a row". Nothing is dropped.
-    for u in push[i:] + pull[j:]:
-        ordered.append(u)
-        if other:
-            ordered.append(other.pop(0))
-    ordered.extend(other)
-    result = [ex for u in ordered for ex in u]
+    # Compounds lead their own chain. The greedy below always takes the FIRST
+    # remaining unit of whichever chain it picks, so an isolation sitting ahead of
+    # a compound would get scheduled while he's fresh and push the heavy work late.
+    def _is_compound(u):
+        return "COMPOUND" in (u[0].get("type") or "")
+    for c in chains:
+        chains[c] = ([u for u in chains[c] if _is_compound(u)]
+                     + [u for u in chains[c] if not _is_compound(u)])
+
+    # Lay the session out so no two consecutive movements train the same chain.
+    # Always draw from the chain with the most work LEFT (excluding the one just
+    # used): taking from the largest remaining pile is what keeps the surplus from
+    # collecting into a same-chain run at the end. The old code paired push with
+    # pull and then appended the leftovers back to back, so the seam between the
+    # last paired unit and the first leftover was never separated — that is the
+    # exact "two back movements in a row" Nolan hit. A repeat only happens when one
+    # chain outnumbers all the others combined, where it is unavoidable.
+    # The focus movement leads the session, but it leads it as the greedy's FIRST
+    # PICK rather than as a unit glued on afterward. Prepending it (the old
+    # behaviour) meant the alternation never saw it, so a chest-focus day opened
+    # bench then incline press — two chest movements in a row, arrived at by the
+    # very pass whose job is to prevent that.
+    ordered, prev = [], None
     if focus_lead:
-        result = list(focus_lead) + result
-    return result
+        ordered.append(focus_lead)
+        prev = kind(focus_lead)
+    while any(chains[c] for c in chains):
+        avail = [c for c in _CHAIN_PRIORITY if chains[c] and c != prev]
+        if not avail:                                    # only `prev` has work left
+            avail = [c for c in _CHAIN_PRIORITY if chains[c]]
+        pick = max(avail, key=lambda c: (len(chains[c]), -_CHAIN_PRIORITY.index(c)))
+        ordered.append(chains[pick].pop(0))
+        prev = pick
+
+    return [ex for u in ordered for ex in u]
 
 
 def _build_session(
@@ -1757,7 +1895,9 @@ def _build_session(
                 e["notes"] = ((e.get("notes", "") + " · ") if e.get("notes") else "") \
                     + "backed off — flagged pain"
         out.append(_clean(e))
-    return out
+    # Last word: a lift and its back-offs leave here as ONE exercise. Runs after
+    # the philosophy pass so the per-block set counts in the scheme are final.
+    return _merge_lift_variants(out)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -2119,12 +2259,23 @@ class SessionGenerator:
                 _name = (_p or {}).get("name")
                 if not _name or canon(_name) in _blocked:
                     continue
-                _row = copy.deepcopy(_EX_BY_NAME.get(_name) or _p)
-                for _k in ("sets", "rep_target", "rir_target", "rest_seconds", "notes"):
-                    if _p.get(_k) is not None:
-                        _row[_k] = _p[_k]
-                _row["name"] = _name
-                _pinned.append(_row)
+                # An approved plan stores a lift and its back-offs as one merged
+                # exercise (see _merge_lift_variants). Expand it back into the
+                # catalog rows it was built from, so every daily layer below —
+                # soreness trim, cut trim, e1RM load assignment — keeps seeing the
+                # separate prescriptions it knows how to reason about. The merge at
+                # the end of this function puts it back together with today's loads.
+                _parts = list(zip(_p.get("components") or [_name],
+                                  _p.get("set_scheme") or [_p]))
+                for _cname, _blk in _parts:
+                    _row = copy.deepcopy(_EX_BY_NAME.get(_cname) or _p)
+                    for _k in ("sets", "rep_target", "rir_target", "rest_seconds", "notes"):
+                        if _blk.get(_k) is not None:
+                            _row[_k] = _blk[_k]
+                    _row["name"] = _cname
+                    _row.pop("set_scheme", None)
+                    _row.pop("components", None)
+                    _pinned.append(_row)
             if _pinned:
                 exercises = _pinned
                 selection_pinned = True
@@ -2279,6 +2430,10 @@ class SessionGenerator:
                     strength_block.append(ex_detail)
             else:
                 strength_block.append(ex_detail)
+
+        # Same merge the plan gets, applied to the prescribed session: a lift and
+        # its back-offs read as one movement, each block carrying its own load.
+        strength_block = _merge_lift_variants(strength_block)
 
         # Build run block
         for c in cardio:
