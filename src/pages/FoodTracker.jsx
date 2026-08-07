@@ -262,7 +262,11 @@ export default function FoodTracker() {
   // True once the athlete has actually touched the portion list in this form.
   // syncPortions reconciles by deletion, so it must only ever run against a list
   // he edited — never against one that merely happens to be empty because the
-  // read hadn't landed.
+  // read hadn't landed. It stays true for the rest of the form session rather
+  // than clearing on a successful write: the invalidated query hasn't refetched
+  // yet at that moment, so clearing it would let the adopt-effect below stomp
+  // the edit back to the pre-edit list until the refetch landed. Re-syncing an
+  // unchanged list on save is a no-op, and every food selection resets it.
   const [portionsDirty, setPortionsDirty] = useState(false);
   const [portionDraft, setPortionDraft] = useState({ label: "", grams: "" });
   const [portionsExpanded, setPortionsExpanded] = useState(false);
@@ -604,7 +608,6 @@ export default function FoodTracker() {
         // portions he never asked to lose.
         if (portionsDirty) {
           syncPortions(saved.id, activePortions)
-            .then(() => setPortionsDirty(false))
             .catch((e) =>
               toast.error(`Saved the food, but its portions didn't stick: ${e.message}`)
             );
@@ -1286,7 +1289,6 @@ const handleSaveMealTemplate = () => {
     setPortionsDirty(true);
     if (activeFoodId) {
       syncPortions(activeFoodId, next)
-        .then(() => setPortionsDirty(false))
         .catch((e) => toast.error(`Couldn't save the portion: ${e.message}`));
     }
   };
@@ -3309,6 +3311,10 @@ const handleSaveMealTemplate = () => {
               setGoalForm={setGoalForm}
               fiberGoal={fiberGoal}
               setFiberGoal={setFiberGoal}
+              // The DRI default off the calorie target the day actually resolved
+              // to (engine rec first), not off the profile goal — otherwise the
+              // dialog promises a number the daily readout contradicts.
+              fiberDefault={Math.round((targets.calories / 1000) * 14)}
               navigate={navigate}
               setShowGoalsModal={setShowGoalsModal}
               setShowStatsModal={setShowStatsModal}
@@ -3831,7 +3837,7 @@ function GoalsFormContent({
   activePhase, tdee, profile, latestWeight,
   proteinPerLb, setProteinPerLb,
   goalForm, setGoalForm,
-  fiberGoal, setFiberGoal,
+  fiberGoal, setFiberGoal, fiberDefault,
   navigate, setShowGoalsModal, setShowStatsModal,
 }) {
 
@@ -3960,12 +3966,11 @@ function GoalsFormContent({
           inputMode="numeric"
           value={fiberGoal}
           onChange={(e) => setFiberGoal(e.target.value)}
-          placeholder={String(Math.round(((parseInt(goalForm.daily_calorie_goal) || 0) / 1000) * 14))}
+          placeholder={String(fiberDefault)}
         />
         <p className="text-xs text-ink-faint">
           Leave blank to track 14 g per 1,000 kcal (
-          {Math.round(((parseInt(goalForm.daily_calorie_goal) || 0) / 1000) * 14)} g at your current
-          calorie target).
+          {fiberDefault} g at your current calorie target).
         </p>
       </div>
     </div>
