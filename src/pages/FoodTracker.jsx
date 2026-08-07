@@ -1453,8 +1453,12 @@ const handleSaveMealTemplate = () => {
       onSuccess: ({ plan }) => {
         setSwapEntry(null);
         const row = plan.rows.find((r) => r.food_name === replacement);
+        // No gram number here on purpose: a fresh solve lands a little over
+        // budget by design (floor buffer + minServe rounding), so
+        // usePlannedDayRebalance may rescale these rows moments later. The
+        // row itself always shows the current grams; a toast can't.
         toast.success(row
-          ? `Swapped in ${replacement} — ${row.serving_size} g`
+          ? `Swapped in ${replacement}, day re-fit around it`
           : `${original} removed; ${replacement} didn't fit today's budget`);
       },
       onError: (e) => toast.error(e.message || "Swap failed"),
