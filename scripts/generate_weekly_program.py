@@ -609,6 +609,19 @@ def main():
     ex_prefs     = profile.get("exercise_preferences") or {}
     blocked_ex   = {canon(n) for n in (ex_prefs.get("blocked") or [])}
     preferred_ex = {canon(n) for n in (ex_prefs.get("preferred") or [])}
+
+    # Equipment/location profile (e.g. no-gym Casper trips) — unions on top of
+    # the manual blocked/preferred sets above, never overrides them. Both the
+    # weekly (this generator) and daily (mpc_prescriber.py) paths read this, so
+    # a Sunday MILP run in Casper generates a Casper-filtered template rather
+    # than the daily path patching around a full-gym one all week.
+    from engine.equipment_profiles import equipment_blocked_and_preferred
+    from engine.session_generator import _EX_BY_NAME as all_ex_names
+    eq_blocked, eq_preferred = equipment_blocked_and_preferred(
+        profile.get("equipment_profile"), all_ex_names.keys())
+    blocked_ex   |= eq_blocked
+    preferred_ex |= eq_preferred
+
     if blocked_ex or preferred_ex:
         print(f"  Exercise prefs — blocked: {sorted(blocked_ex)}  preferred: {sorted(preferred_ex)}")
     

@@ -371,6 +371,29 @@ EXERCISES = [
     {"name": "Diamond Push-ups",  "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.0, "muscles": ["triceps", "chest"],
      "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
+
+    # ── Limited-equipment additions (equipment_profiles.py "casper" whitelist) ──
+    {"name": "DB Bench Press",        "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 3.0, "muscles": ["chest", "triceps", "front_delt"],
+     "sets": 3, "rep_target": "6-10", "rir_target": 2, "rest_seconds": 120},
+    {"name": "Barbell Row",           "pattern": "horizontal_pull", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 3.0, "muscles": ["lats", "upper_back"],
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 90},
+    {"name": "Seated DB Overhead Press", "pattern": "vertical_push", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 3.0, "muscles": ["shoulders", "triceps"],
+     "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 90,
+     "notes": "Seated, no back support — ceiling too low for standing OHP."},
+    {"name": "Barbell Curl",          "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["biceps"],
+     "sets": 2, "rep_target": "8-10", "rir_target": 1, "rest_seconds": 60},
+    {"name": "Skull Crushers",        "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["triceps"],
+     "sets": 2, "rep_target": "8-12", "rir_target": 1, "rest_seconds": 60,
+     "notes": "Lying on flat bench, DB or barbell."},
+    {"name": "Weighted DB Sit-Up",    "pattern": "isolation_lower", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["core"],
+     "sets": 3, "rep_target": "12-15","rir_target": 1, "rest_seconds": 45,
+     "notes": "DB held at chest."},
 ]
 
 # Quick lookup by name
