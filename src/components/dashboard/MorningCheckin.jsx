@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, useSetEquipmentProfile } from "@/hooks/useUserQueries";
 import { useLogWeight, useTodayBodyWeight } from "@/hooks/useWeighIn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,14 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
   const { profile } = useProfile();
   const { todayWeight } = useTodayBodyWeight(todayStr);
   const logWeight = useLogWeight();
+  const setEquipmentProfile = useSetEquipmentProfile();
+  const equipmentProfile = profile?.equipment_profile || "full_gym";
+  const toggleEquipmentProfile = () => {
+    setEquipmentProfile.mutate({
+      profile,
+      equipmentProfile: equipmentProfile === "casper" ? "full_gym" : "casper",
+    });
+  };
   const weightUnit = profile?.weight_unit || "lbs";
   const [typedWeight, setTypedWeight] = useState(null);
   // Derived, not synced by effect: until the athlete types, the field mirrors
@@ -219,16 +227,32 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
             <span className="section-label !text-ink">Subjective check-in</span>
             <span className="text-[10px] font-semibold text-faint uppercase tracking-wider">Logged</span>
           </div>
-          {/* 'Update' is a quiet re-entry affordance on a completed card, not a
-              primary action: borderless quiet text (no ghost button chrome) so
-              it reads as a tap-to-edit link, not a competing control (today-3). */}
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="min-h-[44px] -my-2.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-secondary hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
-          >
-            Update
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Quiet, out-of-the-way equipment toggle — not a checkin field, just
+                rides here so it's visible once a day without its own settings
+                trip. Only shows when it differs from full_gym or is mid-toggle,
+                so the common case (home, full gym) stays silent. */}
+            {equipmentProfile === "casper" && (
+              <button
+                type="button"
+                onClick={toggleEquipmentProfile}
+                disabled={setEquipmentProfile.isPending}
+                className="min-h-[44px] -my-2.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-warn hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              >
+                Casper mode · tap for full gym
+              </button>
+            )}
+            {/* 'Update' is a quiet re-entry affordance on a completed card, not a
+                primary action: borderless quiet text (no ghost button chrome) so
+                it reads as a tap-to-edit link, not a competing control (today-3). */}
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="min-h-[44px] -my-2.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-secondary hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+            >
+              Update
+            </button>
+          </div>
         </div>
         <div className="p-4 flex flex-col md:flex-row gap-6">
           <div className="flex gap-8">
@@ -371,6 +395,19 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           ))}
         </div>
       </div>
+
+      {/* Equipment — quiet, not a checkin field. No-gym mode (Casper etc.) swaps
+          the engine's exercise pool for that day's equipment. Text link, same
+          weight as "Update" above — this isn't a decision that needs a slot in
+          the visual hierarchy every day. */}
+      <button
+        type="button"
+        onClick={toggleEquipmentProfile}
+        disabled={setEquipmentProfile.isPending}
+        className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-faint hover:text-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
+      >
+        {equipmentProfile === "casper" ? "Casper mode (limited equipment) · tap for full gym" : "Full gym · tap for Casper mode"}
+      </button>
 
       {/* Notes */}
       <Textarea

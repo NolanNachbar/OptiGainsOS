@@ -57,6 +57,26 @@ export function useToggleExerciseLike() {
   });
 }
 
+// Sets user_profiles.equipment_profile ('full_gym' | 'casper'). Read by both
+// the weekly (Sunday MILP) and daily (MPC) generators, which union its
+// exercise whitelist (scripts/engine/equipment_profiles.py) on top of the
+// manual exercise_preferences blocked/preferred sets — never overriding them.
+export function useSetEquipmentProfile() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ profile, equipmentProfile }) => {
+      if (!profile?.id) return null;
+      await db.entities.UserProfile.update(profile.id, { equipment_profile: equipmentProfile });
+      return equipmentProfile;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.userProfile(user?.id) });
+    },
+  });
+}
+
 // Active exercise_shot_notes for the user, as a lowercased-name -> shot_note
 // lookup. Hand-populated (Nolan sets which exercises are "content-worthy"),
 // so this just reads what exists — no inference.
