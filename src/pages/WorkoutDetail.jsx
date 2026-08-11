@@ -442,7 +442,17 @@ export default function WorkoutDetail() {
 
       if (isProgramSource && programWorkout?.exercises && enrollment) {
         // Program mode: initialize with set types and target weights
-        initialLogs = programWorkout.exercises.filter(ex => !isRunEx(ex)).map((ex, index) => {
+        // The weekly plan is only regenerated on Sunday, so an equipment_profile
+        // change mid-week leaves it listing movements the athlete can't perform.
+        // The daily engine re-filters against the profile every run, so when
+        // today's prescription exists, treat its movement list as authoritative
+        // and drop anything the plan still carries that the engine dropped.
+        // Guarded on a non-empty block so a missing/failed prescription seeds
+        // the full plan rather than an empty session.
+        const engineFiltered = engineByName.size > 0
+          ? programWorkout.exercises.filter(ex => isRunEx(ex) || engineByName.has(ex.name))
+          : programWorkout.exercises;
+        initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
           // The plan's set_scheme carries no load_lbs — it's the static weekly
           // shape, not the day's autoregulated numbers. Match today's engine row
           // (training_prescription.strength_block) by set_type so real e1RM-based

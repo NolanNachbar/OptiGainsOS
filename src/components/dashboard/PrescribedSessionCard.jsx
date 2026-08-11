@@ -219,9 +219,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // prescription has no row for falls back to the plan's own rep/RIR targets
   // with no load. Today and the Train tab therefore render the same list the
   // moment a plan changes, not a compute cycle later.
-  const planned = (action === "REST" ? [] : (programWorkout?.exercises || []))
-    .filter((e) => (e.sets || 0) > 0);
   const engineByName = new Map((p.strength_block || []).map((ex) => [ex.name, ex]));
+  // The plan is only rebuilt weekly, so an equipment_profile change mid-week
+  // leaves it listing movements the athlete can't perform. The daily engine
+  // re-filters every run, so when it produced a block, its list wins over the
+  // plan's. Guarded on a non-empty block so a missing prescription still shows
+  // the full plan rather than nothing.
+  const planned = (action === "REST" ? [] : (programWorkout?.exercises || []))
+    .filter((e) => (e.sets || 0) > 0)
+    .filter((e) => engineByName.size === 0 || engineByName.has(e.name));
   const strength = planned.length
     ? planned.map((e) => engineByName.get(e.name) || {
         name: e.name,
