@@ -5,6 +5,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
+import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -182,6 +183,18 @@ export default function WorkoutDetail() {
   });
 
   const logProgramWorkout = useLogProgramWorkout();
+
+  // Today's engine-computed loads (training_prescription.strength_block). The
+  // approved plan (programWorkout.exercises) carries no load_lbs — it's the
+  // static weekly shape, not the daily autoregulated numbers — so a session
+  // seeded from it alone falls back to a from-history Epley estimate instead
+  // of what the engine actually prescribed today. Same join PrescribedSessionCard
+  // already does for display; this makes the logged session agree with it.
+  const { prescription: todayPrescription, isLoading: isTodayPrescriptionLoading } = useTodayPrescription(getTodayString(profile?.timezone));
+  const engineByName = useMemo(() => {
+    const strengthBlock = todayPrescription?.prescription?.strength_block || [];
+    return new Map(strengthBlock.map((ex) => [ex.name, ex]));
+  }, [todayPrescription]);
 
   // Exercise management
   const {
@@ -411,6 +424,11 @@ export default function WorkoutDetail() {
 
   // Initialize exercise logs when workout loads or logging mode starts
   useEffect(() => {
+    // Program-mode seeding needs today's engine loads to be in hand before it
+    // runs once — the effect only fires while exerciseLogs.length === 0, so if
+    // it seeds early off an empty engineByName it never gets a second chance
+    // to pick up the real load_lbs once the prescription query resolves.
+    if (isProgramSource && isTodayPrescriptionLoading) return;
     if (workout && isLogging && exerciseLogs.length === 0) {
       let initialLogs;
 
@@ -425,6 +443,16 @@ export default function WorkoutDetail() {
       if (isProgramSource && programWorkout?.exercises && enrollment) {
         // Program mode: initialize with set types and target weights
         initialLogs = programWorkout.exercises.filter(ex => !isRunEx(ex)).map((ex, index) => {
+          // The plan's set_scheme carries no load_lbs — it's the static weekly
+          // shape, not the day's autoregulated numbers. Match today's engine row
+          // (training_prescription.strength_block) by set_type so real e1RM-based
+          // loads seed the session instead of a from-history Epley guess.
+          // Keyed by label first: two blocks (e.g. "Back-off Vol" / "Back-off Int")
+          // can share set_type "backoff", and keying on set_type alone would
+          // collapse them so the last one's load wins for both.
+          const engineBlocksByLabel = new Map(
+            (engineByName.get(ex.name)?.set_scheme || []).map((b) => [b.label || b.set_type, b])
+          );
           const targets = progressionTargetsMap[ex.name];
           const numSets = resolveSetCount(ex.sets);
 
@@ -450,7 +478,10 @@ export default function WorkoutDetail() {
           const sets = scheme
             ? scheme.flatMap((block) => {
                 const blockReps = parseRepTarget(block.rep_target ?? ex.rep_target);
-                const blockWeight = block.load_lbs
+                const engineBlock = engineBlocksByLabel.get(block.label || block.set_type)
+                  || engineBlocksByLabel.get(block.set_type);
+                const blockWeight = engineBlock?.load_lbs
+                  || block.load_lbs
                   || (lastPerf?.lastWeight && lastPerf?.lastReps
                       ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, blockReps)
                       : targets?.workingWeight || scaledWeight);
@@ -529,7 +560,7 @@ export default function WorkoutDetail() {
       setExerciseLogs(initialLogs);
       // startTime is set by handleStartLogging (or handleResumeSession for resumed sessions)
     }
-  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs]);
+  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, isTodayPrescriptionLoading]);
 
   // Observe when workout card scrolls out of view
   useEffect(() => {
