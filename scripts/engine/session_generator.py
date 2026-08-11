@@ -372,7 +372,7 @@ EXERCISES = [
      "fatigue_cost": 2.0, "muscles": ["triceps", "chest"],
      "sets": 3, "rep_target": "15-20","rir_target": 2, "rest_seconds": 60, "is_bodyweight": True},
 
-    # ── Limited-equipment additions (equipment_profiles.py "casper" whitelist) ──
+    # ── Limited-equipment additions (see equipment_profiles.py) ──
     {"name": "DB Bench Press",        "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 3.0, "muscles": ["chest", "triceps", "front_delt"],
      "sets": 3, "rep_target": "6-10", "rir_target": 2, "rest_seconds": 120},
