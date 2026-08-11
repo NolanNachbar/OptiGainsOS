@@ -751,6 +751,10 @@ def main():
         spec_muscle = (((guardrail_dict or {}).get("synthesis_state")
                         or {}).get("spec_muscle")),
         planned_exercises = _today_planned_ex,
+        # Kept separate from blocked_exercises: when equipment (not a manual
+        # block) takes a lift out of the approved plan, the generator re-plans
+        # the day instead of pinning to a plan written for another location.
+        equipment_blocked = _eq_blocked,
     )
 
     # ── Upsert to Supabase ────────────────────────────────────────────────────

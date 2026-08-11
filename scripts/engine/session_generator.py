@@ -2194,6 +2194,7 @@ class SessionGenerator:
         session_size_learned: float = None,
         spec_muscle: str = None,
         planned_exercises: list = None,
+        equipment_blocked: set = None,
     ) -> dict:
         from datetime import date
         sim_date = date.today()
@@ -2298,8 +2299,23 @@ class SessionGenerator:
         # Both mean the plan and today disagree about whether to lift at all, which
         # is the MPC's call, not the plan's. `blocked` still filters — a lift he
         # blocked after the plan was approved must not come back through it.
+        # An equipment_profile switch is a different question from a lift blocked
+        # by hand. A manual block means "drop this one lift" — subtracting it from
+        # the approved plan is right. A location change means the plan was written
+        # against equipment that isn't here today, so subtracting leaves a gutted
+        # session (a Casper day that lost squat, pull-ups, cables and the dip
+        # station down to four movements). When equipment took anything out of the
+        # plan, keep the session generated above instead: it was built for the same
+        # split from only the movements actually available, so the day gets
+        # RE-PLANNED rather than trimmed. The weekly plan stays full-gym and today
+        # owns the substitution.
+        _eq_blocked = {canon(n) for n in (equipment_blocked or set())}
+        _plan_hits_equipment = any(
+            canon((_p or {}).get("name") or "") in _eq_blocked
+            for _p in (planned_exercises or [])
+        )
         selection_pinned = False
-        if planned_exercises and exercises:
+        if planned_exercises and exercises and not _plan_hits_equipment:
             _blocked = {canon(n) for n in (blocked_exercises or set())}
             _pinned = []
             for _p in planned_exercises:
