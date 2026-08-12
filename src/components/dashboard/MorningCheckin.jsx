@@ -239,7 +239,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
                 disabled={setEquipmentProfile.isPending}
                 className="min-h-[44px] -my-2.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-warn hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
               >
-                Casper mode · tap for full gym
+                {setEquipmentProfile.isPending ? "Rebuilding…" : "Casper mode · tap for full gym"}
               </button>
             )}
             {/* 'Update' is a quiet re-entry affordance on a completed card, not a
@@ -406,7 +406,14 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
         disabled={setEquipmentProfile.isPending}
         className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-faint hover:text-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
       >
-        {equipmentProfile === "casper" ? "Casper mode (limited equipment) · tap for full gym" : "Full gym · tap for Casper mode"}
+        {/* The tap now waits on a real engine run (~60-90s), not a column write,
+            so say so — a control that sits dead for a minute otherwise reads as
+            broken and gets tapped again. */}
+        {setEquipmentProfile.isPending
+          ? "Rebuilding today's session…"
+          : equipmentProfile === "casper"
+            ? "Casper mode (limited equipment) · tap for full gym"
+            : "Full gym · tap for Casper mode"}
       </button>
 
       {/* Notes */}

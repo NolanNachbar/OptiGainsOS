@@ -449,9 +449,38 @@ export default function WorkoutDetail() {
         // and drop anything the plan still carries that the engine dropped.
         // Guarded on a non-empty block so a missing/failed prescription seeds
         // the full plan rather than an empty session.
-        const engineFiltered = engineByName.size > 0
-          ? programWorkout.exercises.filter(ex => isRunEx(ex) || engineByName.has(ex.name))
-          : programWorkout.exercises;
+        // Filtering only SUBTRACTS, which is right while the engine pinned today
+        // to the plan. On a re-planned day it isn't: the plan was written for a
+        // full gym, the engine rebuilt the session from what's actually available
+        // and SUBSTITUTED (Zercher Squat for a racked squat on a Casper day).
+        // Those substitutes are absent from the plan, so subtracting would seed a
+        // logger missing exactly the lifts he's about to do. plan_pinned, stamped
+        // by session_generator, says which case this is. The engine's rows use
+        // reps/rir where the plan uses rep_target/rir_target, so reshape rather
+        // than special-case the seeding below. Runs live in the plan only and are
+        // carried through untouched.
+        const engineReplanned =
+          todayPrescription?.prescription?.plan_pinned === false && engineByName.size > 0;
+        const asPlanShape = (ex) => ({
+          ...ex,
+          rep_target: ex.rep_target ?? ex.reps,
+          rir_target: ex.rir_target ?? ex.rir,
+          set_scheme: Array.isArray(ex.set_scheme)
+            ? ex.set_scheme.map((b) => ({
+                ...b,
+                rep_target: b.rep_target ?? b.reps,
+                rir_target: b.rir_target ?? b.rir,
+              }))
+            : ex.set_scheme,
+        });
+        const engineFiltered = engineReplanned
+          ? [
+              ...(todayPrescription?.prescription?.strength_block || []).map(asPlanShape),
+              ...programWorkout.exercises.filter(isRunEx),
+            ]
+          : engineByName.size > 0
+            ? programWorkout.exercises.filter(ex => isRunEx(ex) || engineByName.has(ex.name))
+            : programWorkout.exercises;
         initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
           // The plan's set_scheme carries no load_lbs — it's the static weekly
           // shape, not the day's autoregulated numbers. Match today's engine row
@@ -570,7 +599,7 @@ export default function WorkoutDetail() {
       setExerciseLogs(initialLogs);
       // startTime is set by handleStartLogging (or handleResumeSession for resumed sessions)
     }
-  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, isTodayPrescriptionLoading]);
+  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, todayPrescription, isTodayPrescriptionLoading]);
 
   // Observe when workout card scrolls out of view
   useEffect(() => {

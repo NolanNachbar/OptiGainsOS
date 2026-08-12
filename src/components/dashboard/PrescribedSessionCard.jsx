@@ -220,12 +220,17 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // with no load. Today and the Train tab therefore render the same list the
   // moment a plan changes, not a compute cycle later.
   const engineByName = new Map((p.strength_block || []).map((ex) => [ex.name, ex]));
-  // The plan is only rebuilt weekly, so an equipment_profile change mid-week
-  // leaves it listing movements the athlete can't perform. The daily engine
-  // re-filters every run, so when it produced a block, its list wins over the
-  // plan's. Guarded on a non-empty block so a missing prescription still shows
-  // the full plan rather than nothing.
-  const planned = (action === "REST" ? [] : (programWorkout?.exercises || []))
+  // The join above only holds while the engine pinned today to the plan. When it
+  // didn't — the plan was written for a full gym and today's equipment_profile
+  // blocks part of it — the engine RE-PLANS the day and substitutes (Zercher
+  // Squat for a racked squat, Skull Crushers for a cable pressdown). Those
+  // substitutes are absent from the plan by definition, so joining against it
+  // would delete exactly the movements that make the session performable and
+  // leave a gutted list. plan_pinned says which case this is; the engine stamps
+  // it (session_generator.generate). Older rows predate the field and keep the
+  // join, which is what they were computed for.
+  const engineReplanned = p.plan_pinned === false && engineByName.size > 0;
+  const planned = (action === "REST" || engineReplanned ? [] : (programWorkout?.exercises || []))
     .filter((e) => (e.sets || 0) > 0)
     .filter((e) => engineByName.size === 0 || engineByName.has(e.name));
   const strength = planned.length

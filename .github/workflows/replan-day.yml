@@ -1,0 +1,143 @@
+name: Replan Day
+
+# On-demand re-run of the daily prescription, for when something the athlete
+# changes in the UI invalidates today's already-written training_prescription.
+#
+# The motivating case: flipping equipment_profile to "casper" wrote the column
+# and nothing else. The equipment filter lives in the Python generator
+# (scripts/engine/equipment_profiles.py), which only runs on the 10:00 UTC cron —
+# so a toggle at noon left the morning's full-gym session on screen, cable and
+# machine work included, until the next day. The filter was never broken; nothing
+# re-ran it.
+#
+# Deliberately narrower than daily-engine.yml:
+#   - No ingest. Equipment has nothing to do with Garmin activities.
+#   - No compute_athlete_state. Equipment does not change athlete state, and that
+#     script WRITES engine_params — re-running it on every toggle would be a real
+#     side effect of a UI tap.
+#   - No generate_weekly_program. By design the weekly plan stays full-gym
+#     ("re-plan the day, don't trim the week"); the daily generator discards the
+#     plan pin when the plan hits blocked equipment. Regenerating the week here
+#     would be both wrong and slow.
+# That leaves validate + prescribe, which is the whole job.
+
+on:
+  workflow_dispatch:
+  # Fired by the recompute-today edge function when the client toggles something
+  # that invalidates the day. Payload is ignored; the prescriber reads current
+  # state from the database.
+  repository_dispatch:
+    types: [replan-day]
+
+permissions:
+  contents: read
+
+# A double-tap on the toggle would otherwise race two prescriber runs writing the
+# same (created_by, date) row, and the loser could be the one holding the stale
+# equipment profile. Newest tap wins.
+concurrency:
+  group: replan-day
+  cancel-in-progress: true
+
+jobs:
+  # Same gate as the daily cron: engine checks pass before anything writes to the
+  # production database. This path is dispatchable from the client, so it needs
+  # the gate at least as much as the cron does.
+  validate:
+    name: Validate Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install python-dotenv numpy "scipy>=1.11"
+
+      # cwd must be scripts/ — the script importlib-loads
+      # "generate_weekly_program.py" by relative path. Supabase vars are
+      # deliberate placeholders; nothing here touches the network.
+      - name: Run convergence validation
+        working-directory: scripts
+        env:
+          SUPABASE_URL: "https://placeholder.invalid"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-not-a-real-key"
+        run: python3 validate_convergence_fixes.py
+
+  prescribe:
+    name: MPC Prescription
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install python-dotenv numpy
+
+      - name: Run mpc_prescriber
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: python scripts/mpc_prescriber.py
+
+  # Unlike the cron, a failure here is semi-visible: the athlete is standing in
+  # front of the app waiting for the card to change. Still open an issue, because
+  # "the card didn't update" is not a diagnosis.
+  alert:
+    name: Alert on Failure
+    if: failure()
+    needs: [validate, prescribe]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open or update the failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Replan Day failed"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          R_VALIDATE: ${{ needs.validate.result }}
+          R_PRESCRIBE: ${{ needs.prescribe.result }}
+        run: |
+          set -uo pipefail
+
+          BODY=$(cat <<EOF
+          The **Replan Day** workflow failed on $(date -u '+%Y-%m-%d %H:%M UTC').
+
+          [View the failed run]($RUN_URL)
+
+          | job | result |
+          | --- | --- |
+          | validate  | \`$R_VALIDATE\` |
+          | prescribe | \`$R_PRESCRIBE\` |
+
+          Today's \`training_prescription\` is whatever the last successful run
+          wrote, so the card on screen may not reflect the setting that was just
+          changed in the UI.
+          EOF
+          )
+
+          gh label create engine-failure --color B60205 \
+            --description "Automated engine / CI failure" --force >/dev/null 2>&1 || true
+
+          EXISTING=$(gh issue list --state open --label engine-failure --json number,title \
+            --jq "[.[] | select(.title == \"$TITLE\")] | .[0].number // empty" 2>/dev/null || true)
+
+          if [ -n "${EXISTING:-}" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY" --label engine-failure \
+              || gh issue create --title "$TITLE" --body "$BODY"
+          fi

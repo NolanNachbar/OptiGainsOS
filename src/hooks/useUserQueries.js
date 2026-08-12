@@ -4,6 +4,7 @@ import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryKeys } from "@/lib/queryKeys";
 import { format, subDays } from "date-fns";
+import { getTodayString } from "@/utils/dateUtils";
 
 // One shared empty array, so "no rows" keeps a stable identity across renders
 // and doesn't retrigger every memo downstream of it.
@@ -61,6 +62,13 @@ export function useToggleExerciseLike() {
 // the weekly (Sunday MILP) and daily (MPC) generators, which union its
 // exercise whitelist (scripts/engine/equipment_profiles.py) on top of the
 // manual exercise_preferences blocked/preferred sets — never overriding them.
+// Writing the column is only half the job: both generators are Python on a cron,
+// so until one of them runs again the athlete keeps looking at a session built for
+// the gym he isn't in. This dispatches the Replan Day workflow and waits for the
+// rewritten training_prescription row before settling, so `isPending` covers the
+// whole round trip and the card changes when it resolves. The write itself is
+// never blocked on the recompute — a failed dispatch still leaves the setting
+// saved and tomorrow's cron correct.
 export function useSetEquipmentProfile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -69,12 +77,47 @@ export function useSetEquipmentProfile() {
     mutationFn: async ({ profile, equipmentProfile }) => {
       if (!profile?.id) return null;
       await db.entities.UserProfile.update(profile.id, { equipment_profile: equipmentProfile });
+
+      // Everything from here is best-effort. Whatever happens, the column is set.
+      const dispatchedAt = new Date().toISOString();
+      try {
+        const { error } = await supabase.functions.invoke("replan-day", {
+          body: { reason: `equipment_profile → ${equipmentProfile}` },
+        });
+        if (error) throw error;
+        await waitForFreshPrescription(user?.id, dispatchedAt);
+      } catch (e) {
+        console.error("replan dispatch failed; today's session stays as computed", e);
+      }
       return equipmentProfile;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.userProfile(user?.id) });
+      queryClient.invalidateQueries({ queryKey: ['todayPrescription'] });
     },
   });
+}
+
+// Poll today's prescription until its computed_at passes the moment we dispatched.
+// A GitHub Actions run is queue + checkout + pip install + prescribe, so ~60-90s
+// is normal and the ceiling is generous. Giving up just means the card updates on
+// the next natural refetch instead of now; it does not mean the recompute failed.
+async function waitForFreshPrescription(userId, dispatchedAt, timeoutMs = 180000) {
+  if (!userId) return false;
+  const deadline = Date.now() + timeoutMs;
+  const today = getTodayString();
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const { data } = await supabase
+      .from("training_prescription")
+      .select("computed_at")
+      .eq("created_by", userId)
+      .eq("date", today)
+      .maybeSingle();
+    if (data?.computed_at && new Date(data.computed_at) > new Date(dispatchedAt)) return true;
+  }
+  console.warn("replan did not land within the wait window; card will update on next refetch");
+  return false;
 }
 
 // Active exercise_shot_notes for the user, as a lowercased-name -> shot_note

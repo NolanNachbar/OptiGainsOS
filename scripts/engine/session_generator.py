@@ -2556,6 +2556,15 @@ class SessionGenerator:
             "split": split,
             "rationale": rationale,
             "interference_warning": warning,
+            # Whether today's lifts came from the approved weekly plan (True) or
+            # were generated fresh here (False). The UI joins strength_block
+            # against program_workouts so a plan approved after the 4am compute
+            # still renders correctly — but that join must not run on a re-planned
+            # day, or the substitutions this function just made (Zercher Squat for
+            # a racked squat on a Casper day) get filtered out for not appearing
+            # in a plan written for another location. Consumers: the Today card
+            # and the workout logger.
+            "plan_pinned": selection_pinned,
             "strength_block": strength_block,
             "calisthenics_block": calisthenics_block,
             "run_block": run_block,
