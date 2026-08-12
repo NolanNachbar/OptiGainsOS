@@ -512,9 +512,16 @@ ISOLATION_SUPPLEMENTS = {
 # same movement — the same deterministic week/day rotation _pick_assistance uses.
 # TBJP's own picks for these three slots are a cable lateral raise, a single-arm
 # pushdown and a cable curl (Episode 03, ~line 500-510); the pools mirror that.
+#
+# Every pool needs at least one entry that survives a limited-equipment day, or
+# the guarantee quietly stops being a guarantee. Triceps had none: Pushdown needs
+# a cable and OH Extension was the only alternative, so a Casper day plus a manual
+# block on OH Extension emptied the pool and the session lost its triceps work
+# entirely (2026-08-12, 8 movements down to 7). Skull Crushers is barbell/DB and
+# is what Nolan asks for anyway.
 MANDATORY_ISOLATION_POOL = {
     "side_delts": ["Lateral Raise", "Cable Lateral Raise"],
-    "triceps":    ["Triceps Pushdown", "Triceps OH Extension"],
+    "triceps":    ["Skull Crushers", "Triceps Pushdown", "Triceps OH Extension"],
     "biceps":     ["Bicep Curl", "Hammer Curl"],
 }
 
@@ -1617,6 +1624,13 @@ def _build_session(
                  if n in _EX_BY_NAME and canon(n) not in blocked
                  and n not in excluded_names]
         if not _pool:
+            # The guarantee just failed silently. That is how a Casper day plus a
+            # blocked OH Extension quietly shipped a session with no triceps work
+            # at all — say so, so the missing slot is visible in the run log
+            # instead of only in the finished workout.
+            print(f"WARN: no available exercise for mandatory {_m_muscle} isolation "
+                  f"(pool: {MANDATORY_ISOLATION_POOL.get(_m_muscle, [])}) — "
+                  f"session will have no {_m_muscle} isolation", flush=True)
             continue
         # Already have a true isolation for this muscle? Then the requirement is
         # satisfied — but TAG that slot rather than just moving on. Otherwise the
@@ -1629,11 +1643,17 @@ def _build_session(
         if _existing is not None:
             _existing["is_mandatory_iso"] = True
             continue
-        _pick = next((n for n in _pool if n not in chosen_names), None)
-        if _pick is None:
-            continue
-        # deterministic rotation across the pool, same shape as _pick_assistance
         _rot = [n for n in _pool if n not in chosen_names]
+        if not _rot:
+            continue
+        # A liked movement wins its mandatory slot outright rather than taking
+        # turns with movements he didn't ask for. Everywhere else in selection a
+        # preference is a weight (PREFER_SELECT_WEIGHT) competing against exercise
+        # value, but there is nothing to compete with here — the slot exists only
+        # to guarantee the muscle gets worked, so which movement fills it is purely
+        # his call. Rotation stays the rule for muscles he has no preference on.
+        _liked = [n for n in _rot if canon(n) in preferred]
+        _rot = _liked or _rot
         _pick = _rot[assist_week % len(_rot)]
         _m_ex = copy.deepcopy(_EX_BY_NAME[_pick])
         _m_weekly = wt.get(_m_muscle, 0)

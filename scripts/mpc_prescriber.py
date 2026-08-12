@@ -663,16 +663,17 @@ def main():
     # Athlete exercise preferences (user_profiles.exercise_preferences): same
     # block/prefer lists the weekly generator honors, so the daily card and the
     # weekly schedule surface the same movements (no Box Squat / Trap Bar, etc.).
-    from engine.log_ingest import canon
-    _ex_prefs     = profile.get("exercise_preferences") or {}
-    _blocked_ex   = {canon(n) for n in (_ex_prefs.get("blocked") or [])}
-    _preferred_ex = {canon(n) for n in (_ex_prefs.get("preferred") or [])}
+    # A name that resolves to no catalog exercise is reported rather than dropped
+    # on the floor — see engine/exercise_prefs.py.
+    from engine.exercise_prefs import canon_prefs
+    from engine.session_generator import _EX_BY_NAME as _ALL_EX_NAMES
+    _blocked_ex, _preferred_ex = canon_prefs(
+        profile.get("exercise_preferences"), _ALL_EX_NAMES.keys(), label="daily")
 
     # Equipment/location profile (e.g. no-gym Casper trips) — unions on top of
     # the manual blocked/preferred sets above, never overrides them. Read fresh
     # every run so a mid-week profile switch takes effect same-day.
     from engine.equipment_profiles import equipment_blocked_and_preferred
-    from engine.session_generator import _EX_BY_NAME as _ALL_EX_NAMES
     _eq_blocked, _eq_preferred = equipment_blocked_and_preferred(
         profile.get("equipment_profile"), _ALL_EX_NAMES.keys())
     _blocked_ex   |= _eq_blocked

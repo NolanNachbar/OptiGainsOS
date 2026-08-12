@@ -606,9 +606,12 @@ def main():
     # block/prefer lists the session generator honors. Blocked lifts are never
     # programmed; preferred lifts win their selection slot. Shared with the daily
     # prescriber so both engines surface the same movements.
-    ex_prefs     = profile.get("exercise_preferences") or {}
-    blocked_ex   = {canon(n) for n in (ex_prefs.get("blocked") or [])}
-    preferred_ex = {canon(n) for n in (ex_prefs.get("preferred") or [])}
+    # A name that resolves to no catalog exercise is reported rather than dropped
+    # on the floor — see engine/exercise_prefs.py.
+    from engine.exercise_prefs import canon_prefs
+    from engine.session_generator import _EX_BY_NAME as _ALL_EX_NAMES
+    blocked_ex, preferred_ex = canon_prefs(
+        profile.get("exercise_preferences"), _ALL_EX_NAMES.keys(), label="weekly")
 
     # Equipment/location profile is deliberately NOT applied here. The weekly
     # template is the full-gym plan — the athlete's home base and what he trains
