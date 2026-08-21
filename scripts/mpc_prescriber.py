@@ -882,7 +882,13 @@ def main():
                 **({"components": e["components"]} if e.get("components") else {}),
             } for e in _strength]
             _new_title = build_title(best_action, _new_split, intensity)
-            if sb_patch("program_workouts", {"scheduled_date": f"eq.{TODAY}"},
+            # Scope the patch to the enrollment today's row belongs to. A lingering
+            # second enrollment also has a row for TODAY, and a date-only filter
+            # would rewrite that one too.
+            _pw_filt = {"scheduled_date": f"eq.{TODAY}"}
+            if _today_plan[0].get("program_id"):
+                _pw_filt["program_id"] = f"eq.{_today_plan[0]['program_id']}"
+            if sb_patch("program_workouts", _pw_filt,
                         {"title": _new_title, "exercises": _pw_ex}):
                 print(f"   Re-planned today's program row → '{_new_title}' "
                       f"({len(_pw_ex)} exercises)")
@@ -900,8 +906,13 @@ def main():
     if ok and _replanned and (prescription.get("strength_block") or []):
         from engine.session_generator import build_title
         _eq_name = (profile.get("equipment_profile") or "full_gym")
+        _goal_prio = profile.get("goal_priorities") or {}
         _lib_title = build_title(best_action, prescription.get("split") or "", intensity)
-        if _plan_deviated is False and _eq_name != "full_gym":
+        # Suffix on the equipment profile alone. A day that is BOTH a deviation
+        # day and on a travel profile is still a travel session, and saving it
+        # under the plain title would overwrite the full-gym template for that
+        # split with swapped-in alternatives.
+        if _eq_name != "full_gym":
             _lib_title = f"{_lib_title} ({_eq_name})"
         _lib_ex = [{
             "name":         e.get("name"),
@@ -917,7 +928,11 @@ def main():
         _lib_payload = {
             "title":            _lib_title,
             "description":      "Engine-generated session, auto-saved from today's prescription.",
-            "focus":            prescription.get("session_type") or "strength",
+            # Match the weekly generator's label vocabulary. session_type reads
+            # "mixed", which is not one of the library's filter pills, so those
+            # rows were invisible under every filter except "all".
+            "focus":            "cardio" if best_action == "CARDIO" else (
+                max(_goal_prio, key=_goal_prio.get) if _goal_prio else "strength"),
             "duration_minutes": None,
             "exercises":        _lib_ex,
             "folder":           "Engine",
