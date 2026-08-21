@@ -1587,7 +1587,10 @@ def main():
             lib_payload = {
                 "title":            title,
                 "description":      f"Engine-generated {split} session, auto-saved from the weekly program.",
-                "focus":            pw_row["focus"],
+                # The library's Type filter only offers strength/cardio/hiit, so a
+                # row saved as "hypertrophy" (what pw_row carries) is invisible
+                # under every pill except All. Map into the library's vocabulary.
+                "focus":            "cardio" if pw_row["focus"] == "cardio" else "strength",
                 "duration_minutes": None,
                 "exercises":        lib_exercises,
                 "folder":           "Engine",

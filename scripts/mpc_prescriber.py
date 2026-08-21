@@ -906,7 +906,6 @@ def main():
     if ok and _replanned and (prescription.get("strength_block") or []):
         from engine.session_generator import build_title
         _eq_name = (profile.get("equipment_profile") or "full_gym")
-        _goal_prio = profile.get("goal_priorities") or {}
         _lib_title = build_title(best_action, prescription.get("split") or "", intensity)
         # Suffix on the equipment profile alone. A day that is BOTH a deviation
         # day and on a travel profile is still a travel session, and saving it
@@ -928,11 +927,10 @@ def main():
         _lib_payload = {
             "title":            _lib_title,
             "description":      "Engine-generated session, auto-saved from today's prescription.",
-            # Match the weekly generator's label vocabulary. session_type reads
-            # "mixed", which is not one of the library's filter pills, so those
-            # rows were invisible under every filter except "all".
-            "focus":            "cardio" if best_action == "CARDIO" else (
-                max(_goal_prio, key=_goal_prio.get) if _goal_prio else "strength"),
+            # The library's Type filter only offers strength/cardio/hiit. Anything
+            # else (session_type reads "mixed") is invisible under every pill but
+            # All, which reads as "not in the library".
+            "focus":            "cardio" if best_action == "CARDIO" else "strength",
             "duration_minutes": None,
             "exercises":        _lib_ex,
             "folder":           "Engine",
