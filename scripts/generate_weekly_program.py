@@ -157,6 +157,19 @@ def sb_insert(table, row):
         print(f"  ERROR sb_insert({table}): {e}")
         return False
 
+def sb_insert_returning(table, row):
+    """INSERT one row and return it, so the caller can key later updates off its id."""
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    req = urllib.request.Request(url, data=json.dumps(row).encode(), method="POST",
+                                 headers=_headers({"Prefer": "return=representation"}))
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            body = json.loads(r.read() or "[]")
+            return body[0] if body else None
+    except Exception as e:
+        print(f"  ERROR sb_insert_returning({table}): {e}")
+        return None
+
 def sb_patch(table, filt, row):
     """PATCH rows matching filt (dict of col->'eq.val' style already formatted)."""
     qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}" for k, v in filt.items())
@@ -1416,8 +1429,18 @@ def main():
     # Library auto-save dedup set: existing workout-library titles, fetched once
     # per run. Generated sessions whose title isn't in the library yet get saved
     # as reusable templates; re-runs and repeat titles no-op.
-    _lib_rows = sb_get("workouts", {"select": "title", "created_by": f"eq.{USER_ID}"})
-    library_titles = {str(r.get("title", "")).strip().lower() for r in (_lib_rows or [])}
+    _lib_rows = sb_get("workouts", {"select": "id,title", "created_by": f"eq.{USER_ID}"})
+    # title → id. Dedup used to be a set of titles that made the auto-save SKIP a
+    # title it had seen, which froze each library template at the first week that
+    # ever generated it ("Lower A — Squat" was still the 2026-07-07 session months
+    # later, so opening it from the library gave a session the engine no longer
+    # programs). Keyed by id instead, a repeat title now REFRESHES the template in
+    # place: one row per session flavor, always the current one.
+    library_ids = {}
+    for r in (_lib_rows or []):
+        _t = str(r.get("title", "")).strip().lower()
+        if _t and _t not in library_ids:
+            library_ids[_t] = r.get("id")
     # F15: the generated week is staged for Nolan's approval, not applied straight
     # to program_workouts (his call, 2026-07-27 — mirrors reviewing the diet plan
     # before it loads: nothing about his ACTUAL schedule changes until he taps
@@ -1550,7 +1573,7 @@ def main():
         # intensity suffix), so the library accumulates one template per session
         # flavor instead of 7 new rows a week. Exercises are mapped to the
         # library's manual-create shape ({name, sets, reps, rest_seconds, notes}).
-        if ok and exercises and title.strip().lower() not in library_titles:
+        if ok and exercises:
             lib_exercises = [{
                 "name": e.get("name", ""),
                 "sets": e.get("sets", 3),
@@ -1561,18 +1584,25 @@ def main():
                     str(e.get("notes") or ""),
                 ] if x),
             } for e in exercises]
-            lib_ok = sb_insert("workouts", {
-                "created_by":       USER_ID,
+            lib_payload = {
                 "title":            title,
                 "description":      f"Engine-generated {split} session, auto-saved from the weekly program.",
                 "focus":            pw_row["focus"],
                 "duration_minutes": None,
                 "exercises":        lib_exercises,
                 "folder":           "Engine",
-            })
-            if lib_ok:
-                library_titles.add(title.strip().lower())
-                print(f"    + library: saved template '{title}'")
+            }
+            _key = title.strip().lower()
+            _existing = library_ids.get(_key)
+            if _existing:
+                if sb_patch("workouts", {"id": f"eq.{_existing}",
+                                         "created_by": f"eq.{USER_ID}"}, lib_payload):
+                    print(f"    ~ library: refreshed template '{title}'")
+            else:
+                _row = sb_insert_returning("workouts", {"created_by": USER_ID, **lib_payload})
+                if _row:
+                    library_ids[_key] = _row.get("id")
+                    print(f"    + library: saved template '{title}'")
 
         # Advance rolling state
         recent_session_types.append(split)

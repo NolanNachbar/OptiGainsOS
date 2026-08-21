@@ -194,6 +194,45 @@ def sb_upsert(table, row):
         return False
 
 
+def sb_post(table, row):
+    url  = f"{SUPABASE_URL}/rest/v1/{table}"
+    data = json.dumps(row).encode()
+    req  = urllib.request.Request(
+        url, data=data, method="POST",
+        headers=_headers({"Prefer": "return=minimal"}),
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"  ERROR sb_post({table}) {e.code}: {e.read().decode()[:300]}")
+        return False
+    except Exception as e:
+        print(f"  ERROR sb_post({table}): {e}")
+        return False
+
+
+def sb_patch(table, filt, row):
+    query = {"created_by": f"eq.{USER_ID}", **filt}
+    qs   = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}"
+                    for k, v in query.items())
+    url  = f"{SUPABASE_URL}/rest/v1/{table}?{qs}"
+    data = json.dumps(row).encode()
+    req  = urllib.request.Request(
+        url, data=data, method="PATCH",
+        headers=_headers({"Prefer": "return=minimal"}),
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"  ERROR sb_patch({table}) {e.code}: {e.read().decode()[:300]}")
+        return False
+    except Exception as e:
+        print(f"  ERROR sb_patch({table}): {e}")
+        return False
+
+
 # ── MPC core ──────────────────────────────────────────────────────────────────
 
 def deadline_weights() -> tuple:
@@ -420,6 +459,7 @@ def main():
     # _decide_split's reversed() lookback sees the true most-recent logged session.
     _seen_dates = set()
     _classified = []   # most-recent-first
+    _classified_dates = []
     for log in workout_log_rows:   # already ordered log_date.desc
         d = log.get("log_date")
         if d in _seen_dates:
@@ -428,7 +468,13 @@ def main():
         if split:
             _seen_dates.add(d)
             _classified.append(split)
+            _classified_dates.append(d)
     recent_session_types = list(reversed(_classified))
+    # Most recent session he ACTUALLY trained, with its date — the weekly plan is
+    # a calendar written on Sunday, so it only knows what it intended. Used below
+    # to spot a deviation day before inheriting a stale planned split.
+    _last_log_split = _classified[0] if _classified else None
+    _last_log_date  = _classified_dates[0] if _classified_dates else None
 
     # Fallback to training prescription if no actual workouts have been logged
     if not recent_session_types:
@@ -692,6 +738,7 @@ def main():
     _today_run_slot = None
     _today_split = None
     _today_planned_ex = None
+    _plan_deviated = False
     if _today_plan:
         _cs = _today_plan[0].get("cardio_sessions") or []
         if _cs:
@@ -699,12 +746,42 @@ def main():
         _today_split = split_from_title(_today_plan[0].get("title"))
         if _today_split:
             print(f"  Inheriting planned split for today: {_today_split}")
+
+        # ── Deviation day: the plan is stale, don't inherit it ────────────────
+        # The plan is a fixed calendar. When the session he actually logged most
+        # recently covers the same region the plan wants again today (he trained
+        # upper yesterday on a day the plan called lower, so the plan still has
+        # him on upper today), inheriting the planned split repeats the region
+        # back-to-back. That is exactly the "upper on upper" failure the log-based
+        # freshness signal exists to prevent (CURRENT_STATE, 2026-06-05); the F8
+        # override reintroduced it by honoring the plan unconditionally.
+        #
+        # This does NOT re-open the Today-vs-Train split (F8): dropping the
+        # override routes the day through the same _converge_split path the weekly
+        # generator uses, and the regenerated session is written back onto today's
+        # program_workouts row below, so the Train tab reads what Today reads.
+        _region = lambda s: ("lower" if str(s or "").startswith("lower")
+                             else "upper" if str(s or "").startswith("upper")
+                             else None)
+        _yesterday = (datetime.date.fromisoformat(TODAY)
+                      - datetime.timedelta(days=1)).isoformat()
+        if (_today_split and _last_log_split and _last_log_date
+                and _last_log_date >= _yesterday
+                and _region(_last_log_split) is not None
+                and _region(_last_log_split) == _region(_today_split)):
+            print(f"  Deviation day: logged {_last_log_split} on {_last_log_date}, "
+                  f"plan wants {_today_split} again — re-planning today off actual logs")
+            _today_split = None
+            _plan_deviated = True
         # The approved plan's movement list, not just its split label. Today's card
         # renders training_prescription and the Train tab renders program_workouts;
         # letting the daily generator re-pick meant the two showed different
         # exercises for the same day. The plan owns which lifts, today owns how hard.
-        _today_planned_ex = [e for e in (_today_plan[0].get("exercises") or [])
-                             if int(e.get("sets") or 0) > 0]
+        # On a deviation day the plan's movement list belongs to the wrong region,
+        # so it can't pin the session either — the day is re-planned whole.
+        _today_planned_ex = None if _plan_deviated else [
+            e for e in (_today_plan[0].get("exercises") or [])
+            if int(e.get("sets") or 0) > 0]
         if _today_planned_ex:
             print(f"  Inheriting {len(_today_planned_ex)} planned exercises for today")
 
@@ -781,6 +858,79 @@ def main():
     }
 
     ok = sb_upsert("training_prescription", row)
+
+    # ── Deviation write-through ──────────────────────────────────────────────
+    # program_workouts is the source of truth the Train tab renders and that this
+    # script inherits from on the next run. When a deviation day forced today to
+    # be re-planned off actual logs, leaving the stale planned row in place would
+    # put Train and Today back in disagreement (the exact F8 failure) and hand
+    # tomorrow's run the same stale split to inherit. So the re-planned session
+    # replaces today's row: same day, same cardio, new title and movements.
+    if ok and _plan_deviated and _today_plan:
+        _new_split = prescription.get("split") or ""
+        _strength  = prescription.get("strength_block") or []
+        if _new_split and _strength:
+            from engine.session_generator import build_title
+            _pw_ex = [{
+                "name":         e.get("name"),
+                "sets":         e.get("sets"),
+                "rep_target":   e.get("rep_target", e.get("reps")),
+                "rir_target":   e.get("rir_target", e.get("rir")),
+                "rest_seconds": e.get("rest_seconds"),
+                "notes":        e.get("notes"),
+                **({"set_scheme": e["set_scheme"]} if e.get("set_scheme") else {}),
+                **({"components": e["components"]} if e.get("components") else {}),
+            } for e in _strength]
+            _new_title = build_title(best_action, _new_split, intensity)
+            if sb_patch("program_workouts", {"scheduled_date": f"eq.{TODAY}"},
+                        {"title": _new_title, "exercises": _pw_ex}):
+                print(f"   Re-planned today's program row → '{_new_title}' "
+                      f"({len(_pw_ex)} exercises)")
+
+    # ── Library write-through ────────────────────────────────────────────────
+    # A session Nolan is actually programmed to train should be browsable in the
+    # workout library, not only on the Today card. The weekly generator saves the
+    # sessions IT writes, but any day the daily engine re-plans (a deviation day,
+    # or an equipment_profile that made the full-gym plan unusable) exists only in
+    # training_prescription and never reaches `workouts`. Save it here, keyed by
+    # title so re-runs refresh one template instead of piling up rows. An
+    # equipment-driven re-plan gets its own title so it can't overwrite the
+    # full-gym template for the same split.
+    _replanned = _plan_deviated or prescription.get("plan_pinned") is False
+    if ok and _replanned and (prescription.get("strength_block") or []):
+        from engine.session_generator import build_title
+        _eq_name = (profile.get("equipment_profile") or "full_gym")
+        _lib_title = build_title(best_action, prescription.get("split") or "", intensity)
+        if _plan_deviated is False and _eq_name != "full_gym":
+            _lib_title = f"{_lib_title} ({_eq_name})"
+        _lib_ex = [{
+            "name":         e.get("name"),
+            "sets":         e.get("sets", 3),
+            "reps":         str(e.get("rep_target") or e.get("reps") or "10"),
+            "rest_seconds": e.get("rest_seconds", 120),
+            "notes":        " · ".join(x for x in [
+                (f"RIR {e.get('rir_target', e.get('rir'))}"
+                 if e.get("rir_target", e.get("rir")) is not None else ""),
+                str(e.get("notes") or ""),
+            ] if x),
+        } for e in prescription["strength_block"]]
+        _lib_payload = {
+            "title":            _lib_title,
+            "description":      "Engine-generated session, auto-saved from today's prescription.",
+            "focus":            prescription.get("session_type") or "strength",
+            "duration_minutes": None,
+            "exercises":        _lib_ex,
+            "folder":           "Engine",
+        }
+        _existing = sb_get("workouts", {"select": "id", "title": f"eq.{_lib_title}",
+                                        "limit": "1"})
+        if _existing:
+            if sb_patch("workouts", {"id": f"eq.{_existing[0]['id']}"}, _lib_payload):
+                print(f"   Library: refreshed '{_lib_title}'")
+        else:
+            if sb_post("workouts", {"created_by": USER_ID, **_lib_payload}):
+                print(f"   Library: saved '{_lib_title}'")
+
     if ok:
         print(f"\n✓  Prescription written: {best_action} (intensity {intensity})")
         print(f"   Session type: {prescription.get('session_type')}")

@@ -190,7 +190,23 @@ export default function WorkoutDetail() {
   // seeded from it alone falls back to a from-history Epley estimate instead
   // of what the engine actually prescribed today. Same join PrescribedSessionCard
   // already does for display; this makes the logged session agree with it.
-  const { prescription: todayPrescription, isLoading: isTodayPrescriptionLoading } = useTodayPrescription(getTodayString(profile?.timezone));
+  const { prescription: rawTodayPrescription, isLoading: isTodayPrescriptionLoading } = useTodayPrescription(getTodayString(profile?.timezone));
+
+  // Today's engine row describes TODAY. The Weekly Schedule links every day of
+  // the plan through this same route, so opening a lower day from two weeks ago
+  // used to seed the logger from today's upper block: the filter branch stripped
+  // the old session down to whatever overlapped today, and the re-planned branch
+  // (plan_pinned === false, which is every day while an equipment_profile is set)
+  // replaced its movements outright. Tapping Start Session on a two-week-old
+  // Lower day therefore started an Upper session. Only let the engine layer touch
+  // the session when the program workout on screen IS today's.
+  // Null until programWorkout resolves — `workout` is built from programWorkout,
+  // and the seeding effect below is gated on `workout`, so this can never read
+  // "not today" while the real today session is still loading.
+  const isTodaysProgramWorkout =
+    !!programWorkout?.scheduled_date
+    && programWorkout.scheduled_date === getTodayString(profile?.timezone);
+  const todayPrescription = isTodaysProgramWorkout ? rawTodayPrescription : null;
   const engineByName = useMemo(() => {
     const strengthBlock = todayPrescription?.prescription?.strength_block || [];
     return new Map(strengthBlock.map((ex) => [ex.name, ex]));

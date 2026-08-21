@@ -415,6 +415,12 @@ _out16 = SessionGenerator().generate(
 )
 check("F16 split_override wins over log-derived split even with session history",
       _out16.get("split") == "upper_a", f"got {_out16.get('split')!r}")
+# Still true, and deliberately so: deciding whether today's PLAN is stale is not
+# this function's job. mpc_prescriber.py detects the deviation (logged the same
+# region yesterday that the plan wants again today) and passes split_override=None,
+# which routes the day through _decide_split / _converge_split and then writes the
+# re-planned session back onto today's program_workouts row so Train still agrees
+# with Today. Given an override, the generator honors it — that invariant holds.
 
 
 # ── F13: single low-severity pain note de-prioritises, doesn't veto ───────────
