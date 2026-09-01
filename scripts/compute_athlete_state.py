@@ -1709,7 +1709,10 @@ def main():
             profile.get("training_phase"))
         nutrition["phase_recommendation"] = recommend_phase(
             weight_trend=nutrition.get("weight_trend_lbs_per_week"),
-            days_to_deadline=max(0, (datetime.date(2026, 8, 31) - datetime.date.today()).days),
+            # None, not 0: phase_recommender latches `near` (and with it the
+            # "tactical priority" block on bulking) whenever days_to_deadline <= 100,
+            # and a passed date clamps to 0 forever. The PST is a standing target.
+            days_to_deadline=None,
             bodyfat=float(_bodyfat) if _bodyfat is not None else None,
             goal_priorities=_goal_prio,
             current_phase=nutrition.get("phase"),

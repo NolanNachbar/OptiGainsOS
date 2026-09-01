@@ -119,10 +119,16 @@ ACTION_TSS = {
 # MPC horizon (days to simulate forward)
 HORIZON = 14
 
-# Reward function weights (dynamic — adjusted by deadline urgency in code)
-# Base weights when deadline is 90+ days away
-W_PST_BASE = 0.50
-W_STR_BASE = 0.50
+# Reward function weights. FLAT — no deadline urgency ramp (Nolan's call,
+# 2026-09-01). The old ramp walked w_pst 0.50 -> 0.90 over the 90 days before
+# Aug 31 and then, because days_left clamps at 0, PINNED it at 0.90 forever once
+# the date passed. At w_pst=0.90 the goal term puts STRENGTH (PST value 0.15)
+# ~2.0 points behind CARDIO (1.0) and no trajectory term can close that, so the
+# engine prescribed run-only weeks indefinitely. The ramp also contradicted the
+# recorded training model: the PST is a SOFT readiness target, hypertrophy is the
+# priority, and there is no peak. Hypertrophy-led concurrent split, no expiry.
+W_PST_BASE = 0.30
+W_STR_BASE = 0.70
 
 # Penalty constants
 PENALTY_FATIGUE_SCALE  = 0.08   # per unit of f_t above threshold
@@ -236,12 +242,11 @@ def sb_patch(table, filt, row):
 # ── MPC core ──────────────────────────────────────────────────────────────────
 
 def deadline_weights() -> tuple:
-    """Dynamic PST/strength weights based on days remaining to Aug 31."""
-    days_left = max(0, (DEADLINE - datetime.date.today()).days)
-    urgency   = 1.0 - min(days_left / 90.0, 1.0)
-    w_pst     = min(0.90, W_PST_BASE + urgency * 0.45)
-    w_str     = 1.0 - w_pst
-    return round(w_pst, 3), round(w_str, 3)
+    """Flat PST/strength reward weights. Kept as a function (and under the old
+    name) because the prescription row records w_pst/w_str per day and the weekly
+    generator mirrors this exactly. No date input: the PST is a standing readiness
+    target, not an event to peak against, so the weights never ramp or expire."""
+    return round(W_PST_BASE, 3), round(W_STR_BASE, 3)
 
 
 def simulate_trajectory(

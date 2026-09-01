@@ -239,6 +239,11 @@ ACTION_TSS = {
 }
 DEADLINE = datetime.date(2026, 8, 31)
 
+# Flat reward weights — byte-identical to mpc_prescriber.W_PST_BASE / W_STR_BASE.
+# See the comment there for why the deadline urgency ramp was removed.
+W_PST_BASE = 0.30
+W_STR_BASE = 0.70
+
 # What each action is WORTH toward each goal. Kept byte-identical to
 # mpc_prescriber.PST_READINESS_VALUE / STRENGTH_PROGRESS_VALUE / GOAL_REWARD_SCALE —
 # validate_convergence_fixes.py asserts the two stay in sync, because the last time
@@ -255,10 +260,8 @@ STRENGTH_PROGRESS_VALUE = {
 GOAL_REWARD_SCALE = 3.0
 
 def deadline_weights():
-    days_left = max(0, (DEADLINE - TODAY).days)
-    urgency   = 1.0 - min(days_left / 90.0, 1.0)
-    w_pst     = min(0.90, 0.50 + urgency * 0.45)
-    return round(w_pst, 3), round(1.0 - w_pst, 3)
+    """Flat, no ramp. Mirrors mpc_prescriber.deadline_weights exactly."""
+    return round(W_PST_BASE, 3), round(W_STR_BASE, 3)
 
 def simulate_and_score(kalman, action, load_history, w_pst, w_str):
     default = ["STRENGTH","CARDIO","CALISTHENICS","REST","STRENGTH","MIXED","CARDIO","REST",
@@ -1283,7 +1286,10 @@ def main():
     tsb_now   = float((latest_athlete.get("fatigue") or {}).get("tsb") or 0.0)
     phase_now = (latest_athlete.get("nutrition") or {}).get("phase")
     days_to_deadline = max(0, (DEADLINE - TODAY).days)
-    pst_mult  = max(1.0, min(1.5, 1.0 + (90 - days_to_deadline) / 180.0))  # [ENG] PST urgency
+    # Flat, for the same reason the reward weights are flat: this ramp was pinned at
+    # its 1.5 ceiling from Aug 31 onward, permanently inflating PST volume in the
+    # allocator's weekly plan. No urgency multiplier against a soft target.
+    pst_mult  = 1.0
     deadline_mult = {"strength": 1.0, "hypertrophy": 1.0, "pst": pst_mult}
     goal_prio = profile.get("goal_priorities") or default_goal_priorities(profile.get("training_phase"))
     emphasis  = profile.get("muscle_emphasis") or MUSCLE_EMPHASIS
