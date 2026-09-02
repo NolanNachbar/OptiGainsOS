@@ -584,13 +584,15 @@ function EnduranceSection({ data }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="hero-metric text-3xl text-gold">{data.days_to_aug31}</div>
-        <div>
-          <div className="text-sm font-bold text-ink">Days to Aug 31</div>
-          <div className="text-xs font-semibold text-muted-2">BUD/S PST deadline</div>
+      {data.days_to_aug31 != null && (
+        <div className="flex items-center gap-3">
+          <div className="hero-metric text-3xl text-gold">{data.days_to_aug31}</div>
+          <div>
+            <div className="text-sm font-bold text-ink">Days to Aug 31</div>
+            <div className="text-xs font-semibold text-muted-2">BUD/S PST target</div>
+          </div>
         </div>
-      </div>
+      )}
       {data.aerobic_fitness_proxy != null && (
         <div>
           <div className="flex items-center justify-between text-xs mb-1">

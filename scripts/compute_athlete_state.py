@@ -649,8 +649,12 @@ def compute_recovery(recovery_rows: list, checkin: Optional[dict]) -> dict:
 # ── Endurance computation ─────────────────────────────────────────────────────
 
 def compute_endurance(recovery_rows: list, pst_tests: list) -> dict:
+    # None once the date has passed, not 0. The PST is a standing readiness
+    # target with no peak, so a countdown that sticks at 0 forever is worse than
+    # no countdown: consumers hide the tile when this is None.
     aug31 = datetime.date(2026, 8, 31)
-    days_to_aug31 = max(0, (aug31 - datetime.date.today()).days)
+    _days = (aug31 - datetime.date.today()).days
+    days_to_aug31 = _days if _days > 0 else None
 
     # VO2max from most recent Garmin row that has it
     vo2max          = None

@@ -99,11 +99,15 @@ function fmtEndurance(e: Record<string, unknown> | null): string {
   const daysSinceSwim = e.days_since_swim != null ? `${e.days_since_swim}d ago` : "never";
   const missed = (e.missed_sessions_7d as Array<Record<string,string>> | undefined) ?? [];
   const lines = [
-    `  ${e.days_to_aug31} days to Aug 31 BUD/S PST deadline`,
     `  VO2max: ${e.vo2max ?? "—"} | Aerobic fitness: ${e.aerobic_fitness_proxy != null ? pct(Number(e.aerobic_fitness_proxy)) : "—"}`,
     `  This week: ${e.run_sessions_7d ?? 0} runs (${e.run_km_7d ?? 0} km) | ${e.swim_sessions_7d ?? 0} swims (${e.swim_m_7d ?? 0} m)`,
     `  Last run: ${daysSinceRun} | Last swim: ${daysSinceSwim}`,
   ];
+  // Only shown while the Aug 31 target is still ahead. Null past it: the PST is
+  // a standing readiness target, not a dated event, so no stuck-at-zero counter.
+  if (e.days_to_aug31 != null) {
+    lines.unshift(`  ${e.days_to_aug31} days to Aug 31 BUD/S PST target`);
+  }
   if (missed.length > 0) {
     const missedStr = missed.slice(0, 4).map(m => `${m.day} ${m.expected}`).join(", ");
     lines.push(`  ⚠ Missed conditioning sessions this week: ${missedStr}`);
