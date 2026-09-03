@@ -154,6 +154,16 @@ jobs:
           SKIP_STATE_REFRESH: "1"
         run: python scripts/generate_weekly_program.py
 
+      # Anything that got programmed and isn't in the library yet — cardio-only
+      # days, and days written before the auto-save existed. Idempotent, and it
+      # only ever writes rows in the "Engine" folder.
+      - name: Sync programmed days into the workout library
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: python scripts/sync_library.py --commit
+
   # A scheduled run that dies is invisible: a 28-minute failure on 2026-07-09 went
   # unnoticed for two days. Surface every failure as a GitHub issue.
   alert:

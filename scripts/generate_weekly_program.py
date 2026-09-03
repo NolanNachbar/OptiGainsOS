@@ -47,6 +47,7 @@ from engine.hypertrophy_volume import (HypertrophyVolumeEngine, MUSCLES as MUSCL
                                        apply_running_interference, apply_endurance_interference)
 from engine.allocator          import plan_week, default_goal_priorities, marginal_value
 from engine.nutrition_modulator import ETA_DEFICIT
+from engine.library_capture   import library_payload
 from engine.athlete_profile    import MUSCLE_EMPHASIS
 from engine.hypertrophy_volume import LANDMARK_PRIORS
 from engine.learners           import update_mrv, update_frequency, best_frequency, apply_mrv_observation, OBS_VAR
@@ -1573,34 +1574,18 @@ def main():
         ok = True
         print(f"    staged  '{title}' — {len(exercises)} exercises + {len(cardio)} cardio")
 
-        # Auto-save each DISTINCT generated strength session into the workout
-        # library (`workouts` table) so engine programming is browsable/reusable
+        # Auto-save each DISTINCT programmed day into the workout library
+        # (`workouts` table) so engine programming is browsable and re-runnable
         # there, not only in program_workouts. Dedup is by title (split +
         # intensity suffix), so the library accumulates one template per session
-        # flavor instead of 7 new rows a week. Exercises are mapped to the
-        # library's manual-create shape ({name, sets, reps, rest_seconds, notes}).
-        if ok and exercises:
-            lib_exercises = [{
-                "name": e.get("name", ""),
-                "sets": e.get("sets", 3),
-                "reps": str(e.get("reps") or e.get("rep_target") or "10"),
-                "rest_seconds": e.get("rest_seconds", 120),
-                "notes": " · ".join(x for x in [
-                    (f"RIR {e['rir_target']}" if e.get("rir_target") is not None else ""),
-                    str(e.get("notes") or ""),
-                ] if x),
-            } for e in exercises]
-            lib_payload = {
-                "title":            title,
-                "description":      f"Engine-generated {split} session, auto-saved from the weekly program.",
-                # The library's Type filter only offers strength/cardio/hiit, so a
-                # row saved as "hypertrophy" (what pw_row carries) is invisible
-                # under every pill except All. Map into the library's vocabulary.
-                "focus":            "cardio" if pw_row["focus"] == "cardio" else "strength",
-                "duration_minutes": None,
-                "exercises":        lib_exercises,
-                "folder":           "Engine",
-            }
+        # flavor instead of 7 new rows a week. Cardio-only days count: the old
+        # `and exercises` guard skipped every run day, which is why the library
+        # had no conditioning in it. See engine/library_capture.py.
+        lib_payload = library_payload(
+            title, pw_row["focus"], exercises, cardio,
+            description=f"Engine-generated {split} session, auto-saved from the weekly program.",
+        )
+        if ok and lib_payload:
             _key = title.strip().lower()
             _existing = library_ids.get(_key)
             if _existing:
