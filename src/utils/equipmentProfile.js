@@ -14,17 +14,31 @@ import EQUIPMENT from "@/data/equipmentProfiles.json";
 
 const norm = (s) => String(s || "").toLowerCase().split(/\s+/).join(" ").trim();
 
+/** Every replacement this profile can run for one name, best first. */
+export function substitutesFor(name, profileName) {
+  const prof = EQUIPMENT.profiles?.[profileName || "full_gym"];
+  if (!prof || !prof.available) return [];
+  const key = EQUIPMENT.index?.[norm(name)];
+  if (!key) return [];
+  const list = prof.blocked?.[key];
+  if (!list) return [];
+  return Array.isArray(list) ? list : [list];
+}
+
 /** The replacement for one exercise name under a profile, or null to keep it. */
 export function substituteFor(name, profileName) {
-  const prof = EQUIPMENT.profiles?.[profileName || "full_gym"];
-  if (!prof || !prof.available) return null;
   const key = EQUIPMENT.index?.[norm(name)];
   if (!key) return null;
-  return prof.blocked?.[key] || null;
+  const prof = EQUIPMENT.profiles?.[profileName || "full_gym"];
+  if (!prof || !prof.available || !(key in (prof.blocked || {}))) return null;
+  return substitutesFor(name, profileName)[0] || null;
 }
 
 export function isBlocked(name, profileName) {
-  return substituteFor(name, profileName) !== null;
+  const prof = EQUIPMENT.profiles?.[profileName || "full_gym"];
+  if (!prof || !prof.available) return false;
+  const key = EQUIPMENT.index?.[norm(name)];
+  return !!key && key in (prof.blocked || {});
 }
 
 /**
@@ -32,7 +46,8 @@ export function isBlocked(name, profileName) {
  * Returns { exercises, swaps: [{ from, to }] }. The set/rep prescription rides
  * along unchanged — the swap is a movement substitution, not a new session, so
  * the volume he was going to do is the volume he does.
- * A substitute already in the list is dropped rather than duplicated.
+ * When the best substitute is already in the list the next one down is taken,
+ * so two blocked lifts sharing a top pick still come back as two movements.
  */
 export function applyEquipmentProfile(exercises, profileName) {
   const list = Array.isArray(exercises) ? exercises : [];
@@ -43,13 +58,18 @@ export function applyEquipmentProfile(exercises, profileName) {
   const present = new Set(list.map((ex) => norm(ex?.name)));
   const out = [];
   for (const ex of list) {
-    const to = substituteFor(ex?.name, profileName);
-    if (!to) {
+    if (!isBlocked(ex?.name, profileName)) {
       out.push(ex);
       continue;
     }
+    const options = substitutesFor(ex?.name, profileName);
+    const to = options.find((c) => !present.has(norm(c)));
+    if (!to) {
+      // Nothing left this profile can run that isn't already programmed.
+      swaps.push({ from: ex.name, to: options[0] || null });
+      continue;
+    }
     swaps.push({ from: ex.name, to });
-    if (present.has(norm(to))) continue;
     present.add(norm(to));
     out.push({ ...ex, name: to, _substituted_from: ex.name });
   }

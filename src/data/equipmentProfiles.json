@@ -1122,175 +1122,680 @@
         "dumbbells"
       ],
       "blocked": {
-        "Reverse Grip Incline Smith Machine Press": "Incline DB Press",
-        "Weighted Dip": "DB Bench Press",
-        "Back Squat (Top Set)": "Zercher Squat",
-        "Back Squat (Back-Off)": "Zercher Squat",
-        "Pin Squat": "Zercher Squat",
-        "Paused Squat": "Zercher Squat",
-        "Leg Press": "Bulgarian Split Squat",
-        "Leg Extension": "Bulgarian Split Squat",
-        "Hamstring Curl": "Romanian Deadlift",
-        "Nordic Curl": "Romanian Deadlift",
-        "Back Extension": "Romanian Deadlift",
-        "Weighted Pull-Up": "Barbell Row",
-        "Lat Pulldown": "Barbell Row",
-        "Cable Row": "Chest-Supported Row",
-        "Seal Row": "Chest-Supported Row",
-        "Low-To-High Cable Fly": "Incline DB Press",
-        "Overhead Press (Barbell)": "Seated DB Overhead Press",
-        "Overhead Press (Dumbbell)": "Seated DB Overhead Press",
-        "Triceps Pushdown": "Skull Crushers",
-        "Face Pull": "Rear Delt Fly",
-        "Cable Lateral Raise": "Lateral Raise",
-        "Pull-Up Pyramid": "Dumbbell Row",
-        "Dip Pyramid": "Push-up Pyramid",
-        "Bodyweight Pull-Up": "Dumbbell Row",
-        "Dip": "Push-ups",
-        "Hanging Leg Raise": "Weighted DB Sit-Up",
-        "Ab Crunch Machine": "Weighted DB Sit-Up",
-        "Alternating Cable Shoulder Press": "Seated DB Overhead Press",
-        "Bent Over Low-Pulley Side Lateral": "Seated DB Overhead Press",
-        "Bicycling, Stationary": "Front Squat",
-        "Bosu Ball Cable Crunch With Side Bend": "Weighted DB Sit-Up",
-        "Butterfly": "DB Bench Press",
-        "Cable Chest Press": "DB Bench Press",
-        "Cable Crossover": "DB Bench Press",
-        "Cable Crunch": "Weighted DB Sit-Up",
-        "Cable Deadlift": "Front Squat",
-        "Cable Hammer Curls - Rope Attachment": "Bicep Curl",
-        "Cable Hip Adduction": "Front Squat",
-        "Cable Incline Pushdown": "Dumbbell Row",
-        "Cable Incline Triceps Extension": "Skull Crushers",
-        "Cable Internal Rotation": "Seated DB Overhead Press",
-        "Cable Iron Cross": "DB Bench Press",
-        "Cable Judo Flip": "Weighted DB Sit-Up",
-        "Cable Lying Triceps Extension": "Skull Crushers",
-        "Cable One Arm Tricep Extension": "Skull Crushers",
-        "Cable Preacher Curl": "Bicep Curl",
-        "Cable Rear Delt Fly": "Seated DB Overhead Press",
-        "Cable Reverse Crunch": "Weighted DB Sit-Up",
-        "Cable Rope Overhead Triceps Extension": "Skull Crushers",
-        "Cable Rope Rear-Delt Row": "Seated DB Overhead Press",
-        "Cable Russian Twist": "Weighted DB Sit-Up",
-        "Cable Seated Crunch": "Weighted DB Sit-Up",
-        "Cable Seated Lateral Raise": "Seated DB Overhead Press",
-        "Cable Shoulder Press": "Seated DB Overhead Press",
-        "Cable Shrug": "Dumbbell Shrug",
-        "Cable Wrist Curl": "Wrist Curl",
-        "Calf-Machine Shoulder Shrug": "Dumbbell Shrug",
-        "Calf Press": "Seated Calf Raise",
-        "Calf Press On The Leg Press Machine": "Seated Calf Raise",
-        "Chair Squat": "Front Squat",
-        "Close-Grip Front Lat Pulldown": "Dumbbell Row",
-        "Decline Smith Press": "DB Bench Press",
-        "Dip Machine": "Skull Crushers",
-        "Elevated Cable Row": "Dumbbell Row",
-        "Elliptical Trainer": "Front Squat",
-        "External Rotation With Cable": "Seated DB Overhead Press",
-        "Flat Bench Cable Flye": "DB Bench Press",
-        "Front Cable Raise": "Seated DB Overhead Press",
-        "Full Range-Of-Motion Lat Pulldown": "Dumbbell Row",
-        "Glute Ham Raise": "Romanian Deadlift",
-        "Hack Squat": "Front Squat",
-        "High Cable Curl": "Bicep Curl",
-        "Incline Cable Chest Press": "DB Bench Press",
-        "Incline Cable Flye": "DB Bench Press",
-        "Jogging, Treadmill": "Front Squat",
-        "Kneeling Cable Crunch With Alternating Oblique Twist": "Weighted DB Sit-Up",
-        "Kneeling Cable Triceps Extension": "Skull Crushers",
-        "Kneeling High Pulley Row": "Dumbbell Row",
-        "Kneeling Single-Arm High Pulley Row": "Dumbbell Row",
-        "Leverage Chest Press": "DB Bench Press",
-        "Leverage Deadlift": "Front Squat",
-        "Leverage Decline Chest Press": "DB Bench Press",
-        "Leverage High Row": "Chest-Supported Row",
-        "Leverage Incline Chest Press": "DB Bench Press",
-        "Leverage Iso Row": "Dumbbell Row",
-        "Leverage Shoulder Press": "Seated DB Overhead Press",
-        "Leverage Shrug": "Dumbbell Shrug",
-        "Low Cable Crossover": "DB Bench Press",
-        "Low Cable Triceps Extension": "Skull Crushers",
-        "Low Pulley Row To Neck": "Seated DB Overhead Press",
-        "Lunge Sprint": "Front Squat",
-        "Lying Cable Curl": "Bicep Curl",
-        "Lying Close-Grip Bar Curl On High Pulley": "Bicep Curl",
-        "Lying Leg Curl": "Romanian Deadlift",
-        "Lying Machine Squat": "Front Squat",
-        "Lying T-Bar Row": "Chest-Supported Row",
-        "Machine Bench Press": "DB Bench Press",
-        "Machine Bicep Curl": "Bicep Curl",
-        "Machine Preacher Curl": "Bicep Curl",
-        "Machine Shoulder (Military) Press": "Seated DB Overhead Press",
-        "Machine Triceps Extension": "Skull Crushers",
-        "Narrow Stance Hack Squat": "Front Squat",
-        "Narrow Stance Leg Press": "Front Squat",
-        "One-Arm High-Pulley Cable Side Bend": "Weighted DB Sit-Up",
-        "One-Legged Cable Kickback": "Hip Thrust",
-        "One Arm Lat Pulldown": "Dumbbell Row",
-        "Overhead Cable Curl": "Bicep Curl",
-        "Pallof Press": "Weighted DB Sit-Up",
-        "Pallof Press With Rotation": "Weighted DB Sit-Up",
-        "Pull Through": "Hip Thrust",
-        "Recumbent Bike": "Front Squat",
-        "Reverse Cable Curl": "Bicep Curl",
-        "Reverse Grip Triceps Pushdown": "Skull Crushers",
-        "Reverse Hyperextension": "Romanian Deadlift",
-        "Reverse Machine Flye": "Seated DB Overhead Press",
-        "Rope Crunch": "Weighted DB Sit-Up",
-        "Rope Straight-Arm Pulldown": "Dumbbell Row",
-        "Rowing, Stationary": "Front Squat",
-        "Running, Treadmill": "Front Squat",
-        "Seated Cable Row": "Chest-Supported Row",
-        "Seated Cable Shoulder Press": "Seated DB Overhead Press",
-        "Seated Leg Curl": "Romanian Deadlift",
-        "Seated One-Arm Cable Pulley Row": "Chest-Supported Row",
-        "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl": "Wrist Curl",
-        "Shotgun Row": "Dumbbell Row",
-        "Single-Arm Cable Crossover": "DB Bench Press",
-        "Single-Leg Leg Extension": "Front Squat",
-        "Smith Machine Behind The Back Shrug": "Dumbbell Shrug",
-        "Smith Machine Bench Press": "DB Bench Press",
-        "Smith Machine Bent Over Row": "Chest-Supported Row",
-        "Smith Machine Calf Raise": "Seated Calf Raise",
-        "Smith Machine Close-Grip Bench Press": "Skull Crushers",
-        "Smith Machine Decline Press": "DB Bench Press",
-        "Smith Machine Hang Power Clean": "Romanian Deadlift",
-        "Smith Machine Hip Raise": "Weighted DB Sit-Up",
-        "Smith Machine Incline Bench Press": "DB Bench Press",
-        "Smith Machine Leg Press": "Front Squat",
-        "Smith Machine One-Arm Upright Row": "Seated DB Overhead Press",
-        "Smith Machine Overhead Shoulder Press": "Seated DB Overhead Press",
-        "Smith Machine Pistol Squat": "Front Squat",
-        "Smith Machine Reverse Calf Raise": "Seated Calf Raise",
-        "Smith Machine Squat": "Front Squat",
-        "Smith Machine Stiff-Legged Deadlift": "Romanian Deadlift",
-        "Smith Machine Upright Row": "Dumbbell Shrug",
-        "Smith Single-Leg Split Squat": "Front Squat",
-        "Stairmaster": "Front Squat",
-        "Standing Biceps Cable Curl": "Bicep Curl",
-        "Standing Cable Chest Press": "DB Bench Press",
-        "Standing Cable Lift": "Weighted DB Sit-Up",
-        "Standing Cable Wood Chop": "Weighted DB Sit-Up",
-        "Standing Calf Raise": "Seated Calf Raise",
-        "Standing Leg Curl": "Romanian Deadlift",
-        "Standing Low-Pulley Deltoid Raise": "Seated DB Overhead Press",
-        "Standing Low-Pulley One-Arm Triceps Extension": "Skull Crushers",
-        "Standing One-Arm Cable Curl": "Bicep Curl",
-        "Standing Rope Crunch": "Weighted DB Sit-Up",
-        "Step Mill": "Front Squat",
-        "Straight-Arm Pulldown": "Dumbbell Row",
-        "Thigh Abductor": "Bulgarian Split Squat",
-        "Thigh Adductor": "Bulgarian Split Squat",
-        "Triceps Overhead Extension With Rope": "Skull Crushers",
-        "Triceps Pushdown - Rope Attachment": "Skull Crushers",
-        "Triceps Pushdown - V-Bar Attachment": "Skull Crushers",
-        "Underhand Cable Pulldown": "Dumbbell Row",
-        "Upright Cable Row": "Dumbbell Shrug",
-        "V-Bar Pulldown": "Dumbbell Row",
-        "Walking, Treadmill": "Front Squat",
-        "Wide-Grip Lat Pulldown": "Dumbbell Row",
-        "Wide-Grip Pulldown Behind The Neck": "Dumbbell Row"
+        "Reverse Grip Incline Smith Machine Press": [
+          "Incline DB Press",
+          "Incline Bench Press"
+        ],
+        "Weighted Dip": [
+          "DB Bench Press",
+          "Bench Press (Back-off Vol)"
+        ],
+        "Back Squat (Top Set)": [
+          "Zercher Squat",
+          "Front Squat"
+        ],
+        "Back Squat (Back-Off)": [
+          "Zercher Squat",
+          "Front Squat"
+        ],
+        "Pin Squat": [
+          "Zercher Squat",
+          "Front Squat"
+        ],
+        "Paused Squat": [
+          "Zercher Squat",
+          "Front Squat"
+        ],
+        "Leg Press": [
+          "Bulgarian Split Squat",
+          "Front Squat"
+        ],
+        "Leg Extension": [
+          "Bulgarian Split Squat",
+          "Barbell Lunge"
+        ],
+        "Hamstring Curl": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Nordic Curl": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Back Extension": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Weighted Pull-Up": [
+          "Barbell Row",
+          "Dumbbell Row"
+        ],
+        "Lat Pulldown": [
+          "Barbell Row",
+          "Dumbbell Row"
+        ],
+        "Cable Row": [
+          "Chest-Supported Row",
+          "Dumbbell Row"
+        ],
+        "Seal Row": [
+          "Chest-Supported Row",
+          "Dumbbell Row"
+        ],
+        "Low-To-High Cable Fly": [
+          "Incline DB Press",
+          "Incline Dumbbell Flyes"
+        ],
+        "Overhead Press (Barbell)": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Overhead Press (Dumbbell)": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Triceps Pushdown": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Face Pull": [
+          "Rear Delt Fly"
+        ],
+        "Cable Lateral Raise": [
+          "Lateral Raise"
+        ],
+        "Pull-Up Pyramid": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Dip Pyramid": [
+          "Push-up Pyramid",
+          "Diamond Push-ups"
+        ],
+        "Bodyweight Pull-Up": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Dip": [
+          "Push-ups",
+          "DB Bench Press"
+        ],
+        "Hanging Leg Raise": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Ab Crunch Machine": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Alternating Cable Shoulder Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Bent Over Low-Pulley Side Lateral": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Bicycling, Stationary": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Bosu Ball Cable Crunch With Side Bend": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Butterfly": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Cable Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Cable Crossover": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Cable Crunch": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Cable Deadlift": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Cable Hammer Curls - Rope Attachment": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Cable Hip Adduction": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Cable Incline Pushdown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Cable Incline Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Cable Internal Rotation": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Cable Iron Cross": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Cable Judo Flip": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Cable Lying Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Cable One Arm Tricep Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Cable Preacher Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Cable Rear Delt Fly": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Cable Reverse Crunch": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Cable Rope Overhead Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Cable Rope Rear-Delt Row": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Cable Russian Twist": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Cable Seated Crunch": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Cable Seated Lateral Raise": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Cable Shoulder Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Cable Shrug": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "Cable Wrist Curl": [
+          "Wrist Curl",
+          "Barbell Hold"
+        ],
+        "Calf-Machine Shoulder Shrug": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "Calf Press": [
+          "Seated Calf Raise",
+          "Calf Raise"
+        ],
+        "Calf Press On The Leg Press Machine": [
+          "Seated Calf Raise",
+          "Calf Raise"
+        ],
+        "Chair Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Close-Grip Front Lat Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Decline Smith Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Dip Machine": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Elevated Cable Row": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Elliptical Trainer": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "External Rotation With Cable": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Flat Bench Cable Flye": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Front Cable Raise": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Full Range-Of-Motion Lat Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Glute Ham Raise": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Hack Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "High Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Incline Cable Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Incline Cable Flye": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Jogging, Treadmill": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Kneeling Cable Crunch With Alternating Oblique Twist": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Kneeling Cable Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Kneeling High Pulley Row": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Kneeling Single-Arm High Pulley Row": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Leverage Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Leverage Deadlift": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Leverage Decline Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Leverage High Row": [
+          "Chest-Supported Row",
+          "Barbell Row"
+        ],
+        "Leverage Incline Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Leverage Iso Row": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Leverage Shoulder Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Leverage Shrug": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "Low Cable Crossover": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Low Cable Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Low Pulley Row To Neck": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Lunge Sprint": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Lying Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Lying Close-Grip Bar Curl On High Pulley": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Lying Leg Curl": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Lying Machine Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Lying T-Bar Row": [
+          "Chest-Supported Row",
+          "Barbell Row"
+        ],
+        "Machine Bench Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Machine Bicep Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Machine Preacher Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Machine Shoulder (Military) Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Machine Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Narrow Stance Hack Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Narrow Stance Leg Press": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "One-Arm High-Pulley Cable Side Bend": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "One-Legged Cable Kickback": [
+          "Hip Thrust",
+          "Romanian Deadlift"
+        ],
+        "One Arm Lat Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Overhead Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Pallof Press": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Pallof Press With Rotation": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Pull Through": [
+          "Hip Thrust",
+          "Romanian Deadlift"
+        ],
+        "Recumbent Bike": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Reverse Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Reverse Grip Triceps Pushdown": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Reverse Hyperextension": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Reverse Machine Flye": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Rope Crunch": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Rope Straight-Arm Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Rowing, Stationary": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Running, Treadmill": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Seated Cable Row": [
+          "Chest-Supported Row",
+          "Barbell Row"
+        ],
+        "Seated Cable Shoulder Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Seated Leg Curl": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Seated One-Arm Cable Pulley Row": [
+          "Chest-Supported Row",
+          "Barbell Row"
+        ],
+        "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl": [
+          "Wrist Curl",
+          "Barbell Hold"
+        ],
+        "Shotgun Row": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Single-Arm Cable Crossover": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Single-Leg Leg Extension": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Smith Machine Behind The Back Shrug": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "Smith Machine Bench Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Smith Machine Bent Over Row": [
+          "Chest-Supported Row",
+          "Barbell Row"
+        ],
+        "Smith Machine Calf Raise": [
+          "Seated Calf Raise",
+          "Calf Raise"
+        ],
+        "Smith Machine Close-Grip Bench Press": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Smith Machine Decline Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Smith Machine Hang Power Clean": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Smith Machine Hip Raise": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Smith Machine Incline Bench Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Smith Machine Leg Press": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Smith Machine One-Arm Upright Row": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Smith Machine Overhead Shoulder Press": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Smith Machine Pistol Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Smith Machine Reverse Calf Raise": [
+          "Seated Calf Raise",
+          "Calf Raise"
+        ],
+        "Smith Machine Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Smith Machine Stiff-Legged Deadlift": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Smith Machine Upright Row": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "Smith Single-Leg Split Squat": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Stairmaster": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Standing Biceps Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Standing Cable Chest Press": [
+          "DB Bench Press",
+          "Push-ups"
+        ],
+        "Standing Cable Lift": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Standing Cable Wood Chop": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Standing Calf Raise": [
+          "Seated Calf Raise",
+          "Calf Raise"
+        ],
+        "Standing Leg Curl": [
+          "Romanian Deadlift",
+          "Good Morning"
+        ],
+        "Standing Low-Pulley Deltoid Raise": [
+          "Seated DB Overhead Press",
+          "Lateral Raise"
+        ],
+        "Standing Low-Pulley One-Arm Triceps Extension": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Standing One-Arm Cable Curl": [
+          "Bicep Curl",
+          "Hammer Curl"
+        ],
+        "Standing Rope Crunch": [
+          "Weighted DB Sit-Up",
+          "Plank"
+        ],
+        "Step Mill": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Straight-Arm Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Thigh Abductor": [
+          "Bulgarian Split Squat",
+          "Barbell Lunge"
+        ],
+        "Thigh Adductor": [
+          "Bulgarian Split Squat",
+          "Sumo Deadlift"
+        ],
+        "Triceps Overhead Extension With Rope": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Triceps Pushdown - Rope Attachment": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Triceps Pushdown - V-Bar Attachment": [
+          "Skull Crushers",
+          "Triceps OH Extension"
+        ],
+        "Underhand Cable Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Upright Cable Row": [
+          "Dumbbell Shrug",
+          "Barbell Shrug"
+        ],
+        "V-Bar Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Walking, Treadmill": [
+          "Front Squat",
+          "Bulgarian Split Squat"
+        ],
+        "Wide-Grip Lat Pulldown": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ],
+        "Wide-Grip Pulldown Behind The Neck": [
+          "Dumbbell Row",
+          "Barbell Row"
+        ]
       }
     }
   }

@@ -189,14 +189,14 @@ _SUBSTITUTES = {
 
     # No machines.
     "Leg Press":       ["Bulgarian Split Squat", "Front Squat"],
-    "Leg Extension":   ["Bulgarian Split Squat"],
-    "Hamstring Curl":  ["Romanian Deadlift", "Nordic Curl"],
+    "Leg Extension":   ["Bulgarian Split Squat", "Barbell Lunge"],
+    "Hamstring Curl":  ["Romanian Deadlift", "Nordic Curl", "Good Morning"],
     "Lat Pulldown":    ["Barbell Row", "Dumbbell Row"],
     "Reverse Grip Incline Smith Machine Press": ["Incline DB Press", "Incline Bench Press"],
 
     # No hyper bench / foot anchor.
-    "Back Extension":  ["Romanian Deadlift"],
-    "Nordic Curl":     ["Romanian Deadlift"],
+    "Back Extension":  ["Romanian Deadlift", "Good Morning"],
+    "Nordic Curl":     ["Romanian Deadlift", "Good Morning"],
 
     # No pull-up bar: vertical pull falls back to horizontal pull, which is the
     # only lat option left with a bar and dumbbells.
@@ -212,7 +212,7 @@ _SUBSTITUTES = {
     "Triceps Pushdown":    ["Skull Crushers", "Triceps OH Extension"],
     "Cable Lateral Raise": ["Lateral Raise"],
     "Face Pull":           ["Rear Delt Fly"],
-    "Low-to-High Cable Fly": ["Incline DB Press"],
+    "Low-to-High Cable Fly": ["Incline DB Press", "Incline Dumbbell Flyes"],
 
     # No dip station.
     "Weighted Dip": ["DB Bench Press", "Bench Press (Back-off Vol)"],
@@ -220,8 +220,8 @@ _SUBSTITUTES = {
     "Dip Pyramid":  ["Push-up Pyramid", "Diamond Push-ups"],
 
     # No ceiling clearance: press seated instead of standing.
-    "Overhead Press (BB)": ["Seated DB Overhead Press"],
-    "Overhead Press (DB)": ["Seated DB Overhead Press"],
+    "Overhead Press (BB)": ["Seated DB Overhead Press", "Lateral Raise"],
+    "Overhead Press (DB)": ["Seated DB Overhead Press", "Lateral Raise"],
 }
 
 # For exercises that aren't in the engine catalog at all — a hand-built library
@@ -230,34 +230,34 @@ _SUBSTITUTES = {
 # that trains it and that a bar, dumbbells and two benches can run.
 _MUSCLE_FALLBACK = {
     "chest":       ["DB Bench Press", "Push-ups"],
-    "upper_chest": ["Incline DB Press"],
+    "upper_chest": ["Incline DB Press", "Incline Dumbbell Flyes"],
     "triceps":     ["Skull Crushers", "Triceps OH Extension"],
     "biceps":      ["Bicep Curl", "Hammer Curl"],
-    "brachialis":  ["Hammer Curl"],
+    "brachialis":  ["Hammer Curl", "Alternate Hammer Curl"],
     "shoulders":   ["Seated DB Overhead Press", "Lateral Raise"],
-    "front_delt":  ["Seated DB Overhead Press"],
-    "side_delts":  ["Lateral Raise"],
-    "rear_delts":  ["Rear Delt Fly"],
+    "front_delt":  ["Seated DB Overhead Press", "Front Raise"],
+    "side_delts":  ["Lateral Raise", "Seated Side Lateral Raise"],
+    "rear_delts":  ["Rear Delt Fly", "Dumbbell Lying Rear Lateral Raise"],
     "lats":        ["Dumbbell Row", "Barbell Row"],
     "upper_back":  ["Chest-Supported Row", "Barbell Row"],
     "back":        ["Barbell Row", "Dumbbell Row"],
     "middle back": ["Chest-Supported Row", "Barbell Row"],
-    "lower back":  ["Romanian Deadlift"],
-    "erectors":    ["Romanian Deadlift"],
+    "lower back":  ["Romanian Deadlift", "Good Morning"],
+    "erectors":    ["Romanian Deadlift", "Good Morning"],
     "traps":       ["Dumbbell Shrug", "Barbell Shrug"],
     "quads":       ["Front Squat", "Bulgarian Split Squat"],
     "quadriceps":  ["Front Squat", "Bulgarian Split Squat"],
-    "hamstrings":  ["Romanian Deadlift"],
+    "hamstrings":  ["Romanian Deadlift", "Good Morning"],
     "glutes":      ["Hip Thrust", "Romanian Deadlift"],
-    "adductors":   ["Bulgarian Split Squat"],
-    "abductors":   ["Bulgarian Split Squat"],
+    "adductors":   ["Bulgarian Split Squat", "Sumo Deadlift"],
+    "abductors":   ["Bulgarian Split Squat", "Barbell Lunge"],
     "calves":      ["Seated Calf Raise", "Calf Raise"],
     "core":        ["Weighted DB Sit-Up", "Plank"],
     "abdominals":  ["Weighted DB Sit-Up", "Plank"],
-    "hip_flexors": ["Weighted DB Sit-Up"],
+    "hip_flexors": ["Weighted DB Sit-Up", "Jackknife Sit-Up"],
     "forearms":    ["Wrist Curl", "Barbell Hold"],
     "neck":        ["Neck Curl", "Neck Extension"],
-    "rotator_cuff": ["Rear Delt Fly"],
+    "rotator_cuff": ["Rear Delt Fly", "Dumbbell Lying Rear Lateral Raise"],
 }
 
 # exerciseLibrary.json's `equipment` string -> the tokens it needs. Anything not
@@ -282,15 +282,17 @@ def _profile_runs(profile_name: str, name: str) -> bool:
     return (not needs) or needs <= prof["available"]
 
 
-def substitute_for(profile_name: str, name: str, muscles=None):
-    """The replacement to run instead of `name` under this profile, or None.
+def substitutes_for(profile_name: str, name: str, muscles=None):
+    """Every replacement this profile can run instead of `name`, best first.
 
     Tries the hand-authored pair list first, then falls back by muscle for names
-    the catalog doesn't carry. Returns the first candidate the profile can run,
-    with the profile's own `preferred` set jumping the queue."""
+    the catalog doesn't carry. The profile's own `preferred` set jumps the queue.
+    A ranked list rather than a single pick because two blocked lifts in one
+    session can share a top substitute — the caller walks down the list so an
+    Upper Pull day at Casper gets two rows back, not one row and a hole."""
     prof = EQUIPMENT_PROFILES.get(profile_name or "full_gym")
     if not prof:
-        return None
+        return []
     cands = list(_SUBSTITUTES.get(name, []))
     if not cands:
         for m in (muscles or []):
@@ -299,10 +301,14 @@ def substitute_for(profile_name: str, name: str, muscles=None):
                     cands.append(c)
     preferred = prof.get("preferred") or set()
     cands.sort(key=lambda c: 0 if canon(c) in preferred else 1)
-    for c in cands:
-        if _profile_runs(profile_name, c) and canon(c) != canon(name):
-            return c
-    return None
+    return [c for c in cands
+            if _profile_runs(profile_name, c) and canon(c) != canon(name)]
+
+
+def substitute_for(profile_name: str, name: str, muscles=None):
+    """The single best replacement for `name` under this profile, or None."""
+    out = substitutes_for(profile_name, name, muscles)
+    return out[0] if out else None
 
 
 # Shorthand Nolan actually types in hand-built workouts, mapped to the catalog

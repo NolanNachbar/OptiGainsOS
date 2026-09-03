@@ -8,8 +8,8 @@ changed. So Python stays the single source of truth and this script emits a
 lookup table the browser can use with nothing but lowercase-and-collapse:
 
   index   raw-name (lowercased, whitespace collapsed) -> canonical key
-  blocked per profile, canonical key -> replacement display name, or null when
-          there's nothing available to swap in
+  blocked per profile, canonical key -> replacement display names, best
+          first, empty when there's nothing available to swap in
 
 Names the index doesn't carry fail open in the browser exactly as they do in the
 engine: no entry means no requirement, so the row runs unchanged.
@@ -31,7 +31,7 @@ from engine.equipment_profiles import (  # noqa: E402
     LIBRARY_EQUIPMENT_TOKENS,
     _REQUIRES_CANON,
     _SHORTHAND,
-    substitute_for,
+    substitutes_for,
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -89,7 +89,7 @@ def build():
                 needs = LIBRARY_EQUIPMENT_TOKENS.get(m["lib_equipment"])
             if not needs or needs <= available:
                 continue
-            blocked[c] = substitute_for(pname, m["name"], m["muscles"])
+            blocked[c] = substitutes_for(pname, m["name"], m["muscles"])
         profiles[pname] = {"available": sorted(available), "blocked": blocked}
 
     return {

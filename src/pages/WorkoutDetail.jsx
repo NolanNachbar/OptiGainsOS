@@ -31,7 +31,7 @@ import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
-import { applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
+import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
@@ -521,7 +521,7 @@ export default function WorkoutDetail() {
               }))
             : ex.set_scheme,
         });
-        const engineFiltered = engineReplanned
+        const engineSelected = engineReplanned
           ? [
               ...(todayPrescription?.prescription?.strength_block || []).map(asPlanShape),
               ...programWorkout.exercises.filter(isRunEx),
@@ -529,6 +529,11 @@ export default function WorkoutDetail() {
           : engineByName.size > 0
             ? programWorkout.exercises.filter(ex => isRunEx(ex) || engineByName.has(ex.name))
             : programWorkout.exercises;
+        // The header renders the substituted list; seed the logger from the same
+        // one or the cards would still show the racked squat on a Casper day.
+        // A no-op when the engine already re-planned around the profile, since
+        // what it picked is by definition something the profile can run.
+        const engineFiltered = applyEquipmentProfile(engineSelected, equipmentProfile).exercises;
         initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
           // The plan's set_scheme carries no load_lbs — it's the static weekly
           // shape, not the day's autoregulated numbers. Match today's engine row
@@ -647,7 +652,7 @@ export default function WorkoutDetail() {
       setExerciseLogs(initialLogs);
       // startTime is set by handleStartLogging (or handleResumeSession for resumed sessions)
     }
-  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, todayPrescription, isTodayPrescriptionLoading]);
+  }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, todayPrescription, isTodayPrescriptionLoading, equipmentProfile]);
 
   // Observe when workout card scrolls out of view
   useEffect(() => {

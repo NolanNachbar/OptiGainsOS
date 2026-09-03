@@ -1157,7 +1157,7 @@ check("F18 equipmentProfiles.json is not stale", _disk == _fresh,
       "regenerate: python3 scripts/emit_equipment_profiles.py")
 _cb = _fresh["profiles"]["casper"]["blocked"]
 check("F18 casper blocks the rack squat and offers a floor-loaded swap",
-      _cb.get("Back Squat (Top Set)") in ("Zercher Squat", "Front Squat"),
+      (_cb.get("Back Squat (Top Set)") or [None])[0] in ("Zercher Squat", "Front Squat"),
       str(_cb.get("Back Squat (Top Set)")))
 check("F18 every casper block has something to run instead",
       all(bool(v) for v in _cb.values()),
@@ -1167,7 +1167,15 @@ check("F18 nothing is blocked at full gym",
 # Shorthand off a hand-built workout has to resolve, or Casper silently no-ops
 # on exactly the rows the engine didn't write.
 check("F18 hand-typed shorthand resolves through the index",
-      _cb.get(_fresh["index"].get("squat (top set)")) is not None)
+      bool(_cb.get(_fresh["index"].get("squat (top set)"))))
+# Two blocked lifts sharing a top substitute must not collapse into one movement:
+# the browser walks the ranked list, so anything with a shared first pick needs a
+# second option behind it.
+_shared = [k for k, v in _cb.items()
+           if v and len(v) < 2
+           and sum(1 for w in _cb.values() if w and w[0] == v[0]) > 1]
+check("F18 shared substitutes have a second option behind them",
+      not _shared, str(_shared[:5]))
 
 
 print()
