@@ -1134,6 +1134,42 @@ check("F17 a pinned session's whole plan lands in strength_block",
       f"{len(_pin['strength_block'])} of {len(_PLAN)}")
 
 
+# ── F18: the browser's equipment table matches the Python source ─────────────
+# src/data/equipmentProfiles.json is generated from equipment_profiles.py so the
+# Train tab can substitute without a JS port of canon(). Same idea as the
+# byte-identical scorer check: a stale copy is a silent wrong answer.
+import json as _json
+import importlib.util as _ilu
+_emit_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "emit_equipment_profiles.py")
+_spec = _ilu.spec_from_file_location("_emit_eq", _emit_path)
+_emit = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_emit)
+_fresh = _emit.build()
+try:
+    with open(_emit.OUT) as _f:
+        _disk = _json.load(_f)
+except FileNotFoundError:
+    _disk = None
+check("F18 equipmentProfiles.json exists", _disk is not None,
+      "run: python3 scripts/emit_equipment_profiles.py")
+check("F18 equipmentProfiles.json is not stale", _disk == _fresh,
+      "regenerate: python3 scripts/emit_equipment_profiles.py")
+_cb = _fresh["profiles"]["casper"]["blocked"]
+check("F18 casper blocks the rack squat and offers a floor-loaded swap",
+      _cb.get("Back Squat (Top Set)") in ("Zercher Squat", "Front Squat"),
+      str(_cb.get("Back Squat (Top Set)")))
+check("F18 every casper block has something to run instead",
+      all(bool(v) for v in _cb.values()),
+      str([k for k, v in _cb.items() if not v][:5]))
+check("F18 nothing is blocked at full gym",
+      _fresh["profiles"]["full_gym"]["blocked"] == {})
+# Shorthand off a hand-built workout has to resolve, or Casper silently no-ops
+# on exactly the rows the engine didn't write.
+check("F18 hand-typed shorthand resolves through the index",
+      _cb.get(_fresh["index"].get("squat (top set)")) is not None)
+
+
 print()
 if all(_results):
     print(f"ALL {len(_results)} CHECKS PASSED")

@@ -167,3 +167,165 @@ def equipment_blocked_and_preferred(profile_name: str, all_exercise_names):
         if needs and not needs <= available:
             blocked.add(c)
     return blocked, set(prof["preferred"])
+
+
+# ── Substitutions ────────────────────────────────────────────────────────
+# What to run INSTEAD when the profile blocks a movement. Hand-authored the
+# same way "preferred" above is, and for the same reason: a computed ranking
+# (nearest fatigue_cost, most shared muscles) invents a rule the training model
+# doesn't have, and it picks badly at exactly the slots that matter. Every
+# blockable catalog entry gets an ordered list; the first candidate the profile
+# can actually run wins, so one list serves every profile.
+#
+# The pairs are the standard no-rack / no-machine answers: squats come off the
+# floor instead of out of stands, vertical pulls become rows, cable isolation
+# becomes the free-weight version of the same joint action.
+_SUBSTITUTES = {
+    # No rack: the bar is cleaned or picked up rather than unracked.
+    "Back Squat (Top Set)":  ["Zercher Squat", "Front Squat"],
+    "Back Squat (Back-off)": ["Zercher Squat", "Front Squat"],
+    "Pin Squat":             ["Front Squat", "Zercher Squat"],
+    "Paused Squat":          ["Front Squat", "Zercher Squat"],
+
+    # No machines.
+    "Leg Press":       ["Bulgarian Split Squat", "Front Squat"],
+    "Leg Extension":   ["Bulgarian Split Squat"],
+    "Hamstring Curl":  ["Romanian Deadlift", "Nordic Curl"],
+    "Lat Pulldown":    ["Barbell Row", "Dumbbell Row"],
+    "Reverse Grip Incline Smith Machine Press": ["Incline DB Press", "Incline Bench Press"],
+
+    # No hyper bench / foot anchor.
+    "Back Extension":  ["Romanian Deadlift"],
+    "Nordic Curl":     ["Romanian Deadlift"],
+
+    # No pull-up bar: vertical pull falls back to horizontal pull, which is the
+    # only lat option left with a bar and dumbbells.
+    "Weighted Pull-up":    ["Barbell Row", "Dumbbell Row"],
+    "Pull-ups":            ["Barbell Row", "Dumbbell Row"],
+    "Bodyweight Pull-ups": ["Dumbbell Row", "Barbell Row"],
+    "Pull-up Pyramid":     ["Dumbbell Row", "Barbell Row"],
+    "Hanging Leg Raise":   ["Weighted DB Sit-Up", "Plank"],
+
+    # No cable stack / seal bench.
+    "Cable Row":           ["Chest-Supported Row", "Dumbbell Row"],
+    "Seal Row":            ["Chest-Supported Row", "Dumbbell Row"],
+    "Triceps Pushdown":    ["Skull Crushers", "Triceps OH Extension"],
+    "Cable Lateral Raise": ["Lateral Raise"],
+    "Face Pull":           ["Rear Delt Fly"],
+    "Low-to-High Cable Fly": ["Incline DB Press"],
+
+    # No dip station.
+    "Weighted Dip": ["DB Bench Press", "Bench Press (Back-off Vol)"],
+    "Dips":         ["Push-ups", "DB Bench Press"],
+    "Dip Pyramid":  ["Push-up Pyramid", "Diamond Push-ups"],
+
+    # No ceiling clearance: press seated instead of standing.
+    "Overhead Press (BB)": ["Seated DB Overhead Press"],
+    "Overhead Press (DB)": ["Seated DB Overhead Press"],
+}
+
+# For exercises that aren't in the engine catalog at all — a hand-built library
+# workout naming movements out of exerciseLibrary.json. There's no per-name pair
+# to author for 873 entries, so the fallback is by muscle: the catalog movement
+# that trains it and that a bar, dumbbells and two benches can run.
+_MUSCLE_FALLBACK = {
+    "chest":       ["DB Bench Press", "Push-ups"],
+    "upper_chest": ["Incline DB Press"],
+    "triceps":     ["Skull Crushers", "Triceps OH Extension"],
+    "biceps":      ["Bicep Curl", "Hammer Curl"],
+    "brachialis":  ["Hammer Curl"],
+    "shoulders":   ["Seated DB Overhead Press", "Lateral Raise"],
+    "front_delt":  ["Seated DB Overhead Press"],
+    "side_delts":  ["Lateral Raise"],
+    "rear_delts":  ["Rear Delt Fly"],
+    "lats":        ["Dumbbell Row", "Barbell Row"],
+    "upper_back":  ["Chest-Supported Row", "Barbell Row"],
+    "back":        ["Barbell Row", "Dumbbell Row"],
+    "middle back": ["Chest-Supported Row", "Barbell Row"],
+    "lower back":  ["Romanian Deadlift"],
+    "erectors":    ["Romanian Deadlift"],
+    "traps":       ["Dumbbell Shrug", "Barbell Shrug"],
+    "quads":       ["Front Squat", "Bulgarian Split Squat"],
+    "quadriceps":  ["Front Squat", "Bulgarian Split Squat"],
+    "hamstrings":  ["Romanian Deadlift"],
+    "glutes":      ["Hip Thrust", "Romanian Deadlift"],
+    "adductors":   ["Bulgarian Split Squat"],
+    "abductors":   ["Bulgarian Split Squat"],
+    "calves":      ["Seated Calf Raise", "Calf Raise"],
+    "core":        ["Weighted DB Sit-Up", "Plank"],
+    "abdominals":  ["Weighted DB Sit-Up", "Plank"],
+    "hip_flexors": ["Weighted DB Sit-Up"],
+    "forearms":    ["Wrist Curl", "Barbell Hold"],
+    "neck":        ["Neck Curl", "Neck Extension"],
+    "rotator_cuff": ["Rear Delt Fly"],
+}
+
+# exerciseLibrary.json's `equipment` string -> the tokens it needs. Anything not
+# listed (bands, kettlebells, "other", null) maps to nothing required and stays
+# available, which is the same fail-open the catalog gets.
+LIBRARY_EQUIPMENT_TOKENS = {
+    "barbell":     {BARBELL},
+    "e-z curl bar": {BARBELL},
+    "dumbbell":    {DUMBBELLS},
+    "cable":       {CABLE},
+    "machine":     {MACHINE},
+    "body only":   set(),
+}
+
+
+def _profile_runs(profile_name: str, name: str) -> bool:
+    """Can this profile run the named catalog exercise? Unknown names fail open."""
+    prof = EQUIPMENT_PROFILES.get(profile_name or "full_gym")
+    if not prof:
+        return True
+    needs = _REQUIRES_CANON.get(canon(name))
+    return (not needs) or needs <= prof["available"]
+
+
+def substitute_for(profile_name: str, name: str, muscles=None):
+    """The replacement to run instead of `name` under this profile, or None.
+
+    Tries the hand-authored pair list first, then falls back by muscle for names
+    the catalog doesn't carry. Returns the first candidate the profile can run,
+    with the profile's own `preferred` set jumping the queue."""
+    prof = EQUIPMENT_PROFILES.get(profile_name or "full_gym")
+    if not prof:
+        return None
+    cands = list(_SUBSTITUTES.get(name, []))
+    if not cands:
+        for m in (muscles or []):
+            for c in _MUSCLE_FALLBACK.get(m, []):
+                if c not in cands:
+                    cands.append(c)
+    preferred = prof.get("preferred") or set()
+    cands.sort(key=lambda c: 0 if canon(c) in preferred else 1)
+    for c in cands:
+        if _profile_runs(profile_name, c) and canon(c) != canon(name):
+            return c
+    return None
+
+
+# Shorthand Nolan actually types in hand-built workouts, mapped to the catalog
+# entry it means. canon() deliberately doesn't guess these (it would collapse
+# distinct lifts), but without them a row reading "Squat (Top Set)" fails open
+# and a rack squat survives a no-rack day.
+_SHORTHAND = {
+    "squat":              "Back Squat (Top Set)",
+    "back squat":         "Back Squat (Top Set)",
+    "squat (top set)":    "Back Squat (Top Set)",
+    "squat (back-off)":   "Back Squat (Back-off)",
+    "squat (back off)":   "Back Squat (Back-off)",
+    "bench press":        "Bench Press (Top Set)",
+    "bench":              "Bench Press (Top Set)",
+    "deadlift":           "Deadlift (Top Set)",
+    "ohp":                "Overhead Press (BB)",
+    "overhead press":     "Overhead Press (BB)",
+    "pulldown":           "Lat Pulldown",
+    "pushdown":           "Triceps Pushdown",
+    "pull-up":            "Pull-ups",
+    "pull up":            "Pull-ups",
+    "pullup":             "Pull-ups",
+    "chin-up":            "Pull-ups",
+    "chinup":             "Pull-ups",
+    "dip":                "Dips",
+}

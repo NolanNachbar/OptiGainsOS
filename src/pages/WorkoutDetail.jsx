@@ -31,6 +31,8 @@ import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
+import { applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
+import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
 
@@ -134,7 +136,7 @@ export default function WorkoutDetail() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { showLocalNotification } = usePushNotifications(user?.id);
-  const [workout, setWorkout] = useState(null);
+  const [rawWorkout, setWorkout] = useState(null);
   const [workoutNotFound, setWorkoutNotFound] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [preWorkoutNotes, setPreWorkoutNotes] = useState("");
@@ -162,6 +164,17 @@ export default function WorkoutDetail() {
 
   // Fetch user profile to get weight unit preference
   const { profile } = useProfile();
+
+  // Equipment substitution. rawWorkout is what's stored; `workout` is what he can
+  // actually run where he is today. A library workout never passes through the
+  // engine, so this is the only place a Casper day gets the rack squat swapped
+  // out. On a program workout the engine already re-planned, leaving nothing
+  // blocked for this to find, so it's a no-op there rather than a second opinion.
+  const equipmentProfile = profile?.equipment_profile || "full_gym";
+  const { workout, swaps: equipmentSwaps } = useMemo(
+    () => applyEquipmentProfileToWorkout(rawWorkout, equipmentProfile),
+    [rawWorkout, equipmentProfile]
+  );
   const toggleLike = useToggleExerciseLike();
   const { shotNoteFor, noteCount: shotNoteCount, isLoading: shotNotesLoading, error: shotNotesError } = useExerciseShotNotes();
   const weightUnit = profile?.weight_unit || 'lbs';
@@ -311,6 +324,24 @@ export default function WorkoutDetail() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Flipping the equipment toggle mid-session rewrites the live logger too.
+  // The seeding effect below only runs on an empty log, so without this the
+  // header would say Casper while the cards still listed the racked squat.
+  // Renaming in place keeps whatever sets are already completed.
+  useEffect(() => {
+    if (!exerciseLogs.length) return;
+    let changed = false;
+    const next = exerciseLogs.map((log) => {
+      const to = substituteFor(log.name, equipmentProfile);
+      if (!to || to === log.name) return log;
+      changed = true;
+      return { ...log, name: to };
+    });
+    if (changed) setExerciseLogs(next);
+  // exerciseLogs is read, not watched: this only needs to fire on a profile change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipmentProfile]);
 
   // Auto-save exercises to Supabase whenever a set is changed while logging
   useEffect(() => {
@@ -1130,6 +1161,7 @@ export default function WorkoutDetail() {
                 {isProgramSource && (
                   <Badge variant="slate">Program Workout</Badge>
                 )}
+                <EquipmentProfileToggle swaps={equipmentSwaps} />
                 {isLogging && (
                   <Badge variant="slate">Logging Active</Badge>
                 )}
