@@ -11,6 +11,11 @@ on:
         description: "Number of days to generate (0 = rest of this week)"
         required: false
         default: "0"
+  # Fired from the app when a programmed day is overridden by hand: the rest of
+  # the week reflows around the swap. The locked date itself is skipped by the
+  # generator, so the override survives the run it triggers.
+  repository_dispatch:
+    types: [regenerate-week]
 
 permissions:
   contents: read

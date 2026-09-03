@@ -1634,7 +1634,7 @@ def main():
     # placeholders (same program_id+scheduled_date conflict key) with the real
     # engine output. Unapproved genuinely means "same workouts as last week."
     _carry_src = sb_get("program_workouts", {
-        "select": "scheduled_date,title,focus,exercises,cardio_sessions,duration_minutes",
+        "select": "scheduled_date,title,focus,exercises,cardio_sessions,duration_minutes,locked",
         "created_by": f"eq.{USER_ID}", "program_id": f"eq.{program_id}",
         "scheduled_date": f"gte.{(days_to_generate[0] - datetime.timedelta(days=7)).isoformat()}",
     }) or []
@@ -1662,6 +1662,18 @@ def main():
             _v = str(_r.get(_key) or "")[:10]
             if _v:
                 _touched.add(_v)
+
+    # A day he overrode by hand is locked the same way a trained day is. The
+    # override is written before any session exists, so without this the
+    # regeneration it triggers would overwrite the workout he just chose.
+    for _r in (sb_get("program_workouts", {
+        "select": "scheduled_date", "created_by": f"eq.{USER_ID}",
+        "locked": "is.true",
+        "scheduled_date": f"gte.{days_to_generate[0].isoformat()}",
+    }) or []):
+        _v = str(_r.get("scheduled_date") or "")[:10]
+        if _v:
+            _touched.add(_v)
 
     applied, carried, skipped = 0, 0, 0
     _fresh_by_date = {r["scheduled_date"]: r for r in pending_rows}

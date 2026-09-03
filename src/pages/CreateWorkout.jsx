@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/api/supabaseClient";
+import { useOverrideProgramWorkout } from "@/hooks/useOverrideProgramWorkout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,6 +78,9 @@ export default function CreateWorkout() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
+  // Arriving from a programmed day's Override: whatever gets built here also
+  // replaces that day, so he isn't asked to save it and then go find it again.
+  const overrideProgramWorkoutId = searchParams.get('override');
   const [isLoading, setIsLoading] = useState(!!editId);
   // Description is an optional, rarely-used field — keep it folded behind a
   // single-row disclosure so the dense form stays short on a 390px viewport.
@@ -209,6 +213,8 @@ export default function CreateWorkout() {
     setWorkout({ ...workout, exercises: next });
   };
 
+  const overrideProgramWorkout = useOverrideProgramWorkout();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -235,6 +241,19 @@ export default function CreateWorkout() {
         await db.entities.Workout.create({ ...workoutData, created_by: user.id });
         invalidateWorkouts(queryClient);
         toast.success("Workout created successfully");
+      }
+      if (overrideProgramWorkoutId) {
+        const rows = await db.entities.ProgramWorkout.filter({ id: overrideProgramWorkoutId });
+        if (rows?.[0]) {
+          await overrideProgramWorkout.mutateAsync({
+            programWorkout: rows[0],
+            replacement: workoutData,
+            source: "custom",
+          });
+          toast.success("Swapped in — the week is re-planning");
+          navigate("/today");
+          return;
+        }
       }
       navigate("/workouts");
     } catch (error) {

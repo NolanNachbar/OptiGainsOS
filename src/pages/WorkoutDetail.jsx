@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
+import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
 
@@ -1162,6 +1163,12 @@ export default function WorkoutDetail() {
                   <Badge variant="slate">Program Workout</Badge>
                 )}
                 <EquipmentProfileToggle swaps={equipmentSwaps} />
+                {isProgramSource && !isLogging && (
+                  <OverrideProgramWorkout
+                    programWorkout={programWorkout}
+                    onDone={refetchProgramWorkout}
+                  />
+                )}
                 {isLogging && (
                   <Badge variant="slate">Logging Active</Badge>
                 )}
