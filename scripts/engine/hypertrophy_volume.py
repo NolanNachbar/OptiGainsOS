@@ -210,6 +210,14 @@ class HypertrophyVolumeEngine:
         """
         Adapt every muscle's landmarks from its own measured response.
 
+        ⚠ DORMANT — no caller (CONVERGENCE_AUDIT F7). The Bayesian `update_mrv`
+        is the authoritative MRV learner: its posterior is upserted to
+        `athlete_landmarks` and read by the allocator. This deterministic ±1
+        rule only ever mutated the in-memory engine that F6 showed is discarded,
+        so running both was wasted compute and a drift hazard. Its caller was
+        removed in generate_weekly_program.py. Do NOT re-wire it — two learners
+        moving the same landmarks against each other is how MRV stops converging.
+
         muscle_slopes      {muscle: e1RM-per-session slope} — the performance
                            signal. Muscles absent from this dict have NO real
                            strength signal yet, so their landmarks are left

@@ -6,6 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 // and goes back to being a banner. Without the bound, one forgotten in_progress
 // row hijacks every single app launch from then on, and the only way out is to
 // open the workout you did not want and end it.
+//
+// MUST stay strictly below STALE_SESSION_MS (24h, src/lib/workoutSessionFlag.js).
+// WorkoutDetail restores a session silently while it is younger than that and
+// only shows the Resume?/Start Fresh dialog past it. Widen this beyond 24h and
+// every cold launch lands on a modal whose left button discards a live session.
+// scripts/smoke.py pins the ordering.
 export const ACTIVE_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 /** Where an in-progress session lives, so the banner and the launch redirect

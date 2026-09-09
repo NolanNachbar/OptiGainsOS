@@ -2193,6 +2193,11 @@ class SessionGenerator:
         latest_pst: dict,
         nutrition_mod: dict,
         vdot_zones: dict,
+        # ⚠ DORMANT — threaded in from mpc_prescriber but never read in this
+        # body (CONVERGENCE_AUDIT F12). Running volume is therefore unmanaged:
+        # vdot_engine.base_mileage is a fixed 15.0 and the spec's +10%/wk
+        # tolerance ramp does not exist yet. Kept in the signature so wiring it
+        # is a one-line change once that ramp is written.
         mileage_cap: float,
         mpc_action: str,
         mpc_intensity: float,

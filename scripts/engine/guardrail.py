@@ -153,6 +153,10 @@ class SystemGuardrail:
         """
         Confirm a state change only after HYSTERESIS_DAYS consecutive days.
         Returns the confirmed state (may differ from proposed_state if in transition).
+
+        ⚠ DORMANT — no caller (CONVERGENCE_AUDIT F12). Harmless as written, but
+        it delays every state change by three days, so wiring it onto anything
+        the learners drive would slow convergence for no safety gain.
         """
         if len(self._state_history) < HYSTERESIS_DAYS:
             return proposed_state

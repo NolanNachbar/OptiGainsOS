@@ -54,6 +54,16 @@ def section(title):
 # ══════════════════════════════════════════════════════════════════════════════
 # Credentials — LIVE tier gate
 # ══════════════════════════════════════════════════════════════════════════════
+# Without this a plain `python3 scripts/smoke.py` silently skips the entire
+# live tier — the half that catches real data problems — and still prints
+# "ALL CHECKS PASSED". load_dotenv does not override an already-set variable,
+# so CI's placeholders still win and still force the skip path.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(REPO / ".env")
+except ImportError:
+    pass
+
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
 # CI passes deliberate placeholders (see .github/workflows/test.yml) so the pure
@@ -315,6 +325,22 @@ check("P0-3 no write of the nonexistent programs.cycle_length column",
       "cycle_length" not in _prog_cols,
       ", ".join(_prog_cols.get("cycle_length", [])))
 
+# The launch redirect and the Resume?/Start Fresh dialog are coupled through
+# two constants in different files. WorkoutDetail restores a session silently
+# while it is younger than STALE_SESSION_MS and only shows the dialog past it,
+# so the redirect window MUST stay strictly inside that. If someone widens the
+# redirect to 48h, every cold launch lands on a modal whose left-hand button
+# discards a live session — the exact harm the retracted P0-2 fix caused.
+def _ms_const(path, name):
+    m = re.search(rf"{name}\s*=\s*([0-9*\s]+);", (SRC / path).read_text())
+    return eval(m.group(1)) if m else None
+
+_redirect_ms = _ms_const("hooks/useActiveWorkoutSession.js", "ACTIVE_SESSION_MAX_AGE_MS")
+_stale_ms = _ms_const("lib/workoutSessionFlag.js", "STALE_SESSION_MS")
+check("launch redirect can never land on the Start Fresh dialog",
+      bool(_redirect_ms and _stale_ms and _redirect_ms < _stale_ms),
+      f"redirect {(_redirect_ms or 0)/3.6e6:.0f}h must stay < stale {(_stale_ms or 0)/3.6e6:.0f}h")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # LIVE TIER
@@ -395,6 +421,32 @@ else:
                 if s.get("start_time") and _local_date(s["start_time"]) not in _log_dates]
     check(f"logging round-trip: completed sessions have a log ({_tzname})",
           not _orphans, f"{len(_orphans)} orphan session(s): {sorted(set(_orphans))[:5]}")
+
+    # ── 1c. stranded sessions ────────────────────────────────────────────────
+    # The check above only sees status=completed, so a session that was trained
+    # into and never finished is invisible to it — yet those carry real sets
+    # that no learner will ever read. Anything older than the stale window with
+    # logged sets and no log on its local date is stranded training history.
+    _STRANDED_AFTER_H = 24
+    _open = sb_get("workout_sessions", {
+        "select": "id,start_time,exercises", "status": "eq.in_progress",
+        "start_time": f"gte.{(_today - datetime.timedelta(days=120)).isoformat()}"})
+    _stranded = []
+    for _s in _open:
+        if not _s.get("start_time"):
+            continue
+        _age_h = (datetime.datetime.now(datetime.timezone.utc)
+                  - datetime.datetime.fromisoformat(_s["start_time"].replace("Z", "+00:00"))
+                  ).total_seconds() / 3600
+        if _age_h < _STRANDED_AFTER_H:
+            continue  # still resumable; the launch redirect exists for exactly this
+        _sets = sum(len(_e.get("sets") or []) for _e in (_s.get("exercises") or [])
+                    if isinstance(_e, dict))
+        if _sets and _local_date(_s["start_time"]) not in _log_dates:
+            _stranded.append((_local_date(_s["start_time"]), _sets))
+    check("no stranded in-progress sessions holding unlogged sets",
+          not _stranded,
+          "; ".join(f"{d} ({n} sets)" for d, n in sorted(_stranded)))
 
     # ── 4. date-pinned coverage >= 14 days with no gaps ──────────────────────
     # P0-1's real damage: the generator stopped at the week edge, the schedule
