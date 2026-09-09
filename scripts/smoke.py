@@ -234,6 +234,7 @@ section("PURE — split logic")
 sys.path.insert(0, str(REPO / "scripts"))
 try:
     from engine.session_generator import SPLIT_REGION, _converge_split
+    from engine.learners import exercise_reward, SET_DELTA_GAIN, SET_DELTA_CLAMP
     _ENGINE_OK = True
 except Exception as e:                                    # pragma: no cover
     _ENGINE_OK = False
@@ -265,6 +266,28 @@ if _ENGINE_OK:
                      if _week[i] == _week[i + 1]]
     check("P1-2 a simulated 6-day week has no back-to-back region",
           not _back_to_back, ", ".join(_back_to_back[:4]))
+
+    # P1-1: the mean signed set delta was computed every run and discarded.
+    # These pin the direction, the symmetry and the ceiling, so the term cannot
+    # silently invert or start dominating the reward if the gain is retuned.
+    _base = exercise_reward(None, 0, 0, 0.0, 0, pain=False)
+    _short = exercise_reward(None, 0, 0, 0.0, 0, pain=False, set_delta=-2.0)
+    _long = exercise_reward(None, 0, 0, 0.0, 0, pain=False, set_delta=2.0)
+    check("P1-1 cutting sets short lowers an exercise's reward",
+          _short < _base, f"{_short} < {_base}")
+    check("P1-1 adding sets raises it",
+          _long > _base, f"{_long} > {_base}")
+    check("P1-1 the term is symmetric around no deviation",
+          abs((_long - _base) + (_short - _base)) < 1e-9)
+    check("P1-1 the term is clamped so it cannot dominate the reward",
+          abs(exercise_reward(None, 0, 0, 0.0, 0, pain=False, set_delta=99.0)
+              - _base) <= SET_DELTA_CLAMP + 1e-9,
+          f"clamp {SET_DELTA_CLAMP}, gain {SET_DELTA_GAIN}")
+    # A corroborated pain note is a hard veto; no amount of extra volume may
+    # buy a flagged movement back into the program.
+    check("P1-1 a set surplus cannot override a corroborated pain veto",
+          exercise_reward(None, 0, 0, 0.0, 0, pain=True, pain_severity=2,
+                          pain_mentions=2, set_delta=99.0) < 0)
 
 section("PURE — frontend/schema contract")
 
@@ -411,11 +434,11 @@ else:
     # the actual filler signature, and separately catch a template that has
     # collapsed to a single session.
     PLACEHOLDER_SIGNATURE = {"deadlift", "squat", "bench", "run"}
-    _base = sb_get("program_workouts",
+    _base_rows = sb_get("program_workouts",
                    {"select": "id,program_id,day_index,title,exercises",
                     "scheduled_date": "is.null"})
     _filler, _by_program = [], defaultdict(set)
-    for _r in _base:
+    for _r in _base_rows:
         _ex = _r.get("exercises") or []
         if not isinstance(_ex, list):
             continue
@@ -427,9 +450,9 @@ else:
             json.dumps(_ex, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12])
     check("P0-1 no filler rows in any base template",
           not _filler, ", ".join(_filler[:6]))
-    _collapsed = [f"{k[:8]} ({len(_base)} rows, 1 unique)"
+    _collapsed = [f"{k[:8]} ({len(_base_rows)} rows, 1 unique)"
                   for k, v in _by_program.items() if len(v) == 1
-                  and sum(1 for r in _base if r.get("program_id") == k) > 1]
+                  and sum(1 for r in _base_rows if r.get("program_id") == k) > 1]
     check("P0-1 no base template collapsed to a single session",
           not _collapsed, ", ".join(_collapsed[:3]))
 

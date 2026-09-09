@@ -40,6 +40,18 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: "placeholder-not-a-real-key"
         run: python3 validate_convergence_fixes.py
 
+      # AUDIT_2026-07-30 P5. smoke.py recognises the placeholders above as "no
+      # credentials" and skips its live tier, so this runs the pure tier here —
+      # the frontend/schema contract and the split-logic and reward assertions.
+      # The live tier is run by hand against the real project; it needs secrets
+      # that fork PRs never receive.
+      - name: Run smoke checks
+        working-directory: scripts
+        env:
+          SUPABASE_URL: "https://placeholder.invalid"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-not-a-real-key"
+        run: python3 smoke.py
+
   # A red X on a PR is already visible, but a broken push to main is not — and main
   # is what the daily cron runs. Only alert for main: fork PRs get a read-only
   # GITHUB_TOKEN and could not open an issue anyway.

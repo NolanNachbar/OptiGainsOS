@@ -1000,6 +1000,7 @@ def main():
                 hard_mentions=notes_signals["too_hard"].get(name, 0),
                 pain_severity=pain_severity,
                 pain_mentions=pain_mentions,
+                set_delta=deviations["set_delta"].get(name, 0.0),
             )
             if reward != 0.0:
                 ev_meta = update_exercise_value(ev_meta, name, reward)

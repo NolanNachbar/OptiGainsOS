@@ -191,7 +191,7 @@ def track_deviations(program_workouts: list, workout_logs: list,
                 out["dropped"][name] = out["dropped"].get(name, 0) + 1
                 out["events"].append(f"{d}: skipped {name}")
 
-    # informational only — not consumed by exercise_reward
+    # consumed by exercise_reward via generate_weekly_program (P1-1)
     out["set_delta"] = {n: round(sum(v) / len(v), 2) for n, v in _delta_acc.items() if v}
     if _size_logged:
         out["session_size"] = {

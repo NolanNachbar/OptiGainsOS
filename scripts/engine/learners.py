@@ -205,6 +205,17 @@ HARD_LOSS       = -0.3   # [ENG] "too hard / grinding" reads as hold / back off
 PAIN_PENALTY    = -1.5   # [ENG] a CORROBORATED pain note is a strong "stop programming this"
 PAIN_SOFT_PENALTY = -0.5 # [ENG] F13: a single low-severity mention de-prioritises, not vetoes
 SLOPE_SCALE     = 2.5    # [ENG] lbs/session that saturates the strength-response term
+# AUDIT_2026-07-30 P1-1: deviation_tracker measured the mean signed set delta
+# (logged minus prescribed) for every movement he actually ran, and threw it
+# away — exercise_reward had no parameter to receive it. Cutting a lift short
+# week after week is a real preference signal and it was invisible.
+#
+# It is deliberately weaker than DROP_VOTE: trimming a set is a softer statement
+# than skipping the movement outright, and the delta is a mean over the window,
+# so it is already smoothed. Both knobs are tunable — start conservative and
+# raise SET_DELTA_GAIN if the signal proves too quiet in practice.
+SET_DELTA_GAIN  = 0.2    # [ENG] reward per mean set logged above/below prescription
+SET_DELTA_CLAMP = 0.6    # [ENG] cap the term's magnitude so it can't outweigh a skip
 
 
 def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
@@ -230,7 +241,7 @@ def update_exercise_value(meta: dict, exercise: str, reward: float) -> dict:
 def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
                     sentiment: float, easy_mentions: int, pain: bool,
                     hard_mentions: int = 0, pain_severity: int = 0,
-                    pain_mentions: int = 0) -> float:
+                    pain_mentions: int = 0, set_delta: float = 0.0) -> float:
     """Blend the per-exercise signals for one week into a single reward scalar.
 
     Pain handling (CONVERGENCE_AUDIT F13): a single low-severity mention should
@@ -238,7 +249,14 @@ def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
     attributed to every pressing exercise sharing the cautioned muscle, so a hard
     veto on any single mention reshapes the whole next program off one datum. The
     hard veto now requires corroboration — a sharp/strain flag (severity ≥ 2) or a
-    repeat (≥ 2 mentions); otherwise a softer penalty applies."""
+    repeat (≥ 2 mentions); otherwise a softer penalty applies.
+
+    `set_delta` (P1-1) is deviation_tracker's mean signed sets-vs-prescribed for
+    this movement, over the movements he actually ran. It is symmetric on
+    purpose: consistently cutting a lift short votes against it, consistently
+    adding sets votes for it. Only rows where he ran the prescribed movement
+    contribute, so a skipped exercise is counted once, by dropped_votes, and is
+    not double-penalised here."""
     r = 0.0
     if slope is not None:
         # Strength response, normalized to the ±1 scale of the vote/note terms
@@ -249,6 +267,8 @@ def exercise_reward(slope, chosen_votes: int, dropped_votes: int,
     r += SENTIMENT_GAIN * float(sentiment or 0.0)
     r += EASY_GAIN * int(easy_mentions or 0)
     r += HARD_LOSS * int(hard_mentions or 0)
+    r += max(-SET_DELTA_CLAMP, min(SET_DELTA_CLAMP,
+                                  SET_DELTA_GAIN * float(set_delta or 0.0)))
     if pain:
         corroborated = int(pain_severity or 0) >= 2 or int(pain_mentions or 0) >= 2
         if corroborated:
