@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { db } from "@/api/supabaseClient";
 import { invalidateFood } from "@/lib/queryKeys";
 import { FIXED_ITEMS } from "@/config/dietPlans";
+import { toast } from "sonner";
 
 const r1 = (n) => Math.round(n * 10) / 10;
 
@@ -100,7 +101,13 @@ export function usePlannedDayRebalance(date, entries, calorieTarget, proteinFloo
       })
     )
       .then(() => invalidateFood(qc))
-      .catch(() => {});
+      // A swallowed failure here leaves the planned rows showing macros that no
+      // longer match the target he is eating to, with nothing on screen saying
+      // the rescale did not land.
+      .catch((err) => {
+        console.error("Planned-day macro rescale failed:", err);
+        toast.error("Couldn't rescale today's planned macros.");
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canRescale, date, calorieTarget, plannedCal, eatenCal]);
 

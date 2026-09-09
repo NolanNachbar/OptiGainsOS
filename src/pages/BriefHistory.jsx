@@ -11,6 +11,10 @@ import {
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { estimateBriefCost } from "@/utils/briefCost";
 
+// One page of history. Referenced by the count line too, so the number the
+// UI claims and the number it fetches cannot drift apart.
+const BRIEF_PAGE_SIZE = 30;
+
 const COACHES = [
   { key: "performance",  label: "Performance",  icon: Dumbbell,  hue: "!text-ink-muted bg-track" },
   { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-ink-muted bg-track" },
@@ -158,7 +162,7 @@ export default function BriefHistory() {
         .select("*")
         .eq("created_by", user.id)
         .order("date", { ascending: false })
-        .limit(30);
+        .limit(BRIEF_PAGE_SIZE);
       if (error) throw error;
       return data || [];
     },
@@ -224,7 +228,11 @@ export default function BriefHistory() {
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-ink leading-tight">
-                  <span className="font-technical">{briefs.length}</span> brief{briefs.length === 1 ? "" : "s"} on file
+                  {/* The query is .limit(30), so briefs.length is a page size,
+                      not a total — at 30 it read "30 briefs on file" forever. */}
+                  {briefs.length >= BRIEF_PAGE_SIZE
+                    ? <>last <span className="font-technical">{BRIEF_PAGE_SIZE}</span> briefs</>
+                    : <><span className="font-technical">{briefs.length}</span> brief{briefs.length === 1 ? "" : "s"} on file</>}
                 </p>
                 <p className="text-xs font-semibold text-muted-2 mt-0.5">
                   Most recent {format(parseISO(briefs[0].date), "EEEE, MMMM d")}

@@ -799,10 +799,15 @@ export default function WorkoutDetail() {
       ].filter(Boolean).join("\n\n");
 
       // Create workout log
+      // program_id / enrollment_id exist on workout_logs and were never
+      // populated, so all 142 rows read null and nothing downstream could tell
+      // a programmed session from a one-off.
       await db.entities.WorkoutLog.create({
         created_by: user.id,
         workout_schedule_id: scheduleId,
         workout_id: realWorkoutId,
+        program_id: (isProgramSource && enrollment?.program_id) || null,
+        enrollment_id: (isProgramSource && enrollment?.id) || null,
         log_date: today,
         exercises: exerciseLogs,
         duration_seconds: durationSeconds,

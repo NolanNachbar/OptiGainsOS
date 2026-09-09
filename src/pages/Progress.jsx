@@ -401,7 +401,11 @@ function MetabolismTab() {
            </div>
            <div className="text-center py-4">
               <p className="hero-metric text-ink text-4xl">{state?.nutrition?.avg_calories_7d || state?.nutrition?.avg_daily_calories_7d || "—"}</p>
-              <p className="text-[10px] text-muted-2 mt-1.5 font-bold uppercase tracking-[0.08em]">Calculated Burn (7d Avg)</p>
+              {/* This is avg_calories_7d — what he ATE over the last 7 days.
+                  Labelling logged intake as "Calculated Burn" made the one
+                  number on the Expenditure card mean the opposite of what it
+                  says, in the place he checks whether the cut is working. */}
+              <p className="text-[10px] text-muted-2 mt-1.5 font-bold uppercase tracking-[0.08em]">Intake (7d Avg)</p>
            </div>
         </CardContent>
       </Card>

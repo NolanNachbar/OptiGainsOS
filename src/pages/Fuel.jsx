@@ -73,7 +73,7 @@ export default function Fuel() {
             {/* Body & Progress — weight (logger + trend), measurements, photos.
                 Merged in from the retired standalone /progress route. The Progress
                 sub-tab strip is its own label, so no extra section heading here. */}
-            <Progress embedded />
+            <Progress />
           </div>
         ) : (
           <div className="px-4 pt-4 max-w-2xl mx-auto space-y-6 pb-[var(--dock-clearance)]">

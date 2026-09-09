@@ -1,3 +1,4 @@
+import { nowInTz } from '@/utils/dateUtils';
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -159,10 +160,16 @@ const getWorkoutSplitTitle = (log, scheduledTitle) => {
 export default function WeeklySchedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  // Read the profile before the day state: every "today" on this screen is the
+  // athlete's local day, not the browser's. They agree most of the time and
+  // disagree exactly when it matters — near midnight, and when he logs from a
+  // device in another timezone, which is when the wrong day gets highlighted
+  // and the wrong day's session gets opened.
+  const { profile } = useProfile();
   const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 })
+    startOfWeek(nowInTz(profile?.timezone), { weekStartsOn: 1 })
   );
-  const [selectedDay, setSelectedDay] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(() => nowInTz(profile?.timezone));
   const [showAllMuscles, setShowAllMuscles] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   // The completed-session card starts COLLAPSED on every day (today included):
@@ -179,7 +186,6 @@ export default function WeeklySchedule() {
     setShowCompleted(false);
   };
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
-  const { profile } = useProfile();
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekDateStrs = weekDays.map(d => format(d, "yyyy-MM-dd"));
@@ -223,7 +229,7 @@ export default function WeeklySchedule() {
 
   const selectedEntries = getEntriesForDay(selectedDay);
   const selectedLog = getLogForDay(selectedDay);
-  const isToday = isSameDay(selectedDay, new Date());
+  const isToday = isSameDay(selectedDay, nowInTz(profile?.timezone));
   const selectedDayType = dayType(selectedEntries, selectedLog);
   const isTwoADay = selectedDayType === "TWO_A_DAY";
   // Day echo folded into each card's section-label so identity survives without
@@ -353,7 +359,7 @@ export default function WeeklySchedule() {
           const log = getLogForDay(day);
           const entries = getEntriesForDay(day);
           const isSelected = isSameDay(day, selectedDay);
-          const isCurrentDay = isSameDay(day, new Date());
+          const isCurrentDay = isSameDay(day, nowInTz(profile?.timezone));
           const type = dayType(entries, log);
           const pill = TYPE_PILLS[type];
           // Non-logged, non-program days fall back to a designed muted 'Rest'
