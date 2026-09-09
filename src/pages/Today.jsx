@@ -13,6 +13,7 @@ import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
+import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
@@ -279,25 +280,10 @@ export default function Today() {
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
 
-  // Any in-progress workout session — surfaced as a banner so it can't be lost
-  const { data: activeSession } = useQuery({
-    queryKey: ["activeWorkoutSession", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("workout_sessions")
-        .select("id, workout_id, program_workout_id, enrollment_id")
-        .eq("created_by", user.id)
-        .eq("status", "in_progress")
-        // Skip orphan sessions with no navigable target, else the banner dead-ends.
-        .or("workout_id.not.is.null,program_workout_id.not.is.null")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data || null;
-    },
-    enabled: !!user,
-    staleTime: 30 * 1000,
-  });
+  // Any in-progress workout session — surfaced as a banner so it can't be lost.
+  // Shares its query and its URL builder with the launch redirect in App.jsx;
+  // they must never disagree about where a given session lives.
+  const { activeSession, path: activeSessionPath } = useActiveWorkoutSession();
 
   // ── The single teal-primary selector (dashboard-6) ──────────────────────
   // Teal is THE action color, so the page must show exactly ONE teal primary.
@@ -417,9 +403,7 @@ export default function Today() {
 
       {activeSession && (
         <Link
-          to={activeSession.program_workout_id
-            ? `/workout-detail?source=program&programWorkoutId=${activeSession.program_workout_id}${activeSession.enrollment_id ? `&enrollmentId=${activeSession.enrollment_id}` : ''}`
-            : `/workout-detail?id=${activeSession.workout_id}`}
+          to={activeSessionPath}
           // Neutral glass, not glass-brand/text-brand: the FAB is the single
           // teal action on this screen, so the in-progress banner reads as a
           // quiet "tap to continue" disclosure row (muted ink + chevron) rather

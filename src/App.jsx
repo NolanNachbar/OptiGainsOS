@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveWorkoutSession } from '@/hooks/useActiveWorkoutSession';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, toast } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -147,11 +148,22 @@ function AppToaster() {
   );
 }
 
+// Nolan's call: if a workout is running, opening the app IS opening that
+// workout. Only "/" does this — the bottom nav points at "/today" directly, so
+// leaving the session is always one tap and never fights this redirect.
 function RootRoute() {
   const { user, loading } = useAuth();
+  const { isLoading: sessionLoading, isFresh, path } = useActiveWorkoutSession();
+
   if (loading) return <LoadingScreen />;
-  if (user) return <Navigate to="/today" replace />;
-  return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  // Hold the splash for this one query rather than painting Today and yanking
+  // it away a beat later. It is a single indexed row and Today issues the same
+  // query anyway, so the cache is already warm by the time Today mounts.
+  if (sessionLoading) return <LoadingScreen />;
+
+  if (isFresh && path) return <Navigate to={path} replace />;
+  return <Navigate to="/today" replace />;
 }
 
 // Guards the sign-in form: an already-authenticated session has no business
