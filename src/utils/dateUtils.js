@@ -11,6 +11,15 @@ export function getTodayString(timezone) {
   return format(nowInTz(timezone), 'yyyy-MM-dd');
 }
 
+// The local calendar date of a past instant. getTodayString answers "what day
+// is it", this answers "what day was that" — the auto-finisher back-dates a
+// log to the session that earned it, and stamping it with today would file a
+// forgotten Tuesday workout under Wednesday.
+export function localDateOf(instant, timezone) {
+  const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return format(new TZDate(new Date(instant), tz), 'yyyy-MM-dd');
+}
+
 // UTC instants bounding the given calendar day in the given IANA timezone.
 // Use with .gte(col, start) / .lt(col, end) on timestamptz columns.
 export function dayWindowUtc(dateStr, timezone) {

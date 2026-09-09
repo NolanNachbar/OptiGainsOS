@@ -26,7 +26,8 @@ import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
 import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
-import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
+import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
+import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
@@ -114,7 +115,7 @@ export default function QuickWorkout() {
   const restTimerRef = useRef(null);
   const restTimerEndRef = useRef(null);
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
 
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
@@ -252,6 +253,20 @@ export default function QuickWorkout() {
     checkForActiveSession({}).then((session) => {
       if (session) {
         const ageMs = Date.now() - new Date(session.start_time).getTime();
+        // Quiet for hours but still today's: he stopped lifting without
+        // pressing Finish. Save it properly, then start clean. See
+        // AUTO_FINISH_STALE_MS for why silence and age are separate clocks.
+        const silenceMs = sessionSilenceMs(session);
+        if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
+          autoFinishSession(session, profile?.timezone).then((saved) => {
+            // Only open a new session once the old one is actually closed.
+            // Creating it unconditionally would leave two rows in_progress.
+            if (saved) createSession({ exercises: prescribedInitial, startTime });
+            else setResumeSession(session);
+          });
+          return;
+        }
+
         // Recent session: drop straight back into it. No dialog, no new session,
         // nothing discarded. See STALE_SESSION_MS.
         if (ageMs < STALE_SESSION_MS) {

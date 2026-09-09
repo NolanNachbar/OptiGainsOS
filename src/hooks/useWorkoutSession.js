@@ -1,7 +1,12 @@
 import { useRef } from "react";
-import { supabase } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { setWorkoutActive } from "@/lib/workoutSessionFlag";
+import {
+  buildWorkoutLogFromSession,
+  sessionHasLoggedSets,
+  logMatchesSession,
+} from "@/lib/buildWorkoutLogFromSession";
 
 /**
  * Manages a workout_sessions row in Supabase so in-progress workouts
@@ -143,15 +148,60 @@ export function useWorkoutSession() {
   };
 
   /**
-   * Mark a specific session as completed by ID without touching sessionIdRef.
-   * Used to auto-finish stale sessions found on mount.
+   * Finish a stale session found on mount, and write its workout_log.
+   *
+   * Both halves, in this order. The 8h auto-finish this replaces flipped
+   * `status` and stopped, so the sets were still in the session row but no
+   * workout_log existed and every downstream learner — MRV, volume budget,
+   * exercise values — saw a week where that workout never happened. Three
+   * sessions from August are sitting in exactly that state.
+   *
+   * So: log first, status second, and if the log write fails we leave the
+   * session in_progress and return false. A session stuck in_progress is
+   * recoverable by hand; a session marked completed with no log is silent
+   * data loss, and looks identical to a workout he never did.
+   *
+   * Returns true only if the log landed.
    */
-  const autoFinishSession = async (sessionId) => {
+  const autoFinishSession = async (session, timezone) => {
+    if (!session?.id) return false;
+    if (!sessionHasLoggedSets(session)) return false;
+
+    const payload = buildWorkoutLogFromSession(session, timezone);
+
+    // If the previous attempt wrote the log and then failed to close the row,
+    // this mount must not write it again. There is already one duplicated
+    // (created_by, log_date) pair in the live data from 2026-06-22 and it is a
+    // standing smoke failure; do not manufacture more.
+    //
+    // But the date is only the shortlist, never the verdict. He trains twice in
+    // a day often enough, and skipping the second log while still closing its
+    // session would destroy those sets exactly the way the old 8h auto-finish
+    // did. Only a log whose completed work matches this session's counts as
+    // already-written.
+    try {
+      const sameDay = await db.entities.WorkoutLog.filter({
+        created_by: payload.created_by,
+        log_date: payload.log_date,
+      });
+      const alreadyWritten = (sameDay || []).some((log) => logMatchesSession(log, payload));
+      if (!alreadyWritten) await db.entities.WorkoutLog.create(payload);
+    } catch (error) {
+      console.error("Auto-finish aborted, workout_log write failed:", error);
+      return false;
+    }
+
     const { error } = await supabase
       .from("workout_sessions")
       .update({ status: "completed" })
-      .eq("id", sessionId);
-    if (error) console.error("Error auto-finishing workout session:", error);
+      .eq("id", session.id);
+    if (error) {
+      // The log exists, so nothing is lost; the row just stays in_progress and
+      // the next mount retries. Guard against a second log on that retry.
+      console.error("Auto-finish wrote the log but could not close the session:", error);
+      return false;
+    }
+    return true;
   };
 
   /**

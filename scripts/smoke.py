@@ -337,9 +337,32 @@ def _ms_const(path, name):
 
 _redirect_ms = _ms_const("hooks/useActiveWorkoutSession.js", "ACTIVE_SESSION_MAX_AGE_MS")
 _stale_ms = _ms_const("lib/workoutSessionFlag.js", "STALE_SESSION_MS")
+_autofin_ms = _ms_const("lib/workoutSessionFlag.js", "AUTO_FINISH_STALE_MS")
 check("launch redirect can never land on the Start Fresh dialog",
       bool(_redirect_ms and _stale_ms and _redirect_ms < _stale_ms),
       f"redirect {(_redirect_ms or 0)/3.6e6:.0f}h must stay < stale {(_stale_ms or 0)/3.6e6:.0f}h")
+
+# Auto-finish measures silence (updated_at), the other two measure age
+# (start_time) — different clocks, but the ordering still has to hold. If
+# auto-finish ever exceeds STALE_SESSION_MS, a session reaches the dialog
+# before anything has saved it, and the left-hand button discards logged sets.
+check("auto-finish fires before a session can reach the Start Fresh dialog",
+      bool(_autofin_ms and _stale_ms and _autofin_ms < _stale_ms),
+      f"auto-finish {(_autofin_ms or 0)/3.6e6:.0f}h must stay < stale {(_stale_ms or 0)/3.6e6:.0f}h")
+
+# The whole point of the rewritten auto-finish: it writes the log BEFORE it
+# flips status. The removed 8h version flipped status alone, which is why three
+# August sessions hold sets no learner can see. Guard the ordering in source.
+_hook_src = (SRC / "hooks/useWorkoutSession.js").read_text()
+_af_body = _hook_src.split("const autoFinishSession")[-1].split("const cancelSession")[0]
+check("auto-finish's duplicate guard matches work, not just the date",
+      "logMatchesSession" in _af_body,
+      "a date-only guard swallows a real second workout on the same day")
+
+check("auto-finish writes the workout_log before flipping status",
+      "WorkoutLog.create" in _af_body
+      and _af_body.index("WorkoutLog.create") < _af_body.index('status: "completed"'),
+      "autoFinishSession must create the log first, or it silently destroys sets")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

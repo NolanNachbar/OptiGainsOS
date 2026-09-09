@@ -35,7 +35,8 @@ import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } 
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
+import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
+import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
 
@@ -155,7 +156,7 @@ export default function WorkoutDetail() {
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
 
   // Detect program source from URL params
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -305,6 +306,24 @@ export default function WorkoutDetail() {
     checkForActiveSession({ workoutId, programWorkoutId }).then((session) => {
       if (!session) return;
       const ageMs = Date.now() - new Date(session.start_time).getTime();
+      // null when updated_at is unavailable: never guess from start_time.
+      const silenceMs = sessionSilenceMs(session);
+
+      // Went quiet for hours but is still today's: he finished lifting and
+      // never pressed Finish. Write the log, close the row, and fall through
+      // to a fresh workout. Age is deliberately still bounded by
+      // STALE_SESSION_MS — a session older than a day gets the dialog below,
+      // because back-dating a log that far retroactively moves MRV and volume.
+      if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
+        autoFinishSession(session, profile?.timezone).then((saved) => {
+          if (saved) invalidateWorkoutLogs(queryClient);
+          // Not saved means the log write failed and the row is still
+          // in_progress on purpose. Ask rather than silently dropping it.
+          else setResumeSession(session);
+        });
+        return;
+      }
+
       // A live session is NEVER restarted or discarded. Set the phone down
       // mid-set, come back, reload: we drop straight back into logging with the
       // saved sets, no dialog and no confirmation. An empty `exercises` (started
@@ -800,7 +819,7 @@ export default function WorkoutDetail() {
 
       // Create workout log
       // program_id / enrollment_id exist on workout_logs and were never
-      // populated, so all 142 rows read null and nothing downstream could tell
+      // populated, so all 98 rows read null and nothing downstream could tell
       // a programmed session from a one-off.
       await db.entities.WorkoutLog.create({
         created_by: user.id,
