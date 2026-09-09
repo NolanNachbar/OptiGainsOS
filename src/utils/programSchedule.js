@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, format, isBefore, isEqual, parseISO, parse } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parse } from "date-fns";
 import { getTodayString } from "@/utils/dateUtils";
 
 const CARDIO_ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
@@ -8,37 +8,6 @@ export function normalizeCardioSession(s) {
   const activity = CARDIO_ACTIVITY_LABELS[s.activity_type] || "Cardio";
   const zone = s.zone || "Z2";
   return { ...s, title: `${zone} ${activity}` };
-}
-
-/**
- * Spread N training days across a 7-day week with balanced rest days.
- *
- *   1 day  → Mon                      [0]
- *   2 days → Mon / Thu                [0, 3]
- *   3 days → Mon / Wed / Fri          [0, 2, 4]
- *   4 days → Mon / Tue / Thu / Fri    [0, 1, 3, 4]
- *   5 days → Mon / Tue / Wed / Fri / Sat  [0, 1, 2, 4, 5]
- *   6 days → Mon–Sat                  [0, 1, 2, 3, 4, 5]
- *   7 days → every day                [0, 1, 2, 3, 4, 5, 6]
- */
-const WEEKLY_OFFSETS = {
-  1: [0],
-  2: [0, 3],
-  3: [0, 2, 4],
-  4: [0, 1, 3, 4],
-  5: [0, 1, 2, 4, 5],
-  6: [0, 1, 2, 3, 4, 5],
-  7: [0, 1, 2, 3, 4, 5, 6],
-};
-
-/**
- * Given a 1-based day_index and the number of training days in a cycle,
- * return the 0-based calendar offset from the week/cycle start date.
- */
-function getDayOffset(dayIndex, cycleLength) {
-  const n = Math.min(Math.max(Math.round(cycleLength), 1), 7);
-  const offsets = WEEKLY_OFFSETS[n] ?? WEEKLY_OFFSETS[7];
-  return offsets[Math.min(dayIndex - 1, offsets.length - 1)] ?? (dayIndex - 1);
 }
 
 /**
@@ -131,9 +100,6 @@ export function getProgramSchedule(enrollment, workouts, timezone) {
 
   // Each cycle is exactly cycleLength days (no week alignment needed)
   const calDaysPerCycle = cycleLength;
-
-  const currentCycle = enrollment.current_cycle || 1;
-  const currentDayIndex = enrollment.current_day_index || enrollment.current_day || 1;
 
   const entries = [];
   // Schedule dates are plain calendar days, so "today" must be resolved in the
