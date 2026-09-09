@@ -270,7 +270,7 @@ export default function QuickWorkout() {
         // Recent session: drop straight back into it. No dialog, no new session,
         // nothing discarded. See STALE_SESSION_MS.
         if (ageMs < STALE_SESSION_MS) {
-          restoreSession(session.id);
+          restoreSession(session.id, session.exercises);
           setExercises(session.exercises || []);
           setStartTime(new Date(session.start_time).getTime());
         } else {
@@ -396,14 +396,14 @@ export default function QuickWorkout() {
 
   const handleResumeSession = () => {
     if (!resumeSession) return;
-    restoreSession(resumeSession.id);
+    restoreSession(resumeSession.id, resumeSession.exercises);
     setExercises(resumeSession.exercises || []);
     setStartTime(new Date(resumeSession.start_time).getTime());
     setResumeSession(null);
   };
 
   const handleDismissResume = () => {
-    restoreSession(resumeSession.id);
+    restoreSession(resumeSession.id, resumeSession.exercises);
     cancelSession();
     setResumeSession(null);
     createSession({ exercises: [], startTime: Date.now() });

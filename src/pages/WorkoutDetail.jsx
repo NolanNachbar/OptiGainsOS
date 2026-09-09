@@ -330,7 +330,7 @@ export default function WorkoutDetail() {
       // logging but hasn't completed a set yet) restores too — the init effect
       // below reseeds the template and `isLogging` stays true.
       if (ageMs < STALE_SESSION_MS) {
-        restoreSession(session.id);
+        restoreSession(session.id, session.exercises);
         setExerciseLogs(session.exercises || []);
         setStartTime(new Date(session.start_time).getTime());
         setPreWorkoutNotes(session.notes || "");
@@ -1018,7 +1018,7 @@ export default function WorkoutDetail() {
 
   const handleResumeSession = () => {
     if (!resumeSession) return;
-    restoreSession(resumeSession.id);
+    restoreSession(resumeSession.id, resumeSession.exercises);
     setExerciseLogs(resumeSession.exercises || []);
     setStartTime(new Date(resumeSession.start_time).getTime());
     setPreWorkoutNotes(resumeSession.notes || "");
@@ -1028,7 +1028,7 @@ export default function WorkoutDetail() {
 
   const handleDismissResume = () => {
     // Cancel the old session and start fresh
-    restoreSession(resumeSession.id);
+    restoreSession(resumeSession.id, resumeSession.exercises);
     cancelSession();
     setResumeSession(null);
   };

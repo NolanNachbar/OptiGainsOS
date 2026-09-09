@@ -25,9 +25,15 @@ export function buildWorkoutLogFromSession(session, timezone) {
   const startedAt = session.start_time || session.started_at || session.created_at;
   const lastTouched = session.updated_at || startedAt;
 
-  const durationSeconds = startedAt
+  // null, not 0, when the span is unknowable. A row whose updated_at was
+  // backfilled to its own start_time computes 0, and writing that claims a
+  // workout that took no time; null reads as "unknown" everywhere downstream
+  // (calculateLiftingTSS already declines under 0.1h, and the duration averages
+  // in ProgressContent coalesce it away rather than averaging in a false zero).
+  const rawDuration = startedAt
     ? Math.max(0, Math.floor((new Date(lastTouched) - new Date(startedAt)) / 1000))
     : null;
+  const durationSeconds = rawDuration || null;
 
   return {
     created_by: session.created_by,

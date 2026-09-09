@@ -355,6 +355,11 @@ check("auto-finish fires before a session can reach the Start Fresh dialog",
 # August sessions hold sets no learner can see. Guard the ordering in source.
 _hook_src = (SRC / "hooks/useWorkoutSession.js").read_text()
 _af_body = _hook_src.split("const autoFinishSession")[-1].split("const cancelSession")[0]
+_hook_sp = _hook_src.split("const saveProgress")[-1].split("const completeSession")[0]
+check("saveProgress skips no-op writes so a restore cannot reset the silence clock",
+      "lastSavedRef" in _hook_sp and "return;" in _hook_sp,
+      "without this the updated_at trigger fires on every app open and 3h is never reached")
+
 check("auto-finish's duplicate guard matches work, not just the date",
       "logMatchesSession" in _af_body,
       "a date-only guard swallows a real second workout on the same day")

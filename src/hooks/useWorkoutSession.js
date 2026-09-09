@@ -18,6 +18,9 @@ import {
 export function useWorkoutSession() {
   const { user } = useAuth();
   const sessionIdRef = useRef(null);
+  // What the session row already holds, so a restore's echo is not mistaken for
+  // training activity. See saveProgress.
+  const lastSavedRef = useRef({ exercises: null, notes: undefined });
 
   /**
    * Check for an existing in_progress session for this workout.
@@ -112,6 +115,7 @@ export function useWorkoutSession() {
     }
 
     sessionIdRef.current = data.id;
+    lastSavedRef.current = { exercises: JSON.stringify(exercises), notes: undefined };
     setWorkoutActive(true);
     return data;
   };
@@ -123,6 +127,28 @@ export function useWorkoutSession() {
   const saveProgress = (exercises, notes) => {
     const id = sessionIdRef.current;
     if (!id) return;
+
+    // Skip writes that change nothing. Restoring a session re-populates React
+    // state, which re-fires both pages' auto-save effects with exactly the data
+    // just read. That is not training activity, but the updated_at trigger
+    // cannot tell the difference — it would reset the silence clock on every
+    // app open, and the 3h auto-finish threshold would be unreachable for
+    // anyone who opens the app more than once in three hours.
+    //
+    // exercises and notes are compared separately because the two pages call
+    // this differently: QuickWorkout always passes null notes, WorkoutDetail
+    // passes the live pre-workout field. A seeded `notes: undefined` means
+    // "unknown, do not let it force a write"; the first skipped call learns the
+    // real value so a later notes-only edit still saves.
+    const exercisesFp = JSON.stringify(exercises);
+    const nextNotes = notes || null;
+    const prev = lastSavedRef.current;
+    if (exercisesFp === prev.exercises && (prev.notes === undefined || nextNotes === prev.notes)) {
+      lastSavedRef.current = { exercises: exercisesFp, notes: nextNotes };
+      return;
+    }
+    lastSavedRef.current = { exercises: exercisesFp, notes: nextNotes };
+
     supabase
       .from("workout_sessions")
       .update({ exercises, notes: notes || null })
@@ -139,6 +165,7 @@ export function useWorkoutSession() {
     const id = sessionIdRef.current;
     if (!id) return;
     sessionIdRef.current = null;
+    lastSavedRef.current = { exercises: null, notes: undefined };
     setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
@@ -211,6 +238,7 @@ export function useWorkoutSession() {
     const id = sessionIdRef.current;
     if (!id) return;
     sessionIdRef.current = null;
+    lastSavedRef.current = { exercises: null, notes: undefined };
     setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
@@ -222,8 +250,13 @@ export function useWorkoutSession() {
   /**
    * Restore a previously found session (set its ID so saves go to the right row).
    */
-  const restoreSession = (sessionId) => {
+  const restoreSession = (sessionId, exercises) => {
     sessionIdRef.current = sessionId;
+    // Seed with what the row already holds so the auto-save effect's first fire
+    // after the restore is recognised as an echo and skipped.
+    lastSavedRef.current = exercises === undefined
+      ? { exercises: null, notes: undefined }
+      : { exercises: JSON.stringify(exercises), notes: undefined };
     setWorkoutActive(true);
   };
 
