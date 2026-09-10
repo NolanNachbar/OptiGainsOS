@@ -16,7 +16,7 @@ from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
 from engine.session_generator import (split_from_title, build_title, _converge_split,
                                       classify_log_split, week_muscle_counts_from_logs,
                                       split_muscles_for, SessionGenerator)
-from engine.muscle_map import get_muscles, hypertrophy_muscles
+from engine.muscle_map import get_muscles, hypertrophy_muscles, get_muscle_credit
 from engine.notes_parser import parse_workout_notes
 from engine.hypertrophy_volume import MUSCLES as LANDMARK_MUSCLES
 
@@ -644,6 +644,16 @@ check("MAP a hyphenated name matches a space-separated keyword (Pull-up → back
 check("MAP Push-Up Pyramid credits chest/triceps (was: nothing)",
       set(hypertrophy_muscles("Push-Up Pyramid")) == {"chest", "triceps"},
       str(hypertrophy_muscles("Push-Up Pyramid")))
+# The two paths must stay split: push-ups are a pressing movement for every
+# membership consumer (deviation tracking, dedup, pain matcher, landmark
+# slopes) and worth ZERO hypertrophy volume. A refactor that collapses
+# get_muscle_credit back onto get_muscles fails here. Nolan's call, 2026-09-10.
+check("MAP Push-Up Pyramid is worth NO hypertrophy volume",
+      get_muscle_credit("Push-Up Pyramid") == {},
+      str(get_muscle_credit("Push-Up Pyramid")))
+check("MAP the volume exemption does not leak to real pressing",
+      get_muscle_credit("Bench Press") == {"chest": 1.0, "triceps": 0.5},
+      str(get_muscle_credit("Bench Press")))
 check("MAP Hamstring Curl is a LEG movement, not biceps",
       hypertrophy_muscles("Hamstring Curl") == ["hamstrings"],
       str(hypertrophy_muscles("Hamstring Curl")))

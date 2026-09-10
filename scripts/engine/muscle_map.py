@@ -27,6 +27,22 @@ from engine.hypertrophy_volume import MUSCLES as LANDMARK_MUSCLES
 # other [ENG] constants in this codebase, not a fixed law.
 SECONDARY_MUSCLE_CREDIT = 0.5   # [ENG] fraction of a set credited to synergist movers
 
+# Movements that train a muscle but must never count toward hypertrophy VOLUME.
+# Push-ups are PRT/PST test work and conditioning filler, not a pressing
+# stimulus: bodyweight is far under his working bench load, the sets are
+# rep-max or pyramid efforts rather than RIR-controlled hard sets, and the
+# engine was reading them as chest 1.0 + triceps 0.5 and prescribing FEWER
+# real pressing sets as a result. Nolan's call, 2026-09-10. [COACH]
+#
+# Substring match, so "Weighted Push-up" is exempt too — the plain reading of
+# "don't count the push-ups as volume", not a carve-out he asked for.
+#
+# VOLUME ONLY. get_muscles()/hypertrophy_muscles() deliberately still return
+# chest+triceps for these, because deviation tracking, session pattern dedup,
+# the caution/pain matcher and the landmark response slopes all need to know a
+# push-up is a pressing movement. Exempting membership would break those.
+VOLUME_EXEMPT_KEYWORDS = ("push up", "pushup")
+
 # ── Exercise name keyword → analysis-vocab muscles ────────────────────────────
 # Moved verbatim from compute_athlete_state.py so both the daily compute and the
 # weekly orchestrator share one definition (was duplicated/at risk of drift).
@@ -303,6 +319,8 @@ def get_muscle_credit(exercise_name: str) -> dict:
     counting (compute_hypertrophy) — get_muscles() stays unweighted for
     plain membership checks (deviation tracking, session pattern dedup)."""
     name = _norm(exercise_name)
+    if any(kw in name for kw in VOLUME_EXEMPT_KEYWORDS):
+        return {}
     matched: list[str] = []
     credit: dict[str, float] = {}
     for kw in _MUSCLE_KEYWORDS:
