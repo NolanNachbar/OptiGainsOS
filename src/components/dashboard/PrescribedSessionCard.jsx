@@ -116,6 +116,10 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // no longer a standalone row on Today). Starting a session with no check-in
   // logged today opens the check-in sheet first; saving (or skipping) then
   // continues into the logger. Holds {to, state} while the sheet is open.
+  // Holds {to, state, weighInOnly}. weighInOnly is captured at open time, not
+  // recomputed on every render: the weight query can resolve mid-sheet and flip
+  // the answer, which would swap the dialog's whole body out from under him
+  // while he is typing into it.
   const [checkinGate, setCheckinGate] = useState(null);
   // The weigh-in rides the same gate, and gates independently: a day where
   // energy/mood were already logged but the scale wasn't still stops here, or
@@ -127,8 +131,11 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   const { todayWeight, isLoading: weightLoading, isFetching: weightFetching } = useTodayBodyWeight(today);
   const needsWeight = !weightLoading && !weightFetching && todayWeight?.weight == null;
   const beginSession = (to, state) => {
-    if (!todayCheckin?.energy || needsWeight) setCheckinGate({ to, state });
-    else navigate(to, state ? { state } : undefined);
+    if (!todayCheckin?.energy || needsWeight) {
+      setCheckinGate({ to, state, weighInOnly: !!todayCheckin?.energy && needsWeight });
+    } else {
+      navigate(to, state ? { state } : undefined);
+    }
   };
   const continueToSession = () => {
     const gate = checkinGate;
@@ -141,7 +148,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // field appended (what it used to do) buried the only outstanding item under a
   // card already stamped "Logged", and the weigh-in went unanswered on every
   // training day for a month.
-  const weighInOnly = !!todayCheckin?.energy && needsWeight;
+  const weighInOnly = !!checkinGate?.weighInOnly;
   const checkinGateSheet = checkinGate && (
     <Dialog open onOpenChange={(open) => { if (!open) setCheckinGate(null); }}>
       <DialogContent className="sm:max-w-md">

@@ -345,6 +345,10 @@ I swept `UI_AUDIT.md`, `LAUNCH_READINESS.md`, `PRODUCT_GAPS.md`,
 `KNOWN_NON_ISSUES.md`, and verified each surviving candidate against current
 source rather than trusting the doc's own status line.
 
+Every one of those documents except `AUDIT_2026-07-30.md` and `CONVERGENCE_AUDIT.md`
+was deleted on 2026-09-10, once this sweep had established that none of them held a
+live finding. They remain readable at `git show e02d93f1:<name>`.
+
 No unaddressed UI/UX finding survived. Ten-plus specific fixes were confirmed
 present in code, including `Profile.jsx:256`, the `ResetPassword`
 `onAuthStateChange` race, `Login.jsx:90` and `:104` labels,

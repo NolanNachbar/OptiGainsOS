@@ -3,7 +3,7 @@
 Concrete journeys for the test/improve loop. Each is a sequence a subagent walks
 against the running app (local Vite :5173, bypass auth, mobile 390x844 by default),
 logging friction, screenshots, timings, and console errors, then scoring against the
-criteria in the persona files and the surface map in `SURFACE_INVENTORY.md`.
+criteria in the persona files and the surface map in `SURFACE_INVENTORY.md` (deleted 2026-09-10; `git show e02d93f1:SURFACE_INVENTORY.md`).
 
 Auth: bypass only (`localStorage.bypass_auth='true'`), never the real account. See
 `harness.md`. Data: UI-AUDIT mode (empty, safe) by default; journeys tagged

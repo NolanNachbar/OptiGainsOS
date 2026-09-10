@@ -9,7 +9,8 @@ convergence, and is the guardrail/freedom balance right?
 **Method:** end-to-end parameter traces (owned by lead), three fan-out coverage
 agents (allocation / guardrails / session+coherence), every claim verified against
 source and — where decisive — against runtime (`numpy` RNG, RLS variance). Held the
-code to `ADAPTIVE_ENGINE_DESIGN.md` + `Science.md`; the OptiGainsOS doc (EKF/PyMC/
+code to `ADAPTIVE_ENGINE_DESIGN.md` + the then-current `Science.md` (deleted
+2026-09-10; merged into `Science-Unified.md`); the OptiGainsOS doc (EKF/PyMC/
 CP-SAT/RL) is aspirational and **not** what shipped — the shipped system is the
 greedy-allocator + Normal/Kalman-learner + bandit design in `ADAPTIVE_ENGINE_DESIGN.md`.
 

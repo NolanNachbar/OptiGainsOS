@@ -1242,7 +1242,7 @@ def main():
     #     converged). The +1-set magnitude is a bounded, recovery-safe probe.
     #   - Suppressed while the fatigue guardrail is not NORMAL. The spec used to cite a
     #     "hazard_score > 0.6" halt; no hazard score was ever implemented anywhere in
-    #     the engine and that 0.6 appears in no source (Science.md's own pseudocode
+    #     the engine and that 0.6 appears in no source (Science-Unified.md:730's pseudocode
     #     uses 0.8). Rather than invent a threshold, gate on SystemGuardrail's real,
     #     already-calibrated overreach detector — same intent, grounded constants.
     _test_running = bool(active_vol)

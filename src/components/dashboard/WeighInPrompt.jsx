@@ -57,9 +57,33 @@ export default function WeighInPrompt({
   // Already on record, or not yet known. The card variant renders nothing in
   // both cases: a prompt that flashes for one frame on every dashboard load,
   // then vanishes once the query resolves, teaches him to ignore it. The sheet
-  // variant is only ever mounted once the gate has already decided a weight is
-  // missing, so it renders through the fetch rather than blanking the dialog.
+  // variant renders through the fetch rather than blanking the dialog, since the
+  // gate has already decided a weight is missing by the time it mounts.
   if (!isSheet && (isLoading || isFetching || todayWeight?.weight != null)) return null;
+
+  // The gate reads `needsWeight` off a query that reports false while it is
+  // refetching, so the sheet can open on a stale "no entry" and then resolve to
+  // a weight already logged today. Asking anyway would be worse than useless:
+  // useLogWeight reads-then-updates the existing row, so a second reading typed
+  // here silently replaces the real one. Confirm and move on instead.
+  if (isSheet && todayWeight?.weight != null) {
+    return (
+      <div className="glass px-4 sm:px-5 py-4">
+        <p className="text-[13px] font-semibold text-secondary">
+          Already logged today: <span className="tabular-nums text-ink">{todayWeight.weight} {unit}</span>
+        </p>
+        <Button
+          type="button"
+          variant="volt"
+          size="lg"
+          onClick={() => onLogged?.()}
+          className="mt-3 min-h-[50px] w-full text-[15px]"
+        >
+          Continue to the session
+        </Button>
+      </div>
+    );
+  }
 
   const reference = lastWeight?.weight ?? profile?.current_weight ?? null;
 

@@ -3,7 +3,7 @@ type: technical-spec
 project: OptiGains
 status: authoritative
 created: 2026-06-18
-supersedes: [Science.md, sciencev2.md]
+supersedes: [Science.md, sciencev2.md]  # both deleted 2026-09-10, see Provenance
 source: "Science.md; sciencev2.md; RESEARCH_VS_SCIENCE_2026-06.md (binding correction spec)"
 origin: distilled
 tags: [optigains, training-science, architecture, hypertrophy, strength, concurrent]
@@ -14,8 +14,10 @@ tags: [optigains, training-science, architecture, hypertrophy, strength, concurr
 Provenance: this document supersedes `Science.md` and `sciencev2.md` as of 2026-06-18.
 Where those two docs conflicted, the more defensible option was selected per the
 comparison table in `RESEARCH_VS_SCIENCE_2026-06.md`. Where the research correction
-spec conflicts with either original, the correction spec wins. The two originals are
-retained for history but are no longer authoritative.
+spec conflicts with either original, the correction spec wins. The two originals were
+deleted from the tree on 2026-09-10, having been non-authoritative since June; every
+reference to them below is a historical citation, and both files remain readable at
+`git show e02d93f1:Science.md` and `git show e02d93f1:sciencev2.md`.
 
 OptiGainsOS is a self-optimizing performance operating system for a single tactical
 athlete. It coordinates high-frequency wearable telemetry, objective strength

@@ -1,6 +1,6 @@
-# Science.md Alignment Report
+# Science-Unified Alignment Report
 
-How OptiGainsOS's actual implementation maps to the engines specified in `Science-Unified.md` (the merged source-of-truth spec, which superseded `Science.md` + `sciencev2.md` on 2026-06-18), and where the **frontend cannot close the gap alone** (engine/backend work). Page-fixable gaps were addressed in the UX/UI fix pass; this document is the report-only backlog.
+How OptiGainsOS's actual implementation maps to the engines specified in `Science-Unified.md` (the merged source-of-truth spec, which superseded `Science.md` + `sciencev2.md` on 2026-06-18; both originals were deleted from the tree on 2026-09-10 and remain readable at `git show e02d93f1:Science.md`), and where the **frontend cannot close the gap alone** (engine/backend work). Page-fixable gaps were addressed in the UX/UI fix pass; this document is the report-only backlog.
 
 > Framing: `Science-Unified.md` describes an idealized research backend (Go microservices, Kafka, OR-Tools CP-SAT, PyMC/JAX, GRPO RL, gRPC). This repo is React+Vite+Supabase + simplified Python in `scripts/engine/`. "Alignment" means the app faithfully surfaces each engine's *intended user-facing output*, not that it reimplements that infrastructure.
 

@@ -60,7 +60,7 @@ centered-not-bottom-sheet, [A11Y] target < 44px / contrast / focus, [PERF] slow 
 
 ## Gotchas (each costs a debugging cycle once)
 - KNOWN SYSTEMIC ISSUE: `src/components/ui/dialog.jsx` renders a CENTERED modal on
-  mobile, not a bottom sheet (see SURFACE_INVENTORY.md). It affects ~20 overlays. Track
+  mobile, not a bottom sheet (see `git show e02d93f1:SURFACE_INVENTORY.md`, deleted 2026-09-10). It affects ~20 overlays. Track
   it ONCE at the primitive level; do not file it 20 times per overlay.
 - The seeded athlete HAS real data (workouts/food/profile). Judge empty-state DESIGN where
   a surface is legitimately empty, but flag a populated journey that renders empty where
