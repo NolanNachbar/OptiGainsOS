@@ -3,6 +3,22 @@
  */
 
 /**
+ * Compare exercise names the way the rest of the app already does.
+ *
+ * Stored history carries more than one spelling for the same lift — a catalog
+ * rename, a manual entry typed in a different case, a trailing space — and
+ * every comparison in this file was strict `===`. The effect was silent and
+ * one-directional: a PR set logged under the old spelling simply stopped
+ * existing, the history chart started at the rename, and "last time" offered
+ * nothing to tap, which is exactly when a wrong number gets typed by hand.
+ *
+ * coachingEngine.js:65 already keys on `(ex.name || '').toLowerCase().trim()`,
+ * so this makes the stats agree with the engine rather than inventing a rule.
+ */
+const sameExercise = (a, b) =>
+  (a || "").toLowerCase().trim() === (b || "").toLowerCase().trim();
+
+/**
  * Get max weight ever lifted for an exercise
  * @param {Array} logs - Array of workout logs
  * @param {string} exerciseName - Name of the exercise
@@ -18,7 +34,7 @@ export const getExercisePR = (logs, exerciseName) => {
     if (!log.exercises) return;
 
     log.exercises.forEach(ex => {
-      if (ex.name === exerciseName && ex.sets) {
+      if (sameExercise(ex.name, exerciseName) && ex.sets) {
         const weights = ex.sets.map(s => s.weight || 0);
         const weight = Math.max(...weights);
 
@@ -113,9 +129,9 @@ export const getExerciseHistory = (logs, exerciseName) => {
   if (!logs || logs.length === 0) return [];
 
   return logs
-    .filter(log => log.exercises?.some(ex => ex.name === exerciseName))
+    .filter(log => log.exercises?.some(ex => sameExercise(ex.name, exerciseName)))
     .map(log => {
-      const exercise = log.exercises.find(ex => ex.name === exerciseName);
+      const exercise = log.exercises.find(ex => sameExercise(ex.name, exerciseName));
       if (!exercise || !exercise.sets || exercise.sets.length === 0) {
         return null;
       }
@@ -208,7 +224,7 @@ export const getLastExercisePerformance = (logs, exerciseName) => {
   for (const log of sortedLogs) {
     if (!log.exercises) continue;
 
-    const exercise = log.exercises.find(ex => ex.name === exerciseName);
+    const exercise = log.exercises.find(ex => sameExercise(ex.name, exerciseName));
     if (exercise && exercise.sets && exercise.sets.length > 0) {
       // Get all weights and reps from the sets
       const weights = exercise.sets.map(s => s.weight || 0);

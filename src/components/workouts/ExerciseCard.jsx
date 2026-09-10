@@ -598,8 +598,19 @@ export default function ExerciseCard({
               <input
                 type="number"
                 aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
-                value={set.weight || ""}
-                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
+                // `?? ""`, not `|| ""`: a logged 0 is a real load (every
+                // bodyweight movement) and `||` blanked the field out from
+                // under him. And an empty field means empty, not zero — with
+                // `|| 0` the box refilled itself with "0" the instant it was
+                // cleared, so a mistyped weight could not be deleted, only
+                // typed over, and the RIR input three rows down had the
+                // null-on-empty handling this one was missing.
+                value={set.weight ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const next = raw === "" ? null : parseFloat(raw);
+                  onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
+                }}
                 onFocus={handleInputFocus}
                 placeholder={
                   isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
@@ -611,17 +622,35 @@ export default function ExerciseCard({
                     : "0"
                 }
                 min="0"
+                // A fat-fingered extra digit (2255 for 225) is indistinguishable
+                // from a real lift downstream: it becomes the e1RM, the PR, and
+                // the progression baseline. 2000 is far above anything human and
+                // still catches the common slip.
+                max="2000"
                 step="2.5"
                 className={setCell(isActive)}
               />
               <input
                 type="number"
                 aria-label={isHold ? `Set ${set.set_number} hold seconds` : `Set ${set.set_number} reps`}
-                value={(isHold ? set.duration_s : set.reps) || ""}
-                onChange={(e) => onUpdateSet(exerciseIndex, setIndex, isHold ? 'duration_s' : 'reps', parseInt(e.target.value) || 0)}
+                value={(isHold ? set.duration_s : set.reps) ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const next = raw === "" ? null : parseInt(raw, 10);
+                  onUpdateSet(
+                    exerciseIndex,
+                    setIndex,
+                    isHold ? 'duration_s' : 'reps',
+                    Number.isFinite(next) ? next : null
+                  );
+                }}
                 onFocus={handleInputFocus}
                 placeholder={isHold ? "30" : (lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0")}
                 min="0"
+                // Holds are seconds, reps are reps, so the ceiling differs: an
+                // hour-long plank and a 500-rep set are both absurd, and either
+                // number wrecks the volume totals it feeds.
+                max={isHold ? "3600" : "500"}
                 className={setCell(isActive)}
               />
               {showRIR && (

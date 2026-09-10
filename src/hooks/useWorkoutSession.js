@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { setWorkoutActive } from "@/lib/workoutSessionFlag";
+import { saveDraft, clearDraft, preferDraft } from "@/lib/workoutDraft";
 import {
   buildWorkoutLogFromSession,
   sessionHasLoggedSets,
@@ -21,6 +22,56 @@ export function useWorkoutSession() {
   // What the session row already holds, so a restore's echo is not mistaken for
   // training activity. See saveProgress.
   const lastSavedRef = useRef({ exercises: null, notes: undefined });
+
+  // A save that did not land, and the payload that would land it. saveFailed
+  // drives the marker in the logging header: a drop the athlete can see while
+  // he is still standing at the rack is a drop he can do something about, and
+  // until now the only trace was a console.error nobody reads on a phone.
+  const [saveFailed, setSaveFailed] = useState(false);
+  const pendingRef = useRef(null);
+
+  // Set when checkForActiveSession handed back a session whose local mirror
+  // held sets the server row did not. restoreSession reads it to decide
+  // whether the first auto-save after the restore is a genuine write (push the
+  // recovered tail up) or the usual echo to be skipped.
+  const draftAheadRef = useRef(false);
+
+  /**
+   * Re-send the last write that failed. Nothing else retries: React Query is
+   * not in this path, and its mutations default to zero retries anyway.
+   */
+  const flushPending = () => {
+    const pending = pendingRef.current;
+    if (!pending) {
+      setSaveFailed(false);
+      return;
+    }
+    supabase
+      .from("workout_sessions")
+      .update({ exercises: pending.exercises, notes: pending.notes })
+      .eq("id", pending.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error("Retrying a failed workout session save did not work:", error);
+          return;
+        }
+        if (pendingRef.current === pending) pendingRef.current = null;
+        lastSavedRef.current = {
+          exercises: JSON.stringify(pending.exercises),
+          notes: pending.notes,
+        };
+        setSaveFailed(false);
+      });
+  };
+
+  // Retry the moment the connection returns, which in a basement gym is usually
+  // the moment he walks toward the door. Without this the only thing that
+  // re-fires a save is logging another set, and the sets at the END of a
+  // workout are exactly the ones with nothing after them.
+  useEffect(() => {
+    window.addEventListener("online", flushPending);
+    return () => window.removeEventListener("online", flushPending);
+  }, []);
 
   /**
    * Check for an existing in_progress session for this workout.
@@ -86,7 +137,16 @@ export function useWorkoutSession() {
       const anyLive = await hasAnyActiveSession();
       if (!anyLive) setWorkoutActive(false);
     }
-    return data || null;
+    // Every consumer of a session row goes through here — auto-restore,
+    // Resume, and the stale auto-finisher all call this one function — so
+    // this is the single place the local mirror has to be preferred for all
+    // three to stop losing the tail of a workout. preferDraft returns the row
+    // untouched unless a draft for THIS session id holds at least as many
+    // completed sets.
+    if (!data) return null;
+    const merged = preferDraft(data);
+    draftAheadRef.current = !!merged.restoredFromDraft;
+    return merged;
   };
 
   /**
@@ -143,18 +203,41 @@ export function useWorkoutSession() {
     const exercisesFp = JSON.stringify(exercises);
     const nextNotes = notes || null;
     const prev = lastSavedRef.current;
+
+    // Mirror locally before anything touches the network, and on every call
+    // including the skipped ones. This write cannot fail for a lack of signal,
+    // which makes it the only copy of these sets that survives a dead
+    // connection. See src/lib/workoutDraft.js.
+    saveDraft(id, exercises, nextNotes);
+
     if (exercisesFp === prev.exercises && (prev.notes === undefined || nextNotes === prev.notes)) {
       lastSavedRef.current = { exercises: exercisesFp, notes: nextNotes };
       return;
     }
+    // Advanced before the write is issued, on purpose: it doubles as the
+    // in-flight guard that stops a double render from firing the same update
+    // twice. The failure branch below puts it back.
     lastSavedRef.current = { exercises: exercisesFp, notes: nextNotes };
 
     supabase
       .from("workout_sessions")
-      .update({ exercises, notes: notes || null })
+      .update({ exercises, notes: nextNotes })
       .eq("id", id)
       .then(({ error }) => {
-        if (error) console.error("Error saving workout session progress:", error);
+        if (error) {
+          console.error("Error saving workout session progress:", error);
+          // Roll the fingerprint back to what was actually last saved. Leaving
+          // it advanced marks a payload as written that never was, so the next
+          // identical call is skipped as redundant and one dropped request
+          // becomes a permanent hole. Guarded so a newer successful write that
+          // already moved it is not clobbered.
+          if (lastSavedRef.current.exercises === exercisesFp) lastSavedRef.current = prev;
+          pendingRef.current = { id, exercises, notes: nextNotes };
+          setSaveFailed(true);
+          return;
+        }
+        if (pendingRef.current?.id === id) pendingRef.current = null;
+        setSaveFailed(false);
       });
   };
 
@@ -166,6 +249,11 @@ export function useWorkoutSession() {
     if (!id) return;
     sessionIdRef.current = null;
     lastSavedRef.current = { exercises: null, notes: undefined };
+    pendingRef.current = null;
+    setSaveFailed(false);
+    // The log has been written from live React state by this point, so the
+    // mirror has no one left to protect.
+    clearDraft(id);
     setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
@@ -228,6 +316,9 @@ export function useWorkoutSession() {
       console.error("Auto-finish wrote the log but could not close the session:", error);
       return false;
     }
+    // Only here. On either failure path above, the mirror is still the newest
+    // copy of those sets and the next mount needs it.
+    clearDraft(session.id);
     return true;
   };
 
@@ -239,6 +330,9 @@ export function useWorkoutSession() {
     if (!id) return;
     sessionIdRef.current = null;
     lastSavedRef.current = { exercises: null, notes: undefined };
+    pendingRef.current = null;
+    setSaveFailed(false);
+    clearDraft(id);
     setWorkoutActive(false);
     const { error } = await supabase
       .from("workout_sessions")
@@ -254,7 +348,14 @@ export function useWorkoutSession() {
     sessionIdRef.current = sessionId;
     // Seed with what the row already holds so the auto-save effect's first fire
     // after the restore is recognised as an echo and skipped.
-    lastSavedRef.current = exercises === undefined
+    //
+    // Unless the sets being restored came from the local mirror and the server
+    // has never seen them. Then the echo is the whole point: leave the
+    // fingerprint empty so that first fire writes for real and the tail that
+    // was stranded on this device lands in the row.
+    const recovered = draftAheadRef.current;
+    draftAheadRef.current = false;
+    lastSavedRef.current = exercises === undefined || recovered
       ? { exercises: null, notes: undefined }
       : { exercises: JSON.stringify(exercises), notes: undefined };
     setWorkoutActive(true);
@@ -269,5 +370,7 @@ export function useWorkoutSession() {
     autoFinishSession,
     cancelSession,
     restoreSession,
+    saveFailed,
+    retrySave: flushPending,
   };
 }

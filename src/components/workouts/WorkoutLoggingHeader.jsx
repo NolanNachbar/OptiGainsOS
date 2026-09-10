@@ -25,6 +25,11 @@ export default function WorkoutLoggingHeader({
   // something to log so only the Add CTA reads as the live coral action.
   canFinish = true,
   weightUnit = "lbs",
+  // A save to workout_sessions that did not land, and the retry for it. Until
+  // now the only trace of a dropped write was a console.error, which on a phone
+  // in a gym is no trace at all.
+  saveFailed = false,
+  onRetrySave = null,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCalculators, setShowCalculators] = useState(false);
@@ -287,7 +292,27 @@ export default function WorkoutLoggingHeader({
   // (no py-2 band, no hairline) so an empty grey strip never floats above the
   // workout card. Desktop always has content (clock / actions), so the padding +
   // edge re-appear at lg.
-  const hasMobileTopContent = restActive && !restRunning;
+  const hasMobileTopContent = (restActive && !restRunning) || saveFailed;
+
+  // Deliberately not a toast and not a dialog. A toast is gone before he racks
+  // the bar, and a dialog in the middle of a set is worse than the problem. It
+  // sits in the header for as long as the condition is true, says the reassuring
+  // half first (the sets are on the device, nothing is lost), and doubles as the
+  // retry button so the fix is one thumb-tap away.
+  const saveWarning = saveFailed ? (
+    <button
+      type="button"
+      onClick={() => onRetrySave?.()}
+      className="flex items-center gap-1.5 rounded-lg bg-warn/[0.15] px-2 py-1 text-left rise-in"
+      aria-label="Sets are saved on this device but not synced. Tap to retry."
+    >
+      <AlertTriangle className="w-3.5 h-3.5 text-warn flex-shrink-0" />
+      <span className="flex flex-col leading-tight min-w-0">
+        <span className="text-[11px] font-bold text-warn">Not synced</span>
+        <span className="text-[10px] text-ink-muted truncate">Saved on this device. Tap to retry</span>
+      </span>
+    </button>
+  ) : null;
 
   return (
     <>
@@ -347,6 +372,8 @@ export default function WorkoutLoggingHeader({
                   {restCountdown}
                 </div>
               )}
+
+              {saveWarning}
             </div>
 
             {/* Desktop-only action cluster + rest controls (top zone is fine

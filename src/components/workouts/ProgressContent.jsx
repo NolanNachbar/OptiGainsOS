@@ -11,7 +11,7 @@ import { useProfile, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { TrendingUp, Dumbbell, Calendar, ChevronDown, ChevronUp, Trash2, Scale, BarChart3, Brain } from "lucide-react";
+import { TrendingUp, Dumbbell, Calendar, ChevronDown, ChevronUp, Trash2, Scale, BarChart3, Brain, Pencil, Check, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -27,6 +27,11 @@ export function ProgressContent() {
   const queryClient = useQueryClient();
   const [selectedExercise, setSelectedExercise] = useState("");
   const [expandedLogs, setExpandedLogs] = useState(new Set());
+  // The log currently open for editing, and a working copy of its exercises.
+  // Weights and reps live as strings in the draft so a cleared field stays
+  // cleared while he retypes it, instead of snapping back to 0 mid-keystroke.
+  const [editingLogId, setEditingLogId] = useState(null);
+  const [editDraft, setEditDraft] = useState(null);
   const [exerciseFilter, setExerciseFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [newWeight, setNewWeight] = useState("");
@@ -60,6 +65,24 @@ export function ProgressContent() {
     },
     onError: () => {
       toast.error("Failed to delete workout log");
+    },
+  });
+
+  // Correcting one number in a finished workout used to mean deleting the
+  // workout and re-entering every set, which is why a wrong weight tended to
+  // just stay wrong: the cost of fixing it was higher than the cost of the
+  // error, and the engine learned from the error either way.
+  const updateLogMutation = useMutation({
+    mutationFn: async ({ logId, exercises }) =>
+      await db.entities.WorkoutLog.update(logId, { exercises }),
+    onSuccess: () => {
+      invalidateWorkoutLogs(queryClient);
+      setEditingLogId(null);
+      setEditDraft(null);
+      toast.success("Workout updated");
+    },
+    onError: () => {
+      toast.error("Could not save the change. The workout is unchanged.");
     },
   });
 
@@ -151,6 +174,64 @@ export function ProgressContent() {
       }
       return newSet;
     });
+  };
+
+  // This is the one write on this screen that touches real training history, so
+  // it is a read-modify-write of the WHOLE exercises array: clone the stored
+  // log, change one cell, send the entire array back. Patching a single set in
+  // place is the only shape of this that could silently drop the others.
+  const startEditingLog = (log) => {
+    setEditingLogId(log.id);
+    setEditDraft(
+      (log.exercises || []).map((ex) => ({
+        ...ex,
+        sets: (ex.sets || []).map((set) => ({
+          ...set,
+          weight: set.weight ?? "",
+          reps: set.reps ?? "",
+        })),
+      }))
+    );
+    setExpandedLogs((prev) => new Set(prev).add(log.id));
+  };
+
+  const cancelEditingLog = () => {
+    setEditingLogId(null);
+    setEditDraft(null);
+  };
+
+  const updateDraftSet = (exerciseIdx, setIdx, field, value) => {
+    setEditDraft((prev) =>
+      (prev || []).map((ex, i) =>
+        i !== exerciseIdx
+          ? ex
+          : {
+              ...ex,
+              sets: ex.sets.map((set, j) => (j !== setIdx ? set : { ...set, [field]: value })),
+            }
+      )
+    );
+  };
+
+  const saveEditedLog = (logId) => {
+    if (!editDraft) return;
+    // An empty field means the set had no load (bodyweight) or no reps, not
+    // zero-as-a-number-he-typed. Null reads as unknown everywhere downstream;
+    // a fabricated 0 would enter the volume totals as a real measurement.
+    const toNumber = (v) => {
+      if (v === "" || v === null || v === undefined) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const exercises = editDraft.map((ex) => ({
+      ...ex,
+      sets: ex.sets.map((set) => ({
+        ...set,
+        weight: toNumber(set.weight),
+        reps: toNumber(set.reps),
+      })),
+    }));
+    updateLogMutation.mutate({ logId, exercises });
   };
 
   const handleDelete = (logId) => {
@@ -421,6 +502,7 @@ export function ProgressContent() {
               <div className="space-y-4">
                 {filteredLogs.map((log) => {
                   const isExpanded = expandedLogs.has(log.id);
+                  const isEditing = editingLogId === log.id;
                   const volume = calculateVolume(log);
                   const durationMin = log.duration_seconds
                     ? Math.round(log.duration_seconds / 60)
@@ -458,6 +540,20 @@ export function ProgressContent() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label={isEditing ? "Stop editing this workout" : "Edit this workout"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isEditing) cancelEditingLog();
+                                else startEditingLog(log);
+                              }}
+                              className={isEditing ? "text-brand" : "text-ink-muted hover:text-ink"}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Delete this workout"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDelete(log.id);
@@ -492,16 +588,56 @@ export function ProgressContent() {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {exercise.sets?.map((set, setIdx) => (
-                                        <tr key={setIdx} className="border-b border-charcoal-border">
-                                          <td className="py-2 px-2 font-medium">{set.set_number}</td>
-                                          <td className="py-2 px-2">{set.weight} {weightUnit}</td>
-                                          <td className="py-2 px-2">{set.reps}</td>
-                                          <td className="py-2 px-2 text-brand">
-                                            {set.weight * set.reps} {weightUnit}
-                                          </td>
-                                        </tr>
-                                      ))}
+                                      {exercise.sets?.map((set, setIdx) => {
+                                        const draftSet = isEditing ? editDraft?.[idx]?.sets?.[setIdx] : null;
+                                        const shownWeight = isEditing ? draftSet?.weight : set.weight;
+                                        const shownReps = isEditing ? draftSet?.reps : set.reps;
+                                        // Coalesced, because a set with no load
+                                        // rendered `undefined * reps` and printed
+                                        // a literal NaN in the volume column.
+                                        const setVolume = (Number(shownWeight) || 0) * (Number(shownReps) || 0);
+                                        return (
+                                          <tr key={setIdx} className="border-b border-charcoal-border">
+                                            <td className="py-2 px-2 font-medium">{set.set_number}</td>
+                                            <td className="py-2 px-2">
+                                              {isEditing ? (
+                                                <Input
+                                                  type="number"
+                                                  inputMode="decimal"
+                                                  aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
+                                                  value={draftSet?.weight ?? ""}
+                                                  onChange={(e) => updateDraftSet(idx, setIdx, "weight", e.target.value)}
+                                                  min="0"
+                                                  max="2000"
+                                                  step="2.5"
+                                                  className="h-8 w-24"
+                                                />
+                                              ) : (
+                                                <>{set.weight ?? 0} {weightUnit}</>
+                                              )}
+                                            </td>
+                                            <td className="py-2 px-2">
+                                              {isEditing ? (
+                                                <Input
+                                                  type="number"
+                                                  inputMode="numeric"
+                                                  aria-label={`Set ${set.set_number} reps`}
+                                                  value={draftSet?.reps ?? ""}
+                                                  onChange={(e) => updateDraftSet(idx, setIdx, "reps", e.target.value)}
+                                                  min="0"
+                                                  max="500"
+                                                  className="h-8 w-20"
+                                                />
+                                              ) : (
+                                                set.reps
+                                              )}
+                                            </td>
+                                            <td className="py-2 px-2 text-brand">
+                                              {setVolume} {weightUnit}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
                                     </tbody>
                                   </table>
                                 </div>
@@ -512,6 +648,22 @@ export function ProgressContent() {
                                 )}
                               </div>
                             ))}
+                            {isEditing && (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="volt"
+                                  onClick={() => saveEditedLog(log.id)}
+                                  disabled={updateLogMutation.isPending}
+                                >
+                                  <Check className="w-4 h-4 mr-2" />
+                                  {updateLogMutation.isPending ? "Saving" : "Save changes"}
+                                </Button>
+                                <Button variant="ghost" onClick={cancelEditingLog}>
+                                  <X className="w-4 h-4 mr-2" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            )}
                             {log.notes && (
                               <div className="bg-brand/[5%] border border-brand/20 rounded-lg p-4">
                                 <div className="font-semibold text-sm text-ink-muted mb-1">

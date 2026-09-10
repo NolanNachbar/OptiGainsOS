@@ -115,7 +115,7 @@ export default function QuickWorkout() {
   const restTimerRef = useRef(null);
   const restTimerEndRef = useRef(null);
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, saveFailed, retrySave } = useWorkoutSession();
 
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
@@ -390,6 +390,15 @@ export default function QuickWorkout() {
       navigate("/dashboard");
     },
     onError: (error) => {
+      // Same unique index as the programmed path: hitting it means the log is
+      // already in the database, so this is a repeat submit and not a failure.
+      const dupe = error?.code === "23505"
+        || /duplicate key|no_exact_dupes/i.test(error?.message || "");
+      if (dupe) {
+        toast.success("Workout already logged.");
+        navigate("/dashboard");
+        return;
+      }
       toast.error(error.message || "Failed to save workout log");
     },
   });
@@ -414,6 +423,7 @@ export default function QuickWorkout() {
       toast.error("Add at least one exercise before saving");
       return;
     }
+    if (saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess) return;
     saveWorkoutLogMutation.mutate();
   };
 
@@ -438,8 +448,10 @@ export default function QuickWorkout() {
           navigate("/dashboard");
         }}
         onFinish={handleSave}
-        isSaving={saveWorkoutLogMutation.isPending}
+        isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
         weightUnit={weightUnit}
+        saveFailed={saveFailed}
+        onRetrySave={retrySave}
         // The session clock must not tick before the Resume-vs-Start-Fresh
         // decision is made — a running timer behind the prompt reads as if a
         // session already started and contradicts the choice. Hold the header

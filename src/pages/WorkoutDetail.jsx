@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
@@ -137,7 +136,6 @@ export default function WorkoutDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { showLocalNotification } = usePushNotifications(user?.id);
   const [rawWorkout, setWorkout] = useState(null);
   const [workoutNotFound, setWorkoutNotFound] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
@@ -156,7 +154,7 @@ export default function WorkoutDetail() {
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession } = useWorkoutSession();
+  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, saveFailed, retrySave } = useWorkoutSession();
 
   // Detect program source from URL params
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -688,6 +686,16 @@ export default function WorkoutDetail() {
     return () => observer.disconnect();
   }, [isLogging]);
 
+  // Hand the rest deadline to the service worker, which is the only thing here
+  // that can still fire once the phone locks. See the message handler in
+  // /home/nolan/projects/OptiGains/public/sw.js.
+  const postRest = (message) => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready
+      .then((reg) => reg.active?.postMessage(message))
+      .catch(() => {});
+  };
+
   // Rest timer — uses absolute end timestamp so it's accurate when tab is backgrounded or revisited
   useEffect(() => {
     const tick = () => {
@@ -696,27 +704,39 @@ export default function WorkoutDetail() {
       setRestTimer(remaining);
       if (remaining <= 0) {
         restTimerEndRef.current = null;
-        showLocalNotification("Rest Over", "Time to get back to work!");
+        // Deliberately no notification here. This tick only runs while the page
+        // is alive and visible, and in that state the countdown he is looking at
+        // has just hit zero on its own. The worker covers the case that actually
+        // needs an alert — screen off, app backgrounded — and skips when a window
+        // is visible, so exactly one of the two speaks at any moment.
       }
     };
     restTimerRef.current = setInterval(tick, 500);
     return () => clearInterval(restTimerRef.current);
   }, []);
 
+  // A scheduled rest alarm outlives the page. Cancel it on unmount so leaving
+  // mid-rest does not buzz him three minutes into whatever he did next.
+  useEffect(() => () => postRest({ type: "CANCEL_REST" }), []);
+
   const startRestTimer = (duration) => {
     setRestDuration(duration);
-    restTimerEndRef.current = Date.now() + duration * 1000;
+    const endsAt = Date.now() + duration * 1000;
+    restTimerEndRef.current = endsAt;
     setRestTimer(duration);
+    postRest({ type: "SCHEDULE_REST", at: endsAt });
   };
 
   const skipRestTimer = () => {
     restTimerEndRef.current = null;
     setRestTimer(null);
+    postRest({ type: "CANCEL_REST" });
   };
 
   const addRestTime = (seconds) => {
     if (restTimerEndRef.current !== null) {
       restTimerEndRef.current += seconds * 1000;
+      postRest({ type: "SCHEDULE_REST", at: restTimerEndRef.current });
       setRestDuration(prev => prev + seconds);
     }
   };
@@ -836,6 +856,11 @@ export default function WorkoutDetail() {
 
     },
     onSuccess: () => {
+      // Close first. In program mode the navigate() below is gated on a second
+      // round trip (logProgramWorkout), so between the insert landing and that
+      // resolving the screen is unchanged and this dialog is still up with its
+      // button re-enabled. That window is how a log gets submitted twice.
+      setShowPostWorkoutDialog(false);
       completeSession();
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
@@ -885,6 +910,18 @@ export default function WorkoutDetail() {
       }
     },
     onError: (error) => {
+      // workout_logs_no_exact_dupes is UNIQUE (created_by, log_date,
+      // md5(exercises)). Hitting it means this exact workout is already saved,
+      // so the athlete's data is safe and the only real defect is telling them
+      // otherwise in Postgres' words. Treat it as the success it is.
+      const dupe = error?.code === "23505"
+        || /duplicate key|no_exact_dupes/i.test(error?.message || "");
+      if (dupe) {
+        setShowPostWorkoutDialog(false);
+        toast.success("Workout already logged.");
+        navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
+        return;
+      }
       toast.error(error.message || "Failed to save workout log");
     },
   });
@@ -1155,7 +1192,7 @@ export default function WorkoutDetail() {
           showTitleInHeader={showTitleInHeader}
           onCancel={handleCancelLogging}
           onFinish={handleSaveWorkoutLog}
-          isSaving={saveWorkoutLogMutation.isPending}
+          isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
           weightUnit={weightUnit}
           startTime={startTime}
           canFinish={loggedSetsCount > 0}
@@ -1163,6 +1200,8 @@ export default function WorkoutDetail() {
           restDuration={restDuration}
           onSkipRest={skipRestTimer}
           onAddRestTime={addRestTime}
+          saveFailed={saveFailed}
+          onRetrySave={retrySave}
         />
       )}
 
@@ -1628,10 +1667,14 @@ export default function WorkoutDetail() {
                 variant="volt"
                 size="lg"
                 className="flex-[2]"
-                disabled={saveWorkoutLogMutation.isPending}
+                disabled={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
                 onClick={() => saveWorkoutLogMutation.mutate()}
               >
-                {saveWorkoutLogMutation.isPending ? "Saving..." : "Log Workout"}
+                {saveWorkoutLogMutation.isPending
+                  ? "Saving..."
+                  : saveWorkoutLogMutation.isSuccess
+                    ? "Saved"
+                    : "Log Workout"}
               </Button>
             </div>
           </div>
