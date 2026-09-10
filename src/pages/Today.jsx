@@ -17,6 +17,8 @@ import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
+import WeighInPrompt from "@/components/dashboard/WeighInPrompt";
+import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
 import PendingWeekBanner from "@/components/program/PendingWeekBanner";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
@@ -498,6 +500,17 @@ export default function Today() {
                 week means this card is showing last week's session. Say so here
                 rather than only on the Schedule tab — this is the screen he
                 opens first. */}
+            {/* A finished program is silent otherwise: the enrollment flips
+                itself to `completed` on the last logged workout and the weekly
+                schedule simply stops filling in. Renders nothing while a block
+                is active or paused. */}
+            <ProgramCompleteCard className="mb-3" />
+            {/* The scale sits above the session CTA, not inside a card he has
+                to open. It renders nothing on a day already weighed, so on most
+                days this costs a null; on a day it does not, it is the first
+                thing under the verdict. The pre-session gate still catches him
+                at the gym — this catches him at home, where the scale is. */}
+            <WeighInPrompt today={today} className="mb-3" />
             <PendingWeekBanner
               programId={enrollments.find((e) => e.status === "active")?.program_id}
               className="mb-3"

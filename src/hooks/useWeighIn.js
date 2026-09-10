@@ -34,6 +34,52 @@ export function useTodayBodyWeight(date) {
   return { todayWeight, isLoading, isFetching };
 }
 
+// The most recent weigh-in strictly BEFORE `date`, and how long ago it was.
+//
+// Two jobs, both about making a missed weigh-in visible rather than silent.
+// The placeholder needs a plausible number so the field reads as "type your
+// weight" rather than an empty box of unknown units, and `daysAgo` is what
+// turns "no weight today" into "no weight in 34 days" — the difference between
+// a prompt that is easy to dismiss and one that states a cost.
+//
+// Excludes `date` itself so the prompt never quotes today's own entry back as
+// history; callers that need today's row already have useTodayBodyWeight.
+export function useLastBodyWeight(date) {
+  const { user } = useAuth();
+  const dateStr = date || getTodayString();
+
+  const { data: lastWeight = null, isLoading } = useQuery({
+    queryKey: ["bodyWeightEntries", "last", user?.id, dateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("body_weight_entries")
+        .select("*")
+        .eq("created_by", user.id)
+        .lt("recorded_date", dateStr)
+        .order("recorded_date", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    enabled: !!user,
+  });
+
+  // Whole days between two calendar dates, computed on the date strings rather
+  // than Date arithmetic on timestamps: recorded_date is a DATE column, and
+  // parsing "2026-08-07" as a Date lands on UTC midnight, which is the previous
+  // day locally west of Greenwich and would report every gap one day short.
+  const daysAgo = (() => {
+    if (!lastWeight?.recorded_date) return null;
+    const [ly, lm, ld] = String(lastWeight.recorded_date).slice(0, 10).split("-").map(Number);
+    const [ty, tm, td] = String(dateStr).slice(0, 10).split("-").map(Number);
+    if (!ly || !ty) return null;
+    const diff = Date.UTC(ty, tm - 1, td) - Date.UTC(ly, lm - 1, ld);
+    return Math.round(diff / 86400000);
+  })();
+
+  return { lastWeight, daysAgo, isLoading };
+}
+
 // Single write path for a weigh-in, shared by the standalone WeighInModal and
 // the pre-session check-in. body_weight_entries has no unique constraint on
 // (created_by, recorded_date), so an upsert would not dedupe — re-weighing the

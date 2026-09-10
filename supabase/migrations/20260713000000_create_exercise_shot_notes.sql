@@ -15,18 +15,27 @@ create table if not exists public.exercise_shot_notes (
 
 alter table public.exercise_shot_notes enable row level security;
 
+-- CREATE POLICY has no IF NOT EXISTS, so each one is dropped first. Without the
+-- drops this file is single-use: the table guard is `if not exists`, so on any
+-- database that already has it the policies collide and the whole migration
+-- aborts — which is exactly what blocked `supabase db push` once this had been
+-- applied out-of-band through the API.
+
+drop policy if exists "own exercise_shot_notes select" on public.exercise_shot_notes;
 create policy "own exercise_shot_notes select"
   on public.exercise_shot_notes
   for select
   to authenticated
   using (auth.uid() = created_by);
 
+drop policy if exists "own exercise_shot_notes insert" on public.exercise_shot_notes;
 create policy "own exercise_shot_notes insert"
   on public.exercise_shot_notes
   for insert
   to authenticated
   with check (auth.uid() = created_by);
 
+drop policy if exists "own exercise_shot_notes update" on public.exercise_shot_notes;
 create policy "own exercise_shot_notes update"
   on public.exercise_shot_notes
   for update
@@ -34,6 +43,7 @@ create policy "own exercise_shot_notes update"
   using (auth.uid() = created_by)
   with check (auth.uid() = created_by);
 
+drop policy if exists "own exercise_shot_notes delete" on public.exercise_shot_notes;
 create policy "own exercise_shot_notes delete"
   on public.exercise_shot_notes
   for delete

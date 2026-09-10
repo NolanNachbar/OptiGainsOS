@@ -3,9 +3,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useSetEquipmentProfile } from "@/hooks/useUserQueries";
-import { useLogWeight, useTodayBodyWeight } from "@/hooks/useWeighIn";
+import { useLastBodyWeight, useLogWeight, useTodayBodyWeight } from "@/hooks/useWeighIn";
+import WeighInPrompt from "@/components/dashboard/WeighInPrompt";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -94,6 +94,10 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
   // never blocks starting the session.
   const { profile } = useProfile();
   const { todayWeight } = useTodayBodyWeight(todayStr);
+  // Staleness, not just the last value: "34 days since the last one" is the
+  // only part of this label that has ever changed his behaviour.
+  const { lastWeight: lastWeighIn, daysAgo: lastWeighInDaysAgo } = useLastBodyWeight(todayStr);
+  const weighInIsStale = todayWeight?.weight == null && lastWeighInDaysAgo != null && lastWeighInDaysAgo >= 7;
   const logWeight = useLogWeight();
   const setEquipmentProfile = useSetEquipmentProfile();
   const equipmentProfile = profile?.equipment_profile || "full_gym";
@@ -190,24 +194,6 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
     onError: () => toast.error("Failed to save check-in"),
   });
 
-  // Readiness already logged but no weigh-in yet — the completed card asks for
-  // the weight on its own, so the pre-session gate can still collect it without
-  // making him redo energy/mood/soreness.
-  const saveWeightOnly = async () => {
-    const parsed = parseFloat(String(weight).trim());
-    if (!(parsed > 0)) {
-      toast.error("Enter a valid weight");
-      return;
-    }
-    try {
-      await logWeight.mutateAsync({ weight: parsed, date: todayStr });
-      toast.success("Weight logged");
-      onComplete?.();
-    } catch {
-      toast.error("Failed to log weight");
-    }
-  };
-
   if (existingCheckin?.energy && !editing) {
     const soreGroups = Object.entries(existingCheckin.soreness_snapshot || {})
       .filter(([, level]) => level > 0)
@@ -292,38 +278,14 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
             )}
           </div>
         </div>
+        {/* The weigh-in is its own card, not a field appended to this one.
+            As a row under the summary it read as an optional extra on a card
+            already marked "Logged", and got treated like one: 17 training days
+            passed with zero weights recorded. It carries the same weight as the
+            check-in itself now, because the trend estimator needs it more. */}
         {todayWeight?.weight == null && (
           <div className="px-4 pb-4">
-            <p className="section-label mb-2">Weigh-in</p>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  step="0.1"
-                  enterKeyHint="done"
-                  placeholder={profile?.current_weight != null ? String(profile.current_weight) : "--"}
-                  value={weight}
-                  onChange={(e) => setTypedWeight(e.target.value)}
-                  className="type-display tabular-nums text-xl h-12 pr-11"
-                  aria-label={`Bodyweight in ${weightUnit}`}
-                />
-                <span
-                  className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-medium text-ink-faint"
-                  aria-hidden="true"
-                >
-                  {weightUnit}
-                </span>
-              </div>
-              <Button
-                variant={coralCta ? "volt" : "ghost"}
-                size="lg"
-                onClick={saveWeightOnly}
-                disabled={logWeight.isPending || !weight}
-              >
-                {logWeight.isPending ? "Saving…" : "Log"}
-              </Button>
-            </div>
+            <WeighInPrompt today={todayStr} onLogged={onComplete} />
           </div>
         )}
         {existingCheckin.notes && (
@@ -337,45 +299,56 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
 
   return (
     <div className="glass p-4">
+      {/* Weigh-in leads the form. It used to sit between mood and soreness as a
+          w-32 field captioned "Optional", which is exactly how it got treated.
+          It is the only entry here the engine cannot reconstruct later: energy
+          and mood are self-reports he can estimate after the fact, a scale
+          reading exists only if he takes it while standing on the scale. */}
+      <div className="mb-5">
+        <div className="flex items-baseline justify-between gap-3 mb-2">
+          <p className="section-label !text-ink">Weigh-in</p>
+          <p className={`text-[11px] font-semibold ${weighInIsStale ? "text-warn" : "text-faint"}`}>
+            {todayWeight?.weight != null
+              ? `Logged today: ${todayWeight.weight} ${weightUnit}`
+              : lastWeighInDaysAgo == null
+                ? "First one on record"
+                : lastWeighInDaysAgo >= 7
+                  ? `${lastWeighInDaysAgo} days since the last one`
+                  : `Last: ${lastWeighIn.weight} ${weightUnit}, ${lastWeighInDaysAgo}d ago`}
+          </p>
+        </div>
+        <div className="relative flex items-center rounded-2xl border border-charcoal-border bg-[var(--glass-inset-bg)]">
+          <input
+            type="text"
+            inputMode="decimal"
+            enterKeyHint="done"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder={
+              lastWeighIn?.weight != null
+                ? String(lastWeighIn.weight)
+                : profile?.current_weight != null
+                  ? String(profile.current_weight)
+                  : "--"
+            }
+            value={weight}
+            onChange={(e) => setTypedWeight(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6))}
+            onFocus={(e) => e.target.select()}
+            className="hero-metric w-full bg-transparent px-4 py-3 text-[30px] text-ink outline-none placeholder:text-ink-faint placeholder:font-semibold"
+            aria-label={`Bodyweight in ${weightUnit}`}
+          />
+          <span className="pointer-events-none pr-4 text-[14px] font-bold text-muted-2" aria-hidden="true">
+            {weightUnit}
+          </span>
+        </div>
+      </div>
+
       {/* Energy + Mood */}
       <div className="flex justify-around mb-5">
         <NumberPicker label="Energy" value={energy} onChange={setEnergy} />
         <div className="w-px border-l hairline" />
         <NumberPicker label="Mood" value={mood} onChange={setMood} />
-      </div>
-
-      {/* Weigh-in — quiet, optional, and inline. Not a NumberPicker: bodyweight
-          is a measured decimal, not a 1-10 self-report. */}
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <p className="section-label">Weigh-in</p>
-          <p className="text-[10px] font-semibold text-faint mt-0.5">
-            {todayWeight?.weight != null
-              ? `Logged today: ${todayWeight.weight} ${weightUnit}`
-              : profile?.current_weight != null
-                ? `Last: ${profile.current_weight} ${weightUnit}`
-                : "Optional"}
-          </p>
-        </div>
-        <div className="relative w-32">
-          <Input
-            type="text"
-            inputMode="decimal"
-            step="0.1"
-            enterKeyHint="done"
-            placeholder="--"
-            value={weight}
-            onChange={(e) => setTypedWeight(e.target.value)}
-            className="type-display tabular-nums text-xl h-12 pr-11 text-right"
-            aria-label={`Bodyweight in ${weightUnit}`}
-          />
-          <span
-            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-medium text-ink-faint"
-            aria-hidden="true"
-          >
-            {weightUnit}
-          </span>
-        </div>
       </div>
 
       {/* Muscle soreness */}

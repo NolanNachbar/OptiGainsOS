@@ -803,7 +803,33 @@ def main():
         "created_by": f"eq.{USER_ID}",
     })
     if not enrollments:
-        print("ERROR: No active program enrollment.")
+        # Finishing a program is not a failure. The enrollment flips itself to
+        # `completed` on the last logged workout (useProgramQueries.js), so the
+        # morning after a block ends this query legitimately returns nothing —
+        # and exiting 1 red-lit the whole Daily Engine every day until someone
+        # noticed. An alert that fires on an expected state trains you to ignore
+        # the alert, which is worse than not having one.
+        #
+        # A genuine misconfiguration (no enrollment ever created, or every one
+        # paused) still exits 1, because that one does need a hand.
+        recent = sb_get("program_enrollments", {
+            "select": "id,status,program_id,updated_at",
+            "created_by": f"eq.{USER_ID}",
+            "order": "updated_at.desc",
+            "limit": "1",
+        })
+        last = recent[0] if recent else None
+        if last and last.get("status") == "completed":
+            print("  No active enrollment: the last program completed "
+                  f"({last.get('updated_at', '')[:10]}).")
+            print("  Nothing to re-anchor. Enroll in the next block to resume "
+                  "weekly programming.")
+            return
+        if last and last.get("status") == "paused":
+            print("  No active enrollment: the current program is paused.")
+            print("  Nothing to re-anchor. Resume it to restart weekly programming.")
+            return
+        print("ERROR: No program enrollment found for this user.")
         sys.exit(1)
 
     enrollment   = enrollments[0]

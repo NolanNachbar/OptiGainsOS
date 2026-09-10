@@ -4,6 +4,7 @@ import {
   Dumbbell, Activity, Waves, Zap, AlertTriangle, Check, Circle, ChevronDown, Plus,
 } from "lucide-react";
 import MorningCheckin from "@/components/dashboard/MorningCheckin";
+import WeighInPrompt from "@/components/dashboard/WeighInPrompt";
 import {
   Dialog,
   DialogContent,
@@ -134,26 +135,45 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     setCheckinGate(null);
     if (gate) navigate(gate.to, gate.state ? { state: gate.state } : undefined);
   };
+  // Two different asks, so two different sheets. When the check-in is already
+  // done and only the scale is outstanding, the dialog IS the weigh-in: one big
+  // field and one button. Rendering the completed check-in summary with a weight
+  // field appended (what it used to do) buried the only outstanding item under a
+  // card already stamped "Logged", and the weigh-in went unanswered on every
+  // training day for a month.
+  const weighInOnly = !!todayCheckin?.energy && needsWeight;
   const checkinGateSheet = checkinGate && (
     <Dialog open onOpenChange={(open) => { if (!open) setCheckinGate(null); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {todayCheckin?.energy ? "Weigh in first" : "Quick check-in first"}
+            {weighInOnly ? "Weigh in first" : "Quick check-in first"}
           </DialogTitle>
         </DialogHeader>
-        {/* Inside the sheet the check-in IS the live step, so it keeps its
-            primary CTA; saving continues straight into the session. Passing the
-            existing row means a day that only needs the weigh-in shows the
-            logged summary plus a weight field, not the whole form again. */}
-        <MorningCheckin today={today} existingCheckin={todayCheckin} onComplete={continueToSession} />
-        <button
-          type="button"
-          onClick={continueToSession}
-          className="min-h-[44px] w-full text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
-        >
-          Skip, straight to the session
-        </button>
+        {weighInOnly ? (
+          // Carries its own skip, so the shared one below is suppressed and the
+          // sheet never shows two ways past the same question.
+          <WeighInPrompt
+            today={today}
+            variant="sheet"
+            onLogged={continueToSession}
+            onSkip={continueToSession}
+            skipLabel="Skip, straight to the session"
+          />
+        ) : (
+          <>
+            {/* Inside the sheet the check-in IS the live step, so it keeps its
+                primary CTA; saving continues straight into the session. */}
+            <MorningCheckin today={today} existingCheckin={todayCheckin} onComplete={continueToSession} />
+            <button
+              type="button"
+              onClick={continueToSession}
+              className="min-h-[44px] w-full text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+            >
+              Skip, straight to the session
+            </button>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
