@@ -41,7 +41,16 @@ SECONDARY_MUSCLE_CREDIT = 0.5   # [ENG] fraction of a set credited to synergist 
 # chest+triceps for these, because deviation tracking, session pattern dedup,
 # the caution/pain matcher and the landmark response slopes all need to know a
 # push-up is a pressing movement. Exempting membership would break those.
-VOLUME_EXEMPT_KEYWORDS = ("push up", "pushup")
+#
+# "plank" added 2026-09-10 alongside the PRT prep block in session_generator.
+# This one is MY inference, not Nolan's instruction: he said "don't count the
+# pushups as volume" and named only push-ups. The push-up case was load-bearing
+# (the engine was prescribing fewer real bench sets to pay for them); the plank
+# case is not, since nothing in his program competes for abs volume. It is
+# exempt for coherence -- both movements are PRT test work scored on reps and
+# time, neither is an RIR-controlled hypertrophy set -- and it is a one-word
+# revert if he disagrees. [COACH]
+VOLUME_EXEMPT_KEYWORDS = ("push up", "pushup", "plank")
 
 # ── Exercise name keyword → analysis-vocab muscles ────────────────────────────
 # Moved verbatim from compute_athlete_state.py so both the daily compute and the

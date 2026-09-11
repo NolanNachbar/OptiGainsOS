@@ -33,7 +33,7 @@ from engine.athlete_profile import (apply_philosophy, MUSCLE_EMPHASIS,
                                     MIN_EXERCISES_PER_SESSION,
                                     split_type as _split_type_of)
 from engine.log_ingest import canon
-from engine.muscle_map import get_joint_action
+from engine.muscle_map import get_joint_action, _norm as _mm_norm
 
 # How strongly the learned exercise-value posterior (learners.exercise_value) and
 # note-caution shift exercise selection. Caution stays BELOW the goal-lift bonus
@@ -1969,6 +1969,55 @@ def _build_session(
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+# ── Navy PRT prep block ───────────────────────────────────────────────────────
+# Nolan's PRT window is 2026-09-14 .. 2026-09-27. The test scores push-up REPS
+# in two minutes and a forearm-plank HOLD, so both have to be loggable numbers
+# he can watch climb -- a display-only cardio note would tell him nothing about
+# whether he is ready on test day.
+#
+# They ride the CONDITIONING days only (any day that carries a run), so the lift
+# is untouched: "don't alter my lift just the cardio to incorporate push up or
+# whatever", Nolan, 2026-09-10. Nothing here edits the strength selection; the
+# block is appended after the knapsack has already chosen the session.
+#
+# Neither counts toward hypertrophy volume -- muscle_map.VOLUME_EXEMPT_KEYWORDS
+# zeroes both -- so this adds PRT practice without buying it with bench sets.
+#
+# Window-gated so it expires on its own after the test instead of silently
+# becoming a permanent rule nobody remembers to remove. [COACH]
+PRT_WINDOW_START = date(2026, 9, 10)
+PRT_WINDOW_END   = date(2026, 9, 27)
+
+# Submaximal on purpose. Daily max-rep sets before a max-rep test dig a hole he
+# would still be in on test day; practice volume is the point, not a rehearsal
+# of the test itself.
+_PRT_BLOCK = [
+    {"name": "Push-ups", "pattern": "horizontal_push", "type": "COMPOUND_PERIPHERAL",
+     "fatigue_cost": 2.0, "muscles": ["chest", "triceps"], "sets": 3,
+     "rep_target": "20-25", "rir_target": 2, "rest_seconds": 60, "is_bodyweight": True,
+     "notes": "PRT prep. Submaximal, leave 2 in the tank. Not counted as volume."},
+    {"name": "Plank", "pattern": "isolation_lower", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["core"], "sets": 3,
+     "rep_target": "60", "rir_target": 1, "rest_seconds": 45,
+     "notes": "PRT prep. Reps field is SECONDS held. Not counted as volume."},
+]
+
+
+def _add_prt_block(sim_date: date, exercises: list, cardio: list) -> list:
+    """Append the PRT calisthenics to a conditioning day inside the test window.
+
+    No cardio on the day means it is not a conditioning day, so nothing is added.
+    Deduped by normalised name: the knapsack can pick "Push-ups" or "Plank" out
+    of the catalog on its own, and appending blindly would render the movement
+    twice on the same day.
+    """
+    if not cardio or not (PRT_WINDOW_START <= sim_date <= PRT_WINDOW_END):
+        return exercises
+    have = {_mm_norm(e.get("name", "")) for e in exercises}
+    return exercises + [copy.deepcopy(ex) for ex in _PRT_BLOCK
+                        if _mm_norm(ex["name"]) not in have]
+
+
 def generate(
     action: str,
     intensity: float,
@@ -2032,8 +2081,9 @@ def generate(
         return [], []
 
     if action == "CARDIO":
-        return [], _build_cardio(sim_date, intensity, ampk, recent_run_tss,
-                                 readiness_z, quad_soreness_avg, vdot, slot=run_slot)
+        cardio = _build_cardio(sim_date, intensity, ampk, recent_run_tss,
+                               readiness_z, quad_soreness_avg, vdot, slot=run_slot)
+        return _add_prt_block(sim_date, [], cardio), cardio
 
     # All other actions: build strength session via knapsack.
     # The MPC intensity scalar already encodes the physiological prescription —
@@ -2064,7 +2114,7 @@ def generate(
                             readiness_z, quad_soreness_avg, vdot, slot=run_slot)
               if action in ("TWO_A_DAY", "MIXED") else [])
 
-    return exercises, cardio
+    return _add_prt_block(sim_date, exercises, cardio), cardio
 
 
 def get_split(action: str, intensity: float, sim_date: date,

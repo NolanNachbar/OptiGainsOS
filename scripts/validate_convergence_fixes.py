@@ -654,6 +654,53 @@ check("MAP Push-Up Pyramid is worth NO hypertrophy volume",
 check("MAP the volume exemption does not leak to real pressing",
       get_muscle_credit("Bench Press") == {"chest": 1.0, "triceps": 0.5},
       str(get_muscle_credit("Bench Press")))
+# Plank joined the exemption on 2026-09-10 with the PRT prep block. Same split
+# as push-ups: zero hypertrophy volume, but still an abs movement to every
+# membership consumer. The third check is the one with teeth -- "plank" is a
+# substring match, and it must not swallow the rest of his ab work.
+check("MAP Plank is worth NO hypertrophy volume",
+      get_muscle_credit("Plank") == {},
+      str(get_muscle_credit("Plank")))
+check("MAP Plank is still an abs movement for membership consumers",
+      get_muscles("Plank") == ["abs"] and hypertrophy_muscles("Plank") == ["core"],
+      f'get_muscles={get_muscles("Plank")} landmark={hypertrophy_muscles("Plank")}')
+check("MAP the plank exemption does not leak to real ab work",
+      get_muscle_credit("Cable Crunch") == {"abs": 1.0},
+      str(get_muscle_credit("Cable Crunch")))
+
+# ── PRT prep block rides conditioning days only ───────────────────────────────
+# Nolan: "don't alter my lift just the cardio to incorporate push up or
+# whatever". These pin the three ways that promise can break: the block landing
+# on a day with no run, the block outliving its window, and the block appearing
+# twice because the knapsack already picked the same movement.
+from datetime import date as _date, timedelta as _td
+from engine.session_generator import (_add_prt_block, PRT_WINDOW_START,
+                                      PRT_WINDOW_END)
+_run  = [{"activity_type": "run", "run_type": "easy", "duration_minutes": 50}]
+_lift = [{"name": "Bench Press"}, {"name": "Barbell Row"}]
+_inw  = _date(2026, 9, 16)
+
+check("PRT a conditioning day in the window gets push-ups and plank",
+      [e["name"] for e in _add_prt_block(_inw, list(_lift), _run)]
+      == ["Bench Press", "Barbell Row", "Push-ups", "Plank"],
+      str([e["name"] for e in _add_prt_block(_inw, list(_lift), _run)]))
+check("PRT a lift day with NO run is left alone",
+      _add_prt_block(_inw, list(_lift), []) == _lift,
+      str(_add_prt_block(_inw, list(_lift), [])))
+check("PRT the block expires after the test window",
+      _add_prt_block(PRT_WINDOW_END + _td(days=1), list(_lift), _run) == _lift)
+check("PRT the block does not fire before the window opens",
+      _add_prt_block(PRT_WINDOW_START - _td(days=1), list(_lift), _run) == _lift)
+check("PRT no duplicate when the knapsack already picked the same movement",
+      [e["name"] for e in _add_prt_block(_inw, [{"name": "Push-ups"}], _run)]
+      == ["Push-ups", "Plank"],
+      str([e["name"] for e in _add_prt_block(_inw, [{"name": "Push-ups"}], _run)]))
+check("PRT the injected block never edits the lift it was appended to",
+      _add_prt_block(_inw, list(_lift), _run)[:2] == _lift)
+check("PRT everything the block adds is volume-exempt",
+      all(get_muscle_credit(e["name"]) == {}
+          for e in _add_prt_block(_inw, [], _run)),
+      str([(e["name"], get_muscle_credit(e["name"])) for e in _add_prt_block(_inw, [], _run)]))
 check("MAP Hamstring Curl is a LEG movement, not biceps",
       hypertrophy_muscles("Hamstring Curl") == ["hamstrings"],
       str(hypertrophy_muscles("Hamstring Curl")))
