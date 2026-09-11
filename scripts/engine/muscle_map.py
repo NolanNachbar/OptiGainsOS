@@ -42,14 +42,21 @@ SECONDARY_MUSCLE_CREDIT = 0.5   # [ENG] fraction of a set credited to synergist 
 # the caution/pain matcher and the landmark response slopes all need to know a
 # push-up is a pressing movement. Exempting membership would break those.
 #
-# "plank" added 2026-09-10 alongside the PRT prep block in session_generator.
-# This one is MY inference, not Nolan's instruction: he said "don't count the
-# pushups as volume" and named only push-ups. The push-up case was load-bearing
-# (the engine was prescribing fewer real bench sets to pay for them); the plank
-# case is not, since nothing in his program competes for abs volume. It is
-# exempt for coherence -- both movements are PRT test work scored on reps and
-# time, neither is an RIR-controlled hypertrophy set -- and it is a one-word
-# revert if he disagrees. [COACH]
+# The rule is: SCORED PRT EVENTS ARE NOT HYPERTROPHY VOLUME. Push-ups and the
+# forearm plank are two of the three things the Navy PRT actually tests. They
+# are practice for a benchmark, measured in reps and seconds, and neither is an
+# RIR-controlled set taken near failure. Counting them would be a category
+# error. Nolan, 2026-09-10: "Why would you even try to count a plank?"
+#
+# Do not re-open this. I briefly reverted the plank half of it on 2026-09-10
+# after misreading his first question as an objection; it was not, and the
+# revert never shipped. If a future PRT event needs adding, it belongs here too.
+#
+# The push-up half is also load-bearing mechanically, which is worth knowing
+# before anyone trims this tuple: the PRT block puts 3 sets on each of 8
+# conditioning days, so 24 sets against a chest MRV of 16. Counted, the
+# allocator would cut real bench work to stay under the ceiling -- exactly what
+# he meant by "don't count the pushups as volume." [COACH]
 VOLUME_EXEMPT_KEYWORDS = ("push up", "pushup", "plank")
 
 # ── Exercise name keyword → analysis-vocab muscles ────────────────────────────
