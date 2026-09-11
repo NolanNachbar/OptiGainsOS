@@ -668,6 +668,44 @@ check("MAP the plank exemption does not leak to real ab work",
       get_muscle_credit("Cable Crunch") == {"abs": 1.0},
       str(get_muscle_credit("Cable Crunch")))
 
+# VOLUME_EXEMPT_KEYWORDS is a SUBSTRING match, so every keyword added to it can
+# silently zero an unrelated movement he actually trains. "push up" vs "Triceps
+# Pushdown" is the near miss that motivates this: "pushdown" does not contain
+# "pushup", but nothing enforced that. This pins the blast radius against the
+# real exercise names in his logged history (audited 2026-09-10, 110 distinct
+# names): only push-up variants and plank may ever come back exempt. If a future
+# keyword catches a loaded lift, his hypertrophy volume silently drops and the
+# allocator starts buying sets it does not need to. [COACH]
+_REAL_LIFTS = [
+    "Bench Press", "Close Grip Bench Press", "Larsen Press", "Incline DB Press",
+    "Machine Incline Press", "Triceps Pushdown", "Cable Triceps Pushdown",
+    "Cable Tricep Pushdown", "Cable Triceps Extension", "Triceps OH Extension",
+    "Skull Crushers", "Weighted Dip", "Dip Pyramid", "Pull-up Pyramid",
+    "Sit-Up Pyramid", "Weighted Pull-up", "Back Squat", "Conventional Deadlift",
+    "Overhead Press (BB)", "Hanging Leg Raise", "Weighted Cable Crunches",
+]
+_leaked = [n for n in _REAL_LIFTS if not get_muscle_credit(n)]
+check("MAP the volume exemption catches no loaded lift he actually trains",
+      _leaked == [], f"exempted by mistake: {_leaked}")
+
+check("MAP push-up pyramids are exempt too, same as plain push-ups",
+      get_muscle_credit("Push-up Pyramid") == {}
+      and get_muscle_credit("Pull-up Pyramid") == {"back": 1.0, "biceps": 0.5},
+      f'pushup={get_muscle_credit("Push-up Pyramid")} '
+      f'pullup={get_muscle_credit("Pull-up Pyramid")}')
+
+# rep_target is rendered straight into a numeric reps input on the frontend
+# (parseInt in useWorkoutExercises.js), so a stray unit like "60s" puts text in a
+# number field. Plain reps, a range, or a pyramid ladder are the only shapes the
+# UI handles. [COACH]
+import re as _re
+from engine.session_generator import EXERCISES as _CAT, _PRT_BLOCK as _PRT
+_LADDER = _re.compile(r"\d+(-\d+)*$")
+_bad_rt = [(e["name"], e.get("rep_target")) for e in _CAT + _PRT
+           if not _LADDER.fullmatch(str(e.get("rep_target", "")))]
+check("CATALOG every rep_target is numeric enough for the reps input",
+      _bad_rt == [], f"non-numeric rep_target: {_bad_rt}")
+
 # ── PRT prep block rides conditioning days only ───────────────────────────────
 # Nolan: "don't alter my lift just the cardio to incorporate push up or
 # whatever". These pin the three ways that promise can break: the block landing

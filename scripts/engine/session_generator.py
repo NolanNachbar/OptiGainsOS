@@ -362,9 +362,13 @@ EXERCISES = [
     {"name": "Hanging Leg Raise", "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["core", "hip_flexors"],
      "sets": 3, "rep_target": "15-20","rir_target": 1, "rest_seconds": 45},
+    # rep_target is a bare number because the frontend parses it with parseInt and
+    # renders it into the reps input: "60s" would put a stray unit in a numeric
+    # field. The seconds meaning lives in notes instead. [COACH]
     {"name": "Plank",             "pattern": "isolation_lower", "type": "ISOLATION",
      "fatigue_cost": 1.0, "muscles": ["core"],
-     "sets": 3, "rep_target": "60s", "rir_target": 1, "rest_seconds": 45},
+     "sets": 3, "rep_target": "60", "rir_target": 1, "rest_seconds": 45,
+     "notes": "Reps field is SECONDS held."},
     {"name": "Hip Thrust",        "pattern": "hip_thrust",      "type": "COMPOUND_PERIPHERAL",
      "fatigue_cost": 2.5, "muscles": ["glutes", "hamstrings"],
      "sets": 2, "rep_target": "8-10", "rir_target": 2, "rest_seconds": 75, "is_primary": True},
