@@ -40,9 +40,14 @@ test('logging a recipe scales real macro columns correctly (no NaN/null corrupti
     await page.getByRole('button', { name: /Templates, recipes/i }).click();
     await page.waitForTimeout(600);
 
-    const recipeCard = page.locator('div').filter({ hasText: RECIPE_NAME }).first();
+    // Scope Log to this spec's own recipe card: other agents' recipes on the
+    // shared account can sort first, so a page-wide .first() logs the wrong one.
+    const recipeCard = page.locator('div')
+      .filter({ hasText: RECIPE_NAME })
+      .filter({ has: page.getByRole('button', { name: 'Log', exact: true }) })
+      .last();
     await recipeCard.waitFor({ state: 'visible', timeout: 8000 });
-    await page.getByRole('button', { name: 'Log' }).first().click();
+    await recipeCard.getByRole('button', { name: 'Log', exact: true }).click();
     await page.waitForTimeout(600);
 
     const servingsInput = page.locator('label:text-is("Servings")').locator('xpath=following-sibling::div[1]//input[@type="number"]');
