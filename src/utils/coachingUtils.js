@@ -291,7 +291,17 @@ export function calculateAdaptiveTDEE(weightEntries, foodEntries, days = 28) {
     (e) => parseISO(e.recorded_date) >= cutoff
   );
 
-  const recentFood = foodEntries.filter((e) => parseISO(e.date) >= cutoff);
+  // Only food actually eaten: week-plan rows load as planned=true (and can be
+  // future-dated) until checked off. Counting them would skew the average the
+  // adaptive TDEE is built on — mirrors compute_athlete_state.py's
+  // planned=not.is.true filter. Latent until the window fix let this path
+  // activate.
+  const now = new Date();
+  const recentFood = foodEntries.filter((e) => {
+    if (e.planned === true) return false;
+    const d = parseISO(e.date);
+    return d >= cutoff && d <= now;
+  });
 
   if (recentWeight.length < 2) return null;
 

@@ -57,3 +57,39 @@ test('a 25-day logging history reaches medium/high confidence with the caller\'s
   expect(result.adaptiveWithOldDefault).toBeNull();
   expect(result.bestMethod).toBe('adaptive');
 });
+
+// Review correction: once the adaptive path could activate, week-plan rows
+// (planned=true, possibly future-dated) leaked into its calorie average —
+// useAllFoodEntries returns them. They must not move the adaptive TDEE.
+test('planned and future-dated food rows do not skew the adaptive TDEE', async ({ page }) => {
+  await signIn(page, '/fuel');
+
+  const result = await page.evaluate(async () => {
+    const { calculateAdaptiveTDEE } = await import('/src/utils/coachingUtils.js');
+    const weightEntries = [];
+    const eaten = [];
+    const now = new Date();
+    for (let i = 24; i >= 0; i--) {
+      const d = new Date(now);
+      d.setUTCDate(d.getUTCDate() - i);
+      const date = d.toISOString().slice(0, 10);
+      weightEntries.push({ recorded_date: date, weight: 200 - (24 - i) * 0.05 });
+      eaten.push({ date, calories: 2400, planned: false });
+    }
+    const noise = [];
+    for (let i = 1; i <= 5; i++) {
+      const past = new Date(now); past.setUTCDate(past.getUTCDate() - i);
+      const future = new Date(now); future.setUTCDate(future.getUTCDate() + i);
+      noise.push({ date: past.toISOString().slice(0, 10), calories: 9000, planned: true });
+      noise.push({ date: future.toISOString().slice(0, 10), calories: 9000, planned: false });
+    }
+    return {
+      clean: calculateAdaptiveTDEE(weightEntries, eaten),
+      noisy: calculateAdaptiveTDEE(weightEntries, [...eaten, ...noise]),
+    };
+  });
+
+  expect(result.clean).not.toBeNull();
+  expect(result.noisy.tdee).toBe(result.clean.tdee);
+  expect(result.noisy.dataPoints.foodDays).toBe(result.clean.dataPoints.foodDays);
+});
