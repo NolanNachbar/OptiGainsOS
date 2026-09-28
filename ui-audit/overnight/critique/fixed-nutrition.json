@@ -1,0 +1,16 @@
+[
+  {
+    "id": "cbum-nutrition-2-adaptive-tdee-window",
+    "commit": "135e784c",
+    "test": "e2e/fuel-adaptive-tdee-window.spec.mjs",
+    "status": "fixed",
+    "note": "calculateAdaptiveTDEE (coachingUtils.js) defaulted to a 14-day window (days=14), but its own confidence tiers need daySpan>=21 ('medium') or >=28 ('high'), and getBestTDEE calls it with no `days` argument. Since the sliced window can never be wider than its own `days` default, daySpan could never exceed 14, so confidence could never clear 21 and the adaptive path could never activate -- every athlete silently got the Mifflin-formula TDEE forever, no matter how much weight/food history they logged. Widened the default window to 28 (matching the function's own 'high' confidence threshold) so a real logging history can actually reach medium/high confidence; left the 500 kcal/lb constant and the 21/28-day thresholds themselves untouched (this was a window/requirement mismatch, not a science-constant change). coachingUtils.js imports via the `@/lib` Vite alias, which plain Node ESM can't resolve, so the regression test loads the real module through the running Vite dev server (dynamic import from inside a signed-in page) rather than reimplementing or stubbing it -- it builds a 25-day weight/food history and asserts getBestTDEE resolves to method:'adaptive' with medium/high confidence under the new default, and (as an explicit regression guard) that the old default of 14 still returns null. Confirmed it fails against the pre-fix code and passes against the fix."
+  },
+  {
+    "id": "cbum-nutrition-4-adherence-cap",
+    "commit": "4e07b2b3",
+    "test": "scripts/test_adherence_honest.py",
+    "status": "fixed",
+    "note": "calorie_adherence (compute_athlete_state.py compute_nutrition) was `round(min(avg_cal / calorie_target, 1.0), 2)`, so eating 3,000 kcal on a 2,000 target scored a dishonest 100%, identical to hitting the target exactly -- exactly the failure mode this number exists to catch (a cut athlete overshooting reads as perfectly on-plan). Removed the clamp: the same 3,000/2,000 case now reads 150%. Scoped narrowly to the requested fix (adherence can now show honestly over 100%, no visual restyle) -- on_track's separate one-sided thresholds (critique #4's other half) are untouched and out of scope here. No pytest infra exists in this repo, so the focused test extracts compute_nutrition's real source out of compute_athlete_state.py via AST and execs just that function in an isolated namespace (avoiding importing the whole module, which would pull in numpy/engine submodules and read `.env` -- forbidden by the audit ground rules) -- it's the actual shipped implementation, not a re-derivation. Asserts 3000kcal/2000target now reads 1.5 (was capped at 1.0), and that the normal under-target case (1500/2000 = 0.75) is unchanged. Confirmed it fails against the pre-fix code (reports FAIL: capped at 1.0) and passes against the fix."
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "train-programs-r1-01",
+    "commit": "59250bba",
+    "test": "e2e/train-programs-edit-insert-first.spec.mjs",
+    "status": "fixed",
+    "note": "useUpdateProgram (useProgramQueries.js) deleted every existing program_workouts row before recreating them, with no rollback, so any failed create mid-loop (dropped connection, a 400) left the program with fewer days than before the edit -- sometimes zero. Changed to insert-first: the new rows are created first, and the old rows are only deleted after every new row has landed; if a create fails partway, the rows that did land are rolled back (best-effort delete) and the error is rethrown with the original rows untouched. The end-to-end UI save path is still blocked today by the known, unapplied migration 20260928000000 (program_workouts.notes missing on hosted -> every create 400s with PGRST204 regardless of this fix), so per the fix instructions the regression test exercises this at the most honest layer available without that migration: it drives the real ProgramBuilder edit UI, strips `notes` from the outgoing requests the same way the verify step did (proving the fix independent of the migration), then aborts the 2nd create request mid-save to simulate a real failure, and asserts the original 3 days are still present afterward -- confirmed to fail (1 row left) against the pre-fix code and pass against the fix."
+  },
+  {
+    "id": "train-programs-r1-nav-cta-overlap",
+    "commit": "de5e993b",
+    "test": "e2e/train-programs-nav-cta-overlap.spec.mjs",
+    "status": "fixed",
+    "note": "ProgramDetail's fixed mobile bottom CTA ('Start Program'/'Start Next Workout'/'Resume') sat under the bottom nav dock (Layout.jsx, z-[9999]), so a real (non-forced) tap at the bottom edge was intercepted by the dock instead of reaching the button -- confirmed by Playwright's '<nav ...> intercepts pointer events' on an unforced click. Reserved the dock's own height in the bar's paddingBottom via calc(var(--dock-total-height) + 16px + env(safe-area-inset-bottom)), the same token CreateWorkout.jsx already uses for its own sticky action row, and bumped the page's bottom spacer to match so content doesn't end up hidden behind the now-taller bar. Regression test taps the mobile CTA without `force` and asserts it isn't intercepted; verified it fails against the pre-fix code with the exact 'intercepts pointer events' error and passes against the fix."
+  },
+  {
+    "id": "train-programs-r1-14",
+    "commit": "3bac7778",
+    "test": "e2e/train-programs-offline-enroll.spec.mjs",
+    "status": "fixed",
+    "note": "React Query's default networkMode pauses (not fails) useEnrollInProgram while offline, so handleEnroll's onError ('Failed to enroll') never fires -- the Start Program button in the Enroll dialog stayed on 'Starting...' for the whole outage with zero signal anything was different from a normal slow save. Mirrors the pattern fuel fixed in f2590dcd and today fixed in 7aa7fc06: while enrollMutation.isPaused, the button now reads 'Offline - starts when you're back online' instead of 'Starting...'. Test goes offline, taps the dialog's Start Program button, asserts the offline message appears and no enrollment is created while offline, then reconnects and polls for the paused mutation to resume and create exactly one enrollment."
+  },
+  {
+    "id": "train-programs-r1-03",
+    "commit": "2def2a8b",
+    "test": "e2e/train-programs-import-validation.spec.mjs",
+    "status": "fixed",
+    "note": "parseProgramJson (programIO.js) clamped cycle_length (1-30) and num_cycles (1-20) on import but left each exercise's name/sets/rest_seconds completely unvalidated, so an imported exercise with a blank name, sets:9999, and rest_seconds:999999 was stored verbatim -- a real hazard beyond the broken-looking card, since progression_state is keyed by exercise name and a blank name collides across exercises. Exercises whose name is blank/whitespace-only after trim are now dropped, and sets/rest_seconds are clamped to 1-20 / 0-900, matching the bounds already used for cycle_length/num_cycles. Regression test drives parseProgramJson directly (pure function, no DB/browser needed) and asserts both the drop and the clamp in both directions."
+  }
+]
