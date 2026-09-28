@@ -26,6 +26,9 @@
     #safe { position: fixed; visibility: hidden;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
     #bottom { position: fixed; left: 0; right: 0; bottom: 0; height: 20px; } /* invisible: a colored bar tints the keyboard glass in the crops */
+    /* While a field has focus, hide the others (layout unchanged) so the keyboard
+       glass is captured over a plain background, not blurred page text. */
+    body:has(:is(input,textarea,select):focus) label:not(:has(:focus)) { visibility: hidden; }
   </style>
 </head>
 <body>
