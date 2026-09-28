@@ -75,16 +75,33 @@ async function findNative(text, timeout = 8000) {
   throw new Error(`native element not found: ${text}`);
 }
 
+let lastTapped = null; // web fields don't report hasKeyboardFocus, so type into what we tapped
+
 async function tapText(text) {
   await native();
-  await (await findNative(text)).click();
+  lastTapped = await findNative(text);
+  await lastTapped.click();
+}
+
+// Safari shows first-run tips (e.g. "View Bookmarks, Share Menu…") over the page.
+async function dismissTips() {
+  await native();
+  for (let i = 0; i < 3; i++) {
+    const x = await driver.$('-ios predicate string:name == "xmark.circle.fill" AND visible == 1');
+    if (!(await x.isExisting())) return;
+    await x.click();
+    await driver.pause(500);
+  }
 }
 
 async function type(text) {
   const val = text.replace(/\$(SIM_EMAIL|SIM_PASSWORD)/g, (_, k) => process.env[k] ?? '');
   await native();
-  const el = await driver.$('-ios predicate string:hasKeyboardFocus == 1');
-  await el.waitForExist({ timeout: 5000 });
+  let el = lastTapped;
+  if (!el) {
+    el = await driver.$('-ios predicate string:hasKeyboardFocus == 1');
+    await el.waitForExist({ timeout: 5000 });
+  }
   await el.addValue(val); // XCUITest typeText: goes through the on-screen keyboard
 }
 
@@ -126,11 +143,13 @@ async function installPwa() {
 
 async function login() {
   // Standalone web apps get their own storage on iOS, so this runs again after installPwa.
-  await tapText('your@email.com');
+  await dismissTips();
+  await tapText('Email');
   await driver.pause(900); shot('login-email-keyboard');
   await type('$SIM_EMAIL');
   await driver.pause(600); shot('login-email-typed');
   await tapText('Password');
+  await dismissTips();
   await driver.pause(900); shot('login-password-keyboard');
   await type('$SIM_PASSWORD');
   await (await findNative('Sign in')).click();
@@ -145,6 +164,7 @@ try {
       if (kind === 'goto') {
         if (standalone) throw new Error('goto is Safari-only; navigate in standalone with tapText');
         await web(); await driver.url(new URL(arg.replace(/^\//, ''), BASE_URL).href);
+        await driver.pause(1500); await dismissTips();
       } else if (kind === 'tap') {
         if (standalone) throw new Error('tap is Safari-only; use tapText in standalone');
         await web(); await (await driver.$(arg)).click();
@@ -167,5 +187,6 @@ try {
   }
 } finally {
   writeFileSync(join(OUT, 'results.json'), JSON.stringify(results, null, 2));
+  if (results.some((r, j) => !r.ok && steps[r.i].optional !== true)) process.exitCode = 1;
   await driver.deleteSession().catch(() => {});
 }
