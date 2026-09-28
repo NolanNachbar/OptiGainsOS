@@ -18,7 +18,11 @@ test('deleting a food entry offers an Undo toast that restores it', async ({ pag
   const uid = await testUserId();
   await cleanup(uid, db);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Local date (the app keys the day log on local time; toISOString is UTC and
+  // would seed tomorrow's log on a Mountain-time evening).
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const EATEN_AT = `${today}T15:30:00.000Z`;
   const { data: entry, error: insErr } = await db.from('food_entries').insert({
     created_by: uid,
     date: today,
@@ -30,6 +34,7 @@ test('deleting a food entry offers an Undo toast that restores it', async ({ pag
     fats_grams: 3,
     serving_size: 1,
     serving_unit: 'serving',
+    eaten_at: EATEN_AT,
   }).select().single();
   expect(insErr).toBeNull();
 
@@ -69,6 +74,11 @@ test('deleting a food entry offers an Undo toast that restores it', async ({ pag
     expect(afterUndo.length).toBe(1);
     expect(afterUndo[0].calories).toBe(150);
     expect(afterUndo[0].protein_grams).toBe(10);
+    expect(afterUndo[0].carbs_grams).toBe(5);
+    expect(afterUndo[0].fats_grams).toBe(3);
+    expect(afterUndo[0].meal_type).toBe('snack');
+    expect(afterUndo[0].date).toBe(today);
+    expect(new Date(afterUndo[0].eaten_at).toISOString()).toBe(EATEN_AT);
   } finally {
     await cleanup(uid, db);
   }

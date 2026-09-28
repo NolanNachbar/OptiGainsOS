@@ -1159,7 +1159,9 @@ const handleSaveMealTemplate = () => {
           label: "Undo",
           onClick: () => {
             const { id, created_at, ...rest } = entry;
-            db.entities.FoodEntry.create(rest).then(() => invalidateFood(queryClient));
+            db.entities.FoodEntry.create(rest)
+              .then(() => invalidateFood(queryClient))
+              .catch(() => toast.error("Couldn't restore the entry. Check your connection and add it again."));
           },
         },
       });
