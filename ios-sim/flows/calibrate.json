@@ -105,6 +105,10 @@
   "optional": true
  },
  {
+  "measure": "safari-date-pre",
+  "optional": true
+ },
+ {
   "tapText": "f-date",
   "optional": true
  },
@@ -114,6 +118,10 @@
  },
  {
   "tapText": "Done",
+  "optional": true
+ },
+ {
+  "measure": "safari-select-pre",
   "optional": true
  },
  {
@@ -238,6 +246,10 @@
   "optional": true
  },
  {
+  "measure": "standalone-date-pre",
+  "optional": true
+ },
+ {
   "tapText": "f-date",
   "optional": true
  },
@@ -247,6 +259,10 @@
  },
  {
   "tapText": "Done",
+  "optional": true
+ },
+ {
+  "measure": "standalone-select-pre",
   "optional": true
  },
  {

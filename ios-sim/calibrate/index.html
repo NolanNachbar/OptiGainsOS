@@ -69,6 +69,9 @@
         activeRect: a && a.getBoundingClientRect().toJSON(),
         ua: navigator.userAgent,
         clientH: document.documentElement.clientHeight,
+        fields: Object.fromEntries([...document.querySelectorAll('input,select,textarea')].map(e => {
+          const r = e.getBoundingClientRect(); return [e.id, [Math.round(r.top), Math.round(r.height)]];
+        })),
         units: { dvh: dvh.offsetHeight, svh: svh.offsetHeight, lvh: lvh.offsetHeight },
       };
     };
