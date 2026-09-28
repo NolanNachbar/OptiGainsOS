@@ -23,7 +23,7 @@ Branch `overnight-audit-2026-09-27` (not pushed). Harness: `ui-audit/overnight/`
 
 ## Unfixed / unconfirmed
 - r1-07 phone locked 3+ h mid-workout (silent auto-finish): not testable in the simulator (mocked clock + reload blanks WebKit; `updated_at` trigger blocks backdating). Test on the phone.
-- r1-10 exercise-swap name field under the keyboard: the verifier blamed the simulator layer; I (orchestrator) still need to check whether a real iPhone shows it.
+- r1-10 exercise-swap name field under the keyboard: was a simulator bug (it scrolled the page behind a fixed sheet instead of panning like iOS). Fixed in iphone-sim; the field now sits at y=285 above the keyboard with no warning. Not an app bug.
 - Intermittent `program_workouts` "access control checks" page error on /train: seen twice, didn't reproduce on demand.
 - Rejected after verification: double-tap Finish duplicate schedule row (only with same-tick taps), offline retry "spam" (one failed save per edit, data correct).
 
