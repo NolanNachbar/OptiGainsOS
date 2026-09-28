@@ -90,11 +90,18 @@ export function calculateRecipeTotals(ingredients) {
 
 export function scaleRecipeToServings(recipe, targetServings) {
   const scale = targetServings / (recipe.servings || 1);
+  // The recipes table stores calories/protein_grams/carbs_grams/fats_grams;
+  // total_* is only calculateRecipeTotals()'s in-memory shape (used before a
+  // recipe is saved), so fall back to it for a not-yet-saved recipe object.
+  const calories = recipe.calories ?? recipe.total_calories ?? 0;
+  const protein = recipe.protein_grams ?? recipe.total_protein ?? 0;
+  const carbs = recipe.carbs_grams ?? recipe.total_carbs ?? 0;
+  const fats = recipe.fats_grams ?? recipe.total_fats ?? 0;
   return {
-    calories: Math.round(recipe.total_calories * scale),
-    protein_grams: Math.round(recipe.total_protein * scale * 10) / 10,
-    carbs_grams: Math.round(recipe.total_carbs * scale * 10) / 10,
-    fats_grams: Math.round(recipe.total_fats * scale * 10) / 10,
+    calories: Math.round(calories * scale),
+    protein_grams: Math.round(protein * scale * 10) / 10,
+    carbs_grams: Math.round(carbs * scale * 10) / 10,
+    fats_grams: Math.round(fats * scale * 10) / 10,
   };
 }
 

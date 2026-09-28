@@ -1002,11 +1002,18 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     }
 
     const cleanIngredients = ingredients.map(stripBaseFields);
+    const totals = calculateRecipeTotals(cleanIngredients);
     const data = {
       name: name.trim(),
       servings,
       ingredients: cleanIngredients,
-      ...calculateRecipeTotals(cleanIngredients),
+      // The recipes table's columns are calories/protein_grams/carbs_grams/
+      // fats_grams, not calculateRecipeTotals()'s total_* keys (which stay
+      // total_* because the on-screen totals above read that shape).
+      calories: totals.total_calories,
+      protein_grams: totals.total_protein,
+      carbs_grams: totals.total_carbs,
+      fats_grams: totals.total_fats,
       created_by: userId,
     };
 
