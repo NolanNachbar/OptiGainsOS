@@ -109,9 +109,13 @@ export default function Coach() {
   // Re-open a past review: sign the stored clip path fresh, then show it.
   const reopenReview = async (review) => {
     setOpenReview({ review, url: null });
-    const { data: s } = await supabase.storage
+    const { data: s, error: signErr } = await supabase.storage
       .from("physique").createSignedUrl(review.clip_path, 3600);
-    setOpenReview({ review, url: s?.signedUrl ?? null });
+    if (signErr || !s?.signedUrl) {
+      setOpenReview({ review, url: null, error: "Clip unavailable - check your connection or re-upload" });
+      return;
+    }
+    setOpenReview({ review, url: s.signedUrl });
   };
 
   // The empty canvas — no clip queued, no fresh critique, no history yet.
@@ -242,6 +246,10 @@ export default function Coach() {
             <div className="space-y-4">
               {openReview.url
                 ? <video src={openReview.url} controls playsInline className="w-full rounded-lg bg-black/40 object-contain" style={{ maxHeight: "42vh" }} />
+                : openReview.error
+                ? <div className="w-full h-40 flex items-center justify-center glass-inset rounded-lg text-bad text-sm font-semibold gap-1.5 text-center px-4">
+                    <AlertTriangle className="w-5 h-5 shrink-0" /> {openReview.error}
+                  </div>
                 : <div className="w-full h-40 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold gap-1.5">
                     <Loader2 className="w-5 h-5 spin-loop" /> Loading clip…
                   </div>
