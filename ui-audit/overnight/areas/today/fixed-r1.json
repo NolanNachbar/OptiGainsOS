@@ -26,5 +26,40 @@
     "test": "e2e/today-delete-undo.spec.mjs",
     "status": "fixed",
     "note": "Same commit as today-r1-01 (root cause and fix are intertwined). The text-only de-dupe (TodayActions.jsx:47-52, keeps only the earliest same-text row) meant deleting the visible row left its hidden same-text twin in the DB, which instantly re-rendered in the deleted row's place on the next de-dupe pass, so the delete looked like it silently failed. Delete and toggle now act on every raw row sharing that text for the date (.in('id', ids)) instead of only the clicked row's id. The de-dupe itself (today-r1-03, proposal:true) is untouched, per instruction. Regression test seeds two same-text rows, asserts only one renders (de-dupe still holds), deletes it, asserts the row disappears (not re-rendered from the hidden twin) with the toast visible, and that Undo restores both rows."
+  },
+  {
+    "id": "today-r1-06",
+    "commit": "14a0e1b7",
+    "test": "e2e/today-long-todo-overflow.spec.mjs",
+    "status": "fixed",
+    "note": "A long unbroken token in a todo's text (e.g. a pasted URL) had no overflow-wrap on the row span, pushing the whole /today page wider than the viewport instead of wrapping. Added min-w-0 [overflow-wrap:anywhere] to the todo text span in TodayActions.jsx, plus a maxLength=500 on the Add Task input as a belt-and-braces guard. Test seeds a todo with a 2000-char unbroken token and asserts document.documentElement.scrollWidth stays within clientWidth."
+  },
+  {
+    "id": "today-r1-09",
+    "commit": "6ad9af80",
+    "test": "e2e/today-athlete-state-timezone.spec.mjs",
+    "status": "fixed",
+    "note": "AthleteState.jsx called useEngineParams()/useTodayPrescription() with no date argument, so both fell back to the browser/device timezone instead of profile.timezone, the same 'which day is it' bug already fixed once for Today.jsx (today-r1-05). Added useProfile() to AthleteState, resolved `today` via getTodayString(profile?.timezone), and threaded it into both AdaptiveEnginePanel render sites and the page's own useEngineParams call. The regression test deliberately avoids page.clock: this WebKit harness's TZDate (from @date-fns/tz) does not read the faked clock's timezone-shifted fields correctly when combined with page.clock.setFixedTime (confirmed directly in-page: TZDate's toString()/getters return the browser-local calendar date even when Intl.DateTimeFormat on the same faked instant returns the correct requested-zone date) - a harness artifact, not an app bug, consistent with the WebKit/simulator-layer quirks already noted for today-r1-05/r1-10. Instead the test uses real, unfaked time and Pacific/Kiritimati (UTC+14) vs the harness's default America/Denver, whose calendar dates differ for all but a few early-morning Denver hours (test.skip guards that rare window), and asserts against a training_prescription row seeded only under the profile-timezone date."
+  },
+  {
+    "id": "today-r1-11",
+    "commit": "7aa7fc06",
+    "test": "e2e/today-mind-skill-offline-practiced.spec.mjs",
+    "status": "fixed",
+    "note": "Mind.jsx's Skills 'Practiced' mutation relied on onError for offline feedback, but react-query's default mutation networkMode ('online') pauses a mutation while offline instead of erroring it, so onError never fires - the button did nothing visible while offline, then silently completed on reconnect with no confirmation. Mirrors the pattern fuel fixed in f2590dcd: when practiced.isPaused && practiced.variables === skill.id, the button now reads 'Offline - saves when back online' instead of 'Practiced'. Test goes offline, taps Practiced, asserts the DB is unchanged and the offline message is visible, then reconnects and polls for the row to update."
+  },
+  {
+    "id": "today-r1-12",
+    "commit": "2f46649d",
+    "test": "e2e/today-coach-missing-clip.spec.mjs",
+    "status": "fixed",
+    "note": "Coach.jsx's reopenReview destructured only `data` from createSignedUrl and never checked `error`, so a failed sign (clip missing from storage, or a flaky connection) silently resolved to url=null and the dialog stayed on 'Loading clip...' forever. Now captures `error` alongside `data` and, on failure or a missing signedUrl, sets an explicit error string rendered in place of the spinner ('Clip unavailable - check your connection or re-upload'). Test seeds a form_reviews row pointing at a nonexistent storage object, reopens it, and asserts the error text appears and the spinner never gets stuck."
+  },
+  {
+    "id": "today-r1-13",
+    "commit": "5c9d270c",
+    "test": "e2e/today-coach-analyze-failure-orphan.spec.mjs",
+    "status": "fixed",
+    "note": "Coach.jsx's analyze() wrapped both the clip upload and the analyze-form invoke in one try/catch whose catch only called setError() - if the upload succeeded but analyze-form then failed, the uploaded clip was never removed, orphaning storage on every retry. Hoisted `path` and an `uploaded` flag above the try; on catch, if the upload had already succeeded, removes the orphaned object (supabase.storage.from('physique').remove([path]), swallowing its own error). Test aborts only the analyze-form network call via page.route so the real upload still lands, then polls the 'physique' bucket to confirm no new object remains after the failure."
   }
 ]
