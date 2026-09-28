@@ -171,14 +171,37 @@ async function installPwa() {
   } catch {}
   await (await findNative('Add to Home Screen')).click();
   await driver.pause(1200); shot('pwa-add-dialog');
-  await (await findNative('Add')).click();
-  await driver.pause(1500);
+  // The sheet's title is "Add to Home Screen", so match the button by type.
+  await (await driver.$('-ios predicate string:type == "XCUIElementTypeButton" AND (name == "Add" OR label == "Add")')).click();
+  await driver.pause(2500);
   await driver.execute('mobile: pressButton', { name: 'home' });
   await driver.pause(1500); shot('pwa-home-screen');
   const short = process.env.PWA_NAME || JSON.parse(readFileSync(join(HERE, '../public/manifest.json'), 'utf8')).short_name;
-  await (await findNative(short, 10000)).click();
+  await (await findIcon(short)).click();
   standalone = true;
   await driver.pause(4000); shot('pwa-launched');
+}
+
+// New home-screen icons land on the first page with room, which isn't always
+// page one. Page through the springboard, then fall back to Spotlight.
+async function findIcon(name) {
+  const icon = () => driver.$(`-ios predicate string:type == "XCUIElementTypeIcon" AND (label == "${name}" OR name == "${name}")`);
+  for (let page = 0; page < 4; page++) {
+    const el = await icon();
+    if (await el.isExisting() && await el.isDisplayed()) return el;
+    await driver.execute('mobile: swipe', { direction: 'left' });
+    await driver.pause(700);
+  }
+  await driver.execute('mobile: pressButton', { name: 'home' });
+  await driver.pause(800);
+  await driver.execute('mobile: swipe', { direction: 'down' });
+  await driver.pause(1000);
+  const field = await driver.$('-ios predicate string:type == "XCUIElementTypeSearchField"');
+  await field.addValue(name);
+  await driver.pause(1500); shot('pwa-spotlight');
+  const hit = await driver.$(`-ios predicate string:(label == "${name}" OR name == "${name}") AND type != "XCUIElementTypeSearchField"`);
+  if (!(await hit.isExisting())) throw new Error(`home-screen icon not found: ${name}`);
+  return hit;
 }
 
 async function login() {
