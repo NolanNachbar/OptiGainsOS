@@ -276,7 +276,13 @@ export function calculateFormulaTDEE(profile, currentWeight, activityLevelOverri
   return { bmr: Math.round(bmr), tdee, method: "formula", activityLevelUsed: activityLevel };
 }
 
-export function calculateAdaptiveTDEE(weightEntries, foodEntries, days = 14) {
+// Window default matches the "high" confidence threshold below (28 days),
+// not the 14 the caller (getBestTDEE) used to pass implicitly. With a
+// 14-day window, daySpan could never exceed 14, so confidence could never
+// reach "medium" (>=21) or "high" (>=28) and the adaptive path could never
+// activate — it always fell back to the formula TDEE. Widening the window
+// doesn't change either threshold or the 500 kcal/lb constant below.
+export function calculateAdaptiveTDEE(weightEntries, foodEntries, days = 28) {
   const cutoff = subDays(new Date(), days);
 
   // Use EWMA over full history, then slice recent window
