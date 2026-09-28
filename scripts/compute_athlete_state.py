@@ -769,7 +769,11 @@ def compute_nutrition(food_entries: list, weight_entries: list, profile: dict) -
     avg_cal     = round(sum(by_date[d]["cal"]     for d in logged) / len(logged)) if logged else 0
     avg_protein = round(sum(by_date[d]["protein"] for d in logged) / len(logged)) if logged else 0
 
-    calorie_adherence = round(min(avg_cal / calorie_target, 1.0), 2) if calorie_target else None
+    # Not clamped to 1.0: capping adherence at 100% made overeating read
+    # identically to hitting the target exactly, hiding exactly the failure
+    # mode (a cut athlete overshooting) this number exists to catch. A day at
+    # 3,000 kcal on a 2,000 target now honestly reads 150%, not 100%.
+    calorie_adherence = round(avg_cal / calorie_target, 2) if calorie_target else None
 
     # Weight trend (linear regression on up to 14 entries). Exclude null/zero
     # weights up front — mapping a bad row to y=0 swings the slope to hundreds
