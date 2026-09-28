@@ -800,7 +800,13 @@ export default function ProgramDetail() {
                 onClick={handleEnroll}
                 disabled={enrollMutation.isPending}
               >
-                {enrollMutation.isPending ? "Starting..." : "Start Program"}
+                {enrollMutation.isPaused
+                  // React Query's default networkMode pauses (not fails) a
+                  // mutation while offline — it resumes on its own on
+                  // reconnect, so onError (handleEnroll's "Failed to enroll")
+                  // never fires. Same pattern as fuel f2590dcd.
+                  ? "Offline - starts when you're back online"
+                  : enrollMutation.isPending ? "Starting..." : "Start Program"}
               </Button>
             </div>
           </DialogContent>
