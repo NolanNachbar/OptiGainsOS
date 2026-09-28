@@ -20,6 +20,8 @@
 //   { "login": true }               macro: sign in through the UI, with keyboard shots
 //   { "installPwa": true }          Add to Home Screen from Safari, then launch the icon (standalone mode)
 //   { "hideKeyboard": true }
+//   { "measure": "name" }            calibration: keyboard/picker frames + page metrics + shot
+//   { "pwaName": "Calibrate" }        home-screen icon name for installPwa (default: app manifest)
 import { remote } from 'webdriverio';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -111,6 +113,27 @@ async function dump(name) {
   writeFileSync(join(OUT, `${String(++n).padStart(2, '0')}-${name}.xml`), await driver.getPageSource());
 }
 
+// Keyboard/picker frame from the native tree + what the page sees (via the METRICS: label
+// the calibration page publishes) + a full-screen shot. Written to OUT/measure-<name>.json.
+async function measure(name) {
+  await native();
+  await driver.pause(1200);
+  shot(`measure-${name}`);
+  const out = { name, shot: `${String(n).padStart(2, '0')}-measure-${name}.png` };
+  for (const [key, type] of [['keyboard', 'XCUIElementTypeKeyboard'], ['picker', 'XCUIElementTypePicker'], ['datePicker', 'XCUIElementTypeDatePicker'], ['toolbar', 'XCUIElementTypeToolbar']]) {
+    const el = await driver.$(`-ios predicate string:type == "${type}" AND visible == 1`);
+    if (await el.isExisting()) out[key] = await driver.getElementRect(await el.elementId);
+  }
+  for (const b of ['Done', 'Previous', 'Next']) {
+    const el = await driver.$(`-ios predicate string:type == "XCUIElementTypeButton" AND name == "${b}" AND visible == 1`);
+    if (await el.isExisting()) out[`btn${b}`] = await driver.getElementRect(await el.elementId);
+  }
+  const m = await driver.$('-ios predicate string:label BEGINSWITH "METRICS:"');
+  if (await m.isExisting()) out.page = JSON.parse((await m.getAttribute('label')).slice(8));
+  writeFileSync(join(OUT, `measure-${name}.json`), JSON.stringify(out, null, 2));
+  log('measured', name, JSON.stringify(out).slice(0, 300));
+}
+
 async function installPwa() {
   await native();
   await driver.hideKeyboard().catch(() => {});
@@ -144,7 +167,7 @@ async function installPwa() {
   await driver.pause(1500);
   await driver.execute('mobile: pressButton', { name: 'home' });
   await driver.pause(1500); shot('pwa-home-screen');
-  const short = JSON.parse(readFileSync(join(HERE, '../public/manifest.json'), 'utf8')).short_name;
+  const short = process.env.PWA_NAME || JSON.parse(readFileSync(join(HERE, '../public/manifest.json'), 'utf8')).short_name;
   await (await findNative(short, 10000)).click();
   standalone = true;
   await driver.pause(4000); shot('pwa-launched');
@@ -185,6 +208,8 @@ try {
       else if (kind === 'type') await type(arg);
       else if (kind === 'shot') shot(arg);
       else if (kind === 'dump') await dump(arg);
+      else if (kind === 'measure') await measure(arg);
+      else if (kind === 'pwaName') process.env.PWA_NAME = arg;
       else if (kind === 'wait') await driver.pause(arg);
       else if (kind === 'login') await login();
       else if (kind === 'installPwa') await installPwa();

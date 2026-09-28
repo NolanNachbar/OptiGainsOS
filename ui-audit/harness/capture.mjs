@@ -10,14 +10,19 @@
 // real. Deterministic capture is the verifier; vision-judging is advisory.
 //
 // Run: bun ui-audit/harness/capture.mjs        (dev server must be on :5173)
-import { chromium } from 'playwright';
+//      IOS=1 node ui-audit/harness/capture.mjs  iPhone 13 Pro Max home-screen app on
+//        WebKit via ~/projects/iphone-sim (keyboard, pickers, safe areas, iPhone-only
+//        warnings). Output goes to out-ios/. Node, not bun: Playwright WebKit.
+import { chromium, webkit } from 'playwright';
 import { readFileSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const BASE = process.env.BASE || 'http://localhost:5173';
 const ROOT = dirname(new URL(import.meta.url).pathname);       // ui-audit/harness
 const REPO = join(ROOT, '../..');
-const OUT = join(ROOT, process.env.OUTDIR || 'out'); // OUTDIR=out-verify to avoid clobbering a running judge
+const IOS = !!process.env.IOS;
+const OUT = join(ROOT, process.env.OUTDIR || (IOS ? 'out-ios' : 'out'));
+const iphone = IOS ? await import(process.env.IPHONE_SIM || join(REPO, '../iphone-sim/index.mjs')) : null; // OUTDIR=out-verify to avoid clobbering a running judge
 const MOBILE = { width: 390, height: 844 };
 const CONCURRENCY = Number(process.env.CONCURRENCY || 4);
 
@@ -59,7 +64,10 @@ if (existsSync(extraPath)) {
 const journeys = process.env.FLOWS_ONLY ? [...flows, ...extraFlows] : [...surfaces, ...flows, ...extraFlows];
 
 async function runJourney(browser, j) {
-  const ctx = await browser.newContext({ viewport: MOBILE, permissions: ['camera'] });
+  const ctx = IOS
+    ? await browser.newContext(iphone.iphoneContextOptions())
+    : await browser.newContext({ viewport: MOBILE, permissions: ['camera'] });
+  if (IOS) await iphone.applyIPhone(ctx, { appOrigin: BASE });
   const page = await ctx.newPage();
   // Poll a condition so assertions wait for data/animation instead of one-shotting
   // (eliminates concurrency/network timing false-negatives against the hosted DB).
@@ -122,10 +130,11 @@ async function runJourney(browser, j) {
     }
   } catch (e) { hardFail = 'exception: ' + e.message.split('\n')[0]; }
   const finalText = (await page.locator('body').innerText().catch(() => '')).slice(0, 400).replace(/\s+/g, ' ');
+  const iosWarnings = IOS ? await iphone.warnings(page).catch(() => []) : undefined;
   const pageErr = errors.find((e) => e.startsWith('pageerror'));
   if (!hardFail && pageErr) hardFail = pageErr;
   await ctx.close();
-  return { id: j.id, label: j.label, hardFail, errors, shots, finalText };
+  return { id: j.id, label: j.label, hardFail, errors, shots, finalText, iosWarnings };
 }
 
 async function pool(items, n, fn) {
@@ -140,7 +149,10 @@ async function pool(items, n, fn) {
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 const started = Date.now();
-const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
+// HEADED=1 opens visible windows so you can watch (use CONCURRENCY=1 SLOWMO=300).
+const browser = IOS
+  ? await webkit.launch({ headless: !process.env.HEADED, slowMo: Number(process.env.SLOWMO || 0) })
+  : await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const results = await pool(journeys, CONCURRENCY, (j) => runJourney(browser, j));
 await browser.close();
 const elapsed = ((Date.now() - started) / 1000).toFixed(1);
@@ -151,3 +163,13 @@ console.log(`captured ${results.length} journeys in ${elapsed}s @ concurrency ${
 for (const f of fails) console.log(`  HARD FAIL  ${f.id}: ${f.hardFail}`);
 const misses = results.filter((r) => r.errors.some((e) => e.includes('-miss:')));
 for (const m of misses) console.log(`  selector-miss  ${m.id}: ${m.errors.filter((e) => e.includes('-miss:')).join(', ')}`);
+if (IOS) {
+  const seen = new Map();
+  for (const r of results) for (const w of r.iosWarnings || []) {
+    const k = w.code + w.where;
+    if (!seen.has(k)) seen.set(k, { ...w, journeys: [] });
+    seen.get(k).journeys.push(r.id);
+  }
+  console.log(`iPhone-only warnings: ${seen.size}`);
+  for (const w of seen.values()) console.log(`  ${w.code}  ${w.where}  (${w.path}; ${w.journeys.length} journey(s))`);
+}

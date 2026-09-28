@@ -1,0 +1,268 @@
+[
+ {
+  "goto": "http://localhost:8765/"
+ },
+ {
+  "wait": 2000
+ },
+ {
+  "measure": "safari-idle"
+ },
+ {
+  "tapText": "f-text",
+  "optional": true
+ },
+ {
+  "measure": "safari-text",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-email",
+  "optional": true
+ },
+ {
+  "measure": "safari-email",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-password",
+  "optional": true
+ },
+ {
+  "measure": "safari-password",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-number",
+  "optional": true
+ },
+ {
+  "measure": "safari-number",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-decimal",
+  "optional": true
+ },
+ {
+  "measure": "safari-decimal",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-numeric",
+  "optional": true
+ },
+ {
+  "measure": "safari-numeric",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-search",
+  "optional": true
+ },
+ {
+  "measure": "safari-search",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-textarea",
+  "optional": true
+ },
+ {
+  "measure": "safari-textarea",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-date",
+  "optional": true
+ },
+ {
+  "measure": "safari-date",
+  "optional": true
+ },
+ {
+  "tapText": "Done",
+  "optional": true
+ },
+ {
+  "tapText": "f-select",
+  "optional": true
+ },
+ {
+  "measure": "safari-select",
+  "optional": true
+ },
+ {
+  "dump": "safari-select",
+  "optional": true
+ },
+ {
+  "tapText": "Option one",
+  "optional": true
+ },
+ {
+  "pwaName": "Calibrate"
+ },
+ {
+  "installPwa": true
+ },
+ {
+  "measure": "standalone-idle"
+ },
+ {
+  "tapText": "f-text",
+  "optional": true
+ },
+ {
+  "measure": "standalone-text",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-email",
+  "optional": true
+ },
+ {
+  "measure": "standalone-email",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-password",
+  "optional": true
+ },
+ {
+  "measure": "standalone-password",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-number",
+  "optional": true
+ },
+ {
+  "measure": "standalone-number",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-decimal",
+  "optional": true
+ },
+ {
+  "measure": "standalone-decimal",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-numeric",
+  "optional": true
+ },
+ {
+  "measure": "standalone-numeric",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-search",
+  "optional": true
+ },
+ {
+  "measure": "standalone-search",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-textarea",
+  "optional": true
+ },
+ {
+  "measure": "standalone-textarea",
+  "optional": true
+ },
+ {
+  "hideKeyboard": true,
+  "optional": true
+ },
+ {
+  "tapText": "f-date",
+  "optional": true
+ },
+ {
+  "measure": "standalone-date",
+  "optional": true
+ },
+ {
+  "tapText": "Done",
+  "optional": true
+ },
+ {
+  "tapText": "f-select",
+  "optional": true
+ },
+ {
+  "measure": "standalone-select",
+  "optional": true
+ },
+ {
+  "dump": "standalone-select",
+  "optional": true
+ },
+ {
+  "tapText": "Option one",
+  "optional": true
+ }
+]

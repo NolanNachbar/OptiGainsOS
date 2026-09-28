@@ -71,16 +71,26 @@ jobs:
       - name: Run flow
         env:
           BASE_URL: ${{ inputs.url || 'https://nolannachbar.github.io/OptiGainsOS/' }}
-          FLOW: ${{ inputs.flow || 'probe' }}
+          FLOW: ${{ inputs.flow }}
           OUT: ${{ github.workspace }}/sim-out
           SIM_EMAIL: ${{ secrets.SIM_EMAIL }}
           SIM_PASSWORD: ${{ secrets.SIM_PASSWORD }}
         run: |
           mkdir -p "$OUT"
+          # Calibration page for the Linux iOS layer (flow: calibrate).
+          python3 -m http.server 8765 --directory ios-sim/calibrate > /dev/null 2>&1 &
           # Appium's own log records typed text, so it goes into the encrypted bundle only.
           appium --log "$OUT/appium.log" --log-level info --log-no-colors > /dev/null 2>&1 &
           for i in $(seq 60); do curl -sf http://127.0.0.1:4723/status > /dev/null && break; sleep 2; done
-          node ios-sim/run.mjs
+          # Pushes have no inputs: ios-sim/push-flows lists the flows to run, one per line.
+          if [ -n "$FLOW" ]; then flows="$FLOW"; else flows=$(grep -v '^#' ios-sim/push-flows); fi
+          status=0
+          for f in $flows; do
+            echo "::group::flow $f"
+            OUT="$OUT/$f" FLOW="$f" node ios-sim/run.mjs || status=1
+            echo "::endgroup::"
+          done
+          exit $status
 
       - name: Encrypt results
         if: always()

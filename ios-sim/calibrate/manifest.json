@@ -1,0 +1,3 @@
+{ "name": "Calibrate", "short_name": "Calibrate", "start_url": "/", "scope": "/", "display": "standalone",
+  "background_color": "#0A0D12", "theme_color": "#0A0D12",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }] }

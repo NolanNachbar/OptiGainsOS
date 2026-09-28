@@ -1,0 +1,3 @@
+# Flows a push to the ios-sim branch runs, one per line.
+probe
+calibrate

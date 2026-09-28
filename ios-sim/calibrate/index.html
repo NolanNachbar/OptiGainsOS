@@ -1,0 +1,70 @@
+<!doctype html>
+<!-- Calibration page for the Linux iOS layer. The simulator taps each field and
+     records the keyboard frame (native) plus what the page sees (visualViewport,
+     safe-area insets). Served from the runner at http://localhost:8765/. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <title>Calibrate</title>
+  <style>
+    body { margin: 0; font: 17px -apple-system, system-ui, sans-serif; background: #0A0D12; color: #eee; }
+    main { padding: 12px 16px; }
+    label { display: block; margin: 0 0 6px; }
+    input, select, textarea { display: block; width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px; margin-top: 2px; }
+    #safe { position: fixed; visibility: hidden;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    #bottom { position: fixed; left: 0; right: 0; bottom: 0; height: 20px; background: #c33; }
+  </style>
+</head>
+<body>
+  <main>
+    <label>text <input id="f-text" aria-label="f-text" type="text" /></label>
+    <label>email <input id="f-email" aria-label="f-email" type="email" /></label>
+    <label>password <input id="f-password" aria-label="f-password" type="password" /></label>
+    <label>number <input id="f-number" aria-label="f-number" type="number" /></label>
+    <label>number decimal <input id="f-decimal" aria-label="f-decimal" type="number" inputmode="decimal" /></label>
+    <label>number numeric <input id="f-numeric" aria-label="f-numeric" type="number" inputmode="numeric" /></label>
+    <label>search <input id="f-search" aria-label="f-search" type="search" /></label>
+    <label>date <input id="f-date" aria-label="f-date" type="date" /></label>
+    <label>select
+      <select id="f-select" aria-label="f-select">
+        <option>Option one</option><option>Option two</option><option>Option three</option>
+        <option>Option four</option><option>Option five</option>
+      </select>
+    </label>
+    <label>textarea <textarea id="f-textarea" aria-label="f-textarea" rows="2"></textarea></label>
+  </main>
+  <div id="safe"></div>
+  <div id="bottom"></div>
+  <div id="m" role="note" style="position:fixed;top:60px;left:0;width:2px;height:2px;overflow:hidden;opacity:.01"></div>
+  <script>
+    window.__metrics = () => {
+      const s = getComputedStyle(document.getElementById('safe'));
+      const vv = window.visualViewport;
+      const a = document.activeElement;
+      return {
+        standalone: !!navigator.standalone || matchMedia('(display-mode: standalone)').matches,
+        inner: [innerWidth, innerHeight],
+        screen: [screen.width, screen.height],
+        dpr: devicePixelRatio,
+        vv: vv && { w: vv.width, h: vv.height, top: vv.offsetTop, pageTop: vv.pageTop, scale: vv.scale },
+        scrollY,
+        safe: { top: s.paddingTop, right: s.paddingRight, bottom: s.paddingBottom, left: s.paddingLeft },
+        bottomBarRect: document.getElementById('bottom').getBoundingClientRect().toJSON(),
+        active: a && a.id,
+        activeRect: a && a.getBoundingClientRect().toJSON(),
+        ua: navigator.userAgent,
+      };
+    };
+    // Native (XCUITest) can't reach the web context in a home-screen app, so mirror
+    // the metrics into an accessibility label it can read.
+    const m = document.getElementById('m');
+    setInterval(() => m.setAttribute('aria-label', 'METRICS:' + JSON.stringify(__metrics())), 250);
+  </script>
+</body>
+</html>
