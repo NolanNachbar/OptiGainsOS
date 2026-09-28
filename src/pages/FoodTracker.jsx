@@ -201,6 +201,32 @@ export default function FoodTracker() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  // If the tab is left open (or an iOS home-screen app backgrounded) across
+  // local midnight, selectedDate never re-derives on its own and new entries
+  // silently save under yesterday's date with no on-screen indication. Only
+  // roll forward when the athlete was viewing today — a deliberately chosen
+  // past day is left alone.
+  const wasOnTodayRef = useRef(selectedDate === format(new Date(), "yyyy-MM-dd"));
+  useEffect(() => {
+    wasOnTodayRef.current = selectedDate === format(new Date(), "yyyy-MM-dd");
+  }, [selectedDate]);
+  const rollDateForwardRef = useRef(() => {});
+  rollDateForwardRef.current = () => {
+    const nowToday = format(new Date(), "yyyy-MM-dd");
+    setSelectedDate((prev) => (wasOnTodayRef.current && prev !== nowToday ? nowToday : prev));
+  };
+  useEffect(() => {
+    const rollDateForward = () => rollDateForwardRef.current();
+    const onVisibility = () => { if (document.visibilityState === "visible") rollDateForward(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", rollDateForward);
+    const interval = setInterval(rollDateForward, 60000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", rollDateForward);
+      clearInterval(interval);
+    };
+  }, []);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [templateEntries, setTemplateEntries] = useState([]);
@@ -1325,6 +1351,7 @@ const handleSaveMealTemplate = () => {
   });
 
   const resetForm = () => {
+    rollDateForwardRef.current();
     setNewFood({
       food_name: "",
       meal_type: getDefaultMealType(),
