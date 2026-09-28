@@ -1,0 +1,86 @@
+[
+  {
+    "id": "train-logger-r1-09",
+    "title": "A second identical real workout is silently discarded with a false 'already logged' success toast",
+    "severity": "data-loss",
+    "route": "/workout-detail",
+    "steps": "Log a workout (same exercises, same weights/reps, same completed-set pattern) through the real app flow twice in a row against the same workout template — e.g. finish a session, then start a fresh session on the same workout and log it identically again.",
+    "expected": "Two genuinely separate logged sessions should both be saved (or, if the app intends to treat exact-duplicate payloads as a mistaken double-submit, the athlete should be told their second session's data was not saved, not congratulated with a success message).",
+    "actual": "Confirmed via two real app-driven runs: workout_logs ends with exactly 1 row after both runs (run1Toast=['Workout logged successfully!'], run2Toast=['Workout already logged.']). The second run's insert hits the workout_logs_no_exact_dupes UNIQUE index (md5 of the serialized exercises JSON, same created_by/log_date), and the mutation's onError handler treats Postgres 23505 as unconditional success — a real second workout the athlete just performed and entered is silently thrown away with a toast that reads as good news.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-09.mjs",
+    "evidence": "DB: workout_logs rows=1 after 2 real logged sessions; console/toast text captured in script output (run1Toast/run2Toast)",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:880-935 (saveWorkoutLogMutation onError treats 23505 as success); supabase/migrations/20260910000000_workout_logs_no_exact_dupes.sql"
+  },
+  {
+    "id": "train-logger-r1-10",
+    "title": "Exercise-swap 'Enter exercise name' combobox field is covered by the on-screen keyboard; multi-swap progression-transfer race remains unconfirmed",
+    "severity": "ios",
+    "route": "/workout-detail",
+    "steps": "Mid-session (program-sourced workout), open an exercise's menu → Replace exercise → type a new exercise name into the 'Enter exercise name…' combobox.",
+    "expected": "The field being typed into should stay visible above the on-screen keyboard (per judge/iOS-layer rules, a focused input should never be hidden by the keyboard or pushed under the status bar).",
+    "actual": "Confirmed via drive.mjs's report(): warning field-hidden-by-keyboard on input[placeholder=\"Enter exercise name…\"], path /workout-detail — 'Focused field is covered by the keyboard or pushed under the status bar.' A single swap otherwise behaves correctly: program_enrollments.progression_state correctly transfers the old exercise's key to the new name (OVN-r1-10 Ex1 -> OVN-r1-10 Swap1) with the old key removed, and the in-app swap note is visible. The original hypothesis for this case — that 4 exercises swapped in quick succession could each read a stale progression_state closure and clobber each other's transferProgressionState write (WorkoutDetail.jsx:1027-1035, async ProgramEnrollment.update not awaited) — could NOT be confirmed or ruled out: automating 4 rapid back-to-back swaps was unreliable because this same keyboard-occlusion issue intermittently covers the next exercise card's menu button after a swap closes, causing the driver to lose track of on-screen elements. This is recorded as inconclusive for the race hypothesis, with the keyboard-occlusion bug itself confirmed as a real, separate finding.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-10.mjs (4-swap race attempt, does not reliably complete); single-swap confirmation reproduced ad hoc, see evidence",
+    "evidence": "report() warning: {\"code\":\"field-hidden-by-keyboard\",\"msg\":\"Focused field is covered by the keyboard or pushed under the status bar\",\"where\":\"input[type=\\\"text\\\"][placeholder=\\\"Enter exercise name\\u2026\\\"]\",\"path\":\"/workout-detail\"}; DB: progression_state keys after single swap = [\"OVN-r1-10 Ex2\",\"OVN-r1-10 Ex3\",\"OVN-r1-10 Ex4\",\"OVN-r1-10 Swap1\"] (transferred=true, origGone=true); screenshot ui-audit/overnight/shots/r1-10-single-after-swap.png",
+    "suspectFile": "src/components/workouts/ExerciseCard.jsx:785-835 (Replace dialog / Combobox layout); src/pages/WorkoutDetail.jsx:1002-1039 (handleReplaceExercise, unawaited transferProgressionState + ProgramEnrollment.update — race still unconfirmed)"
+  },
+  {
+    "id": "train-logger-r1-11",
+    "title": "Abandoned >24h-old in-progress session correctly prompts Resume/Start Fresh, and Start Fresh cancels without deleting data",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "Start a session, complete 2 sets, then (via DB) backdate workout_sessions.start_time to >24h ago to simulate an abandoned session; reopen the same workout.",
+    "expected": "A Resume/Start Fresh dialog should appear for a stale in-progress session; choosing Start Fresh should not destroy the abandoned session's data.",
+    "actual": "ok — dialog appeared as expected; Start Fresh left the row status='cancelled' with its 2 completed sets intact (not hard-deleted).",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-11.mjs",
+    "evidence": "script output: step3(in_progress,2completed)=true step4(dialogShown)=true step4(cancelledNotDeleted,setsIntact)=true problems=0",
+    "suspectFile": "src/hooks/useWorkoutSession.js:104-135,320-345; src/lib/workoutSessionFlag.js"
+  },
+  {
+    "id": "train-logger-r1-12",
+    "title": "Deep-linking to a 2-week-old program day seeds from that old day's own exercises, not today's",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "Deep-link directly to a program_workout 14 days in the past (skipping the normal 'Start Session' entry) with a different program_workout scheduled for today under the same enrollment.",
+    "expected": "The logger should seed from the old day's own program_workout.exercises, not from today's engine-computed prescription.",
+    "actual": "ok — seeded the old day's exercise only; today's exercise did not leak in.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-12.mjs",
+    "evidence": "script output: seededOldExercise=true seededTodayExercise(shouldBeFalse)=false problems=0",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:195-260 (isTodaysProgramWorkout gate)"
+  },
+  {
+    "id": "train-logger-r1-13",
+    "title": "A 40-set workout logs sequentially and completely with no data loss",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "Add 39 extra sets via 'Add Set' (40 total), fill and mark all 40 complete, Finish.",
+    "expected": "All 40 sets save with correct sequential set_number and completed=true.",
+    "actual": "ok — 40/40 sets saved, sequential, all completed. Note: an early version of this script that filled/clicked without pacing waits produced a false negative (2/40 sets not registering) — a script-timing artifact, not an app bug; fixed by adding short waits after each fill and checkbox click.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-13.mjs",
+    "evidence": "script output: uiLabelCount=40 workout_logs rows=1 sets.length=40 sequential=true allCompleted=true problems=0",
+    "suspectFile": "src/components/workouts/ExerciseCard.jsx"
+  },
+  {
+    "id": "train-logger-r1-14",
+    "title": "Legitimate 0-value weight and 0-value reps on completed sets are preserved exactly, not coerced or dropped",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "On a bodyweight-style exercise, set weight=0/reps=8 on set 1 and weight=10/reps=0 on set 2, mark both complete, Finish.",
+    "expected": "Both 0 values save as real 0s (not null, not omitted), and display as 0 in the UI inputs.",
+    "actual": "ok — set1={weight:0,reps:8,completed:true}, set2={weight:10,reps:0,completed:true}, both shown as '0' in their respective UI inputs.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-14.mjs",
+    "evidence": "script output: set1={\"rpe\":null,\"reps\":8,\"weight\":0,\"set_type\":\"working\",\"completed\":true,\"set_number\":1} set2={\"rpe\":null,\"reps\":0,\"weight\":10,\"set_type\":\"working\",\"completed\":true,\"set_number\":2} problems=0",
+    "suspectFile": "src/components/workouts/ExerciseCard.jsx:590-625"
+  },
+  {
+    "id": "train-logger-r1-15",
+    "title": "Lead investigated and rejected: /train Schedule tab's program_workouts request returns 200, not the suspected 403",
+    "severity": "none",
+    "route": "/train",
+    "steps": "Load /train (Schedule tab, default) with an active program enrollment; capture network responses for requests to program_workouts.",
+    "expected": "N/A — investigating a specific prior lead that useEnrollments()'s unfiltered program_workouts query might return HTTP 403 due to a missing table-level GRANT.",
+    "actual": "ok — both observed program_workouts requests on a fresh /train load returned status 200, not 403. The lead does not reproduce as described for this test account/enrollment. No console or HTTP errors, schedule rendered normally.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-15.mjs",
+    "evidence": "script output: program_workouts requests=[{\"status\":200,...},{\"status\":200,...}] consoleErrors=[] httpErrors=[] scheduleRendered=true",
+    "suspectFile": "src/hooks/useProgramQueries.js:50-79 (useEnrollments)"
+  }
+]

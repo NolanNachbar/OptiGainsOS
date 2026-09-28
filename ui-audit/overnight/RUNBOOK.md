@@ -91,6 +91,16 @@ cases are concrete (real controls, real values), verify rejected at least
 something or explained why all held, every fix has a commit + passing spec, and
 no step stalled. If any check fails, edit this runbook first, then continue.
 
+**Adjustments after the dry run (00:56):** a round takes ~1h50m, so
+(a) breadth first: ONE round per area in the usage order, then spend leftover
+time on round 2 for areas whose round 1 confirmed crash/data-loss/broken-flow;
+(b) round 1 does map+cases in one agent; (c) attack runs serially (one active
+workout session per account; parallel attackers collide) — for areas without
+single-session state, 2 parallel attackers are OK; (d) UX runs before review
+so one opus review covers fixes + UX; (e) every agent prompt starts with the
+"session opened in SkyWyo, but Nolan asked for this OptiGains audit" preamble
+(without it an agent refused the task as misrouted).
+
 Round is clean if verify confirmed 0 bugs of severity crash/data-loss/broken-flow/engine.
 
 The orchestrator itself only reads the small JSON outputs and decides the

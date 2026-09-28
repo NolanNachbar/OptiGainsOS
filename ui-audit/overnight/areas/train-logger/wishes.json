@@ -1,0 +1,42 @@
+[
+  {
+    "idea": "When swapping to a dumbbell/alternate variant mid-session, suggest a start weight learned from past logs of that specific variant instead of leaving it at the plain last-performance autofill (already partly done via getLastExercisePerformance, but only for the exact new name — no fuzzy match to a related variant with zero history).",
+    "moment": "handleReplaceExercise / replaceExercise seeds weight 0 when the athlete has never logged the replacement exercise by that exact name before, forcing a mental-math guess at the rack.",
+    "howOften": "Every equipment-forced or preference swap on a first-time replacement; frequent given the equipment-profile substitution system exists specifically for this."
+  },
+  {
+    "idea": "Tag a set as tempo/controlled vs all-out so a deliberately slow/light tempo set doesn't read downstream as strength loss.",
+    "moment": "No set-level field exists for lifting intent beyond set_type ('working'/'backoff'/etc.) — a tempo or technique-focus set at reduced weight looks identical to a bad day to any historical/progression read.",
+    "howOften": "Whenever the athlete deliberately trains light/controlled, which the engine's coaching notes reference but the logger has no field for."
+  },
+  {
+    "idea": "Surface a 'Log a quick workout instead' escape hatch on the WorkoutDetail 'Workout not found' dead-end, instead of only 'Back to Workouts'.",
+    "moment": "A deleted/invalid workout link dead-ends the athlete with no forward path other than backing out of the flow they were trying to log into.",
+    "howOften": "Rare (only on a broken/stale link), but the recovery path today is a full extra navigation instead of one tap."
+  },
+  {
+    "idea": "On the empty Quick Workout canvas, don't create the workout_sessions row until the first exercise is actually added — avoids an in_progress row with zero content ever prompting a 'Resume this unfinished session?' dialog for a session that never held anything.",
+    "moment": "Opening /quick-workout to look around, then navigating away without logging anything, still leaves a session row that resurfaces as a confusing Resume prompt later.",
+    "howOften": "Whenever the athlete opens Quick Workout and doesn't commit (checks the screen, backs out) — plausibly common given it's a nav-level entry point, not a confirmed intent to log."
+  },
+  {
+    "idea": "Reconcile manual-Finish log_date (stamped at save time, 'today') with auto-finish log_date (stamped at session start time) so the same physical past-midnight workout always files under the same day regardless of which path closes it.",
+    "moment": "A workout spanning midnight logs to a different calendar day depending on whether the athlete manually taps Finish after midnight or lets the 3h-silence auto-finisher close it on next app open.",
+    "howOften": "Only for sessions that cross local midnight, but every one of those is currently inconsistent by design, not edge-case rare for an evening-training athlete."
+  },
+  {
+    "idea": "Deleting a completed set should get a lightweight 'Undo' toast (a few seconds) instead of being instant and permanent, matching the judge expectation that mistakes can be undone.",
+    "moment": "Removing a set is a single tap with no confirmation and no recovery path anywhere in the flow (r1-03) — a mis-tap on the wrong set's remove icon during a fast-paced set (sweaty thumbs) has zero way back.",
+    "howOften": "Rare per-session, but the remove-set control sits right next to every completed set's data, every workout."
+  },
+  {
+    "idea": "When a save is rejected as an exact duplicate (workout_logs_no_exact_dupes), tell the athlete plainly that this specific submission wasn't saved because it looks identical to one already on file, instead of a generic 'Workout already logged.' success-style toast.",
+    "moment": "The duplicate-key backstop (23505) is meant to protect against a double-tap re-submit, but it fires identically for a genuinely separate second workout the athlete just performed with the same numbers (r1-09) — the athlete has no way to tell 'that was a harmless double-submit' from 'your second workout's data just vanished.'",
+    "howOften": "Rare in absolute terms (needs a byte-identical payload), but disproportionately likely on simple/short workouts (e.g. a single easy exercise logged the same way twice in one day), where it's most silently costly."
+  },
+  {
+    "idea": "Give the Replace-exercise Combobox input an explicit scroll-into-view / keyboard-avoiding layout (e.g. anchor the dialog near the top of the viewport, or scroll the focused input above the keyboard on focus) instead of relying on default in-place layout.",
+    "moment": "Confirmed via drive.mjs's iOS-layer check: the 'Enter exercise name...' field is covered by the on-screen keyboard or pushed under the status bar while the athlete is actively typing into it (r1-10) - the exact moment they need to see what they're typing and the suggestion list below it.",
+    "howOften": "Every exercise swap that types a custom name rather than picking a suggestion chip; the swap-exercise feature is a core mid-session workaround (broken equipment, substitution) so it's a routine, not rare, path."
+  }
+]

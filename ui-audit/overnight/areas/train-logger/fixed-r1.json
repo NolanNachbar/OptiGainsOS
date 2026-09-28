@@ -1,0 +1,26 @@
+[
+  {
+    "id": "train-logger-r1-01",
+    "status": "fixed",
+    "commit": "f541e685",
+    "test": "e2e/train-logger-weight-typo-guard.spec.mjs",
+    "note": "onChange on the weight field now enforces the previously-decorative max=2000 cap for real. Marking a set complete with weight > 2x the exercise's last recorded weight (getLastExercisePerformance) prompts an inline window.confirm ('X lb is much heavier than your last Y lb... Save it anyway?') before the set is accepted; cancel leaves the set unmarked and unsaved, accept proceeds normally. Tunable UI threshold (2x), not engine semantics -- engine-side outlier handling untouched. Known gaps, not fixed (out of scope for this finding's repro, noted for a future round): (1) the guard only runs in handleSetCompleted, so editing the weight on an already-completed set doesn't re-trigger it; (2) with no prior performance for that exercise (e.g. first-ever lift), an implausible weight like 2255 is silently clamped to 2000 with no prompt.",
+    "files": [
+      "src/components/workouts/ExerciseCard.jsx",
+      "e2e/train-logger-weight-typo-guard.spec.mjs"
+    ]
+  },
+  {
+    "id": "train-logger-r1-03",
+    "status": "fixed",
+    "commit": "61a59c5f",
+    "test": "e2e/train-logger-delete-set-undo.spec.mjs",
+    "note": "removeSet is now wrapped in WorkoutDetail.jsx and QuickWorkout.jsx (both use the shared useWorkoutExercises hook and ExerciseCard, so both got the fix): deleting any set shows a sonner toast ('Set N removed') with an Undo action that calls a new insertSet(exerciseIndex, setIndex, set, exerciseName) helper to reinsert the set and renumber. insertSet re-resolves the target exercise by name (falling back to a findIndex scan) and bails out to a no-op if that exercise no longer exists, since the toast's ~8s actionable lifetime is long enough for the athlete to reorder/remove/swap exercises underneath it -- prevents both a crash (undefined exercise) and silently reinserting into the wrong exercise. The toast also passes closeButton:false, since the app's global always-visible close button (App.jsx) is pinned top-right and otherwise overlaps/intercepts the Undo tap target in the mobile bottom-center toast position.",
+    "files": [
+      "src/hooks/useWorkoutExercises.js",
+      "src/pages/WorkoutDetail.jsx",
+      "src/pages/QuickWorkout.jsx",
+      "e2e/train-logger-delete-set-undo.spec.mjs"
+    ]
+  }
+]

@@ -1,0 +1,137 @@
+[
+  {
+    "id": "train-logger-r1-01",
+    "persona": "sweaty-thumbs",
+    "title": "Weight typo 1710 instead of 171 is saved with no clamp or warning",
+    "setup": "Test athlete, one library workout with a Bench Press exercise, at least 1 set.",
+    "steps": "1. /workout-detail?id=<workoutId> → tap 'Start Session'. 2. In the first Bench Press set's weight input (aria-label 'Set 1 weight in lbs'), type '1710' (meant to type '171'). 3. Type reps '8'. 4. Tap the set's completed checkbox. 5. Tap Finish in the sticky header → confirm 'Finish Workout' in the dialog.",
+    "expected": "Per the judge rules, weird input should not silently produce nonsense downstream (e1RM/progression baseline). Either the UI should reject/clamp the value before it can be marked completed, or at minimum flag it visibly (e.g. red border, confirmation) before saving. It should not save 1710 lb as a normal Bench Press set with no signal to the athlete.",
+    "risk": "src/components/workouts/ExerciseCard.jsx:599-625 — weight input has type=number max=\"2000\" but the onChange handler (line ~608-612) does `parseFloat(raw)` with no Math.min/clamp against max. The HTML max attribute only affects stepper/validity styling, not typed input or form submission here (no form-level checkValidity gate before the Finish mutation). The code comment at line ~622-624 explicitly claims the ceiling 'still catches the common slip' — it does not."
+  },
+  {
+    "id": "train-logger-r1-02",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap Finish confirm in the post-workout dialog",
+    "setup": "Test athlete, active logging session with at least one completed set.",
+    "steps": "1. /workout-detail?id=<workoutId> → Start Session → complete 1 set. 2. Tap Finish (header) → 'Finish Workout' dialog opens. 3. Rapidly double-tap the dialog's 'Finish' button twice in quick succession (simulate with two near-simultaneous click() calls before React re-renders the disabled state).",
+    "expected": "Exactly one workout_logs row is created for this session. No duplicate row, no crash, no error toast implying failure when the workout actually saved.",
+    "risk": "src/pages/WorkoutDetail.jsx:453 — Button disabled={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}, and the workout_logs_no_exact_dupes UNIQUE constraint (created_by, log_date, md5(exercises)) is the DB-level backstop (WorkoutDetail.jsx:912-926 treats 23505 as success). Verify the backstop actually fires if the React guard loses the race."
+  },
+  {
+    "id": "train-logger-r1-03",
+    "persona": "sweaty-thumbs",
+    "title": "Delete the wrong set immediately after logging it",
+    "setup": "Test athlete, active session, one exercise with 3 sets, set 2 already marked completed with real weight/reps.",
+    "steps": "1. Start a session, log set 1 and set 2 (both completed, different weights). 2. Tap the remove-set control on set 2 (the completed one, deleted by mistake instead of an empty set 3). 3. Observe set numbering and data for the remaining sets. 4. Finish the workout.",
+    "expected": "Set 3's data is untouched and correctly renumbered to set 2; nothing from the deleted set 2 bleeds into the remaining sets. No way to undo the delete is fine per judge rules ('mistakes can be undone' — but removeSet has no undo; flag if there is truly zero recovery path, e.g. no toast with Undo).",
+    "risk": "src/hooks/useWorkoutExercises.js:44-58 removeSet — filters by index then renumbers set_number sequentially with no undo affordance. Judge rule 'Mistakes can be undone (deleted set...)' — confirm whether any undo exists anywhere in the UI (toast action, etc.) before flagging this as a gap."
+  },
+  {
+    "id": "train-logger-r1-04",
+    "persona": "sweaty-thumbs",
+    "title": "'Done early' — Finish tapped with most sets still unchecked",
+    "setup": "Test athlete, active session, 4 exercises seeded with 3-4 sets each, only 1 total set marked completed.",
+    "steps": "1. Start session. 2. Complete only 1 set total (out of ~14 seeded). 3. Tap Finish. 4. The 'Incomplete Sets' dialog appears — tap the option that does NOT auto-check remaining sets (the plain confirm, not 'mark all complete'). 5. Confirm Finish in the post-workout dialog.",
+    "expected": "The workout_logs row is written with exercises exactly as left (1 completed set, rest incomplete/false) — not silently marked complete, not dropped. Reopening /train Activity should show this session's real (mostly-incomplete) set data, not a fabricated full completion.",
+    "risk": "src/pages/WorkoutDetail.jsx:1109-1125 handleSaveWorkoutLog/handleIncompleteResponse(autoCheck=false) → setTimeout 50ms before opening the save dialog. Confirm the 50ms delay reliably flushes state before saveWorkoutLogMutation reads exerciseLogs (race risk on a slow/throttled phone)."
+  },
+  {
+    "id": "train-logger-r1-05",
+    "persona": "interrupted",
+    "title": "Reload mid-set loses nothing, restores silently into logging mode",
+    "setup": "Test athlete, active session with 2 completed sets and one in-progress (weight typed, not yet marked complete).",
+    "steps": "1. Start session on /workout-detail?id=<workoutId>, complete 2 sets, type a weight into set 3 but do NOT check it complete. 2. page.reload(). 3. Observe the app state after reload with no user action.",
+    "expected": "Per CLAUDE.md hard constraint: the session restores silently into logging mode with the 2 completed sets intact and isLogging true — no Resume/Start Fresh dialog (session is well under 24h old), no restart, no data loss. The uncompleted set 3's typed-but-unsaved weight value is allowed to be lost (it was never part of a completed set / never auto-saved distinctly), but the 2 completed sets must survive exactly.",
+    "risk": "src/pages/WorkoutDetail.jsx:298-344 (checkForActiveSession effect) and src/lib/workoutSessionFlag.js STALE_SESSION_MS. Also verify saveProgress's fire-and-forget auto-save (useWorkoutSession.js:180-220) actually landed the 2 completed sets to workout_sessions before the reload — if the reload lands between a set completion and the debounce-free but async write, that set could be lost."
+  },
+  {
+    "id": "train-logger-r1-06",
+    "persona": "interrupted",
+    "title": "Offline at the gym — log a set with no network, then reconnect",
+    "setup": "Test athlete, active session started while online.",
+    "steps": "1. Start session on /workout-detail. 2. context.setOffline(true). 3. Complete 2 sets while offline (weight, reps, check complete). 4. Wait a few seconds (auto-save attempts fire and fail). 5. context.setOffline(false) (simulate walking out of the basement gym). 6. Wait for the 'online' event to fire the retry.",
+    "expected": "No error dialog blocks logging while offline (sets stay logged locally via the localStorage draft). Once back online, the pending write flushes automatically (no user action required) and the workout_sessions row on the server ends up matching what was logged offline. Finishing the workout afterward saves the real data, not a stale/empty version.",
+    "risk": "src/hooks/useWorkoutSession.js:39-70 (flushPending, 'online' listener) and src/lib/workoutDraft.js (saveDraft/preferDraft, not yet read — verify it exists and actually mirrors before every network write, per the comment at useWorkoutSession.js:179-183)."
+  },
+  {
+    "id": "train-logger-r1-07",
+    "persona": "interrupted",
+    "title": "Lock phone for 3+ hours mid-workout (silent auto-finish), then reopen",
+    "setup": "Test athlete, session with 3 completed sets across 2 exercises.",
+    "steps": "1. Start session, complete 3 sets. 2. Use page.clock to advance time by 3h30m without any further interaction (simulating the phone locked in a pocket/bag, no set logged, updated_at stays at the last real save). 3. Reload / reopen /workout-detail (simulating the phone being unlocked and the app relaunched).",
+    "expected": "The session auto-finishes: a workout_logs row is written from the 3 completed sets (log-first), then the workout_sessions row flips to 'completed'. The athlete is dropped into a fresh workout (not silently in the old one, not shown a Resume dialog for a session that's already been finished for them). No duplicate workout_logs row on a second reload of the same stale session.",
+    "risk": "src/hooks/useWorkoutSession.js:264-317 autoFinishSession + src/lib/buildWorkoutLogFromSession.js sessionSilenceMs/logMatchesSession. Verify AUTO_FINISH_STALE_MS (3h) is measured off updated_at (last set logged), not off session start, and that the dedup-by-content check (logMatchesSession) correctly prevents a second log on a repeated mount within the same stale window."
+  },
+  {
+    "id": "train-logger-r1-08",
+    "persona": "time",
+    "title": "Start a workout at 11:50pm local, finish by hand at 12:10am — which day does it log to?",
+    "setup": "Test athlete profile timezone America/Denver (per KNOWN_NON_ISSUES.md). Use page.clock to control wall-clock time.",
+    "steps": "1. Set the clock to 23:50 local (America/Denver) on some date D. 2. /workout-detail?id=<workoutId> → Start Session → complete 2 sets. 3. Advance the clock past midnight to 00:10 local on D+1. 4. Tap Finish → confirm in the dialog (manual finish, not auto-finish).",
+    "expected": "Document actual behavior precisely (this is a genuine design ambiguity per the map, not necessarily a bug): the log lands with log_date = D+1 (today at Finish time). Flag for Nolan's call whether this should instead reflect the day the workout was mostly performed (D), since the auto-finish path for the SAME scenario (session goes silent >3h and is picked up next app-open) stamps log_date = D (session start day) via localDateOf — a real inconsistency between the two close paths for what is otherwise the same physical event.",
+    "risk": "src/pages/WorkoutDetail.jsx:770 (getTodayString(profile?.timezone) at Finish time, current instant) vs src/lib/buildWorkoutLogFromSession.js localDateOf(startedAt, timezone) (auto-finish path). Different date sources for the same physical workout depending on close path."
+  },
+  {
+    "id": "train-logger-r1-09",
+    "persona": "time",
+    "title": "Same-day duplicate real workout (byte-identical exercises) is silently discarded as a 'dupe'",
+    "setup": "Test athlete, a simple library workout (e.g. 1 exercise, 1 set, fixed weight/reps) logged once already today (log_date = today, exercises = [{name:'OVN-r1-09 Test Lift', sets:[{set_number:1,weight:100,reps:10,completed:true}]}]).",
+    "steps": "1. Tag and pre-seed one workout_logs row for today with the exact exercises payload above (via drive.mjs / testDb helper, tagged OVN-train-logger-r1-09). 2. /workout-detail?id=<workoutId> for the SAME workout template → Start Session → log the exact same exercise/set/weight/reps (a real second identical session, e.g. AM and PM training the same accessory work). 3. Tap Finish → confirm.",
+    "expected": "This is a REAL second workout and should be saved as a second workout_logs row (or at minimum the athlete should be told their second real session wasn't recorded, not silently told it succeeded). If the UNIQUE constraint on (created_by, log_date, md5(exercises)) rejects it and the code treats the 23505 as success, the athlete's second real training session for the day is permanently lost with a success toast implying it saved — this is the data-loss case the judge rules explicitly guard against.",
+    "risk": "src/pages/WorkoutDetail.jsx:912-926 (and QuickWorkout.jsx:392-404) — `workout_logs_no_exact_dupes` UNIQUE (created_by, log_date, md5(exercises)) treated unconditionally as 'already logged, all good' with no check for whether this really is a repeat submit of the SAME session vs a genuine second identical workout. Confirm via testDb query that only 1 row exists for today after this case, then verify the athlete has no way to recover the second session's data."
+  },
+  {
+    "id": "train-logger-r1-10",
+    "persona": "off-script",
+    "title": "Swap every exercise in a session mid-workout, including one already partially completed",
+    "setup": "Test athlete, program-sourced session (?source=program&enrollmentId=...&programWorkoutId=...) with 4 exercises.",
+    "steps": "1. Start the program session. 2. Complete 1 set on exercise 1, then swap exercise 1 to a custom name via the Replace menu (ExerciseCard 'Replace exercise' → custom name). 3. Swap exercises 2, 3, and 4 to different custom/library names before logging any sets on them. 4. Finish all remaining sets across all 4 (now-swapped) exercises and tap Finish.",
+    "expected": "Exercise 1's already-completed set survives the swap unchanged (weight/reps/completed as originally logged) and its `notes` records the swap ('Swapped X → Y after 1 set'). Exercises 2-4 (swapped before any set) show no swap note and seed cleanly from the replacement's own history/default. The final workout_logs row's exercises array has 4 entries with the NEW names throughout (not a mix of old/new), and program progression_state updates reflect the new exercise names (transferProgressionState), not the originals.",
+    "risk": "src/pages/WorkoutDetail.jsx:982-1039 handleReplaceExercise + src/hooks/useWorkoutExercises.js replaceExercise (used by QuickWorkout) — two separate but parallel implementations; verify they stay in sync in behavior. Also src/utils/programProgression.js transferProgressionState (not yet read) for whether 4 sequential swaps in one session correctly chain rather than clobber each other's progression_state writes (each swap does its own async ProgramEnrollment.update)."
+  },
+  {
+    "id": "train-logger-r1-11",
+    "persona": "off-script",
+    "title": "Abandon a session halfway (close tab, never return) — does it rot as an orphan in_progress row?",
+    "setup": "Test athlete, no active sessions.",
+    "steps": "1. /workout-detail?id=<workoutId> → Start Session → log 2 of 5 sets. 2. Close the page/tab entirely (no Cancel, no Finish — simulate walking away and never opening the app again that day). 3. Use testDb (tagged OVN-train-logger-r1-11) to directly query the resulting workout_sessions row's status and updated_at immediately after step 2 (should still be in_progress). 4. Advance the clock via page.clock by 25 hours from session start and reopen /workout-detail for the same workout.",
+    "expected": "At step 3: row is in_progress with the 2 real completed sets, per the CLAUDE.md hard constraint (never auto-finish/cancel on age). At step 4 (>24h old): the athlete is shown the Resume/Start Fresh dialog (not silently dropped into it, not silently discarded) — this matches the known real anomaly pattern in the runbook ('abandoned sessions with 53 unlogged sets'). Confirm choosing 'Start Fresh' does not delete the abandoned session's row/data outright (cancelSession marks status='cancelled', not a hard delete) so the 2 real completed sets remain forensically recoverable.",
+    "risk": "src/hooks/useWorkoutSession.js cancelSession (does it ever hard-delete?) and src/pages/WorkoutDetail.jsx:1066-1071 handleDismissResume. Also confirms STALE_SESSION_MS=24h boundary (src/lib/workoutSessionFlag.js) behaves as documented at exactly >24h."
+  },
+  {
+    "id": "train-logger-r1-12",
+    "persona": "off-script",
+    "title": "Skip Start Session entirely — deep-link straight to a stale program day two weeks old",
+    "setup": "Test athlete with an active program enrollment; a programWorkoutId whose scheduled_date is 14 days in the past.",
+    "steps": "1. Navigate directly to /workout-detail?source=program&enrollmentId=<id>&programWorkoutId=<oldId> (a day from 2 weeks ago, NOT today's scheduled day). 2. Tap Start Session and observe which exercises get seeded.",
+    "expected": "The logger seeds from the OLD day's own program_workout.exercises (the two-week-old Lower day, say), not from today's engine-computed prescription (which describes a different day, e.g. Upper). Per the code comment at WorkoutDetail.jsx:208-221, this was a real prior bug (isTodaysProgramWorkout gate) — confirm it's actually still gated correctly and hasn't regressed.",
+    "risk": "src/pages/WorkoutDetail.jsx:206-226 isTodaysProgramWorkout / todayPrescription gating. Verify with a real 2-week-old programWorkoutId against the live schema (per CLAUDE.md: check live schema/DB, don't trust the comment's claim alone)."
+  },
+  {
+    "id": "train-logger-r1-13",
+    "persona": "extreme",
+    "title": "40 sets on one exercise — no crash, no truncation, no silent cap",
+    "setup": "Test athlete, active session, one exercise with 1 seeded set.",
+    "steps": "1. Start session on /workout-detail. 2. Tap 'Add set' on one exercise 39 times in a row (scripted via drive.mjs, not by hand) to reach 40 sets total. 3. Mark all 40 complete with varying weight/reps. 4. Finish the workout.",
+    "expected": "No crash, no UI freeze, no silent truncation of the sets array below 40 in the saved workout_logs row (verify via testDb: exercises[0].sets.length === 40 and set_number sequential 1-40). Auto-save (saveProgress) during this should not choke on the growing payload.",
+    "risk": "src/hooks/useWorkoutExercises.js:20-40 addSet — no cap. React re-render cost of 40 rows in ExerciseCard + IntersectionObserver + DndContext is a plausible perf/crash risk on the audit's iPhone 13 Pro Max target; also check the auto-save effect (WorkoutDetail.jsx:364-370) doesn't debounce/drop intermediate writes under rapid-fire updates."
+  },
+  {
+    "id": "train-logger-r1-14",
+    "persona": "extreme",
+    "title": "0 reps / 0 weight on a completed set (bodyweight movement, legitimately 0 load)",
+    "setup": "Test athlete, active session with a bodyweight-style exercise (e.g. 'Pull-up').",
+    "steps": "1. Start session, add exercise 'Pull-up'. 2. In set 1, explicitly clear the weight field to empty then type '0' (weight=0, a real bodyweight value), set reps to a real number like 8, mark complete. 3. In set 2, set reps to '0' (a genuine failed/no-rep attempt) with a real weight, mark complete. 4. Finish the workout.",
+    "expected": "Both sets save exactly as entered (weight:0 preserved as a real value per the ExerciseCard.jsx comment about `?? \"\"` not `|| \"\"` specifically protecting 0 from being blanked) — reps:0 is also preserved, not coerced to null or dropped. No crash. Downstream this may feed odd e1RM math (0 reps → scaleWeightToReps divides by targetReps<=0 which the function guards with an early return) but the UI itself must not choke or silently drop the set.",
+    "risk": "src/components/workouts/ExerciseCard.jsx:599-612 (weight ?? handling, explicitly commented as a prior bug fix) and WorkoutDetail.jsx:97-103 scaleWeightToReps's `targetReps <= 0` guard. Also check handleUpdateSet's top-set cascade (WorkoutDetail.jsx:946-979) with reps=0 doesn't produce a cascaded back-off weight of NaN/Infinity for a different (non-zero) exercise pairing."
+  },
+  {
+    "id": "train-logger-r1-15",
+    "persona": "lead",
+    "title": "Confirmed lead — Supabase 403 on program_workouts when /train loads (Schedule tab, default)",
+    "setup": "Test athlete with at least one active program enrollment (program_enrollments row with status enrolled/active).",
+    "steps": "1. Navigate fresh to /train (defaults to Schedule tab, which triggers useEnrollments()). 2. Capture network requests/console pageerrors during load (list_network_requests / list_console_messages). 3. Identify the exact request to program_workouts, its HTTP status code, and response body.",
+    "expected": "No 403/error on a normal authenticated load for the test athlete's own data. If a genuine 403 (permission denied, not an empty RLS-filtered 200) is confirmed, it points to a missing table GRANT for the authenticated role on program_workouts — distinct from a row-level-security policy gap, since RLS alone would yield 200+[] not 403. Confirm whether Schedule tab data (enrolled program's days) actually renders despite the error (silently degraded) or breaks visibly.",
+    "risk": "src/hooks/useProgramQueries.js:65-68 useEnrollments() — direct `supabase.from('program_workouts').select('*').in('program_id', programIds)` bypassing the `db.entities.ProgramWorkout` wrapper and carrying no created_by filter. Compare against db.entities.ProgramWorkout's createEntity() implementation (src/api/supabaseClient.js) to see if the wrapper does something (e.g. an implicit filter or different auth header) that this raw call skips."
+  }
+]

@@ -1,0 +1,28 @@
+[
+  {
+    "commit": "f541e685",
+    "verdict": "corrected",
+    "issues": [
+      "The >2x-last-weight window.confirm fired on every completed set at that weight. A light last session (technique/deload day, bar-only log) or a lb/kg profile switch (weights are stored as entered, no conversion) would nag on each working set mid-session. Fixed: the confirmed weight is remembered per exercise name (not card index, since cards are keyed by index and a drag-reorder reuses them), and the prompt is skipped at or below it.",
+      "Checked OK: no history -> no prompt (lastPerformance null); bodyweight/0 last weight -> no prompt (lastWeight > 0 required); decimals like 172.5 parse fine; history comes from finished workout_logs only, so earlier sets in the current session never trigger it; only the check button marks a set complete; unchecking is never guarded; the 2000 clamp can't block any real entry.",
+      "Note, not changed: the first-ever log for an exercise has no typo guard beyond the 2000 clamp. The clamp silently turns 9999 into 2000 instead of rejecting it, which is acceptable since 2000 is well past any human lift."
+    ],
+    "followupCommit": "03c2dc26"
+  },
+  {
+    "commit": "61a59c5f",
+    "verdict": "corrected",
+    "issues": [
+      "The logic is correct. insertSet restores the captured set object (same weight/reps/completed) at its original index, renumbers set_number, and re-resolves the exercise by name. The auto-save effect writes the restored state to the workout_sessions row and the local draft. After Finish, completeSession clears sessionIdRef, so a late Undo can't bring back the session. After navigating away, the setState on the unmounted page is a harmless no-op. The set stays deleted, same as before this change.",
+      "Test gap fixed in 03c2dc26: the DB assertion only checked that some set was 105x8. It now asserts that the saved log has set 1 = 100x10 and set 2 = 105x8 with completed=true and set_number 2 (original order).",
+      "Minor, not changed: a duplicate exercise name in one workout resolves to the first match when the index is stale. That's rare, and the set still goes to an exercise of the same name."
+    ],
+    "followupCommit": "03c2dc26"
+  },
+  {
+    "commit": "04afc8b0",
+    "verdict": "approved",
+    "issues": [],
+    "followupCommit": null
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "moves": [
+    {
+      "slug": "exercise-menu-replace-first",
+      "what": "Reordered the per-exercise overflow menu (ExerciseCard.jsx) in WorkoutDetail and QuickWorkout: Replace exercise now leads, ahead of Add notes and How to. Remove exercise (destructive) stays anchored last, unchanged.",
+      "from": "Add notes, How to, Replace exercise, [Add daily min set], Remove exercise",
+      "to": "Replace exercise, Add notes, How to, [Add daily min set], Remove exercise",
+      "why": "Replace exercise is the routine mid-session workaround for an equipment-day swap or a taken machine — wishes.json already calls it 'a core mid-session workaround... routine, not rare path.' It sat third, behind two lower-frequency items (per-exercise notes, cues). Pure reorder of existing items, no new controls, no logic change.",
+      "commit": "04afc8b0",
+      "before": "ui-audit/overnight/shots/tl-ux-exercise-menu-before.png",
+      "after": "ui-audit/overnight/shots/tl-ux-exercise-menu-after.png"
+    }
+  ],
+  "proposals": [
+    {
+      "what": "Skip creating a workout_sessions row on /quick-workout until the first exercise is added (or skip the Resume dialog when exercises is empty).",
+      "why": "Behavior/logic change (session-creation timing), not a within-screen reorder — out of scope for this pass. Already captured in wishes.json."
+    },
+    {
+      "what": "Make manual-Finish log_date and stale-session auto-finish log_date agree for workouts that cross local midnight.",
+      "why": "A data/engine semantics decision (which timestamp is 'right'), not a UI move — out of scope. Already the r1-08 finding/proposal and in wishes.json."
+    },
+    {
+      "what": "Add a 'Log a quick workout instead' escape hatch on the WorkoutDetail 'Workout not found' dead-end (currently only 'Back to Workouts').",
+      "why": "This is a new link into a different screen/flow, not a reorder of what's already on the page — explicitly out of scope ('moving a feature to a different screen', 'new features'). Already in wishes.json."
+    },
+    {
+      "what": "Enforce reps/RIR ceilings in the onChange handlers, matching the weight-field fix already shipped (r1-01 only covered weight; the HTML max on reps/RIR is still decorative).",
+      "why": "A validation/engine-adjacent bug fix, not a UX position move — flag for a future round's fix pass rather than this pass."
+    }
+  ],
+  "checked": [
+    {
+      "what": "Rest timer +30s/Skip controls, flagged in map.md as possibly buried in WorkoutLoggingHeader.jsx.",
+      "finding": "Not buried. On mobile they render on their own dedicated row in the thumb-zone bottom bar (fixed, above the dock) at min 44px height x 64px width tap targets, with the live countdown directly above. Already well-positioned; no move made."
+    }
+  ]
+}

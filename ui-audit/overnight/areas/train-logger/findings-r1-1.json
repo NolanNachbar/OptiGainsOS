@@ -1,0 +1,98 @@
+[
+  {
+    "id": "train-logger-r1-01",
+    "title": "Weight typo 1710 instead of 171 is saved with no clamp, warning, or visible flag",
+    "severity": "engine",
+    "route": "/workout-detail",
+    "steps": "Start Session on a Bench Press workout → type '1710' into the Set 1 weight field (aria-label 'Set 1 weight in lbs') meaning to type '171' → type reps '8' → mark the set complete → Finish → Log Workout.",
+    "expected": "Per judge rules, weird input should not silently produce nonsense downstream (e1RM/progression baseline). The UI should reject/clamp before the set can be marked complete, or at minimum visibly flag it before saving.",
+    "actual": "1710 lb saved verbatim to workout_logs with zero clamp, zero warning, zero visible flag at any point (before or after Finish). Confirmed via live run: workout_logs row exercises[0].sets[0].weight === 1710.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-01.mjs",
+    "evidence": "console/http: none; DB: workout_logs.exercises[0].sets[0].weight=1710; screenshot ui-audit/overnight/shots/r1-01-before-finish.png",
+    "suspectFile": "src/components/workouts/ExerciseCard.jsx:599-625"
+  },
+  {
+    "id": "train-logger-r1-02",
+    "title": "Double-tap Finish confirm creates a duplicate workout_schedules row (workout_logs itself stays deduped)",
+    "severity": "minor",
+    "route": "/workout-detail",
+    "steps": "Start Session, complete 1 set, tap Finish → 'Finish Workout' dialog → fire two near-simultaneous native .click() calls on the 'Log Workout' button (bypassing React's disabled-state re-check, simulating a real double-tap race).",
+    "expected": "Exactly one workout_logs row AND the WorkoutSchedule check-or-create for today stays consistent (one schedule row) — no duplicate rows of any kind.",
+    "actual": "workout_logs correctly ends up with exactly 1 row: the second insert hits the workout_logs_no_exact_dupes UNIQUE constraint (23505), which the mutation's onError handler correctly treats as success (toast 'Workout already logged.', no error surfaced to the athlete) — this backstop works as designed. BUT workout_schedules ends up with 2 rows for the same workout_id/date: both concurrent mutationFn calls read `existing.length === 0` (schedule not yet created by either) before either write lands, so both create a new WorkoutSchedule row instead of one updating the other's. Confirmed via testDb cleanup count: workout_schedules=2 after a single logical Finish.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-02.mjs",
+    "evidence": "console: 'DB create error on workout_logs: duplicate key value violates unique constraint \"workout_logs_no_exact_dupes\"' (expected/handled); DB: workout_schedules count=2 for one workout_id after cleanup query, workout_logs count=1 (correct)",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:800-830 (WorkoutSchedule filter-then-create race, not atomic against the concurrent mutation call)"
+  },
+  {
+    "id": "train-logger-r1-03",
+    "title": "Deleting a completed set has zero undo affordance anywhere in the flow",
+    "severity": "no-undo",
+    "route": "/workout-detail",
+    "steps": "Complete set 1 (100x10) and set 2 (105x8) on one exercise, then tap the remove-set control on set 2 (the completed one, deleted by mistake instead of an empty set 3). Observe for any undo affordance (toast action, etc.) before/after the delete, then Finish.",
+    "expected": "Judge rule: mistakes can be undone (deleted set...). removeSet may legitimately have no built-in undo, but SOME recovery path (toast with Undo, confirmation step) should exist somewhere in the flow.",
+    "actual": "Confirmed zero undo affordance anywhere — no confirmation dialog before delete, no toast, no Undo action. The remaining set correctly renumbers to set 2 and Finish/save completes without crash or data corruption (set numbering and totals are correct). Note: the surviving (previously-untouched) set's weight/reps fields showed non-null autofill values (e.g. weight 252.5, reps 8) after the delete — this was investigated and is the app's existing 'last performance' autofill seeding from the athlete's Bench Press history (same value appeared in isolated pre-delete debug runs too), NOT data bleeding over from the deleted set. Flagging only the confirmed no-undo gap; the autofill-looks-like-bleed appearance is worth a second look by verify since it reads confusingly (autofill visually resembling residue from the just-deleted set could itself mislead a real athlete into thinking their delete didn't fully take).",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-03.mjs",
+    "evidence": "screenshots ui-audit/overnight/shots/r1-03-before-delete.png, r1-03-after-delete.png; DB: workout_logs exercises[0].sets shows correct renumbering, no crash, problems=0",
+    "suspectFile": "src/hooks/useWorkoutExercises.js:44-58 (removeSet, no undo/confirm)"
+  },
+  {
+    "id": "train-logger-r1-04",
+    "title": "'Done early' — Leave As-Is saves the real (mostly-incomplete) set data, not fabricated completion",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "4 exercises seeded with 3 sets each (12 total), complete only 1 set, tap Finish → Incomplete Sets dialog → 'Leave As-Is' (not 'Complete All') → Log Workout.",
+    "expected": "workout_logs row written with exercises exactly as left — 1 completed set, 11 incomplete — not silently marked complete, not dropped.",
+    "actual": "Confirmed correct: workout_logs has 12 total sets, exactly 1 completed, matching what was actually done. No race from the 50ms setTimeout before the save dialog opens.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-04.mjs",
+    "evidence": "DB: exercises reduce to totalSets=12, completedSets=1; problems=0",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:1109-1125"
+  },
+  {
+    "id": "train-logger-r1-05",
+    "title": "Reload mid-set restores silently into logging mode with completed sets intact",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "Complete 2 sets, type (but don't complete) a 3rd set's weight, page.reload().",
+    "expected": "Per CLAUDE.md hard constraint: silent restore into logging mode, no Resume/Start Fresh dialog, 2 completed sets intact.",
+    "actual": "Confirmed correct: no Resume dialog, isLogging true (Finish button visible), both completed sets present with correct weight/reps/completed state in both the UI and workout_sessions row after reload. The uncommitted set 3 weight (150) also happened to survive via the auto-save landing before reload — a bonus, not a requirement.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-05.mjs",
+    "evidence": "DB: workout_sessions.exercises[0].sets shows sets 1-2 completed:true with correct values; problems=0",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:298-344"
+  },
+  {
+    "id": "train-logger-r1-06",
+    "title": "Offline logging + reconnect saves correctly, but auto-save retries spam the console with no visible backoff",
+    "severity": "minor",
+    "route": "/workout-detail",
+    "steps": "Start session online, context.setOffline(true), complete 2 sets while offline, wait, setOffline(false), dispatch an 'online' event, wait for flush, then Finish.",
+    "expected": "No error dialog blocks logging while offline; once back online, the pending write flushes automatically; Finish saves the real (155/6, 155/5) data.",
+    "actual": "End state is correct: no error dialog shown to the athlete, workout_sessions row matches what was logged offline after the flush, and the final workout_logs row has the right 2 completed sets. However, while offline the auto-save effect fired 13 failed write attempts in ~2 seconds (each logging 'Failed to load resource: WebKit encountered an internal error' + 'Error saving workout session progress: TypeError: Load failed' to the console) with no visible backoff/debounce between attempts — harmless to data here, but console/HTTP errors are explicitly in-scope per the runbook goal and this is a real, reproducible pattern that would spam a real phone's battery/network on a longer offline stretch at the gym.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-06.mjs",
+    "evidence": "console: 13x repeated 'Error saving workout session progress' during the offline window; DB: final workout_sessions/workout_logs both correct",
+    "suspectFile": "src/hooks/useWorkoutSession.js:39-70 (saveProgress / online retry, no backoff seen between failed attempts)"
+  },
+  {
+    "id": "train-logger-r1-07",
+    "title": "Could not conclusively verify the 3h-silence auto-finish path in this harness — needs a different repro method",
+    "severity": "none",
+    "route": "/workout-detail",
+    "steps": "Two methods tried: (1) page.clock.setSystemTime to jump 3h30m forward then page.reload() — the reload's initial data/auth fetch reliably fails under WebKit with a mocked Date (page renders only the nav shell, main content area stays blank; no HTTP >=400 seen, requests seem to hang/fail client-side before firing). (2) Direct DB backdating of workout_sessions.updated_at/start_time via testDb, then reload with the real clock — blocked entirely: migration 20260909000000 added a BEFORE UPDATE trigger (`set_updated_at`) that unconditionally sets `NEW.updated_at = now()` on every UPDATE, so a client can never backdate this column (this is a deliberate, working anti-tamper property of the design, not a gap).",
+    "expected": "N/A — could not reach a clean repro of the 3h30m-silence condition to check against the judge rule.",
+    "actual": "Inconclusive. Without a reload, the app is stable under an advanced page.clock (elapsed-time UI updates correctly, no errors) — so the clock mock itself isn't inherently broken, only its combination with a fresh page load. This could plausibly be surfacing a real JWT/session-refresh issue on a long-backgrounded reopen (worth a second look with a real-time overnight-scale test or on-device via a tunnel), or it could be a WebKit+Playwright-clock artifact with no real-world analog (a real phone's clock never jumps discontinuously the way the mock does). Not confident enough either way to file this as a confirmed bug — recommend re-testing this specific case with an on-device/tunnel run using genuine elapsed wall time instead of a mocked clock.",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-07.mjs (current version uses the DB-backdate approach and correctly reports 'blocked by trigger' rather than a false pass/fail; /tmp/debug07*.mjs, not saved under areas/, has the page.clock+reload repro of the blank-screen symptom)",
+    "evidence": "console: 'TypeError: Load failed' + 'Failed to load resource: WebKit encountered an internal error' only in the page.clock+reload variant; body text empty after that reload",
+    "suspectFile": "unknown — could not isolate to app code vs. test harness with remaining budget"
+  },
+  {
+    "id": "train-logger-r1-08",
+    "title": "Confirmed: manual Finish and auto-finish stamp different log_date for the same midnight-crossing workout",
+    "severity": "minor",
+    "route": "/workout-detail",
+    "steps": "page.clock set to 23:50 America/Denver on day D, Start Session, complete 2 sets, advance clock to 00:10 on D+1, manually tap Finish → Log Workout.",
+    "expected": "Documented ambiguity, not necessarily a bug on its own — but the map's suspected inconsistency between the manual-finish and auto-finish paths for the same physical event needed confirming.",
+    "actual": "Confirmed: manual Finish stamped log_date = D+1 (2026-09-21), i.e. 'today' at the moment of Finish. The auto-finish path for the identical physical scenario (session goes silent instead) stamps log_date = D (session-start day) via localDateOf in buildWorkoutLogFromSession.js — a real, confirmed inconsistency: the same physical workout logs to a different calendar day depending only on which code path happens to close it. Flagging for Nolan's call on which is 'right' (already in wishes.json), not auto-fixing per runbook scope (spec/behavior change).",
+    "repro": "ui-audit/overnight/areas/train-logger/scripts/r1-08.mjs",
+    "evidence": "DB: workout_logs.log_date=2026-09-21 for a session started 2026-09-20T23:50 Denver; screenshot ui-audit/overnight/shots/r1-08-after-finish.png",
+    "suspectFile": "src/pages/WorkoutDetail.jsx:770 (getTodayString at Finish time) vs src/lib/buildWorkoutLogFromSession.js (localDateOf at session-start time)"
+  }
+]

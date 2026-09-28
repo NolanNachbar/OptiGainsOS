@@ -1,12 +1,24 @@
 {
- "area": "train-logger",
+ "area": "fuel",
  "round": 1,
- "step": "map",
+ "step": "map+cases",
  "cleanStreak": 0,
- "done": [],
+ "done": [
+  "train-logger (r1)"
+ ],
  "inFlight": null,
  "log": [
   "setup done 2026-09-27 22:10",
-  "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request"
+  "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request",
+  "23:03 start; round 1 map+cases combined into one agent to save budget",
+  "map+cases done (15 cases)",
+  "attack serialized: one active workout session per account, parallel attackers would collide",
+  "atk-1 first launch refused (session cwd is SkyWyo, agent thought task misrouted); relaunched with a context preamble. ALWAYS start agent prompts with: session opened in SkyWyo, but Nolan asked for this OptiGains audit.",
+  "atk-1 done: 8 cases, findings-r1-1.json (engine 1710 no clamp, no-undo set delete, dup schedule row on double Finish, offline retry spam, midnight log_date; r1-07 untestable in harness). atk-2 (09-15) launched",
+  "atk-2 done: r1-09 data-loss (identical 2nd workout discarded, false success), r1-10 ios (swap name field under keyboard), 403 lead rejected",
+  "verify: 2 confirmed (r1-01 1710 no clamp, r1-03 no undo on set delete), 3 rejected (r1-02 harness timing, r1-06, r1-10 blamed on iphone-sim layer -> orchestrator to double-check layer in morning), 2 proposals (r1-08 midnight date, r1-09 identical same-day dedupe). Next round: intermittent program_workouts access-control pageerror",
+  "fix: 2 fixed f541e685, 61a59c5f. Running UX pass before review so one opus review covers both",
+  "ux: 1 move 04afc8b0 (Replace exercise first in exercise menu), 4 proposals",
+  "00:56 review: approved/corrected (03c2dc26). Dry-run gate PASSED. Breadth-first: one round per area. train-logger round 1 done (not clean: engine-level typo bug) -> round 2 later if time"
  ]
 }
