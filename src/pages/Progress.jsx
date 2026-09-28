@@ -5,6 +5,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
+import { BOUNDS as WEIGHT_BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,20 +40,31 @@ function WeightTab() {
   const HISTORY_PAGE_SIZE = 7;
   const logWeight = useLogWeight();
 
+  const [weightError, setWeightError] = useState(null);
+
   const add = useMutation({
     mutationFn: async () => {
+      const parsed = Number.parseFloat(weight);
+      const [min, max] = WEIGHT_BOUNDS[weightUnit] || WEIGHT_BOUNDS.lbs;
+      if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+        throw new Error(`That reads as ${weight} ${weightUnit}. Expected ${min}-${max}.`);
+      }
       // Shared write path: re-logging a date that already has an entry updates
       // it instead of adding a second row for the same day.
       return await logWeight.mutateAsync({
-        weight, date, notes: notes || null,
+        weight: parsed, date, notes: notes || null,
       });
     },
     onSuccess: () => {
       invalidateBodyWeight(qc);
-      setWeight(""); setNotes("");
+      setWeight(""); setNotes(""); setWeightError(null);
       toast.success("Weight logged");
     },
-    onError: () => toast.error("Failed to log weight"),
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : "Failed to log weight";
+      setWeightError(msg);
+      toast.error(msg);
+    },
   });
 
   const del = useMutation({
@@ -94,9 +106,12 @@ function WeightTab() {
               </div>
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
-                <Input type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="0.0" className="h-11 w-full" />
+                <Input type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => { setWeight(e.target.value); setWeightError(null); }} placeholder="0.0" className="h-11 w-full" />
               </div>
             </div>
+            {weightError && (
+              <p className="text-xs font-semibold text-bad">{weightError}</p>
+            )}
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Notes (optional)</Label>
               <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Morning, fasted..." className="h-11" />

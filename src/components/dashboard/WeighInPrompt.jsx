@@ -11,7 +11,7 @@ import { getTodayString } from "@/utils/dateUtils";
 // Deliberately wide: the point is to catch a slipped digit, not to police a
 // range. Rejecting shows the value back rather than silently clamping it,
 // because a clamped weight is a lie the trend estimator cannot detect.
-const BOUNDS = { lbs: [50, 700], kg: [25, 320] };
+export const BOUNDS = { lbs: [50, 700], kg: [25, 320] };
 
 // How stale is stale. Under a week reads as a normal gap and gets a neutral
 // caption; past that the caption carries the count, because the number of days
