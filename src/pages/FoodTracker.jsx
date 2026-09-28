@@ -2754,46 +2754,14 @@ const handleSaveMealTemplate = () => {
                       </div>
                     )}
 
-                    {/* AI estimate — describe a food when exact macros aren't in the DB */}
+                    {/* add-food-dialog-5 (OVN-fuel-ux): manual entry leads this
+                        "alternatives to search" zone — it's the routine
+                        fallback when a food has no USDA match (barcode-miss
+                        and label-capture both land here too), so it comes
+                        before the lower-traffic AI estimate. Manual owns the
+                        zone's one top border; AI estimate (below) drops its
+                        own so they don't stack into a double divider. */}
                     <div className="border-t border-charcoal-border pt-4">
-                      <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-brand" /> Can't find it? Describe it
-                      </Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id="ai-estimate"
-                          value={estimateInput}
-                          onChange={(e) => setEstimateInput(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); estimateFood(); } }}
-                          placeholder="e.g., 8 oz grilled chicken breast"
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="dim"
-                          size="lg"
-                          onClick={estimateFood}
-                          disabled={isEstimating || !estimateInput.trim()}
-                          className="shrink-0 min-w-[92px]"
-                        >
-                          {isEstimating ? <Loader2 className="w-4 h-4 spin-loop" /> : <><Sparkles className="w-4 h-4" /> Estimate</>}
-                        </Button>
-                      </div>
-                      {isEstimatedFood ? (
-                        <p className="mt-1.5 text-[11px] text-brand flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
-                      )}
-                    </div>
-
-                    {/* add-food-dialog-5: the AI-estimate section above already
-                        opens this "alternatives to search" zone with a single
-                        border-t rule; the manual-entry disclosure that follows it
-                        drops its own top border so the two don't stack into a
-                        double divider, spacing alone (pt-1) separates them. */}
-                    <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => setManualExpanded(v => !v)}
@@ -3161,6 +3129,42 @@ const handleSaveMealTemplate = () => {
                       </div>
                       )}
                   </div>
+
+                    {/* AI estimate — describe a food when exact macros aren't in the DB.
+                        Trails manual entry (OVN-fuel-ux): pt-1 only, the border above
+                        already opened this zone. */}
+                    <div className="pt-1">
+                      <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-brand" /> Can't find it? Describe it
+                      </Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id="ai-estimate"
+                          value={estimateInput}
+                          onChange={(e) => setEstimateInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); estimateFood(); } }}
+                          placeholder="e.g., 8 oz grilled chicken breast"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="dim"
+                          size="lg"
+                          onClick={estimateFood}
+                          disabled={isEstimating || !estimateInput.trim()}
+                          className="shrink-0 min-w-[92px]"
+                        >
+                          {isEstimating ? <Loader2 className="w-4 h-4 spin-loop" /> : <><Sparkles className="w-4 h-4" /> Estimate</>}
+                        </Button>
+                      </div>
+                      {isEstimatedFood ? (
+                        <p className="mt-1.5 text-[11px] text-brand flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
+                      )}
+                    </div>
                 </div>
 
               {/* Fixed footer — only mounts once a food is selected/typed, so
