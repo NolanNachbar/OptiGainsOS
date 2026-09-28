@@ -132,7 +132,11 @@ async function measure(name) {
     if (await el.isExisting()) out[`btn${b}`] = await driver.getElementRect(await el.elementId);
   }
   const m = await driver.$('-ios predicate string:label BEGINSWITH "METRICS:"');
-  if (await m.isExisting()) out.page = JSON.parse((await m.getAttribute('label')).slice(8));
+  // iOS appends the role to the label ("…}, note"), so cut at the last brace.
+  if (await m.isExisting()) {
+    const label = await m.getAttribute('label');
+    out.page = JSON.parse(label.slice(8, label.lastIndexOf('}') + 1));
+  }
   writeFileSync(join(OUT, `measure-${name}.json`), JSON.stringify(out, null, 2));
   log('measured', name, JSON.stringify(out).slice(0, 300));
 }
