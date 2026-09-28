@@ -12,6 +12,8 @@ test('approving the week plan sends a single atomic insert, not one request per 
   const db = await testDb();
   const uid = await testUserId();
 
+  const testStart = new Date().toISOString();
+
   await signIn(page, '/fuel');
 
   const weekPlanBtn = page.getByRole('button', { name: /Week plan/ });
@@ -39,4 +41,9 @@ test('approving the week plan sends a single atomic insert, not one request per 
 
   const { data: planned } = await db.from('food_entries').select('id').eq('created_by', uid).eq('planned', true);
   expect((planned?.length ?? 0)).toBeGreaterThan(0);
+
+  // Approve's rows can't carry an OVN tag; remove the planned rows this run
+  // loaded so they don't linger on the shared test account.
+  await db.from('food_entries').delete()
+    .eq('created_by', uid).eq('planned', true).gte('created_at', testStart);
 });
