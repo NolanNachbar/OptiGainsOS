@@ -396,6 +396,23 @@ export default function ExerciseCard({
                 style={menuStyle}
                 className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
               >
+                {/* Replace exercise leads the menu: a mid-session equipment
+                    swap (Casper day, machine taken) is a routine workaround
+                    the athlete reaches for far more than notes/cues, per the
+                    overnight audit's UX pass (wishes.json). Destructive Remove
+                    stays anchored last regardless. */}
+                {onReplaceExercise && (
+                <button
+                  onClick={() => {
+                    setShowReplaceDialog(true);
+                    setOpenMenu(false);
+                  }}
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Replace exercise
+                </button>
+                )}
                 <button
                   onClick={() => {
                     setEditingNotes(true);
@@ -416,18 +433,6 @@ export default function ExerciseCard({
                   <HelpCircle className="w-4 h-4" />
                   How to
                 </button>
-                {onReplaceExercise && (
-                <button
-                  onClick={() => {
-                    setShowReplaceDialog(true);
-                    setOpenMenu(false);
-                  }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Replace exercise
-                </button>
-                )}
                 {isProgramMode && (
                   <button
                     onClick={() => {
