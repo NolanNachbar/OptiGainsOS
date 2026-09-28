@@ -1,4 +1,4 @@
-import { nowInTz } from '@/utils/dateUtils';
+import { nowInTz, getTodayString } from '@/utils/dateUtils';
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -8,9 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useEnrollments } from "@/hooks/useProgramQueries";
-import PendingWeekBanner from "@/components/program/PendingWeekBanner";
 import { useProfile } from "@/hooks/useUserQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
+import WeekTemplateSwap from "@/components/program/WeekTemplateSwap";
 import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 
 const RUN_NAMES = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
@@ -313,7 +313,6 @@ export default function WeeklySchedule() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-6">
-      <PendingWeekBanner programId={activeEnrollment?.program_id} className="mb-3" />
 
       {/* Week nav */}
       <div className="flex items-center justify-between mb-3 px-1 rise-in">
@@ -338,6 +337,12 @@ export default function WeeklySchedule() {
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
+
+      <WeekTemplateSwap
+        programId={activeEnrollment?.program_id}
+        weekDates={weekDays.map((d) => format(d, "yyyy-MM-dd"))}
+        today={getTodayString(profile?.timezone)}
+      />
 
       {/* Week rows — date · type pill · detail · status */}
       <div className="glass px-3.5 pt-2.5 pb-2 mb-4 rise-in">

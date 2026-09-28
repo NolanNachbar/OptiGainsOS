@@ -24,7 +24,7 @@ automatically. No special-cased action branches beyond REST and pure CARDIO.
 
 import copy
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from engine.vdot_engine import VDOTEngine
 from engine.athlete_profile import (apply_philosophy, MUSCLE_EMPHASIS,
@@ -1974,7 +1974,9 @@ def _build_session(
 # ── Public API ────────────────────────────────────────────────────────────────
 
 # ── Navy PRT prep block ───────────────────────────────────────────────────────
-# Nolan's PRT window is 2026-09-14 .. 2026-09-27. The test scores push-up REPS
+# Nolan's PRT is Tuesday 2026-09-29 (confirmed 2026-09-27). Practice runs from
+# 2026-09-10 and stops two days out, so the day before the test carries no
+# push-up or plank work and he tests fresh. The test scores push-up REPS
 # in two minutes and a forearm-plank HOLD, so both have to be loggable numbers
 # he can watch climb -- a display-only cardio note would tell him nothing about
 # whether he is ready on test day.
@@ -1989,8 +1991,9 @@ def _build_session(
 #
 # Window-gated so it expires on its own after the test instead of silently
 # becoming a permanent rule nobody remembers to remove. [COACH]
+PRT_TEST_DATE    = date(2026, 9, 29)
 PRT_WINDOW_START = date(2026, 9, 10)
-PRT_WINDOW_END   = date(2026, 9, 27)
+PRT_WINDOW_END   = PRT_TEST_DATE - timedelta(days=2)
 
 # Submaximal on purpose. Daily max-rep sets before a max-rep test dig a hole he
 # would still be in on test day; practice volume is the point, not a rehearsal

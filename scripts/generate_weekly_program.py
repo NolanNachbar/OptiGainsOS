@@ -184,6 +184,20 @@ def sb_patch(table, filt, row):
         print(f"  ERROR sb_patch({table}): {e}")
         return False
 
+def sb_delete(table, filt):
+    """DELETE this athlete's rows matching filt (col->'eq.val' style)."""
+    query = {"created_by": f"eq.{USER_ID}", **filt}
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='.-+')}" for k, v in query.items())
+    url = f"{SUPABASE_URL}/rest/v1/{table}?{qs}"
+    req = urllib.request.Request(url, method="DELETE",
+                                 headers=_headers({"Prefer": "return=minimal"}))
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return True
+    except Exception as e:
+        print(f"  ERROR sb_delete({table}): {e}")
+        return False
+
 def sb_upsert_engine(row):
     """Upsert engine_params — conflict on created_by,date."""
     url  = f"{SUPABASE_URL}/rest/v1/engine_params?on_conflict=created_by,date"
@@ -1475,10 +1489,7 @@ def main():
         _t = str(r.get("title", "")).strip().lower()
         if _t and _t not in library_ids:
             library_ids[_t] = r.get("id")
-    # F15: the generated week is staged for Nolan's approval, not applied straight
-    # to program_workouts (his call, 2026-07-27 — mirrors reviewing the diet plan
-    # before it loads: nothing about his ACTUAL schedule changes until he taps
-    # approve in the UI). Collected here, written as one row after the loop.
+    # The generated days, collected here and applied live after the loop.
     pending_rows = []
     for i, sim_day in enumerate(days_to_generate):
         day_name = sim_day.strftime("%A")
@@ -1638,28 +1649,18 @@ def main():
         load_history.append(projected_tss)
         guardrail.record_state(overreach["fatigue_state"])
 
-    # F15: stage the whole week as one row, replacing any still-unapproved plan
-    # from a prior run — always the freshest engine state wins, approval is
-    # binary (this week's plan or last week's), never a merge of both.
-    pend_ok = sb_upsert("program_workouts_pending", {
-        "program_id":   program_id,
-        "created_by":   USER_ID,
-        "week_start":   week_start,
-        "rows":         pending_rows,
-        "generated_at": datetime.datetime.utcnow().isoformat(),
-    }, conflict_cols="program_id")
-    print(f"\n  {'✓' if pend_ok else '✗'}  staged {len(pending_rows)} days for approval (week_start={week_start})")
+    # No approval step (Nolan's call, 2026-09-27): the week loads on its own via
+    # the auto-apply below. This used to stage the week in
+    # program_workouts_pending for an "Approve & load" tap, which kept nagging
+    # on Today and Schedule after auto-apply had already made the week live, and
+    # approving re-upserted every day, trained ones included. Clear any row a
+    # previous run left so nothing reads a stale staged week.
+    sb_delete("program_workouts_pending", {"program_id": f"eq.{program_id}"})
 
-    # F15 carry-forward: program_workouts is what mpc_prescriber.py and
-    # compute_athlete_state.py read for TODAY, and it's keyed by scheduled_date.
-    # If we only ever wrote program_workouts_pending, an un-approved week would
-    # leave program_workouts with NO rows for these dates at all — not "last
-    # week's schedule keeps running" (what the UI tells him) but a silent gap
-    # that starves the prescriber and distorts planned-volume-driven carb
-    # targets. So: default each of this week's dates to last week's APPROVED
-    # session for the same weekday, unchanged. Approval later overwrites these
-    # placeholders (same program_id+scheduled_date conflict key) with the real
-    # engine output. Unapproved genuinely means "same workouts as last week."
+    # Carry-forward: program_workouts is what mpc_prescriber.py and
+    # compute_athlete_state.py read for TODAY, keyed by scheduled_date. A date
+    # the fresh generation didn't cover falls back to last week's session for
+    # the same weekday, so the prescriber never sees a gap.
     _carry_src = sb_get("program_workouts", {
         "select": "scheduled_date,title,focus,exercises,cardio_sessions,duration_minutes,locked",
         "created_by": f"eq.{USER_ID}", "program_id": f"eq.{program_id}",
@@ -1677,8 +1678,7 @@ def main():
     # "Touched" is deliberately broad: any session started (whatever its status)
     # or anything logged on that date. Never rewrite a day he has trained or is
     # mid-way through — the log is ground truth and the plan must keep matching
-    # what he actually did. The pending row above is still written, so the UI's
-    # review screen and the approval path keep working unchanged.
+    # what he actually did.
     _touched = set()
     for _tbl, _sel, _key in (("workout_sessions", "started_at", "started_at"),
                              ("workout_logs", "log_date", "log_date")):

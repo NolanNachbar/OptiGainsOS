@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useEnrollments, useProgram } from "@/hooks/useProgramQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
+import { intakeForPhase } from "@/hooks/useSetDietPhase";
 
 export const dayPlanContextKey = (userId, dates) => ["day-plan-context", userId, dates.join(",")];
 
@@ -24,7 +25,9 @@ export function useDayPlanContext(dates, { enabled = true } = {}) {
   const { program } = useProgram(activeEnrollment?.program_id);
 
   const { data: dayContext, isLoading } = useQuery({
-    queryKey: dayPlanContextKey(user?.id, dates),
+    // diet_phase in the key: the targets below depend on it, and a phase pick
+    // must not be served last phase's numbers from cache.
+    queryKey: [...dayPlanContextKey(user?.id, dates), profile?.diet_phase],
     queryFn: async () => {
       const [statesRes, eatenRes, overridesRes] = await Promise.all([
         supabase.from("athlete_state").select("date, nutrition")
@@ -39,8 +42,10 @@ export function useDayPlanContext(dates, { enabled = true } = {}) {
       if (overridesRes.error) throw overridesRes.error;
       const targets = {};
       for (const s of statesRes.data || []) {
-        const cal = s.nutrition?.recommended_intake?.calorie_target;
-        const pro = s.nutrition?.recommended_intake?.protein_g ?? s.nutrition?.protein_target;
+        // The phase he picked, same as useDailyTargets.
+        const { rec } = intakeForPhase(s.nutrition, profile?.diet_phase);
+        const cal = rec?.calorie_target;
+        const pro = rec?.protein_g ?? s.nutrition?.protein_target;
         if (cal) targets[s.date] = { calories: Math.round(cal), protein: pro ? Math.round(pro) : null };
       }
       const overrides = {};

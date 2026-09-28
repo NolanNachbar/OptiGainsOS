@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Create and boot simulator
         env:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Install Appium + XCUITest driver
         run: |
-          npm i -g appium@2
+          npm i -g appium@3
           appium driver install xcuitest
           (cd ios-sim && npm i --no-audit --no-fund)
 

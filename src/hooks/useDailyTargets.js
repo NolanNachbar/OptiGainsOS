@@ -25,6 +25,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
+import { intakeForPhase, ENGINE_TO_PHASE } from "@/hooks/useSetDietPhase";
 
 const DEFAULTS = { calories: 2000, protein: 150, carbs: 200, fats: 65 };
 
@@ -133,7 +134,9 @@ export function useDailyTargets(date) {
   const manualProtein = overrideRow?.action === "manual" ? overrideRow.manual_protein_g : null;
 
   const nutrition = stateRow?.nutrition || null;
-  const recommended = nutrition?.recommended_intake || null;
+  // The phase he picked, not necessarily the one the engine computed under last
+  // night (see intakeForPhase).
+  const { rec: recommended, pending: phasePending } = intakeForPhase(nutrition, profile?.diet_phase);
 
   const engineCal = manualCal ?? recommended?.calorie_target ?? nutrition?.calorie_target ?? null;
   // The engine writes its real recommendation as recommended_intake.protein_g;
@@ -200,6 +203,10 @@ export function useDailyTargets(date) {
     // He typed this number in himself (nutrition_overrides.action = 'manual'),
     // outranking both the engine rec and the profile goal.
     manualOverride: !!manualCal,
+    // He picked a phase the engine hasn't computed yet; numbers are last
+    // night's until the next run.
+    phasePending,
+    dietPhase: ENGINE_TO_PHASE[profile?.diet_phase] || null,
     // True only for the recovery-gated recommendation; the engine's top-level
     // calorie_target is just the profile goal echoed back, which doesn't earn
     // the "engine-set" badge.

@@ -114,6 +114,12 @@ class NutritionModulator:
     POOR_SLEEP_FACTOR         = 0.70
     CUT_PROTEIN_G_PER_LB      = 1.35   # 1.2-1.5 g/lb to retain muscle ON A CUT (TNF cutting philosophy)
     BASE_PROTEIN_G_PER_LB     = 1.0    # ~1 g/lb when not cutting
+    # Bulk surplus over the adaptive TDEE. TNF's small-surplus prior: ~100 kcal
+    # over a scale-derived maintenance, 40-50 kcal minimum for any growth, aiming
+    # at a 0.25-0.75 lb/week gain (BBrain 30-Resources/Training-Science/concepts/
+    # "Bulking & Lean Gaining.md"). A tunable prior, not a rule; the scale trend
+    # is what should move it.
+    BULK_SURPLUS_KCAL         = 100
     MIN_FAT_G_PER_LB          = 0.33   # ~1/3 g/lb hormonal floor on fat (TNF); floored at 50g absolute
     CARB_FLOOR_G_PER_DAY      = 30     # avg cut carbs/day; ×7 = the weekly budget that gets cycled
     # On a cut the calorie target IS this floor (protein×4 + fat×9 + carbs×4), so these
@@ -295,12 +301,20 @@ class NutritionModulator:
             calorie_target = round(self.maintenance_kcal - kcal_deficit)
             deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
         else:
-            # Non-cut: conventional capped target-deficit model. Computed exactly as
-            # before — this is the flat baseline the carb cycling below redistributes
-            # around, not replaces.
-            deficit_ratio = round(target * headroom, 3)
-            kcal_deficit  = round(self.maintenance_kcal * deficit_ratio)
+            # Maintain and bulk (Nolan's call, 2026-09-27, the diet phase picker).
+            # These used to run the capped target-deficit model, so with no caller
+            # passing a target, "maintain" and "bulk" both ate ~25% under TDEE.
+            # Maintain is now the adaptive TDEE itself; bulk is TDEE plus a small
+            # surplus. The recovery gates exist to trim a deficit, and scaling a
+            # surplus by them runs backwards, so they don't touch these targets.
+            # phase arrives as "maintenance" from compute_athlete_state and as
+            # "maintain" from the profile; anything not "bulk" is maintain here.
+            target = 0.0
+            headroom = 1.0
+            gates = []
+            kcal_deficit = -self.BULK_SURPLUS_KCAL if phase == "bulk" else 0
             calorie_target = round(self.maintenance_kcal - kcal_deficit)
+            deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
 
             # Non-cut carb cycling (Nolan's call, 2026-07-27): same demand-weighted
             # redistribution as the cut branch above, blended toward flat (see
@@ -327,7 +341,14 @@ class NutritionModulator:
                 kcal_deficit = round(self.maintenance_kcal - calorie_target)
                 deficit_ratio = round(kcal_deficit / self.maintenance_kcal, 3) if self.maintenance_kcal else 0.0
 
-        if not gates:
+        if phase == "bulk":
+            rationale = (f"Bulking: maintenance ({round(self.maintenance_kcal)} kcal) plus a "
+                         f"{self.BULK_SURPLUS_KCAL} kcal surplus. Aim for 0.25 to 0.75 lb a week "
+                         "on the scale trend.")
+        elif phase != "cut":
+            rationale = (f"Maintaining: eating at your estimated maintenance "
+                         f"({round(self.maintenance_kcal)} kcal).")
+        elif not gates:
             rationale = (f"Recovery is clear — running the full {round(deficit_ratio*100)}% deficit "
                          f"({kcal_deficit} kcal) for max fat loss.")
         elif "manual_push" in gates:

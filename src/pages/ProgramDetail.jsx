@@ -8,8 +8,6 @@ import {
   useUpdateEnrollmentStatus,
   useDeleteProgram,
   useDeleteEnrollment,
-  usePendingProgramWeek,
-  useApprovePendingProgramWeek,
 } from "@/hooks/useProgramQueries";
 import { calculateDailyTargets } from "@/utils/programProgression";
 import { exportProgramAsJson } from "@/utils/programIO";
@@ -43,8 +41,6 @@ import {
   Repeat,
   Activity,
   ChevronDown,
-  Check,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -70,8 +66,6 @@ export default function ProgramDetail() {
   const statusMutation = useUpdateEnrollmentStatus();
   const deleteMutation = useDeleteProgram();
   const deleteEnrollmentMutation = useDeleteEnrollment();
-  const { pending } = usePendingProgramWeek(programId);
-  const approvePendingMutation = useApprovePendingProgramWeek(programId);
 
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [startingWeights, setStartingWeights] = useState({});
@@ -234,14 +228,6 @@ export default function ProgramDetail() {
         setShowDeleteDialog(false);
         toast.error("Failed to delete program");
       },
-    });
-  };
-
-  const handleApprovePending = () => {
-    if (!pending?.rows?.length) return;
-    approvePendingMutation.mutate(pending.rows, {
-      onSuccess: () => toast.success("This week's plan is live"),
-      onError: () => toast.error("Couldn't apply this week's plan"),
     });
   };
 
@@ -525,44 +511,6 @@ export default function ProgramDetail() {
             </div>
           </CardContent>
         </Card>
-
-        {/* This week's engine-generated plan — staged, not applied, until
-            approved (his call, 2026-07-27: mirrors reviewing the diet plan
-            before it loads). Only the owner reviews their own engine output.
-            Note: week_start is the week that just began (generation runs
-            Sunday night), not the week after — the copy below must say so,
-            since program_workouts already carries forward last week's actual
-            sessions onto these dates as the default (see F15 carry-forward
-            in generate_weekly_program.py) until this is approved. */}
-        {isOwner && pending?.rows?.length > 0 && (
-          <Card className="mb-6 rise-in border-[0.5px] border-brand/30">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-brand" />
-                <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">
-                  This week's plan is ready
-                </span>
-              </div>
-              <p className="text-sm text-ink-secondary mb-3">
-                {pending.rows.filter((r) => (r.exercises || []).length > 0).length} training day
-                {pending.rows.filter((r) => (r.exercises || []).length > 0).length === 1 ? "" : "s"} generated
-                for the week of {pending.week_start} &middot; you're currently running last week's sessions on these
-                dates until you approve the new plan.
-              </p>
-              <Button
-                variant="volt"
-                size="lg"
-                className="w-full"
-                onClick={handleApprovePending}
-                disabled={approvePendingMutation.isPending}
-              >
-                {approvePendingMutation.isPending
-                  ? "Applying…"
-                  : <><Check className="w-4 h-4 mr-2" /> Approve &amp; load this week</>}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Recovery warnings */}
         {recoveryWarnings.length > 0 && (

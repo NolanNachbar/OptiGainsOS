@@ -19,7 +19,6 @@ import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries"
 import { useEnrollments } from "@/hooks/useProgramQueries";
 import WeighInPrompt from "@/components/dashboard/WeighInPrompt";
 import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
-import PendingWeekBanner from "@/components/program/PendingWeekBanner";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -511,10 +510,6 @@ export default function Today() {
                 thing under the verdict. The pre-session gate still catches him
                 at the gym — this catches him at home, where the scale is. */}
             <WeighInPrompt today={today} className="mb-3" />
-            <PendingWeekBanner
-              programId={enrollments.find((e) => e.status === "active")?.program_id}
-              className="mb-3"
-            />
             {/* The subjective check-in now rides the Begin Session flow: the card
                 gates its CTA on todayCheckin (no check-in yet → check-in sheet
                 first, then straight into the logger). */}

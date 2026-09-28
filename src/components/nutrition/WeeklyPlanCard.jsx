@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useCustomFoods } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
+import { useSetDietPhase } from "@/hooks/useSetDietPhase";
 import { useDayPlanContext } from "@/hooks/useDayPlanContext";
 import { resolveDayPlan } from "@/utils/dayPlan";
 import { getTodayString } from "@/utils/dateUtils";
@@ -59,7 +60,7 @@ export default function WeeklyPlanCard({ bare = false }) {
   // ONE source of truth for today's targets — the same hook the daily log rings
   // use (engine recovery-gated target → profile goal). Days the engine hasn't
   // scored yet fall back to these numbers.
-  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut, manualOverride, carbWindows } = useDailyTargets(today);
+  const { calories: calTarget, protein: proteinTarget, fats: fatTarget, engineSet, recommended: rec, isCut, aggressiveCut, manualOverride, carbWindows, nutrition, dietPhase, phasePending } = useDailyTargets(today);
 
   const phaseRaw = (activePhase?.phase_type || "").toLowerCase();
   const isBulk = phaseRaw.includes("bulk") || phaseRaw.includes("surplus");
@@ -126,15 +127,36 @@ export default function WeeklyPlanCard({ bare = false }) {
   // own calorie/protein target for the week, it beats the engine everywhere
   // (this card, the daily rings) instantly. Backed by the same nutrition_overrides
   // row the daily ease/push escape valves use — one more `action` value.
-  const weekOverridden = week.some((d) => d.overridden);
   const [showOverride, setShowOverride] = useState(false);
   const [overrideCal, setOverrideCal] = useState("");
   const [overrideProtein, setOverrideProtein] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
   const openOverride = () => {
     setOverrideCal(String(Math.round(calTarget || 0)));
     setOverrideProtein(proteinTarget ? String(Math.round(proteinTarget)) : "");
+    setShowCustom(manualOverride);
     setShowOverride(true);
   };
+
+  // Diet phase picker (Nolan's call, 2026-09-27): Cut / Maintain / Bulk with the
+  // engine's number for each, or Custom (the hand-typed target below). Replaces
+  // the old binary "take the engine's number or type your own".
+  const setPhase = useSetDietPhase(today);
+  const phaseOptions = nutrition?.phase_options || {};
+  const currentChoice = manualOverride ? "custom" : (dietPhase || (isCut ? "cut" : "maintain"));
+  const PHASE_CHOICES = [
+    { value: "cut", label: "Cut", engineKey: "cut" },
+    { value: "maintain", label: "Maintain", engineKey: "maintenance" },
+    { value: "bulk", label: "Bulk", engineKey: "bulk" },
+  ];
+  const pickPhase = (value, label) => {
+    if (value === currentChoice) { setShowOverride(false); return; }
+    setPhase.mutate(value, {
+      onSuccess: () => { setShowOverride(false); toast.success(`${label} set`); },
+      onError: (e) => toast.error(e.message || "Couldn't change the phase"),
+    });
+  };
+  const choiceLabel = { cut: "Cut", maintain: "Maintain", bulk: "Bulk", custom: "Custom" }[currentChoice];
 
   const setOverride = useMutation({
     mutationFn: async ({ clear }) => {
@@ -247,6 +269,12 @@ export default function WeeklyPlanCard({ bare = false }) {
         </div>
       </div>
 
+      {phasePending && !manualOverride && (
+        <p className="mx-5 mb-3 text-xs text-ink-muted">
+          The engine computes your {choiceLabel.toLowerCase()} numbers tonight. Until then this shows last night&apos;s target.
+        </p>
+      )}
+
       {/* ── Manual-override banner — stands in for the recovery-gated block
           below, since that rationale describes the ENGINE's number, which the
           header is no longer showing. ── */}
@@ -268,13 +296,13 @@ export default function WeeklyPlanCard({ bare = false }) {
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-            <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Recovery-Gated Deficit</span>
+            <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">{currentChoice === "bulk" ? "Surplus" : currentChoice === "maintain" ? "Maintenance" : "Recovery-Gated Deficit"}</span>
             {/* This % is the PLANNED deficit magnitude — a derived ratio, not a
                 kcal figure, so it must NOT borrow the gold kcal hue (that hue is
                 owned by the calorie datum). Render it neutral (font-technical +
                 secondary ink). text-warn stays reserved for the gate chips below,
                 which are the actual recovery alarms. */}
-            <span className="ml-auto font-technical text-sm text-ink-secondary">{Math.round((rec.deficit_ratio || 0) * 100)}%</span>
+            <span className="ml-auto font-technical text-sm text-ink-secondary">{currentChoice === "cut" ? `${Math.round((rec.deficit_ratio || 0) * 100)}%` : `${Math.round(rec.maintenance_kcal || 0).toLocaleString()} TDEE`}</span>
           </div>
           <p className={`text-xs text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
           {rec.rationale && rec.rationale.length > 90 && (
@@ -537,7 +565,8 @@ export default function WeeklyPlanCard({ bare = false }) {
             className="glass-interactive shrink-0 min-h-[44px] px-4 rounded-xl border border-charcoal-border flex items-center gap-1.5 text-xs font-bold text-ink-secondary active:scale-[0.98]"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            {weekOverridden ? "Editing" : "Override"}
+            {choiceLabel}
+            <ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
         <p className="text-[10px] text-ink-muted text-center mt-2 flex items-center justify-center gap-1">
@@ -545,54 +574,84 @@ export default function WeeklyPlanCard({ bare = false }) {
         </p>
       </div>
 
-      {/* ── Manual override — MacroFactor's "Algorithm vs Manual" toggle. Sets
-          the week's calorie/protein target by hand instead of the engine's
-          recovery-gated number; the day plan above rebuilds around it. ── */}
+      {/* ── Diet picker: the engine's Cut / Maintain / Bulk numbers, or Custom
+          (a hand-typed target for this week). The day plan above rebuilds
+          around whichever is picked. ── */}
       <Dialog open={showOverride} onOpenChange={setShowOverride}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manual target</DialogTitle>
+            <DialogTitle>Diet</DialogTitle>
           </DialogHeader>
-          <div className="px-5 pb-5 space-y-4">
-            <p className="text-xs text-ink-muted leading-relaxed">
-              Set your own kcal/day for this week — it overrides the engine's target
-              everywhere (this plan, the daily rings) until you clear it.
-            </p>
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Calories / day</span>
-              <input
-                type="number" inputMode="numeric" value={overrideCal}
-                onChange={(e) => setOverrideCal(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-gold"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day (optional)</span>
-              <input
-                type="number" inputMode="numeric" value={overrideProtein}
-                placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
-                onChange={(e) => setOverrideProtein(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
-              />
-            </label>
-            <div className="flex gap-2 pt-1">
-              {weekOverridden && (
+          <div className="px-5 pb-5 space-y-2">
+            {PHASE_CHOICES.map(({ value, label, engineKey }) => {
+              const opt = phaseOptions[engineKey];
+              const selected = currentChoice === value;
+              return (
                 <button
-                  onClick={() => setOverride.mutate({ clear: true })}
-                  disabled={setOverride.isPending}
-                  className="glass-interactive flex-1 min-h-[44px] rounded-xl border border-charcoal-border text-xs font-bold text-ink-secondary disabled:opacity-60"
+                  key={value}
+                  type="button"
+                  onClick={() => pickPhase(value, label)}
+                  disabled={setPhase.isPending}
+                  aria-pressed={selected}
+                  className={`w-full min-h-[52px] rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left disabled:opacity-60 ${selected ? "border-brand/50 bg-brand/[8%]" : "border-charcoal-border glass-interactive"}`}
                 >
-                  Use engine target
+                  <span className="flex items-center gap-2">
+                    {selected ? <Check className="w-4 h-4 text-brand" /> : <span className="w-4" />}
+                    <span className="text-sm font-bold text-ink">{label}</span>
+                  </span>
+                  <span className="text-right">
+                    {opt?.calorie_target ? (
+                      <>
+                        <span className="block font-technical text-gold text-sm">{Math.round(opt.calorie_target).toLocaleString()} kcal</span>
+                        {opt.protein_g ? <span className="block text-[10px] text-ink-muted">{Math.round(opt.protein_g)} g protein</span> : null}
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-ink-muted">after tonight&apos;s engine run</span>
+                    )}
+                  </span>
                 </button>
-              )}
-              <button
-                onClick={() => setOverride.mutate({ clear: false })}
-                disabled={setOverride.isPending}
-                className="cta-action flex-1 disabled:opacity-60"
-              >
-                {setOverride.isPending ? "Saving…" : "Set for this week"}
-              </button>
-            </div>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setShowCustom((v) => !v)}
+              aria-pressed={currentChoice === "custom"}
+              className={`w-full min-h-[52px] rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left ${currentChoice === "custom" ? "border-brand/50 bg-brand/[8%]" : "border-charcoal-border glass-interactive"}`}
+            >
+              <span className="flex items-center gap-2">
+                {currentChoice === "custom" ? <Check className="w-4 h-4 text-brand" /> : <span className="w-4" />}
+                <span className="text-sm font-bold text-ink">Custom</span>
+              </span>
+              <span className="text-[10px] text-ink-muted">your own numbers, this week</span>
+            </button>
+            {showCustom && (
+              <div className="space-y-3 pt-2">
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Calories / day</span>
+                  <input
+                    type="number" inputMode="numeric" value={overrideCal}
+                    onChange={(e) => setOverrideCal(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-gold"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day (optional)</span>
+                  <input
+                    type="number" inputMode="numeric" value={overrideProtein}
+                    placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
+                    onChange={(e) => setOverrideProtein(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
+                  />
+                </label>
+                <button
+                  onClick={() => setOverride.mutate({ clear: false })}
+                  disabled={setOverride.isPending}
+                  className="cta-action w-full disabled:opacity-60"
+                >
+                  {setOverride.isPending ? "Saving…" : "Set for this week"}
+                </button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

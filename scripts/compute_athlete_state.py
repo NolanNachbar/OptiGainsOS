@@ -1625,8 +1625,11 @@ def main():
             # the wrong athlete's cut start.
             _dp = sb_get("diet_phases", {
                 "select": "*", "created_by": f"eq.{USER_ID}",
-                "end_date": "is.null", "order": "created_at.desc", "limit": "1",
+                "end_date": "is.null", "phase_type": "eq.cut",
+                "order": "created_at.desc", "limit": "1",
             })
+            # phase_type filter: the diet picker opens a bulk/maintain row too, and
+            # its age must not count as weeks spent cutting.
             if _dp:
                 _sd = _dp[0].get("start_date") or _dp[0].get("created_at")
                 if _sd:
@@ -1657,7 +1660,7 @@ def main():
         manual_cal = _ov.get("manual_calorie_target") if _ov_action == "manual" else None
         manual_protein = _ov.get("manual_protein_g") if _ov_action == "manual" else None
 
-        nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit({
+        _deficit_signals = {
             "overreaching":  overreach_out.get("overreaching"),
             "hrv_z":         overreach_out.get("hrv_z_3d"),
             "rhr_z":         overreach_out.get("rhr_z_3d"),
@@ -1672,7 +1675,29 @@ def main():
             "poor_sleep_days": poor_sleep_days,
             "ease_today":    ease_today,
             "force_full_deficit": push_today,
-        })
+        }
+        nutrition["recommended_intake"] = nutrition_mod_obj.recommend_deficit(_deficit_signals)
+        # All three phases, computed the same way, for the diet picker (Nolan's
+        # call, 2026-09-27): he picks Cut / Maintain / Bulk and the app shows the
+        # engine's number for that phase straight away instead of waiting for
+        # tonight's run. recommend_deficit is pure (no state written), so the
+        # extra calls don't touch the real one. Picking Cut when not already
+        # cutting starts a new cut, so that option runs with a fresh cut clock;
+        # the manual ease/push taps are per-day and only belong to the live phase.
+        _cur_phase = nutrition.get("phase")
+        nutrition["phase_options"] = {}
+        for _opt in ("cut", "maintenance", "bulk"):
+            _sig = dict(_deficit_signals, phase=_opt)
+            if _opt != _cur_phase:
+                _sig.update(ease_today=False, force_full_deficit=False)
+                if _opt == "cut":
+                    _sig["weeks_in_cut"] = 0
+            _o = nutrition_mod_obj.recommend_deficit(_sig)
+            nutrition["phase_options"][_opt] = {
+                k: _o.get(k) for k in ("calorie_target", "protein_g", "fat_floor_g",
+                                       "carb_target_g", "deficit_ratio", "maintenance_kcal",
+                                       "rationale")
+            }
         _rec = nutrition["recommended_intake"]
         # Manual target wins outright: he outranks the algorithm the same way
         # force_full_deficit does, but for the number itself, not just the gates.

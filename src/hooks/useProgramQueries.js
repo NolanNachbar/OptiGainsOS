@@ -47,58 +47,6 @@ export function useProgram(id) {
   return { program: data, isLoading, error };
 }
 
-// F15: the weekly-engine-generated program is staged in program_workouts_pending
-// until Nolan approves it — his call (2026-07-27), mirroring how the diet plan
-// is reviewed before it loads. Nothing about the live schedule changes until
-// useApprovePendingProgramWeek runs.
-export function usePendingProgramWeek(programId) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["program-pending", programId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("program_workouts_pending")
-        .select("*")
-        .eq("program_id", programId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!programId,
-  });
-
-  return { pending: data, isLoading, error };
-}
-
-export function useApprovePendingProgramWeek(programId) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (rows) => {
-      const { error: upsertError } = await supabase
-        .from("program_workouts")
-        .upsert(rows, { onConflict: "program_id,scheduled_date" });
-      if (upsertError) throw upsertError;
-
-      const { error: deleteError } = await supabase
-        .from("program_workouts_pending")
-        .delete()
-        .eq("program_id", programId);
-      if (deleteError) throw deleteError;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.program(programId) });
-      qc.invalidateQueries({ queryKey: ["program-pending", programId] });
-      // The Schedule tab and the Today card both read the week off enrollments,
-      // not the single-program query — without this they keep rendering the
-      // pre-approval plan until a refetch happens to fire.
-      // Prefix only — queryKeys.enrollments(userId) is ['enrollments', userId]
-      // and invalidation matches element-wise, so passing it without the id
-      // would match nothing.
-      qc.invalidateQueries({ queryKey: ["enrollments"] });
-    },
-  });
-}
-
 export function useEnrollments() {
   const { user } = useAuth();
 
