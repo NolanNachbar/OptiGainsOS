@@ -1310,7 +1310,7 @@ function ExerciseEditor({
           <div>
             <Label className="text-xs text-ink-muted">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               value={exercise.rir_target}
               onChange={(e) => {
                 const val = e.target.value;
@@ -1325,7 +1325,7 @@ function ExerciseEditor({
           <div>
             <Label className="text-xs text-ink-muted">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
             <Input
-              type="number"
+              type="number" inputMode="numeric"
               value={typeof exercise.sets === "number" ? exercise.sets : Array.isArray(exercise.sets) ? exercise.sets.length : 3}
               onChange={(e) => update("sets", parseInt(e.target.value) || 3)}
               min="1"
@@ -1344,7 +1344,7 @@ function ExerciseEditor({
           <div>
             <Label className="text-xs text-ink-muted">Rest (sec)</Label>
             <Input
-              type="number"
+              type="number" inputMode="numeric"
               value={exercise.rest_seconds}
               onChange={(e) => update("rest_seconds", parseInt(e.target.value) || 90)}
               min="0"
@@ -1355,7 +1355,7 @@ function ExerciseEditor({
             <div>
               <Label className="text-xs text-ink-muted">Weight +/session</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={exercise.progression?.weight_increment || 5}
                 onChange={(e) =>
                   update("progression", {
@@ -1437,7 +1437,7 @@ function StepProgression({ exercises, totalCycles, projectionWeights, setProject
             </div>
             <div className="flex items-center gap-2">
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 placeholder="Start lbs"
                 className="w-28 text-sm"
                 value={projectionWeights[currentExercise.name] || ""}

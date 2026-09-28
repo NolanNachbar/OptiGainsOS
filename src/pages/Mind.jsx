@@ -412,7 +412,7 @@ function StudyTab() {
               <div className="col-span-2">
                 <Input value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))} placeholder="Topic / Subject" />
               </div>
-              <Input type="number" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" />
+              <Input type="number" inputMode="decimal" value={form.duration_min} onChange={e => setForm(p => ({ ...p, duration_min: e.target.value }))} placeholder="Minutes" />
               <Select value={form.medium} onValueChange={v => setForm(p => ({ ...p, medium: v }))}>
                 <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>

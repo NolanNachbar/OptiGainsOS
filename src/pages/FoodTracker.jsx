@@ -2804,7 +2804,7 @@ const handleSaveMealTemplate = () => {
                             <Label>Amount</Label>
                             <div className="flex gap-2 mt-1">
                               <Input
-                                type="number"
+                                type="number" inputMode="decimal"
                                 value={newFood.serving_amount}
                                 onChange={(e) => setNewFood({ ...newFood, serving_amount: e.target.value })}
                                 min="0"
@@ -2858,7 +2858,7 @@ const handleSaveMealTemplate = () => {
                             </Label>
                             <Input
                               id="serving_grams"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="e.g. 62"
                               value={foodServingSizeGrams ?? ""}
                               onChange={(e) => {
@@ -2925,7 +2925,7 @@ const handleSaveMealTemplate = () => {
                                     className="flex-1"
                                   />
                                   <Input
-                                    type="number"
+                                    type="number" inputMode="decimal"
                                     placeholder="g"
                                     value={portionDraft.grams}
                                     onChange={(e) => setPortionDraft((d) => ({ ...d, grams: e.target.value }))}
@@ -2977,7 +2977,7 @@ const handleSaveMealTemplate = () => {
                             <Label htmlFor="calories">Calories</Label>
                             <Input
                               id="calories"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="0"
                               value={(isUsdaFood ? newFood.calories : baseMacros.calories) || ""}
                               onChange={(e) => {
@@ -3000,7 +3000,7 @@ const handleSaveMealTemplate = () => {
                             <Label htmlFor="protein">Protein (g)</Label>
                             <Input
                               id="protein"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="0"
                               value={(isUsdaFood ? newFood.protein_grams : baseMacros.protein_grams) || ""}
                               onChange={(e) => {
@@ -3024,7 +3024,7 @@ const handleSaveMealTemplate = () => {
                             <Label htmlFor="carbs">Carbs (g)</Label>
                             <Input
                               id="carbs"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="0"
                               value={(isUsdaFood ? newFood.carbs_grams : baseMacros.carbs_grams) || ""}
                               onChange={(e) => {
@@ -3048,7 +3048,7 @@ const handleSaveMealTemplate = () => {
                             <Label htmlFor="fats">Fats (g)</Label>
                             <Input
                               id="fats"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="0"
                               value={(isUsdaFood ? newFood.fats_grams : baseMacros.fats_grams) || ""}
                               onChange={(e) => {
@@ -3076,7 +3076,7 @@ const handleSaveMealTemplate = () => {
                             <Label htmlFor="fiber">Fiber (g)</Label>
                             <Input
                               id="fiber"
-                              type="number"
+                              type="number" inputMode="decimal"
                               placeholder="optional"
                               value={(isUsdaFood ? newFood.fiber_grams : baseMacros.fiber_grams) ?? ""}
                               onChange={(e) => {
@@ -3563,7 +3563,7 @@ const handleSaveMealTemplate = () => {
               <Label>Amount</Label>
               <div className="flex gap-2 mt-1">
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={newFood.serving_amount}
                   onChange={(e) =>
                     setNewFood({
@@ -3608,7 +3608,7 @@ const handleSaveMealTemplate = () => {
               <div>
                 <Label>Weight of 1 {newFood.serving_unit} (g)</Label>
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   placeholder="e.g. 62"
                   value={foodServingSizeGrams ?? ""}
                   onChange={(e) => {
@@ -3627,7 +3627,7 @@ const handleSaveMealTemplate = () => {
             <div>
               <Label>Calories</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={baseMacros.calories}
                 onChange={(e) =>
                   setBaseMacros({ ...baseMacros, calories: e.target.value })
@@ -3638,7 +3638,7 @@ const handleSaveMealTemplate = () => {
             <div>
               <Label>Protein (g)</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={baseMacros.protein_grams}
                 onChange={(e) =>
                   setBaseMacros({ ...baseMacros, protein_grams: e.target.value })
@@ -3649,7 +3649,7 @@ const handleSaveMealTemplate = () => {
             <div>
               <Label>Carbs (g)</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={baseMacros.carbs_grams}
                 onChange={(e) =>
                   setBaseMacros({ ...baseMacros, carbs_grams: e.target.value })
@@ -3660,7 +3660,7 @@ const handleSaveMealTemplate = () => {
             <div>
               <Label>Fats (g)</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={baseMacros.fats_grams}
                 onChange={(e) =>
                   setBaseMacros({ ...baseMacros, fats_grams: e.target.value })
@@ -3997,7 +3997,7 @@ function GoalsFormContent({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <Label className="whitespace-nowrap text-sm sm:shrink-0">Protein target</Label>
             <div className="flex items-center gap-2 flex-1">
-              <Input type="number" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
+              <Input type="number" inputMode="decimal" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
                 onChange={(e) => setProteinPerLb(e.target.value)} className="flex-1 min-w-0" />
               <span className="text-sm text-ink-muted whitespace-nowrap">g / lb</span>
               {latestWeight && (

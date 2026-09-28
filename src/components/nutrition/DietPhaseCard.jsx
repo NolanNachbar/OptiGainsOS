@@ -465,7 +465,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                 {/* Custom rate input */}
                 <div className="flex items-center gap-2 mt-2">
                   <Input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.05"
                     placeholder="Custom rate"
                     value={customRate}
@@ -496,7 +496,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
               </Label>
               <div className="flex items-center gap-2">
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   placeholder={`e.g., ${
                     newPhaseType === "cut" ? "165" : "185"

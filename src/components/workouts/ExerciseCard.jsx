@@ -596,7 +596,7 @@ export default function ExerciseCard({
                   : '—'}
               </button>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
                 // `?? ""`, not `|| ""`: a logged 0 is a real load (every
                 // bodyweight movement) and `||` blanked the field out from
@@ -631,7 +631,7 @@ export default function ExerciseCard({
                 className={setCell(isActive)}
               />
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 aria-label={isHold ? `Set ${set.set_number} hold seconds` : `Set ${set.set_number} reps`}
                 value={(isHold ? set.duration_s : set.reps) ?? ""}
                 onChange={(e) => {
@@ -655,7 +655,7 @@ export default function ExerciseCard({
               />
               {showRIR && (
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   aria-label={`Set ${set.set_number} reps in reserve`}
                   value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
                   onChange={(e) => {

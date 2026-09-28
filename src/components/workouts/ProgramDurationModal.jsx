@@ -153,7 +153,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
 
             <div className="flex items-center gap-2">
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 placeholder="Custom weeks..."
                 value={customWeeks}
                 min={3}
@@ -178,7 +178,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
               </p>
               <div className="flex items-center gap-2">
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={weeklyIncrement}
                   min={0}
                   step={2.5}
@@ -266,7 +266,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                   <div className="flex items-center gap-2 pl-2">
                     <span className="text-sm text-ink-muted">Drop by</span>
                     <Input
-                      type="number"
+                      type="number" inputMode="decimal"
                       value={deloadReduction}
                       min={0}
                       step={2.5}

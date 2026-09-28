@@ -545,7 +545,7 @@ export default function Profile({ hideHeader }) {
                         <Label htmlFor="profile-age">Age</Label>
                         <Input
                           id="profile-age"
-                          type="number"
+                          type="number" inputMode="numeric"
                           value={formData.age}
                           onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || '' })}
                           min="13"
@@ -601,7 +601,7 @@ export default function Profile({ hideHeader }) {
                           <div>
                             <Label className="text-sm">Feet</Label>
                             <Input
-                              type="number"
+                              type="number" inputMode="numeric"
                               placeholder="5"
                               value={heightFeet}
                               onChange={(e) => {
@@ -617,7 +617,7 @@ export default function Profile({ hideHeader }) {
                           <div>
                             <Label className="text-sm">Inches</Label>
                             <Input
-                              type="number"
+                              type="number" inputMode="numeric"
                               placeholder="10"
                               value={heightInches}
                               onChange={(e) => {
@@ -633,7 +633,7 @@ export default function Profile({ hideHeader }) {
                         </div>
                       ) : (
                         <Input
-                          type="number"
+                          type="number" inputMode="decimal"
                           placeholder="178"
                           value={formData.height_cm}
                           onChange={(e) => setFormData({ ...formData, height_cm: parseFloat(e.target.value) || '' })}
@@ -668,7 +668,7 @@ export default function Profile({ hideHeader }) {
                       <Label htmlFor="current-weight">Current Weight ({formData.weight_unit || 'lbs'})</Label>
                       <Input
                         id="current-weight"
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.1"
                         value={formData.current_weight}
                         onChange={(e) => setFormData({ ...formData, current_weight: e.target.value })}
@@ -707,7 +707,7 @@ export default function Profile({ hideHeader }) {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 flex-1">
                           <Input
-                            type="number"
+                            type="number" inputMode="decimal"
                             step="0.05"
                             min="0.5"
                             max="2.5"

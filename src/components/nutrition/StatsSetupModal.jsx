@@ -159,7 +159,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
             <div>
               <Label className="form-label">Age</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 placeholder="25"
                 value={age}
                 onChange={e => setAge(e.target.value)}
@@ -209,7 +209,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 <div>
                   <Label className="form-label">Feet</Label>
                   <Input
-                    type="number"
+                    type="number" inputMode="numeric"
                     placeholder="5"
                     value={heightFeet}
                     onChange={e => setHeightFeet(e.target.value)}
@@ -221,7 +221,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 <div>
                   <Label className="form-label">Inches</Label>
                   <Input
-                    type="number"
+                    type="number" inputMode="numeric"
                     placeholder="10"
                     value={heightInches}
                     onChange={e => setHeightInches(e.target.value)}
@@ -233,7 +233,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
               </div>
             ) : (
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 placeholder="178"
                 value={heightCm}
                 onChange={e => setHeightCm(e.target.value)}
@@ -267,7 +267,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
           <div>
             <Label className="form-label">Current Weight ({profile?.weight_unit || "lbs"})</Label>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               placeholder="Enter your weight"
               value={weight}
@@ -281,7 +281,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
             <Label className="form-label">Protein Target</Label>
             <div className="flex items-center gap-2 mt-1">
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.05"
                 min="0.5"
                 max="2.5"

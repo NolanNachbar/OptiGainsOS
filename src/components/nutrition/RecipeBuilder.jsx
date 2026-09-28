@@ -550,7 +550,7 @@ function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUnit, onRe
       <div className="flex justify-end mt-2">
         <div className="flex items-center gap-2">
           <Input
-            type="number"
+            type="number" inputMode="decimal"
             value={ingredient.serving_size}
             onChange={(e) => onUpdateServing(index, e.target.value)}
             onFocus={(e) => e.target.select()}
@@ -698,7 +698,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
         <Label className="text-xs font-medium text-ink-muted">Serving</Label>
         <div className="flex items-center gap-2 mt-1">
           <Input
-            type="number"
+            type="number" inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             min="0"
@@ -727,7 +727,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
         <div className="grid grid-cols-4 gap-2 mt-1">
           <div>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               value={calories}
               onChange={(e) => setCalories(e.target.value)}
               placeholder="Cal"
@@ -740,7 +740,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
           </div>
           <div>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               value={protein}
               onChange={(e) => setProtein(e.target.value)}
               placeholder="g"
@@ -754,7 +754,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
           </div>
           <div>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               value={carbs}
               onChange={(e) => setCarbs(e.target.value)}
               placeholder="g"
@@ -768,7 +768,7 @@ function ManualIngredientForm({ onAdd, onCancel, userId }) {
           </div>
           <div>
             <Input
-              type="number"
+              type="number" inputMode="decimal"
               value={fats}
               onChange={(e) => setFats(e.target.value)}
               placeholder="g"
@@ -1126,7 +1126,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           <Minus className="w-4 h-4" />
                         </Button>
                         <Input
-                          type="number"
+                          type="number" inputMode="numeric"
                           value={servings}
                           onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
                           min="1"
@@ -1435,7 +1435,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
                 <Minus className="w-4 h-4" />
               </Button>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 value={servingCount}
                 onChange={(e) => setServingCount(e.target.value)}
                 min="0.5"

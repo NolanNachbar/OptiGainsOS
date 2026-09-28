@@ -696,7 +696,7 @@ export function ProgressContent() {
                         Weight ({weightUnit}) *
                       </label>
                       <Input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.1"
                         value={newWeight}
                         onChange={(e) => setNewWeight(e.target.value)}

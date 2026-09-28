@@ -57,7 +57,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
             Target Weight ({weightUnit})
           </Label>
           <Input
-            type="number"
+            type="number" inputMode="decimal"
             step="0.5"
             placeholder={`e.g., ${weightUnit === 'lbs' ? '225' : '100'}`}
             value={targetWeight}

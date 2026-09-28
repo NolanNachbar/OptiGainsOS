@@ -156,7 +156,7 @@ function SupplementForm({ initial, onSave, onClose }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-ink-muted mb-1.5 block">Default Dose</Label>
-          <Input type="number" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" />
+          <Input type="number" inputMode="decimal" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" />
         </div>
         <div>
           <Label className="text-xs text-ink-muted mb-1.5 block">Unit</Label>
@@ -369,7 +369,7 @@ export default function Supplements({ embedded = false }) {
                     </div>
                     <div className="flex gap-2 items-center">
                       <Input
-                        type="number"
+                        type="number" inputMode="decimal"
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
                         placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}

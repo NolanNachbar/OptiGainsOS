@@ -766,7 +766,7 @@ export default function ProgramDetail() {
                   <Label className="flex-1 text-sm text-ink-muted">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
-                      type="number"
+                      type="number" inputMode="decimal"
                       placeholder="lbs"
                       className="w-24 glass glass-interactive placeholder:text-ink-muted"
                       value={startingWeights[ex.name] || ""}

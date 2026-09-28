@@ -94,7 +94,7 @@ function WeightTab() {
               </div>
               <div>
                 <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
-                <Input type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="0.0" className="h-11 w-full" />
+                <Input type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="0.0" className="h-11 w-full" />
               </div>
             </div>
             <div>
@@ -246,7 +246,7 @@ function MeasurementsTab() {
               <div key={f.key}>
                 <Label className="text-[10px] text-ink-muted mb-1 block uppercase tracking-wider">{f.label}</Label>
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   value={form[f.key] || ""}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}

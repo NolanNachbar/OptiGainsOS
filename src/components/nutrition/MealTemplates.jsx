@@ -698,7 +698,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                             <div key={field}>
                               <Label className={`text-xs font-semibold ${hue}`}>{label}</Label>
                               <Input
-                                type="number"
+                                type="number" inputMode="decimal"
                                 value={item[field]}
                                 onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
                                 className="mt-1 text-sm px-2"

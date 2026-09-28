@@ -371,7 +371,7 @@ export default function CreateWorkout() {
                     <Label htmlFor="duration" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
                     <Input
                       id="duration"
-                      type="number"
+                      type="number" inputMode="numeric"
                       value={workout.duration_minutes}
                       // Allow the field to be cleared mid-edit (empty string) so it
                       // can be retyped; snap back to a valid >=1 on blur. The old
@@ -530,7 +530,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
             <div>
               <Label>Sets</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={exercise.sets}
                 onChange={(e) => onChange("sets", e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
                 onBlur={(e) => { if (e.target.value === '') onChange("sets", 1); }}
@@ -550,7 +550,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
             <div>
               <Label>Rest (sec)</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={exercise.rest_seconds}
                 onChange={(e) => onChange("rest_seconds", e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))}
                 onBlur={(e) => { if (e.target.value === '') onChange("rest_seconds", 0); }}
@@ -583,7 +583,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
         <span className="text-sm font-semibold text-ink">Repeat</span>
         <div className="flex items-center gap-1.5">
           <Input
-            type="number"
+            type="number" inputMode="numeric"
             value={block.repeat_count}
             onChange={(e) => onChangeCount(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
             onBlur={(e) => { if (e.target.value === '') onChangeCount(1); }}
@@ -687,7 +687,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = f
               </Select>
               {step.duration_type !== "open" && (
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={step.duration_value}
                   onChange={(e) => onChange("duration_value", parseFloat(e.target.value) || 0)}
                   min="0"

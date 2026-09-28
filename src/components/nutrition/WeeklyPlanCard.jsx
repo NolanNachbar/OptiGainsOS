@@ -415,7 +415,7 @@ export default function WeeklyPlanCard({ bare = false }) {
               {FORCEABLE_FOODS.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               value={forceGrams}
               onChange={(e) => setForceGrams(e.target.value)}
               className="glass-inset rounded px-1.5 py-1 w-14 text-ink bg-transparent font-technical"
