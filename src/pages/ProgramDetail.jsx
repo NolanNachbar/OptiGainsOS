@@ -264,11 +264,15 @@ export default function ProgramDetail() {
     <div className="p-4 md:p-6 transition-colors duration-300">
       {/* Sticky thumb-zone CTA — the header action scrolls off on a tall mobile
           page, so mirror it as a fixed bottom-edge button (mobile only) clearing
-          the dock + safe-area inset. */}
+          the dock + safe-area inset. The dock is fixed at z-[9999] over this
+          same bottom strip (Layout.jsx), so the bar's padding must reserve the
+          dock's own height (--dock-total-height, same token CreateWorkout.jsx
+          uses for its sticky action row) or a real tap here is swallowed by
+          the dock instead of opening the dialog. */}
       {primaryAction && (
         <div
           className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pt-3 glass-elevated"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+          style={{ paddingBottom: 'calc(var(--dock-total-height) + 16px + env(safe-area-inset-bottom))' }}
         >
           <Button variant="volt" size="lg" className="w-full" onClick={primaryAction.onClick}>
             <Play className="w-4 h-4 mr-2" />
@@ -276,7 +280,7 @@ export default function ProgramDetail() {
           </Button>
         </div>
       )}
-      <div className="max-w-4xl mx-auto pb-24 md:pb-0">
+      <div className="max-w-4xl mx-auto pb-[calc(6rem+var(--dock-total-height))] md:pb-0">
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
