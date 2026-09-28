@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, supabase } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useCustomFoods } from "@/hooks/useUserQueries";
 import { useDietPhase } from "@/hooks/useDietPhase";
@@ -211,8 +211,9 @@ export default function WeeklyPlanCard({ bare = false }) {
       // Idempotent: clear any prior planned rows for these dates, then load fresh.
       // Eaten (checked-off) rows are untouched — the per-day budgets above already
       // subtracted them, so re-approving mid-week can't double-count a day.
-      await supabase.from("food_entries").delete()
+      const { error: deleteError } = await supabase.from("food_entries").delete()
         .eq("created_by", user.id).eq("planned", true).in("date", dates);
+      if (deleteError) throw deleteError;
       const rows = allRows.map((e) => ({
         food_name: e.food_name, meal_type: e.meal_type,
         serving_size: e.serving_size, serving_unit: e.serving_unit,
@@ -223,7 +224,12 @@ export default function WeeklyPlanCard({ bare = false }) {
         tag: e.timing && e.timing !== "anytime" ? e.timing : null,
         cost_usd: e.cost_usd ?? null,
       }));
-      await Promise.all(rows.map((r) => db.entities.FoodEntry.create(r)));
+      // One insert instead of one request per row: a single PostgREST insert
+      // is atomic, so a flaky network can't leave the week partially loaded.
+      if (rows.length > 0) {
+        const { error: insertError } = await supabase.from("food_entries").insert(rows);
+        if (insertError) throw insertError;
+      }
       return rows.length;
     },
     onSuccess: (n) => {
