@@ -79,14 +79,15 @@ export default function Coach() {
   const analyze = async () => {
     if (!pending || !user?.id) return;
     setError(""); setBusy(true); setCritique(null);
+    const ext = (pending.file.name.split(".").pop() || "mp4").toLowerCase();
+    const path = `${user.id}/form/${Date.now()}.${ext}`;
+    let uploaded = false;
     try {
-      const ext = (pending.file.name.split(".").pop() || "mp4").toLowerCase();
-      const path = `${user.id}/form/${Date.now()}.${ext}`;
-
       setStatus("Uploading clip…");
       const { error: upErr } = await supabase.storage
         .from("physique").upload(path, pending.file, { contentType: pending.file.type, upsert: false });
       if (upErr) throw upErr;
+      uploaded = true;
 
       setStatus("Coach is reviewing…");
       const { data, error: fnErr } = await supabase.functions.invoke("analyze-form", {
@@ -101,6 +102,9 @@ export default function Coach() {
     } catch (e) {
       setError(e.message || String(e));
       setStatus("");
+      if (uploaded) {
+        await supabase.storage.from("physique").remove([path]).catch(() => {});
+      }
     } finally {
       setBusy(false);
     }
