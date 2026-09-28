@@ -233,7 +233,11 @@ function MeasurementsTab() {
       if (selErr) throw selErr;
 
       if (existing?.length) {
-        const { error } = await supabase.from("measurements").update(payload).eq("id", existing[0].id);
+        // The form never prefills notes, so a blank notes box on a re-save
+        // means "no change", not "erase the note logged earlier that day".
+        const patch = { ...payload };
+        if (!notes) delete patch.notes;
+        const { error } = await supabase.from("measurements").update(patch).eq("id", existing[0].id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("measurements").insert(payload);

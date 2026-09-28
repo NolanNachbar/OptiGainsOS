@@ -63,6 +63,22 @@ test('re-saving Measurements for the same date updates the row instead of duplic
     expect(rows?.length).toBe(1);
     expect(rows[0].chest_cm).toBe(101);
     expect(rows[0].notes).toBe(`${NOTE}-pm`);
+
+    // Review correction: a third re-save with the notes box left blank (the
+    // form never prefills it) must keep the earlier note, not null it.
+    await dateInput.fill(DATE);
+    await chestInput.fill('102');
+    await notesInput.fill('');
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.waitForTimeout(200);
+    await page.getByRole('button', { name: 'Save Entry', exact: true }).click();
+    await page.waitForTimeout(1000);
+
+    const { data: rows2 } = await db.from('measurements')
+      .select('*').eq('created_by', uid).eq('date', DATE);
+    expect(rows2?.length).toBe(1);
+    expect(rows2[0].chest_cm).toBe(102);
+    expect(rows2[0].notes).toBe(`${NOTE}-pm`);
   } finally {
     await cleanup(uid, db);
   }
