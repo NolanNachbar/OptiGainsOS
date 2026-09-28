@@ -214,7 +214,7 @@ function MeasurementsTab() {
   const { data: history = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["measurements", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("measurements").select("*").eq("created_by", user.id).order("date", { ascending: false }).limit(10);
+      const { data, error } = await supabase.from("measurements").select("*").eq("created_by", user.id).order("date", { ascending: false }).order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
       return data || [];
     },
@@ -225,8 +225,20 @@ function MeasurementsTab() {
     mutationFn: async () => {
       const payload = { created_by: user.id, date, notes: notes || null };
       MEASUREMENT_FIELDS.forEach(f => { if (form[f.key]) payload[f.key] = parseFloat(form[f.key]); });
-      const { error } = await supabase.from("measurements").insert(payload);
-      if (error) throw error;
+
+      // Re-saving the same date updates that row instead of adding a second
+      // one (matches the weight log's select-then-update path in useLogWeight).
+      const { data: existing, error: selErr } = await supabase.from("measurements")
+        .select("id").eq("created_by", user.id).eq("date", date).limit(1);
+      if (selErr) throw selErr;
+
+      if (existing?.length) {
+        const { error } = await supabase.from("measurements").update(payload).eq("id", existing[0].id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("measurements").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["measurements"] });
