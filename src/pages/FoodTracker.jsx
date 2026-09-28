@@ -3942,8 +3942,14 @@ Oats,389,17,66,7,100g`}</pre>
         }}
         onNotFound={(barcode) => {
           setShowBarcodeScanner(false);
-          setSearchQuery(barcode);
-          toast.info("Product not found. Try searching manually.");
+          // An empty barcode means nothing was ever scanned or looked up
+          // (e.g. "Enter manually" from the camera-unavailable error state,
+          // which shares this same handler) — don't tell the athlete their
+          // product wasn't found when no lookup happened.
+          if (barcode) {
+            setSearchQuery(barcode);
+            toast.info("Product not found. Try searching manually.");
+          }
         }}
         onScanLabel={() => {
           setShowBarcodeScanner(false);
