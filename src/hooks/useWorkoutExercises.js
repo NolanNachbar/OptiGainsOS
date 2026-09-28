@@ -58,6 +58,29 @@ export function useWorkoutExercises(initialExercises = []) {
     });
   }, []);
 
+  // Reinsert a previously-removed set at its original index (Undo for
+  // removeSet). Renumbers like removeSet/addSet so set_number stays contiguous.
+  // The Undo toast lives ~8s, long enough for the exercise list to have
+  // changed underneath it (drag-reorder, exercise removed/swapped), so
+  // exerciseIndex alone can be stale: re-resolve by exerciseName first and
+  // bail out silently (no crash, no misfiled set) if that exercise is gone.
+  const insertSet = useCallback((exerciseIndex, setIndex, set, exerciseName) => {
+    setExercises(prev => {
+      const updated = [...prev];
+      const i = updated[exerciseIndex]?.name === exerciseName
+        ? exerciseIndex
+        : updated.findIndex(ex => ex.name === exerciseName);
+      if (i < 0 || !updated[i]) return prev;
+      const sets = [...updated[i].sets];
+      sets.splice(Math.min(setIndex, sets.length), 0, set);
+      updated[i] = {
+        ...updated[i],
+        sets: sets.map((s, idx) => ({ ...s, set_number: idx + 1 })),
+      };
+      return updated;
+    });
+  }, []);
+
   const removeExercise = useCallback((index) => {
     setExercises(prev => prev.filter((_, i) => i !== index));
   }, []);
@@ -160,6 +183,7 @@ export function useWorkoutExercises(initialExercises = []) {
     updateSetData,
     addSet,
     removeSet,
+    insertSet,
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,

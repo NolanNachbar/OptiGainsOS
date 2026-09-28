@@ -232,12 +232,34 @@ export default function WorkoutDetail() {
     updateSetData,
     addSet,
     removeSet,
+    insertSet,
     removeExercise,
     updateExerciseNotes,
     updateExerciseName,
     moveExercise,
     addExercise,
   } = useWorkoutExercises([]);
+
+  // Wrap removeSet with an Undo toast: a fast-thumb delete right next to the
+  // completion check (r1-03) has no other recovery path once tapped.
+  const handleRemoveSet = (exerciseIndex, setIndex) => {
+    const removedSet = exerciseLogs[exerciseIndex]?.sets?.[setIndex];
+    const exerciseName = exerciseLogs[exerciseIndex]?.name;
+    removeSet(exerciseIndex, setIndex);
+    if (removedSet) {
+      toast(`Set ${removedSet.set_number} removed`, {
+        // Global closeButton (App.jsx) is pinned top-right and always tappable
+        // on an actionable toast, which sits right on top of the Undo button
+        // in the thumb zone. Off here so Undo isn't fighting a second tap
+        // target for the same corner.
+        closeButton: false,
+        action: {
+          label: "Undo",
+          onClick: () => insertSet(exerciseIndex, setIndex, removedSet, exerciseName),
+        },
+      });
+    }
+  };
 
   // All exercise names in current workout (to avoid duplicates when replacing)
   const allExerciseNames = exerciseLogs.map(e => e.name);
@@ -1434,7 +1456,7 @@ export default function WorkoutDetail() {
                           weightUnit={weightUnit}
                           onUpdateSet={handleUpdateSet}
                           onAddSet={addSet}
-                          onRemoveSet={removeSet}
+                          onRemoveSet={handleRemoveSet}
                           onRemoveExercise={removeExercise}
                           onUpdateNotes={updateExerciseNotes}
                           onUpdateName={updateExerciseName}
