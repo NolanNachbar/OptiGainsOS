@@ -1,0 +1,122 @@
+[
+  {
+    "id": "today-r1-01",
+    "title": "Deleting a todo has no confirm dialog and no undo",
+    "severity": "no-undo",
+    "route": "/today",
+    "steps": "On /today, tap the delete (X) button on a todo. Double-tap it rapidly to also check for a double-click race.",
+    "expected": "Either a confirm step before an irreversible delete, or an undo affordance after (consistent with Mind's Reading/Study/Skills delete paths, which all use ConfirmDialog).",
+    "actual": "The row is deleted immediately and permanently with a single tap, no confirm dialog, no toast-with-undo. Rapid double-click did not create a duplicate-delete error (deleteMutation is idempotent enough not to crash), but the missing confirm/undo is real and inconsistent with the rest of the app.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-01.mjs",
+    "evidence": "areas/today/scripts/r1-01.mjs console output: rowsBefore=1 rowsAfter=0 clickErrors=0",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:91-97 (deleteMutation, no onError, no confirm/undo UI) vs. Mind's ConfirmDialog usage on its delete paths"
+  },
+  {
+    "id": "today-r1-02",
+    "title": "Two tabs racing the AI-seed insert (code-level risk, not reproduced live)",
+    "severity": "none",
+    "route": "/today",
+    "steps": "With an un-seeded daily brief for a given date, open the same /today in two tabs sharing one browser session/localStorage, navigate both to /today simultaneously (racing the mount-time seed effect).",
+    "expected": "Exactly one todo row per brief action is seeded, regardless of how many tabs mount concurrently.",
+    "actual": "This run did not reproduce a duplicate: rows=2, exactly 1 row per action, no duplicates. The seed guard (localStorage.getItem(seedKey) checked synchronously, but localStorage.setItem(seedKey,'1') only set inside the insert's async .then()) has a real race window by code inspection, but it is narrow/timing-dependent and was not triggered under this run's network latency.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-02.mjs",
+    "evidence": "areas/today/scripts/r1-02.mjs console output: rows=2 countByText={\"OVN-today-r1-02 action A\":1,\"OVN-today-r1-02 action B\":1} pageErrors=0",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:56-77 (seed useEffect: sync localStorage.getItem guard vs. async .then() setItem)"
+  },
+  {
+    "id": "today-r1-03",
+    "title": "Client-side de-dupe-by-text hides a legitimate second todo and mis-scopes its toggle",
+    "severity": "broken-flow",
+    "route": "/today",
+    "steps": "Insert two DB todos rows for the same date with identical text but different domain (e.g. training vs nutrition, both source=ai_generated). Load /today and toggle the one visible row.",
+    "expected": "Either both rows render distinctly, or if intentionally merged, toggling the visible one has a well-defined, non-surprising effect on the underlying data.",
+    "actual": "Only 1 of 2 DB rows rendered (dbRows=2, visibleCount=1). Toggling the visible todo only updated 1 underlying row (training) — the other (nutrition) stayed untouched and permanently hidden behind the first.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-03.mjs",
+    "evidence": "areas/today/scripts/r1-03.mjs console output: dbRows=2 visibleCount=1 completedRows=training",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:47-52 (de-dupe Set keyed purely on t.text, drops legitimate same-text rows)"
+  },
+  {
+    "id": "today-r1-04",
+    "title": "Deleting a todo hidden behind a same-text duplicate gives zero visible feedback",
+    "severity": "no-undo",
+    "route": "/today",
+    "steps": "With two same-text duplicate todos in the DB (as in today-r1-03), delete the visible (earlier) one.",
+    "expected": "Some visible feedback that a delete happened (the row disappears, even briefly, or the remaining state clearly differs).",
+    "actual": "dbRowsAfter=1 confirms the correct underlying row was deleted, but the same-text duplicate (still in the DB) is re-rendered in its place instantly via the de-dupe recompute, so the visible row never disappears at all, before or after reload. The athlete sees no evidence a delete occurred, and the deleted row was silently a different underlying record than what's now shown.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-04.mjs",
+    "evidence": "areas/today/scripts/r1-04.mjs console output: dbRowsBefore=2 dbRowsAfter=1 visibleBeforeReload=1 visibleAfterReload=1",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:47-52 (de-dupe recomputed every render, masks the delete) combined with :91-97 (no confirm/undo, see today-r1-01)"
+  },
+  {
+    "id": "today-r1-05",
+    "title": "Todo added right after local midnight silently saves under yesterday's date",
+    "severity": "data-loss",
+    "route": "/today",
+    "steps": "Load /today at 23:56 local on day D (no reload since). Advance the clock to 00:08 local on day D+1 with no navigation. Add a todo.",
+    "expected": "Once local time crosses midnight, the todo is either saved under the new day, or the UI clearly shows it's still logging to the prior day before saving.",
+    "actual": "The todo was saved with date=2025-09-29 (the stale prior day) instead of the expected 2025-09-30, with zero on-screen indication anything was off. It will not appear when the athlete reopens the app expecting a clean list the next morning.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-05.mjs",
+    "evidence": "areas/today/scripts/r1-05.mjs console output: rows=1 date=2025-09-29 expected=2025-09-30 problems=0",
+    "suspectFile": "src/pages/Today.jsx:55 (const today = getTodayString(profile?.timezone) computed once per mount, not re-derived from a live clock; passed to TodayActions as a static prop)"
+  },
+  {
+    "id": "today-r1-06",
+    "title": "No max-length guard on todo text — long input overflows the row with no truncation",
+    "severity": "minor",
+    "route": "/today",
+    "steps": "Add a todo with ~5000 characters of text.",
+    "expected": "Either a max-length guard on input, or truncation/line-clamp at render so an extreme-length row doesn't break layout.",
+    "actual": "A 4996-char todo was accepted and saved in full (todos.text is unbounded TEXT, no client-side max-length). The row rendered with no truncation/line-clamp, causing horizontal page overflow (rowHeight=54px, overflow=true).",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-06.mjs",
+    "evidence": "areas/today/scripts/r1-06.mjs console output: rows=1 savedLen=4996 overflow=true rowHeight=54",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:99-115 (addMutation, no max-length guard) and :196-199 (row render, no truncation/line-clamp)"
+  },
+  {
+    "id": "today-r1-07",
+    "title": "Toggle complete/incomplete — clean",
+    "severity": "none",
+    "route": "/today",
+    "steps": "Toggle a todo's completed state on /today.",
+    "expected": "The todo's completed state flips and persists.",
+    "actual": "ok — completedBefore=false completedAfter=true, no console/page errors.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-07.mjs",
+    "evidence": "areas/today/scripts/r1-07.mjs console output",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:79-89 (toggleMutation)"
+  },
+  {
+    "id": "today-r1-08",
+    "title": "Reload mid-flight during add-todo silently loses the entry",
+    "severity": "data-loss",
+    "route": "/today",
+    "steps": "Start adding a todo, then reload the page while the insert mutation is still in flight (before its onSuccess fires).",
+    "expected": "Either the insert completes and the todo persists despite the reload, or the athlete is warned before the reload that unsaved work will be lost.",
+    "actual": "The todo was lost entirely (rows=0 after reload) with no persisted draft and no warning shown before the reload — the athlete has no way to know the add silently failed to save.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-08.mjs",
+    "evidence": "areas/today/scripts/r1-08.mjs console output: rows=0 inputAfterReload=null",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:99-115 (addMutation clears newText/closes the panel only in onSuccess; no local draft persistence, no beforeunload warning)"
+  },
+  {
+    "id": "today-r1-14",
+    "title": "Whitespace-only todo via Enter key — clean",
+    "severity": "none",
+    "route": "/today",
+    "steps": "Open Add Task, type only whitespace, press Enter (bypasses the Add button's disabled={!newText.trim()} guard).",
+    "expected": "No blank todo is created, even via the Enter-key path.",
+    "actual": "ok — blankRowsFound=0. The mutationFn's internal !newText.trim() guard (TodayActions.jsx:102) held end-to-end even though the Enter-key handler calls addMutation.mutate() directly without the button's disabled check. Panel closed after Enter (panelStillOpen=false) — worth confirming that's the intended UX for a no-op submit, but not a bug.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-14.mjs",
+    "evidence": "areas/today/scripts/r1-14.mjs console output: blankRowsFound=0 panelStillOpen=false problems=0",
+    "suspectFile": "src/components/dashboard/TodayActions.jsx:102 (mutationFn guard) and Enter keydown handler (bypasses the button's disabled prop but not the mutationFn's own guard)"
+  },
+  {
+    "id": "today-r1-16",
+    "title": "Brief History week-boundary bucket flips cleanly across local midnight",
+    "severity": "none",
+    "route": "/brief-history",
+    "steps": "Seed 3 tagged daily_briefs: one dated a month back (always 'Earlier'), one exactly 7 days before test-today (should flip), one dated test-today (always 'This week') — needed because BriefHistory suppresses the group header entirely when only one bucket is present among shown briefs. Load /brief-history at 23:59 local, check buckets, advance 3 min past local midnight, reload, check buckets again.",
+    "expected": "The 7-days-back brief reads 'This week' before local midnight and 'Earlier' after, with a clean single transition (no flicker), consistent with the rest of the app's day-boundary logic.",
+    "actual": "ok — with the always-Earlier and always-This-week anchors confirmed stable throughout (Earlier/Earlier and This week/This week respectively), the target brief flipped exactly as expected: This week -> Earlier. No crash, no console/page errors. The underlying code-level risk is still real but unconfirmed live: BriefHistory.jsx:42 dateGroup() uses new Date() (browser-local 'now'), not profile.timezone, so a real device/profile timezone mismatch (e.g. an athlete traveling with profile.timezone set to home) could disagree with the rest of the app's day-boundary logic (which uses getTodayString(profile.timezone) elsewhere) — not exercisable from a single-timezone test harness.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-16.mjs",
+    "evidence": "areas/today/scripts/r1-16.mjs console output: target: 2359=This week 0002=Earlier | anchors old(2359/0002)=Earlier/Earlier recent(2359/0002)=This week/This week problems=0",
+    "suspectFile": "src/pages/BriefHistory.jsx:42 (dateGroup, browser-local new Date() not profile.timezone) and :245-249 (multiGroup header suppression for single-bucket lists — a real gotcha for any future single-brief test design, not itself a bug)"
+  }
+]

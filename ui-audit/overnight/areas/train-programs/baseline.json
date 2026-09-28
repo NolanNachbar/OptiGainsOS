@@ -1,0 +1,776 @@
+{
+  "takenAt": "2026-09-28T10:30:06.773Z",
+  "uid": "5ec4eebf-ae62-4f3f-9c1d-f44f92716bc8",
+  "enrollmentIds": [
+    {
+      "id": "60b21c16-b106-48b6-b00b-75e9bbb5b6dc",
+      "program_id": "5ab0534c-8dce-45e2-8e25-92ee84c21eeb",
+      "status": "completed"
+    },
+    {
+      "id": "a1ad4853-46ea-4674-971c-9d5f3f939b4f",
+      "program_id": "46672618-29c4-426f-90c8-4a2530bb3bdd",
+      "status": "active"
+    }
+  ],
+  "programIds": [
+    "5ab0534c-8dce-45e2-8e25-92ee84c21eeb",
+    "46672618-29c4-426f-90c8-4a2530bb3bdd",
+    "c529f334-7916-4d06-9772-c64d5a073574",
+    "863a49cf-1b6b-469b-b35d-65f99e89d90f"
+  ],
+  "libraryWorkoutIds": [
+    "fee23f0b-a37f-447b-8555-1138d9570b53",
+    "6f72e049-70e0-4863-aec7-cbc1e2e2f6bb",
+    "f5cc2961-5453-4438-b556-2618414ea343",
+    "69770fe4-666f-4089-93a0-aad806c04ddd",
+    "5f24db6e-9976-45a0-8267-5874e3ccd6b1",
+    "7385a0c9-a597-4e93-9571-0aa5c3c01edc",
+    "5c50e1e8-6595-4685-b4c0-89f09863b6a1",
+    "35086407-8154-436a-b092-8ff18172f99d",
+    "b509ae3a-d520-48d5-9043-8be10908bd01",
+    "229bcf0c-4a39-4035-bc77-0f7442b23cdb",
+    "6f1f24c6-7cd1-49fa-bedb-2ecad078dc67",
+    "5fe9557e-2529-4a2c-9701-d17e9509baae",
+    "6007fc89-81df-493c-b6d6-49f93c9643c1",
+    "16825645-eaf1-4bc4-a2f1-fec947c28ade",
+    "b7846465-b33f-4566-9f73-a5cd139ead53",
+    "f4cd5bac-0d74-46a3-a5e8-869a775ae856"
+  ],
+  "workoutSessionIds": [
+    "6d67fa19-2be7-46d8-a730-12a294c7095b",
+    "398f3225-b811-4fa8-b29d-6bac09f895ad",
+    "55c76fd7-d1c9-488a-81ed-6e092781223e",
+    "1929b7aa-099f-44a3-a242-e7959c13cfb8",
+    "eff563a0-214d-47f0-8daf-5e14c7cf5ede",
+    "c3f59ad3-955e-4ea4-8efa-8255d4ddb6c3",
+    "a834bb08-651a-4587-9a1f-9ea2a449cdaa",
+    "6ffcc063-50cf-4d06-b62a-a1883cc95d0c",
+    "5925f6bb-b14b-4fd4-9849-de848b233e6b",
+    "9fcdec36-2a80-48a6-800e-28730de5169a",
+    "cb814e1e-db20-4f4e-9ebc-959ada383513",
+    "c4fb1a82-bf25-4b19-9db8-58a3a683e15a",
+    "3ab6e244-ea5e-4740-bca9-3dbd27f8eb85",
+    "e0cc742b-b130-4c02-99db-b612c9c9783a",
+    "42e71349-7024-43e1-9e97-1a1e525acedd",
+    "c14db792-f639-4bff-8e74-571c3dfff37b",
+    "321a5f93-2dac-41b8-97c8-9d1cefae6921",
+    "8f2298f1-3fb4-438f-8d03-55a62e651315",
+    "e1eecc70-a04a-4455-b1a6-ee4b0402498e",
+    "6da5fb4c-79b3-4533-b07d-846824b7b9d3",
+    "93b723ca-6198-4eb6-8eff-2fee04cff1b1",
+    "32ef8441-8f7c-4e8a-8f0d-04cb1c1855ee",
+    "470c3e87-23b7-4408-8dfa-6416987734c2",
+    "4fa72be3-8e22-490d-9d56-70eacf7a1628",
+    "39394b2a-6ba2-471e-9d17-a3a80d595973",
+    "c767f2c4-337a-441d-801c-6613b3f6f2ba",
+    "4076c56e-dbed-4638-b78c-b8a4a3288093",
+    "3ee69bcc-f607-49e9-be67-980285d29f73",
+    "11c143bf-369f-4fa3-bb9c-eb3946916812",
+    "b57e60e5-7f15-4608-a82c-9c41c9340cc7",
+    "8fce3500-fff3-4c04-b51c-26c42e7abd3f",
+    "a355b45d-71c0-40b9-a23a-abfea2d9031a",
+    "ac6acc7e-45e0-490d-af14-921c5e31cbd8",
+    "6a8efc7f-3cc3-459c-8045-228952865eb0",
+    "31c42dfe-c938-4fb4-b9c7-38f90783ea1e",
+    "e9aa6b0a-cfe7-4e4a-a36e-ef6e1e3cf3eb",
+    "fcaf7b52-0d0b-4b98-a983-14ae60180d5f",
+    "fdf4b5ec-c2a7-45e1-ae69-d5685af2d343",
+    "85fdf179-25dd-4e27-a197-defc5d273574",
+    "d3163215-7057-4106-9f94-31fdc427521f",
+    "dcc94aaa-db0d-49eb-a9f9-e637f5aa42de",
+    "702a64ac-f017-46f2-bb33-2c8daedb3d4f",
+    "1cf78611-1bfa-4c7f-8283-8d428f6d80c8",
+    "06f0ce87-f8f5-4bad-bd77-ae0c68796f3f",
+    "7be2e058-e6dd-4022-9236-75d5eceea1f2",
+    "fe45f020-bfac-41f1-8f80-878c1e8772fa",
+    "bac3e8d2-7456-47f9-82e9-61cd8d3e8bec",
+    "43511c21-858f-4ec5-bc92-f7c1bd5f8cf9",
+    "a4daefad-7b2e-4013-8707-1fe35d05d64b",
+    "53e9c3c7-cb6d-4611-a5f1-55e40f011a76",
+    "3d0f9b0e-c2c1-4897-be81-63d9b741c940",
+    "33ef1c0a-8b7c-4915-92dd-9503a130fdf5",
+    "02897940-aae8-45e9-89e3-1a3bc44b359f",
+    "915c4eec-6a74-4e6d-aecb-ecb253eb9458",
+    "0fd50906-c227-43de-95ab-d934386f69ee",
+    "393ce17d-98ab-4201-8186-196ad6c1b7a2",
+    "49720623-1a0c-4f7b-b9c4-3cf19f9fab68",
+    "52baaaf5-82e0-4576-83fe-27138350155d",
+    "5e87ef7e-6844-43ee-8b44-bd6164aac145",
+    "5fc07ae5-f90e-4e15-9216-d1f121849fa9",
+    "cf34bb5f-7788-4a90-a886-04fb56acef17",
+    "227b1294-d11f-429c-ae2f-c22b9643bf98",
+    "2f48c53a-9938-45ea-988d-20b5213158b2",
+    "a7d66277-fc9a-4b5b-a595-d2a97425b8de",
+    "9759badc-ef84-4525-8794-c643456df140",
+    "fbeec818-e8fe-4feb-bf73-2d5ee0dd3142",
+    "d4cd9ed3-7ad2-42bd-a7e8-4788e914448f",
+    "60c0ac81-e1bf-45a5-89ea-a3c03116a79e",
+    "ebd04018-a372-4ecc-84e8-cf5817d458a6",
+    "aa533ee8-11e7-470f-abaa-1f887422ea9f",
+    "d4c814d5-8c27-4d79-8af6-f8d04567111b",
+    "2b2d8f40-70fe-4963-b4d9-5945649a70ef",
+    "0be8e866-b2e6-412e-aaa5-855bd5a7233e",
+    "c509b190-da98-4177-86ab-6d0fe1bacb4b",
+    "96717719-ec41-43b6-8b38-ea72d91ae7d7",
+    "466fc928-dbdc-444c-b4eb-62d0bcb78262",
+    "fa430353-17b7-4535-91b4-9a767b40b0f7",
+    "4833557a-42db-4ce0-8bf6-d37e752ae223",
+    "589b1c8a-2cd6-4655-9118-8636576796f8",
+    "c1996b94-a6a4-4601-8b3f-07ac675505e0",
+    "dada1e72-730d-4727-90bb-847c8dec649e",
+    "5daed67c-3c2e-4065-b8ec-5ea48a340a56",
+    "3a3c3b75-8904-4ff6-9997-b5a756159406",
+    "55d895a7-2952-4314-bbd2-6b6dc7fc2fef",
+    "3ebc63ff-7e88-4e4d-81d3-f338cfaa0aed",
+    "0f8f7885-230f-4381-9731-6198da7c1e4c",
+    "b598f422-2b62-43f1-b498-c4730fd73851",
+    "8f531f19-90a0-488b-a3c3-73da4c276c8a",
+    "21bb4d71-1377-49f6-8262-d9196bca91a2",
+    "c150677f-cd91-4a29-8c4e-da6506ef0de7"
+  ],
+  "workoutLogIds": [
+    "30c01a7c-0016-4963-bc88-b22c9d133b56",
+    "c606e7a0-65e7-40db-b43f-a36066b553b8",
+    "2b0f43f1-aa36-4cec-b698-152a564e205b",
+    "c2d995dc-0cc1-4d19-bbf0-f76730633ad8",
+    "8b0bb47c-944a-4ad3-a4d9-bffa8ec857b7",
+    "2b03dac6-4a47-45bb-975a-b2241a56f78f",
+    "88099d4d-ea32-49f3-bfe1-1fda9d1b250e",
+    "8668f4dc-ead5-4dbc-9684-0fe39d108ac1",
+    "e257c7c9-51fa-490c-aede-129aa9c1f962",
+    "fb910720-ee38-4fee-9c6f-b69aae80c5f4",
+    "7284ce6f-9882-497b-99d5-e9e6a3933ba4",
+    "a7b57a5d-a458-404c-b471-3da60b0dbbfd",
+    "63cd740c-d563-469d-bb73-cb9602c7c398",
+    "9aa64f04-ce9b-4325-8e74-323350c42d79",
+    "10153213-210b-4055-b871-e16f19fc1819",
+    "86d47add-15fb-47fc-a243-b3ab8c58e83c",
+    "4a543831-4cd1-4b2b-8b0f-a2ea3644844e",
+    "76a7c8da-3203-4fc0-a6cc-fcc4ab2aae28",
+    "9c51b43c-a533-4344-8c32-5ea76b8cfa71",
+    "264cb65f-7b9c-4c5a-a710-77e1d6d7aade",
+    "f905cd53-f48c-4633-bd2c-534ce5e42832",
+    "1d9fc65a-d5f2-4a3f-9287-da644106792a",
+    "3176a43f-9218-4ae6-a871-073f35283899",
+    "6d8ae3a3-c5fd-4847-b9a9-4c44d26a00a0",
+    "65c53b67-92f5-4cef-9cf4-759b45af93e0",
+    "010e0387-465b-41ee-88cb-4358597e24e9",
+    "be9f2778-70b0-4412-9b5a-f27027b33ff9",
+    "f5c7ad7e-d806-4c1e-87d3-51b782a1630a",
+    "1b588329-46ec-4104-b421-da4eafc7bf85",
+    "e2eed846-5a3d-47c2-9f8f-e2d663874fcb",
+    "b2242ed7-168a-4997-ad50-416b4abf8f1c",
+    "75008f8c-c76c-4721-ad9c-c963094311a8",
+    "5a5d6c52-f875-421f-a5ef-6dfc38c6875e",
+    "19b61ade-9eb4-48ef-8ae1-26afa7bed71f",
+    "0e2728c0-4fbe-4f5b-be05-56a2e80199b6",
+    "bdd7bf39-3897-461d-bbca-fb6ae970519a",
+    "faff5122-1ac9-4d05-b924-8aca6b1d0346",
+    "051ddcf2-d467-460c-8231-6764e34c907a",
+    "d0d8db5c-e344-41fd-8b53-18295ccab627",
+    "afd63d4f-d699-4bb5-94d1-33b92f674f0f",
+    "45386740-1461-468e-8362-2d8719f7c3b4",
+    "11b86dc1-0440-447c-9478-806afc7cad6f",
+    "235933da-144b-423b-b791-ed24ef53fb13",
+    "6b60609f-a698-4c5f-b5ae-ae35eaadb021",
+    "c9f227bf-c896-4983-b2e9-7f64151646e9",
+    "40b0e815-346b-496c-a148-8e4d94433c5a",
+    "67b2f372-ecb4-4549-b60b-dbcb1c78b965",
+    "c8d6cc89-7382-42fe-a7a8-c144821de44a",
+    "0a3c3ed4-482a-4464-ace6-7acf29100293",
+    "02a32292-abb5-492a-b46c-761bd98d2bd1",
+    "246af2da-5eb1-42c2-bca4-37ec84b191a3",
+    "d8f90742-7842-4d3c-82d8-3185433c426b",
+    "46b11949-aabf-4783-8aa9-b2cb5b1fc1d3",
+    "3148fb0e-46db-4647-a3c1-11bc7b67ecfa",
+    "66e68c1e-6377-43b2-9b48-9dfa2805a95e",
+    "33453b03-b6bf-46b0-8f20-a882b4933a19",
+    "cfe96dd5-6547-44f7-a2c9-716b98d8a0b1"
+  ],
+  "lockedOrOverrideRows": [],
+  "thisAndNextWeekRows": [],
+  "allEnrollmentsFull": [
+    {
+      "id": "60b21c16-b106-48b6-b00b-75e9bbb5b6dc",
+      "created_by": "5ec4eebf-ae62-4f3f-9c1d-f44f92716bc8",
+      "program_id": "5ab0534c-8dce-45e2-8e25-92ee84c21eeb",
+      "started_at": "2026-06-02T22:20:54.602697+00:00",
+      "current_week": 1,
+      "current_day": 3,
+      "status": "completed",
+      "progression_state": {
+        "Hamstring Curl": {
+          "stalled": false,
+          "working_weight": 210,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-03",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-03",
+          "suggested_increment": 5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "_muscle_groups": {
+          "Chest": {
+            "last_trained": "2026-06-03",
+            "hard_sets_this_week": 6
+          },
+          "Hamstrings": {
+            "last_trained": "2026-06-03",
+            "hard_sets_this_week": 2
+          }
+        },
+        "Squat (Top Set)": {
+          "stalled": false,
+          "working_weight": 315,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-03",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-03",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Bench Press (Back-off)": {
+          "stalled": false,
+          "working_weight": 240,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-03",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-03",
+          "suggested_increment": 5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Bench Press (Daily Single)": {
+          "stalled": false,
+          "working_weight": 285,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-03",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-03",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        }
+      },
+      "created_at": "2026-06-02T22:20:54.602697+00:00",
+      "updated_at": "2026-06-03T16:59:23.763+00:00",
+      "completed_workouts": [
+        {
+          "cycle": 1,
+          "day_index": 1,
+          "completed_at": "2026-06-02T12:00:00Z",
+          "program_workout_id": "f896044f-03b4-4505-9d6a-7cea3ef950f3"
+        },
+        {
+          "cycle": 1,
+          "day_index": 2,
+          "completed_at": "2026-06-03T16:59:23.520Z",
+          "program_workout_id": "40311f42-e21f-4fdd-b6ef-a1f335d23de2"
+        }
+      ],
+      "current_day_index": 3,
+      "current_cycle": 1
+    },
+    {
+      "id": "a1ad4853-46ea-4674-971c-9d5f3f939b4f",
+      "created_by": "5ec4eebf-ae62-4f3f-9c1d-f44f92716bc8",
+      "program_id": "46672618-29c4-426f-90c8-4a2530bb3bdd",
+      "started_at": "2026-06-02T00:00:00+00:00",
+      "current_week": 1,
+      "current_day": 6,
+      "status": "active",
+      "progression_state": {
+        "Neck Curl": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-17",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Bicep Curl": {
+          "stalled": false,
+          "working_weight": 50,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Calf Raise": {
+          "stalled": true,
+          "working_weight": 410,
+          "stall_suggestion": "5 sessions grinding near failure (avg RIR 0.0). Consider a deload week, then return to 90% of this weight.",
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 10,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 5
+        },
+        "Hip Thrust": {
+          "stalled": false,
+          "working_weight": 270,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-09",
+          "suggested_increment": 12.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Dip Pyramid": {
+          "stalled": false,
+          "working_weight": 25,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-17",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Larsen Press": {
+          "stalled": false,
+          "working_weight": 210,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-17",
+          "suggested_increment": 5,
+          "last_session_rir_avg": 2,
+          "sessions_at_current_weight": 1
+        },
+        "Weighted Dip": {
+          "stalled": false,
+          "working_weight": 45,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-06",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-06",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Barbell Shrug": {
+          "stalled": false,
+          "working_weight": 15,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-17",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Lateral Raise": {
+          "stalled": false,
+          "working_weight": 50,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-17",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Leg Extension": {
+          "stalled": false,
+          "working_weight": 310,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-18",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 1
+        },
+        "Rear Delt Fly": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Hamstring Curl": {
+          "stalled": false,
+          "working_weight": 212.5,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-18",
+          "suggested_increment": 5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 1
+        },
+        "Sit-Up Pyramid": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-04",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "_muscle_groups": {
+          "Abs": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 1
+          },
+          "Back": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 8
+          },
+          "Core": {
+            "last_trained": "2026-06-04",
+            "hard_sets_this_week": 0
+          },
+          "Lats": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 4
+          },
+          "Legs": {
+            "last_trained": "2026-06-11",
+            "hard_sets_this_week": 0
+          },
+          "Chest": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 11
+          },
+          "Quads": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 2
+          },
+          "Traps": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 4
+          },
+          "Biceps": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 4
+          },
+          "Calves": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 2
+          },
+          "Glutes": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 1
+          },
+          "Lower Abs": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 1
+          },
+          "Rhomboids": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 4
+          },
+          "Shoulders": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 6
+          },
+          "Hamstrings": {
+            "last_trained": "2026-06-18",
+            "hard_sets_this_week": 2
+          },
+          "Rear Delts": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 2
+          },
+          "Side Delts": {
+            "last_trained": "2026-06-19",
+            "hard_sets_this_week": 4
+          },
+          "Posterior Chain": {
+            "last_trained": "2026-06-11",
+            "hard_sets_this_week": 0
+          }
+        },
+        "Paused Deadlift": {
+          "stalled": false,
+          "working_weight": 225,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-07",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 5,
+          "last_session_rir_avg": 7,
+          "sessions_at_current_weight": 1
+        },
+        "Pull-Up Pyramid": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-04",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Pull-up Pyramid": {
+          "stalled": true,
+          "working_weight": 0,
+          "stall_suggestion": "Log RIR on your sets to get progression coaching.",
+          "last_session_date": "2026-06-10",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-06",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 3
+        },
+        "Push-Up Pyramid": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-04",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Push-up Pyramid": {
+          "stalled": true,
+          "working_weight": 0,
+          "stall_suggestion": "Log RIR on your sets to get progression coaching.",
+          "last_session_date": "2026-06-10",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-06",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 3
+        },
+        "Deficit Deadlift": {
+          "stalled": false,
+          "working_weight": 225,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-11",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-09",
+          "suggested_increment": 12.5,
+          "last_session_rir_avg": 2,
+          "sessions_at_current_weight": 2
+        },
+        "Weighted Pull-up": {
+          "stalled": true,
+          "working_weight": 0,
+          "stall_suggestion": "Working close to failure (avg RIR 0.0). Focus on completing all reps before adding weight.",
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-08",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 3
+        },
+        "Hanging Leg Raise": {
+          "stalled": true,
+          "working_weight": 0,
+          "stall_suggestion": "5 sessions grinding near failure (avg RIR 0.0). Consider a deload week, then return to 90% of this weight.",
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 5
+        },
+        "Deadlift (Top Set)": {
+          "stalled": false,
+          "working_weight": 322.5,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": 2,
+          "sessions_at_current_weight": 4
+        },
+        "Chest-Supported Row": {
+          "stalled": false,
+          "working_weight": 230,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-06",
+          "suggested_increment": 5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 2
+        },
+        "Back Squat (Top Set)": {
+          "stalled": false,
+          "working_weight": 347.5,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-11",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 17.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 2
+        },
+        "Triceps OH Extension": {
+          "stalled": false,
+          "working_weight": 0,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-19",
+          "suggested_increment": 2.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 1
+        },
+        "Back Squat (Back-off)": {
+          "stalled": false,
+          "working_weight": 330,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-11",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-05",
+          "suggested_increment": 17.5,
+          "last_session_rir_avg": 2,
+          "sessions_at_current_weight": 2
+        },
+        "Bench Press (Back-off)": {
+          "stalled": false,
+          "working_weight": 260,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-04",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Deadlift (Speed/Light)": {
+          "stalled": false,
+          "working_weight": 327.5,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-18",
+          "ready_to_progress": true,
+          "first_programmed_at": "2026-06-18",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": 4,
+          "sessions_at_current_weight": 1
+        },
+        "Bench Press (Back-off Int)": {
+          "stalled": false,
+          "working_weight": 245,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-08",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-08",
+          "suggested_increment": 5,
+          "last_session_rir_avg": null,
+          "sessions_at_current_weight": 1
+        },
+        "Bench Press (Back-off Vol)": {
+          "stalled": false,
+          "working_weight": 247.5,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-06",
+          "suggested_increment": 5,
+          "last_session_rir_avg": 1.3333333333333333,
+          "sessions_at_current_weight": 1
+        },
+        "Bench Press (Daily Single)": {
+          "stalled": false,
+          "working_weight": 290,
+          "stall_suggestion": null,
+          "last_session_date": "2026-06-19",
+          "ready_to_progress": false,
+          "first_programmed_at": "2026-06-04",
+          "suggested_increment": 7.5,
+          "last_session_rir_avg": 0,
+          "sessions_at_current_weight": 1
+        }
+      },
+      "created_at": "2026-06-03T17:43:23.188917+00:00",
+      "updated_at": "2026-06-19T13:52:34.611+00:00",
+      "completed_workouts": [
+        {
+          "cycle": 1,
+          "day_index": 3,
+          "completed_at": "2026-06-04T17:00:01.043Z",
+          "program_workout_id": "58fe2083-b017-4b05-9d03-f7d11fd57711"
+        },
+        {
+          "cycle": 1,
+          "day_index": 4,
+          "completed_at": "2026-06-06T05:26:34.047Z",
+          "program_workout_id": "c13af58e-f1b2-4f6f-9bb4-64651d47f563"
+        },
+        {
+          "cycle": 1,
+          "day_index": 5,
+          "completed_at": "2026-06-06T18:20:00.226Z",
+          "program_workout_id": "16b17de4-4070-4ef3-b542-e1849a29b1ad"
+        },
+        {
+          "cycle": 1,
+          "day_index": 6,
+          "completed_at": "2026-06-07T18:57:03.391Z",
+          "program_workout_id": "0c451e08-e199-4c74-b56a-562775c2f3f6"
+        },
+        {
+          "cycle": 1,
+          "day_index": 1,
+          "completed_at": "2026-06-08T13:56:04.866Z",
+          "program_workout_id": "ed346693-a70b-4679-93f4-ba024ccb11f0"
+        },
+        {
+          "cycle": 1,
+          "day_index": 2,
+          "completed_at": "2026-06-09T22:01:42.968Z",
+          "program_workout_id": "0de3f232-5d56-4a0b-a257-881dd4512a02"
+        },
+        {
+          "cycle": 1,
+          "day_index": 3,
+          "completed_at": "2026-06-10T15:00:33.011Z",
+          "program_workout_id": "f471ceba-6697-4343-b237-5eed102ba3ff"
+        },
+        {
+          "cycle": 1,
+          "day_index": 4,
+          "completed_at": "2026-06-11T13:48:33.547Z",
+          "program_workout_id": "70c7ce26-9b02-46e8-8e2d-1f26b6c53ffa"
+        },
+        {
+          "cycle": 1,
+          "day_index": 3,
+          "completed_at": "2026-06-17T13:38:59.674Z",
+          "program_workout_id": "6b8b49c8-36f6-46cd-b289-e30074ad31be"
+        },
+        {
+          "cycle": 1,
+          "day_index": 4,
+          "completed_at": "2026-06-18T13:19:30.093Z",
+          "program_workout_id": "ab106ba3-71c2-4233-9355-8b9479244011"
+        },
+        {
+          "cycle": 1,
+          "day_index": 5,
+          "completed_at": "2026-06-19T13:52:34.328Z",
+          "program_workout_id": "9f88ada2-296c-4cc1-90d5-8d4e99946092"
+        }
+      ],
+      "current_day_index": 6,
+      "current_cycle": 1
+    }
+  ]
+}

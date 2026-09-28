@@ -1,0 +1,74 @@
+[
+  {
+    "id": "today-r1-09",
+    "title": "Today hero and Athlete State read engine tables with different date-resolution logic (latent, not live-reproducible for this test account)",
+    "severity": "minor",
+    "route": "/today, /athlete-state",
+    "steps": "1. Query athlete_state/engine_params/training_prescription for the test athlete. 2. Load /today, read the readiness hero (StatRing). 3. Load /athlete-state, read VDOT / Model Confidence (AdaptiveEnginePanel). 4. Compare code paths: Today.jsx:85-86 passes an explicit `today` (getTodayString(profile?.timezone)) into useTodayPrescription/useAthleteState; AthleteState.jsx:43-44 calls useEngineParams()/useTodayPrescription() with NO date argument, so those hooks default internally to getTodayString() with no timezone, i.e. the browser/device timezone, not profile.timezone.",
+    "expected": "Both pages should resolve 'today' the same way so they never silently disagree on which day's engine row is shown.",
+    "actual": "Confirmed by code inspection: AthleteState.jsx never passes a date into useEngineParams()/useTodayPrescription(), so it resolves 'today' via the browser's local timezone while Today.jsx resolves it via profile.timezone. For this test athlete profile.timezone is null, so both currently collapse to the same value and the pages agree live (verified: hero shows 68, AthleteState VDOT shows 52.1, no console/HTTP errors). The divergence would only surface for an athlete whose profile.timezone is set and differs from their device's timezone (e.g. traveling) — Today would show one day's readiness while Athlete State shows a different day's engine internals with no indication they disagree.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-09.mjs",
+    "evidence": "ui-audit/overnight/shots/r1-09-athlete-state.png; console log: 'DB athlete_state.date=2026-07-01 ... Today hero readiness text=\"68\" | AthleteState ... VDOT=\"52.1\"'; 0 console/HTTP problems",
+    "suspectFile": "src/pages/AthleteState.jsx:43-44 (useEngineParams()/useTodayPrescription() called with no date arg, unlike src/pages/Today.jsx:85-86)"
+  },
+  {
+    "id": "today-r1-10",
+    "title": "Mind Skills: rapid-tap level dots settle correctly under normal network; updateLevel still has no onError/isPending guard for the failure case",
+    "severity": "none",
+    "route": "/mind (Skills tab)",
+    "steps": "1. Create a tagged skill at level 3. 2. Fire 5 near-concurrent updateLevel.mutate calls in the order 1,5,2,4,3 (Mind.jsx:598-605 dot buttons, mutation at :539-545).",
+    "expected": "Skill settles on the last-tapped level (3) with no error and no stale flicker.",
+    "actual": "Reproduced clean on a stable connection: final DB level = 3, 0 console/pageerror problems, single skills row. First attempt hit a transient Supabase auth 429 (shared test-account rate limit from concurrent overnight agents, unrelated to this code path) and was re-run per the runbook's flaky-result rule, then passed cleanly. Confirmed by code inspection that the underlying gap from the case's hypothesis is still real: updateLevel (Mind.jsx:539-545) has no onError handler (contrast the `practiced` mutation right above it at :530-536, which does) and the dot buttons (:598-605) have no isPending disable — so a genuinely failed request among a rapid-tap burst would give zero user feedback and could leave the DB on a level that doesn't match what's shown (not observed live here since all 5 requests succeeded both runs).",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-10.mjs",
+    "evidence": "console log: 'PASS today-r1-10 :: finalLevel=3 (expected 3, last tap) rows=1 problems=[]'; ui-audit/overnight/shots/r1-10-after-rapid-taps.png",
+    "suspectFile": "src/pages/Mind.jsx:539-545"
+  },
+  {
+    "id": "today-r1-11",
+    "title": "Mind Skills 'Practiced' while offline: onError never fires — react-query pauses and silently completes the mutation on reconnect with no queued/pending indicator",
+    "severity": "minor",
+    "route": "/mind (Skills tab)",
+    "steps": "1. Create a tagged skill, not yet practiced today. 2. context.setOffline(true). 3. Tap 'Practiced' (Mind.jsx:620, practiced.mutate at :530-536). 4. Wait 4s while still offline, check DB + UI. 5. context.setOffline(false), wait ~2.5s, check DB again.",
+    "expected": "Per the case's stated risk, a clear 'Failed to update' toast (Mind.jsx:536) should fire while offline and the DB should stay unchanged.",
+    "actual": "While offline: DB unchanged (correct) and no false optimistic UI (correct), BUT no 'Failed to update' toast fired either — the button just does nothing visible, no toast, no 'queued' state. After reconnecting (~2.5s later), the mutation silently completed and the DB was updated with no confirmation shown to the user. Root cause: react-query's default mutation networkMode ('online') PAUSES a mutation while offline instead of erroring it, then auto-fires it on reconnect. The onError handler at Mind.jsx:536 is effectively dead code for a real offline scenario — it only helps a genuine server-side error, not a connectivity drop, which is the more realistic offline case at a gym. Net effect: no data loss, but a tap at the gym with a spotty signal gives zero feedback for however long the phone stays offline, then completes invisibly later with no confirmation.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-11.mjs",
+    "evidence": "console log: 'dbUnchangedWhileOffline=true sawFailToastWhileOffline=false dbChangedAfterReconnect=true'; ui-audit/overnight/shots/r1-11-offline-practiced.png",
+    "suspectFile": "src/pages/Mind.jsx:530-536"
+  },
+  {
+    "id": "today-r1-12",
+    "title": "Coach: reopening a review whose clip is missing from storage leaves the dialog stuck on 'Loading clip…' forever",
+    "severity": "error-msg",
+    "route": "/coach",
+    "steps": "1. Insert a tagged form_reviews row with a clip_path that has no matching object in the 'physique' bucket. 2. On /coach, open Past reviews, tap the tagged entry (reopenReview, Coach.jsx:110-115). 3. Observe the dialog.",
+    "expected": "An error message replaces the loading spinner, or the dialog offers a way to tell the clip is missing.",
+    "actual": "Confirmed live and reproducible: createSignedUrl returns an HTTP 400 (object not found) — `const { data: s } = await supabase.storage.from('physique').createSignedUrl(...)` destructures only `data` and never checks the `error` field, so `s` is `undefined` on this failure, `s?.signedUrl ?? null` evaluates to `null`, and the dialog is left rendering its 'Loading clip…' spinner permanently (confirmed still stuck after 6s wait). The X close button in the header still works, so the user isn't fully trapped, but there is zero indication anything went wrong — it just looks broken/hung.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-12.mjs",
+    "evidence": "ui-audit/overnight/shots/r1-12-reopen-bogus-clip.png; console: HTTP 400 on storage/v1/object/sign/physique/OVN-today-r1-12/nonexistent.mp4; body text tail ends '...Loading clip… X' at both 3s and 6s",
+    "suspectFile": "src/pages/Coach.jsx:110-115"
+  },
+  {
+    "id": "today-r1-13",
+    "title": "Coach: analyze-form failure after a successful clip upload leaves the uploaded clip orphaned in storage",
+    "severity": "minor",
+    "route": "/coach",
+    "steps": "1. Fill exercise 'OVN-today-r1-13 test lift', choose a tagged clip. 2. Tap 'Get critique'. 3. Intercept and abort only the analyze-form function call (page.route) so the real storage upload succeeds but the analysis step fails — no paid Gemini call made. 4. Check the error UI and list the 'physique' bucket for a recently-created object.",
+    "expected": "A clear error is shown (not a stuck spinner) and, ideally, the orphaned upload is cleaned up or explicitly accepted as a known minor cost.",
+    "actual": "Error handling is correct: the UI surfaces a visible error message, no stuck spinner (Coach.jsx:100-103 setError path works as intended). Storage cleanup is missing as the map predicted: confirmed a real orphaned object left at physique/<uid>/form/<timestamp>.mp4 after the failure — Coach.jsx:86-104 wraps both the upload and the analyze-form invoke in one try/catch whose catch block only calls setError(), never supabase.storage.from('physique').remove([path]). Manually removed the orphan created by this test during cleanup. Also observed, incidentally, a CSP console error ('Refused to load blob:... because it appears in neither the media-src directive nor the default-src directive') when the app tries to render the local preview `<video src={pending.previewUrl}>` for the newly chosen clip — worth a separate look since it may mean the pre-upload preview video doesn't render for users under the current CSP.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-13.mjs",
+    "evidence": "ui-audit/overnight/shots/r1-13-analyze-fail.png; console log: 'recent physique/<uid>/form objects (last 30s): [\"1790590737129.mp4\"]'; CSP console error captured in REPORT problems",
+    "suspectFile": "src/pages/Coach.jsx:86-104"
+  },
+  {
+    "id": "today-r1-15",
+    "title": "AthleteState engine-value guards use `!= null`, which is not NaN-safe (latent; no live write path found that actually delivers a raw NaN through JSON)",
+    "severity": "minor",
+    "route": "/athlete-state",
+    "steps": "1. Read current engine_params/training_prescription for the test athlete (read-only, no mutation — per the case's own fallback instruction, since safely injecting a tagged NaN into a single-row-per-athlete table without corrupting it isn't feasible). 2. Inspect AthleteState.jsx:106 `{vdot != null ? Number(vdot).toFixed(1) : '—'}` and :119 `{confidence != null ? Math.round(confidence * 100) + '%' : '—'}`.",
+    "expected": "A non-finite engine value should degrade to the em-dash fallback, never render literally as 'NaN%' or 'NaNd'.",
+    "actual": "Confirmed by inspection: `NaN != null` evaluates to `true` in JS, so if `vdot` or `confidence` were ever a literal NaN, these guards would NOT catch it and would render 'NaN' text. However, investigated the realistic path for this to happen and found real friction: these fields are jsonb, transported as JSON, and JSON has no NaN literal — Postgres' jsonb parser rejects a bare `NaN` token as invalid JSON, so an engine write that tries to persist float('nan') would most likely fail at insert time (a write-time engine error) rather than silently landing as a renderable NaN. The one path that could still produce a client-side NaN is local arithmetic — e.g. AthleteState.jsx:71 `vdotTrend = vdot - vdotHist[...]` when vdot is null and history has ≥2 entries — but that specific case is inadvertently protected: the display gate at :107 (`Math.abs(vdotTrend) >= 0.05`) evaluates to `false` for NaN, so nothing renders. Net: the `!= null` guards on :106/:119 are a real defensive gap worth a one-line fix (`Number.isFinite(...)` instead of `!= null`), but current live data (vdot=52.1, confidence unset/—) shows no NaN and no exploitable write path was found in this pass.",
+    "repro": "ui-audit/overnight/areas/today/scripts/r1-09.mjs (same read used for the confidence/vdot values; no separate script needed since this is a code-inspection finding)",
+    "evidence": "code inspection of src/pages/AthleteState.jsx:71,106,107,119; live values observed via r1-09.mjs: VDOT=52.1, Model Confidence unset for today",
+    "suspectFile": "src/pages/AthleteState.jsx:106,119 (and :71 for the vdotTrend NaN case, which is already inadvertently guarded)"
+  }
+]

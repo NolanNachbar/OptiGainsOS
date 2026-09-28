@@ -1,0 +1,30 @@
+[
+  {
+    "id": "today-r1-17",
+    "commit": "98c8c0a4",
+    "test": "e2e/today-csp-media-src.spec.mjs",
+    "status": "fixed",
+    "note": "index.html's CSP had no media-src, so default-src 'self' blocked the pre-upload blob: clip preview and every past-review's signed https://*.supabase.co clip URL on Coach. Added media-src 'self' blob: https://*.supabase.co; kept as tight as possible (no https:, no data:, nothing else loosened). No other CSP source found (no _headers/vercel.json/netlify.toml/vite server.headers CSP). The e2e can't assert actual video playback in this harness (no real codec/camera), so it asserts what it can: zero media-src/Refused-to-load console violations for both the blob: preview path and the signed-URL past-review path."
+  },
+  {
+    "id": "today-r1-05",
+    "commit": "6f932876",
+    "test": "e2e/today-midnight-rollover.spec.mjs",
+    "status": "fixed",
+    "note": "Today.jsx computed `today` once per render via getTodayString(tz) with nothing forcing a re-render after local midnight, so a todo added after midnight silently saved under yesterday's date. Added a shared src/hooks/useNowDay.js hook (mirrors FoodTracker's midnight fix, commit 5331532b: re-derives on visibilitychange/focus/a 60s interval) and used it for Today's `today`, replacing the one-shot getTodayString(tz) call. Did not touch FoodTracker/selectedDate (already reviewed, fuel-specific wasOnToday gating) or the review correction's edit-in-progress guard (07010071) — Today has no open-edit state that a date roll could corrupt. Test mirrors the fuel spec's backward fake-clock approach (yesterday 23:55 -> today 00:10, since faking forward of real now breaks the hosted Supabase session) and asserts both the DB row's date and that it's visible in the list (catches a query-key mismatch)."
+  },
+  {
+    "id": "today-r1-01",
+    "commit": "1768b0e6",
+    "test": "e2e/today-delete-undo.spec.mjs",
+    "status": "fixed",
+    "note": "Deleting a todo had no confirm and no undo. deleteMutation now returns the deleted row(s) and onSuccess shows a 'Task deleted' toast (closeButton disabled, same reasoning as fuel's 58cb69a9: the global close button sits in the same corner as the delete X) with an Undo action that re-inserts them, plus a toast.error on a failed restore (mirrors the fuel review correction, 51b16dca) and onError on the delete mutation itself."
+  },
+  {
+    "id": "today-r1-04",
+    "commit": "1768b0e6",
+    "test": "e2e/today-delete-undo.spec.mjs",
+    "status": "fixed",
+    "note": "Same commit as today-r1-01 (root cause and fix are intertwined). The text-only de-dupe (TodayActions.jsx:47-52, keeps only the earliest same-text row) meant deleting the visible row left its hidden same-text twin in the DB, which instantly re-rendered in the deleted row's place on the next de-dupe pass, so the delete looked like it silently failed. Delete and toggle now act on every raw row sharing that text for the date (.in('id', ids)) instead of only the clicked row's id. The de-dupe itself (today-r1-03, proposal:true) is untouched, per instruction. Regression test seeds two same-text rows, asserts only one renders (de-dupe still holds), deletes it, asserts the row disappears (not re-rendered from the hidden twin) with the toast visible, and that Undo restores both rows."
+  }
+]

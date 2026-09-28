@@ -1,0 +1,152 @@
+[
+  {
+    "id": "train-programs-r1-01",
+    "persona": "off-script",
+    "title": "Editing an existing v2 program deletes all its days, then fails to re-create them (PGRST204 notes) — worse than the known create-time failure",
+    "setup": "Test athlete, a tagged v2 program already created via testDb() seed (title 'OVN-tp-r1-01 program', schema_version: 2, with 2-3 program_workouts rows that have real exercises) OR via /program-builder create flow accepting the known PGRST204 on create currently blocks even that — if create is fully broken, seed the program+workouts rows directly with testDb() instead and only exercise the edit path through the UI.",
+    "steps": "1. Ensure the tagged program has >=2 program_workouts rows (seed directly if the UI create path is currently blocked by the notes migration). 2. Open /program-builder?edit=<id> (or however edit is routed — check ProgramBuilder.jsx for the editId query param name). 3. Change one field (e.g. a rep target) and tap 'Save Changes'. 4. Regardless of whether the save toast says success or 'Failed to update program', immediately query program_workouts for this program_id via testDb().",
+    "expected": "Either the update fully succeeds (all days present with the edit applied), or it fully fails leaving the ORIGINAL days untouched. What must not happen: zero program_workouts rows remaining for a program that had rows before the edit.",
+    "risk": "src/hooks/useProgramQueries.js:146-170 useUpdateProgram deletes all existing ProgramWorkout rows (:151-154) before looping ProgramWorkout.create (:155-161) with no transaction; ProgramBuilder.jsx:429 always sends notes on each create, which 400s (PGRST204) until migration 20260928000000 is applied on hosted — so today every edit-save is expected to wipe then fail to restore.",
+    "serialize": true,
+    "serializeReason": "writes/deletes the tagged program's own program_workouts rows; safe to parallelize with other areas but not with another train-programs case touching the same program id."
+  },
+  {
+    "id": "train-programs-r1-02",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap 'Save Changes' / 'Create Program' fires two overlapping update-mutations",
+    "setup": "Test athlete, tagged v2 program (OVN-tp-r1-02) with a couple of days built in the wizard, on the Confirm step of /program-builder.",
+    "steps": "1. Build a minimal 2-day tagged program in the wizard. 2. On the Confirm step, fire two near-simultaneous native .click() calls on the Create/Save button before the first request's response returns (no await between clicks, matching the pattern used for fuel-r1-06/07).",
+    "expected": "Exactly one program (or one successful update) results — no duplicate Program row, and program_workouts ends with exactly one set of days, not two interleaved delete/create passes worth.",
+    "risk": "src/pages/ProgramBuilder.jsx:449-471 handleSubmit has no visible isPending-disable check before firing createMutation.mutate/updateMutation.mutate a second time; useCreateProgram/useUpdateProgram (useProgramQueries.js:115-170) have no idempotency guard, same shape as fuel's WeeklyPlanCard double-approve bug (fuel-r1-10).",
+    "serialize": true,
+    "serializeReason": "creates/mutates a tagged program+workouts set; keep to one attacker so counts are unambiguous."
+  },
+  {
+    "id": "train-programs-r1-03",
+    "persona": "extreme-data",
+    "title": "Imported program JSON with a blank exercise name and absurd set/rest values passes validation",
+    "setup": "Test athlete, craft a tagged program JSON file (name 'OVN-tp-r1-03 import') with one exercise having name: '', sets: 9999, rest_seconds: 999999, and save it locally for the Import button to read.",
+    "steps": "1. Open /program-builder, tap Import, select the crafted JSON. 2. Step through to Confirm and Create. 3. Inspect the created program_workouts row's exercises array.",
+    "expected": "Either the import rejects/flags the blank exercise name and absurd set/rest values before letting the user proceed, or they're clearly surfaced in the wizard UI for correction — not silently created and then rendered as broken-looking cards elsewhere (ProgramDetail, WeeklySchedule).",
+    "risk": "src/utils/programIO.js:105 exercise name has no non-empty check (defaults to \"\" via String(ex.name || \"\")); sets/rest_seconds (:106,109) have no upper bound unlike cycle_length/num_cycles which are clamped 1-30/1-20 (:87-88).",
+    "serialize": false
+  },
+  {
+    "id": "train-programs-r1-04",
+    "persona": "extreme-data",
+    "title": "Import a program JSON missing the 'program' key or with a non-string name — confirm the thrown Error surfaces as a real message, not a blank/crash",
+    "setup": "Test athlete, two crafted invalid JSON files: (a) '{}' with no program key, (b) { program: { name: 12345 } }.",
+    "steps": "1. Open /program-builder, tap Import, select file (a). Observe the error surfaced (toast/inline). 2. Repeat with file (b).",
+    "expected": "A clear, user-readable error for both ('Missing program key...' / 'Program must have a name'), no blank screen, no unhandled promise rejection in console, wizard remains usable to try again.",
+    "risk": "src/utils/programIO.js:79-83 parseProgramJson throws plain Error objects for both cases; confirm the ProgramBuilder import handler (not yet read this round — locate the try/catch around parseProgramJson call) actually catches and displays these rather than letting them propagate as an unhandled error.",
+    "serialize": false
+  },
+  {
+    "id": "train-programs-r1-05",
+    "persona": "off-script",
+    "title": "Restart (cancel) an enrollment while a /workout-detail session for that program is open on another tab/reload",
+    "setup": "Test athlete, tagged program (OVN-tp-r1-05) with an active enrollment and a program_workouts day with exercises.",
+    "steps": "1. Enroll in the tagged program. 2. Navigate to the current day's workout in /workout-detail and start a session (don't finish it). 3. In a second context (new tab or via testDb() simulating the concurrent action), go to /program/<id> and tap Restart → confirm (confirmRestart). 4. Return to the still-open /workout-detail session and tap Finish → Log Workout.",
+    "expected": "Either the finish is blocked with a clear message ('this program was restarted, your session can't be logged against it') or it logs cleanly against the fresh enrollment state — not a silent write into progression_state/completed_workouts of an enrollment the athlete just wiped, and not a crash/blank screen.",
+    "risk": "src/pages/ProgramDetail.jsx:204 confirmRestart -> deleteEnrollmentMutation sets status:'completed' (useProgramQueries.js:398-409, doesn't actually delete, per its own comment about the status check constraint); src/hooks/useProgramQueries.js:242-381 useLogProgramWorkout takes an `enrollment` object passed in by the caller (likely captured stale in WorkoutDetail's closure) rather than re-fetching current status before writing.",
+    "serialize": true,
+    "serializeReason": "touches the tagged program's single enrollment row and an active session; must run alone."
+  },
+  {
+    "id": "train-programs-r1-06",
+    "persona": "off-script",
+    "title": "Re-enroll in a program after Restart — does progression_state actually reset, or carry over stale working weights",
+    "setup": "Test athlete, tagged program (OVN-tp-r1-06), enroll once and log at least one exercise set so progression_state has a real working_weight for one exercise.",
+    "steps": "1. Enroll, complete one workout day logging a specific weight (e.g. 135 lb) for a tagged exercise name. 2. Restart (cancel) the enrollment via ProgramDetail. 3. Re-enroll via the Enroll dialog, this time entering a DIFFERENT starting weight (e.g. 95 lb) for the same exercise. 4. Read back the enrollment's progression_state for that exercise.",
+    "expected": "progression_state reflects the newly entered starting weight (95 lb), not a leftover 135 lb from the prior run — useEnrollInProgram overwrites the whole progression_state object per exercise, so confirm there's no partial merge bug.",
+    "risk": "src/hooks/useProgramQueries.js:183-240 useEnrollInProgram — re-uses the existing row by created_by+program_id (:225-228) and calls ProgramEnrollment.update(existing[0].id, enrollmentData) where enrollmentData.progression_state is freshly built only from the NEW startingWeights (:189-201) — should be a full overwrite, confirm the DB update isn't a shallow merge that preserves old keys.",
+    "serialize": true,
+    "serializeReason": "reuses the same tagged program's enrollment row as train-programs-r1-05; run sequentially after it, not concurrently."
+  },
+  {
+    "id": "train-programs-r1-07",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap Pause then Resume in quick succession — status field races",
+    "setup": "Test athlete, tagged active enrollment (OVN-tp-r1-07).",
+    "steps": "1. On /program/<id> with an active enrollment, tap Pause. 2. Immediately (before the toast/UI updates) tap what is now the Resume button, then tap Pause again — three rapid taps with no wait for each mutation to settle.",
+    "expected": "Final status is deterministic and matches the LAST action's intent (not stuck mid-toggle, not reverted to an earlier state by a slow response landing after a later one).",
+    "risk": "src/pages/ProgramDetail.jsx:186-196 handlePause/handleResume both call statusMutation.mutate with no isPending guard on the buttons (not yet confirmed whether the buttons disable — check render code); useUpdateEnrollmentStatus (useProgramQueries.js:383-396) has no optimistic-concurrency check (no updated_at compare), so a slow first response can overwrite a fast later one (last-network-response-wins, not last-click-wins).",
+    "serialize": true,
+    "serializeReason": "mutates the tagged enrollment's status field; needs to run alone to attribute the final state correctly."
+  },
+  {
+    "id": "train-programs-r1-08",
+    "persona": "interrupted",
+    "title": "Reload mid-Enroll — does the enrollment partially create, and does the dialog recover cleanly",
+    "setup": "Test athlete, tagged program (OVN-tp-r1-08) not yet enrolled.",
+    "steps": "1. Open the Enroll dialog on /program/<id>, fill in a starting weight for one exercise and a start date. 2. Tap the Enroll/confirm button and immediately page.reload() before the request can complete (throttle the network first).",
+    "expected": "Either the enrollment doesn't exist after reload (clean failure, retry works) or it exists complete and correct (all progression_state fields populated) — never a partially-written enrollment row with some fields set and others null/missing that then confuses the schedule read on /weekly-schedule.",
+    "risk": "src/hooks/useProgramQueries.js:183-240 useEnrollInProgram does a single ProgramEnrollment.create/update call (atomic at the DB layer) but performs a prior read (existing = ProgramEnrollment.filter(...), :225) and an async ProgramWorkout.filter (:204) before it — confirm no client state assumes success before the network response.",
+    "serialize": true,
+    "serializeReason": "creates the tagged program's only enrollment row."
+  },
+  {
+    "id": "train-programs-r1-09",
+    "persona": "time",
+    "title": "Apply a week template on /weekly-schedule for a day already logged earlier the same session — touched-date race",
+    "setup": "Test athlete, tagged library workout folder (OVN-tp-r1-09) with at least one workout in it, and a program enrollment active for the current week.",
+    "steps": "1. Log a tagged workout for TODAY via the normal logging flow (or seed a workout_logs row for today via testDb() tagged OVN-tp-r1-09). 2. Immediately open WeekTemplateSwap on /weekly-schedule (loads its `touched` set from a query fired at that point) and apply a template folder for the current week before navigating away or reloading. 3. Check whether today's program_workouts row got overwritten by the template despite being logged.",
+    "expected": "Today stays untouched by the template (it's in `touched`) because the log write happened before WeekTemplateSwap's query ran. This case is really checking there's no STALE-touched-set race: if the query for `touched` was already in flight/cached from before the log write, today could get silently overwritten.",
+    "risk": "src/components/program/WeekTemplateSwap.jsx:30-46 touched query keyed by [user, programId, first] with no dependency on a 'just logged' signal — if React Query serves a cached result from before the log write, planTemplateWeek (:36-45 imports) could plan over today's already-logged day; src/hooks/useWeekTemplate.js apply mutation not yet read this round — confirm it re-derives touched server-side rather than trusting the client's snapshot.",
+    "serialize": true,
+    "serializeReason": "writes today's program_workouts rows for the shared account's current week; must not overlap another attacker's today-log writes."
+  },
+  {
+    "id": "train-programs-r1-10",
+    "persona": "off-script",
+    "title": "'Use engine plan' (clear template) after a per-day override was already applied to one day in the same week",
+    "setup": "Test athlete, tagged program with an active enrollment, current week. Apply a per-day override to one day (via OverrideProgramWorkout's entry point — locate it first; likely /today or a WeeklySchedule day-cell action) tagged OVN-tp-r1-10, THEN apply a week template via WeekTemplateSwap, THEN tap 'Use engine plan' to clear.",
+    "steps": "1. Apply a per-day override to one specific day (sets locked:true, override_source:'custom' per useOverrideProgramWorkout.js:37-38). 2. Apply a week template via WeekTemplateSwap for the same week. 3. Tap 'Use engine plan' (onClear, WeekTemplateSwap.jsx:79). 4. Check whether the originally-overridden day's locked flag / content survived or got clobbered by the clear.",
+    "expected": "Clearing the template should not silently unlock or overwrite a day the athlete explicitly hand-overrode before ever applying the template — locked:true is the signal the cron/engine respects (useOverrideProgramWorkout.js:7-12), so 'Use engine plan' clobbering it would let the next cron run silently replace the athlete's chosen workout.",
+    "risk": "src/hooks/useWeekTemplate.js useClearWeekTemplate (not yet read this round) — confirm its clear logic distinguishes locked/override_source:'custom' rows from override_source:'<template>' rows rather than clearing every row in the week indiscriminately.",
+    "serialize": true,
+    "serializeReason": "writes/overwrites the same week's program_workouts rows touched by train-programs-r1-09; run these two sequentially, not in parallel."
+  },
+  {
+    "id": "train-programs-r1-11",
+    "persona": "off-script",
+    "title": "Delete a library workout that's already been dropped onto a program day — dangling source_workout_id",
+    "setup": "Test athlete, tagged library workout (OVN-tp-r1-11) with 1-2 exercises.",
+    "steps": "1. Create the tagged library workout on /train?tab=library. 2. In /program-builder, drag it onto a day cell (sets source_workout_id on that program_workouts row). 3. Save the program (accepting the known notes-migration caveat, or verify via the day's in-wizard state if save is blocked). 4. Back on /train?tab=library, delete the tagged workout (confirm dialog). 5. Reopen the program in /program-builder or /program/<id> and check the previously-assigned day still renders correctly.",
+    "expected": "The program day still displays its exercises correctly (they're denormalized onto program_workouts at assign-time) with no crash/blank card from the dangling source_workout_id; ideally the UI doesn't claim it's 'sourced from' a workout that no longer exists.",
+    "risk": "src/pages/Workouts.jsx:129-144 deleteWorkoutMutation nulls WorkoutLog.workout_id and deletes WorkoutSchedule rows but never touches program_workouts.source_workout_id set at ProgramBuilder.jsx:~410/436 drop-time.",
+    "serialize": false
+  },
+  {
+    "id": "train-programs-r1-12",
+    "persona": "extreme-data",
+    "title": "Enroll with a starting weight of 0 and negative for the same program",
+    "setup": "Test athlete, tagged program (OVN-tp-r1-12) with 2+ exercises.",
+    "steps": "1. Open the Enroll dialog. 2. Enter '0' for one exercise's starting weight and '-50' for another (if the input allows a minus sign). 3. Confirm enroll and read back progression_state.",
+    "expected": "Per code, weight>0 is the only branch that populates progression_state (useProgramQueries.js:191): 0 and negative should both be silently skipped (exercise starts with no progression_state entry) — confirm that's really what happens and that a negative value doesn't slip through as a raw negative working_weight that then corrupts the first workout's suggested load.",
+    "risk": "src/hooks/useProgramQueries.js:190-201 `if (weight > 0)` guard; the input field itself (ProgramDetail.jsx enroll dialog, not yet read line-by-line this round) may not have min=\"0\", so confirm the negative case is actually reachable from the UI, not just from a direct API call.",
+    "serialize": true,
+    "serializeReason": "creates the tagged program's enrollment row."
+  },
+  {
+    "id": "train-programs-r1-13",
+    "persona": "extreme-data",
+    "title": "Program with 30-day cycle_length and 20 cycles (max import clamp) renders on WeeklySchedule without freezing",
+    "setup": "Craft a tagged import JSON (OVN-tp-r1-13) with cycle_length: 30, num_cycles: 20, and a full 30 days of exercises (or minimal per-day content to keep the file small).",
+    "steps": "1. Import the file on /program-builder, create it, enroll. 2. Open /weekly-schedule and page through several weeks. 3. Open /program/<id> and expand 'Show all cycles'.",
+    "expected": "No freeze/crash/infinite-render at the clamp ceiling; getProgramSchedule and the ProgramDetail 'show all' expansion handle 600 total programmed days (30x20) without a multi-second stall on a phone-class device.",
+    "risk": "src/utils/programSchedule.js getProgramSchedule (not yet profiled this round) and ProgramDetail.jsx showAllCycles/showAllProgression toggles (:70-71) — confirm these are bounded/paginated rather than rendering all 600 days at once.",
+    "serialize": false
+  },
+  {
+    "id": "train-programs-r1-14",
+    "persona": "interrupted",
+    "title": "Go offline mid-Enroll submit — confirm no false-success toast and the dialog preserves entered weights for retry",
+    "setup": "Test athlete, tagged program (OVN-tp-r1-14).",
+    "steps": "1. Open Enroll dialog, fill starting weights for 2 exercises. 2. context.setOffline(true). 3. Tap Enroll. 4. Observe the error toast and whether the dialog stays open with the typed weights intact. 5. context.setOffline(false), retry.",
+    "expected": "Clear failure toast ('Failed to enroll', ProgramDetail.jsx onError), no false success, no navigation away, entered weights preserved for retry so the athlete doesn't have to re-type them all; retry then succeeds exactly once.",
+    "risk": "src/pages/ProgramDetail.jsx:170-183 handleEnroll onError just toasts, doesn't reset startingWeights state — should be safe by omission, but confirm the dialog doesn't auto-close on error and no optimistic UI shows the program as enrolled while offline.",
+    "serialize": true,
+    "serializeReason": "eventually creates the tagged program's enrollment row once reconnected."
+  }
+]

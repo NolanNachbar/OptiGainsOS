@@ -1,0 +1,172 @@
+[
+  {
+    "id": "today-r1-01",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap Delete on a todo — no confirm, no undo, no isPending guard",
+    "setup": "Test athlete, one tagged manual todo added for today (OVN-today-r1-01).",
+    "steps": "1. On /today, tap + in Today's Actions, type 'OVN-today-r1-01 delete test', tap Add. 2. Locate its row and fire two near-simultaneous clicks on the X button (TodayActions.jsx:187-193) before the first request's response returns (two click() calls, no await between them).",
+    "expected": "Exactly one todo is removed, no crash, no error surfaced. Per judge rules, a destructive action with zero confirm and zero undo is itself worth flagging (contrast Mind's Reading/Study/Skills tabs, which all gate delete behind ConfirmDialog).",
+    "risk": "src/components/dashboard/TodayActions.jsx:92-98 deleteMutation has no confirm dialog, no undo/toast-with-undo, and the X button (:187-193) has no disabled={deleteMutation.isPending} guard.",
+    "serialize": true,
+    "serializeReason": "mutates a shared-account todos row for today; must not overlap another attacker's todo case."
+  },
+  {
+    "id": "today-r1-02",
+    "persona": "interrupted",
+    "title": "Two tabs open /today simultaneously with an un-seeded brief — duplicate AI-seeded todos",
+    "setup": "Test athlete, a daily_briefs row exists for today with today_actions populated, and localStorage key todos_seeded_<uid>_<today> is NOT yet set (clear it first if present, or use a date with no prior seed).",
+    "steps": "1. Open two browser contexts/tabs both navigating to /today at nearly the same instant (or reload two tabs back-to-back within ~200ms). 2. Wait for both to finish loading. 3. Query todos for today filtered by source='ai_generated' and count rows per unique text.",
+    "expected": "Each brief action seeds exactly one todo row. If two tabs race past the localStorage guard before either write lands, duplicate ai_generated rows exist per action (masked in the UI by the by-text de-dupe filter, but present in the DB and inflating the total/completed denominator).",
+    "risk": "src/components/dashboard/TodayActions.jsx:56-77 — localStorage.getItem(seedKey) is checked synchronously but localStorage.setItem(seedKey,'1') only runs inside the insert's .then() callback, so two near-simultaneous loads both pass the guard before either claims it.",
+    "serialize": true,
+    "serializeReason": "writes multiple todos rows tied to today's brief seed; must run alone so no other case's todos pollute the count."
+  },
+  {
+    "id": "today-r1-03",
+    "persona": "extreme-data",
+    "title": "Two AI-seeded todos share identical text but different domains — one silently disappears",
+    "setup": "Test athlete, tagged rows (OVN-today-r1-03). Simulate via testDb(): insert two todos rows for today, same text 'OVN-today-r1-03 duplicate text', different domain values ('training' and 'nutrition'), both source='ai_generated', different created_at (1 minute apart).",
+    "steps": "1. Insert both tagged rows directly via testDb(). 2. Reload /today. 3. Count how many rows render in Today's Actions matching that text. 4. Toggle the visible one complete, then check via testDb() which underlying row(s) got the update.",
+    "expected": "Ideally both distinct todos are visible and independently actionable. Actual/known behavior per code: the client-side de-dupe-by-text filter (TodayActions.jsx:47-52) keeps only the earliest created_at, so the second (later) row is invisible in the UI even though it still exists in the DB and could resurface unexpectedly after the visible one is deleted.",
+    "risk": "src/components/dashboard/TodayActions.jsx:47-52 seen/dedupe Set keys purely on t.text, ignoring id/domain — a legitimate second todo with matching text is permanently hidden while it exists.",
+    "serialize": true,
+    "serializeReason": "writes tagged todos rows for today; other attackers reading today's todo list/count in this window would see the collapsed view."
+  },
+  {
+    "id": "today-r1-04",
+    "persona": "off-script",
+    "title": "Delete the visible (earlier) duplicate — does the hidden later duplicate resurface?",
+    "setup": "Continuation of today-r1-03's state (two same-text tagged rows still present) OR fresh setup: insert two todos with identical text via testDb(), tagged OVN-today-r1-04, 2 minutes apart.",
+    "steps": "1. Ensure two same-text tagged rows exist (earlier one is what's currently visible per the de-dupe). 2. On /today, tap the visible row's X to delete it. 3. Reload /today. 4. Check whether the second (previously hidden) duplicate now appears.",
+    "expected": "After deleting what looked like 'the' todo, the athlete sees it's gone. If the hidden duplicate now surfaces, that's a confusing 'deleted item came back' experience worth flagging as a no-real-undo-but-also-no-real-delete UX bug.",
+    "risk": "src/components/dashboard/TodayActions.jsx:47-52 — de-dupe recomputes 'earliest' each render, so deleting the previously-earliest visible row can promote a previously-hidden duplicate into view on the next load.",
+    "serialize": true,
+    "serializeReason": "deletes a tagged todos row and depends on exact row state from setup; run alone."
+  },
+  {
+    "id": "today-r1-05",
+    "persona": "time",
+    "title": "Add a todo right after local midnight with the tab left open since before midnight",
+    "setup": "Test athlete, /today open, tagged case (OVN-today-r1-05).",
+    "steps": "1. Load /today at 23:56 local (page.clock). 2. Leave the tab open, no reload/navigation. 3. Advance page.clock to 00:08 the next day. 4. Tap + → type 'OVN-today-r1-05 midnight todo' → Add.",
+    "expected": "Either the day rolls over (todo lands on the new date) or the UI visibly indicates it's still logging to 'yesterday'. Silently writing to the stale date (today prop computed once on Today.jsx:55 mount) means the todo won't appear when the athlete reopens the app the next morning expecting a clean list.",
+    "risk": "src/pages/Today.jsx:55 const today = getTodayString(profile?.timezone) is computed once per render/mount, not re-derived from a live clock; TodayActions.jsx receives it as a static today prop and keys every query/insert off todayStr (:33, :68, :108).",
+    "serialize": true,
+    "serializeReason": "writes a todos row dated across a clock boundary; must not overlap another today/midnight case."
+  },
+  {
+    "id": "today-r1-06",
+    "persona": "extreme-data",
+    "title": "Paste a huge block of text into the add-todo input",
+    "setup": "Test athlete, /today open.",
+    "steps": "1. Tap + in Today's Actions. 2. Paste ~5000 characters of text prefixed 'OVN-today-r1-06 ' into the input. 3. Tap Add (or press Enter).",
+    "expected": "Either the input/DB enforces a reasonable max length, or the huge todo is accepted but the row renders without breaking layout (no horizontal overflow, no unbounded row height that pushes the rest of the page off-screen).",
+    "risk": "src/components/dashboard/TodayActions.jsx:100-116 addMutation has no max-length check on newText, and the todos.text column (supabase/migrations/00000000000000_remote_schema.sql:872) is unbounded TEXT with no CHECK on length; the row render (:196-199) has no truncation/line-clamp.",
+    "serialize": true,
+    "serializeReason": "writes a tagged todos row visible in today's shared list."
+  },
+  {
+    "id": "today-r1-07",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap the toggle-complete checkbox on a todo",
+    "setup": "Test athlete, one tagged todo added (OVN-today-r1-07).",
+    "steps": "1. Add the tagged todo. 2. Fire two near-simultaneous clicks on its circle/checkmark toggle (TodayActions.jsx:172-181, toggleMutation :80-90) before the first request's response returns.",
+    "expected": "The todo ends in a single consistent completed state (true, since it started false) with no flicker/error, and the completed/total counter (:150) reflects it correctly once settled.",
+    "risk": "src/components/dashboard/TodayActions.jsx:172-181 toggle button has no disabled={toggleMutation.isPending} guard; two concurrent .update({completed: !todo.completed}) calls computed from the SAME stale client-side todo.completed value could both send completed:true (idempotent, low risk) or interleave oddly if React re-renders between clicks.",
+    "serialize": true,
+    "serializeReason": "mutates a shared todos row's completed state."
+  },
+  {
+    "id": "today-r1-08",
+    "persona": "interrupted",
+    "title": "Add a todo, reload before the insert response lands",
+    "setup": "Test athlete, /today open, no prior tagged rows.",
+    "steps": "1. Throttle network (context.route with added delay on the supabase insert call, or use context.setOffline briefly). 2. Tap + → type 'OVN-today-r1-08 reload test' → tap Add. 3. Immediately page.reload() before the request can complete. 4. After reload, check whether the todo exists (query todos for this tagged text) and whether the input retained the typed text or is empty.",
+    "expected": "No duplicate on retry, no silently lost text — either the insert completed (todo present after reload) or it didn't and the athlete can tell (an error state or the row simply absent, not a false sense that it saved because the input cleared before confirmation).",
+    "risk": "src/components/dashboard/TodayActions.jsx:100-116 addMutation onSuccess (:112-116) clears newText and closes the adding panel only on success, but there's no persisted draft — a reload mid-flight loses the typed text entirely if the request hadn't resolved, with no warning.",
+    "serialize": true,
+    "serializeReason": "may write a tagged todos row depending on timing; run in isolation to read a clean result."
+  },
+  {
+    "id": "today-r1-09",
+    "persona": "off-script",
+    "title": "Readiness hero and Athlete State disagree after a stale athlete_state row",
+    "setup": "Test athlete, insert a tagged athlete_state-adjacent scenario is not directly writable via UI; instead simulate via testDb(): confirm the current athlete_state row's date vs today, and if stale, note it (read-only check, no mutation needed unless a fresh row is easy to seed).",
+    "steps": "1. Query athlete_state for the test athlete's most recent row and its date. 2. Load /today and read the readiness score shown in the hero (StatRing). 3. Load /athlete-state and compare any overlapping metrics (recovery score, fatigue) for consistency with what Today displayed.",
+    "expected": "Today's hero and the Athlete State detail page should read the same underlying athlete_state row for the same day — no silent divergence where one page shows a fresher or staler read than the other.",
+    "risk": "src/pages/Today.jsx:86 useAthleteState(today) and AthleteState.jsx's engine-params panels pull from related but distinct queries; confirm both key off the same 'today' definition (getTodayString(profile?.timezone)) and don't disagree on a day-boundary edge.",
+    "serialize": false
+  },
+  {
+    "id": "today-r1-10",
+    "persona": "extreme-data",
+    "title": "Mind Skills: rapid-tap level dots 1 through 5 on one skill",
+    "setup": "Test athlete, one tagged skill created (OVN-today-r1-10) via Mind > Skills > Add Skill.",
+    "steps": "1. Create the tagged skill with level 3. 2. On its card, tap the level dots in quick succession: 1, 5, 2, 4, 3 (no pause between taps, five updateLevel.mutate calls fired near-concurrently, Mind.jsx:598-605).",
+    "expected": "The skill settles on the LAST tapped level (3) after all requests resolve, no error, no visible flicker to a stale intermediate value that then silently reverts without explanation.",
+    "risk": "src/pages/Mind.jsx:539-545 updateLevel mutation has NO onError handler (unlike its sibling 'practiced' mutation just above it) and no isPending guard on the dot buttons — a failed request among the five gives zero user feedback.",
+    "serialize": true,
+    "serializeReason": "mutates a shared tagged skills row; run alone to read final state cleanly."
+  },
+  {
+    "id": "today-r1-11",
+    "persona": "interrupted",
+    "title": "Mind Skills: mark 'Practiced' while offline",
+    "setup": "Test athlete, one tagged skill (OVN-today-r1-11) already created, not marked practiced today.",
+    "steps": "1. Create the tagged skill. 2. context.setOffline(true). 3. Tap 'Practiced' (Mind.jsx:620, practiced.mutate). 4. Observe UI feedback. 5. context.setOffline(false).",
+    "expected": "A clear failure toast fires ('Failed to update', Mind.jsx:536) and the card does NOT show a false 'just practiced' state while offline.",
+    "risk": "src/pages/Mind.jsx:530-536 practiced mutation does have onError wired (contrast updateLevel above it, which doesn't) — this case is a control to confirm that guard actually works end-to-end, and that no optimistic UI update runs ahead of the network response.",
+    "serialize": true,
+    "serializeReason": "mutates a shared tagged skills row's last_practiced_at."
+  },
+  {
+    "id": "today-r1-12",
+    "persona": "extreme-data",
+    "title": "Coach: reopen a past review whose stored clip_path 404s (deleted/moved storage object)",
+    "setup": "Test athlete, one tagged form_reviews row exists with a clip_path that does NOT resolve to a real storage object (simulate via testDb(): insert a form_reviews row with clip_path 'OVN-today-r1-12/nonexistent.mp4', result JSON with a minimal critique shape, created_by test athlete).",
+    "steps": "1. Insert the tagged review row with a bogus clip_path via testDb(). 2. On /coach, scroll to Past reviews, tap the tagged entry (reopenReview, Coach.jsx:110-115). 3. Observe the dialog's video-loading state.",
+    "expected": "Either an error message replaces the loading spinner, or the video element shows a broken-media state the user can dismiss — not an infinite 'Loading clip…' spinner with no way out.",
+    "risk": "src/pages/Coach.jsx:110-115 reopenReview has no try/catch around createSignedUrl and no handling for a signed URL that resolves but 404s when the video element tries to load it; openReview.url ?? null only guards the synchronous createSignedUrl error, not a downstream fetch failure.",
+    "serialize": false
+  },
+  {
+    "id": "today-r1-13",
+    "persona": "interrupted",
+    "title": "Coach: kill the network between clip upload and analyze-form call",
+    "setup": "Test athlete, a short (<1MB) tagged test video file available for upload.",
+    "steps": "1. On /coach, choose the tagged clip, fill exercise 'OVN-today-r1-13 test lift'. 2. Tap 'Get critique' (analyze, Coach.jsx:79-107). 3. context.setOffline(true) immediately after the storage upload call fires but before the analyze-form function invoke resolves (or throttle so the upload succeeds and analyze-form is what fails). 4. Observe the error state, then check the 'physique' storage bucket for an orphaned uploaded clip under the tagged path.",
+    "expected": "A clear error is shown (not a stuck spinner) and, ideally, the orphaned uploaded clip is either cleaned up or is a known/accepted minor cost — flag if there's no cleanup, since repeated failed attempts accumulate storage.",
+    "risk": "src/pages/Coach.jsx:86-96 — storage upload and the analyze-form invoke are two sequential awaits with a single try/catch around both; the catch block (:101-104) only sets an error message, never calls supabase.storage.from('physique').remove([path]) to clean up a successful upload whose analyze step failed.",
+    "serialize": false
+  },
+  {
+    "id": "today-r1-14",
+    "persona": "off-script",
+    "title": "Add a todo with only whitespace, then Enter",
+    "setup": "Test athlete, /today open.",
+    "steps": "1. Tap + in Today's Actions. 2. Type only spaces '   ' into the input. 3. Press Enter (addMutation.mutate is called directly on Enter keydown, TodayActions.jsx:107-108, bypassing the button's disabled={!newText.trim()} guard at :133-142).",
+    "expected": "No empty/whitespace-only todo is created — the mutationFn's own `if (!newText.trim()) return;` guard (:102) should catch it even though the Enter-key path skips the button's disabled check.",
+    "risk": "src/components/dashboard/TodayActions.jsx:107-108 the Enter keydown handler calls addMutation.mutate() directly, NOT gated by the same !newText.trim() the Add button's disabled prop uses (:141) — relies entirely on the mutationFn's internal early-return (:102) to prevent a blank insert; confirm that path is truly unreachable end-to-end (e.g. the 'adding' panel doesn't flash-close/reopen oddly on a no-op mutate).",
+    "serialize": false
+  },
+  {
+    "id": "today-r1-15",
+    "persona": "extreme-data",
+    "title": "Athlete State: engine writes an Infinity/NaN into engine_params — does the Adaptive Engine panel render garbage",
+    "setup": "Tagged simulated engine_params row, NOT overwriting the real one: instead of mutating the athlete's live engine_params (single row per athlete, risky to corrupt), use testDb() to read the current row's shape, then only proceed if a safe tagged-copy approach exists; if not, treat this as a READ-ONLY code-path check instead of a live mutation.",
+    "steps": "1. Read the current engine_params row via testDb() (read-only). 2. On /athlete-state, read the VDOT, Model Confidence, and Learnings values rendered by AdaptiveEnginePanel (AthleteState.jsx:93-152). 3. Inspect the source of confidence (prescription.banister_state.confidence) and vdot for any value that is 0, null, or an extreme outlier already present, and confirm the display math (Math.round(confidence * 100), tauFat.toFixed(0)) degrades to '—' rather than 'NaN%' or 'Infinityd' if the underlying field is ever non-finite.",
+    "expected": "No 'NaN%' or 'Infinityd' rendered anywhere on the page for any currently-stored value; the != null guards at AthleteState.jsx:106,119 should be confirmed to also exclude NaN (they do not, by inspection: `confidence != null` is true for NaN).",
+    "risk": "src/pages/AthleteState.jsx:119 `{confidence != null ? Math.round(confidence * 100) + '%' : '—'}` — NaN passes `!= null` (NaN != null is true), so an engine-written NaN would render literally as 'NaN%' instead of falling back to the em-dash. Same pattern at :106 for vdot.toFixed(1).",
+    "serialize": false
+  },
+  {
+    "id": "today-r1-16",
+    "persona": "time",
+    "title": "Brief History: 'This week' bucket at a local-vs-UTC day boundary",
+    "setup": "Test athlete, a daily_briefs row exists (or seed one via testDb()) dated exactly 7 days before 'today' by UTC date string, tagged only by date choice (no row content changes needed beyond what's already there).",
+    "steps": "1. Use page.clock to set the browser's local time to just after local midnight but where the UTC date has not yet rolled (e.g. an evening-in-a-behind-UTC timezone scenario, or simpler: set local date to exactly 7 days after a known brief's date at 00:30 local). 2. Load /brief-history. 3. Check which bucket ('This week' vs 'Earlier') that brief lands in, per differenceInCalendarDays(new Date(), parseISO(brief.date)) (BriefHistory.jsx:42).",
+    "expected": "The bucket boundary is a minor cosmetic grouping, not data loss — flag only if a brief flips bucket inconsistently between a reload at 23:59 and 00:01 local in a way that looks broken rather than just a natural date-boundary shift.",
+    "risk": "src/pages/BriefHistory.jsx:42 dateGroup() uses new Date() (browser local 'now'), not profile.timezone — for an athlete whose device timezone differs from their profile timezone (e.g. travel), the 'This week' cutoff can disagree with the rest of the app's day-boundary logic (which does use profile.timezone via getTodayString elsewhere).",
+    "serialize": false
+  }
+]

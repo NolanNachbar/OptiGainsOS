@@ -1,0 +1,27 @@
+[
+  {
+    "idea": "A 'yesterday's leftovers' strip on Today when incomplete todos exist from a prior date, with a one-tap 'bump to today' action",
+    "moment": "Todos are scoped to date=today only (TodayActions.jsx), so anything left unchecked from yesterday simply vanishes from view even though the row still exists — no way to notice or recover it without querying the DB directly.",
+    "howOften": "Likely most days given 324 todos/90d (~3.6/day) and no completion-rate visibility across days."
+  },
+  {
+    "idea": "A todos history/archive view (even a simple date-picker back through past days) since todos is the app's 2nd most-used table but has zero browsing surface beyond 'today'",
+    "moment": "Wanting to check 'did I actually do that thing I noted last Tuesday' has nowhere to go — Brief History shows the AI's notes but not which todos were completed.",
+    "howOften": "Occasional but real given the volume of rows accumulated (562 total)."
+  },
+  {
+    "idea": "Delete-with-undo (toast 'Deleted, tap to undo') on Today's todo X button, matching the confirm-before-delete pattern already used in Mind's Reading/Study/Skills tabs",
+    "moment": "Deleting a todo on Today is the one destructive, no-confirmation, no-undo action in this whole screen group — a mis-tap loses it permanently with no recovery.",
+    "howOften": "Rare but the cost when it happens is total (no recovery path at all)."
+  },
+  {
+    "idea": "A small 'queued — will sync' badge on Mind Skills' Practiced/level actions (and other mutation-triggering taps app-wide) when the network is offline, instead of silent no-feedback until reconnect",
+    "moment": "Tapping 'Practiced' at the gym with a spotty signal gives zero visual feedback for however long the phone is offline (react-query pauses the mutation rather than failing it), then silently completes on reconnect with no confirmation toast either way.",
+    "howOften": "Occasional — gym wifi/cell dead zones, not constant, but confusing when it happens since there's genuinely no signal either way that anything is pending."
+  },
+  {
+    "idea": "Coach's reopened-review dialog should show an explicit 'Clip unavailable' state with a dismiss action when the stored clip 404s, instead of an indefinite 'Loading clip…' spinner",
+    "moment": "Reopening an old form review whose video is missing/moved leaves the dialog looking permanently hung with no explanation — the only way out is noticing the X close button.",
+    "howOften": "Rare today (Coach is near-zero usage, 1 form_review ever) but would compound if Coach usage grows and clips get deleted/expired over time."
+  }
+]

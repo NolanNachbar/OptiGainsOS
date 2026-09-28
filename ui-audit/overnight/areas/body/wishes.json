@@ -1,0 +1,37 @@
+[
+  {
+    "idea": "Give physique entries a delete path (remove the DB row and the storage object, and re-derive the session average) instead of no delete affordance at all.",
+    "moment": "Static analysis of PhysiqueTracker.jsx found only a pose-fix mutation — no delete anywhere in the file. A wrong, duplicate, or embarrassing upload currently has no in-app way to remove it.",
+    "howOften": "rare per-upload, but permanent when it happens (39 physique_entries rows on record, 21 in the last 90 days)"
+  },
+  {
+    "idea": "Reuse WeighInPrompt's BOUNDS sanity check (lbs 50-700 / kg 25-320, reject-and-show-back rather than silently accept) on the Progress page's own Weight tab input.",
+    "moment": "The exact same 'a typo is a lie the trend estimator can't detect' guard already exists one component away for the dashboard weigh-in prompt, but the Weight tab in Progress.jsx has no min/max at all on the same write path (useLogWeight).",
+    "howOften": "any time weight is logged from Progress instead of the dashboard prompt"
+  },
+  {
+    "idea": "Make body_weight_entries logging a real DB-level upsert (unique constraint on created_by+recorded_date, or ON CONFLICT) instead of client-side select-then-create/update.",
+    "moment": "Seven different components call useLogWeight for 'today's weight' (Progress, WeighInModal, WeighInPrompt, MorningCheckin, ProgressContent, StatsSetupModal, Profile) — any two firing close together can both read zero existing rows and both insert, producing duplicate same-day weight entries that skew the trend chart and adaptive TDEE. The code already names this exact risk in a comment, just hasn't closed the race.",
+    "howOften": "rare in isolation, but the failure mode is silent and permanent (a phantom duplicate weight point) when it happens, and there are 7 possible trigger points"
+  },
+  {
+    "idea": "Give water log delete and supplement log delete the same ConfirmDialog (or an undo toast) that weight/measurement/supplement-type delete already have.",
+    "moment": "Testing the Hydration sub-tab: both per-entry delete (X) buttons are instant, no confirm, no isPending guard — the same inconsistency round 1 found in fuel's food-entry delete.",
+    "howOften": "any time a mis-logged water or supplement entry needs correcting"
+  },
+  {
+    "idea": "Make the Measurements tab upsert-by-date like Weight does (or, if multiple-per-day is intentional for AM/PM readings, add a secondary sort key so 'Latest' is deterministic instead of relying on tie-breaking order from the DB).",
+    "moment": "Saving twice for the same date inserts two rows with no dedupe, and the history query orders by date only (no created_at tiebreak), so which one displays as 'Latest' isn't guaranteed to be the one just saved.",
+    "howOften": "currently never — measurements usage.json shows 0 total / 0 last 90 days, so this is dormant risk in an unused feature rather than an active pain point"
+  },
+  {
+    "idea": "Add a manual-entry fallback for recovery_metrics (sleep score, HRV, resting HR, etc.) for days the Garmin/Apple Health sync misses.",
+    "moment": "recovery_metrics is the single most-used body-area table by row count (129 total / 89 last 90 days) but every row comes from sync — RecoveryDetail.jsx is entirely read-only with no manual-entry path found anywhere in the app.",
+    "howOften": "whenever a sync gap happens (watch not worn, Bluetooth miss, etc.)"
+  },
+  {
+    "idea": "Distinguish a personalized water goal from the generic 3000ml fallback in the UI copy (e.g. a small 'estimated' badge) when profile.current_weight is unset.",
+    "moment": "waterGoalMl() silently substitutes DEFAULT_WATER_GOAL_ML with no visual difference from a real personalized number — someone with no weight on file would have no way to know the goal isn't calculated for them.",
+    "howOften": "only for accounts without current_weight set — likely rare for Nolan's own account but worth a cheap fix"
+  }
+]
