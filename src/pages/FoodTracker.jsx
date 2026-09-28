@@ -2208,11 +2208,11 @@ const handleSaveMealTemplate = () => {
                                   single-item meal never restates the same kcal twice
                                   within ~40px. */}
                               <div className={`sm:hidden font-technical tabular-nums text-[11px] font-semibold mt-0.5 flex flex-wrap items-center gap-x-1.5 ${entry.planned ? 'opacity-45' : ''}`}>
-                                <span className="text-coral">{entry.protein_grams}P</span>
+                                <span className="text-coral">{entry.protein_grams ?? 0}P</span>
                                 <span className="text-ink-faint">·</span>
-                                <span className="text-carb">{entry.carbs_grams}C</span>
+                                <span className="text-carb">{entry.carbs_grams ?? 0}C</span>
                                 <span className="text-ink-faint">·</span>
-                                <span className="text-fat">{entry.fats_grams}F</span>
+                                <span className="text-fat">{entry.fats_grams ?? 0}F</span>
                                 {formatEntryServing(entry) && (
                                   <span className="text-ink-muted">· {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}</span>
                                 )}
@@ -2229,10 +2229,10 @@ const handleSaveMealTemplate = () => {
                             </div>
                             {/* Desktop: per-column macro grid (one legend per section covers identity) */}
                             <div className={`hidden sm:grid shrink-0 grid-cols-5 gap-1.5 w-[170px] text-right items-center font-technical tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
-                              <span className="text-xs font-bold text-gold">{entry.calories}</span>
-                              <span className="text-xs font-bold text-coral">{entry.protein_grams}</span>
-                              <span className="text-xs font-bold text-carb">{entry.carbs_grams}</span>
-                              <span className="text-xs font-bold text-fat">{entry.fats_grams}</span>
+                              <span className="text-xs font-bold text-gold">{entry.calories ?? 0}</span>
+                              <span className="text-xs font-bold text-coral">{entry.protein_grams ?? 0}</span>
+                              <span className="text-xs font-bold text-carb">{entry.carbs_grams ?? 0}</span>
+                              <span className="text-xs font-bold text-fat">{entry.fats_grams ?? 0}</span>
                               <span className="text-xs font-bold text-ink-muted">{entry.cost_usd != null ? `$${entry.cost_usd.toFixed(2)}` : "—"}</span>
                             </div>
                             {/* Edit/delete each get a full 44px target; on mobile
