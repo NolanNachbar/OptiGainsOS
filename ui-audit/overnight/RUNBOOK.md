@@ -35,11 +35,21 @@ anything in KNOWN_NON_ISSUES.md.
 - Usage frequency: `ui-audit/overnight/usage.json` (Nolan's real row counts:
   total / last 90 days). Don't query hosted usage yourself.
 - Write every result to disk as you go (JSON/MD under `areas/<area>/`).
+- Use absolute paths; never `cd`. Final reply to the orchestrator is ONE line
+  ("wrote X, N confirmed, M fixed"); details live on disk.
+- **Shared test account:** attackers run in parallel on one account. Tag every
+  row you create (names/notes prefixed `OVN-<case id>`), assert only on your
+  own tagged rows (never day/week totals), and delete your rows at the end of
+  each case. Clock-API cases must clean up any past/future-dated rows.
+- **Secrets:** never read, print or paste `.env` contents or any key into a
+  file, script, log or commit. Scripts get Supabase access only via
+  `e2e/helpers.mjs` `testDb()`.
 
 ## Areas (in order)
 | id | routes | notes |
 |---|---|---|
 | train-logger | /train, /workout-detail, /quick-workout, /create-workout | DRY RUN area |
+| fuel | (see below) | then continue in THIS order: fuel, today, train-programs, body, analyze, profile-auth (real usage ranking) |
 | train-programs | /program-builder, /program/:id, /weekly-schedule, /train?tab=library | program save needs migration 20260928000000 on hosted (not applied): expect PGRST204 `notes` until then, note it, don't re-report |
 | fuel | /fuel, /food-tracker (meals, week plan, recipes, templates) | highest real usage |
 | body | /fuel?tab=body (weigh-in, supplements, water), /physique, /recovery | |
@@ -52,8 +62,12 @@ data-loss / bad-engine / broken-flow bug) or **3 rounds max**. UX pass once per
 area, after its first round.
 
 ## Steps per round (orchestrator)
-State file `state.json`: `{ area, round, step, cleanStreak, done: [areas], log: [...] }`.
-Update it after every step.
+State file `state.json`: `{ area, round, step, cleanStreak, done: [areas], inFlight, log: [...] }`.
+`inFlight` = `{ step, startedAt (ISO), agents: [names], outputs: [paths] }` while
+background agents run, `null` otherwise. Set it BEFORE launching agents and
+clear it when all outputs exist. Update the file after every step. A heartbeat
+that finds `inFlight` younger than 60 min only checks outputs; older than 60 min
+with outputs missing = stale → relaunch the missing parts.
 
 1. **map** (round 1 only) — 1 agent, `sonnet`. Output `areas/<a>/map.md`.
 2. **cases** — 1 agent, `sonnet`. Output `areas/<a>/cases-r<N>.json`
@@ -72,6 +86,11 @@ Update it after every step.
    `git revert` (not reset) and moved to unfixed. Output `areas/<a>/review-r<N>.json`.
 7. **ux** (after round 1) — 1 agent `sonnet` makes the moves, then the review
    step (6) covers them too. Output `areas/<a>/ux.json`.
+**Dry-run gate** (after train-logger round 1, before anything else): check that
+cases are concrete (real controls, real values), verify rejected at least
+something or explained why all held, every fix has a commit + passing spec, and
+no step stalled. If any check fails, edit this runbook first, then continue.
+
 Round is clean if verify confirmed 0 bugs of severity crash/data-loss/broken-flow/engine.
 
 The orchestrator itself only reads the small JSON outputs and decides the

@@ -1,1 +1,12 @@
-{ "area": "train-logger", "round": 1, "step": "map", "cleanStreak": 0, "done": [], "log": ["setup done 2026-09-27 22:40"] }
+{
+ "area": "train-logger",
+ "round": 1,
+ "step": "map",
+ "cleanStreak": 0,
+ "done": [],
+ "inFlight": null,
+ "log": [
+  "setup done 2026-09-27 22:10",
+  "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request"
+ ]
+}
