@@ -210,9 +210,13 @@ export default function FoodTracker() {
   useEffect(() => {
     wasOnTodayRef.current = selectedDate === format(new Date(), "yyyy-MM-dd");
   }, [selectedDate]);
+  const editingEntryRef = useRef(null);
   const rollDateForwardRef = useRef(() => {});
   rollDateForwardRef.current = () => {
     const nowToday = format(new Date(), "yyyy-MM-dd");
+    // Never move the day out from under an open edit: updateFoodMutation
+    // saves with date: selectedDate, so a roll mid-edit would move the entry.
+    if (editingEntryRef.current) return;
     setSelectedDate((prev) => (wasOnTodayRef.current && prev !== nowToday ? nowToday : prev));
   };
   useEffect(() => {
@@ -340,6 +344,7 @@ export default function FoodTracker() {
   const [isReadingLabel, setIsReadingLabel] = useState(false);
   const labelPhotoInputRef = useRef(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  editingEntryRef.current = editingEntry;
   const queryClient = useQueryClient();
   const searchRef = useRef(null);
 
@@ -3177,7 +3182,11 @@ const handleSaveMealTemplate = () => {
                     // day's ring with no other feedback. Mirrors the
                     // train-logger heavy-weight confirm.
                     const computedCalories = Math.round(parseFloat(newFood.calories) || 0);
-                    if (computedCalories > 2500) {
+                    // Editing an already-logged big entry (renaming it, moving
+                    // its meal) with the calories unchanged isn't a typo.
+                    const unchangedEdit = editingEntry
+                      && computedCalories === Math.round(Number(editingEntry.calories) || 0);
+                    if (computedCalories > 2500 && !unchangedEdit) {
                       const ok = window.confirm(
                         `That's ${computedCalories.toLocaleString()} kcal, log it?`
                       );
