@@ -210,7 +210,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
                   : <Circle className="w-4 h-4" />
                 }
               </button>
-              <span className={`flex-1 text-sm font-semibold leading-normal ${todo.completed ? "line-through text-muted-2" : "text-secondary"}`}>
+              <span className={`flex-1 min-w-0 [overflow-wrap:anywhere] text-sm font-semibold leading-normal ${todo.completed ? "line-through text-muted-2" : "text-secondary"}`}>
                 {todo.text}
               </span>
               {todo.source === "ai_generated" && (
@@ -239,6 +239,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
               }}
               placeholder="Add a task..."
               className="text-sm flex-1"
+              maxLength={500}
             />
             <Button
               size="lg"
