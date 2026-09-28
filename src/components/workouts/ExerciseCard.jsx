@@ -52,6 +52,7 @@ export default function ExerciseCard({
   const [editingNotes, setEditingNotes] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nudgeMessage, setNudgeMessage] = useState(null);
+  const confirmedHeavyRef = useRef({});
   const [coachingChip, setCoachingChip] = useState(null); // { message, suggestedWeight, type, targetSetIndex }
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [customExerciseName, setCustomExerciseName] = useState("");
@@ -188,15 +189,22 @@ export default function ExerciseCard({
     if (completed) {
       const weight = exercise.sets[setIndex]?.weight;
       const lastWeight = lastPerformance?.lastWeight;
+      // Once the athlete confirms a heavy weight for this exercise, don't ask
+      // again for later sets at or below it (a light last session, or a unit
+      // switch, would otherwise nag on every working set). Keyed by name, not
+      // card index: cards are keyed by index and a drag-reorder reuses them.
+      const confirmedMax = confirmedHeavyRef.current[exercise.name] ?? 0;
       if (
         typeof weight === 'number' && Number.isFinite(weight)
         && typeof lastWeight === 'number' && lastWeight > 0
         && weight > lastWeight * 2
+        && weight > confirmedMax
       ) {
         const ok = window.confirm(
           `${weight} ${weightUnit} is much heavier than your last ${lastWeight} ${weightUnit} on this exercise. Save it anyway?`
         );
         if (!ok) return;
+        confirmedHeavyRef.current[exercise.name] = weight;
       }
     }
 

@@ -90,7 +90,9 @@ test('deleting a completed set offers an Undo toast that restores it', async ({ 
     expect(error).toBeNull();
     expect(logs?.length).toBe(1);
     const savedSets = logs[0].exercises[0].sets;
-    expect(savedSets.some((s) => s.weight === 105 && s.reps === 8)).toBe(true);
+    // Restored at its original position, same values, renumbered contiguously.
+    expect(savedSets[0]).toMatchObject({ set_number: 1, weight: 100, reps: 10 });
+    expect(savedSets[1]).toMatchObject({ set_number: 2, weight: 105, reps: 8, completed: true });
   } finally {
     await cleanup(workoutId);
   }

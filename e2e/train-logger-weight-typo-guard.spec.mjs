@@ -87,6 +87,19 @@ test.describe('weight typo guard', () => {
       await page.waitForTimeout(300);
       await expect(page.getByRole('checkbox', { name: 'Mark set 1 incomplete' })).toBeVisible();
 
+      // Once confirmed, a later set at the same weight must not nag again.
+      await page.getByRole('button', { name: 'Add Set' }).first().click();
+      await setNumberField(page, page.getByLabel(/Set 2 weight in/).first(), '1710');
+      await setNumberField(page, page.getByLabel(/Set 2 reps$/).first(), '8');
+      let secondDialog = null;
+      const onDialog = async (dialog) => { secondDialog = dialog.message(); await dialog.dismiss(); };
+      page.on('dialog', onDialog);
+      await page.getByRole('checkbox', { name: /Mark set 2/ }).click();
+      await page.waitForTimeout(300);
+      page.off('dialog', onDialog);
+      expect(secondDialog).toBeNull();
+      await expect(page.getByRole('checkbox', { name: 'Mark set 2 incomplete' })).toBeVisible();
+
       await page.getByRole('button', { name: 'Finish', exact: true }).click();
       await page.getByRole('button', { name: 'Log Workout' }).click();
       await page.waitForTimeout(1200);
@@ -95,6 +108,7 @@ test.describe('weight typo guard', () => {
       expect(error).toBeNull();
       expect(logs?.length).toBe(1);
       expect(logs[0].exercises[0].sets[0].weight).toBe(1710);
+      expect(logs[0].exercises[0].sets[1].weight).toBe(1710);
     } finally {
       await cleanup(workoutId, priorLogId);
     }
