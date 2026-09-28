@@ -100,16 +100,26 @@ export function parseProgramJson(jsonString) {
     day_index: parseInt(w.day_index) || i + 1,
     title: String(w.title || `Day ${w.day_index || i + 1}`).slice(0, 100),
     focus: w.focus || w.type || "strength",
-    exercises: Array.isArray(w.exercises) ? w.exercises.map((ex) => ({
-      name: String(ex.name || ""),
-      sets: typeof ex.sets === "number" ? ex.sets : parseInt(ex.sets) || 3,
-      rep_target: ex.rep_target ?? ex.reps ?? "8",
-      rir_target: ex.rir_target ?? 2,
-      rest_seconds: parseInt(ex.rest_seconds) || 90,
-      notes: ex.notes || "",
-      focus: ex.focus || "hypertrophy",
-      progression: ex.progression || { weight_increment: 5, daily_min_pct: 0.85 },
-    })) : [],
+    exercises: Array.isArray(w.exercises)
+      ? w.exercises
+          // A blank/whitespace-only name is a real hazard, not just cosmetic:
+          // progression_state is keyed by exercise name, so every blank-named
+          // exercise would collide on the same progression entry.
+          .filter((ex) => String(ex?.name || "").trim().length > 0)
+          .map((ex) => ({
+            name: String(ex.name).slice(0, 100),
+            // Clamped the same way cycle_length/num_cycles are above, so an
+            // imported 9999-set or 999999s-rest exercise can't render as a
+            // broken-looking card with no upper bound.
+            sets: Math.max(1, Math.min(20, typeof ex.sets === "number" ? ex.sets : parseInt(ex.sets) || 3)),
+            rep_target: ex.rep_target ?? ex.reps ?? "8",
+            rir_target: ex.rir_target ?? 2,
+            rest_seconds: Math.max(0, Math.min(900, parseInt(ex.rest_seconds) || 90)),
+            notes: ex.notes || "",
+            focus: ex.focus || "hypertrophy",
+            progression: ex.progression || { weight_increment: 5, daily_min_pct: 0.85 },
+          }))
+      : [],
     cardio_sessions: Array.isArray(w.cardio_sessions)
       ? w.cardio_sessions.map((c) => ({
           workout_id: c.workout_id || null,
