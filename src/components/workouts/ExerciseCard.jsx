@@ -180,6 +180,26 @@ export default function ExerciseCard({
 
   // Handle set completed
   const handleSetCompleted = (setIndex, completed) => {
+    // Sweaty-thumb guard (r1-01): a fat-fingered extra digit (1710 for 171)
+    // sails past any per-field max and becomes the e1RM/PR/progression
+    // baseline the moment the set is marked complete. Catch it here, once,
+    // right before it's treated as real data — not in onChange, so typing
+    // isn't interrupted mid-entry. Tunable UI threshold, not engine semantics.
+    if (completed) {
+      const weight = exercise.sets[setIndex]?.weight;
+      const lastWeight = lastPerformance?.lastWeight;
+      if (
+        typeof weight === 'number' && Number.isFinite(weight)
+        && typeof lastWeight === 'number' && lastWeight > 0
+        && weight > lastWeight * 2
+      ) {
+        const ok = window.confirm(
+          `${weight} ${weightUnit} is much heavier than your last ${lastWeight} ${weightUnit} on this exercise. Save it anyway?`
+        );
+        if (!ok) return;
+      }
+    }
+
     onUpdateSet(exerciseIndex, setIndex, 'completed', completed);
 
     // Start rest timer when set is completed
@@ -608,7 +628,12 @@ export default function ExerciseCard({
                 value={set.weight ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
-                  const next = raw === "" ? null : parseFloat(raw);
+                  let next = raw === "" ? null : parseFloat(raw);
+                  // The max="2000" attribute below is decorative on a controlled
+                  // number input (never enforced outside <form> validation), so
+                  // enforce the cap here for real (r1-01): a fat-fingered extra
+                  // digit becomes the e1RM / PR / progression baseline downstream.
+                  if (Number.isFinite(next) && next > 2000) next = 2000;
                   onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
                 }}
                 onFocus={handleInputFocus}
@@ -625,7 +650,7 @@ export default function ExerciseCard({
                 // A fat-fingered extra digit (2255 for 225) is indistinguishable
                 // from a real lift downstream: it becomes the e1RM, the PR, and
                 // the progression baseline. 2000 is far above anything human and
-                // still catches the common slip.
+                // still catches the common slip. Enforced for real in onChange above.
                 max="2000"
                 step="2.5"
                 className={setCell(isActive)}
