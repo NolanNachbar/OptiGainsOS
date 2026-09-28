@@ -618,7 +618,14 @@ function SkillsTab() {
                     viewport is the header Add action — a per-card teal-tinted
                     "Practiced" was a second action accent (drift). */}
                 <Button size="sm" variant="ghost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Practiced
+                  {practiced.isPaused && practiced.variables === skill.id ? (
+                    // React Query's default networkMode pauses (not fails) a
+                    // mutation while offline — it resumes on its own on
+                    // reconnect, so this is honest, not an error.
+                    "Offline - saves when back online"
+                  ) : (
+                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Practiced</>
+                  )}
                 </Button>
               </div>
             </div>
