@@ -4,6 +4,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,13 @@ export default function Coach() {
     const ext = (pending.file.name.split(".").pop() || "mp4").toLowerCase();
     const path = `${user.id}/form/${Date.now()}.${ext}`;
     let uploaded = false;
+    // True only when analyze-form definitely answered with a rejection (a
+    // non-2xx status or an { error } body). Every such path returns before the
+    // function inserts its form_reviews row, so the clip is safe to delete. A
+    // network/relay failure is ambiguous: the function may have finished and
+    // saved a review pointing at this clip before the connection dropped (a
+    // long analysis while the phone app is backgrounded), so keep the clip.
+    let rejectedByServer = false;
     try {
       setStatus("Uploading clip…");
       const { error: upErr } = await supabase.storage
@@ -93,8 +101,14 @@ export default function Coach() {
       const { data, error: fnErr } = await supabase.functions.invoke("analyze-form", {
         body: { path, exercise, notes },
       });
-      if (fnErr) throw fnErr;
-      if (data?.error) throw new Error(data.error);
+      if (fnErr) {
+        rejectedByServer = fnErr instanceof FunctionsHttpError;
+        throw fnErr;
+      }
+      if (data?.error) {
+        rejectedByServer = true;
+        throw new Error(data.error);
+      }
 
       setCritique(data.critique);
       setStatus("");
@@ -102,7 +116,7 @@ export default function Coach() {
     } catch (e) {
       setError(e.message || String(e));
       setStatus("");
-      if (uploaded) {
+      if (uploaded && rejectedByServer) {
         await supabase.storage.from("physique").remove([path]).catch(() => {});
       }
     } finally {
