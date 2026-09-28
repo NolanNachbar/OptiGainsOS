@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getTodayString } from "@/utils/dateUtils";
 import { useEngineParams, useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
+import { useProfile } from "@/hooks/useUserQueries";
 import PSTTracker from "@/components/PSTTracker";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -39,9 +40,9 @@ function InfoNote({ children, label = "What do these mean?" }) {
 // Surfaces the engine's deepest learned state — VDOT, RLS personalization
 // progress, Banister model confidence, concurrent-training interference — which
 // the app computes daily but never previously displayed.
-function AdaptiveEnginePanel() {
-  const { engineParams, isLoading: engineLoading } = useEngineParams();
-  const { prescription, isLoading: prescriptionLoading } = useTodayPrescription();
+function AdaptiveEnginePanel({ date }) {
+  const { engineParams, isLoading: engineLoading } = useEngineParams(date);
+  const { prescription, isLoading: prescriptionLoading } = useTodayPrescription(date);
   const isLoading = engineLoading || prescriptionLoading;
 
   if (isLoading) {
@@ -822,13 +823,14 @@ function SummaryStripSkeleton() {
 
 export default function AthleteState({ hideHeader = false }) {
   const { user } = useAuth();
-  const today = getTodayString();
+  const { profile } = useProfile();
+  const today = getTodayString(profile?.timezone);
   const [engineOpen, setEngineOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
 
   // The engine's learned volume landmarks live in engine_params, not athlete_state,
   // so pull them here to overlay onto the (otherwise template) volume bars.
-  const { engineParams } = useEngineParams();
+  const { engineParams } = useEngineParams(today);
   const dailyTargets = useDailyTargets(today);
 
   const { data: state, isLoading, isError, refetch } = useQuery({
@@ -958,7 +960,7 @@ export default function AthleteState({ hideHeader = false }) {
             is moved BELOW the primary cards (it holds the most niche data and
             shouldn't occupy the prime second-fold slot). */}
         <div className="hidden lg:block">
-          <AdaptiveEnginePanel />
+          <AdaptiveEnginePanel date={today} />
           <WeeklyPlanPanel />
           <VdotZonesCard className="mb-4" />
         </div>
@@ -1097,7 +1099,7 @@ export default function AthleteState({ hideHeader = false }) {
             {/* Same grid-rows height + opacity reveal as the analytics accordion. */}
             <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[280ms] ease-[cubic-bezier(.2,.7,.3,1)] ${engineOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
               <div className="min-h-0">
-                <AdaptiveEnginePanel />
+                <AdaptiveEnginePanel date={today} />
                 <WeeklyPlanPanel />
                 <VdotZonesCard className="mb-4" />
               </div>
