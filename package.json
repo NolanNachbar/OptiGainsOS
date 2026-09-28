@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "mobile:sync": "npm run build && npx cap sync",
     "mobile:android": "npx cap open android",
-    "mobile:ios": "npx cap open ios"
+    "mobile:ios": "npx cap open ios",
+    "test:e2e": "playwright test -c e2e/playwright.config.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
@@ -49,6 +50,7 @@
     "@capacitor/cli": "^7.6.5",
     "@capacitor/core": "^8.3.4",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-basic-ssl": "^2.3.0",

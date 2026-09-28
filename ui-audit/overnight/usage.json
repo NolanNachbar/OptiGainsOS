@@ -1,0 +1,154 @@
+{
+ "athlete_state": {
+  "total": 109,
+  "last90d": null
+ },
+ "body_weight_entries": {
+  "total": 49,
+  "last90d": 24
+ },
+ "capture_inbox": {
+  "total": 8,
+  "last90d": 0
+ },
+ "cardio_completions": {
+  "total": 5,
+  "last90d": null
+ },
+ "controlled_tests": {
+  "total": 5,
+  "last90d": 3
+ },
+ "daily_briefs": {
+  "total": 94,
+  "last90d": null
+ },
+ "daily_readiness": {
+  "total": 51,
+  "last90d": 37
+ },
+ "diet_phases": {
+  "total": 2,
+  "last90d": 1
+ },
+ "engine_params": {
+  "total": 108,
+  "last90d": null
+ },
+ "food_entries": {
+  "total": 591,
+  "last90d": 398
+ },
+ "food_portions": {
+  "total": 0,
+  "last90d": 0
+ },
+ "form_reviews": {
+  "total": 1,
+  "last90d": 0
+ },
+ "friendships": {
+  "total": null,
+  "last90d": null
+ },
+ "garmin_activities": {
+  "total": 108,
+  "last90d": 101
+ },
+ "job_applications": {
+  "total": 0,
+  "last90d": 0
+ },
+ "measurements": {
+  "total": 0,
+  "last90d": 0
+ },
+ "networking_log": {
+  "total": 0,
+  "last90d": 0
+ },
+ "nutrition_overrides": {
+  "total": 14,
+  "last90d": 14
+ },
+ "physique": {
+  "total": null,
+  "last90d": null
+ },
+ "physique_entries": {
+  "total": 39,
+  "last90d": 21
+ },
+ "program_workouts": {
+  "total": 135,
+  "last90d": 96
+ },
+ "programs": {
+  "total": 2,
+  "last90d": 0
+ },
+ "pst_tests": {
+  "total": 1,
+  "last90d": 0
+ },
+ "push_subscriptions": {
+  "total": 1,
+  "last90d": 0
+ },
+ "reading_log": {
+  "total": 0,
+  "last90d": 0
+ },
+ "recovery_metrics": {
+  "total": 129,
+  "last90d": 89
+ },
+ "skills": {
+  "total": 0,
+  "last90d": 0
+ },
+ "soreness_logs": {
+  "total": 13,
+  "last90d": 7
+ },
+ "study_log": {
+  "total": 0,
+  "last90d": null
+ },
+ "supplement_logs": {
+  "total": 1,
+  "last90d": null
+ },
+ "supplement_types": {
+  "total": 1,
+  "last90d": 0
+ },
+ "todos": {
+  "total": 562,
+  "last90d": 324
+ },
+ "training_prescription": {
+  "total": 107,
+  "last90d": null
+ },
+ "user_profiles": {
+  "total": 1,
+  "last90d": 0
+ },
+ "water_logs": {
+  "total": 2,
+  "last90d": null
+ },
+ "weekly_plans": {
+  "total": 17,
+  "last90d": 13
+ },
+ "workout_logs": {
+  "total": 110,
+  "last90d": 50
+ },
+ "workout_sessions": {
+  "total": 137,
+  "last90d": 81
+ }
+}
