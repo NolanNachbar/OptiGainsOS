@@ -1,0 +1,47 @@
+{
+  "moves": [
+    {
+      "slug": "addfood-manual-before-ai-estimate",
+      "what": "In the Add Food dialog (FoodTracker.jsx), swapped the order of the two search-fallback sections: the 'Manual entry' disclosure now leads, the 'Can't find it? Describe it' AI-estimate box now trails it. Only the two existing blocks' position (and their border-t/pt-1 divider classes) changed \u2014 no new controls, no default-expanded state, no logic change.",
+      "where": "src/pages/FoodTracker.jsx, Add Food dialog, the zone below search/recent/my-foods results",
+      "why": "map.md: manual entry is the routine fallback whenever a food has no USDA match, and two other flows (barcode-miss -> label-photo capture, nutrition-label read) also funnel into it -- multiple real paths converge there. The AI text estimate is 'occasional' by comparison. Manual entry sat second, below a section used less often. usage.json: food_entries is Nolan's #1 table (591 total / 398 last 90d), so this fallback zone inside the #1-used dialog is worth the small reorder even though both remain equally reachable (a collapsed disclosure vs. an always-visible box either way).",
+      "commit": "82b50256",
+      "before": "ui-audit/overnight/shots/fuel-ux-addfood-before.png",
+      "after": "ui-audit/overnight/shots/fuel-ux-addfood-after.png",
+      "status": "reverted",
+      "reviewNote": "Reverted in review (a6d62856): AI estimate expands the manual form above its own box, so \"filled in below\" became false and filled macros land out of view on iPhone."
+    }
+  ],
+  "proposals": [
+    {
+      "what": "Move the 'Week plan' entry point higher on the Fuel page (persistent chip/badge, or its own sub-tab) instead of a single row below the entire daily food log.",
+      "why": "Nolan named this himself in map.md, and weekly_plans usage (13/17 in the last 90 days) shows it's touched almost every week. But this is a cross-section layout change to the whole Fuel page a real user would notice as a redesign, not a reorder of two adjacent controls -- and the existing code comment documents a deliberate frequency tradeoff (daily food log, used far more per usage.json, intentionally leads; weekly plan trails). Structural call for Nolan, not this pass. Already in wishes.json."
+    },
+    {
+      "what": "Surface 'Food portions' (custom named serving sizes) somewhere more discoverable, or fold it into the main manual-entry flow, instead of 4 taps deep inside Add/Edit food.",
+      "why": "food_portions usage.json shows 0 total / 0 last 90 days ever -- the opposite of a 'promote a common action' move; before moving it up, worth Nolan's call on whether it's undiscoverable or just not wanted. Also arguably a feature-surface change, not a within-screen reorder. Already in wishes.json."
+    },
+    {
+      "what": "Give 'Approve & load the week' a visible success/idempotency signal (e.g. 'Loaded 42 items') instead of leaving the sheet reading the same label after a successful load.",
+      "why": "A feedback/state-change bug, not a position move -- out of scope for this pass; already the r1-11-adjacent finding and in wishes.json."
+    },
+    {
+      "what": "Toast what changed when usePlannedDayRebalance silently rewrites a planned entry's grams/macros to fit a shifted day budget.",
+      "why": "Behavior/logic change (new user-visible feedback on a background write), not a UI reorder -- out of scope. Already in wishes.json."
+    }
+  ],
+  "checked": [
+    {
+      "what": "Per-row action icon order (Swap -> Edit -> Delete) on food-log entries, flagged in map.md as a spot to verify.",
+      "finding": "Already correctly frequency/safety ordered: Swap (planned rows only) leads, Edit (very common given 398 entries/90d) is second, destructive Delete is anchored last. No move made."
+    },
+    {
+      "what": "Fuel sub-tab default (Nutrition & Meals vs Body vs Hydration) and FoodTracker's default sub-view.",
+      "finding": "Already optimal -- Nutrition & Meals (the daily food log, by far the highest-usage surface per usage.json) is the default tab and renders with zero extra taps from Fuel. No move made."
+    },
+    {
+      "what": "Desktop/mobile 'Templates | Recipes | Ideas' tab order in the sidebar / More sheet.",
+      "finding": "Consistent in both surfaces already (Templates leads Recipes leads Ideas). No usage signal strong enough to justify reordering; no move made."
+    }
+  ]
+}

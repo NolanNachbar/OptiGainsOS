@@ -1,0 +1,52 @@
+[
+  {
+    "idea": "Show a visible before/after summary (e.g. 'Loaded 42 items for this week') when 'Approve & load the week' finishes, instead of leaving the sheet reading the same 'Approve & load the week' label with no state change.",
+    "moment": "Approving the week plan tonight loaded 42 items with no on-screen confirmation it worked — the only way to tell was to leave the sheet and check the day log.",
+    "howOften": "every week — weekly_plans usage is 13 approvals in the last 90 days"
+  },
+  {
+    "idea": "When usePlannedDayRebalance silently rewrites a planned item's grams/macros to fit the day's shifted budget, toast what changed (e.g. 'Adjusted chicken breast 180g → 210g to fit today's target') instead of a silent background write.",
+    "moment": "A user who manually nudges a planned entry's amount has no way to know the next render's rebalance pass may overwrite it.",
+    "howOften": "potentially every day a plan is active and the live target drifts from the approval-time target"
+  },
+  {
+    "idea": "Move the Week plan entry point higher on the Fuel page (or give it a persistent badge/chip) instead of a single row below the entire daily log.",
+    "moment": "Nolan named this himself: weekly food plans are buried at the bottom of the meal page, yet it's used almost every week.",
+    "howOften": "weekly"
+  },
+  {
+    "idea": "Add a confirm step or an 'Undo' action on the delete-entry toast, matching the ConfirmDialog that meal-template delete already has.",
+    "moment": "Deleting a food entry is one tap, instant, with no recovery — the single most-used destructive action in the area (398 entries logged in 90 days implies frequent corrections) has the weakest safety net.",
+    "howOften": "likely several times a week given entry volume"
+  },
+  {
+    "idea": "Either surface food portions (custom named serving sizes) somewhere more discoverable, or fold it into the main manual-entry flow — right now it's 4 taps deep and has zero rows ever used.",
+    "moment": "food_portions usage.json shows 0 total / 0 last 90 days despite the feature existing and being fully built.",
+    "howOften": "never, currently — that's the finding"
+  },
+  {
+    "idea": "Cap or confirm implausible single-entry serving amounts (e.g. warn above ~2-5000 kcal in one item, or floor below ~0.1 of a unit) instead of accepting anything > 0.",
+    "moment": "Testing the Add Food amount field: 0.00001 g and 10000 g both saved without complaint — a fat-finger extra zero on either end creates a junk or wildly wrong entry with no prompt to double-check.",
+    "howOften": "plausible any time someone free-types the Amount field, e.g. after a decimal-point mis-tap"
+  },
+  {
+    "idea": "Scroll the focused field above the on-screen keyboard (or resize the Add Food dialog's visible area) when #food_name / #calories / similar are focused.",
+    "moment": "During testing, the autofocused search field's keyboard covered 'Manual entry' and other controls beneath it, silently swallowing the first tap — a real user would hit the same dead-tap confusion, not just the test harness.",
+    "howOften": "every time the Add Food dialog opens on a phone"
+  },
+  {
+    "idea": "Make 'Approve & load the week' either atomic (all rows or none) or explicitly report partial success (e.g. 'Loaded Sun & Mon, 5 days failed — retry?') instead of a single fail-fast Promise.all that silently leaves some days committed while reporting total failure.",
+    "moment": "A 429 rate-limit on an auth token refresh mid-approve caused half the week's planned rows to fail while the other half had already committed; the user only ever sees one failure toast with no indication some days DID save.",
+    "howOften": "rare in isolation (needs a transient per-row failure mid-bulk-write), but the underlying non-atomic pattern risks the same silent partial state from any transient error, not just this specific trigger"
+  },
+  {
+    "idea": "Add a timeout to the Add Food mutation so a stalled/offline request eventually surfaces a 'still trying / check your connection' state instead of a button stuck reading 'Adding...' forever with no feedback.",
+    "moment": "Going offline mid-submit left the button frozen with no error message at all — data wasn't lost (it silently completed once back online) but there was no way to know that while it was stuck.",
+    "howOften": "any time a request goes out over a flaky/no connection, e.g. logging food at the gym with weak signal"
+  },
+  {
+    "idea": "Give the barcode scanner's 'camera unavailable / never started' error state its own message on 'Enter manually', distinct from the not-found path's 'Product not found. Try searching manually.' — the current shared toast tells the user something specific happened (a lookup failed) when nothing was ever looked up.",
+    "moment": "Testing without camera hardware showed the scanner's error state routes through the exact same onNotFound handler as a genuine not-found result, misreporting what happened.",
+    "howOften": "every time a device denies camera access or has none available and the user falls back to manual entry"
+  }
+]

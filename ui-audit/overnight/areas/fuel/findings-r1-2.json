@@ -1,0 +1,86 @@
+[
+  {
+    "id": "fuel-r1-09",
+    "title": "Offline manual add — form state preserved for retry, no false success",
+    "severity": "error-msg",
+    "route": "/fuel",
+    "steps": "Open Add Food, fill a manual entry, go offline (context.setOffline(true)), tap Add Food, wait, then go back online.",
+    "expected": "No false success while offline; form values preserved; clear error feedback telling the athlete what happened and what to do; exactly one row exists once back online (no drop, no duplicate).",
+    "actual": "Data integrity was fine: no false success while offline, the dialog and its form values (name, calories) stayed intact, and exactly one row existed once reconnected with no retap needed. But there was NO error feedback at all while offline — the Add Food button gets stuck reading \"Adding...\" indefinitely with no \"Failed to log food\" toast, because Chromium/Playwright offline emulation (and likely real airplane-mode/no-signal conditions) leaves the underlying fetch pending rather than rejecting it, so the mutation's onError never fires and there is no timeout to catch it. An athlete at the gym with no signal has no way to know whether to wait, retry, or that anything is wrong.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-09.mjs",
+    "evidence": "areas/fuel/scripts/r1-09.mjs console output: sawFalseSuccess=false stuckAdding=true sawFailureToast=false rowsWhileOffline=0 rowsAfterReconnect=1",
+    "suspectFile": "src/pages/FoodTracker.jsx:1115-1117 (addFoodMutation onError only fires on an actual rejected request; no client-side timeout for a stalled fetch)"
+  },
+  {
+    "id": "fuel-r1-10",
+    "title": "Double-tap 'Approve & load the week' — verify no duplicate planned rows",
+    "severity": "none",
+    "route": "/fuel",
+    "steps": "Two near-simultaneous clicks on Approve & load the week (no await between them), then check planned rows for the week for duplicate (date, food_name) pairs.",
+    "expected": "No duplicate planned rows, no page errors.",
+    "actual": "ok — no duplicates found, no click errors, no page errors. The button does disable and show \"Loading week…\" while pending, and a success toast (\"Loaded N planned items...\") is wired at WeeklyPlanCard.jsx onSuccess. This contradicts an earlier map.md claim of \"no success/idempotency signal\" — that claim does not hold against current source/behavior.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-10.mjs",
+    "evidence": "areas/fuel/scripts/r1-10.mjs console output: dupes=0 clickErrors=0 sawSuccessToast=true stillLoadingAfter3s=false",
+    "suspectFile": "src/components/nutrition/WeeklyPlanCard.jsx approve mutation"
+  },
+  {
+    "id": "fuel-r1-11",
+    "title": "Re-approve the week plan after manually editing one planned item's amount",
+    "severity": "data-loss",
+    "route": "/fuel",
+    "steps": "Edit a planned item's (Eggs) amount via the entry editor, save, then tap 'Approve & load the week' again on the same week.",
+    "expected": "Either the manual edit survives the re-approve, or the athlete is warned before it would be discarded.",
+    "actual": "The manual edit was silently discarded with no warning: the row was recreated with the algorithm's originally-computed serving_size, losing the athlete's hand correction entirely. No confirm/warning dialog appeared before the discard.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-11.mjs",
+    "evidence": "areas/fuel/scripts/r1-11.mjs console output: survived=false warnedBeforeApprove=false",
+    "suspectFile": "src/components/nutrition/WeeklyPlanCard.jsx approve mutation — unconditional delete().eq(\"planned\", true).in(\"date\", dates) before recreating from resolveDayPlan(), with no diff/check against hand-edited rows"
+  },
+  {
+    "id": "fuel-r1-12",
+    "title": "Carb-cycled targets and shopping list across a week-boundary approve (Sunday into next week)",
+    "severity": "data-loss",
+    "route": "/fuel",
+    "steps": "Fake the clock to a future Sunday, approve the week plan, advance the clock into Monday via SPA navigation (no reload), and check planned rows/UI state.",
+    "expected": "The full week's planned rows commit atomically (or the failure/success reporting accurately reflects what did and didn't commit); the carb-cycled figures and grocery list stay correct.",
+    "actual": "Reproduced on three separate runs: the approve mutation's Promise.all over ~40+ parallel food_entries .create() calls (one per planned row across the week) hit a 429 on auth/v1/token?grant_type=refresh_token partway through. Every .create() still in flight after that failed with 401 -> RLS policy violation, while creates that had already completed stayed committed. Result: Sunday and Monday (the first two days processed) each got their full 6 rows, but 2026-11-03..2026-11-07 got zero — the week was left silently, partially populated — while the mutation as a whole reports failure to the user (onError / a failure toast) with no indication of which days did or didn't load. This is a genuine non-atomic-bulk-write architecture risk independent of the specific 429 trigger (plausibly this test harness's own heavy repeated-login pattern rather than a realistic single-user scenario) — any transient per-row failure would produce the same silent partial commit. The originally-suspected carb-cycle-text/grocery-list staleness question did not reproduce as a bug: WeeklyPlanCard recomputes today/dates live from the clock every render, so text changing across the Sun->Monday crossing is expected, correct behavior.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-12.mjs",
+    "evidence": "areas/fuel/scripts/r1-12.mjs console output: sunRows=6 monRows=6 sawPartialCommitCascade=true, plus captured 429/401 HTTP problems and 'new row violates row-level security policy for table \"food_entries\"' console errors for dates 2026-11-03..2026-11-07",
+    "suspectFile": "src/components/nutrition/WeeklyPlanCard.jsx approve mutation — await Promise.all(rows.map((r) => db.entities.FoodEntry.create(r))) has no per-row error isolation, no rollback of rows that DID succeed when a sibling create fails, and no partial-success reporting"
+  },
+  {
+    "id": "fuel-r1-13",
+    "title": "Log a recipe at 9999 servings — no upper bound on LogRecipeDialog",
+    "severity": "engine",
+    "route": "/fuel",
+    "steps": "Seed a recipe directly in the DB using the recipes table's real column names (calories/protein_grams/carbs_grams/fats_grams), log it via the UI's LogRecipeDialog at servingCount=9999.",
+    "expected": "An implausible serving count is blocked or requires confirmation; at minimum, macros scale correctly and are never corrupted.",
+    "actual": "Worse than the servings-upper-bound question: scaleRecipeToServings() (src/utils/nutritionUtils.js) reads recipe.total_calories/total_protein/total_carbs/total_fats, but the recipes table's actual columns (confirmed against the migration schema and live insert probing) are calories/protein_grams/carbs_grams/fats_grams. Any real recipe row therefore scales to NaN, logged as a food_entries row with calories=null (a React console NaN warning fires) — at ANY serving count, not just 9999. Separately, and consistent with the same naming bug, RecipeBuilder.jsx's RecipeFormDialog.handleSave() INSERTs total_calories/total_protein/total_carbs/total_fats into recipes, which has no such columns — confirmed live via a direct probe returning PGRST204 \"Could not find the 'total_calories' column of 'recipes' in the schema cache\" on every attempted recipe creation. Net effect: recipe creation via the UI wizard fails every time, and even a recipe present in the table (e.g. seeded directly) logs with corrupted null/NaN macros when used. The servings field itself has no max (min=\"0.5\" step=\"0.5\") but that is secondary to the schema mismatch.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-13.mjs",
+    "evidence": "areas/fuel/scripts/r1-13.mjs console output: disabledAt9999=false rowsCreated=1 corruptedRow=true calories=null reactNanWarning=true; plus a live PGRST204 probe on RecipeFormDialog.handleSave's field names",
+    "suspectFile": "src/utils/nutritionUtils.js:79-98 (calculateRecipeTotals / scaleRecipeToServings) and src/components/nutrition/RecipeBuilder.jsx:993-1017 (handleSave) — both use total_calories/total_protein/total_carbs/total_fats naming that does not match the recipes table's real columns"
+  },
+  {
+    "id": "fuel-r1-14",
+    "title": "Ring total vs intake-stats total disagree after a MealPlanIdeas-style 'suspicious' entry exists",
+    "severity": "none",
+    "route": "/fuel",
+    "steps": "Insert a tagged food_entries row with an implausible calorie density (500 cal / 10 g = 50 cal/g) dated today, then compare the kcal ring delta against the intake-stats 7-day average delta.",
+    "expected": "The ring and intake-stats either both count the row or both exclude it — no silent divergence.",
+    "actual": "ok — both the ring (calculateMacros(eatenEntries)) and the intake-stats useMemo counted the row identically (ringDelta=500, matching the expected stats-average delta within tolerance). Neither path applies a calorie-density filter; only MealPlanIdeas.jsx's isSuspicious() (a different, meal-idea-generation-only feature) does that. No divergence bug found.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-14.mjs",
+    "evidence": "areas/fuel/scripts/r1-14.mjs console output: dbDelta=500 ringDelta=500 ringIncludesRow=true statsIncludesRow=true agree=true noPageErrors=true",
+    "suspectFile": "src/pages/FoodTracker.jsx:1406-1407 (ring) and :1510-1561 (intakeStats useMemo)"
+  },
+  {
+    "id": "fuel-r1-15",
+    "title": "Barcode scan: product not found, then label-photo fallback — form isn't silently pre-filled with stale scan data",
+    "severity": "error-msg",
+    "route": "/fuel",
+    "steps": "Open Add Food, tap Scan barcode (no real camera hardware in this environment, so getUserMedia fails and BarcodeScanner.jsx lands on scanState=\"error\" rather than \"not_found\" — both share the identical onNotFound(foundBarcode) wiring), tap Enter manually, then reopen the scanner a second time and repeat.",
+    "expected": "The search field never accumulates/leaks stale text across attempts, the scanner starts fresh each reopen, and any error message accurately reflects what happened.",
+    "actual": "The state-reset and search-field-cleanliness concerns did NOT reproduce as bugs: the scanner starts a genuinely fresh attempt on each reopen and the search field never accumulates stale text. But a real, confirmed bug was found: \"Enter manually\" from the camera-unavailable error state fires the exact same toast as the not_found path — \"Product not found. Try searching manually.\" — even though no scan or lookup ever happened (the camera never started). FoodTracker.jsx's onNotFound handler is shared, unconditional, single-message code for both states. This tells the athlete their product wasn't found when in fact nothing was ever looked up. NOTE (scope caveat): with no real camera in this environment, the not_found state itself and the 'Photograph the label' -> onScanLabel fallback (not_found-only) were not directly exercised; source-level cross-check of onNotFound's overwrite-not-append semantics found no separate accumulation bug on that untested path either.",
+    "repro": "ui-audit/overnight/areas/fuel/scripts/r1-15.mjs",
+    "evidence": "areas/fuel/scripts/r1-15.mjs console output: sawErrorState1=true sawMisleadingNotFoundToast=true cleanReset=true searchFieldClean=true noPageErrors=true",
+    "suspectFile": "src/pages/FoodTracker.jsx:3897-3901 (onNotFound handler, single toast.info for both states) and src/components/nutrition/BarcodeScanner.jsx:264/:294 (not_found / error 'Enter manually' both call the same onNotFound with no state-specific message)"
+  }
+]

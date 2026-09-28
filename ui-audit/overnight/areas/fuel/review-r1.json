@@ -1,0 +1,67 @@
+[
+  {
+    "commit": "5755f086",
+    "verdict": "approved",
+    "note": "Correct and minimal. recipes table (remote_schema.sql) has calories/protein_grams/carbs_grams/fats_grams; scaleRecipeToServings now reads them with a total_* fallback for the unsaved in-memory shape, and RecipeBuilder.handleSave maps totals onto the real columns (previously it wrote nonexistent total_* columns). All three scaleRecipeToServings callers (list per-serving display x2, log dialog, recipeToFoodEntry) benefit. Spec asserts the food_entries row's 4 macro columns in the DB and would fail before (null). Spec correction: the Log click was page-wide .first() and timed out in the full suite when another agent's recipe sorted first; scoped to its own card.",
+    "correctionCommit": "8aa7bd96"
+  },
+  {
+    "commit": "e4442610",
+    "verdict": "approved",
+    "note": "Correct. Delete of prior planned rows is unchanged (same created_by/planned/dates filter) and now checks its error; the N parallel creates became one insert of uniformly-keyed rows with an error check and an empty-rows guard. Caveat (not a regression): delete + insert are still two requests, so a failed insert leaves the week with zero planned rows plus the 'Couldn't load the plan' toast; tapping Approve again recovers. That is honest, never a partial week. Spec ran (not skipped) and passed; it asserts exactly 1 POST (fails before with N>1) and planned rows exist in the DB. Spec correction: it left untagged planned rows on the shared account, now deletes planned rows created since test start.",
+    "correctionCommit": "bbecb867"
+  },
+  {
+    "commit": "5331532b",
+    "verdict": "corrected",
+    "note": "Logic right: rolls forward only if the athlete was viewing today (ref recomputed on selectedDate change), so a deliberately chosen past/future day is not yanked; triggers on visibility/focus/60s/Add Food open. Regression found: the roll could fire while an entry was open for editing (60s tick, or the focus event after dismissing the new 2500-kcal confirm), and updateFoodMutation saves with date: selectedDate, so an edit straddling midnight would move the entry to the new day. Correction skips the roll while editingEntry is set (resetForm calls the roll before clearing editingEntry, so closing an edit doesn't roll; the next Add Food open does). Spec asserts the saved row's date column = the new day; passes.",
+    "correctionCommit": "07010071"
+  },
+  {
+    "commit": "58cb69a9",
+    "verdict": "corrected",
+    "note": "Correct: entries come from select('*'), so the re-create (minus id/created_at) keeps date, meal_type, eaten_at, planned, tag, serving, fiber, cost; no generated columns on food_entries. Corrections: the Undo re-create had no catch (a failed restore vanished as an unhandled rejection), now toasts an error; spec seeded with a UTC date (would seed tomorrow's log on a Mountain-time evening) and asserted only calories/protein, now uses the local date, seeds eaten_at and asserts meal_type, date, eaten_at and all four macros after Undo.",
+    "correctionCommit": "51b16dca"
+  },
+  {
+    "commit": "f2590dcd",
+    "verdict": "approved",
+    "note": "Correct. Default QueryClient (no networkMode override) so a mutation pauses while navigator.onLine is false and resumes on reconnect; paused implies isPending, and the submit button's disabled already includes isPending, so no duplicate queued rows from repeat taps. Dialog closes on onSuccess, i.e. after the resumed save. Spec goes offline, asserts the message and no 'Adding...', then polls the DB for the row after reconnect (proves the resume). Limitation, not a regression: a reload while paused drops the in-memory mutation, and iOS can report onLine=true with no signal (then the fetch fails into onError as before).",
+    "correctionCommit": null
+  },
+  {
+    "commit": "692b9060",
+    "verdict": "approved",
+    "note": "Correct and minimal: empty barcode (camera-error 'Enter manually' path) just closes the scanner; a real miss still fills the search and toasts. Spec uses a short timeout so it catches the toast while showing; fails before.",
+    "correctionCommit": null
+  },
+  {
+    "commit": "efa40480",
+    "verdict": "approved",
+    "note": "Correct and minimal (?? 0 on mobile strip and desktop grid; no restyle). Spec seeds null macros and asserts 0P/0C/0F; fails before (bare P/C/F).",
+    "correctionCommit": null
+  },
+  {
+    "commit": "69983820",
+    "verdict": "corrected",
+    "note": "Confirm once (not a block) when computed calories > 2500 in the Add/Edit Food dialog only; recipes (recipeToFoodEntry), templates and week-plan paths do not hit it, so legit big recipe logs are not nagged. A legit single >2500 kcal manual entry gets one confirm, acceptable. Regression fixed: editing an already-logged big entry (rename, meal move) with calories unchanged re-prompted every save; now skipped when editingEntry calories are unchanged. Spec asserts cancel saves no DB row and accept saves calories=57900.",
+    "correctionCommit": "07010071"
+  },
+  {
+    "commit": "82b50256",
+    "verdict": "reverted",
+    "note": "UX move reverted (a6d62856). estimateFood calls setManualExpanded(true), so after the reorder a successful AI estimate expands the long manual form ABOVE the estimate box: the hint 'AI estimate filled in below' became false and on iPhone the filled macros land out of view above the scroll position. Keeping it would need scroll/copy changes beyond a pure reorder, and the benefit was marginal (both options were already one tap). Not a restyle/new feature otherwise; within scope, just a net-negative move.",
+    "correctionCommit": "a6d62856"
+  },
+  {
+    "suite": "npm run test:e2e: first full run 11/12 (fuel-recipe-scaling timed out; passed alone; cause = page-wide .first() Log click colliding with shared-account recipes, spec scoped in 8aa7bd96). Final full run 12/12 passed.",
+    "build": "npm run build: ok",
+    "reviewCommits": [
+      "a6d62856 revert UX move",
+      "51b16dca undo catch + spec fields",
+      "07010071 confirm skip on unchanged edit + no roll mid-edit",
+      "bbecb867 approve spec cleanup",
+      "8aa7bd96 recipe spec scoping"
+    ]
+  }
+]

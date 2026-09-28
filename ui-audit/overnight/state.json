@@ -1,12 +1,28 @@
 {
- "area": "fuel",
+ "area": "today",
  "round": 1,
- "step": "map+cases",
+ "step": "fix",
  "cleanStreak": 0,
  "done": [
-  "train-logger (r1)"
+  "train-logger (r1)",
+  "fuel (r1)"
  ],
- "inFlight": null,
+ "inFlight": {
+  "step": "today fix + train-programs atk + body map/cases + fuel report",
+  "startedAt": "2026-09-28T05:10-06:00",
+  "agents": [
+   "today-fix (sonnet)",
+   "train-programs atk (retry)",
+   "body map+cases",
+   "fuel report writer"
+  ],
+  "outputs": [
+   "areas/today/fixed-r1.json",
+   "areas/train-programs/findings-r1-1.json",
+   "areas/body/map.md",
+   "areas/body/cases-r1.json"
+  ]
+ },
  "log": [
   "setup done 2026-09-27 22:10",
   "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request",
@@ -19,6 +35,20 @@
   "verify: 2 confirmed (r1-01 1710 no clamp, r1-03 no undo on set delete), 3 rejected (r1-02 harness timing, r1-06, r1-10 blamed on iphone-sim layer -> orchestrator to double-check layer in morning), 2 proposals (r1-08 midnight date, r1-09 identical same-day dedupe). Next round: intermittent program_workouts access-control pageerror",
   "fix: 2 fixed f541e685, 61a59c5f. Running UX pass before review so one opus review covers both",
   "ux: 1 move 04afc8b0 (Replace exercise first in exercise menu), 4 proposals",
-  "00:56 review: approved/corrected (03c2dc26). Dry-run gate PASSED. Breadth-first: one round per area. train-logger round 1 done (not clean: engine-level typo bug) -> round 2 later if time"
+  "00:56 review: approved/corrected (03c2dc26). Dry-run gate PASSED. Breadth-first: one round per area. train-logger round 1 done (not clean: engine-level typo bug) -> round 2 later if time",
+  "fuel map+cases done (15 cases, 13 serial)",
+  "fuel atk-1 done: r1-01 selectedDate stale past midnight (data-loss), no-undo delete, minor portion bounds/null macros, ios warning on Add Food dialog (check vs sim fix e9519bf). atk-2 (09-15) launched",
+  "fuel atk-2 done: r1-09 offline add stuck 'Adding...' (error-msg), r1-11 re-approve discards manual plan edit (data-loss), r1-12 approve bulk-create non-atomic, partial week on mid-approve failure (data-loss), r1-13 recipes column mismatch -> recipe create fails PGRST204, seeded recipes log null macros (engine/broken-flow), r1-15 camera-unavailable shows 'Product not found'. Clean: r1-10, r1-14. verify (opus) launched",
+  "04:00 fuel verify: 9 confirmed (r1-01,03,05,06,09,11P,12,13,15), rejected r1-04, console-error (harness), ios keyboard warning (blamed on sim again - orchestrator double-check in morning). Verifier deleted 36 future planned rows + 7 OVN custom_foods on test account (RLS-scoped). Time budget: 5 areas left, ~4.5h -> running next area's map+cases in parallel with fixes (read-only), and will drop round-2s.",
+  "04:05 today map+cases done (16). Launched 2 today attackers in parallel with fuel fixer (disjoint tables: todos/brief vs mind/coach/athlete_state vs food). After fuel fix -> fuel ux -> fuel review, then today verify.",
+  "today atk-2 done: 4 minor/error-msg (r1-11 offline Practiced no feedback, r1-12 Coach stuck loading on 404 clip, r1-13 orphaned storage upload, r1-15 NaN display guard); r1-09/10 latent/none",
+  "04:21 launched train-programs map+cases (read-only) to pipeline",
+  "04:26 train-programs cases done (14). fuel fixer at 3 commits (5755f086 recipes, e4442610 atomic approve, 5331532b midnight). Launched one serial train-programs attacker.",
+  "04:30 train-programs attacker #1 refused (couldn't verify the mandate; took no action). Relaunched with verifiable pointers (git log, state.json, prior area outputs, memory file) + baseline snapshot/restore.",
+  "04:39 fuel fix: 8 fixed (5755f086 recipes, e4442610 atomic approve, 5331532b midnight, 58cb69a9 delete undo, f2590dcd offline msg, 692b9060 scanner toast, efa40480 null macros 0, 69983820 huge-kcal confirm), r1-11 left as proposal. fuel ux launched.",
+  "04:52 fuel ux: 1 move 82b50256 (Manual entry before AI estimate in Add Food fallback), 4 proposals. fuel review (opus) launched. (today/train-programs findings files exist but attackers still running - wait for their hand-backs)",
+  "05:00 today atk-1 done (6 bugs). today verify (opus) launched in parallel with fuel review.",
+  "05:05 fuel review: 5 approved, 3 corrected (51b16dca undo failure+spec, 07010071 no confirm on unchanged edit / no midnight roll mid-edit), UX move 82b50256 reverted (a6d62856: AI estimate hint became false), test fixes bbecb867, 8aa7bd96. e2e 12/12, build ok. fuel r1 done (not clean: data-loss/engine) -> round 2 candidate if time. Report writer launched.",
+  "05:10 today verify: 10 confirmed (incl. new r1-17 CSP missing media-src blocks Coach clip playback), 7 rejected, r1-03 proposal. today fix launched; body map+cases (read-only) launched."
  ]
 }

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "fuel-r1-13",
+    "commit": "5755f086",
+    "test": "e2e/fuel-recipe-scaling.spec.mjs",
+    "status": "fixed",
+    "note": "Client-side column-name fix only: scaleRecipeToServings() now reads recipe.calories/protein_grams/carbs_grams/fats_grams (falling back to calculateRecipeTotals()'s total_* shape for a not-yet-saved recipe object), and RecipeBuilder.handleSave() writes calories/protein_grams/carbs_grams/fats_grams instead of total_*. No migration needed — the recipes table already has the correct columns; the bug was purely application code using the wrong key names. Regression test seeds a recipe via real columns, logs it at 2 servings through the UI, and asserts the resulting food_entries row has calories=200/protein=10/carbs=20/fats=4 (fails before with all null)."
+  },
+  {
+    "id": "fuel-r1-12",
+    "commit": "e4442610",
+    "test": "e2e/fuel-approve-week-atomic.spec.mjs",
+    "status": "fixed",
+    "note": "WeeklyPlanCard's approve mutation replaced the Promise.all of ~40 parallel per-row FoodEntry.create() calls with a single atomic supabase.from('food_entries').insert(rows) call, so a transient per-row failure can no longer leave the week silently partially loaded. Regression test counts POST requests to /rest/v1/food_entries during Approve and asserts exactly 1 (skips if no calorie target is available on the account, so Approve isn't visible)."
+  },
+  {
+    "id": "fuel-r1-01",
+    "commit": "5331532b",
+    "test": "e2e/fuel-midnight-rollover.spec.mjs",
+    "status": "fixed",
+    "note": "FoodTracker now keeps a ref of 'today' and re-derives selectedDate on visibilitychange/focus/a 60s interval (only rolling forward when the athlete was already viewing today, leaving a deliberately chosen past day alone), and also re-derives right when Add Food opens. Regression test fakes the clock backward (yesterday 23:55 -> today 00:10) rather than forward: faking forward of real 'now', even by <24h, makes the hosted Supabase session's access token look prematurely expired and breaks auth (401/RLS cascade or a forced sign-out) — a harness artifact independently confirmed here and previously documented for fuel-r1-12. A backward fake exercises the identical date-string rollover logic safely."
+  },
+  {
+    "id": "fuel-r1-06",
+    "commit": "58cb69a9",
+    "test": "e2e/fuel-delete-entry-undo.spec.mjs",
+    "status": "fixed",
+    "note": "deleteFoodMutation now takes the whole entry and, onSuccess, shows an 'Entry deleted' toast (closeButton disabled, since the global close button sits in the same corner as the trash/edit icons) with an Undo action that re-creates the row (stripping id/created_at), matching the train-logger delete-set Undo pattern (commit 61a59c5f). Process note: the first regression-test run had a locator bug (page-wide .first() Delete-entry click instead of scoping to the seeded row) that deleted an untagged planned row instead of the tagged one; that row was itself a byproduct of my own earlier fuel-r1-12 test run (the week-plan approve), not pre-existing real athlete data, so no real/Nolan data was affected. Fixed by scoping the locator to the row containing both the food name and its Delete-entry button; re-verified fail-before/pass-after and confirmed no orphaned OVN-tagged rows remain."
+  },
+  {
+    "id": "fuel-r1-09",
+    "commit": "f2590dcd",
+    "test": "e2e/fuel-offline-add-feedback.spec.mjs",
+    "status": "fixed",
+    "note": "The Add Food/Save Changes button now reads \"Offline - saves when you're back online\" while addFoodMutation.isPaused or updateFoodMutation.isPaused, instead of an indefinitely stuck \"Adding...\" with zero feedback. React Query's default networkMode pauses (doesn't fail) the mutation while navigator.onLine is false and resumes it on reconnect, so this is an honest label, not a new error path. Regression test goes offline mid-submit, asserts the offline message appears and \"Adding...\" does not, then goes back online and polls for the row to land (paused mutation auto-resumes)."
+  },
+  {
+    "id": "fuel-r1-15",
+    "commit": "692b9060",
+    "test": "e2e/fuel-barcode-camera-error-toast.spec.mjs",
+    "status": "fixed",
+    "note": "FoodTracker's onNotFound handler (shared by BarcodeScanner's not_found and camera-error \"Enter manually\" paths) now only sets the search query and shows the \"Product not found\" toast when barcode is non-empty; an empty barcode (camera never started) just closes the scanner. Regression test opens the scanner with no camera hardware in this environment (so it lands on the error state), clicks Enter manually, and asserts the toast does not appear. Note: an initial version of the assertion used a bare toHaveCount(0) with Playwright's default 5s polling window, which passed even against the unfixed code once the toast's own auto-dismiss timer cleared it — not real evidence of a fix. Corrected to a short, non-default timeout so it actually catches the toast while it's showing; re-verified fail-before/pass-after against the corrected assertion."
+  },
+  {
+    "id": "fuel-r1-03",
+    "commit": "efa40480",
+    "test": "e2e/fuel-null-macros-render-zero.spec.mjs",
+    "status": "fixed",
+    "note": "Per-row protein/carbs/fats/calories cells in both the mobile inline strip and the desktop macro grid now render with a `?? 0` fallback instead of blank when the underlying fields are null. Regression test inserts a food_entries row with calories=320 and null protein/carbs/fats and asserts the mobile strip (this suite runs under iPhone emulation) reads 0P/0C/0F rather than bare P/C/F."
+  },
+  {
+    "id": "fuel-r1-05",
+    "commit": "69983820",
+    "test": "e2e/fuel-huge-calorie-confirm.spec.mjs",
+    "status": "fixed",
+    "note": "The Add Food submit handler now calls window.confirm() once when the entry's computed calories exceed 2500 (\"That's N kcal, log it?\"), before mutating — no hard max, matching the train-logger heavy-weight guard pattern (commit 03c2dc26). Regression test drives a manual entry at 57,900 kcal, confirms the dialog message and that cancelling saves nothing, then confirms accepting still saves the row."
+  },
+  {
+    "id": "fuel-r1-11",
+    "commit": null,
+    "test": null,
+    "status": "unfixed",
+    "note": "Left for Nolan per explicit instruction: this finding is marked proposal:true. The verify pass found the real cause is two intentional behaviors interacting (usePlannedDayRebalance.js rescaling every remaining planned row to hit the day's calorie target, which overwrites a hand-edited planned amount, and WeeklyPlanCard's re-approve deleting+recreating all planned rows for the week) with no warning before the discard. The fixHint's cheap half (a confirm() before re-approve when planned rows already exist for the week) is a plausible code-only fix, but the other half (pinning hand-edited planned rows so the rebalance skips them) needs a new DB column and is out of scope for an unattended pass — not attempted."
+  }
+]

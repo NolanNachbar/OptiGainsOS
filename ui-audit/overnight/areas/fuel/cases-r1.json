@@ -1,0 +1,165 @@
+[
+  {
+    "id": "fuel-r1-01",
+    "persona": "time",
+    "title": "selectedDate never advances at local midnight while the tab stays open",
+    "setup": "Test athlete, Fuel tab open on /fuel (Nutrition sub-tab), tagged rows only (OVN-fuel-r1-01).",
+    "steps": "1. Load /fuel at 23:55 local (use page.clock to set the browser clock). 2. Leave the tab open, do not reload or navigate. 3. Advance page.clock past local midnight to 00:10 the next day. 4. Tap 'Add' → manual entry → food_name 'OVN-fuel-r1-01 midnight snack', calories 100 → Add Food (no reload, no date-picker interaction).",
+    "expected": "Either the day rolls over automatically (entry lands on the new date) or the UI visibly shows 'yesterday' so the athlete knows which day they're logging to. Silently logging a post-midnight entry to the stale date with no indicator would misattribute it in the daily/weekly totals.",
+    "risk": "src/pages/FoodTracker.jsx:202 — selectedDate = useState(format(new Date(), 'yyyy-MM-dd')) initializes once on mount and never re-derives from a live clock; the write at :1104 uses date: selectedDate.",
+    "serialize": true,
+    "serializeReason": "writes a row to the shared account's day total for 'today'/'yesterday'; must not overlap another attacker logging to the same dates."
+  },
+  {
+    "id": "fuel-r1-02",
+    "persona": "time",
+    "title": "'Logging earlier' eaten_at across a DST fall-back transition",
+    "setup": "Test athlete, America/Denver profile timezone. Tagged rows (OVN-fuel-r1-02).",
+    "steps": "1. Use page.clock to set the date to 2026-11-01 (the Sunday DST falls back in America/Denver). 2. Tap 'Add' → toggle 'Logging earlier' → meal type 'dinner' (default clock time 19:00 per MEAL_DEFAULT_TIME) → food_name 'OVN-fuel-r1-02 dst dinner', calories 500 → Add Food, with selectedDate = 2026-11-01. 3. Read back the created row's eaten_at (query food_entries filtered to this tagged row) and confirm which UTC instant it resolved to.",
+    "expected": "eaten_at should represent 19:00 local on 2026-11-01 regardless of the DST transition, i.e. a consistent UTC offset for that specific date/time, not silently using the wrong pre/post-DST offset from a stale cached offset.",
+    "risk": "src/pages/FoodTracker.jsx:73-77 getEatenAt — new Date(`${dateStr}T${time}:00`).toISOString() relies on the browser's current local-to-UTC conversion for that specific date string; confirm it's using the date's own offset and not a globally cached one.",
+    "serialize": false
+  },
+  {
+    "id": "fuel-r1-03",
+    "persona": "extreme-data",
+    "title": "Food entry with calories present but protein/carbs/fats null (AI text estimate returns partial macros)",
+    "setup": "Test athlete, tagged custom food (OVN-fuel-r1-03). Can be simulated by inserting a food_entries row directly via testDb() with calories: 320, protein_grams: null, carbs_grams: null, fats_grams: null, food_name: 'OVN-fuel-r1-03 partial macros', date: today.",
+    "steps": "1. Insert the tagged partial-macro row for today via testDb() (simulating what the AI estimate / manual entry with blank macro fields could produce). 2. Reload /fuel. 3. Read the calorie ring value, the macro bars (protein/carbs/fats), and the intake stats panel.",
+    "expected": "Ring and macro bars render a sane number (treating null as 0 contribution) with no NaN/blank/-- displayed anywhere, and the ring's calorie total still includes the 320 kcal.",
+    "risk": "src/utils/nutritionUtils.js:8-24 calculateMacros uses (entry.protein_grams || 0) etc., which is null-safe; verify the ring SVG math (FoodTracker.jsx:1737-1761, the overflow arc) and intakeStats memo (:1510-1561) don't independently re-derive these fields without the same null guard.",
+    "serialize": true,
+    "serializeReason": "adds a row to today's shared totals; other attackers reading today's ring/macros in the same window would see this row."
+  },
+  {
+    "id": "fuel-r1-04",
+    "persona": "extreme-data",
+    "title": "Serving amount of 0.00001 passes validation and logs a near-zero-calorie ghost entry",
+    "setup": "Test athlete, tagged manual entry (OVN-fuel-r1-04).",
+    "steps": "1. Tap 'Add' → USDA search 'chicken breast' → select a generic result. 2. In the serving-amount field (min=\"0\" step=\"0.5\", FoodTracker.jsx:2807), clear it and type '0.00001'. 3. Tap 'Add Food' (submit only rejects <= 0, FoodTracker.jsx:3145).",
+    "expected": "Either the UI rejects/clamps a serving amount that rounds to an unusable quantity, or it's accepted and the resulting calories/macros round sensibly to 0 without a phantom entry that inflates the day's item count for no nutritional signal.",
+    "risk": "src/pages/FoodTracker.jsx:2807 (input min/step, no upper or granularity floor) and :3145 (disabled check is `(parseFloat(newFood.serving_amount) || 0) <= 0`, which lets 0.00001 through since it's > 0).",
+    "serialize": true,
+    "serializeReason": "writes a food_entries row counted in today's shared totals."
+  },
+  {
+    "id": "fuel-r1-05",
+    "persona": "extreme-data",
+    "title": "10000 g portion on a manual entry — do macros scale linearly with no sanity cap",
+    "setup": "Test athlete, tagged manual entry (OVN-fuel-r1-05).",
+    "steps": "1. Tap 'Add' → USDA search 'almonds' → select a generic 100 g result (~579 kcal/100g). 2. Change serving unit to grams, type '10000' into the amount field. 3. Tap 'Add Food'.",
+    "expected": "A 10 kg serving of almonds (~57,900 kcal) is either flagged/blocked as an implausible entry before saving, or at minimum doesn't corrupt the day's ring (e.g. break the SVG arc math, produce a negative 'remaining' display that reads as a UI glitch rather than 'way over').",
+    "risk": "src/pages/FoodTracker.jsx:2807 no upper bound on serving amount; ring overflow-arc code at :1748-1758 — confirm it degrades gracefully (visually caps/labels overflow) rather than rendering a broken arc for a 50x-over-target day.",
+    "serialize": true,
+    "serializeReason": "massively skews today's shared calorie total for anyone else reading it in the same window; delete immediately after assertion."
+  },
+  {
+    "id": "fuel-r1-06",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap Delete on a food entry — no isPending guard, no confirm, no undo",
+    "setup": "Test athlete, one tagged food entry already logged today (OVN-fuel-r1-06).",
+    "steps": "1. Create the tagged entry via the Add flow. 2. Locate its row and fire two near-simultaneous clicks on its Trash icon (FoodTracker.jsx:2222) before the first request's response returns (simulate with two click() calls back-to-back, no await between them).",
+    "expected": "Exactly one entry is removed, no error surfaces, no crash, and the day's totals reflect the single removal. Per judge rules, a destructive action with no undo is itself worth flagging even if the double-tap doesn't corrupt data — confirm there really is zero recovery path (no 'Entry deleted' toast Undo action).",
+    "risk": "src/pages/FoodTracker.jsx:1120-1128 deleteFoodMutation has no onError handler and the trash button at :2222 has no disabled={deleteFoodMutation.isPending} guard (contrast with addFoodMutation at :3145, which does).",
+    "serialize": true,
+    "serializeReason": "mutates a shared-account row; run this case alone so no other attacker is mid-write on the same entry."
+  },
+  {
+    "id": "fuel-r1-07",
+    "persona": "sweaty-thumbs",
+    "title": "Double-tap 'mark as eaten' on a planned item — no isPending guard",
+    "setup": "A weekly plan approved so today has at least one planned:true row (or seed one directly via testDb() tagged OVN-fuel-r1-07).",
+    "steps": "1. Ensure a tagged planned row exists for today. 2. Fire two near-simultaneous clicks on its 'mark as eaten' checkbox (FoodTracker.jsx:2143, togglePlannedMutation :1132-1141) before the first mutation's response returns.",
+    "expected": "The entry flips planned:false exactly once with no duplicate toast/error and no double-counting in the day's eaten total.",
+    "risk": "src/pages/FoodTracker.jsx:2143 checkbox has no disabled={togglePlannedMutation.isPending}; the mutation itself (:1132-1141) is a single FoodEntry.update so a second concurrent call is likely a no-op, but confirm the toast doesn't fire twice or read misleadingly.",
+    "serialize": true,
+    "serializeReason": "touches a shared planned row tied to today's totals."
+  },
+  {
+    "id": "fuel-r1-08",
+    "persona": "interrupted",
+    "title": "Edit an entry's amount, reload before the update lands",
+    "setup": "Test athlete, one tagged food entry logged today (OVN-fuel-r1-08).",
+    "steps": "1. Create the tagged entry. 2. Tap it to open Edit (startEditEntry, FoodTracker.jsx:1170-1219). 3. Change the serving amount to a new value. 4. Tap 'Save Changes' (updateFoodMutation, :1143-1168) and immediately page.reload() before the request can complete (throttle network first via context.route with a delay, or reload within the same tick).",
+    "expected": "Either the edit is lost cleanly (old value survives, no partial/corrupt row) with no silent partial write, or the edit completes and is reflected after reload — never a row left in an inconsistent state (e.g. new serving_size but old calories, since multiple fields are set together).",
+    "risk": "src/pages/FoodTracker.jsx:1143-1168 updateFoodMutation — single db.entities.FoodEntry.update({...}) call, so it should be atomic at the DB layer; verify no client-side optimistic cache write happens before the network response that a reload could persist incorrectly.",
+    "serialize": true,
+    "serializeReason": "mutates a shared row's macros; totals reads by other attackers during this window would see an in-flux value."
+  },
+  {
+    "id": "fuel-r1-09",
+    "persona": "interrupted",
+    "title": "Offline manual add — form state preserved for retry, no false success",
+    "setup": "Test athlete, Fuel tab open, no existing tagged rows.",
+    "steps": "1. context.setOffline(true). 2. Tap 'Add' → manual entry → food_name 'OVN-fuel-r1-09 offline test', calories 200 → tap 'Add Food'. 3. Observe the toast/error and whether the dialog stays open with the typed values intact. 4. context.setOffline(false), tap 'Add Food' again.",
+    "expected": "Offline attempt shows a clear failure toast ('Failed to log food', FoodTracker.jsx:1116) and does NOT show a false 'Food logged successfully!' success. The typed form values must still be present after the failed attempt (resetForm() only runs onSuccess, :1112) so the athlete doesn't have to retype. Once back online, the retry succeeds and exactly one entry is created (not zero, not two).",
+    "risk": "src/pages/FoodTracker.jsx:1091-1118 addFoodMutation onError (:1115-1117) — confirm the dialog does not close and no optimistic entry appears in the day's list while offline.",
+    "serialize": true,
+    "serializeReason": "eventually writes a tagged row to today's shared total once reconnected."
+  },
+  {
+    "id": "fuel-r1-10",
+    "persona": "off-script",
+    "title": "Double-tap 'Approve & load the week' — verify no duplicate planned rows",
+    "setup": "Test athlete, a resolvable week plan available (current week). No pre-existing planned:true rows for the target week (clean via testDb() delete first if needed).",
+    "steps": "1. Open Fuel → 'Week plan' row → WeeklyPlanCard dialog. 2. Fire two near-simultaneous clicks on 'Approve & load the week' (WeeklyPlanCard.jsx:558) before the first click's isPending state can disable the button (two click() calls with no await between them). 3. Count food_entries rows with planned:true for the week's 7 dates after both requests settle.",
+    "expected": "Exactly one week's worth of planned rows exist afterward (no duplicates), matching what a single Approve would produce. Given tonight's known lead (approving loaded 42 items and the sheet still reads 'Approve & load the week' with no success/idempotency signal), also confirm the sheet gives SOME visible confirmation that the load completed.",
+    "risk": "src/components/nutrition/WeeklyPlanCard.jsx:209-235 — delete-then-create of planned rows for the week is idempotent only if serialized; two overlapping calls can interleave (call A deletes, call B deletes redundantly, call A inserts, call B inserts) and duplicate the week's ~42 rows. Button guard at :558 is a client-side disabled state only, no server-side lock.",
+    "serialize": true,
+    "serializeReason": "bulk-writes/deletes the shared account's planned rows for an entire week; must run in isolation."
+  },
+  {
+    "id": "fuel-r1-11",
+    "persona": "off-script",
+    "title": "Re-approve the week plan after manually editing one planned item's amount",
+    "setup": "Test athlete, week plan already approved (from fuel-r1-10 or a fresh approve). Tag any manual edit distinctly.",
+    "steps": "1. Approve the week plan once. 2. Edit one of today's planned entries (tap it → change serving amount, e.g. double it → Save Changes). 3. Reopen the Week plan dialog and tap 'Approve & load the week' again. 4. Check whether the hand-edited entry survived or was silently overwritten.",
+    "expected": "Either re-approving warns that it will discard manual edits to already-loaded planned items, or it's documented/expected behavior — but a silent, unannounced overwrite of a user's manual correction is a data-loss-adjacent UX bug worth flagging per judge rules ('entered data is never lost').",
+    "risk": "src/components/nutrition/WeeklyPlanCard.jsx:214-225 — approve deletes ALL existing planned:true rows for the week's dates unconditionally before recreating from resolveDayPlan(), with no diff against rows the user has since hand-edited.",
+    "serialize": true,
+    "serializeReason": "same shared week-plan rows as fuel-r1-10; must not run concurrently with it."
+  },
+  {
+    "id": "fuel-r1-12",
+    "persona": "time",
+    "title": "Carb-cycled targets and shopping list across a week-boundary approve (Sunday into next week)",
+    "setup": "Test athlete, use page.clock to set the browser date to a Sunday.",
+    "steps": "1. On a Sunday, open Week plan and inspect the 7 days it's about to approve (WeeklyPlanCard.jsx:72-98 computes the week via addDays(parseISO(today), i)). 2. Approve the week. 3. Advance page.clock to Monday (still within the same approved week or crossing into a new one, depending on the app's week-start convention) and reload /fuel. 4. Check the carb-cycled target shown for 'today' and the shopping list contents.",
+    "expected": "Training/rest-day carb targets and the shopping list stay consistent with the days actually covered by the approved plan — no day silently falls back to a default/last-known target because it fell just outside the computed week array, and the shopping list (persisted to localStorage keyed by weekStart) doesn't show stale contents from the wrong week.",
+    "risk": "src/components/nutrition/WeeklyPlanCard.jsx:72-98 (week date array), :101 buildShoppingList, and the localStorage key optigains.grocery.${weekStart} — confirm weekStart is computed the same way on both sides of the boundary.",
+    "serialize": true,
+    "serializeReason": "reads/writes the shared account's week-plan and shopping-list state."
+  },
+  {
+    "id": "fuel-r1-13",
+    "persona": "extreme-data",
+    "title": "Log a recipe at 9999 servings — no upper bound on LogRecipeDialog",
+    "setup": "Test athlete, one tagged recipe already built (OVN-fuel-r1-13) with modest per-serving macros (e.g. 400 kcal/serving, 4 servings in the recipe).",
+    "steps": "1. Create the tagged recipe via RecipeBuilder. 2. Open 'Log recipe' for it, and in the servings field (min='0.5', no max, LogRecipeDialog per RecipeBuilder.jsx:1441) type '9999'. 3. Log it to today.",
+    "expected": "Either the servings input is capped to something plausible before logging, or the resulting ~4,000,000 kcal entry is flagged/blocked rather than silently accepted and blowing up the day's ring/macro-bar rendering.",
+    "risk": "src/components/nutrition/RecipeBuilder.jsx:1441 LogRecipeDialog input has min='0.5' and no max; src/utils/nutritionUtils.js:91-98 scaleRecipeToServings multiplies calories linearly with no upper clamp.",
+    "serialize": true,
+    "serializeReason": "writes a food_entries row that would dominate today's shared totals; delete immediately after assertion."
+  },
+  {
+    "id": "fuel-r1-14",
+    "persona": "extreme-data",
+    "title": "Ring total vs intake-stats total disagree after a MealPlanIdeas-style 'suspicious' entry exists",
+    "setup": "Test athlete, insert a tagged food_entries row directly via testDb() with an implausible calorie density (e.g. calories: 500, serving_size: 10, i.e. 50 cal/g, food_name 'OVN-fuel-r1-14 suspicious density'), dated today.",
+    "steps": "1. Insert the tagged suspicious-density row for today. 2. Reload /fuel. 3. Read the calorie ring's displayed total. 4. Expand the intake-stats panel and read its computed total for the same day.",
+    "expected": "The two totals agree — the ring and the stats panel should either both count this entry or both exclude it, not silently diverge (MealPlanIdeas.jsx:14-25 filters 'suspicious' entries >10 cal/g when generating meal ideas from history; if any other view applies a similar silent filter while the main ring doesn't, that's exactly the 'totals vs ring disagree' failure mode named in the persona brief).",
+    "risk": "src/pages/FoodTracker.jsx:1407 calculateMacros(eatenEntries) (no suspicious-entry filtering) vs intakeStats useMemo :1510-1561 — confirm both use the same entry set with no independent filtering; also compare against MealPlanIdeas.jsx:14-25's isSuspicious() filter, which silently drops this exact entry shape for meal-idea generation only.",
+    "serialize": true,
+    "serializeReason": "adds a row to today's shared totals visible to any other attacker reading the ring/stats in this window."
+  },
+  {
+    "id": "fuel-r1-15",
+    "persona": "off-script",
+    "title": "Barcode scan: product not found, then label-photo fallback — form isn't silently pre-filled with stale scan data",
+    "setup": "Test athlete, Fuel tab open, no tagged rows yet.",
+    "steps": "1. Tap 'Add' → barcode scan icon → BarcodeScanner opens. 2. Trigger a lookup for a barcode not in the DB (mock lookupBarcode to return falsy). 3. Observe the 'not_found' state (FoodTracker.jsx:3903-3906 wires this to open label capture). 4. Tap 'photograph the label' fallback. 5. Cancel out of label capture without taking a photo, then reopen barcode scan and scan the SAME barcode again.",
+    "expected": "No stale data from the failed first lookup leaks into the manual/label form on the second attempt; the barcode-not-found message clears cleanly and a second scan of the same code re-triggers a fresh lookup rather than reusing a cached 'not_found' state.",
+    "risk": "src/components/nutrition/BarcodeScanner.jsx (state machine idle→requesting→scanning→looking_up→not_found/error) and FoodTracker.jsx:3891-3908 wiring — confirm scanState resets fully between scans and the 'not found' barcode value isn't left in a shared field that bleeds into the next manual-entry session.",
+    "serialize": false
+  }
+]
