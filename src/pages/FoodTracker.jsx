@@ -3170,6 +3170,17 @@ const handleSaveMealTemplate = () => {
               <div className="px-6 pt-4 border-t bg-charcoal-surface shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                 <Button
                   onClick={() => {
+                    // No hard max, just a once-per-submit gut check: a typo'd
+                    // amount (10000g instead of 1000g) silently wrecks the
+                    // day's ring with no other feedback. Mirrors the
+                    // train-logger heavy-weight confirm.
+                    const computedCalories = Math.round(parseFloat(newFood.calories) || 0);
+                    if (computedCalories > 2500) {
+                      const ok = window.confirm(
+                        `That's ${computedCalories.toLocaleString()} kcal, log it?`
+                      );
+                      if (!ok) return;
+                    }
                     if (editingEntry) {
                       updateFoodMutation.mutate({ id: editingEntry.id, data: newFood });
                       return;
