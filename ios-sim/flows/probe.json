@@ -1,0 +1,11 @@
+[
+  { "goto": "/" },
+  { "wait": 4000 },
+  { "shot": "safari-landing" },
+  { "dump": "safari-landing" },
+  { "login": true },
+  { "installPwa": true, "optional": true },
+  { "shot": "standalone-before-login" },
+  { "login": true, "optional": true },
+  { "dump": "standalone-after-login" }
+]

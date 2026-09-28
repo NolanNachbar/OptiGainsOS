@@ -1,0 +1,98 @@
+name: iOS Simulator
+
+# Runs an ios-sim/flows/<flow>.json journey in Apple's iOS Simulator on an
+# iPhone 13 Pro Max, and uploads full-device screenshots (keyboard, pickers and
+# all). The repo is public, so artifacts are public: the bundle is encrypted with
+# SIM_ARTIFACT_KEY before upload, and nothing typed is ever echoed to the log.
+#
+#   gh workflow run ios-sim.yml -f flow=probe
+#   gh run download <id> -n ios-sim && ios-sim/decrypt.sh
+
+on:
+  # Pushes to the ios-sim branch run the default probe, so the harness can be
+  # iterated on without touching main (workflow_dispatch only works from main).
+  push:
+    branches: [ios-sim]
+  workflow_dispatch:
+    inputs:
+      flow:
+        description: Flow name in ios-sim/flows/
+        default: probe
+      url:
+        description: App URL (must end with /)
+        default: https://nolannachbar.github.io/OptiGainsOS/
+      device:
+        description: Simulator device type
+        default: iPhone 13 Pro Max
+      runtime:
+        description: iOS runtime prefix to use (newest match wins)
+        default: iOS 26
+
+permissions:
+  contents: read
+
+jobs:
+  sim:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create and boot simulator
+        env:
+          DEVICE: ${{ inputs.device || 'iPhone 13 Pro Max' }}
+          RUNTIME: ${{ inputs.runtime || 'iOS 26' }}
+        run: |
+          xcrun simctl list runtimes
+          RT=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, os, sys
+          rts = [r for r in json.load(sys.stdin)["runtimes"]
+                 if r["isAvailable"] and r["name"].startswith(os.environ["RUNTIME"])]
+          rts.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
+          print(rts[-1]["identifier"])')
+          echo "runtime: $RT"
+          # Software keyboard on: the simulator hides it when a hardware keyboard is "connected".
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+          UDID=$(xcrun simctl create "og-sim" "$DEVICE" "$RT")
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Install Appium + XCUITest driver
+        run: |
+          npm i -g appium@2
+          appium driver install xcuitest
+          (cd ios-sim && npm i --no-audit --no-fund)
+
+      - name: Run flow
+        env:
+          BASE_URL: ${{ inputs.url || 'https://nolannachbar.github.io/OptiGainsOS/' }}
+          FLOW: ${{ inputs.flow || 'probe' }}
+          OUT: ${{ github.workspace }}/sim-out
+          SIM_EMAIL: ${{ secrets.SIM_EMAIL }}
+          SIM_PASSWORD: ${{ secrets.SIM_PASSWORD }}
+        run: |
+          mkdir -p "$OUT"
+          # Appium's own log records typed text, so it goes into the encrypted bundle only.
+          appium --log "$OUT/appium.log" --log-level info --log-no-colors > /dev/null 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:4723/status > /dev/null && break; sleep 2; done
+          node ios-sim/run.mjs
+
+      - name: Encrypt results
+        if: always()
+        env:
+          SIM_ARTIFACT_KEY: ${{ secrets.SIM_ARTIFACT_KEY }}
+        run: |
+          mkdir -p sim-out
+          tar czf - sim-out | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:SIM_ARTIFACT_KEY -out ios-sim.tar.gz.enc
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-sim
+          path: ios-sim.tar.gz.enc
+          retention-days: 3
