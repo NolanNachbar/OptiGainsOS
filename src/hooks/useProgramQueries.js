@@ -148,16 +148,31 @@ export function useUpdateProgram() {
       const updated = await db.entities.Program.update(id, updates);
 
       if (workouts) {
+        // Insert-first, delete-after: a failed create (bad network, a 400)
+        // must leave the ORIGINAL days untouched instead of wiping the
+        // program down to zero. If a create fails partway, roll back the
+        // ones that already landed so a retry doesn't duplicate rows, then
+        // rethrow with the old days still in place.
         const existing = await db.entities.ProgramWorkout.filter({ program_id: id });
+        const createdIds = [];
+        try {
+          for (const workout of workouts) {
+            const created = await db.entities.ProgramWorkout.create({
+              ...workout,
+              program_id: id,
+              created_by: user.id,
+            });
+            createdIds.push(created.id);
+          }
+        } catch (err) {
+          for (const createdId of createdIds) {
+            await db.entities.ProgramWorkout.delete(createdId).catch(() => {});
+          }
+          throw err;
+        }
+
         for (const w of existing) {
           await db.entities.ProgramWorkout.delete(w.id);
-        }
-        for (const workout of workouts) {
-          await db.entities.ProgramWorkout.create({
-            ...workout,
-            program_id: id,
-            created_by: user.id,
-          });
         }
       }
 
