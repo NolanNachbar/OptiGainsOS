@@ -13,6 +13,7 @@ import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
+import { useNowDay } from "@/hooks/useNowDay";
 import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
@@ -52,7 +53,10 @@ const sentence = (s) => {
 export default function Today() {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const today = getTodayString(profile?.timezone);
+  // Re-derives on visibilitychange/focus/a 60s interval so a tab left open (or
+  // an iOS home-screen app backgrounded) across local midnight doesn't keep
+  // reading yesterday's date with no on-screen indication (today-r1-05).
+  const today = useNowDay(profile?.timezone);
 
   // Morning check-in surfaces (weigh-in) and the muscle-load disclosure — kept
   // local so the home stays the daily-ritual home without depending on the
