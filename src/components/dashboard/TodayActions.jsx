@@ -77,12 +77,20 @@ export default function TodayActions({ today, briefActions = [], isError = false
     });
   }, [briefActions, user, todayStr, queryClient]);
 
+  // The de-dupe above collapses same-text rows to one visible row (keeping
+  // the earliest), so a toggle or delete on the visible row must act on
+  // every raw row sharing that text for the date, not just its own id —
+  // otherwise a hidden same-text twin (real when the brief was seeded on two
+  // devices) stays untouched, and for delete, instantly re-renders in the
+  // deleted row's place, so the delete looks like it silently failed
+  // (today-r1-04).
   const toggleMutation = useMutation({
-    mutationFn: async ({ id, completed }) => {
+    mutationFn: async ({ text, completed }) => {
+      const ids = rawTodos.filter(t => t.text === text).map(t => t.id);
       const { error } = await supabase
         .from("todos")
         .update({ completed })
-        .eq("id", id)
+        .in("id", ids)
         .eq("created_by", user.id);
       if (error) throw error;
     },
@@ -91,11 +99,38 @@ export default function TodayActions({ today, briefActions = [], isError = false
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase.from("todos").delete().eq("id", id).eq("created_by", user.id);
+    mutationFn: async (todo) => {
+      const ids = rawTodos.filter(t => t.text === todo.text).map(t => t.id);
+      const { data, error } = await supabase
+        .from("todos")
+        .delete()
+        .in("id", ids)
+        .eq("created_by", user.id)
+        .select();
       if (error) throw error;
+      return data || [];
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] }),
+    onSuccess: (deletedRows) => {
+      queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
+      if (!deletedRows.length) return;
+      toast("Task deleted", {
+        // Global closeButton (App.jsx) sits top-right, same corner as the
+        // delete X this came from — off so it isn't a second tap target
+        // fighting Undo right after a mis-tap.
+        closeButton: false,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const rows = deletedRows.map(({ id, created_at, ...rest }) => rest);
+            supabase.from("todos").insert(rows).then(({ error }) => {
+              if (error) toast.error("Couldn't restore the task. Check your connection and add it again.");
+              else queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
+            });
+          },
+        },
+      });
+    },
+    onError: () => toast.error("Failed to delete"),
   });
 
   const addMutation = useMutation({
@@ -166,7 +201,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
               className="flex items-center gap-3 group py-1.5 border-b hairline last:border-0"
             >
               <button
-                onClick={() => toggleMutation.mutate({ id: todo.id, completed: !todo.completed })}
+                onClick={() => toggleMutation.mutate({ text: todo.text, completed: !todo.completed })}
                 className="shrink-0 h-11 w-11 -my-2 -ml-2 flex items-center justify-center text-faint hover:text-leaf transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label={todo.completed ? "Mark incomplete" : "Mark complete"}
               >
@@ -182,7 +217,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
                 <Bot className={`w-4 h-4 shrink-0 ${DOMAIN_COLORS[todo.domain] || "text-faint"}`} />
               )}
               <button
-                onClick={() => deleteMutation.mutate(todo.id)}
+                onClick={() => deleteMutation.mutate(todo)}
                 className="shrink-0 h-11 w-11 -my-2 -mr-2 flex items-center justify-center text-faint hover:text-bad transition-colors duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                 aria-label="Delete action"
               >
