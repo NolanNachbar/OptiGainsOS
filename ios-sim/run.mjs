@@ -67,7 +67,8 @@ const q = (s) => s.replace(/"/g, '\\"');
 async function findNative(text, timeout = 8000) {
   const exact = `label == "${q(text)}" OR name == "${q(text)}" OR value == "${q(text)}" OR placeholderValue == "${q(text)}"`;
   const loose = `label BEGINSWITH "${q(text)}" OR name BEGINSWITH "${q(text)}"`;
-  for (const pred of [exact, loose]) {
+  const field = `type IN {"XCUIElementTypeTextField","XCUIElementTypeSecureTextField","XCUIElementTypeTextView"} AND (${exact})`;
+  for (const pred of [field, exact, loose]) {
     const el = await driver.$(`-ios predicate string:(${pred}) AND visible == 1`);
     if (await el.waitForExist({ timeout, timeoutMsg: '' }).catch(() => false)) return el;
     timeout = 2000;
@@ -112,6 +113,9 @@ async function dump(name) {
 
 async function installPwa() {
   await native();
+  await driver.hideKeyboard().catch(() => {});
+  await driver.pause(800);
+  await dump('pwa-safari-chrome');
   // Safari 26 moved Share behind the "…" button in the compact tab bar; older
   // layouts expose Share directly. Try the known names in order.
   let opened = false;
@@ -119,8 +123,13 @@ async function installPwa() {
     try { await (await findNative(name, 2000)).click(); opened = true; break; } catch {}
   }
   if (!opened) {
-    for (const more of ['MoreButton', 'More', 'Page Menu', 'TabOverviewButton']) {
-      try { await (await findNative(more, 2000)).click(); break; } catch {}
+    let found = false;
+    for (const more of ['MoreButton', 'More', 'Page Menu', 'More Options']) {
+      try { await (await findNative(more, 2000)).click(); found = true; break; } catch {}
+    }
+    if (!found) {
+      const el = await driver.$('-ios predicate string:type == "XCUIElementTypeButton" AND (label CONTAINS[c] "more" OR name CONTAINS[c] "more" OR name CONTAINS "ellipsis")');
+      await el.click();
     }
     await driver.pause(800); shot('pwa-menu');
     await (await findNative('Share')).click();
@@ -148,11 +157,15 @@ async function login() {
   await driver.pause(900); shot('login-email-keyboard');
   await type('$SIM_EMAIL');
   await driver.pause(600); shot('login-email-typed');
-  await tapText('Password');
+  // Like a person would: the keyboard's accessory bar covers the Password field,
+  // so move with its Next (⌄) button, then submit with Return.
+  await (await findNative('Next')).click();
+  lastTapped = await driver.$('-ios predicate string:type == "XCUIElementTypeSecureTextField"');
   await dismissTips();
   await driver.pause(900); shot('login-password-keyboard');
   await type('$SIM_PASSWORD');
-  await (await findNative('Sign in')).click();
+  await lastTapped.addValue('\n');
+  lastTapped = null;
   await driver.pause(5000); shot('login-done');
 }
 
