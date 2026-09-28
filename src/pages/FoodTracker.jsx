@@ -3188,7 +3188,12 @@ const handleSaveMealTemplate = () => {
                   className="w-full"
                   data-tutorial="add-food-submit"
                 >
-                  {(addFoodMutation.isPending || updateFoodMutation.isPending) ? (
+                  {(addFoodMutation.isPaused || updateFoodMutation.isPaused) ? (
+                    // React Query's default networkMode pauses (not fails) a
+                    // mutation while navigator.onLine is false — it resumes on
+                    // its own on reconnect, so this is honest, not an error.
+                    "Offline - saves when you're back online"
+                  ) : (addFoodMutation.isPending || updateFoodMutation.isPending) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 spin-loop" />
                       {editingEntry ? "Saving..." : "Adding..."}
