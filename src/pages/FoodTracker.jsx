@@ -1144,12 +1144,25 @@ const handleSaveMealTemplate = () => {
   });
 
   const deleteFoodMutation = useMutation({
-    mutationFn: async (id) => {
-      await db.entities.FoodEntry.delete(id);
+    mutationFn: async (entry) => {
+      await db.entities.FoodEntry.delete(entry.id);
+      return entry;
     },
-    onSuccess: () => {
+    onSuccess: (entry) => {
       invalidateFood(queryClient);
-      toast.success("Entry deleted");
+      toast("Entry deleted", {
+        // Global closeButton (App.jsx) sits top-right, same corner as the
+        // trash/edit icons this delete came from — off so it isn't a second
+        // tap target fighting Undo right after a mis-tap.
+        closeButton: false,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const { id, created_at, ...rest } = entry;
+            db.entities.FoodEntry.create(rest).then(() => invalidateFood(queryClient));
+          },
+        },
+      });
     },
   });
 
@@ -2246,7 +2259,7 @@ const handleSaveMealTemplate = () => {
                               <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
                                 <Pencil className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                               </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry.id)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-bad active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
+                              <button onClick={() => deleteFoodMutation.mutate(entry)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-bad active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
                                 <Trash2 className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
                               </button>
                             </div>
