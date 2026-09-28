@@ -90,7 +90,10 @@ async function tapText(text) {
 async function dismissTips() {
   await native();
   for (let i = 0; i < 3; i++) {
-    const x = await driver.$('-ios predicate string:name == "xmark.circle.fill" AND visible == 1');
+    // Safari tips close with an X; the "Save Password?" sheet after login
+    // closes with "Not Now". Either one blocks the Safari menu.
+    let x = await driver.$('-ios predicate string:name == "xmark.circle.fill" AND visible == 1');
+    if (!(await x.isExisting())) x = await driver.$('-ios predicate string:type == "XCUIElementTypeButton" AND label == "Not Now" AND visible == 1');
     if (!(await x.isExisting())) return;
     await x.click();
     await driver.pause(500);
@@ -138,6 +141,7 @@ async function installPwa() {
   await native();
   await driver.hideKeyboard().catch(() => {});
   await driver.pause(800);
+  await dismissTips();
   await dump('pwa-safari-chrome');
   // Safari 26 moved Share behind the "…" button in the compact tab bar; older
   // layouts expose Share directly. Try the known names in order.
@@ -189,6 +193,8 @@ async function login() {
   await type('$SIM_PASSWORD');
   await lastTapped.addValue('\n');
   lastTapped = null;
+  await driver.pause(1500);
+  await dismissTips();
   await driver.pause(5000); shot('login-done');
 }
 

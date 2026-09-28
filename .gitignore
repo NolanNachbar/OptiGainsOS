@@ -61,3 +61,4 @@ ui-audit/_probe/
 # Python bytecode — build artifacts, never source
 __pycache__/
 *.pyc
+ui-audit/harness/out-ios/
