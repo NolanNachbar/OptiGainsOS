@@ -437,6 +437,61 @@ export default function ExerciseCard({
     }
   };
 
+  // Shared commit functions (Phase B keypad): the real <input>s' onChange
+  // handlers and the custom keypad sheet both call these, so a value typed
+  // on a hardware keyboard and a value tapped on the keypad go through the
+  // exact same clamp/null/parse rules. Extracted verbatim from the inputs
+  // below — same 2000 max clamp on weight, same null-on-empty, same
+  // parseInt for reps, RIR still routed through handleRirChange (which
+  // fires the program-mode nudge / Phase-3 coaching chip side effects).
+  const commitWeight = (setIndex, raw) => {
+    let next = raw === "" || raw == null ? null : parseFloat(raw);
+    if (Number.isFinite(next) && next > 2000) next = 2000;
+    onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
+  };
+
+  const commitReps = (setIndex, raw) => {
+    const next = raw === "" || raw == null ? null : parseInt(raw, 10);
+    onUpdateSet(
+      exerciseIndex,
+      setIndex,
+      isHold ? 'duration_s' : 'reps',
+      Number.isFinite(next) ? next : null
+    );
+  };
+
+  const commitRir = (setIndex, raw) => {
+    const rir = raw === "" || raw == null ? null : parseFloat(raw);
+    handleRirChange(setIndex, rir);
+  };
+
+  // Phase B keypad: which field is being edited via the custom bottom-sheet
+  // keypad (touch/coarse-pointer only; fine pointers keep native inputs and
+  // never set this). null when the sheet is closed. Lives here, not in
+  // WorkoutDetail, per advisor guidance -- this is the component that owns
+  // handleSetCompleted / commitWeight / commitReps / commitRir.
+  const [activeField, setActiveField] = useState(null); // { setIndex, field: 'weight'|'reps'|'rir' }
+
+  // Coarse pointer (touch) -> use the custom keypad sheet instead of the
+  // native OS keyboard. Read once per mount via matchMedia rather than on
+  // every render; a real device doesn't flip from coarse to fine mid-session,
+  // and this keeps SSR/test environments (jsdom, no matchMedia) safe via the
+  // `?.` + default-false fallback.
+  const [useKeypad] = useState(() => {
+    try {
+      return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+    } catch {
+      return false;
+    }
+  });
+  // Ref maps (keyed by setIndex) so the keypad's "Next" key can move real
+  // DOM focus to the next field -- that focus event is what opens the sheet
+  // on that field via the existing onFocus handlers above, so Next doesn't
+  // need its own copy of the open logic.
+  const weightInputRefs = useRef({});
+  const repsInputRefs = useRef({});
+  const rirInputRefs = useRef({});
+
   // Compact one-line row for every exercise other than the focused one
   // (mockup .nx: "name · target · last time"). Ledger rebuild (coordinator
   // review, r4d/step3): the old version was a boxed glass-inset card with a
@@ -926,7 +981,16 @@ export default function ExerciseCard({
               </button>
               <div className="relative min-w-0">
                 <input
-                  type="number" inputMode="decimal"
+                  ref={(el) => { weightInputRefs.current[setIndex] = el; }}
+                  type="number"
+                  // Phase B: on a coarse pointer (touch), the keypad sheet
+                  // opens on focus and owns entry, so the native OS number
+                  // pad is suppressed (inputMode="none"). Fine pointers
+                  // (mouse/trackpad, i.e. desktop) keep the native numeric
+                  // keyboard behavior. The input stays a real, editable
+                  // <input> either way -- never readOnly -- so Playwright's
+                  // fill() and a hardware keyboard both still work unchanged.
+                  inputMode={useKeypad ? "none" : "decimal"}
                   aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
                   // `?? ""`, not `|| ""`: a logged 0 is a real load (every
                   // bodyweight movement) and `||` blanked the field out from
@@ -936,17 +1000,11 @@ export default function ExerciseCard({
                   // typed over, and the RIR input three rows down had the
                   // null-on-empty handling this one was missing.
                   value={set.weight ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    let next = raw === "" ? null : parseFloat(raw);
-                    // The max="2000" attribute below is decorative on a controlled
-                    // number input (never enforced outside <form> validation), so
-                    // enforce the cap here for real (r1-01): a fat-fingered extra
-                    // digit becomes the e1RM / PR / progression baseline downstream.
-                    if (Number.isFinite(next) && next > 2000) next = 2000;
-                    onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
+                  onChange={(e) => commitWeight(setIndex, e.target.value)}
+                  onFocus={(e) => {
+                    handleInputFocus(e);
+                    if (useKeypad) setActiveField({ setIndex, field: 'weight' });
                   }}
-                  onFocus={handleInputFocus}
                   placeholder={
                     isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
                       ? String(progressionTargets.dailyMin)
@@ -976,20 +1034,16 @@ export default function ExerciseCard({
                 )}
               </div>
               <input
-                type="number" inputMode="numeric"
+                ref={(el) => { repsInputRefs.current[setIndex] = el; }}
+                type="number"
+                inputMode={useKeypad ? "none" : "numeric"}
                 aria-label={isHold ? `Set ${set.set_number} hold seconds` : `Set ${set.set_number} reps`}
                 value={(isHold ? set.duration_s : set.reps) ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const next = raw === "" ? null : parseInt(raw, 10);
-                  onUpdateSet(
-                    exerciseIndex,
-                    setIndex,
-                    isHold ? 'duration_s' : 'reps',
-                    Number.isFinite(next) ? next : null
-                  );
+                onChange={(e) => commitReps(setIndex, e.target.value)}
+                onFocus={(e) => {
+                  handleInputFocus(e);
+                  if (useKeypad) setActiveField({ setIndex, field: 'reps' });
                 }}
-                onFocus={handleInputFocus}
                 placeholder={isHold ? "30" : (lastPerformance?.lastReps ? String(lastPerformance.lastReps) : "0")}
                 min="0"
                 // Holds are seconds, reps are reps, so the ceiling differs: an
@@ -1000,15 +1054,16 @@ export default function ExerciseCard({
               />
               {showRIR && (
                 <input
-                  type="number" inputMode="decimal"
+                  ref={(el) => { rirInputRefs.current[setIndex] = el; }}
+                  type="number"
+                  inputMode={useKeypad ? "none" : "decimal"}
                   aria-label={`Set ${set.set_number} reps in reserve`}
                   value={(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null)) ?? ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const rir = val === "" ? null : parseFloat(val);
-                    handleRirChange(setIndex, rir);
+                  onChange={(e) => commitRir(setIndex, e.target.value)}
+                  onFocus={(e) => {
+                    handleInputFocus(e);
+                    if (useKeypad) setActiveField({ setIndex, field: 'rir' });
                   }}
-                  onFocus={handleInputFocus}
                   placeholder="—"
                   min="0"
                   max="10"
@@ -1270,6 +1325,278 @@ export default function ExerciseCard({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Phase B custom keypad (Ledger-styled bottom sheet). A plain
+        createPortal div, NOT the shared Dialog/Sheet primitive: Radix's
+        modal mode aria-hides and sets pointer-events:none on the rest of
+        the page, which would break the "Mark set N" checkbox and the
+        Playwright locators that click it. Mounted only while a field on
+        THIS exercise is active. */}
+    {activeField && createPortal(
+      <KeypadSheet
+        activeField={activeField}
+        exercise={exercise}
+        weightUnit={weightUnit}
+        isHold={isHold}
+        showRIR={showRIR}
+        lastPerformance={lastPerformance}
+        commitWeight={commitWeight}
+        commitReps={commitReps}
+        commitRir={commitRir}
+        onClose={() => setActiveField(null)}
+        onDone={(setIndex) => {
+          // Close FIRST, then complete the set -- otherwise the weight-typo
+          // guard's window.confirm() renders underneath the sheet.
+          setActiveField(null);
+          handleSetCompleted(setIndex, true);
+        }}
+        focusField={(field) => {
+          const idx = activeField.setIndex;
+          const ref =
+            field === 'weight' ? weightInputRefs.current[idx]
+            : field === 'reps' ? repsInputRefs.current[idx]
+            : rirInputRefs.current[idx];
+          ref?.focus();
+        }}
+      />,
+      document.body
+    )}
   </>
+  );
+}
+
+// MF-scale RIR effort tint (0 red, 1-2 amber, 3-4 green, 5+ blue) -- same
+// scale as ExerciseCard's rirCell. Every class string below appears here
+// literally (not built via template interpolation) because Tailwind's JIT
+// scanner only picks up arbitrary-value classes it can see verbatim in the
+// source -- a `bg-[${var}]` built at runtime would silently generate no CSS.
+function rirPillTint(val, active) {
+  if (val <= 0) return active ? "bg-[#E5484D] text-[#12161C]" : "bg-[#E5484D]/15 text-[#E5484D]";
+  if (val <= 2) return active ? "bg-[#E2B84E] text-[#12161C]" : "bg-[#E2B84E]/15 text-[#E2B84E]";
+  if (val <= 4) return active ? "bg-[#7CC389] text-[#12161C]" : "bg-[#7CC389]/15 text-[#7CC389]";
+  return active ? "bg-[#6EA6DA] text-[#12161C]" : "bg-[#6EA6DA]/15 text-[#6EA6DA]";
+}
+
+// Phase B: Ledger-styled bottom-sheet keypad for weight/reps/RIR, referenced
+// on MacroFactor Workouts / Strong / Hevy. Exists because a PWA's native
+// on-screen numeric keyboard covers roughly half an iOS screen with no
+// reliable Next/Done key. The real <input> stays focused and editable the
+// whole time (inputMode="none" just suppresses the OS keyboard) -- every key
+// here calls preventDefault() in onPointerDown so tapping it never steals
+// DOM focus away from that input, and every value still commits through the
+// exact same commitWeight/commitReps/commitRir functions a hardware
+// keyboard's onChange would call.
+function KeypadSheet({
+  activeField, exercise, weightUnit, isHold, showRIR, lastPerformance,
+  commitWeight, commitReps, commitRir, onClose, onDone, focusField,
+}) {
+  const { setIndex, field } = activeField;
+  const set = exercise.sets[setIndex];
+  const [buffer, setBuffer] = useState("");
+  const [fresh, setFresh] = useState(true);
+  const sheetRef = useRef(null);
+  const touchStartY = useRef(null);
+
+  // Re-seed the buffer whenever the active field changes (a new set, or
+  // weight -> reps -> rir advance on the SAME set).
+  useEffect(() => {
+    let initial;
+    if (field === "weight") initial = set?.weight;
+    else if (field === "reps") initial = isHold ? set?.duration_s : set?.reps;
+    else initial = set?.rir != null ? set.rir : (set?.rpe != null ? 10 - set.rpe : null);
+    setBuffer(initial == null ? "" : String(initial));
+    setFresh(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setIndex, field]);
+
+  // Publish this sheet's real height into --logging-bar-clearance so the
+  // page's existing bottom padding / scroll-margin (WorkoutDetail.jsx,
+  // QuickWorkout.jsx both already read this var) keeps the focused row
+  // visible above the sheet instead of the sheet covering it. Revert to 0
+  // on unmount (matches WorkoutLoggingHeader's Phase A baseline).
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = sheetRef.current;
+    if (!el) return undefined;
+    const publish = () => root.style.setProperty("--logging-bar-clearance", `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty("--logging-bar-clearance", "0px");
+    };
+  }, []);
+
+  // Dismiss on an outside tap -- deliberately NOT calling preventDefault or
+  // stopPropagation, so a tap that lands on, say, the "Mark set complete"
+  // checkbox both closes the sheet AND still completes that click.
+  useEffect(() => {
+    const onPointerDown = (e) => {
+      if (sheetRef.current && !sheetRef.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [onClose]);
+
+  const commit = (nextBuf) => {
+    if (field === "weight") commitWeight(setIndex, nextBuf);
+    else if (field === "reps") commitReps(setIndex, nextBuf);
+    else commitRir(setIndex, nextBuf);
+  };
+
+  const pressDigit = (d) => {
+    if (field === "rir") return; // RIR uses the pill strip, not digits.
+    const next = fresh ? d : buffer + d;
+    setBuffer(next);
+    setFresh(false);
+    commit(next);
+  };
+
+  const pressDot = () => {
+    if (field !== "weight" || buffer.includes(".")) return; // reps are integer-only.
+    const next = fresh ? "0." : buffer + ".";
+    setBuffer(next);
+    setFresh(false);
+    commit(next);
+  };
+
+  const pressBackspace = () => {
+    if (field === "rir") return;
+    const next = buffer.slice(0, -1);
+    setBuffer(next);
+    setFresh(next === "");
+    commit(next);
+  };
+
+  const increment = weightUnit === "kg" ? 2.5 : 5;
+  const pressStep = (dir) => {
+    const current = buffer === "" ? 0 : parseFloat(buffer) || 0;
+    const next = Math.max(0, Math.round((current + dir * increment) * 100) / 100);
+    const nextStr = String(next);
+    setBuffer(nextStr);
+    setFresh(true);
+    commit(nextStr);
+  };
+
+  const fieldOrder = showRIR ? ["weight", "reps", "rir"] : ["weight", "reps"];
+  const isLastField = field === fieldOrder[fieldOrder.length - 1];
+
+  const goNext = () => {
+    if (isLastField) {
+      onClose();
+      onDone(setIndex);
+      return;
+    }
+    focusField(fieldOrder[fieldOrder.indexOf(field) + 1]);
+  };
+
+  const pickRir = (val) => {
+    commitRir(setIndex, String(val));
+    // RIR is always the last field in fieldOrder when it's shown, so
+    // tapping a pill both sets the value and finishes the set.
+    onClose();
+    onDone(setIndex);
+  };
+
+  const label =
+    field === "weight" ? `Set ${set?.set_number ?? ""} · Weight`
+    : field === "reps" ? `Set ${set?.set_number ?? ""} · ${isHold ? "Sec" : "Reps"}`
+    : `Set ${set?.set_number ?? ""} · RIR`;
+
+  const prevText =
+    field === "weight" && lastPerformance?.lastWeight
+      ? `Prev ${lastPerformance.lastWeight} ${weightUnit}`
+      : field === "reps" && lastPerformance?.lastReps
+      ? `Prev ${lastPerformance.lastReps}`
+      : null;
+
+  const currentRir = set?.rir != null ? set.rir : (set?.rpe != null ? 10 - set.rpe : null);
+
+  const key = "min-h-[52px] rounded-xl bg-[#2A2E35] text-[#F5F3EE] text-xl font-bold flex items-center justify-center active:bg-[#363B44] touch-manipulation select-none";
+  const stop = (e) => e.preventDefault();
+
+  return (
+    <div
+      ref={sheetRef}
+      role="group"
+      aria-label="Set entry keypad"
+      className="fixed inset-x-0 bottom-0 z-[70] bg-[#1C1F23] border-t border-charcoal-border rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom,0px)]"
+      onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
+      onTouchEnd={(e) => {
+        if (touchStartY.current == null) return;
+        const dy = e.changedTouches[0].clientY - touchStartY.current;
+        touchStartY.current = null;
+        if (dy > 60) onClose();
+      }}
+    >
+      <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-full bg-white/20" />
+
+      <div className="flex items-end justify-between px-4 pt-1 pb-3">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">{label}</div>
+          <div className="text-3xl font-extrabold tabular-nums text-[#F5F3EE] mt-0.5">
+            {buffer === "" ? "—" : buffer}
+          </div>
+        </div>
+        {prevText && <div className="text-xs font-semibold text-ink-faint pb-1">{prevText}</div>}
+      </div>
+
+      {field === "rir" ? (
+        <div className="px-4 pb-4 flex gap-1.5">
+          {[0, 1, 2, 3, 4, 5, 6].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onPointerDown={stop}
+              onClick={() => pickRir(v)}
+              aria-label={`RIR ${v === 6 ? "6+" : v}`}
+              className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, currentRir === v)}`}
+            >
+              {v === 6 ? "6+" : v}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
+          <div className="col-span-3 grid grid-cols-3 gap-1.5">
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
+              <button key={d} type="button" onPointerDown={stop} onClick={() => pressDigit(d)} className={key}>
+                {d}
+              </button>
+            ))}
+            <button
+              type="button"
+              onPointerDown={stop}
+              onClick={pressDot}
+              disabled={field !== "weight"}
+              aria-label="Decimal point"
+              className={`${key} ${field !== "weight" ? "opacity-30" : ""}`}
+            >
+              .
+            </button>
+            <button type="button" onPointerDown={stop} onClick={() => pressDigit("0")} className={key}>0</button>
+            <button type="button" onPointerDown={stop} onClick={pressBackspace} aria-label="Backspace" className={key}>⌫</button>
+          </div>
+          <div className="col-span-1 flex flex-col gap-1.5">
+            {field === "weight" && (
+              <div className="flex gap-1.5">
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(-1)} aria-label={`Decrease by ${increment}`} className={`${key} flex-1 text-base`}>−</button>
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(1)} aria-label={`Increase by ${increment}`} className={`${key} flex-1 text-base`}>+</button>
+              </div>
+            )}
+            <button
+              type="button"
+              onPointerDown={stop}
+              onClick={goNext}
+              aria-label={isLastField ? "Done, mark set complete" : "Next field"}
+              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[#12161C] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+            >
+              {isLastField ? "Done ✓" : "Next"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
