@@ -23,6 +23,10 @@ test('a 25-day logging history reaches medium/high confidence with the caller\'s
   const result = await page.evaluate(async () => {
     const mod = await import('/src/utils/coachingUtils.js');
     const { calculateAdaptiveTDEE, getBestTDEE } = mod;
+    // Local calendar dates, as the app stores them. UTC dates run a day ahead
+    // in the evening, which slid one extra day into the old 14-day window and
+    // let it (wrongly) reach daySpan 14.
+    const { localDateOf } = await import('/src/utils/dateUtils.js');
 
     const weightEntries = [];
     const foodEntries = [];
@@ -31,8 +35,8 @@ test('a 25-day logging history reaches medium/high confidence with the caller\'s
     const now = new Date();
     for (let i = 24; i >= 0; i--) {
       const d = new Date(now);
-      d.setUTCDate(d.getUTCDate() - i);
-      const date = d.toISOString().slice(0, 10);
+      d.setDate(d.getDate() - i);
+      const date = localDateOf(d);
       weightEntries.push({ recorded_date: date, weight: 200 - (24 - i) * 0.05 });
       foodEntries.push({ date, calories: 2400, protein_grams: 180 });
     }
@@ -66,22 +70,23 @@ test('planned and future-dated food rows do not skew the adaptive TDEE', async (
 
   const result = await page.evaluate(async () => {
     const { calculateAdaptiveTDEE } = await import('/src/utils/coachingUtils.js');
+    const { localDateOf } = await import('/src/utils/dateUtils.js');
     const weightEntries = [];
     const eaten = [];
     const now = new Date();
     for (let i = 24; i >= 0; i--) {
       const d = new Date(now);
-      d.setUTCDate(d.getUTCDate() - i);
-      const date = d.toISOString().slice(0, 10);
+      d.setDate(d.getDate() - i);
+      const date = localDateOf(d);
       weightEntries.push({ recorded_date: date, weight: 200 - (24 - i) * 0.05 });
       eaten.push({ date, calories: 2400, planned: false });
     }
     const noise = [];
     for (let i = 1; i <= 5; i++) {
-      const past = new Date(now); past.setUTCDate(past.getUTCDate() - i);
-      const future = new Date(now); future.setUTCDate(future.getUTCDate() + i);
-      noise.push({ date: past.toISOString().slice(0, 10), calories: 9000, planned: true });
-      noise.push({ date: future.toISOString().slice(0, 10), calories: 9000, planned: false });
+      const past = new Date(now); past.setDate(past.getDate() - i);
+      const future = new Date(now); future.setDate(future.getDate() + i);
+      noise.push({ date: localDateOf(past), calories: 9000, planned: true });
+      noise.push({ date: localDateOf(future), calories: 9000, planned: false });
     }
     return {
       clean: calculateAdaptiveTDEE(weightEntries, eaten),

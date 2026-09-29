@@ -4,6 +4,7 @@
 // macro grid. Fix: render with a `?? 0` fallback.
 import { test, expect } from '@playwright/test';
 import { signIn, testDb, testUserId } from './helpers.mjs';
+import { getTodayString } from '../src/utils/dateUtils.js';
 
 const CASE = 'r1-03';
 const FOOD_NAME = `OVN-${CASE} null macro food`;
@@ -17,7 +18,9 @@ test('a food entry with null macros renders 0, not blank', async ({ page }) => {
   const uid = await testUserId();
   await cleanup(uid, db);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // The app files entries under the LOCAL calendar day; a UTC date is
+  // tomorrow after ~6pm Mountain, so the row landed on a day Fuel wasn't showing.
+  const today = getTodayString();
   const { data: entry, error: insErr } = await db.from('food_entries').insert({
     created_by: uid,
     date: today,
