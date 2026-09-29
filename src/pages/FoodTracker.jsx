@@ -1709,8 +1709,8 @@ const handleSaveMealTemplate = () => {
         type="button"
         onClick={() => { resetForm(); setShowAddDialog(true); }}
         aria-label="Add food"
-        className="cta-action lg:hidden fixed right-4 z-30 h-14 w-14 !rounded-full p-0 active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
-        style={{ bottom: 'calc(var(--dock-total-height) + 24px + env(safe-area-inset-bottom))' }}
+        className="cta-action lg:hidden fixed right-3 z-30 h-12 w-12 !rounded-full p-0 active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
       >
         <Plus className="w-6 h-6" />
       </button>
