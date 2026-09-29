@@ -702,6 +702,43 @@ export default function ExerciseCard({
             </div>
           </div>
         </div>
+
+        {/* Per-exercise icon-button toolbar (Phase A, MF-referenced):
+            fast-access variants of items also reachable from the kebab
+            above, so the athlete doesn't have to open the menu for the
+            three things they'd reach for mid-set. 44px targets, muted
+            icons, no labels — required aria-labels carry the meaning. */}
+        <div className="flex items-center gap-1 mt-1 -ml-2">
+          <button
+            type="button"
+            onClick={() => setShowCues(true)}
+            aria-label="Exercise history and info"
+            className="relative h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
+          >
+            <HelpCircle className="w-[18px] h-[18px]" />
+            {hasPendingNotes && (
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
+            )}
+          </button>
+          {onReplaceExercise && (
+            <button
+              type="button"
+              onClick={() => setShowReplaceDialog(true)}
+              aria-label="Swap exercise"
+              className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
+            >
+              <RefreshCw className="w-[18px] h-[18px]" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditingNotes(true)}
+            aria-label="Add notes"
+            className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
+          >
+            <FileText className="w-[18px] h-[18px]" />
+          </button>
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         {/* Advisory nudge, between-set coaching chip, and shot-list note all moved
