@@ -209,6 +209,90 @@ export const getVolumeByDate = (logs) => {
 };
 
 /**
+ * Estimate a one-rep max from a single set (Epley formula), matching the
+ * formula coachingEngine.js and config/failureReasons.js already use
+ * elsewhere in the app — this doesn't invent a second convention.
+ * @param {number} weight
+ * @param {number} reps
+ * @returns {number} estimated 1RM, or 0 if weight/reps are missing
+ */
+export const estimateOneRepMax = (weight, reps) => {
+  const w = Number(weight) || 0;
+  const r = Number(reps) || 0;
+  if (!w || !r) return 0;
+  return w * (1 + r / 30);
+};
+
+/**
+ * Per-session estimated 1RM history for one exercise: the best (highest)
+ * e1RM among that session's sets, one point per log date.
+ * @param {Array} logs - Array of workout logs
+ * @param {string} exerciseName
+ * @returns {Array} Array of {date, e1rm} sorted oldest → newest
+ */
+export const getExerciseE1rmHistory = (logs, exerciseName) => {
+  if (!logs || logs.length === 0) return [];
+
+  return logs
+    .filter(log => log.exercises?.some(ex => sameExercise(ex.name, exerciseName)))
+    .map(log => {
+      const exercise = log.exercises.find(ex => sameExercise(ex.name, exerciseName));
+      if (!exercise || !exercise.sets || exercise.sets.length === 0) return null;
+
+      const best = Math.max(...exercise.sets.map(s => estimateOneRepMax(s.weight, s.reps)));
+      if (!best) return null;
+
+      return { date: log.log_date, e1rm: Math.round(best * 10) / 10 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
+/**
+ * Every logged exercise with its e1RM trend, for the Body → Lifts list.
+ * Sorted by recency (most recently logged first), frequency as the tiebreak,
+ * since that's the order a daily lifter scans for "what did I just do".
+ * @param {Array} logs - Array of workout logs
+ * @returns {Array} Array of {name, history, lastDate, count, currentE1rm, change4w}
+ */
+export const getLoggedExerciseSummaries = (logs) => {
+  const names = getUniqueExercises(logs);
+
+  return names
+    .map(name => {
+      const history = getExerciseE1rmHistory(logs, name);
+      if (history.length === 0) return null;
+
+      const last = history[history.length - 1];
+      const cutoff = new Date(`${last.date}T00:00:00`);
+      cutoff.setDate(cutoff.getDate() - 28);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+      // The most recent entry AT OR BEFORE the 4-weeks-ago cutoff — the
+      // nearest thing to "what was the e1RM 4 weeks ago" the log dates
+      // actually give us. null (no such entry) means less than 4 weeks of
+      // history for this lift, so "no comparison yet" rather than a
+      // fabricated one.
+      const priorEntries = history.filter(h => h.date <= cutoffStr);
+      const prior = priorEntries[priorEntries.length - 1] || null;
+
+      return {
+        name,
+        history,
+        lastDate: last.date,
+        count: history.length,
+        currentE1rm: last.e1rm,
+        change4w: prior ? Math.round((last.e1rm - prior.e1rm) * 10) / 10 : null,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.lastDate !== b.lastDate) return a.lastDate < b.lastDate ? 1 : -1;
+      return b.count - a.count;
+    });
+};
+
+/**
  * Get the most recent performance for a specific exercise
  * @param {Array} logs - Array of workout logs
  * @param {string} exerciseName - Name of the exercise

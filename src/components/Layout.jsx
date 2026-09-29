@@ -54,7 +54,7 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
   { title: "Body", url: "/athlete-state", icon: HeartPulse,
-    matches: ["/athlete-state", "/recovery", "/physique", "/coach"],
+    matches: ["/athlete-state", "/recovery", "/physique", "/coach", "/lifts"],
     mobileStrip: true,
     children: [
       { label: "State", url: "/athlete-state",
@@ -65,6 +65,11 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/physique") },
       { label: "Coach", url: "/coach",
         active: (l) => l.pathname.startsWith("/coach") },
+      // Lifts (phase 2b): the e1RM progress chart used to have no route at
+      // all (ExerciseProgressChart only rendered inside the unimported
+      // ProgressContent.jsx). Real sub-tab now, same as its siblings.
+      { label: "Lifts", url: "/lifts",
+        active: (l) => l.pathname.startsWith("/lifts") },
     ] },
   // Mind owns its OWN nav home so /mind lights a Mind dock entry, not Analyze.
   // Mind renders an in-page <SubTabs> (Capture / Reading / Study / Skills) plus a
