@@ -6,13 +6,17 @@ import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "luc
 
 const EASE = [0.2, 0.7, 0.3, 1];
 
+// Three tiers (IA.md): a prominent primary pair, a normal-weight middle tier
+// (Weigh In — a daily ritual, not demoted), and a visually quieter demoted
+// trio for the less-frequent utilities. `tier` drives rendering only; the
+// path/action handling below is unchanged.
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", primary: true },
-  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true" },
-  { label: "Weigh In", icon: Scale, action: "weighIn" },
-  { label: "Stream Note", icon: Brain, action: "streamNote" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout" },
-  { label: "Calculators", icon: Calculator, action: "calculators" },
+  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", primary: true, tier: "primary" },
+  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", primary: true, tier: "primary" },
+  { label: "Weigh In", icon: Scale, action: "weighIn", tier: "mid" },
+  { label: "Create Workout", icon: PenLine, path: "/create-workout", tier: "demoted" },
+  { label: "Calculators", icon: Calculator, action: "calculators", tier: "demoted" },
+  { label: "Stream Note", icon: Brain, action: "streamNote", tier: "demoted" },
 ];
 
 export default function FloatingActionButton({ onWeighIn, onCalculators, onStreamNote }) {
@@ -63,27 +67,45 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 style={{ bottom: 'calc(var(--floating-chrome-bottom) + 48px + 12px)' }}
                 role="menu"
               >
-                {actions.map((action) => (
+                {actions.map((action, index) => {
+                  // A hairline rule ahead of the demoted tier's first row reads
+                  // as "everything below is secondary" without needing a label.
+                  const startsDemotedTier = action.tier === "demoted" && actions[index - 1]?.tier !== "demoted";
+                  const demoted = action.tier === "demoted";
+                  return (
                   <button
                     key={action.label}
                     type="button"
                     role="menuitem"
                     data-tutorial={action.label === "Log Food" ? "fab-log-food" : undefined}
                     onClick={() => handleAction(action)}
-                    className="flex w-full items-center gap-3 min-h-[44px] px-2.5 rounded-xl text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-[var(--glass-edge)]"
+                    className={`flex w-full items-center gap-3 min-h-[44px] px-2.5 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-[var(--glass-edge)] rounded-xl ${
+                      startsDemotedTier ? "mt-1 pt-2 border-t border-[var(--color-border)]" : ""
+                    }`}
                   >
                     <span
-                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                      className={`shrink-0 rounded-full flex items-center justify-center ${
                         action.primary
-                          ? "bg-brand text-[var(--color-action-dark)]"
-                          : "bg-[var(--glass-inset-bg)] text-ink"
+                          ? "w-10 h-10 bg-brand text-[var(--color-action-dark)]"
+                          : demoted
+                            ? "w-8 h-8 bg-[var(--glass-inset-bg)] text-muted-2"
+                            : "w-9 h-9 bg-[var(--glass-inset-bg)] text-ink"
                       }`}
                     >
-                      <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
+                      <action.icon className={demoted ? "w-4 h-4" : "w-[18px] h-[18px]"} strokeWidth={2} />
                     </span>
-                    <span className="text-sm font-semibold text-ink">{action.label}</span>
+                    <span className={
+                      action.primary
+                        ? "text-[15px] font-bold text-ink"
+                        : demoted
+                          ? "text-[13px] font-medium text-muted-2"
+                          : "text-sm font-semibold text-ink"
+                    }>
+                      {action.label}
+                    </span>
                   </button>
-                ))}
+                  );
+                })}
               </motion.div>
               {/* The sheet is raised clear of the FAB's own rect (R1-02), but the
                   scrim (z-[10000]) still sits above the FAB's own z-50, so the
@@ -138,7 +160,9 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
       <AnimatePresence>
         {isOpen && (
           <div className="hidden md:flex fixed md:bottom-[88px] md:right-6 z-50 flex-col items-end gap-3">
-            {actions.map((action, index) => (
+            {actions.map((action, index) => {
+              const demoted = action.tier === "demoted";
+              return (
               <div
                 key={action.label}
                 data-tutorial={action.label === "Log Food" ? "fab-log-food" : undefined}
@@ -155,21 +179,26 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                   onClick={() => handleAction(action)}
                   className="flex items-center gap-3"
                 >
-                  <span className="glass-elevated text-ink text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap">
+                  <span className={`glass-elevated rounded-lg whitespace-nowrap ${
+                    demoted ? "text-muted-2 text-[13px] font-medium px-2.5 py-1" : "text-ink text-sm font-medium px-3 py-1.5"
+                  }`}>
                     {action.label}
                   </span>
                   <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border ${
+                    className={`rounded-full flex items-center justify-center border ${
                       action.primary
-                        ? "bg-brand text-[var(--color-action-dark)] border-transparent"
-                        : "glass-elevated text-brand border-charcoal-border"
+                        ? "w-11 h-11 bg-brand text-[var(--color-action-dark)] border-transparent"
+                        : demoted
+                          ? "w-9 h-9 glass-elevated text-muted-2 border-charcoal-border"
+                          : "w-11 h-11 glass-elevated text-ink border-charcoal-border"
                     }`}
                   >
-                    <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
+                    <action.icon className={demoted ? "w-4 h-4" : "w-[18px] h-[18px]"} strokeWidth={2} />
                   </div>
                 </motion.button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </AnimatePresence>
