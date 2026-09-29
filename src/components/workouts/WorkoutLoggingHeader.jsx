@@ -38,11 +38,27 @@ export default function WorkoutLoggingHeader({
   onRetrySave = null,
   doneSets = 0,
   totalSets = 0,
+  // Exercise chip strip (Phase A): [{ name, done }], the focused index, and
+  // a setter. Lives inside this same fixed bar (not a second fixed element)
+  // so the existing --logging-top-clearance measurement already accounts
+  // for it with zero extra plumbing.
+  exercises = null,
+  focusedExerciseIndex = 0,
+  onSelectExercise = null,
 }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showRestPopover, setShowRestPopover] = useState(false);
   const topBarRef = useRef(null);
   const restPopoverRef = useRef(null);
+  const stripRef = useRef(null);
+  const chipRefs = useRef([]);
+
+  // Auto-scroll the strip so the focused chip is always in view — on
+  // mount and whenever focus moves (manual tap or auto-advance).
+  useEffect(() => {
+    const chip = chipRefs.current[focusedExerciseIndex];
+    if (chip) chip.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }, [focusedExerciseIndex]);
 
   const restActive = restTimer !== null && restTimer >= 0;
   const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
@@ -259,6 +275,46 @@ export default function WorkoutLoggingHeader({
             <div className="text-[11px] font-bold uppercase tracking-[0.02em] text-ink-muted truncate py-1">
               {workoutTitle}
               {totalSets > 0 && <span className="text-ink-faint"> · {doneSets}/{totalSets} sets</span>}
+            </div>
+          )}
+
+          {/* Exercise chip strip (Phase A, MF-referenced): a horizontally-
+              scrolling row of every exercise in the workout, so the athlete
+              can jump to any of them without leaving the logger. Focused
+              chip is outlined off-white; done chips read muted with a small
+              check. Tap-to-focus calls the same onSelectExercise the page
+              already uses for manual focus changes. */}
+          {exercises && exercises.length > 0 && (
+            <div
+              ref={stripRef}
+              className="flex gap-1.5 overflow-x-auto pb-2 pt-0.5 -mx-3 px-3 md:-mx-8 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              role="tablist"
+              aria-label="Exercises in this workout"
+            >
+              {exercises.map((ex, i) => {
+                const focused = i === focusedExerciseIndex;
+                return (
+                  <button
+                    key={i}
+                    ref={(el) => { chipRefs.current[i] = el; }}
+                    type="button"
+                    role="tab"
+                    aria-selected={focused}
+                    data-testid={`exercise-chip-${i}`}
+                    onClick={() => onSelectExercise?.(i)}
+                    className={`flex-shrink-0 min-h-[32px] px-3 rounded-full text-xs font-bold whitespace-nowrap border transition-colors flex items-center gap-1 ${
+                      focused
+                        ? 'border-white/90 text-ink bg-[var(--glass-edge)]'
+                        : ex.done
+                        ? 'border-transparent text-ink-faint bg-track'
+                        : 'border-transparent text-ink-muted bg-track'
+                    }`}
+                  >
+                    {ex.done && <CheckCircle2 className="w-3 h-3 text-leaf flex-shrink-0" />}
+                    {ex.name}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

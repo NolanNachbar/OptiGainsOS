@@ -1187,6 +1187,50 @@ export default function WorkoutDetail() {
     ? -1
     : Math.min(focusedExerciseIndex ?? 0, exerciseLogs.length - 1);
 
+  // Auto-advance (Phase A, MF-referenced): once the focused exercise's last
+  // set is checked, hand focus to the next incomplete exercise ~600ms later
+  // so the just-checked row stays on screen for a beat before the swap.
+  // exerciseLogsRef keeps a live snapshot for the timeout callback (the
+  // effect itself depends only on the focused exercise's own done-ness, not
+  // on exerciseLogs identity, so a keystroke elsewhere doesn't cancel/replay
+  // a pending advance).
+  const exerciseLogsRef = useRef(exerciseLogs);
+  exerciseLogsRef.current = exerciseLogs;
+  const autoAdvanceTimerRef = useRef(null);
+  const prevFocusedDoneRef = useRef(false);
+  const focusedExerciseForAdvance = exerciseLogs[effectiveFocusIndex];
+  const focusedAllSetsDone = !!(
+    focusedExerciseForAdvance?.sets?.length > 0
+    && focusedExerciseForAdvance.sets.every((s) => s.completed)
+  );
+
+  useEffect(() => {
+    if (focusedAllSetsDone && !prevFocusedDoneRef.current) {
+      const focusIndexAtSchedule = effectiveFocusIndex;
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        setFocusedExerciseIndex((current) => {
+          // Only advance if the user hasn't already moved focus manually,
+          // and only to an exercise that still has incomplete sets — never
+          // jump when everything's done.
+          if (current !== focusIndexAtSchedule) return current;
+          const logs = exerciseLogsRef.current;
+          const nextIncomplete = logs.findIndex((ex, i) =>
+            i !== current && !(ex.sets?.length > 0 && ex.sets.every((s) => s.completed))
+          );
+          return nextIncomplete === -1 ? current : nextIncomplete;
+        });
+      }, 600);
+    }
+    prevFocusedDoneRef.current = focusedAllSetsDone;
+
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+        autoAdvanceTimerRef.current = null;
+      }
+    };
+  }, [focusedAllSetsDone, effectiveFocusIndex]);
+
   // Reorder mode (Ledger rebuild): one toggle, lifted here, governs whether
   // ANY ExerciseCard shows its drag handle — hidden by default (mockup's
   // flush rows carry no handle) until chosen from a card's kebab.
@@ -1372,6 +1416,12 @@ export default function WorkoutDetail() {
           onAddRestTime={addRestTime}
           saveFailed={saveFailed}
           onRetrySave={retrySave}
+          exercises={exerciseLogs.map((ex) => ({
+            name: ex.name,
+            done: ex.sets?.length > 0 && ex.sets.every((s) => s.completed),
+          }))}
+          focusedExerciseIndex={effectiveFocusIndex}
+          onSelectExercise={setFocusedExerciseIndex}
         />
       )}
 
