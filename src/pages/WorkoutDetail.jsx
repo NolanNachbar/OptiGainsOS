@@ -1267,14 +1267,16 @@ export default function WorkoutDetail() {
                     type="button"
                     onClick={() => setShowShotList((v) => !v)}
                     aria-pressed={showShotList}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+                    className="min-h-[44px] -my-2 inline-flex items-center"
+                  >
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
                       showShotList
                         ? 'bg-brand/[0.16] border-brand/40 text-brand'
                         : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
-                    }`}
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    Shot list
+                    }`}>
+                      <Camera className="w-3.5 h-3.5" />
+                      Shot list
+                    </span>
                   </button>
                 )}
                 {/* Diagnostic status while the toggle is on — a silent fetch failure

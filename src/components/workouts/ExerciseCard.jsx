@@ -325,7 +325,7 @@ export default function ExerciseCard({
                       aria-label={liked ? "Unlike this exercise" : "Like this exercise — the engine will program it more"}
                       aria-pressed={liked}
                       title={liked ? "Liked — programmed more often" : "Like — program this more often"}
-                      className="min-h-[32px] min-w-[32px] -my-1 flex items-center justify-center touch-manipulation"
+                      className="min-h-[44px] min-w-[44px] -m-1.5 flex items-center justify-center touch-manipulation"
                     >
                       <Heart className={`w-[18px] h-[18px] transition-colors ${liked ? "fill-brand text-brand" : "text-ink-faint hover:text-brand"}`} strokeWidth={2.5} />
                     </button>
@@ -383,7 +383,7 @@ export default function ExerciseCard({
                 {...dragHandleProps.attributes}
                 {...dragHandleProps.listeners}
                 aria-label="Drag to reorder exercise"
-                className="h-9 w-8 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation cursor-grab active:cursor-grabbing"
+                className="h-11 w-11 -my-1 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation cursor-grab active:cursor-grabbing"
               >
                 <GripVertical className="w-4 h-4" strokeWidth={2.5} />
               </button>
@@ -621,7 +621,7 @@ export default function ExerciseCard({
                   onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
                 }}
                 aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
-                className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand"
+                className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] -my-3.5 inline-flex items-center"
               >
                 {lastPerformance?.lastWeight
                   ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
