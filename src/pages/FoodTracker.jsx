@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame, ArrowLeftRight } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
-import { format, subDays, parseISO } from "date-fns";
+import { format, subDays, parseISO, isValid } from "date-fns";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -51,6 +51,7 @@ import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
 import SwapFoodDialog from "@/components/nutrition/SwapFoodDialog";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
+import { Module } from "@/components/ui/system";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -1674,6 +1675,34 @@ const handleSaveMealTemplate = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Header search/barcode — one tap each, every breakpoint. Search opens
+              the Add dialog straight onto its search field (already
+              auto-focused there); barcode opens the same dialog underneath the
+              full-screen scanner so a found product lands in a visible form.
+              Hidden while the Add dialog is open so they don't collide (same
+              aria-labels) with that dialog's own search/scan controls. */}
+          {!showAddDialog && (
+            <>
+              <button
+                type="button"
+                onClick={() => { resetForm(); setShowAddDialog(true); }}
+                aria-label="Search food"
+                title="Search food"
+                className="flex items-center justify-center min-w-[44px] min-h-[44px] text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              >
+                <Search className="w-[18px] h-[18px]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => { resetForm(); setShowAddDialog(true); setShowBarcodeScanner(true); }}
+                aria-label="Scan barcode"
+                title="Scan a barcode"
+                className="flex items-center justify-center min-w-[44px] min-h-[44px] text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              >
+                <Camera className="w-[18px] h-[18px]" />
+              </button>
+            </>
+          )}
           {/* Coral discipline: the sticky-bar 'Add Food' is desktop-only — on
               mobile the thumb-zone coral FAB is the SOLE Add-Food affordance, so
               exactly one coral Add-Food exists per viewport. */}
@@ -1730,198 +1759,153 @@ const handleSaveMealTemplate = () => {
               the full FAB footprint here would open a >100px dead band before the
               Week-plan row. The final container (Fuel's Week-plan wrapper) carries
               --dock-clearance. */}
-          <div className="max-w-3xl mx-auto px-3 py-3 pb-3.5 space-y-3.5">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 pb-3.5 space-y-2">
 
-            {/* Gold kcal ring + hue-coded P/C/F bars */}
+            {/* 7-day strip (DESIGN.md/directions "B · Fuel" .wk): a kcal bar per
+                day against a dashed goal tick, today highlighted, tap to select —
+                reuses the same selectedDate state the date-nav pill above drives. */}
+            <div className="grid grid-cols-7 gap-1.5">
+              {calorieTrend.map((day) => {
+                const isSelected = day.date === selectedDate;
+                const isTodayCol = day.date === format(new Date(), 'yyyy-MM-dd');
+                // One shared scale across all 7 days (goal × ~1.1 headroom, or the
+                // tallest day if someone blew way past goal) so an over-target day
+                // visibly crosses its own dashed tick instead of clipping flat.
+                const scaleMax = Math.max(
+                  ...calorieTrend.map((d) => Math.max(d.calories, d.goal || 0)),
+                  1
+                ) * 1.02;
+                const barPct = Math.min(100, (day.calories / scaleMax) * 100);
+                const tickPct = day.goal > 0 ? Math.min(100, (day.goal / scaleMax) * 100) : null;
+                return (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => setSelectedDate(day.date)}
+                    aria-pressed={isSelected}
+                    aria-label={`${format(parseISO(day.date), 'EEEE, MMM d')} · ${Math.round(day.calories)} kcal`}
+                    className={`min-h-[44px] flex flex-col items-center gap-1 py-1 rounded-lg transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                      isSelected ? 'glass-inset' : 'hover:bg-charcoal-surface2/60'
+                    }`}
+                  >
+                    <span className={`text-[11px] font-bold uppercase ${isTodayCol ? 'text-ink' : 'text-ink-muted'}`}>
+                      {day.label[0]}
+                    </span>
+                    <div className="relative w-full h-11 rounded-sm bg-charcoal-surface overflow-hidden">
+                      <div
+                        className="absolute inset-x-0 bottom-0 rounded-sm"
+                        style={{
+                          height: `${barPct}%`,
+                          background: isSelected ? 'var(--text-primary)' : 'var(--text-faint)',
+                        }}
+                      />
+                      {tickPct != null && (
+                        <span
+                          className="absolute inset-x-0 border-t border-dashed"
+                          style={{ bottom: `${tickPct}%`, borderColor: 'var(--text-secondary)' }}
+                        />
+                      )}
+                    </div>
+                    <span className="font-technical text-[11px] font-semibold tabular-nums text-ink-secondary">
+                      {Math.round(day.calories) || 0}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Intake vs pace (DESIGN.md/directions "B · Fuel" .mod/.cols): kcal
+                left leads the module header, then flat 8px eaten/target bars for
+                Kcal/Protein/Carbs/Fat. Macro hues live on the LABEL only —
+                numbers stay neutral ink, matching Today.jsx's "Nutrition ·
+                remaining" module. No cumulative pace curve: food_entries'
+                eaten_at is defaulted per logging-mode/meal-slot (getEatenAt),
+                not a real intraday timeline, so a "now" line would plot
+                partly-invented times — skipped rather than faked. */}
             {(() => {
               const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
               const calsConsumed = totals.calories;
               const calsGoal = targets.calories;
               const calsRemaining = calsGoal - calsConsumed;
-              const calsPct = Math.min(1, calsConsumed / calsGoal);
-              const macroRows = [
-                { label: 'P', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
-                { label: 'C', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
-                { label: 'F', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
+              const macroCols = [
+                { label: 'Kcal', consumed: calsConsumed, goal: calsGoal, hue: null },
+                { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
+                { label: 'Carbs', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
+                { label: 'Fat', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
               ];
               return (
-                <div className="glass px-4 sm:px-5 py-4 rise-in" data-tutorial="nutrition-rings">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="section-label flex items-center gap-1.5">
-                      Daily log
+                <div
+                  className="surface px-4 sm:px-5 py-3 -mx-4 sm:-mx-6 rise-in"
+                  data-tutorial="nutrition-rings"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-[13px] font-semibold text-muted-2 flex items-center gap-1.5">
+                      Intake vs pace
                       {targets.engineSet && (
                         <span className="text-[9px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5">
                           ENGINE-SET
                         </span>
                       )}
                     </span>
-                    {/* The kcal remaining/eaten figure is already the ring's
-                        center readout, restating it as a chip here was a
-                        redundant second kcal datum, so it's dropped. The only
-                        thing the ring can't show is the planned-but-unlogged
-                        budget, which is surfaced once when relevant. */}
-                    {isToday && calsConsumed === 0 && plannedCount > 0 && (
-                      <span className="chip-gold">
-                        {Math.round(planFit.plannedCal)} kcal planned
-                      </span>
-                    )}
-                    {totals.cost > 0 && (
-                      <span className="font-technical text-[11px] font-semibold text-ink-muted">
-                        ≈ ${totals.cost.toFixed(2)}
-                      </span>
-                    )}
+                    <span className="font-technical text-[13px] font-semibold text-ink tabular-nums shrink-0">
+                      {calsGoal > 0
+                        ? (isToday
+                            ? `${Math.abs(Math.round(calsRemaining)).toLocaleString()} kcal ${calsRemaining < 0 ? 'over' : 'left'}`
+                            : `${Math.round(calsConsumed).toLocaleString()} / ${Math.round(calsGoal).toLocaleString()} kcal`)
+                        : '—'}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-5 md:gap-8">
-                    {/* Calorie ring — kcal owns gold */}
-                    <div className="relative shrink-0" style={{ width: 92, height: 92 }}>
-                      {(() => {
-                        const C = 2 * Math.PI * 38;
-                        // kcal owns GOLD — the ring stroke + center number stay gold
-                        // whether under or over budget (never the bad/red spectrum).
-                        // Over-budget reads STRUCTURALLY: the base arc completes the
-                        // full ring (gold), and the overflow beyond goal is drawn as a
-                        // second, inset translucent-gold arc that re-traces the loop,
-                        // so "over" is shown by an extra band of the same hue.
-                        const overPct = Math.max(0, (calsConsumed / calsGoal) - 1);
-                        const overFrac = Math.min(1, overPct);
-                        return (
-                          <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="46" cy="46" r="38" stroke="var(--color-track)" strokeWidth="7" fill="transparent" />
-                            <circle
-                              cx="46" cy="46" r="38"
-                              stroke="var(--hue-gold)"
-                              strokeWidth="7"
-                              fill="transparent"
-                              strokeDasharray={`${calsPct * C} ${C}`}
-                              strokeLinecap="round"
-                              style={{ transition: 'stroke-dasharray 280ms var(--ease)' }}
-                            />
-                            {overFrac > 0 && (
-                              <circle
-                                cx="46" cy="46" r="31"
-                                stroke="rgba(var(--hue-gold-rgb) / 0.45)"
-                                strokeWidth="3.5"
-                                fill="transparent"
-                                strokeDasharray={`${overFrac * (2 * Math.PI * 31)} ${2 * Math.PI * 31}`}
-                                strokeLinecap="round"
-                                style={{ transition: 'stroke-dasharray 280ms var(--ease)' }}
-                              />
-                            )}
-                          </svg>
-                        );
-                      })()}
-                      {/* Center readout holds AT MOST two lines (fuel-nutrition-3):
-                          the big number leads, with one quiet context line beneath.
-                          The consumed/goal restatement was a redundant third datum —
-                          the goal already lives in the goals row and the arc encodes
-                          progress — so it's dropped. Constraining width to the inner
-                          track (px-1.5) keeps both lines clear of the arc. */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center px-1.5 text-center">
-                        {isToday ? (
-                          <>
-                            <span className="font-technical text-[22px] font-extrabold leading-none text-gold">
-                              {Math.abs(Math.round(calsRemaining))}
-                            </span>
-                            <span className={`text-[8px] font-bold uppercase tracking-[0.14em] leading-none mt-1 ${calsRemaining < 0 ? 'text-gold/80' : 'text-secondary'}`}>
-                              {calsRemaining < 0 ? 'over' : 'left'}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-technical text-[22px] font-extrabold leading-none text-ink">
-                              {Math.round(calsConsumed)}
-                            </span>
-                            <span className="text-[8px] font-bold uppercase tracking-[0.14em] leading-none mt-1 text-muted-2">
-                              of {calsGoal}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {/* Macro bars — each macro owns one hue */}
-                    <div className="flex-1 space-y-[9px] min-w-0">
-                      {macroRows.map(({ label, consumed, goal, hue }) => {
-                        const rawPct = goal > 0 ? (consumed / goal) * 100 : 0;
-                        const pct = Math.min(100, Math.round(rawPct));
-                        // Over-target: the fill saturates to the bad hue and a cap
-                        // marker pins the goal edge, so an over-budget macro reads as
-                        // a distinct WARN state rather than a full in-budget bar.
-                        const over = goal > 0 && consumed > goal;
-                        // Overflow fraction of the goal, mirroring the ring's overflow
-                        // arc: how far past the goal the intake runs, capped at one
-                        // full re-trace (fuel-nutrition-4 / food-tracker-7).
-                        const overFrac = over ? Math.min(1, (consumed / goal) - 1) : 0;
-                        return (
-                          <div key={label} className="flex items-center gap-2">
-                            <span className="text-[10.5px] font-bold text-secondary w-3.5 shrink-0">{label}</span>
-                            {/* Bar + value coupled in one group (gap-2) so the
-                                readout reads as belonging to its bar; only the
-                                label sits apart. */}
-                            <div className="flex-1 flex items-center gap-2 min-w-0">
-                              <div className="relative flex-1 h-1.5 rounded-full bg-track overflow-hidden">
-                                {/* Each macro keeps its OWN hue at every state — the
-                                    spectrum (warn/bad) is biometric-only, so an
-                                    over-budget macro is NEVER recolored to amber/red.
-                                    The fill stays the datum's hue (P=coral, C=carb,
-                                    F=fat); "over" reads STRUCTURALLY via the neutral
-                                    goal tick + the inset over-band below.
-                                    Fat (--hue-yellow) sits one slot from the kcal-gold
-                                    ring, so its fill carries FULL weight (opacity-100)
-                                    while P/C stay at 80% — the saturated chartreuse-
-                                    yellow then reads as unmistakably its own hue next
-                                    to the dimmer gold, no extra token needed. */}
-                                <div className={`h-full rounded-full transition-[width] ${label === 'F' ? 'opacity-100' : 'opacity-80'}`} style={{ width: `${pct}%`, background: hue, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }} />
-                                {/* Structural over-band: a second, inset half-height
-                                    band of the SAME hue at reduced alpha re-traces the
-                                    bar from the left, mirroring the kcal ring's inset
-                                    overflow arc. "Over" then reads as an extra band of
-                                    the datum's own hue, never a spectrum recolor. */}
-                                {over && (
-                                  <div
-                                    className="absolute inset-x-0 bottom-0 h-[3px] rounded-full transition-[width]"
-                                    style={{ width: `${overFrac * 100}%`, background: hue, opacity: 0.45, transitionDuration: '280ms', transitionTimingFunction: 'var(--ease)' }}
-                                  />
-                                )}
-                                {/* Goal tick: a neutral hairline at the goal edge so an
-                                    over-target fill reads as having crossed a line,
-                                    without poaching the biometric spectrum. */}
-                                {over && (
-                                  <span className="absolute inset-y-0 right-0 w-[1.5px] bg-charcoal-borderSoft" />
-                                )}
-                              </div>
-                              <span className="font-technical text-[10.5px] font-bold whitespace-nowrap shrink-0 tabular-nums text-secondary">
-                                {over ? (
-                                  <span className="text-ink">+{Math.round(consumed - goal)}g over</span>
-                                ) : (
-                                  <>{Math.round(consumed)}<span className="opacity-60">/{goal}g</span></>
-                                )}
-                              </span>
-                            </div>
+                  {isToday && calsConsumed === 0 && plannedCount > 0 && (
+                    <span className="chip-gold mb-2 inline-block">
+                      {Math.round(planFit.plannedCal)} kcal planned
+                    </span>
+                  )}
+                  <div className="grid grid-cols-4 gap-3">
+                    {macroCols.map((c) => {
+                      const pct = c.goal > 0 ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
+                      return (
+                        <div key={c.label} className="min-w-0">
+                          <div
+                            className="text-[11px] font-semibold mb-1.5 truncate"
+                            style={{ color: c.hue || 'var(--text-secondary)' }}
+                          >
+                            {c.label}
                           </div>
-                        );
-                      })}
-                      {/* Fiber sits below the macro bars, not among them: it's
-                          already counted inside carbs, so giving it a bar would
-                          double-draw the same grams. An incomplete day says so
-                          rather than reporting a total it can't stand behind. */}
-                      <div className="flex items-center gap-2 pt-0.5">
-                        <span className="text-[10.5px] font-bold text-secondary w-3.5 shrink-0">Fb</span>
-                        <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
-                          <span className="text-[10px] text-ink-faint truncate">
-                            fiber{targets.fiberIsDefault ? ' · 14 g / 1000 kcal' : ''}
-                          </span>
-                          <span className="font-technical text-[10.5px] font-bold whitespace-nowrap shrink-0 tabular-nums text-secondary">
-                            {Math.round(totals.fiber || 0)}
-                            <span className="opacity-60">/{targets.fiber}g</span>
-                            {!totals.fiberKnown && <span className="opacity-60 ml-1">+ unknown</span>}
-                          </span>
+                          <div className="h-2 rounded-full bg-track overflow-hidden">
+                            <div
+                              className="h-full rounded-full opacity-90"
+                              style={{ width: `${pct}%`, background: c.hue || 'var(--text-primary)' }}
+                            />
+                          </div>
+                          <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
+                            {Math.round(c.consumed)}
+                            <span className="opacity-60"> / {Math.round(c.goal) || 0}</span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
+                  {/* Fiber: already counted inside carbs, so it gets a plain line
+                      rather than a 5th bar that would double-draw the same grams. */}
+                  <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t hairline">
+                    <span className="text-[10px] text-ink-faint truncate">
+                      Fiber{targets.fiberIsDefault ? ' · 14 g / 1000 kcal' : ''}
+                    </span>
+                    <span className="font-technical text-[11px] font-semibold tabular-nums text-secondary">
+                      {Math.round(totals.fiber || 0)}
+                      <span className="opacity-60">/{targets.fiber}g</span>
+                      {!totals.fiberKnown && <span className="opacity-60 ml-1">+ unknown</span>}
+                    </span>
+                  </div>
+                  {totals.cost > 0 && (
+                    <div className="text-right font-technical text-[11px] font-semibold text-ink-muted mt-1">
+                      ≈ ${totals.cost.toFixed(2)}
+                    </div>
+                  )}
                 </div>
               );
             })()}
+
 
             {/* Carb timing: today's carb target split around session(s) — same
                 data WeeklyPlanCard surfaces, mirrored here since this is the
@@ -2069,7 +2053,13 @@ const handleSaveMealTemplate = () => {
               </div>
             )}
 
-            {/* Numbered meal sections */}
+            {/* Meal log (DESIGN.md/directions "B · Fuel" .mrow): one flat module
+                — a shared "kcal P C F" caption row, then each meal as a header
+                row (name + time + totals) followed by its food rows (name,
+                muted quantity, tabular numbers) and a trailing "Add to <meal>"
+                row. Every existing per-entry action survives verbatim (edit,
+                delete-with-undo, swap, mark-eaten, save-meal-as-template) —
+                only the visual grid changed, not the handlers/aria-labels. */}
             {entriesError ? (
               <div className="glass px-4 py-6 flex flex-col items-center gap-2.5 text-center">
                 {/* A failed fetch is chrome, not a biometric — the icon stays neutral
@@ -2082,216 +2072,173 @@ const handleSaveMealTemplate = () => {
               /* Loading skeletons: bars use the system `bg-track` material with
                  the tokened `.pulse-loop` shimmer (single easing, --loop-dur
                  cadence), a restrained, hue-free placeholder breathe. */
-              <div className="space-y-4">
-                {[
-                  { mealType: 'breakfast', label: '01. BREAKFAST' },
-                  { mealType: 'lunch',     label: '02. LUNCH' },
-                  { mealType: 'dinner',    label: '03. DINNER' },
-                  { mealType: 'snack',     label: '04. SNACK' },
-                ].map(({ mealType, label }) => (
-                  <div key={mealType} className="glass overflow-hidden">
-                    {/* Real meal label in the skeleton header so the structure is
-                        recognizable while only the row content shimmers. */}
-                    <div className="flex items-center gap-2.5 px-4 py-3 border-b hairline">
+              <div className="surface px-4 sm:px-5 py-2 -mx-4 sm:-mx-6 space-y-4">
+                {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((label) => (
+                  <div key={label} className="pulse-loop space-y-2 py-1">
+                    <div className="flex items-center gap-2.5">
                       <div className="w-2 h-2 rounded-full shrink-0 bg-track" />
                       <h3 className="section-label tracking-[0.12em]">{label}</h3>
                     </div>
-                    <div className="px-4 py-4 space-y-2">
-                      <div className="h-3 w-full rounded bg-track pulse-loop" />
-                      <div className="h-3 w-2/3 rounded bg-track pulse-loop" />
-                    </div>
+                    <div className="h-3 w-full rounded bg-track" />
+                    <div className="h-3 w-2/3 rounded bg-track" />
                   </div>
                 ))}
               </div>
             ) : (
-            <div className="space-y-4 rise-in-2">
+            <div className="surface px-4 sm:px-5 py-1 -mx-4 sm:-mx-6 rise-in-2">
+              {/* Column header caption — kcal/P/C/F once for the whole log */}
+              <div className="grid grid-cols-[1fr_42px_32px_32px_32px] gap-x-1.5 text-[11px] uppercase tracking-wider font-semibold text-ink-faint py-2">
+                <span />
+                <span className="text-right">kcal</span>
+                <span className="text-right">P</span>
+                <span className="text-right">C</span>
+                <span className="text-right">F</span>
+              </div>
               {[
-                { mealType: 'breakfast', label: '01. BREAKFAST' },
-                { mealType: 'lunch',     label: '02. LUNCH' },
-                { mealType: 'dinner',    label: '03. DINNER' },
-                { mealType: 'snack',     label: '04. SNACK' },
-              ].map(({ mealType, label }) => {
+                { mealType: 'breakfast', label: 'Breakfast' },
+                { mealType: 'lunch',     label: 'Lunch' },
+                { mealType: 'dinner',    label: 'Dinner' },
+                { mealType: 'snack',     label: 'Snack' },
+              ].map(({ mealType, label }, i) => {
                 const entries = mealGroups[mealType];
                 const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
+                const mealP = entries.reduce((sum, e) => sum + (e.protein_grams || 0), 0);
+                const mealC = entries.reduce((sum, e) => sum + (e.carbs_grams || 0), 0);
+                const mealF = entries.reduce((sum, e) => sum + (e.fats_grams || 0), 0);
                 const mealCost = entries.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
                 const hasEntries = entries.length > 0;
+                // Earliest VALID eaten_at across the meal's entries, for the
+                // header time badge — date-fns `format` throws on an invalid
+                // Date, so a bad/missing timestamp is skipped, not fatal.
+                const mealTime = entries.reduce((earliest, e) => {
+                  if (!e.eaten_at) return earliest;
+                  const d = new Date(e.eaten_at);
+                  if (!isValid(d)) return earliest;
+                  return !earliest || d < earliest ? d : earliest;
+                }, null);
                 return (
-                  <section key={mealType} className="glass overflow-hidden">
-                    {/* Meal header */}
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b hairline">
-                      <div className="flex items-center gap-2.5">
+                  <section key={mealType} className={i > 0 ? 'mt-1 pt-1 border-t hairline' : ''}>
+                    {/* Meal header row */}
+                    <div className="grid grid-cols-[1fr_42px_32px_32px_32px] gap-x-1.5 items-center py-2.5 border-b hairline">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-ink-secondary' : 'bg-track'}`} />
-                        <h3 className="section-label tracking-[0.12em]">{label}</h3>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        {/* Desktop legend for the per-row macro grid — one per section, hue encodes identity */}
-                        {hasEntries && (
-                          <div className="hidden sm:grid grid-cols-5 gap-1.5 text-right text-[9px] uppercase tracking-wider font-semibold text-ink-faint w-[170px]">
-                            <span>Cal</span>
-                            <span>P</span>
-                            <span>C</span>
-                            <span>F</span>
-                            <span>$</span>
-                          </div>
-                        )}
-                        {/* kcal owns gold — matches the ring + trend grammar. The
-                            gold pill leads the right cluster (directly after the
-                            meal title) so the section's headline datum reads first,
-                            with the bookmark + '+' actions trailing to its right. */}
-                        {hasEntries && (
-                          <span className="pill-value font-technical text-gold">
-                            {mealCals} <span className="text-[9.5px] font-semibold text-gold/70">kcal</span>
+                        <span className="text-[14.5px] font-bold text-ink truncate">{label}</span>
+                        {mealTime && (
+                          <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
+                            {format(mealTime, 'h:mm a')}
                           </span>
                         )}
                         {mealCost > 0 && (
-                          <span className="font-technical text-[10px] font-semibold text-ink-muted">
+                          <span className="font-technical text-[10px] font-semibold text-ink-muted shrink-0">
                             ${mealCost.toFixed(2)}
                           </span>
                         )}
                         {hasEntries && (
                           <button
                             onClick={() => { setTemplateEntries(entries); setTemplateMealType(mealType); setShowSaveTemplateDialog(true); }}
-                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-faint hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                            className="ml-auto shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-faint hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
                             aria-label="Save meal as template"
                             title="Save as template"
                           >
-                            <Bookmark className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
-                          </button>
-                        )}
-                        {/* Per-section add demoted to an icon-only '+' in the
-                            header so each meal block stays a single, compact
-                            section and the whole log fits ~2 viewports. */}
-                        {hasEntries && (
-                          <button
-                            onClick={() => {
-                              setNewFood(prev => ({ ...prev, meal_type: mealType }));
-                              setShowAddDialog(true);
-                            }}
-                            className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-8 sm:h-8 rounded-full text-ink-faint hover:text-brand hover:bg-charcoal-surface2/60 transition-colors duration-200 [transition-timing-function:var(--ease)]"
-                            aria-label={`Add item to ${mealType}`}
-                            title="Add item"
-                          >
-                            <Plus className="w-[18px] h-[18px] sm:w-4 sm:h-4" />
+                            <Bookmark className="w-[15px] h-[15px] sm:w-3.5 sm:h-3.5" />
                           </button>
                         )}
                       </div>
+                      {hasEntries ? (
+                        <>
+                          <span className="font-technical text-[13px] font-bold text-ink text-right tabular-nums">{Math.round(mealCals)}</span>
+                          <span className="font-technical text-[13px] font-bold text-coral text-right tabular-nums">{Math.round(mealP)}</span>
+                          <span className="font-technical text-[13px] font-bold text-carb text-right tabular-nums">{Math.round(mealC)}</span>
+                          <span className="font-technical text-[13px] font-bold text-fat text-right tabular-nums">{Math.round(mealF)}</span>
+                        </>
+                      ) : <span className="col-span-4" />}
                     </div>
- 
+
                     {/* Food rows */}
-                    {hasEntries ? (
-                      <>
-                        {entries.map((entry) => (
-                          <div
-                            key={entry.id}
-                            /* One row system: hairline-separated tiles. The faint
-                               glass-inset fill is RESERVED for planned (not-yet-
-                               eaten) rows so it reads as a distinct state, not a
-                               decorative zebra. The row's own square corners come
-                               from the tile, so no !rounded-none override. */
-                            className={`flex items-center gap-2 md:gap-3 py-2.5 px-4 border-b hairline tile-interactive group ${entry.planned ? 'row-stripe' : ''}`}
-                          >
-                            {entry.planned && (
-                              <button
-                                onClick={() => togglePlannedMutation.mutate(entry.id)}
-                                title="Mark as eaten"
-                                aria-label="Mark as eaten"
-                                className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px] active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
-                              >
-                                {/* Checking off is an ACTION, so the affordance wears
-                                    the teal action color on interaction — not leaf
-                                    green (a done-state data hue). The resting ring is
-                                    neutral track; teal arrives only on hover/active. */}
-                                <span className="w-6 h-6 rounded-full border-[1.5px] border-track flex items-center justify-center hover:bg-brand/[0.18] hover:border-brand/60 transition-colors duration-200 [transition-timing-function:var(--ease)]" />
-                              </button>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              {/* Name owns its own full-width line on mobile */}
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
-                                {entry.tag && (
-                                  <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
-                                    {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
-                                  </span>
-                                )}
-                              </div>
-                              {/* Mobile: single inline macro strip (hue encodes identity, no captions) */}
-                              {/* kcal lives once per card in the header gold pill —
-                                  the per-row strip carries only P/C/F + serving so a
-                                  single-item meal never restates the same kcal twice
-                                  within ~40px. */}
-                              <div className={`sm:hidden font-technical tabular-nums text-[11px] font-semibold mt-0.5 flex flex-wrap items-center gap-x-1.5 ${entry.planned ? 'opacity-45' : ''}`}>
-                                <span className="text-coral">{entry.protein_grams ?? 0}P</span>
-                                <span className="text-ink-faint">·</span>
-                                <span className="text-carb">{entry.carbs_grams ?? 0}C</span>
-                                <span className="text-ink-faint">·</span>
-                                <span className="text-fat">{entry.fats_grams ?? 0}F</span>
-                                {formatEntryServing(entry) && (
-                                  <span className="text-ink-muted">· {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}</span>
-                                )}
-                                {entry.cost_usd != null && (
-                                  <span className="text-ink-muted">· ${entry.cost_usd.toFixed(2)}</span>
-                                )}
-                              </div>
-                              {/* Desktop: serving line under the name */}
-                              {formatEntryServing(entry) && (
-                                <span className="hidden sm:block text-[10px] font-technical mt-0.5 font-semibold text-ink-muted">
-                                  {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
+                    {entries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        /* One row system: hairline-separated tiles. The faint
+                           glass-inset fill is RESERVED for planned (not-yet-
+                           eaten) rows so it reads as a distinct state, not a
+                           decorative zebra. */
+                        className={`grid grid-cols-[1fr_42px_32px_32px_32px] gap-x-1.5 items-center py-2.5 border-b hairline tile-interactive group ${entry.planned ? 'row-stripe' : ''}`}
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {entry.planned && (
+                            <button
+                              onClick={() => togglePlannedMutation.mutate(entry.id)}
+                              title="Mark as eaten"
+                              aria-label="Mark as eaten"
+                              className="shrink-0 p-3 -m-2 flex items-center justify-center min-w-[44px] min-h-[44px] active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                            >
+                              {/* Checking off is an ACTION, so the affordance wears
+                                  the teal action color on interaction — not leaf
+                                  green (a done-state data hue). The resting ring is
+                                  neutral track; teal arrives only on hover/active. */}
+                              <span className="w-5 h-5 rounded-full border-[1.5px] border-track flex items-center justify-center hover:bg-brand/[0.18] hover:border-brand/60 transition-colors duration-200 [transition-timing-function:var(--ease)]" />
+                            </button>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
+                              {entry.tag && (
+                                <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
+                                  {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
                                 </span>
                               )}
                             </div>
-                            {/* Desktop: per-column macro grid (one legend per section covers identity) */}
-                            <div className={`hidden sm:grid shrink-0 grid-cols-5 gap-1.5 w-[170px] text-right items-center font-technical tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{/* macros */}
-                              <span className="text-xs font-bold text-gold">{entry.calories ?? 0}</span>
-                              <span className="text-xs font-bold text-coral">{entry.protein_grams ?? 0}</span>
-                              <span className="text-xs font-bold text-carb">{entry.carbs_grams ?? 0}</span>
-                              <span className="text-xs font-bold text-fat">{entry.fats_grams ?? 0}</span>
-                              <span className="text-xs font-bold text-ink-muted">{entry.cost_usd != null ? `$${entry.cost_usd.toFixed(2)}` : "—"}</span>
-                            </div>
-                            {/* Edit/delete each get a full 44px target; on mobile
-                                they're spaced apart (gap-2) so the paired icons
-                                don't share an edge and risk a mis-tap one-handed.
-                                Desktop collapses the gap since hit areas shrink.
-                                food-tracker-1: the thumb-zone coral FAB floats over
-                                the lower-right (56px body, 16px inset), so reserve a
-                                right gutter on mobile (pr-14 ≈ FAB body + inset less
-                                the page gutter) so a row scrolled behind the FAB never
-                                tucks its edit/delete icons under the '+'. Desktop has
-                                no FAB, so the reservation collapses to 0. */}
-                            <div className="shrink-0 flex items-center justify-end gap-2 sm:gap-0.5 pr-14 lg:pr-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 [transition-timing-function:var(--ease)]">
-                              {entry.planned && (
-                                <button
-                                  onClick={() => setSwapEntry(entry)}
-                                  aria-label={`Swap out ${entry.food_name}`}
-                                  title="Swap this for another food"
-                                  className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
-                                >
-                                  <ArrowLeftRight className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
-                                </button>
-                              )}
-                              <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
-                                <Pencil className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
-                              </button>
-                              <button onClick={() => deleteFoodMutation.mutate(entry)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-bad active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
-                                <Trash2 className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5" />
-                              </button>
-                            </div>
+                            {/* Muted quantity line under the name */}
+                            {formatEntryServing(entry) && (
+                              <span className="block text-[10.5px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
+                                {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
+                                {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
+                              </span>
+                            )}
                           </div>
-                        ))}
-                      </>
-                    ) : (
-                      /* Empty meal collapses to a single compact Add Item line so
-                         four empty sections don't eat a full viewport. */
-                      <button
-                        className="w-full min-h-[44px] py-2.5 flex items-center justify-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 active:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)] group"
-                        onClick={() => {
-                          setNewFood(prev => ({ ...prev, meal_type: mealType }));
-                          setShowAddDialog(true);
-                        }}
-                      >
-                        <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand" />
-                        <span className="text-xs font-bold tracking-widest uppercase text-ink-muted group-hover:text-brand">Add Item</span>
-                      </button>
-                    )}
+                          {/* Edit/delete/swap — same handlers and aria-labels as
+                              before, just compacted to sit beside the numeric
+                              columns instead of the FAB-clearance gutter. Every
+                              row keeps a real 44px tap target on mobile. */}
+                          <div className="shrink-0 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 [transition-timing-function:var(--ease)]">
+                            {entry.planned && (
+                              <button
+                                onClick={() => setSwapEntry(entry)}
+                                aria-label={`Swap out ${entry.food_name}`}
+                                title="Swap this for another food"
+                                className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
+                              >
+                                <ArrowLeftRight className="w-[15px] h-[15px] sm:w-3.5 sm:h-3.5" />
+                              </button>
+                            )}
+                            <button onClick={() => startEditEntry(entry)} aria-label="Edit entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-brand active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
+                              <Pencil className="w-[15px] h-[15px] sm:w-3.5 sm:h-3.5" />
+                            </button>
+                            <button onClick={() => deleteFoodMutation.mutate(entry)} aria-label="Delete entry" className="flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 text-ink-secondary hover:text-bad active:scale-90 transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]">
+                              <Trash2 className="w-[15px] h-[15px] sm:w-3.5 sm:h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <span data-field="kcal" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
+                        <span data-field="protein" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
+                        <span data-field="carbs" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
+                        <span data-field="fats" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
+                      </div>
+                    ))}
+
+                    {/* Add to <meal> — every meal, whether it has entries yet or not */}
+                    <button
+                      type="button"
+                      className="w-full min-h-[44px] py-2 flex items-center gap-2 text-ink-muted hover:text-brand hover:bg-charcoal-surface2/60 active:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)] group"
+                      onClick={() => {
+                        setNewFood(prev => ({ ...prev, meal_type: mealType }));
+                        setShowAddDialog(true);
+                      }}
+                      aria-label={`Add item to ${mealType}`}
+                    >
+                      <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand shrink-0" />
+                      <span className="text-[13px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
+                    </button>
                   </section>
                 );
               })}
