@@ -143,14 +143,12 @@ export default function WorkoutDetail() {
   const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
   const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [recoveryWarnings, setRecoveryWarnings] = useState([]);
   const [restTimer, setRestTimer] = useState(null); // seconds remaining for rest (display only)
   const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
   const [resumeSession, setResumeSession] = useState(null); // session data to offer resume for
   const [showShotList, setShowShotList] = useState(false); // "Shot list" toggle — off by default, per-exercise shot notes
-  const workoutCardRef = useRef(null);
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
@@ -718,21 +716,6 @@ export default function WorkoutDetail() {
       // startTime is set by handleStartLogging (or handleResumeSession for resumed sessions)
     }
   }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, todayPrescription, isTodayPrescriptionLoading, equipmentProfile]);
-
-  // Observe when workout card scrolls out of view
-  useEffect(() => {
-    if (!workoutCardRef.current || !isLogging) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowTitleInHeader(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
-    );
-
-    observer.observe(workoutCardRef.current);
-    return () => observer.disconnect();
-  }, [isLogging]);
 
   // Hand the rest deadline to the service worker, which is the only thing here
   // that can still fire once the phone locks. See the message handler in
@@ -1338,7 +1321,7 @@ export default function WorkoutDetail() {
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
-          showTitleInHeader={showTitleInHeader}
+          focusedExerciseName={effectiveFocusIndex >= 0 ? exerciseLogs[effectiveFocusIndex]?.name : null}
           onCancel={handleCancelLogging}
           onFinish={handleSaveWorkoutLog}
           isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
@@ -1384,7 +1367,7 @@ export default function WorkoutDetail() {
             focused exercise sits at the top of the page instead of under this
             card. */}
         {!isLogging && (
-        <Card ref={workoutCardRef} className="mb-6">
+        <Card className="mb-6">
           <CardHeader className="pt-4 pb-2">
             <div className="flex items-center justify-between">
               {chipsRow}
@@ -1476,13 +1459,6 @@ export default function WorkoutDetail() {
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
-            {/* Sentinel for the "scrolled past the top of the logger" observer
-                below — the session Card that used to carry workoutCardRef is
-                suppressed while isLogging, so showTitleInHeader (desktop top
-                bar's "workout title when scrolled" heading) needs a stand-in
-                anchor at the same position instead of losing its signal. */}
-            <div ref={workoutCardRef} aria-hidden="true" className="h-px -mb-6" />
-
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
               <div className="glass px-4 py-3">

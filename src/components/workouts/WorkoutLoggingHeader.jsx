@@ -7,12 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle2, AlertTriangle, Clock, Timer, Calculator } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Timer, Calculator, MoreVertical, X } from "lucide-react";
 import CalculatorsModal from "@/components/CalculatorsModal";
 
 export default function WorkoutLoggingHeader({
   workoutTitle,
-  showTitleInHeader,
+  // The focused exercise's name (Ledger rebuild, Step 5) — rendered at 24px
+  // in the sticky header row alongside the meta line and Finish, mirroring
+  // the mockup's .hdr. null/undefined (no exercises yet, or not logging)
+  // just omits the name line.
+  focusedExerciseName = null,
   onCancel,
   onFinish,
   isSaving = false,
@@ -40,6 +44,14 @@ export default function WorkoutLoggingHeader({
   const [elapsedTime, setElapsedTime] = useState(0);
   const bottomBarRef = useRef(null);
   const topBarRef = useRef(null);
+  const menuRef = useRef(null);
+  const [openMenu, setOpenMenu] = useState(false);
+
+  // Computed early (before the clearance effects below, which now depend on
+  // restRunning) so there's no temporal-dead-zone reference.
+  const restActive = restTimer !== null && restTimer >= 0;
+  const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
+  const restRunning = restActive && restTimer > 0;
 
   // Publish the mobile bottom action bar's true footprint (its rendered height
   // PLUS the dock clearance + safe-area it floats above) as --logging-bar-clearance.
@@ -89,10 +101,12 @@ export default function WorkoutLoggingHeader({
       window.removeEventListener("orientationchange", publish);
       root.style.setProperty("--logging-bar-clearance", "0px");
     };
-    // ResizeObserver catches the one-row → two-row (rest active) height change and
-    // resize catches viewport/safe-area shifts, so startTime alone (bar mount) is the
-    // only re-run trigger needed.
-  }, [startTime]);
+    // The bottom bar is now ONLY the rest bar (Ledger rebuild) and unmounts
+    // entirely — ref goes null — the instant rest ends, instead of collapsing
+    // to a zero-height row within an always-mounted div. restRunning has to be
+    // a dependency so this effect re-binds (or tears down) the observer on
+    // that mount/unmount, not just on session start.
+  }, [startTime, restRunning]);
 
   // Same measured-clearance pattern for the TOP bar. It's usually zero-height
   // on mobile (hasMobileTopContent false most of the session — see below), so
@@ -177,11 +191,20 @@ export default function WorkoutLoggingHeader({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const restActive = restTimer !== null && restTimer >= 0;
-  const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
-  const restRunning = restActive && restTimer > 0;
+  // Close the kebab on an outside click/tap (no portal here — the header is
+  // fixed near the top of the viewport with nothing to clip it, so a plain
+  // absolutely-positioned panel is enough, unlike ExerciseCard's kebab which
+  // needs a portal to escape a scrolling card).
+  useEffect(() => {
+    if (!openMenu) return;
+    const onDocClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenu(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [openMenu]);
 
-  // Depleting rest fraction — teal filled portion shrinks as the timer runs
+  // Depleting rest fraction — the filled portion shrinks as the timer runs
   // down. Guarded against a zero/short duration so the track never overflows.
   const restFraction = restActive && restDuration > 0
     ? Math.max(0, Math.min(1, restTimer / restDuration))
@@ -201,154 +224,93 @@ export default function WorkoutLoggingHeader({
     </div>
   ) : null;
 
-  // rtb-3: depleting rest progress track. Rest is a workout DATUM, so the filled
-  // portion wears the rest datum hue — the teal DATA hue (--hue-teal, the
-  // readiness/positive/intensity hue), NOT --color-brand (the action teal Skip
-  // wears). A datum owning its hue here is correct: the bar is a read-only
-  // remaining-rest readout, not a control, so it doesn't poach the "one teal
-  // action" rule. bg-track is the empty channel; the bar is h-1.5 so it reads as
-  // a visible hued depletion bar rather than a faint hairline. rtb-5: the width
-  // transition rides the single system easing via var(--ease).
+  // rtb-3: depleting rest progress track (mockup .restbar/.trk). Coordinator
+  // review (r4d/step3): the teal fill was off-palette — the mockup's track
+  // uses the off-white action fill (var(--color-brand), Tailwind `bg-brand`)
+  // on a rule-colored track (bg-track, unchanged), same as every other
+  // primary-fill element in the system. rtb-5: width transition still rides
+  // the single system easing.
   const restProgressTrack = restActive ? (
-    <div className="h-1.5 w-full rounded-full bg-track overflow-hidden">
+    <div className="h-1 w-full rounded-full bg-track overflow-hidden">
       <div
-        className="h-full rounded-full bg-teal transition-[width] duration-500 [transition-timing-function:var(--ease)]"
+        className="h-full rounded-full bg-brand transition-[width] duration-500 [transition-timing-function:var(--ease)]"
         style={{ width: `${restFraction * 100}%` }}
       />
     </div>
   ) : null;
 
-  // Rest controls (+30s / Skip). Uniform gap-2; full 44px tap height on mobile
-  // (no size="sm") so they match the Cancel/Finish rhythm. The mobile bottom
-  // bar renders these on their own thin secondary row (the countdown + track
-  // live above), so withCountdown only applies to the desktop top bar's inline
-  // cluster.
-  // rtb-1/2: mid-rest, Skip ("get back to work") is the live next action, so it
-  // wears the teal volt action fill; +30s is the quieter adjustment and stays
-  // neutral glass (ghost). One teal control per rest row — Skip — so the action
-  // color points at exactly one thing. rtb-6: each control min-w-[64px] so a 1–2
-  // char label ("Skip"/"+30s") keeps a forgiving thumb target.
-  const restControls = (withCountdown) => restRunning ? (
-    <div className="flex gap-2 items-center min-w-0">
-      {withCountdown && restCountdown}
-      <Button
-        variant="ghost"
-        onClick={() => onAddRestTime?.(30)}
-        className="min-h-[44px] min-w-[64px] lg:min-h-0 lg:h-9 font-bold"
-      >
-        +30s
-      </Button>
-      <Button
-        variant="volt"
-        onClick={() => onSkipRest?.()}
-        className="min-h-[44px] min-w-[64px] lg:min-h-0 lg:h-9 font-bold"
-      >
-        Skip
-      </Button>
-    </div>
-  ) : null;
-
-  // Live elapsed-workout clock cluster — a real datum reused in BOTH mobile
-  // bottom-bar states (rest active and no-rest) so the left slot is never dead
-  // space and the two layouts stay symmetric.
-  // TASTE fix: at session start (zero sets logged, !canFinish) the ticking 0:01
-  // next to a coral Finish is premature emphasis — a live clock and a bright CTA
-  // competing before anything's been logged. Hold the clock until there's real
-  // progress (canFinish), the same threshold that earns Finish its coral, so the
-  // bar stays calm on entry and both go live together once the first set lands.
-  // Ledger compact meta line (DESIGN.md dB .num): "UPPER A · 38:12 · 7/18 SETS"
-  // in tabular numerals — the session title, live elapsed clock, and set
-  // progress in one row. Existing state only: startTime/elapsedTime already
-  // drove the old elapsedCluster, doneSets/totalSets are passed in from
-  // WorkoutDetail's existing exerciseLogs count. Progress (clock + set count)
-  // only appears once canFinish is true, same calm-until-progress threshold
-  // the rest of this bar already uses; the title alone shows from the start.
-  const metaLine = startTime ? (
-    <div className="flex items-baseline gap-1.5 min-w-0 font-technical">
-      <span className="text-[13px] font-bold uppercase tracking-[0.02em] text-ink-secondary truncate">
-        {workoutTitle}
-      </span>
-      {canFinish && (
-        <>
-          <span className="text-ink-faint text-[13px]">·</span>
-          <span className="text-ink text-[13px] font-extrabold tabular-nums whitespace-nowrap">
-            {formatTime(elapsedTime)}
-          </span>
-          <span className="text-ink-faint text-[13px]">·</span>
-          <span className="text-ink text-[13px] font-extrabold tabular-nums whitespace-nowrap">
-            {doneSets}/{totalSets} sets
-          </span>
-        </>
-      )}
-    </div>
-  ) : null;
-
   // Plate/1RM calculators — mid-workout is exactly when they're needed (next
   // set's plate math during rest), and the global FAB that normally carries
-  // them is suppressed on logging routes. Quiet ghost icon so it never
-  // competes with the single live action (Skip mid-rest / Finish otherwise).
+  // them is suppressed on logging routes. Now a kebab item (was a standing
+  // icon button) alongside Cancel — see actionMenu below.
   const calcButton = (
-    <Button
-      variant="ghost"
-      onClick={() => setShowCalculators(true)}
-      aria-label="Calculators"
-      className="min-h-[44px] min-w-[44px] px-0 lg:min-h-0 lg:h-9 lg:w-9 flex-shrink-0"
+    <button
+      type="button"
+      onClick={() => { setShowCalculators(true); setOpenMenu(false); }}
+      className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
     >
       <Calculator className="w-4 h-4" />
-    </Button>
+      Calculators
+    </button>
   );
 
-  // Cancel / Finish — Finish is the structural anchor (bordered when inert,
-  // coral once it's the live next action). Cancel is a recessive text-only
-  // escape hatch: no border box, no icon, muted ink, so the abort never reads
-  // stronger than Finish. The bad hue is reserved for the in-dialog confirm.
-  const actionCluster = (
-    <div className="flex items-center gap-2 flex-shrink-0">
+  // Header kebab — Cancel workout + Calculators (Ledger rebuild, Step 5):
+  // both used to be standing controls in the bar; the mockup's header carries
+  // only the meta line, name, and Finish, so anything else lives behind the
+  // kebab instead.
+  const actionMenu = (
+    <div className="relative flex-shrink-0" ref={menuRef}>
       <Button
-        // `plain` = chrome-free (no fill, no border box) so Cancel reads as a
-        // recessive text-only escape hatch. `ghost`/glassGhost gave it a solid
-        // boxed pill that out-emphasized Finish — inverted hierarchy. Cancel must
-        // never carry more visual weight than the Finish anchor beside it.
-        variant="plain"
-        onClick={() => setShowConfirm(true)}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-3 text-ink-muted font-medium"
+        variant="ghost"
+        size="icon"
+        onClick={() => setOpenMenu((v) => !v)}
+        aria-label="More workout actions"
+        className="min-h-[44px] min-w-[44px] lg:min-h-0 lg:h-9 lg:w-9"
       >
-        Cancel
+        <MoreVertical className="w-4 h-4" />
       </Button>
-      <Button
-        onClick={onFinish}
-        disabled={isSaving || !canFinish}
-        // Finish earns coral only when it's the live next action. Two cases drop
-        // it to neutral glass: (1) an empty workout (Finish is inert — the live
-        // Add input owns the only coral); (2) an ACTIVE rest countdown — mid-rest
-        // the athlete is resting, not finishing, so a bright coral Finish would
-        // be the brightest pixel competing with the live rest timer. It re-earns
-        // coral once rest ends.
-        variant={canFinish && !restRunning ? "volt" : "dim"}
-        className="min-h-[44px] lg:min-h-0 lg:h-9 text-sm px-5 lg:px-4 flex-1 lg:flex-none"
-        data-tutorial="finish-workout-btn"
-      >
-        {isSaving ? (
-          <LoadingSpinner size="small" />
-        ) : (
-          <>
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-            <span>Finish</span>
-          </>
-        )}
-      </Button>
+      {openMenu && (
+        <div className="absolute right-0 top-full mt-1 glass-elevated rounded-xl overflow-hidden py-1 z-[10200] min-w-[170px] text-ink">
+          {calcButton}
+          <button
+            type="button"
+            onClick={() => { setShowConfirm(true); setOpenMenu(false); }}
+            className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Cancel workout
+          </button>
+        </div>
+      )}
     </div>
   );
 
-  // The mobile top bar carries NOTHING in most states (the workout clock, the
-  // running rest countdown, and the action cluster are all lg-only; on a phone
-  // they live in the thumb-zone bottom bar). The single thing it can show on
-  // mobile is the post-rest "Rest 0:00" readout (restActive && !restRunning).
-  // wd-2: when there's no mobile-visible content, collapse the bar to zero height
-  // (no py-2 band, no hairline) so an empty grey strip never floats above the
-  // workout card. Desktop always has content (clock / actions), so the padding +
-  // edge re-appear at lg.
-  const hasMobileTopContent = (restActive && !restRunning) || saveFailed;
+  // Finish — the structural anchor. Off-white primary fill whenever it's the
+  // live next action (canFinish), full stop: the earlier "grey out mid-rest"
+  // treatment made Finish read as unavailable during rest even though it's
+  // fully clickable, which the coordinator flagged as wrong (r4d/step3
+  // review) — restRunning no longer touches its variant, only `disabled`
+  // (isSaving/!canFinish) governs whether it's actually clickable. Exactly
+  // one Finish element exists now (no responsive duplicate to CSS-hide),
+  // since the header is a single row at every breakpoint.
+  const finishButton = (
+    <Button
+      onClick={onFinish}
+      disabled={isSaving || !canFinish}
+      variant={canFinish ? "volt" : "dim"}
+      className="min-h-[40px] lg:h-9 text-sm px-4 flex-shrink-0"
+      data-tutorial="finish-workout-btn"
+    >
+      {isSaving ? (
+        <LoadingSpinner size="small" />
+      ) : (
+        <>
+          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+          <span>Finish</span>
+        </>
+      )}
+    </Button>
+  );
 
   // Deliberately not a toast and not a dialog. A toast is gone before he racks
   // the bar, and a dialog in the middle of a set is worse than the problem. It
@@ -359,7 +321,7 @@ export default function WorkoutLoggingHeader({
     <button
       type="button"
       onClick={() => onRetrySave?.()}
-      className="flex items-center gap-1.5 rounded-lg bg-warn/[0.15] px-2 py-1 text-left rise-in"
+      className="flex items-center gap-1.5 rounded-lg bg-warn/[0.15] px-2 py-1 text-left rise-in mt-1"
       aria-label="Sets are saved on this device but not synced. Tap to retry."
     >
       <AlertTriangle className="w-3.5 h-3.5 text-warn flex-shrink-0" />
@@ -372,129 +334,77 @@ export default function WorkoutLoggingHeader({
 
   return (
     <>
-      {/* ── Top bar: read-only timers (+ actions on desktop only) ────────── */}
+      {/* ── Header: meta line + focused exercise name (24px) + Finish ──────
+          Mockup .hdr — one row, every breakpoint, always reachable (fixed).
+          Cancel/Calculators live in the kebab; the rest timer/controls live
+          ONLY in the bottom rest bar below (never duplicated up here). */}
       <div
         ref={topBarRef}
-        className={`fixed top-0 left-0 right-0 z-[9998] border-x-0 ${
-          hasMobileTopContent ? 'glass-elevated glass-elevated--substacked' : 'lg:glass-elevated lg:glass-elevated--substacked'
-        }`}
+        className="fixed top-0 left-0 right-0 z-[9998] border-x-0 glass-elevated glass-elevated--substacked"
         style={{ top: 'var(--layout-header-height, 0px)' }}
       >
-        {/* rtb-7: the bar is fixed left-0 right-0, so on desktop its left edge
-            spans UNDER the floating sidebar (w-[216px] + ml-4 ≈ 232px). Pad the
-            inner container's left to clear the sidebar wordmark on lg so the
-            Workout/Rest timers never sit beneath it. Mobile (no sidebar) keeps
-            the symmetric px-3. */}
-        <div className={`max-w-4xl mx-auto px-3 md:px-8 lg:pl-[248px] ${hasMobileTopContent ? 'py-2' : 'py-0 lg:py-2'}`}>
-          {/* Workout Title (when scrolled) - Desktop Only */}
-          {showTitleInHeader && (
-            <h2 className="hidden md:block font-extrabold tracking-[-0.01em] text-ink text-base mb-2 truncate animate-in fade-in slide-in-from-top-2 duration-200">
-              {workoutTitle}
-            </h2>
-          )}
-
-          {/* Main Row */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Timers */}
-            <div className="flex items-center gap-3 md:gap-4 min-w-0">
-              {/* NOTE: the mobile left slot intentionally carries NO session title.
-                  The Layout chrome already prints the page/session name directly
-                  above this bar, so restating workoutTitle here stacked the same
-                  string twice within ~100px (e.g. "Quick Workout" over "Quick
-                  Workout"). The session name lives in the chrome above and the
-                  scrollable body title; this strip stays quiet (the bottom action
-                  bar carries the live clock / rest countdown). */}
-
-              {/* Ledger meta line — hidden on mobile (the bottom bar carries its
-                  own copy); desktop keeps it up top next to the rest timer.
-                  Mirrors the Rest block's lg-gating so the same datum never
-                  renders twice on a phone. */}
-              {startTime && (
-                <div className="hidden lg:flex flex-col min-w-0">
-                  {metaLine}
-                </div>
+        <div className="max-w-4xl mx-auto px-3 md:px-8 lg:pl-[248px] py-2">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 min-w-0 font-technical">
+                <span className="text-[12px] font-bold uppercase tracking-[0.02em] text-ink-secondary truncate">
+                  {workoutTitle}
+                </span>
+                {canFinish && (
+                  <>
+                    <span className="text-ink-faint text-[12px]">·</span>
+                    <span className="text-ink text-[12px] font-extrabold tabular-nums whitespace-nowrap">
+                      {formatTime(elapsedTime)}
+                    </span>
+                    <span className="text-ink-faint text-[12px]">·</span>
+                    <span className="text-ink text-[12px] font-extrabold tabular-nums whitespace-nowrap">
+                      {doneSets}/{totalSets} SETS
+                    </span>
+                  </>
+                )}
+              </div>
+              {focusedExerciseName && (
+                <h1 className="text-[19px] md:text-[24px] font-extrabold text-ink truncate mt-0.5 leading-tight">
+                  {focusedExerciseName}
+                </h1>
               )}
-
-              {/* Rest Timer — teal throughout; urgency = pulse, not a hue swap.
-                  While running it's hidden on mobile (lg:flex) so the countdown
-                  renders ONCE in the thumb-zone bottom bar; desktop keeps it
-                  here next to the workout clock. */}
-              {restActive && (
-                <div className={`${restRunning ? 'hidden lg:flex' : 'flex'} flex-col min-w-0 rise-in`}>
-                  <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Rest</span>
-                  {restCountdown}
-                </div>
-              )}
-
               {saveWarning}
             </div>
-
-            {/* Desktop-only action cluster + rest controls (top zone is fine
-                with a mouse; on mobile these live in the bottom bar). */}
-            <div className="hidden lg:flex items-center gap-3">
-              {calcButton}
-              {restControls(false)}
-              {actionCluster}
-            </div>
+            {actionMenu}
+            {finishButton}
           </div>
         </div>
       </div>
 
-      {/* ── Bottom action bar (mobile only) — thumb zone, above the dock ─── */}
-      <div
-        ref={bottomBarRef}
-        className="lg:hidden fixed left-0 right-0 z-[9998] glass-elevated border-x-0 border-b-0 rise-in"
-        // Sit on the shared --floating-chrome-bottom token (= dock's full
-        // painted footprint + safe-area + a 12px breathing gap), so every
-        // floated action bar shares ONE clearance value above the dock instead
-        // of each hand-adding its own gap. The token already folds in the
-        // safe-area inset, so don't re-add env(safe-area-inset-bottom) here or
-        // it's double-counted.
-        style={{ bottom: 'var(--floating-chrome-bottom)' }}
-      >
-        <div className="max-w-4xl mx-auto px-3 py-2.5 flex flex-col gap-2">
-          {restRunning ? (
-            <>
-              {/* rtb-1: two rows on mobile, NOT one ml-auto cluster. Forcing the
-                  countdown + restControls + Cancel/Finish into a single 390px row
-                  squeezed the coral Finish past the right edge (label clipped to
-                  "Finis…"). Row 1 carries the read-only rest state (countdown +
-                  full-width depleting track); row 2 carries the live controls
-                  (+30s / Skip on the left, then the Cancel / full-width Finish
-                  anchor). Each row's content box stays inside 390px. */}
-              <div className="flex items-center gap-2 min-w-0">
-                {restCountdown}
-                <div className="flex-1 min-w-0">
-                  {restProgressTrack}
-                </div>
-              </div>
-              {/* rtb-4: mid-rest the live work is the rest controls (Skip/+30s),
-                  so they flex-GROW and own the row; the Cancel/Finish cluster is
-                  flex-none and quiet (Finish is already `dim` while restRunning).
-                  Once rest ends the no-rest branch restores Finish's prominence. */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  {calcButton}
-                  {restControls(false)}
-                </div>
-                <div className="flex-none">
-                  {actionCluster}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-between gap-2">
-              {/* No rest active → carry the Ledger meta line here (a real
-                  datum), never a dead static label. */}
-              <div className="flex items-center gap-2 min-w-0">
-                {calcButton}
-                {metaLine}
-              </div>
-              {actionCluster}
-            </div>
-          )}
+      {/* ── Rest bar (mobile + desktop) — the ONLY thing in the bottom bar
+          now, and only while a rest timer is actually running. One row:
+          timer icon · countdown · track · +30s · Skip, above the tab dock. */}
+      {restRunning && (
+        <div
+          ref={bottomBarRef}
+          className="fixed left-0 right-0 z-[9998] glass-elevated border-x-0 border-b-0 rise-in"
+          style={{ bottom: 'var(--floating-chrome-bottom)' }}
+        >
+          <div className="max-w-4xl mx-auto px-3 py-2 lg:pl-[248px] flex items-center gap-3">
+            {restCountdown}
+            <div className="flex-1 min-w-0">{restProgressTrack}</div>
+            <Button
+              variant="ghost"
+              onClick={() => onAddRestTime?.(30)}
+              className="min-h-[44px] min-w-[56px] lg:min-h-0 lg:h-9 font-bold flex-shrink-0"
+            >
+              +30s
+            </Button>
+            <Button
+              variant="volt"
+              onClick={() => onSkipRest?.()}
+              className="min-h-[44px] min-w-[56px] lg:min-h-0 lg:h-9 font-bold flex-shrink-0"
+            >
+              Skip
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <CalculatorsModal
         isOpen={showCalculators}
