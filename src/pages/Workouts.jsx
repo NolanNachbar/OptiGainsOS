@@ -550,7 +550,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     key={value}
                     onClick={() => setProgramView(value)}
                     aria-pressed={programView === value}
-                    className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
+                    className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
                       programView === value
                         ? 'bg-track text-ink'
                         : 'text-ink-muted hover:text-ink'
