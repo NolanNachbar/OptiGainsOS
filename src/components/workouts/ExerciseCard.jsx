@@ -227,20 +227,38 @@ export default function ExerciseCard({
   // the page's p-4, the card's 1px border, and CardContent's px-4 are
   // subtracted. 22+52(Prev min)+44+44+44+36+44+44 + 7×4px gaps = 358px, so
   // all 8 tracks fit with 4px to spare — no column needs to drop on mobile.
+  // Phase A (MF-referenced): dropped the e1RM column entirely, so one fewer
+  // track per row — Set | Prev | Weight | Reps | (RIR) | Done | Remove.
   const gridCols = showRIR
-    ? "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_44px_36px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_72px_60px_48px_48px_44px_44px]"
-    : "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_36px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_80px_64px_48px_44px_44px]";
+    ? "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_44px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_72px_60px_48px_44px_44px]"
+    : "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_80px_64px_44px_44px]";
 
-  // Translucent value cell — 44px tall (touch-target floor), rounded 10px,
-  // inset top highlight. Cells inside the active (raised) row read slightly
-  // brighter; future (not-yet-reached, not completed) rows mute their value
-  // text so the current row is the one thing that reads at full contrast.
-  const setCell = (isActive, muted = false) =>
-    `h-11 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] ` +
-    `${muted ? 'text-ink-faint' : 'text-ink'} ` +
-    `placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation ` +
-    `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-brand/40 ` +
-    `${isActive ? 'bg-[var(--glass-bg)]' : 'bg-track'}`;
+  // Flat raised-gray input (MF-referenced): no border, no per-cell active
+  // highlight (the row's own bg-charcoal-surface2 already marks the active
+  // row) — just a 1.5px off-white focus outline so keyboard/tap focus is
+  // still obvious. cellBase carries everything except bg/text color so the
+  // RIR cell below can swap those two for its tint instead.
+  const cellBase =
+    "h-11 w-full min-w-0 rounded-[9px] text-center font-technical font-extrabold text-[14px] " +
+    "placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation " +
+    "focus:outline focus:outline-[1.5px] focus:outline-offset-0 focus:outline-white/90 focus:ring-0";
+
+  const setCell = (_isActive, muted = false) =>
+    `${cellBase} bg-[#1C1F23] ${muted ? 'text-ink-faint' : 'text-ink'}`;
+
+  // RIR cell tint (MF scale, design-reference only — our own palette tokens
+  // where they exist): 0 = red (failure), 1-2 = amber, 3-4 = green (the
+  // trained-to-near-failure sweet spot), 5+ = blue (a lot left in the tank).
+  // Tints only this one cell, never the whole row.
+  const rirCell = (rirValue) => {
+    if (rirValue == null) return `${cellBase} bg-[#1C1F23] text-ink-faint`;
+    const tint =
+      rirValue <= 0 ? 'bg-[#E5484D]/20 text-[#E5484D]'
+      : rirValue <= 2 ? 'bg-[#E2B84E]/20 text-[#E2B84E]'
+      : rirValue <= 4 ? 'bg-[#7CC389]/20 text-[#7CC389]'
+      : 'bg-[#6EA6DA]/20 text-[#6EA6DA]';
+    return `${cellBase} ${tint}`;
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -803,7 +821,6 @@ export default function ExerciseCard({
               </span>
             </span>
           )}
-          <span className="text-center">e1RM</span>
           <span className="text-center">Done</span>
           <span></span>
         </div>
@@ -846,10 +863,8 @@ export default function ExerciseCard({
               </div>
             )}
             <div
-              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
-                isActive
-                  ? 'bg-charcoal-surface2 rounded-xl -mx-2 px-2'
-                  : setIndex === 0 ? '' : 'border-t-[0.5px] border-t-charcoal-border'
+              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[48px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
+                isActive ? 'bg-charcoal-surface2 rounded-xl -mx-2 px-2' : ''
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
             >
               <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
@@ -961,18 +976,9 @@ export default function ExerciseCard({
                   min="0"
                   max="10"
                   step="0.5"
-                  className={setCell(isActive, !set.completed && !isActive)}
+                  className={rirCell(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null))}
                 />
               )}
-              {/* e1RM (Epley, ≤12 reps, completed sets only — matches
-                  exerciseStats.isE1rmEligibleSet exactly, no second rule). */}
-              <span className={`font-technical text-[13px] text-center tabular-nums ${
-                !set.completed && !isActive ? 'text-ink-faint' : 'text-ink-muted'
-              }`}>
-                {!isHold && isE1rmEligibleSet(set)
-                  ? Math.round(estimateOneRepMax(set.weight, set.reps))
-                  : '–'}
-              </span>
               <button
                 type="button"
                 role="checkbox"
@@ -981,12 +987,14 @@ export default function ExerciseCard({
                 onClick={() => handleSetCompleted(setIndex, !set.completed)}
                 className="min-h-[44px] w-full flex items-center justify-center touch-manipulation"
               >
-                <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                {/* Rounded-square fill (MF-referenced), not a circle: full
+                    gain-green fill + dark check when done, bordered when not. */}
+                <span className={`w-8 h-8 rounded-[8px] flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   set.completed
-                    ? 'bg-leaf/[0.16] text-leaf'
+                    ? 'bg-[#7CC389] text-[#12161C]'
                     : 'border-[1.5px] border-charcoal-border text-ink-faint hover:border-brand/50 hover:text-brand'
                 }`}>
-                  <Check className="w-5 h-5" strokeWidth={3} />
+                  <Check className="w-4 h-4" strokeWidth={3} />
                 </span>
               </button>
               <button
