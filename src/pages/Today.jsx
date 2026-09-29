@@ -70,7 +70,10 @@ function WeighInRow({ today, weightUnit }) {
   const { lastWeight } = useLastBodyWeight(today);
   const logWeight = useLogWeight();
   const [typed, setTyped] = useState("");
-  const [error, setError] = useState(false);
+  // A message, not a bare boolean — WeighInPrompt's own sheet distinguishes
+  // "out of bounds" from "the save failed" with real copy, and this compact
+  // row shouldn't regress to a silent red underline for either failure.
+  const [error, setError] = useState(null);
 
   // Don't flash the ask for one frame before we know today is already logged.
   if (isLoading || isFetching) return null;
@@ -83,16 +86,22 @@ function WeighInRow({ today, weightUnit }) {
     const raw = String(typed).trim().replace(/,/g, ".");
     const parsed = Number.parseFloat(raw);
     const [min, max] = BOUNDS[weightUnit] || BOUNDS.lbs;
-    if (!Number.isFinite(parsed) || parsed <= 0 || parsed < min || parsed > max) {
-      setError(true);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError("Enter your weight");
       return;
     }
-    setError(false);
+    if (parsed < min || parsed > max) {
+      setError(`That reads as ${parsed} ${weightUnit}. Expected ${min}-${max}.`);
+      return;
+    }
+    setError(null);
     logWeight.mutate(
       { weight: parsed, date: today },
       {
         onSuccess: () => { toast.success(`Logged ${parsed} ${weightUnit}`); setTyped(""); },
-        onError: () => setError(true),
+        // The typed value stays in the field on failure, same as WeighInPrompt
+        // — a network blip shouldn't cost him the reading he just typed.
+        onError: () => setError("Didn't save. Tap Log to retry."),
       }
     );
   };
@@ -112,33 +121,36 @@ function WeighInRow({ today, weightUnit }) {
           <Check className="w-4 h-4 text-leaf shrink-0" />
         </div>
       ) : (
-        <form onSubmit={submit} className="flex items-center gap-3">
-          <span className="text-[13px] font-semibold text-muted-2 shrink-0 truncate">
-            {reference != null ? `Weigh in · last ${fmt(reference, 1)} ${weightUnit}` : "Weigh in"}
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            enterKeyHint="done"
-            autoComplete="off"
-            placeholder={reference != null ? String(reference) : "--"}
-            value={typed}
-            onChange={(e) => {
-              setTyped(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6));
-              if (error) setError(false);
-            }}
-            onFocus={(e) => e.target.select()}
-            aria-label={`Bodyweight in ${weightUnit}`}
-            aria-invalid={error}
-            className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-[15px] font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
-          />
-          <button
-            type="submit"
-            disabled={logWeight.isPending || !typed.trim()}
-            className="cta-action shrink-0 px-4 min-h-[44px] text-[13px]"
-          >
-            {logWeight.isPending ? "…" : "Log"}
-          </button>
+        <form onSubmit={submit}>
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] font-semibold text-muted-2 shrink-0 truncate">
+              {reference != null ? `Weigh in · last ${fmt(reference, 1)} ${weightUnit}` : "Weigh in"}
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              enterKeyHint="done"
+              autoComplete="off"
+              placeholder={reference != null ? String(reference) : "--"}
+              value={typed}
+              onChange={(e) => {
+                setTyped(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6));
+                if (error) setError(null);
+              }}
+              onFocus={(e) => e.target.select()}
+              aria-label={`Bodyweight in ${weightUnit}`}
+              aria-invalid={!!error}
+              className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-[15px] font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
+            />
+            <button
+              type="submit"
+              disabled={logWeight.isPending || !typed.trim()}
+              className="cta-action shrink-0 px-4 min-h-[44px] text-[13px]"
+            >
+              {logWeight.isPending ? "…" : "Log"}
+            </button>
+          </div>
+          {error && <p className="text-[11px] font-semibold text-warn mt-1">{error}</p>}
         </form>
       )}
     </div>
