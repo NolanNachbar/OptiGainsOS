@@ -26,14 +26,14 @@ import { format, parseISO } from "date-fns";
 const CHART_TICK = {
   fill: 'var(--text-muted)',
   fontSize: 10,
-  fontFamily: 'Manrope',
+  fontFamily: 'var(--font-ui)',
   fontVariantNumeric: 'tabular-nums',
 };
 const CHART_TOOLTIP_CONTENT = {
   backgroundColor: 'var(--color-elevated)',
   border: '0.5px solid var(--color-border)',
   borderRadius: 12,
-  fontFamily: 'Manrope',
+  fontFamily: 'var(--font-ui)',
   fontVariantNumeric: 'tabular-nums',
 };
 const CHART_TOOLTIP_ITEM = {

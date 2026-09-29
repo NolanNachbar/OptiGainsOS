@@ -48,14 +48,14 @@ export default function ExerciseProgressChart({ data, exerciseName, weightUnit =
             dataKey="date"
             tickFormatter={(date) => format(parseISO(date), 'MMM d')}
             stroke="rgba(255,255,255,0.05)"
-            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
+            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'var(--font-ui)' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={(v) => `${v}`}
             stroke="rgba(255,255,255,0.05)"
-            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'Manrope' }}
+            tick={{ fontSize: 11, fill: 'rgba(242,244,247,0.4)', fontFamily: 'var(--font-ui)' }}
             axisLine={false}
             tickLine={false}
             width={36}

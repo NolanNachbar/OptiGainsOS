@@ -93,14 +93,14 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
               ticks={xTicks}
               tickFormatter={(date) => format(parseISO(date), 'MMM d')}
               stroke="var(--color-track)"
-              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
+              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'var(--font-ui)' }}
               axisLine={false}
               tickLine={false}
               minTickGap={24}
             />
             <YAxis
               stroke="var(--color-track)"
-              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'Manrope' }}
+              tick={{ fontSize: 11, fill: 'var(--text-faint)', fontFamily: 'var(--font-ui)' }}
               axisLine={false}
               tickLine={false}
               width={36}
