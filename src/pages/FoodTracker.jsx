@@ -1974,6 +1974,7 @@ const handleSaveMealTemplate = () => {
               <Button
                 variant="dim"
                 size="sm"
+                className="min-h-[44px]"
                 onClick={() => {
                   // Default to the most recent logged day before this one, so
                   // the dialog opens on something rather than an empty date.
@@ -1989,7 +1990,7 @@ const handleSaveMealTemplate = () => {
               >
                 <Bookmark className="w-3.5 h-3.5 mr-1.5" /> Copy a day
               </Button>
-              <Button variant="dim" size="sm" onClick={() => setShowIntakeStats((v) => !v)}>
+              <Button variant="dim" size="sm" className="min-h-[44px]" onClick={() => setShowIntakeStats((v) => !v)}>
                 <Calculator className="w-3.5 h-3.5 mr-1.5" /> Intake stats
                 {showIntakeStats ? <ChevronUp className="w-3.5 h-3.5 ml-1.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-1.5" />}
               </Button>
