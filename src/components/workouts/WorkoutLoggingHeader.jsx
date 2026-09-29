@@ -28,7 +28,6 @@ export default function WorkoutLoggingHeader({
   isSaving = false,
   startTime = null,
   restTimer = null,
-  restDuration = 90,
   onSkipRest = null,
   onAddRestTime = null,
   // Empty workout → Finish is a dead-end; render it inert until there's
@@ -47,7 +46,6 @@ export default function WorkoutLoggingHeader({
 
   const restActive = restTimer !== null && restTimer >= 0;
   const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
-  const restRunning = restActive && restTimer > 0;
 
   // Measured-clearance pattern (unchanged from Step 5) for the fixed top bar
   // — pages pad by the bar's real height instead of a guessed constant.

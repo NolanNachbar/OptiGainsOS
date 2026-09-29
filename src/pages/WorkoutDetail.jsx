@@ -1352,7 +1352,13 @@ export default function WorkoutDetail() {
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
-          onBack={() => navigate(-1)}
+          onBack={() => {
+            // navigate(-1) with no in-app history (deep link, reload, PWA
+            // cold start, push notification) can exit the app entirely —
+            // fall back to a known route so the chevron is never a dead end.
+            if (window.history.state?.idx > 0) navigate(-1);
+            else navigate('/train');
+          }}
           onFinish={handleSaveWorkoutLog}
           isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
           weightUnit={weightUnit}
@@ -1861,11 +1867,11 @@ export default function WorkoutDetail() {
             <DialogTitle>Cancel Workout?</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            This discards the in-progress session. Sets you've already logged will not be saved.
+            Your progress for this workout will be lost. Are you sure you want to cancel?
           </DialogDescription>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
-              Keep Logging
+              Keep Going
             </Button>
             <Button
               variant="destructive"
