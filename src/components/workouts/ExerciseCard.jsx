@@ -394,7 +394,6 @@ export default function ExerciseCard({
               size="icon"
               ref={menuTriggerRef}
               onClick={() => setOpenMenu(!openMenu)}
-              className="h-9 w-9"
             >
               <MoreVertical className="w-5 h-5" />
             </Button>

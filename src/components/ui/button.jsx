@@ -87,7 +87,7 @@ const Button = React.forwardRef(({
     default: "h-9 px-4 text-[13.5px]",
     sm:      "h-[30px] px-3 text-[12.5px]",
     lg:      "h-11 px-[22px] text-[15px]",
-    icon:    "h-9 w-9",
+    icon:    "h-11 w-11 md:h-9 md:w-9",
   };
 
   const combinedClassName = twMerge(baseStyles, variants[variant], sizes[size], className);
