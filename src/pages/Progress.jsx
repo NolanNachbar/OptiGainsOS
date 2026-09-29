@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
@@ -15,16 +15,132 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import WeightProgressChart from "@/components/progress/WeightProgressChart";
+import { Module } from "@/components/ui/system";
+import { calculateEWMA } from "@/utils/coachingUtils";
 import {
   TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
   TrendingDown, ArrowUpRight, ArrowDownRight, Flame, Activity, ChevronDown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { db } from "@/api/supabaseClient";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
+
+const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
+
+// Ledger-style 30-day weight chart (DESIGN.md Charts): gray raw weigh-in
+// points, a white trend line (EWMA) over them, small tabular axis labels on
+// the right. Same visual convention as the "B" mockup's Today weight module,
+// just a full-width version for the Body detail page.
+function WeightTrendChart({ trended }) {
+  if (!trended || trended.length < 2) return null;
+  const W = 396, H = 108, PAD_X = 4, PAD_Y = 12, LABEL_W = 32;
+  const rawVals = trended.map((e) => Number(e.weight));
+  const trendVals = trended.map((e) => Number(e.trendWeight));
+  const allVals = [...rawVals, ...trendVals];
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
+  const span = max - min || 1;
+  const innerH = H - PAD_Y * 2;
+  const yFor = (v) => PAD_Y + (1 - (v - min) / span) * innerH;
+  const step = (W - LABEL_W - PAD_X * 2) / (trended.length - 1);
+  const xFor = (i) => PAD_X + i * step;
+
+  const rawPoints = trended.map((e, i) => ({ x: xFor(i), y: yFor(Number(e.weight)) }));
+  const trendPoints = trended.map((e, i) => ({ x: xFor(i), y: yFor(Number(e.trendWeight)) }));
+  const path = trendPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const last = trendPoints[trendPoints.length - 1];
+  const ticks = [max, (max + min) / 2, min];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      {ticks.map((t, i) => {
+        const y = yFor(t);
+        return (
+          <g key={i}>
+            <line x1={0} y1={y} x2={W - LABEL_W} y2={y} stroke="var(--color-border-soft)" />
+            <text x={W} y={y + 3} textAnchor="end" fontSize="10" fontFamily="var(--font-ui)" fill="var(--text-faint)" className="tabular-nums">
+              {Math.round(t * 10) / 10}
+            </text>
+          </g>
+        );
+      })}
+      <g fill="var(--text-faint)">
+        {rawPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2" />)}
+      </g>
+      <path d={path} fill="none" stroke="var(--text-primary)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      <circle cx={last.x} cy={last.y} r="3.5" fill="var(--text-primary)" />
+    </svg>
+  );
+}
+
+// Weight-trend module (Body/Fuel phase-2b, IA.md "Weight trend takes an extra
+// unscored step"): the first thing rendered in Body, above Measurements and
+// Photos — trend value, rate/week, and a 30-day chart, mirroring Today's
+// compact weight-trend module but full width for the detail page it links to.
+function WeightTrendModule() {
+  const { weightEntries } = useBodyWeightEntries();
+  const { profile } = useProfile();
+  const weightUnit = profile?.weight_unit || "lbs";
+
+  // Windowed relative to the most recent weigh-in, not the wall clock: a
+  // lapsed logger (or a demo/test account with older fixture data) should
+  // still see their last 30 days of logged history, not an empty "log a few
+  // more" state just because none of it happens to fall within the last 30
+  // real-world days. Mirrors getLoggedExerciseSummaries' same convention.
+  const allTrended = useMemo(() => calculateEWMA(weightEntries, 0.1), [weightEntries]);
+
+  const weight30d = useMemo(() => {
+    if (allTrended.length === 0) return [];
+    const lastDate = allTrended[allTrended.length - 1].recorded_date;
+    const cutoff = new Date(`${lastDate}T00:00:00`);
+    cutoff.setDate(cutoff.getDate() - 29);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return allTrended.filter((e) => e.recorded_date >= cutoffStr);
+  }, [allTrended]);
+
+  const trendStats = useMemo(() => {
+    if (weight30d.length < 2) return { weeklyRate: 0, dataPoints: weight30d.length };
+    const first = weight30d[0];
+    const last = weight30d[weight30d.length - 1];
+    const daySpan = differenceInCalendarDays(parseISO(last.recorded_date), parseISO(first.recorded_date));
+    const weeklyRate = daySpan > 0 ? Math.round(((last.trendWeight - first.trendWeight) / daySpan) * 7 * 10) / 10 : 0;
+    return { weeklyRate, dataPoints: weight30d.length };
+  }, [weight30d]);
+  const latest = weight30d[weight30d.length - 1];
+  const hasRate = trendStats.dataPoints >= 2;
+
+  return (
+    <Module label="Weight trend · 30 days" className="mb-2">
+      {weightEntries.length === 0 ? (
+        <p className="text-[12px] text-muted-2 font-semibold">Log a few weigh-ins to see a trend</p>
+      ) : (
+        <>
+          <div className="flex items-baseline gap-1.5">
+            <span className="type-display text-2xl font-semibold tabular-nums">
+              {latest ? fmt(latest.trendWeight, 1) : "—"}
+            </span>
+            <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
+            {hasRate && (
+              <span className="ml-auto font-technical text-[13px] font-semibold text-secondary tabular-nums">
+                {`${trendStats.weeklyRate > 0 ? "+" : ""}${trendStats.weeklyRate} lb/wk`}
+              </span>
+            )}
+          </div>
+          {weight30d.length >= 2 ? (
+            <div className="mt-2">
+              <WeightTrendChart trended={weight30d} />
+            </div>
+          ) : (
+            <p className="text-[12px] text-muted-2 font-semibold mt-2">Log a few more weigh-ins to see a 30-day chart</p>
+          )}
+        </>
+      )}
+    </Module>
+  );
+}
 
 // ─── Weight Tab ────────────────────────────────────────────────────────────────
 function WeightTab() {
@@ -486,7 +602,9 @@ function MetabolismTab() {
 // Rendered embedded inside Fuel → Body & Progress (the standalone /progress route was retired).
 export default function Progress() {
   return (
-    <Tabs defaultValue="weight">
+    <>
+      <WeightTrendModule />
+      <Tabs defaultValue="weight">
       {/* Subordinate to the parent Fuel SubTabs: a lighter, contained segmented
           control (glass-inset, no full-width underline strip) so the two nav
           levels read as a clear hierarchy rather than two equal-weight strips. */}
@@ -500,6 +618,7 @@ export default function Progress() {
       <TabsContent value="weight"><WeightTab /></TabsContent>
       <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
       <TabsContent value="photos"><PhotosLink /></TabsContent>
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
