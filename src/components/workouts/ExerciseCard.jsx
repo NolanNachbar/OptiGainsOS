@@ -905,7 +905,7 @@ export default function ExerciseCard({
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
             >
               <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
-                set.set_type === 'daily_min' ? 'text-info' : isActive ? 'text-ink' : !set.completed ? '' : 'text-ink-muted'
+                set.set_type === 'daily_min' ? 'text-info' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
               }`}>
                 {set.set_number}
               </span>

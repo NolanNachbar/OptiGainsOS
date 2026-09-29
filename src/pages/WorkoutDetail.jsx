@@ -1197,7 +1197,14 @@ export default function WorkoutDetail() {
   const exerciseLogsRef = useRef(exerciseLogs);
   exerciseLogsRef.current = exerciseLogs;
   const autoAdvanceTimerRef = useRef(null);
-  const prevFocusedDoneRef = useRef(false);
+  // Tracks {index, done} of the LAST render's focused exercise. Advisor
+  // caught a real bug in the first pass: tracking only a bare "was done"
+  // boolean meant tapping a chip for an ALREADY-done exercise (index changes,
+  // done stays true) still read as "not done -> done" and rescheduled an
+  // advance, bouncing the user straight back off the exercise they just
+  // navigated to review/edit. Only schedule when the SAME index flips from
+  // not-done to done.
+  const prevFocusedRef = useRef({ index: -1, done: false });
   const focusedExerciseForAdvance = exerciseLogs[effectiveFocusIndex];
   const focusedAllSetsDone = !!(
     focusedExerciseForAdvance?.sets?.length > 0
@@ -1205,7 +1212,8 @@ export default function WorkoutDetail() {
   );
 
   useEffect(() => {
-    if (focusedAllSetsDone && !prevFocusedDoneRef.current) {
+    const prev = prevFocusedRef.current;
+    if (focusedAllSetsDone && prev.index === effectiveFocusIndex && !prev.done) {
       const focusIndexAtSchedule = effectiveFocusIndex;
       autoAdvanceTimerRef.current = setTimeout(() => {
         setFocusedExerciseIndex((current) => {
@@ -1221,7 +1229,7 @@ export default function WorkoutDetail() {
         });
       }, 600);
     }
-    prevFocusedDoneRef.current = focusedAllSetsDone;
+    prevFocusedRef.current = { index: effectiveFocusIndex, done: focusedAllSetsDone };
 
     return () => {
       if (autoAdvanceTimerRef.current) {
