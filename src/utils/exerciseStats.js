@@ -231,7 +231,9 @@ export const estimateOneRepMax = (weight, reps) => {
 // most isolation/burnout work) from reporting a fabricated e1RM at all.
 const MAX_E1RM_REPS = 12;
 
-const isE1rmEligibleSet = (s) =>
+// Exported so per-row UI (the logger's e1RM column) can reuse the exact same
+// eligibility rule instead of re-deriving a second copy of it.
+export const isE1rmEligibleSet = (s) =>
   !!s?.completed && Number(s?.weight) > 0 && Number(s?.reps) > 0 && Number(s?.reps) <= MAX_E1RM_REPS;
 
 /**

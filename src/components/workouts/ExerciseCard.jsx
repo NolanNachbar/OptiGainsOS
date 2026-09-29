@@ -13,6 +13,7 @@ import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
 import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
+import { estimateOneRepMax, isE1rmEligibleSet } from "@/utils/exerciseStats";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -96,20 +97,25 @@ export default function ExerciseCard({
   // Presentation only: the first un-completed set is the "active" set.
   const activeSetIndex = exercise.sets.findIndex((s) => !s.completed);
 
-  // Set-grid template — SET | PREV | LOAD | REPS | (RIR) | ✓ | ✕
-  // The DONE/✓ and delete/✕ tracks are 44px each (touch-target floor) so the
-  // enlarged hit areas aren't re-clipped by their column width. A wider column
-  // gap on the trailing tracks keeps ✕ off ✓'s edge so a delete-set mis-tap
-  // isn't one stray thumb away from the completion check.
+  // Set-grid template (DESIGN.md dB .st) — SET | PREV | LOAD | REPS | (RIR) |
+  // E1RM | ✓ | ✕. LOAD/REPS/RIR are real <input>s and ✓/✕ are real buttons,
+  // so all five stay 44px (touch-target floor) at every breakpoint; SET (a
+  // label) and E1RM (read-only text) are the only tracks allowed to shrink.
+  // Measured at 428px viewport: the card's inner content area is 362px once
+  // the page's p-4, the card's 1px border, and CardContent's px-4 are
+  // subtracted. 22+52(Prev min)+44+44+44+36+44+44 + 7×4px gaps = 358px, so
+  // all 8 tracks fit with 4px to spare — no column needs to drop on mobile.
   const gridCols = showRIR
-    ? "grid grid-cols-[24px_minmax(52px,1fr)_58px_48px_40px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_88px_72px_56px_44px_44px]"
-    : "grid grid-cols-[24px_minmax(52px,1fr)_58px_48px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_88px_72px_44px_44px]";
+    ? "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_44px_36px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_72px_60px_48px_48px_44px_44px]"
+    : "grid grid-cols-[22px_minmax(52px,1fr)_44px_44px_36px_44px_44px] sm:grid-cols-[32px_minmax(64px,1fr)_80px_64px_48px_44px_44px]";
 
   // Translucent value cell — 44px tall (touch-target floor), rounded 10px,
-  // inset top highlight. Cells inside the active (coral-tinted) row read
-  // slightly brighter.
-  const setCell = (isActive) =>
-    `h-11 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] text-ink ` +
+  // inset top highlight. Cells inside the active (raised) row read slightly
+  // brighter; future (not-yet-reached, not completed) rows mute their value
+  // text so the current row is the one thing that reads at full contrast.
+  const setCell = (isActive, muted = false) =>
+    `h-11 w-full min-w-0 rounded-[10px] text-center font-technical font-extrabold text-[14px] ` +
+    `${muted ? 'text-ink-faint' : 'text-ink'} ` +
     `placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation ` +
     `shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] focus:outline-none focus:ring-2 focus:ring-brand/40 ` +
     `${isActive ? 'bg-[var(--glass-bg)]' : 'bg-track'}`;
@@ -545,7 +551,7 @@ export default function ExerciseCard({
         {/* Column header */}
         <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
           <span className="pl-0.5">Set</span>
-          <span>Last</span>
+          <span>Prev</span>
           <span className="text-center">{weightUnit}</span>
           <span className="text-center">{isHold ? "Sec" : "Reps"}</span>
           {showRIR && (
@@ -559,6 +565,7 @@ export default function ExerciseCard({
               </span>
             </span>
           )}
+          <span className="text-center">e1RM</span>
           <span className="text-center">Done</span>
           <span></span>
         </div>
@@ -603,12 +610,12 @@ export default function ExerciseCard({
             <div
               className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[44px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
                 isActive
-                  ? 'bg-brand/[0.06] rounded-xl -mx-2 px-2'
+                  ? 'bg-charcoal-surface2 rounded-xl -mx-2 px-2'
                   : setIndex === 0 ? '' : 'border-t-[0.5px] border-t-charcoal-border'
-              }`}
+              } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
             >
               <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
-                set.set_type === 'daily_min' ? 'text-info' : 'text-ink-muted'
+                set.set_type === 'daily_min' ? 'text-info' : isActive ? 'text-ink' : !set.completed ? '' : 'text-ink-muted'
               }`}>
                 {set.set_number}
               </span>
@@ -627,46 +634,57 @@ export default function ExerciseCard({
                   ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
                   : '—'}
               </button>
-              <input
-                type="number" inputMode="decimal"
-                aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
-                // `?? ""`, not `|| ""`: a logged 0 is a real load (every
-                // bodyweight movement) and `||` blanked the field out from
-                // under him. And an empty field means empty, not zero — with
-                // `|| 0` the box refilled itself with "0" the instant it was
-                // cleared, so a mistyped weight could not be deleted, only
-                // typed over, and the RIR input three rows down had the
-                // null-on-empty handling this one was missing.
-                value={set.weight ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  let next = raw === "" ? null : parseFloat(raw);
-                  // The max="2000" attribute below is decorative on a controlled
-                  // number input (never enforced outside <form> validation), so
-                  // enforce the cap here for real (r1-01): a fat-fingered extra
-                  // digit becomes the e1RM / PR / progression baseline downstream.
-                  if (Number.isFinite(next) && next > 2000) next = 2000;
-                  onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
-                }}
-                onFocus={handleInputFocus}
-                placeholder={
-                  isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
-                    ? String(progressionTargets.dailyMin)
-                    : isProgramMode && progressionTargets?.workingWeight
-                    ? String(progressionTargets.workingWeight)
-                    : lastPerformance?.lastWeight
-                    ? String(lastPerformance.lastWeight)
-                    : "0"
-                }
-                min="0"
-                // A fat-fingered extra digit (2255 for 225) is indistinguishable
-                // from a real lift downstream: it becomes the e1RM, the PR, and
-                // the progression baseline. 2000 is far above anything human and
-                // still catches the common slip. Enforced for real in onChange above.
-                max="2000"
-                step="2.5"
-                className={setCell(isActive)}
-              />
+              <div className="relative min-w-0">
+                <input
+                  type="number" inputMode="decimal"
+                  aria-label={`Set ${set.set_number} weight in ${weightUnit}`}
+                  // `?? ""`, not `|| ""`: a logged 0 is a real load (every
+                  // bodyweight movement) and `||` blanked the field out from
+                  // under him. And an empty field means empty, not zero — with
+                  // `|| 0` the box refilled itself with "0" the instant it was
+                  // cleared, so a mistyped weight could not be deleted, only
+                  // typed over, and the RIR input three rows down had the
+                  // null-on-empty handling this one was missing.
+                  value={set.weight ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    let next = raw === "" ? null : parseFloat(raw);
+                    // The max="2000" attribute below is decorative on a controlled
+                    // number input (never enforced outside <form> validation), so
+                    // enforce the cap here for real (r1-01): a fat-fingered extra
+                    // digit becomes the e1RM / PR / progression baseline downstream.
+                    if (Number.isFinite(next) && next > 2000) next = 2000;
+                    onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
+                  }}
+                  onFocus={handleInputFocus}
+                  placeholder={
+                    isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
+                      ? String(progressionTargets.dailyMin)
+                      : isProgramMode && progressionTargets?.workingWeight
+                      ? String(progressionTargets.workingWeight)
+                      : lastPerformance?.lastWeight
+                      ? String(lastPerformance.lastWeight)
+                      : "0"
+                  }
+                  min="0"
+                  // A fat-fingered extra digit (2255 for 225) is indistinguishable
+                  // from a real lift downstream: it becomes the e1RM, the PR, and
+                  // the progression baseline. 2000 is far above anything human and
+                  // still catches the common slip. Enforced for real in onChange above.
+                  max="2000"
+                  step="2.5"
+                  className={setCell(isActive, !set.completed && !isActive)}
+                />
+                {/* Ledger "+5" up-delta (DESIGN.md .up, gain-green): a completed set
+                    that beats the last logged weight for this exercise. Absolutely
+                    positioned + pointer-events-none so it never shrinks the input's
+                    44px hit area or intercepts the tap. */}
+                {set.completed && lastPerformance?.lastWeight != null && Number(set.weight) > Number(lastPerformance.lastWeight) && (
+                  <span className="pointer-events-none absolute -top-1 -right-0.5 font-technical text-[9px] font-bold text-leaf bg-[var(--color-bg)] px-0.5 rounded">
+                    +{Math.round(Number(set.weight) - Number(lastPerformance.lastWeight))}
+                  </span>
+                )}
+              </div>
               <input
                 type="number" inputMode="numeric"
                 aria-label={isHold ? `Set ${set.set_number} hold seconds` : `Set ${set.set_number} reps`}
@@ -688,7 +706,7 @@ export default function ExerciseCard({
                 // hour-long plank and a 500-rep set are both absurd, and either
                 // number wrecks the volume totals it feeds.
                 max={isHold ? "3600" : "500"}
-                className={setCell(isActive)}
+                className={setCell(isActive, !set.completed && !isActive)}
               />
               {showRIR && (
                 <input
@@ -705,9 +723,18 @@ export default function ExerciseCard({
                   min="0"
                   max="10"
                   step="0.5"
-                  className={setCell(isActive)}
+                  className={setCell(isActive, !set.completed && !isActive)}
                 />
               )}
+              {/* e1RM (Epley, ≤12 reps, completed sets only — matches
+                  exerciseStats.isE1rmEligibleSet exactly, no second rule). */}
+              <span className={`font-technical text-[13px] text-center tabular-nums ${
+                !set.completed && !isActive ? 'text-ink-faint' : 'text-ink-muted'
+              }`}>
+                {!isHold && isE1rmEligibleSet(set)
+                  ? Math.round(estimateOneRepMax(set.weight, set.reps))
+                  : '–'}
+              </span>
               <button
                 type="button"
                 role="checkbox"
@@ -718,7 +745,7 @@ export default function ExerciseCard({
               >
                 <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   set.completed
-                    ? 'bg-brand/[0.16] text-brand'
+                    ? 'bg-leaf/[0.16] text-leaf'
                     : 'border-[1.5px] border-charcoal-border text-ink-faint hover:border-brand/50 hover:text-brand'
                 }`}>
                   <Check className="w-5 h-5" strokeWidth={3} />
