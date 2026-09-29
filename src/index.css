@@ -59,8 +59,13 @@
      that measured ~2.9:1 on the module bg, a contrastFails regression vs the
      old CLEAN faint (~3.4:1). This is a mid gray, dimmer than muted but still
      legible as UI text; t3-dim grays are reserved for rules/chart axes only,
-     never text. */
-  --text-faint:     #7B828C;
+     never text.
+     Bumped from #7B828C -> #838A94: the first value cleared 4.5:1 (WCAG AA
+     normal text) on --color-bg/--color-surface but only hit ~4.26:1 on
+     --color-surface-2/--glass-elevated (dock tab labels, sheet chrome bullets)
+     — a probe-caught contrastFails regression. This value clears 4.5:1 on all
+     three surface tiers. */
+  --text-faint:     #838A94;
 
   /* ── Off-white — THE action color (no brand hue, Ledger) ──────────────── */
   --color-brand:     #ECEEF1;

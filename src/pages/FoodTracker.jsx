@@ -1702,15 +1702,19 @@ const handleSaveMealTemplate = () => {
         </div>
       </div>
 
-      {/* Thumb-zone FAB — teal action 'Add Food' in the lower-right, above the
-          dock. Mobile only; desktop keeps the sticky-bar button. active:scale-95
-          gives a press confirmation (fuel-nutrition-2) on the single easing. */}
+      {/* Thumb-zone FAB — off-white action 'Add Food' in the lower-right, above
+          the dock. Mobile only; desktop keeps the sticky-bar button. active:scale-95
+          gives a press confirmation (fuel-nutrition-2) on the single easing.
+          bottom: var(--floating-chrome-bottom), not a bare 5rem+safe-area —
+          the shared token's 12px breathing gap keeps this clear of the dock
+          even when the dock's real height drifts a couple px past its nominal
+          80px (SF Pro's line-height vs Manrope's caused exactly that). */}
       <button
         type="button"
         onClick={() => { resetForm(); setShowAddDialog(true); }}
         aria-label="Add food"
         className="cta-action lg:hidden fixed right-3 z-30 h-12 w-12 !rounded-full p-0 active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
-        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'var(--floating-chrome-bottom)' }}
       >
         <Plus className="w-6 h-6" />
       </button>

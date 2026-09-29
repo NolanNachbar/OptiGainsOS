@@ -60,7 +60,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.24, ease: EASE }}
                 className="fixed left-3 right-3 z-50 glass-elevated rounded-2xl p-1.5 overflow-hidden"
-                style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 48px + 12px)' }}
+                style={{ bottom: 'calc(var(--floating-chrome-bottom) + 48px + 12px)' }}
                 role="menu"
               >
                 {actions.map((action) => (
@@ -101,8 +101,16 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 transition={{ duration: 0.2, ease: EASE }}
                 onClick={() => setIsOpen(false)}
                 aria-label="Close quick-add menu"
+                // var(--floating-chrome-bottom): was a bare `calc(5rem + safe-
+                // area)` flush against the dock's ASSUMED height with zero
+                // margin. SF Pro's slightly taller default line-height grew
+                // the dock's actual painted height by a couple px, which was
+                // enough to clip this button's bottom corner under it (a
+                // probe-caught occlusion regression). The shared token adds
+                // its already-designed-in 12px breathing gap, so it no longer
+                // depends on the dock rendering at exactly its nominal height.
                 className="fixed right-3 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)]"
-                style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+                style={{ bottom: 'var(--floating-chrome-bottom)' }}
               >
                 <X className="w-6 h-6" />
               </motion.button>
@@ -183,7 +191,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
         // (5rem above the dock baseline vs 6rem) so its overlap zone is minimal
         // and sits below most card content. 48px is still ≥44px tap minimum.
         className={`fixed right-3 md:bottom-6 md:right-6 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)] ${isOpen ? "max-md:invisible" : ""}`}
-        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'var(--floating-chrome-bottom)' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"
         aria-label={isOpen ? "Close quick-add menu" : "Quick add"}

@@ -104,7 +104,11 @@ function WaterCard({ today }) {
               size="sm"
               onClick={() => addWater.mutate(ml)}
               disabled={addWater.isPending}
-              className="flex-1 min-h-[44px] glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-xs font-bold"
+              // min-w-0: SF Pro (Ledger) renders this bold label a few px
+              // wider per button than Manrope did; flex-1 alone won't shrink
+              // below content's intrinsic width, so 3 across overflowed the
+              // row (and bled into document scrollWidth) without it.
+              className="flex-1 min-w-0 min-h-[44px] glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-xs font-bold"
             >
               +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
             </Button>
