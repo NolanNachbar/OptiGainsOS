@@ -417,23 +417,66 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       );
     }
     return (
-      <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="min-w-0">
-          <div className="text-[15px] font-bold text-ink truncate">{titleText}</div>
-          {metaLine && (
-            <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">{metaLine}</div>
-          )}
+      <div className="sess min-h-[56px]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[15px] font-bold text-ink truncate">{titleText}</div>
+            {metaLine && (
+              <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">{metaLine}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => beginSession(programHref || "/quick-workout", programHref ? undefined : {
+              prescribedSession: { title: titleText, exercises: prescribedExercises },
+              preNote: preNote.trim() || undefined,
+            })}
+            className={`${demoteCta ? "cta-ghost" : "cta-action"} shrink-0 whitespace-nowrap`}
+          >
+            Start
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => beginSession(programHref || "/quick-workout", programHref ? undefined : {
-            prescribedSession: { title: titleText, exercises: prescribedExercises },
-            preNote: preNote.trim() || undefined,
-          })}
-          className={`${demoteCta ? "cta-ghost" : "cta-action"} shrink-0 whitespace-nowrap`}
-        >
-          Start
-        </button>
+        {/* Conditioning mark-done — the compact row still needs this: for a
+            run/swim not auto-detected via Garmin, this manual toggle
+            (cardio_completions) is the ONLY way to check it off, and Today is
+            now the sole renderer of PrescribedSessionCard (compact is not an
+            alternate view, it IS the shipped view), so it must not be
+            lift-list-only. */}
+        {(run || swim) && (
+          <div className="flex flex-col gap-2 mt-2.5 pt-2.5 border-t border-[var(--color-border)]">
+            {run && renderCardio({
+              kind: "run",
+              name: `${run.zone} run`,
+              icon: <Activity className="w-3.5 h-3.5 text-info shrink-0" />,
+              label: (() => {
+                const rtype = String(run.run_type || "").toLowerCase();
+                const rname = RUN_TYPE_LABEL[rtype] || `${run.zone} run`;
+                const isQuality = QUALITY_RUNS.has(rtype);
+                const paceUnit = /^\d+:\d{2}$/.test(String(run.pace)) ? "/mi" : "";
+                return (
+                  <span>
+                    {rname}
+                    {isQuality
+                      ? (run.duration_minutes ? <span className="font-technical text-ink-secondary">{` · ~${run.duration_minutes} min`}</span> : null)
+                      : (run.session_miles ? <span className="font-technical text-ink-secondary">{` · ${run.session_miles} mi`}</span> : null)}
+                    {run.pace && <span className="text-ink-faint">{` · ${run.pace}${paceUnit}`}</span>}
+                  </span>
+                );
+              })(),
+            })}
+            {swim && renderCardio({
+              kind: "swim",
+              name: `swim ${swim.meters}m`,
+              icon: <Waves className="w-3.5 h-3.5 text-info shrink-0" />,
+              label: (
+                <>
+                  <span className="font-technical text-ink-secondary">{swim.meters} m</span>
+                  {swim.stroke && <span className="text-ink-faint"> {swim.stroke}</span>}
+                </>
+              ),
+            })}
+          </div>
+        )}
         {checkinGateSheet}
       </div>
     );
