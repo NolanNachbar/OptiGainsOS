@@ -12,7 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
-import { useProfile, useAllFoodEntries } from "@/hooks/useUserQueries";
+import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
+import { calculateEWMA } from "@/utils/coachingUtils";
 import { useNowDay } from "@/hooks/useNowDay";
 import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
@@ -26,7 +27,7 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
-import { StatRing, MetricTile, SectionLabel, MiniRing, SegmentedControl } from "@/components/ui/system";
+import { StatRing, MetricTile, SectionLabel, SegmentedControl, Module } from "@/components/ui/system";
 import { bandFor } from "@/components/ui/system/helpers";
 import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame } from "lucide-react";
 import { format } from "date-fns";
@@ -49,6 +50,22 @@ const sentence = (s) => {
   const t = String(s || "").replace(/_/g, " ").trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
 };
+
+// Shared Ledger chart convention (DESIGN.md "Charts"): a gray history polyline
+// with a single off-white "now" dot on the last point. Used by both the
+// Readiness and Weight-trend modules on Today, each feeding it a normalized
+// {points, W, H} built from its own data.
+function Spark({ points, W, H }) {
+  if (!points || points.length < 2) return null;
+  const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const last = points[points.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none" aria-hidden="true">
+      <path d={path} fill="none" stroke="var(--text-faint)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <circle cx={last.x} cy={last.y} r="2.75" fill="var(--text-primary)" />
+    </svg>
+  );
+}
 
 export default function Today() {
   const { user } = useAuth();
@@ -88,6 +105,30 @@ export default function Today() {
 
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
+
+  // 14-day readiness-score history for the hero sparkline (B mockup: "Readiness
+  // · 14 days" with a gray history line + off-white "now" dot). No existing
+  // hook returns a score history (useAthleteState only reads the single latest
+  // row), so this queries the same athlete_state table directly — same source
+  // Today's own readiness ring already reads, just a date range instead of one row.
+  const { data: readinessHistory = [] } = useQuery({
+    queryKey: ["readinessHistory14d", today, user?.id],
+    queryFn: async () => {
+      const since = new Date(`${today}T00:00:00`);
+      since.setDate(since.getDate() - 13);
+      const { data, error } = await supabase
+        .from("athlete_state")
+        .select("date, recovery")
+        .eq("created_by", user.id)
+        .gte("date", since.toISOString().slice(0, 10))
+        .lte("date", today)
+        .order("date", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!today,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Actual (not target) carbs eaten around today's session(s) — pulled straight
   // from the logged food_entries.eaten_at/carbs_grams, never the engine's static
@@ -371,7 +412,48 @@ export default function Today() {
   ];
 
   const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
-  const { calories: calTarget, protein: proteinTarget } = useDailyTargets(today);
+  const dailyTargets = useDailyTargets(today);
+
+  // Nutrition-remaining module (Today, above the fold): the same
+  // allFoodEntries source + useDailyTargets targets FoodTracker's own "Daily
+  // log" ring/bars use — just today's totals in the B mockup's flat 4-column
+  // layout instead of a ring, so it fits the module budget here.
+  const todayTotals = useMemo(() => {
+    const rows = (allFoodEntries || []).filter((e) => e.date === today);
+    return rows.reduce((acc, e) => ({
+      calories: acc.calories + (Number(e.calories) || 0),
+      protein: acc.protein + (Number(e.protein_grams) || 0),
+      carbs: acc.carbs + (Number(e.carbs_grams) || 0),
+      fats: acc.fats + (Number(e.fats_grams) || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+  }, [allFoodEntries, today]);
+  // Readiness sparkline points — normalized into a 250×48 viewBox matching the
+  // B mockup's hero chart. Gray history polyline + an off-white "now" dot on
+  // the last point (DESIGN.md Charts: "gray history, off-white 'now' dot").
+  const readinessSpark = useMemo(() => {
+    const scores = readinessHistory
+      .map((r) => ({ date: r.date, score: r.recovery?.score }))
+      .filter((r) => r.score != null);
+    if (scores.length < 2) return null;
+    const W = 250, H = 48, PAD = 4;
+    const vals = scores.map((s) => Number(s.score));
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = max - min || 1;
+    const step = (W - PAD * 2) / (scores.length - 1);
+    const points = vals.map((v, i) => {
+      const x = PAD + i * step;
+      const y = PAD + (1 - (v - min) / span) * (H - PAD * 2);
+      return { x, y };
+    });
+    return { points, W, H };
+  }, [readinessHistory]);
+
+  const nutritionCols = [
+    { label: "Kcal", consumed: todayTotals.calories, goal: dailyTargets.calories, hue: "var(--text-primary)", unit: "" },
+    { label: "Protein", consumed: todayTotals.protein, goal: dailyTargets.protein, hue: "var(--hue-coral)", unit: "g" },
+    { label: "Carbs", consumed: todayTotals.carbs, goal: dailyTargets.carbs, hue: "var(--hue-blue)", unit: "g" },
+    { label: "Fat", consumed: todayTotals.fats, goal: dailyTargets.fats, hue: "var(--hue-yellow)", unit: "g" },
+  ];
 
   // lb/wk trend. Gold is the documented owner of kcal, so the trend ring must
   // NOT also ride gold — two gold rings flanking the coral protein ring flatten
@@ -396,8 +478,41 @@ export default function Today() {
     caption: trendAligned == null ? "lb/wk" : trendAligned ? "on goal" : "off goal",
   };
 
+  // Weight-trend module (Today, above the fold): reuses the same
+  // useBodyWeightEntries hook + calculateEWMA util that Progress.jsx's full
+  // WeightProgressChart uses — just a compact 30-day sparkline instead of the
+  // full stat-trio + big chart, so it fits the module budget here. Tapping
+  // "Detail ›" still routes to the full chart (Fuel → Body → Weight).
+  const { weightEntries } = useBodyWeightEntries();
+  const weightUnit = profile?.weight_unit || "lbs";
+  const weight30d = useMemo(() => {
+    const since = new Date(`${today}T00:00:00`);
+    since.setDate(since.getDate() - 29);
+    const sorted = [...weightEntries]
+      .filter((e) => e.recorded_date >= since.toISOString().slice(0, 10))
+      .sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
+    return calculateEWMA(sorted, 0.1);
+  }, [weightEntries, today]);
+  const latestWeight = weight30d[weight30d.length - 1];
+  // Same gray-history/off-white-now-dot sparkline convention as readinessSpark,
+  // built from the EWMA trend line (not the raw noisy daily weigh-ins).
+  const weightSpark = useMemo(() => {
+    if (weight30d.length < 2) return null;
+    const W = 250, H = 48, PAD = 4;
+    const vals = weight30d.map((e) => Number(e.trendWeight));
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = max - min || 1;
+    const step = (W - PAD * 2) / (weight30d.length - 1);
+    const points = vals.map((v, i) => {
+      const x = PAD + i * step;
+      const y = PAD + (1 - (v - min) / span) * (H - PAD * 2);
+      return { x, y };
+    });
+    return { points, W, H };
+  }, [weight30d]);
+
   return (
-    <div className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 pb-6 max-w-[1240px] mx-auto">
+    <div className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 pb-6 max-w-[720px] mx-auto">
       {/* Desktop-only page header (mobile header already names the screen) */}
       <div className="hidden lg:flex items-baseline justify-between mb-5 rise-in">
         <div className="flex items-baseline gap-3.5">
@@ -406,125 +521,163 @@ export default function Today() {
         </div>
       </div>
 
-      {activeSession && (
-        <Link
-          to={activeSessionPath}
-          // Neutral glass, not glass-brand/text-brand: the FAB is the single
-          // teal action on this screen, so the in-progress banner reads as a
-          // quiet "tap to continue" disclosure row (muted ink + chevron) rather
-          // than a second competing teal CTA.
-          className="surface flex items-center justify-between gap-3 px-4 py-3 mb-3 rounded-2xl text-ink text-sm font-semibold rise-in"
-        >
-          <span className="flex items-center gap-2">
-            <Activity className="w-4 h-4 shrink-0 text-muted-2" />
-            Workout in progress, tap to continue
-          </span>
-          <ChevronRight className="w-4 h-4 shrink-0 text-muted-2" />
-        </Link>
+      {/* Load-failure is an app condition, not a biometric — render it as
+          neutral glass (muted icon + brand-colored retry), not warn-amber,
+          so the physiological spectrum stays reserved for body data. */}
+      {(prescriptionError || stateError) && (
+        <div className="glass-inset flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-muted-2" />
+          <span className="font-semibold text-muted-2">Could not load today&apos;s data</span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="ml-auto font-semibold text-brand min-h-[44px] -my-2 px-1"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
-      {/* Mobile order (the canonical home order):
-            readiness hero → subjective check-in → prescribed session (+ghost log)
-            → Fuel rings → thumb-zone quick actions (Log food / Weigh in)
-            → Today's Actions → Details disclosure (State / Brief / Muscle).
-          Desktop: hero/check-in/session/actions in the left column, the Fuel rail
-          on the right, DOM order stays mobile-first; lg placement is explicit. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-3 lg:gap-4">
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 rise-in-2">
-          {/* Load-failure is an app condition, not a biometric — render it as
-              neutral glass (muted icon + brand-colored retry), not warn-amber,
-              so the physiological spectrum stays reserved for body data. */}
-          {(prescriptionError || stateError) && (
-            <div className="glass-inset flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-muted-2" />
-              <span className="font-semibold text-muted-2">Could not load today&apos;s data</span>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="ml-auto font-semibold text-brand min-h-[44px] -my-2 px-1"
-              >
-                Retry
-              </button>
+      {/* Ledger module stack (DESIGN.md / directions "B"): a single flat column,
+          8px gaps, one order top → bottom for every breakpoint —
+            1. Readiness  2. Session  3. To-do  4. Nutrition remaining
+            5. Weight trend  6. everything else (secondary / below the fold).
+          Target: modules 1-4 visible without scrolling at 428×926. */}
+      <div className="space-y-2">
+        {/* 1 — Readiness: score + one-line verdict + 14-day sparkline. */}
+        <Module label="Readiness · 14 days">
+          {(prescriptionLoading || stateLoading) ? (
+            <div className="pulse-loop space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="w-[104px] h-[104px] rounded-full bg-track shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-5 bg-track rounded-lg w-2/3" />
+                  <div className="h-3 bg-track rounded-lg w-full" />
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4 sm:gap-6">
+                {/* StatRing rule: the readiness ring is BAND-colored (the verdict
+                    hue), so the arc tracks the score/headline, the component's
+                    teal gradient is the default only for non-verdict rings. */}
+                <StatRing value={score} size={88} label="Readiness" color={readinessHue} />
+                <div className="flex-1 min-w-0">
+                  <h2 className="type-display text-lg" style={{ color: headlineColor }}>
+                    {headline}
+                  </h2>
+                  <p className="font-technical text-[13px] font-semibold text-secondary leading-relaxed mt-1">
+                    {detail}
+                  </p>
+                </div>
+              </div>
+              {readinessSpark && (
+                <div className="mt-2">
+                  <Spark {...readinessSpark} />
+                </div>
+              )}
+            </>
           )}
-          {/* The readiness hero — verdict in 3 seconds */}
-          <div className="glass px-4 sm:px-5 py-4 rise-in">
-            {(prescriptionLoading || stateLoading) ? (
-              <div className="pulse-loop space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-[104px] h-[104px] rounded-full bg-track shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-5 bg-track rounded-lg w-2/3" />
-                    <div className="h-3 bg-track rounded-lg w-full" />
-                    <div className="h-3 bg-track rounded-lg w-4/5" />
+        </Module>
+
+        {/* 2 — Start/Resume session (Ledger ".sess" row). The in-progress
+            "tap to continue" banner sits inside this same module when a session
+            is live; otherwise the prescribed/program session CTA renders. */}
+        <Module label="Session">
+          {activeSession && (
+            <Link
+              to={activeSessionPath}
+              // Neutral, not brand-colored: the FAB is the single teal action on
+              // this screen, so this reads as a quiet "tap to continue" row.
+              className="-mx-4 sm:-mx-5 px-4 sm:px-5 -mt-1 mb-3 pb-3 border-b border-[var(--color-border)] flex items-center justify-between gap-3 text-ink text-sm font-semibold"
+            >
+              <span className="flex items-center gap-2">
+                <Activity className="w-4 h-4 shrink-0 text-muted-2" />
+                Workout in progress, tap to continue
+              </span>
+              <ChevronRight className="w-4 h-4 shrink-0 text-muted-2" />
+            </Link>
+          )}
+          {/* PrescribedSessionCard owns ALL its fallbacks now: when the engine
+              prescribes nothing it renders the neutral "Log a workout" ghost
+              itself. One exception: when a workout is already in progress AND
+              the engine has no prescription, that fallback ghost is redundant
+              with the continue banner above, so it's suppressed here. */}
+          {!(activeSession && !prescription) && (
+            <>
+              {/* A finished program is silent otherwise: the enrollment flips
+                  itself to `completed` on the last logged workout. Renders
+                  nothing while a block is active or paused. */}
+              <ProgramCompleteCard className="mb-3" />
+              {/* The scale sits above the session CTA, not inside a card he has
+                  to open. Renders nothing on a day already weighed. */}
+              <WeighInPrompt today={today} className="mb-3" />
+              {/* The subjective check-in rides the Begin Session flow: the card
+                  gates its CTA on todayCheckin. */}
+              <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} />
+            </>
+          )}
+        </Module>
+
+        {/* 3 — To-do checklist, moved up from last so it's above the fold.
+            Self-hides when empty. */}
+        <TodayActions today={today} briefActions={briefActions} isError={briefError} />
+
+        {/* 4 — Nutrition remaining: flat 4-column Kcal/Protein/Carbs/Fat, 8px
+            bars, macro hues on the labels (DESIGN.md — calories own no hue). */}
+        <Module label="Nutrition · remaining" detail="Detail" detailHref="/fuel">
+          <div className="grid grid-cols-4 gap-3">
+            {nutritionCols.map((c) => {
+              const remaining = c.goal ? Math.max(0, Math.round(c.goal - c.consumed)) : null;
+              const pct = c.goal ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
+              return (
+                <div key={c.label} className="min-w-0">
+                  <div className="text-[11px] font-semibold mb-1.5 truncate" style={{ color: c.hue }}>{c.label}</div>
+                  <div className="h-2 rounded-full bg-track overflow-hidden">
+                    <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
                   </div>
+                  <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
+                    {remaining != null ? `${withThousands(remaining)}${c.unit} left` : "—"}
+                  </div>
+                  {c.label === "Kcal" && avgCal != null && (
+                    <div className="text-[10px] text-muted font-semibold mt-0.5 truncate">7d avg {compactK(avgCal)}</div>
+                  )}
+                  {c.label === "Protein" && nutrition?.avg_protein_7d != null && (
+                    <div className="text-[10px] text-muted font-semibold mt-0.5 truncate">7d avg {Math.round(nutrition.avg_protein_7d)}g</div>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px]">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 bg-track rounded-lg" />
-                  ))}
-                </div>
-              </div>
-            ) : (
-            <><div className="flex items-center gap-4 sm:gap-6">
-              {/* StatRing rule: the readiness ring is BAND-colored (the verdict
-                  hue), so the arc tracks the score/headline, the component's
-                  teal gradient is the default only for non-verdict rings. The
-                  micro-label below the score stays 'READINESS'. */}
-              <StatRing value={score} size={104} label="Readiness" color={readinessHue} />
-              <div className="flex-1 min-w-0">
-                <h2 className="type-display text-lg sm:text-xl" style={{ color: headlineColor }}>
-                  {headline}
-                </h2>
-                <p className="font-technical text-[13px] font-semibold text-secondary leading-relaxed mt-1 max-w-[52ch]">
-                  {detail}
-                </p>
-              </div>
+              );
+            })}
+          </div>
+        </Module>
+
+        {/* 5 — Weight trend: EWMA trend value + compact 30-day sparkline,
+            reusing the same useBodyWeightEntries/calculateEWMA the full
+            WeightProgressChart (Fuel → Body) uses. */}
+        <Module label="Weight trend · 30 days" detail="Detail" detailHref="/fuel?tab=body">
+          <div className="flex items-baseline gap-2">
+            <span className="type-display text-2xl tabular-nums">
+              {latestWeight ? `${fmt(latestWeight.trendWeight, 1)}` : "—"}
+              <span className="text-sm font-semibold text-muted ml-1">{weightUnit}</span>
+            </span>
+            <span className="text-[13px] font-semibold" style={{ color: trend.hue }}>
+              {trend.value !== "—" ? `${trend.value} lb/wk` : "—"} <span className="text-muted">· {trend.caption}</span>
+            </span>
+          </div>
+          {weightSpark ? (
+            <div className="mt-2">
+              <Spark {...weightSpark} />
             </div>
-            </>)}
-          </div>
-        </div>
+          ) : (
+            <p className="text-[12px] text-muted-2 font-semibold mt-2">Log a few weigh-ins to see a trend</p>
+          )}
+        </Module>
 
-        {/* The day's CTA — under the verdict so the next action is never
-            buried. PrescribedSessionCard owns ALL its fallbacks now: when the
-            engine prescribes nothing it renders the neutral "Log a workout" ghost
-            itself (the duplicate ghost that used to live here was removed).
-
-            One exception: when a workout is already in progress AND the engine has
-            no prescription, the card's ONLY content would be that "Log a workout"
-            fallback ghost, which is redundant with (and competes against) the
-            teal "tap to continue" banner above. In that single case we suppress
-            the card so the continue banner is the sole workout entry. On train
-            days (a prescription exists) the card still renders, and demoteCta
-            keeps its Begin Session a ghost so there's never a second teal. */}
-        {!(activeSession && !prescription) && (
-          <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 rise-in-2">
-            {/* Today's session is pinned to the approved plan, so an unapproved
-                week means this card is showing last week's session. Say so here
-                rather than only on the Schedule tab — this is the screen he
-                opens first. */}
-            {/* A finished program is silent otherwise: the enrollment flips
-                itself to `completed` on the last logged workout and the weekly
-                schedule simply stops filling in. Renders nothing while a block
-                is active or paused. */}
-            <ProgramCompleteCard className="mb-3" />
-            {/* The scale sits above the session CTA, not inside a card he has
-                to open. It renders nothing on a day already weighed, so on most
-                days this costs a null; on a day it does not, it is the first
-                thing under the verdict. The pre-session gate still catches him
-                at the gym — this catches him at home, where the scale is. */}
-            <WeighInPrompt today={today} className="mb-3" />
-            {/* The subjective check-in now rides the Begin Session flow: the card
-                gates its CTA on todayCheckin (no check-in yet → check-in sheet
-                first, then straight into the logger). */}
-            <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} />
-          </div>
-        )}
-
-        {/* Actual carbs eaten pre/post each session, from the real food log —
-            not the engine's target. Empty on a rest day (carbTimingToday null). */}
+        {/* Below the fold: everything else — secondary or collapsed.
+            Carb timing chip → Vitals + Brief/State/Muscle detail disclosure. */}
         {carbTimingToday && carbTimingToday.length > 0 && (
-          <div className="lg:col-start-1 lg:col-span-8 rise-in-2 glass px-4 sm:px-5 py-3.5 mt-3">
+          <div className="glass px-4 sm:px-5 py-3.5">
             <div className="flex items-center gap-2 mb-1.5">
               <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
               <span className="section-label">
@@ -543,165 +696,52 @@ export default function Today() {
           </div>
         )}
 
-        {/* Thumb-zone quick actions — the two most-tapped daily logs (food +
-            weigh-in). Lifted directly under the session CTA (ABOVE the Fuel
-            rings) so food logging lands in the thumb zone of the first viewport
-            and never requires a scroll. On desktop it stays in the left column
-            (lg:row-start-4) below the session; the Fuel rail keeps the right
-            rail, so this DOM move is mobile-only. */}
-        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 rise-in-2">
-          <div className="glass px-4 pt-3 pb-3 rise-in">
-            <SectionLabel className="mb-2">Quick actions</SectionLabel>
-            {/* One tile: weigh-in was dropped here as a redundant entry — the
-                global FAB fan already owns "Weigh In" (dashboard-5), so a second
-                weigh-in launcher on Today duplicated it. "Log food" is the one
-                most-tapped daily log, so it takes the full row. */}
-            <Link
-              to="/food-tracker?addFood=true"
-              className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
-            >
-              {/* Action tile, not a datum: the icon carries no value, so it
-                  rides neutral muted ink. Data hues (gold/coral/violet) are
-                  reserved for actual readouts, never tile decoration. */}
-              <Apple className="w-[18px] h-[18px] text-muted-2" />
-              <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
-              <span className="text-[10px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Fuel today — the detail of the #3 priority. On MOBILE it renders after
-            the thumb-zone quick actions (DOM order) so the food-log tap lands
-            first. On desktop it jumps to the right rail via explicit
-            lg:col/row-start, so this DOM move is mobile-only. */}
-        <aside className="lg:col-start-9 lg:col-span-4 lg:row-start-1 space-y-3 rise-in-3">
-          {/* Fuel today — hue-coded rings, one tap to the log */}
-          {/* active:press — tap feedback on the whole Fuel card so a thumb tap
-              reads as a pressed control, not an inert panel (today-7). On the
-              single system easing; the scale settles back on release. */}
-          <Link
-            to="/fuel"
-            className="glass glass-interactive block px-4 py-3 transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-[0.98]"
-          >
-            {/* Chevron lives in the header row (the link affordance) so the
-                three rings below own a clean, centered row to themselves. */}
-            <div className="flex items-center justify-between">
-              <SectionLabel>Fuel today</SectionLabel>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
-                {nutrition?.phase ? `${nutrition.phase} phase` : "targets"}
-                <ChevronRight className="w-4 h-4 text-secondary" />
-              </span>
-            </div>
-            <div className="flex items-center justify-around mt-2 px-1">
-              {/* Center value is the LIVE 7-day average (what the arc measures),
-                  with the target moved to the caption so the digit and the arc
-                  agree. Labels say "/ target · 7d avg" so the number is never
-                  mistaken for today's intake or for the goal itself. */}
-              <MiniRing
-                label={calTarget ? `/${withThousands(calTarget)} · 7d` : "kcal · 7d"} hue="var(--hue-gold)" size={50}
-                value={compactK(avgCal)}
-                frac={calTarget && avgCal ? avgCal / calTarget : 0}
-              />
-              {/* Protein owns coral. When the 7d average is genuinely absent the
-                  ring drops to the faint track hue (not full coral at frac 0) so
-                  a bare "—" reads as an intentional "no data yet" state rather
-                  than a broken/colorless circle flanked by the two filled
-                  rings. */}
-              <MiniRing
-                label={proteinTarget ? `/${Math.round(proteinTarget)}g · 7d` : "protein · 7d"}
-                hue={nutrition?.avg_protein_7d != null ? "var(--hue-coral)" : "var(--text-faint)"}
-                value={nutrition?.avg_protein_7d != null ? `${Math.round(nutrition.avg_protein_7d)}` : "—"}
-                frac={proteinTarget && nutrition?.avg_protein_7d ? nutrition.avg_protein_7d / proteinTarget : 0}
-              />
-              {/* lb/wk rides the body-comp violet hue (distinct from gold kcal
-                  and coral protein so the three rings read as three datums); the
-                  SIGN (+/−) carries direction and the label flips to on/off goal
-                  so alignment is read from sign + caption, not a ring color. */}
-              <MiniRing
-                label={trend.caption} hue={trend.hue}
-                value={trend.value}
-                frac={trend.frac}
-              />
-            </div>
-          </Link>
-        </aside>
-
         {/* Consolidated detail card — one header, one body. The three former
             disclosure drawers (Brief / State / Muscle) collapse into a single
-            glass card switched by the lighter inset SegmentedControl. On MOBILE
-            the whole card sits behind a single disclosure (default closed) so the
-            primary surface ends near the 2-viewport mark; on desktop the body is
-            always shown. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-4 rise-in-3">
-          <div className="surface overflow-hidden">
-            {/* Vitals sub-row — the 4 biometric tiles (HRV/RHR/Sleep/Batt) moved
-                off the readiness hero so the hero stays StatRing + verdict and the
-                session CTA lands in viewport 1. Now rendered ALWAYS (not behind
-                the mobile disclosure): at 390px the collapsed stack ended well
-                above the fold and left a tall dead band between this card and the
-                dock. Promoting these 4 glanceable markers fills that hollow with
-                real data instead of an empty gap, while the fuller Brief / State /
-                Muscle context still lives behind the disclosure below.
-                2-up at 390px, 4-up at sm+ so the values are never cramped. */}
-            <div className="px-4 pt-3 lg:pt-4">
-              <SectionLabel>Vitals</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
-                {morningMetrics.map((m) => (
-                  <MetricTile
-                    key={m.k}
-                    label={m.k}
-                    value={m.v}
-                    unit={m.u || undefined}
-                    accent={m.hue}
-                    // Uniform L+R padding on every Vitals cell so the four tiles
-                    // compute identical insets at 390px. FAB overlap is handled by
-                    // the page's --fab-clearance bottom budget (Layout's <main>
-                    // reserves the FAB's full footprint), so the bottom-right BATT
-                    // tile no longer needs a bespoke right-edge inset to clear the
-                    // floating '+'.
-                    className="!py-2 !px-2.5"
-                  />
-                ))}
-              </div>
-            </div>
-            {/* Mobile-only disclosure trigger — ≥44px tap target. */}
-            <button
-              type="button"
-              onClick={() => setDetailOpen(!detailOpenResolved)}
-              aria-expanded={detailOpenResolved}
-              className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
-            >
-              <SectionLabel>Today&apos;s detail</SectionLabel>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
-                Brief · state · muscle
-                <ChevronDown
-                  className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpenResolved ? "rotate-180" : ""}`}
+            card switched by the lighter inset SegmentedControl, plus the Vitals
+            row. Now demoted below the four primary modules; still behind a
+            mobile disclosure so it doesn't add scroll weight when collapsed. */}
+        <div className="surface overflow-hidden">
+          <div className="px-4 pt-3 lg:pt-4">
+            <SectionLabel>Vitals</SectionLabel>
+            <div className="vit4 grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
+              {morningMetrics.map((m) => (
+                <MetricTile
+                  key={m.k}
+                  label={m.k}
+                  value={m.v}
+                  unit={m.u || undefined}
+                  accent={m.hue}
+                  className="!py-2 !px-2.5"
                 />
-              </span>
-            </button>
-            {/* Body: toggleable on mobile via detailOpenResolved, always shown on desktop. */}
-            <div className={`${detailOpenResolved ? "block" : "hidden"} lg:block`}>
-            {/* In-card switch uses the lighter inset SegmentedControl (NOT the
-                global glass-elevated coral SubTabs strip) so it doesn't mimic the
-                page-level nav pills. */}
+              ))}
+            </div>
+          </div>
+          {/* Mobile-only disclosure trigger — ≥44px tap target. */}
+          <button
+            type="button"
+            onClick={() => setDetailOpen(!detailOpenResolved)}
+            aria-expanded={detailOpenResolved}
+            className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
+          >
+            <SectionLabel>Today&apos;s detail</SectionLabel>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
+              Brief · state · muscle
+              <ChevronDown
+                className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpenResolved ? "rotate-180" : ""}`}
+              />
+            </span>
+          </button>
+          <div className={`${detailOpenResolved ? "block" : "hidden"} lg:block`}>
             <div className="px-4 pt-3 lg:pt-4">
               <SegmentedControl
                 options={detailTabs}
                 value={detailTab}
                 onChange={setDetailTab}
                 size="md"
-                // Arbitrary child variant lifts each segment button to a ≥44px
-                // tap target without touching the shared primitive (used at its
-                // compact default elsewhere).
                 className="inline-flex [&_button]:min-h-[44px] [&_button]:px-4"
               />
             </div>
-            {/* Even vertical rhythm (today-5): the tab body opens one shared
-                step (pt-3 / lg:pt-4) below the SegmentedControl — the SAME gap
-                that sits above the control and above the Vitals grid — so
-                Vitals → control → brief read as evenly spaced bands rather than
-                three different gaps. Each tab carries only its bottom padding
-                (pb-4); the top gap lives here once. */}
             <div key={detailTab} className="rise-in pt-3 lg:pt-4 pb-4">
               {detailTab === "state" && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-4">
@@ -723,11 +763,6 @@ export default function Today() {
                     accent="var(--hue-blue)"
                     sub={vdot?.vdot_gap != null ? `${fmt(vdot.vdot_gap, 1)} to PST` : "aerobic"}
                   />
-                  {/* Fitness (chronic training load) replaces the former
-                      "To Aug 31 · PST" deadline tile, which duplicated the gold
-                      "days · PST" chip in the mobile header (Layout.jsx). CTL is
-                      a distinct training-state datum and shares the aerobic blue
-                      hue family with the load metrics around it. */}
                   <MetricTile
                     label="Fitness · CTL"
                     value={fmt(fatigue?.ctl)}
@@ -753,18 +788,22 @@ export default function Today() {
                 )
               )}
             </div>
-            </div>
           </div>
         </div>
 
-        {/* Today's Actions — the coaching todo list ported from Dashboard. Moved
-            BELOW the collapsed detail disclosure so the primary surface (verdict +
-            session CTA + fuel + quick actions) ends near the 2-viewport mark and
-            the coaching todo region no longer pushes the detail disclosure off
-            screen. Self-hides when empty, so it only occupies a slot when there is
-            something to do. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-5 rise-in-3">
-          <TodayActions today={today} briefActions={briefActions} isError={briefError} />
+        {/* Old "Quick actions" Log-food tile — demoted here as a secondary
+            shortcut now that Log Food is a primary FAB action and Nutrition ·
+            remaining above already links to /fuel. */}
+        <div className="glass px-4 pt-3 pb-3">
+          <SectionLabel className="mb-2">Quick actions</SectionLabel>
+          <Link
+            to="/food-tracker?addFood=true"
+            className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
+          >
+            <Apple className="w-[18px] h-[18px] text-muted-2" />
+            <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
+            <span className="text-[10px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
+          </Link>
         </div>
       </div>
     </div>
