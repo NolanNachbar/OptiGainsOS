@@ -261,7 +261,7 @@ export default function MealTemplates({ compact = false }) {
                     <Button
                       size="sm"
                       onClick={() => handleApply(template)}
-                      className="flex-1 bg-brand"
+                      className="flex-1 bg-brand text-[var(--color-action-dark)]"
                     >
                       <Play className="w-3 h-3 mr-1" />
                       Apply
