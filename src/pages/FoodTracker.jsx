@@ -135,7 +135,7 @@ const FavoriteToggle = ({ food, onToggle }) => (
     onClick={(e) => { e.stopPropagation(); onToggle({ id: food.id, is_favorite: !food.is_favorite }); }}
     aria-label={food.is_favorite ? `Unfavorite ${food.food_name}` : `Favorite ${food.food_name}`}
     aria-pressed={!!food.is_favorite}
-    className="px-3 py-3 min-h-[44px] shrink-0 text-ink-faint hover:text-gold transition-colors duration-200 [transition-timing-function:var(--ease)]"
+    className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center text-ink-faint hover:text-gold transition-colors duration-200 [transition-timing-function:var(--ease)]"
   >
     <Star className={`w-4 h-4 ${food.is_favorite ? "fill-gold text-gold" : ""}`} />
   </button>
@@ -2690,7 +2690,7 @@ const handleSaveMealTemplate = () => {
                             <button
                               type="button"
                               onClick={() => setRecentExpanded(!recentExpanded)}
-                              className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                              className="w-full px-3 min-h-[44px] py-2 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <span>Recent</span>
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
