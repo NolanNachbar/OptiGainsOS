@@ -29,7 +29,7 @@ import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { getLastExercisePerformance } from "@/utils/exerciseStats";
+import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
@@ -1494,6 +1494,13 @@ export default function WorkoutDetail() {
                   // history rather than "next".
                   const showNextHeader = exerciseIndex === effectiveFocusIndex + 1;
                   const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
+                  // e1RM sparkline data — computed ONLY for the focused
+                  // exercise (fetch/compute scoped to what's on screen, per
+                  // the coordinator's e1RM module requirement), reusing the
+                  // exact same history function Lifts.jsx uses.
+                  const e1rmHistory = exerciseIndex === effectiveFocusIndex
+                    ? getExerciseE1rmHistory(allWorkoutLogs, exerciseLog.name)
+                    : null;
                   const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
                   const targets = programEx ? progressionTargetsMap[programEx.name] : null;
                   // Match the template entry BY NAME, like programEx above. This was
@@ -1557,6 +1564,7 @@ export default function WorkoutDetail() {
                             exerciseIndex === exerciseLogs.length - 1
                             || exerciseIndex + 1 === effectiveFocusIndex
                           }
+                          e1rmHistory={e1rmHistory}
                         />
                       )}
                     </SortableExerciseRow>

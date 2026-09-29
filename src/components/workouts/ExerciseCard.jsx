@@ -64,6 +64,15 @@ export default function ExerciseCard({
   // its own bottom rule so the module's rows read as N-1 internal dividers,
   // not N (which would double up against the module container's own edge).
   isLastRow = false,
+  // e1RM sparkline data (Ledger rebuild, mockup .mod "e1RM · last N
+  // sessions"): [{date, e1rm}] sorted oldest -> newest, from the exact same
+  // getExerciseE1rmHistory() used by Lifts.jsx — no separate fetch, no
+  // reimplemented eligibility rule. WorkoutDetail computes this ONLY for the
+  // focused exercise (it's already loading allWorkoutLogs for the whole
+  // page, but running the per-exercise history filter for every compact row
+  // too would be wasted work for data nobody sees), so this is null for
+  // every non-focused row.
+  e1rmHistory = null,
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -175,6 +184,30 @@ export default function ExerciseCard({
     if (!target && !volume && !best) return null;
     return { target, volume, best };
   }, [isProgramMode, progressionTargets, programExercise, originalExercise, exercise.sets, isHold, lastPerformance, weightUnit]);
+
+  // e1RM sparkline (mockup .mod "e1RM · last N sessions"): hidden outright
+  // with fewer than 2 sessions of history (a single point isn't a trend and
+  // the mockup's delta figure would have nothing to compare against).
+  // e1rmHistory is already sorted oldest -> newest by getExerciseE1rmHistory.
+  const e1rmSpark = useMemo(() => {
+    if (!e1rmHistory || e1rmHistory.length < 2) return null;
+    const points = e1rmHistory.slice(-8);
+    const values = points.map((p) => p.e1rm);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const w = 200;
+    const h = 36;
+    const pad = 4;
+    const coords = points.map((p, i) => ({
+      x: points.length > 1 ? pad + (i / (points.length - 1)) * (w - pad * 2) : w / 2,
+      y: h - pad - ((p.e1rm - min) / range) * (h - pad * 2),
+    }));
+    const path = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+    const current = Math.round(points[points.length - 1].e1rm);
+    const prior = Math.round(points[points.length - 2].e1rm);
+    return { coords, path, current, delta: current - prior, count: points.length, w, h };
+  }, [e1rmHistory]);
 
   // Set-grid template (DESIGN.md dB .st) — SET | PREV | LOAD | REPS | (RIR) |
   // E1RM | ✓ | ✕. LOAD/REPS/RIR are real <input>s and ✓/✕ are real buttons,
@@ -619,6 +652,51 @@ export default function ExerciseCard({
             set-progress segment strip that used to live here is dropped outright
             — it duplicated the "N/M sets" count already in the page meta line
             above the logger. */}
+
+        {/* e1RM module (mockup .mod "e1RM · last N sessions"): sparkline over
+            up to the last 8 sessions plus a hero current-e1RM figure and a
+            vs-last-session delta. Hidden entirely below 2 sessions of
+            history (e1rmSpark is null in that case). */}
+        {e1rmSpark && (
+          <div className="border-t border-charcoal-border pt-2.5 mb-3">
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">
+                e1RM · last {e1rmSpark.count} sessions
+              </span>
+              {e1rmSpark.delta !== 0 && (
+                <span className={`text-[11px] font-bold ${e1rmSpark.delta > 0 ? "text-leaf" : "text-ink-muted"}`}>
+                  {e1rmSpark.delta > 0 ? "+" : ""}{e1rmSpark.delta}{weightUnit}
+                </span>
+              )}
+            </div>
+            <div className="flex items-end gap-3">
+              <div className="font-technical font-extrabold text-ink tabular-nums flex-shrink-0" style={{ fontSize: 28, lineHeight: 1 }}>
+                {e1rmSpark.current}
+                <span className="text-[12px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+              </div>
+              <svg
+                viewBox={`0 0 ${e1rmSpark.w} ${e1rmSpark.h}`}
+                className="flex-1 min-w-0"
+                style={{ height: e1rmSpark.h }}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path d={e1rmSpark.path} fill="none" className="stroke-ink-faint" strokeWidth="1.5" />
+                {e1rmSpark.coords.slice(0, -1).map((c, i) => (
+                  <circle key={i} cx={c.x} cy={c.y} r="1.75" className="fill-ink-faint" />
+                ))}
+                {e1rmSpark.coords.length > 0 && (
+                  <circle
+                    cx={e1rmSpark.coords[e1rmSpark.coords.length - 1].x}
+                    cy={e1rmSpark.coords[e1rmSpark.coords.length - 1].y}
+                    r="2.75"
+                    className="fill-ink"
+                  />
+                )}
+              </svg>
+            </div>
+          </div>
+        )}
 
         {/* Per-exercise vitals (DESIGN.md dB .vit4): Target / Volume vs last /
             Best set. Only rendered cells with real data; the row itself is
