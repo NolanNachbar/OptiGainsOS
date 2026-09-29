@@ -9,9 +9,10 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTodayString, nowInTz } from "@/utils/dateUtils";
+import { nowInTz } from "@/utils/dateUtils";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { calculateEWMA } from "@/utils/coachingUtils";
 import { useNowDay } from "@/hooks/useNowDay";
@@ -19,7 +20,8 @@ import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
-import WeighInPrompt from "@/components/dashboard/WeighInPrompt";
+import { useTodayBodyWeight, useLastBodyWeight, useLogWeight } from "@/hooks/useWeighIn";
+import { BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
@@ -27,20 +29,11 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
-import { StatRing, MetricTile, SectionLabel, SegmentedControl, Module } from "@/components/ui/system";
-import { bandFor } from "@/components/ui/system/helpers";
-import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame } from "lucide-react";
+import { MetricTile, SectionLabel, SegmentedControl, Module } from "@/components/ui/system";
+import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame, Check } from "lucide-react";
 import { format } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
-// Compact kcal for the 50px MiniRing — "2,043" overruns the ring, so values
-// ≥1,000 collapse to a single-decimal "k" form (2043 → "2.0k"). MiniRing is a
-// shared primitive (no in-ring autosizing), so the abbreviation happens at the
-// call site to keep the digit count ≤4 glyphs.
-const compactK = (n) =>
-  n == null || Number.isNaN(Number(n)) ? "—"
-    : Number(n) >= 1000 ? `${(Number(n) / 1000).toFixed(1)}k`
-    : String(Math.round(Number(n)));
 // Full thousands-separated integer — used for the kcal ring's TARGET caption so
 // it reads non-lossy ("/2,800 · 7d"), distinct from the compact in-ring average
 // value (which abbreviates to "2.8k" to fit the 50px ring).
@@ -64,6 +57,91 @@ function Spark({ points, W, H }) {
       <path d={path} fill="none" stroke="var(--text-faint)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
       <circle cx={last.x} cy={last.y} r="2.75" fill="var(--text-primary)" />
     </svg>
+  );
+}
+
+// Compact weigh-in row (B mockup): an unweighed morning is the NORMAL case (he
+// weighs in every day), so this is its own ~56px module above the to-do list,
+// not a rare-state card buried inside Session. One inline field + one button;
+// the full WeighInPrompt sheet (with the stale-days warning copy) is still
+// used verbatim by the pre-session check-in gate in PrescribedSessionCard.
+function WeighInRow({ today, weightUnit }) {
+  const { todayWeight, isLoading, isFetching } = useTodayBodyWeight(today);
+  const { lastWeight } = useLastBodyWeight(today);
+  const logWeight = useLogWeight();
+  const [typed, setTyped] = useState("");
+  const [error, setError] = useState(false);
+
+  // Don't flash the ask for one frame before we know today is already logged.
+  if (isLoading || isFetching) return null;
+
+  const already = todayWeight?.weight != null;
+  const reference = lastWeight?.weight ?? null;
+
+  const submit = (e) => {
+    e?.preventDefault?.();
+    const raw = String(typed).trim().replace(/,/g, ".");
+    const parsed = Number.parseFloat(raw);
+    const [min, max] = BOUNDS[weightUnit] || BOUNDS.lbs;
+    if (!Number.isFinite(parsed) || parsed <= 0 || parsed < min || parsed > max) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    logWeight.mutate(
+      { weight: parsed, date: today },
+      {
+        onSuccess: () => { toast.success(`Logged ${parsed} ${weightUnit}`); setTyped(""); },
+        onError: () => setError(true),
+      }
+    );
+  };
+
+  // One row, no separate module label — the row's own leading text carries
+  // "Weigh in" (coordinator: "Weigh in · last 184 lb"). Both the input and the
+  // Log button are 44px tall (the tap-target floor), so the row is closer to
+  // 56px than a purely visual 56px chip would be — that's the accessibility
+  // floor, not a miss on the "about 56px" target.
+  return (
+    <div className="surface px-4 sm:px-5 lg:px-4 py-3 -mx-4 sm:-mx-6 lg:mx-0">
+      {already ? (
+        <div className="flex items-center justify-between gap-3 min-h-[26px]">
+          <span className="text-[13px] font-semibold text-muted-2">
+            Logged today <span className="tabular-nums text-ink font-semibold">· {fmt(todayWeight.weight, 1)} {weightUnit}</span>
+          </span>
+          <Check className="w-4 h-4 text-leaf shrink-0" />
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex items-center gap-3">
+          <span className="text-[13px] font-semibold text-muted-2 shrink-0 truncate">
+            {reference != null ? `Weigh in · last ${fmt(reference, 1)} ${weightUnit}` : "Weigh in"}
+          </span>
+          <input
+            type="text"
+            inputMode="decimal"
+            enterKeyHint="done"
+            autoComplete="off"
+            placeholder={reference != null ? String(reference) : "--"}
+            value={typed}
+            onChange={(e) => {
+              setTyped(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6));
+              if (error) setError(false);
+            }}
+            onFocus={(e) => e.target.select()}
+            aria-label={`Bodyweight in ${weightUnit}`}
+            aria-invalid={error}
+            className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-[15px] font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
+          />
+          <button
+            type="submit"
+            disabled={logWeight.isPending || !typed.trim()}
+            className="cta-action shrink-0 px-4 min-h-[44px] text-[13px]"
+          >
+            {logWeight.isPending ? "…" : "Log"}
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
 
@@ -287,42 +365,6 @@ export default function Today() {
   const nutrition = state?.nutrition || {};
   const vdot = state?.vdot_zones || {};
   const score = recovery?.score ?? null;
-  const band = bandFor(score);
-  // "Calibrating" — no engine action yet (no prescription). In this state the
-  // hero must NOT signal a confident verdict: the arc + headline word are not
-  // brand teal regardless of the raw recovery score, since the engine hasn't
-  // cleared anything to train.
-  const calibrating = prescription?.mpc_action == null;
-  // Readiness owns TEAL in the hue map (readiness · intensity), so the hero ring
-  // and verdict word stay teal whenever the read is positive (>=70). bandFor
-  // hands the 70-84 "Ready" band a body-battery GREEN, which both wears the
-  // wrong family for the single most prominent datum and competes with the teal
-  // FAB/dock as a second action-adjacent color. We keep warn/bad for the
-  // genuinely cautionary bands (Moderate/Recover) so the verdict still signals.
-  //
-  // CALIBRATING (today-2 / dashboard-1): the engine hasn't cleared a session, so
-  // the hero must NOT signal a confident teal verdict. But a flat-grey arc read
-  // as broken/disabled, hiding the biometric the athlete DID log. So while
-  // calibrating we still paint the arc its raw BAND hue (a measured biometric
-  // readout — never brand teal: bandFor's teal stop is --hue-teal #5EDCD2, a data
-  // hue, not the rgb(25,200,166) action teal), and the verdict WORD stays
-  // non-teal by lifting to --text-primary. When a real read exists, the ring uses
-  // the readiness-teal for the positive band and the band hue otherwise.
-  const readinessHue = score == null
-    ? "var(--text-faint)"
-    : calibrating
-      ? band.color
-      : score >= 70 ? "var(--hue-teal)" : band.color;
-  // The headline word never reads brand teal. While calibrating it lifts to
-  // --text-primary (the strongest non-teal ink) so the directive leads cleanly;
-  // a null score keeps it at --text-secondary; otherwise it tracks the verdict
-  // arc hue (which is the data --hue-teal, not the action teal, on a positive
-  // read).
-  const headlineColor = score == null
-    ? "var(--text-secondary)"
-    : calibrating
-      ? "var(--text-primary)"
-      : readinessHue;
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
 
@@ -354,43 +396,20 @@ export default function Today() {
   // session owns it; otherwise it's demoted to a ghost.
   const demoteSessionCta = tealPrimary !== "session";
 
-  // The directive — one headline, one supporting sentence. The lead word is
-  // derived from the readiness band (bandFor), so the WORD never contradicts the
-  // ring/verdict hue: "Primed" is gated to the ≥85 primed band, and a 72 reads
-  // "Ready" (its band) rather than overstating "Primed". The engine action
-  // (rest vs train, cleared intensity) is carried as the supporting detail.
-  const { headline, detail } = useMemo(() => {
-    const rec = state?.recovery || {};
-    const fat = state?.fatigue || {};
+  // One plain-language verdict line — no engine jargon (ACWR/Form/HRV-trend)
+  // on the first screen; that detail already lives one tap away in the
+  // consolidated detail card's State tab (MetricTiles below). Today just
+  // answers "what do I do": rest, train, or the engine doesn't know yet.
+  const verdict = useMemo(() => {
     const action = prescription?.mpc_action;
-    const bits = [];
-    if (fat.acwr != null) bits.push(`ACWR ${Number(fat.acwr).toFixed(2)}`);
-    if (fat.tsb != null) bits.push(`Form ${Number(fat.tsb).toFixed(0)}`);
-    if (rec.hrv_trend && rec.hrv_trend !== "stable") bits.push(`HRV ${rec.hrv_trend}`);
-    const line = bits.join(" · ");
-    if (action === "REST") {
-      return {
-        headline: "Rest today",
-        detail: line ? `${line}. The engine calls recovery, honor it.` : "The engine calls recovery. Honor it.",
-      };
-    }
+    if (action === "REST") return "Rest today. The engine calls recovery, honor it.";
     if (action) {
-      // Lead word from the band scale so it tracks the verdict hue; "Primed"
-      // only fires in the primed band. Below "Ready" the score itself says
-      // caution, so fall back to the band label as the directive word.
-      const word = band.label === "—" ? "Cleared to train" : `${band.label} to train`;
-      return {
-        headline: word,
-        detail: intensity != null
-          ? `${line ? line + ". " : ""}Load is cleared for ${intensity.toFixed(2)}× intensity.`
-          : line ? `${line}.` : "Markers nominal.",
-      };
+      return intensity != null
+        ? `Train as planned, cleared for ${intensity.toFixed(2)}× intensity.`
+        : "Train as planned.";
     }
-    return {
-      headline: "Calibrating",
-      detail: line ? `${line}.` : "Log a session and a check-in to sharpen the read.",
-    };
-  }, [state, prescription, intensity, band.label]);
+    return "Calibrating — needs a few more days of data for a verdict.";
+  }, [prescription, intensity]);
 
   // The consolidated detail card's segmented control — Brief leads (the Daily
   // Brief headline is the IA priority). Muscle is offered even on error/empty so
@@ -411,7 +430,6 @@ export default function Today() {
     { k: "Batt", v: fmt(recovery?.body_battery), u: "%", hue: "var(--hue-green)" },
   ];
 
-  const avgCal = nutrition?.avg_calories_7d ?? nutrition?.avg_daily_calories_7d;
   const dailyTargets = useDailyTargets(today);
 
   // Nutrition-remaining module (Today, above the fold): the same
@@ -455,13 +473,10 @@ export default function Today() {
     { label: "Fat", consumed: todayTotals.fats, goal: dailyTargets.fats, hue: "var(--hue-yellow)", unit: "g" },
   ];
 
-  // lb/wk trend. Gold is the documented owner of kcal, so the trend ring must
-  // NOT also ride gold — two gold rings flanking the coral protein ring flatten
-  // the per-datum encoding (kcal and the trend read as the same datum). Trend is
-  // a body-comp readout, so it carries violet (the body-state family, distinct
-  // from gold kcal and coral protein) while staying off the ok/warn
-  // physiological spectrum. On- vs off-goal is still read from the SIGN (a loss
-  // reads "-0.8", a gain "+1.2") plus the caption, not from recoloring the ring.
+  // lb/wk trend. On- vs off-goal is read from trendAligned (the sign of the
+  // trend relative to the current phase), not from a hard-coded hue — the
+  // render side colors it green only when aligned, neutral text otherwise
+  // (DESIGN.md: no brand/off-palette accent on a plain data line).
   const trendPerWk = nutrition?.weight_trend_lbs_per_week;
   const trendAligned = (() => {
     if (trendPerWk == null) return null;
@@ -473,8 +488,6 @@ export default function Today() {
   const trend = {
     value: trendPerWk == null ? "—"
       : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
-    frac: trendPerWk != null ? Math.min(1, Math.abs(Number(trendPerWk)) / 2) : 0,
-    hue: trendPerWk == null ? "var(--text-faint)" : "var(--hue-violet)",
     caption: trendAligned == null ? "lb/wk" : trendAligned ? "on goal" : "off goal",
   };
 
@@ -512,7 +525,10 @@ export default function Today() {
   }, [weight30d]);
 
   return (
-    <div className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 pb-6 max-w-[720px] mx-auto">
+    <div
+      className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 max-w-[720px] mx-auto"
+      style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
+    >
       {/* Desktop-only page header (mobile header already names the screen) */}
       <div className="hidden lg:flex items-baseline justify-between mb-5 rise-in">
         <div className="flex items-baseline gap-3.5">
@@ -540,50 +556,49 @@ export default function Today() {
 
       {/* Ledger module stack (DESIGN.md / directions "B"): a single flat column,
           8px gaps, one order top → bottom for every breakpoint —
-            1. Readiness  2. Session  3. To-do  4. Nutrition remaining
-            5. Weight trend  6. everything else (secondary / below the fold).
-          Target: modules 1-4 visible without scrolling at 428×926. */}
+            1. Readiness  2. Weigh in  3. Session  4. To-do  5. Nutrition
+            6. Weight trend  7. everything else (secondary / below the fold).
+          Target: modules 1-4 visible without scrolling at 428×926, including
+          the ordinary unweighed-morning state (weigh-in row not yet logged). */}
       <div className="space-y-2">
-        {/* 1 — Readiness: score + one-line verdict + 14-day sparkline. */}
+        {/* 1 — Readiness: a big tabular number + one plain-language verdict
+            line (no ACWR/Form/HRV jargon — that lives one tap away in the
+            State detail tab below) + the 14-day sparkline alongside it. No
+            ring: a band-colored arc read as an off-palette accent color. */}
         <Module label="Readiness · 14 days">
           {(prescriptionLoading || stateLoading) ? (
             <div className="pulse-loop space-y-3">
-              <div className="flex items-center gap-4">
-                <div className="w-[104px] h-[104px] rounded-full bg-track shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-5 bg-track rounded-lg w-2/3" />
-                  <div className="h-3 bg-track rounded-lg w-full" />
-                </div>
-              </div>
+              <div className="h-9 bg-track rounded-lg w-16" />
+              <div className="h-3 bg-track rounded-lg w-2/3" />
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-4 sm:gap-6">
-                {/* StatRing rule: the readiness ring is BAND-colored (the verdict
-                    hue), so the arc tracks the score/headline, the component's
-                    teal gradient is the default only for non-verdict rings. */}
-                <StatRing value={score} size={88} label="Readiness" color={readinessHue} />
-                <div className="flex-1 min-w-0">
-                  <h2 className="type-display text-lg" style={{ color: headlineColor }}>
-                    {headline}
-                  </h2>
-                  <p className="font-technical text-[13px] font-semibold text-secondary leading-relaxed mt-1">
-                    {detail}
-                  </p>
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="shrink-0 max-w-[55%]">
+                <div className="type-display text-[34px] font-semibold tabular-nums leading-none text-ink">
+                  {score == null ? "—" : Math.round(score)}
                 </div>
+                <p className="font-technical text-[13px] font-semibold text-secondary leading-snug mt-1.5">
+                  {verdict}
+                </p>
               </div>
               {readinessSpark && (
-                <div className="mt-2">
+                <div className="flex-1 min-w-0">
                   <Spark {...readinessSpark} />
                 </div>
               )}
-            </>
+            </div>
           )}
         </Module>
 
-        {/* 2 — Start/Resume session (Ledger ".sess" row). The in-progress
-            "tap to continue" banner sits inside this same module when a session
-            is live; otherwise the prescribed/program session CTA renders. */}
+        {/* 2 — Weigh in: a daily ritual, not a rare state — its own compact
+            module, not folded inside Session (see WeighInRow above). */}
+        <WeighInRow today={today} weightUnit={weightUnit} />
+
+        {/* 3 — Start/Resume session (Ledger ".sess" row): workout name, an
+            "N ex · N sets · ~N min" meta line, one off-white action. The
+            in-progress "tap to continue" banner sits inside this same module
+            when a session is live; otherwise the compact prescribed/program
+            session row renders (PrescribedSessionCard's `compact` mode). */}
         <Module label="Session">
           {activeSession && (
             <Link
@@ -610,21 +625,18 @@ export default function Today() {
                   itself to `completed` on the last logged workout. Renders
                   nothing while a block is active or paused. */}
               <ProgramCompleteCard className="mb-3" />
-              {/* The scale sits above the session CTA, not inside a card he has
-                  to open. Renders nothing on a day already weighed. */}
-              <WeighInPrompt today={today} className="mb-3" />
-              {/* The subjective check-in rides the Begin Session flow: the card
-                  gates its CTA on todayCheckin. */}
-              <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} />
+              {/* The subjective check-in + weigh-in gate still rides the Begin
+                  Session flow (the sheet), unchanged — only the passive card
+                  shrinks to the compact row here. */}
+              <PrescribedSessionCard today={today} loggedToday={loggedToday} demoteCta={demoteSessionCta} programWorkout={todayProgramWorkout} todayCheckin={todayCheckIn} compact />
             </>
           )}
         </Module>
 
-        {/* 3 — To-do checklist, moved up from last so it's above the fold.
-            Self-hides when empty. */}
+        {/* 4 — To-do checklist. Self-hides when empty. */}
         <TodayActions today={today} briefActions={briefActions} isError={briefError} />
 
-        {/* 4 — Nutrition remaining: flat 4-column Kcal/Protein/Carbs/Fat, 8px
+        {/* 5 — Nutrition remaining: flat 4-column Kcal/Protein/Carbs/Fat, 8px
             bars, macro hues on the labels (DESIGN.md — calories own no hue). */}
         <Module label="Nutrition · remaining" detail="Detail" detailHref="/fuel">
           <div className="grid grid-cols-4 gap-3">
@@ -637,34 +649,41 @@ export default function Today() {
                   <div className="h-2 rounded-full bg-track overflow-hidden">
                     <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
                   </div>
+                  {/* 7d-avg captions were dropped from this module: at 4 narrow
+                      columns the "N left" line and the caption underneath it
+                      overlapped. The averages themselves aren't stranded —
+                      AthleteState and Progress both still surface them. */}
                   <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
                     {remaining != null ? `${withThousands(remaining)}${c.unit} left` : "—"}
                   </div>
-                  {c.label === "Kcal" && avgCal != null && (
-                    <div className="text-[10px] text-muted font-semibold mt-0.5 truncate">7d avg {compactK(avgCal)}</div>
-                  )}
-                  {c.label === "Protein" && nutrition?.avg_protein_7d != null && (
-                    <div className="text-[10px] text-muted font-semibold mt-0.5 truncate">7d avg {Math.round(nutrition.avg_protein_7d)}g</div>
-                  )}
                 </div>
               );
             })}
           </div>
         </Module>
 
-        {/* 5 — Weight trend: EWMA trend value + compact 30-day sparkline,
+        {/* 6 — Weight trend: EWMA trend value + compact 30-day sparkline,
             reusing the same useBodyWeightEntries/calculateEWMA the full
-            WeightProgressChart (Fuel → Body) uses. */}
+            WeightProgressChart (Fuel → Body) uses. Two separate lines (number+
+            unit, then trend+caption) rather than one wrapping flex row, so the
+            unit label can't collide with the line above it on a narrow phone. */}
         <Module label="Weight trend · 30 days" detail="Detail" detailHref="/fuel?tab=body">
-          <div className="flex items-baseline gap-2">
-            <span className="type-display text-2xl tabular-nums">
-              {latestWeight ? `${fmt(latestWeight.trendWeight, 1)}` : "—"}
-              <span className="text-sm font-semibold text-muted ml-1">{weightUnit}</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="type-display text-2xl font-semibold tabular-nums">
+              {latestWeight ? fmt(latestWeight.trendWeight, 1) : "—"}
             </span>
-            <span className="text-[13px] font-semibold" style={{ color: trend.hue }}>
-              {trend.value !== "—" ? `${trend.value} lb/wk` : "—"} <span className="text-muted">· {trend.caption}</span>
-            </span>
+            <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
           </div>
+          {/* Purple was an off-palette accent for this line. Neutral text by
+              default; green only signals an actual positive-vs-goal delta
+              (trendAligned), never the raw sign of the trend. */}
+          <p
+            className="text-[13px] font-semibold mt-1"
+            style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
+          >
+            {trend.value !== "—" ? `${trend.value} lb/wk` : "—"}{" "}
+            <span className={trendAligned ? "" : "text-muted"}>· {trend.caption}</span>
+          </p>
           {weightSpark ? (
             <div className="mt-2">
               <Spark {...weightSpark} />

@@ -109,7 +109,7 @@ function CardioDoneToggle({ done, onToggle }) {
   );
 }
 
-export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false, programWorkout = null, todayCheckin = null }) {
+export default function PrescribedSessionCard({ today, loggedToday = false, demoteCta = false, programWorkout = null, todayCheckin = null, compact = false }) {
   const { prescription } = useTodayPrescription(today);
   const navigate = useNavigate();
   // Check-in gate — the subjective check-in rides the start-workout flow (it is
@@ -217,6 +217,30 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
           </div>
         );
       }
+      if (compact) {
+        const pwEx = programWorkout?.exercises || [];
+        const pwSets = pwEx.reduce((s, e) => s + (e.sets || 0), 0);
+        return (
+          <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
+            <div className="min-w-0">
+              <div className="text-[15px] font-bold text-ink truncate">{programWorkout?.name || "Workout"}</div>
+              {pwEx.length > 0 && (
+                <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
+                  {pwEx.length} ex · {pwSets} sets
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => beginSession(programHref)}
+              className={`${demoteCta ? "cta-ghost" : "cta-action"} shrink-0 whitespace-nowrap`}
+            >
+              Start
+            </button>
+            {checkinGateSheet}
+          </div>
+        );
+      }
       return (
         <>
           <button type="button" onClick={() => beginSession(programHref)} className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
@@ -224,6 +248,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
           </button>
           {checkinGateSheet}
         </>
+      );
+    }
+    if (compact) {
+      return (
+        <div className="sess flex items-center min-h-[56px]">
+          <Link to="/quick-workout" className="cta-ghost w-full">
+            Log a workout
+          </Link>
+        </div>
       );
     }
     return (
@@ -334,6 +367,77 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       </div>
     );
   };
+
+  // Compact ".sess" row for Today: workout name, an "N ex · N sets · ~N min"
+  // meta line, and a single Start/Resume CTA. The full breakdown (lifts,
+  // calisthenics, conditioning, warnings, pre-train note) still lives on the
+  // uncompacted render used elsewhere (e.g. the detail view); Today only needs
+  // enough to identify the session and start it.
+  if (compact) {
+    const totalSets = strength.reduce((s, e) => s + (e.sets || 0), 0)
+      + calItems.reduce((s, [, v]) => s + (v.sets || 0), 0);
+    const totalEx = strength.length + calItems.length + (run ? 1 : 0) + (swim ? 1 : 0);
+    // No engine minute estimate exists for lifting — ~3.5 min/set (work + rest)
+    // is a rough rule of thumb, good enough for a glanceable meta line. A
+    // prescribed run's own duration is authoritative when present.
+    const estMinutes = run?.duration_minutes || (totalSets > 0 ? Math.round(totalSets * 3.5) : null);
+    const metaLine = [
+      totalEx > 0 && `${totalEx} ex`,
+      totalSets > 0 && `${totalSets} sets`,
+      estMinutes && `~${estMinutes} min`,
+    ].filter(Boolean).join(" · ");
+
+    if (isRest) {
+      return (
+        <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
+          <div className="min-w-0">
+            <div className="text-[15px] font-bold text-ink truncate">Rest Day</div>
+            <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">Recovery</div>
+          </div>
+          <button type="button" onClick={() => beginSession("/quick-workout")} className="cta-ghost shrink-0 whitespace-nowrap">
+            Log a workout
+          </button>
+          {checkinGateSheet}
+        </div>
+      );
+    }
+    if (loggedToday) {
+      return (
+        <div className="sess flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[56px] text-sm font-semibold text-leaf">
+          <Check className="w-4 h-4 shrink-0" />
+          <span className="truncate">Logged today, nice work.</span>
+          <Link
+            to="/quick-workout"
+            state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
+            className="ml-auto -my-2 min-h-[44px] flex items-center text-brand font-semibold whitespace-nowrap"
+          >
+            Log another
+          </Link>
+        </div>
+      );
+    }
+    return (
+      <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
+        <div className="min-w-0">
+          <div className="text-[15px] font-bold text-ink truncate">{titleText}</div>
+          {metaLine && (
+            <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">{metaLine}</div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => beginSession(programHref || "/quick-workout", programHref ? undefined : {
+            prescribedSession: { title: titleText, exercises: prescribedExercises },
+            preNote: preNote.trim() || undefined,
+          })}
+          className={`${demoteCta ? "cta-ghost" : "cta-action"} shrink-0 whitespace-nowrap`}
+        >
+          Start
+        </button>
+        {checkinGateSheet}
+      </div>
+    );
+  }
 
   return (
     // Plain glass div (not Card/CardContent) — CardContent's default pt-0

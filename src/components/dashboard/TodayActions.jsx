@@ -4,8 +4,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SectionLabel } from "@/components/ui/system";
-import { ListChecks, Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
+import { Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
@@ -162,26 +161,19 @@ export default function TodayActions({ today, briefActions = [], isError = false
 
   return (
     <div className="glass glass-interactive px-4 pt-3 pb-3">
-      <SectionLabel
-        right={
-          <Button
-            variant="plain"
-            onClick={() => setAdding(v => !v)}
-            className="h-11 w-11 p-0 -my-2 active:scale-95 duration-200 [transition-timing-function:var(--ease)]"
-            aria-label="Add action"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        }
-      >
-        <span className="flex items-center gap-2">
-          <ListChecks className="w-4 h-4 text-muted-2" />
-          Today's Actions
-          {total > 0 && (
-            <span className="font-technical text-[10px] text-muted-2 font-bold">{completed}/{total}</span>
-          )}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[13px] font-semibold text-muted-2">
+          {total > 0 ? `To do · ${total - completed} open` : "To do"}
         </span>
-      </SectionLabel>
+        <Button
+          variant="plain"
+          onClick={() => setAdding(v => !v)}
+          className="h-11 w-11 p-0 -my-2 active:scale-95 duration-200 [transition-timing-function:var(--ease)]"
+          aria-label="Add action"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+      </div>
       {total === 0 && !adding && (
         <p className="text-xs text-faint py-2">No actions yet, tap + to add one</p>
       )}
