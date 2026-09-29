@@ -33,5 +33,20 @@
     "idea": "Distinguish a personalized water goal from the generic 3000ml fallback in the UI copy (e.g. a small 'estimated' badge) when profile.current_weight is unset.",
     "moment": "waterGoalMl() silently substitutes DEFAULT_WATER_GOAL_ML with no visual difference from a real personalized number — someone with no weight on file would have no way to know the goal isn't calculated for them.",
     "howOften": "only for accounts without current_weight set — likely rare for Nolan's own account but worth a cheap fix"
+  },
+  {
+    "idea": "Give MorningCheckin (readiness/soreness/weigh-in) a reachable path when a workout is already in-progress and today has no engine prescription — either render it alongside the 'tap to continue' banner, or link out to it, instead of suppressing the whole PrescribedSessionCard.",
+    "moment": "Today.jsx:500 suppresses PrescribedSessionCard (which hosts MorningCheckin) whenever `activeSession && !prescription`. Confirmed at runtime: with the shared test account's leftover in-progress workout session and no prescription today, the check-in form was completely unreachable — no alternate route anywhere in the app (MorningCheckin is only imported by PrescribedSessionCard.jsx). An abandoned/forgotten in-progress session can permanently hide the daily check-in.",
+    "howOften": "any day with a stale/abandoned in-progress workout session and no fresh prescription — plausible after a forgotten 'started but never finished' workout, which is exactly what happened here from a leftover test session"
+  },
+  {
+    "idea": "Have useLogWeight's profile-sync step (current_weight) get reverted or re-derived when the body_weight_entries row it came from is deleted — or at least make the two writes transactional so a failed/rolled-back weigh-in never leaves profile.current_weight out of sync with the entries table.",
+    "moment": "Confirmed while investigating: after the r1-01 race-condition test (two concurrent weigh-in writes to different components, both syncing profile.current_weight), deleting the resulting duplicate body_weight_entries rows left profile.current_weight pointing at whichever write's value happened to resolve last — a value with no corresponding entries row anymore. Had to be manually restored from baseline.",
+    "howOften": "any time a weigh-in entry is deleted/corrected after the fact — current_weight silently keeps the stale value"
+  },
+  {
+    "idea": "Explicitly allow a typed '0' dose when logging a supplement instead of `parseFloat(dose) || type.default_dose` silently substituting the default.",
+    "moment": "Confirmed bug (body-r1-06): typing '0' into the dose field and tapping Log records the supplement's default_dose instead of 0, because parseFloat('0') is falsy in JS.",
+    "howOften": "any time someone deliberately logs a 0 dose (e.g. 'skipped today but wanted a record') — silently records the wrong number instead"
   }
 ]

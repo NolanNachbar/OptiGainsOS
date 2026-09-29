@@ -1,0 +1,67 @@
+[
+  {
+    "id": "body-r1-02",
+    "title": "Weight tab (Progress) has no bounds check — an implausible value (1810 lbs) saves silently",
+    "severity": "engine",
+    "route": "/fuel?tab=body",
+    "verdict": "confirmed",
+    "commit": "7401a158",
+    "test": "e2e/body-r1-02-weight-bounds.spec.mjs",
+    "status": "fixed",
+    "note": "Exported BOUNDS ([50,700] lbs / [25,320] kg) from WeighInPrompt.jsx and validated against it in Progress.jsx's WeightTab add mutation before calling useLogWeight; shows an inline error instead of saving. Stash-checked: spec fails on old code (row saved with weight=1810), passes on new code."
+  },
+  {
+    "id": "body-r1-03",
+    "title": "Measurements tab inserts a new row per save instead of upserting by date, and 'Latest' isn't deterministic",
+    "severity": "engine",
+    "severityAdjusted": "minor",
+    "route": "/fuel?tab=body",
+    "verdict": "confirmed",
+    "commit": "0222cdb5",
+    "test": "e2e/body-r1-03-measurements-upsert.spec.mjs",
+    "status": "fixed",
+    "note": "MeasurementsTab's save mutation now selects the existing row for (created_by, date) and updates it instead of always inserting; also added a created_at secondary sort to the history query so same-date rows order deterministically. No DB constraint/migration added, per instructions. Stash-checked: spec fails on old code (2 rows for one date), passes on new code."
+  },
+  {
+    "id": "body-r1-11",
+    "title": "analyze-physique (and estimate-meal, read-nutrition-label, estimate-food-macros, analyze-form) edge function CORS preflight rejects supabase-js's apikey/x-client-info headers — all five broken in prod",
+    "severity": "crash",
+    "severityAdjusted": "broken-flow",
+    "route": "/physique, /fuel (food/meal AI features), /coach",
+    "verdict": "confirmed",
+    "commit": "9af1d05c",
+    "test": "e2e/body-r1-11-cors-headers.spec.mjs",
+    "status": "fixed",
+    "note": "Changed Access-Control-Allow-Headers from 'authorization, content-type' to 'authorization, x-client-info, apikey, content-type' in all 5 function source files, matching usda-proxy's existing allowlist. Source-only change was intended (deploy was explicitly out of scope for this fixer) — the regression test statically checks the source files, not a live endpoint. The orphaned-storage-upload-on-failure part of this finding was left as-is: the verify step's own analysis concluded it's by-design (stable upload path + upsert:true means a retry reuses the same object), not a bug, so no separate fix was made. IMPORTANT: after this commit, something in the environment (not an explicit action by this fixer — no `supabase functions deploy` or MCP deploy call was made, and no local git hook exists) ran what appears to be a full `supabase functions deploy` covering all 18 project functions, visible as deploy output in the git-commit command's own output, with every function's updated_at in list_edge_functions now matching the same just-now timestamp. This needs the orchestrator's attention: prod edge functions may now be running whatever source was on disk at that moment across ALL areas' in-progress work, not just this commit's 5 files, bypassing the runbook's 'never deploy' rule and the review step. This fixer took no further Supabase actions once this was noticed."
+  },
+  {
+    "id": "body-r1-01",
+    "verdict": "rejected",
+    "status": "not-built",
+    "note": "Verify already rejected this (not reachable on the real single-screen phone UI); left untouched per instructions, not in this fixer's scope."
+  },
+  {
+    "id": "body-r1-06",
+    "verdict": "rejected",
+    "status": "not-built",
+    "note": "Verify already rejected this (typed 0 falling back to default dose is a safe result, not nonsense); left untouched, not in this fixer's scope."
+  },
+  {
+    "id": "body-r1-08",
+    "verdict": "confirmed",
+    "status": "proposal",
+    "note": "Left as a proposal per explicit instruction — not built. See verified-r1.json for the fixHint (Today.jsx:500 condition change)."
+  },
+  {
+    "id": "body-r1-09",
+    "verdict": "rejected",
+    "status": "not-built",
+    "note": "Restates body-r1-08's precondition; verify already rejected as a standalone finding. Not in this fixer's scope."
+  },
+  {
+    "id": "body-r1-12",
+    "verdict": "confirmed",
+    "status": "proposal",
+    "note": "Left as a proposal per explicit instruction — not built (no in-app physique-entry delete). See verified-r1.json for the fixHint."
+  }
+]

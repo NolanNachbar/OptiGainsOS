@@ -1,0 +1,150 @@
+{
+  "reviewedAt": "2026-09-28",
+  "branch": "overnight-audit-2026-09-27",
+  "commits": [
+    {
+      "commit": "98c8c0a4",
+      "area": "today",
+      "finding": "today-r1-17",
+      "verdict": "approved",
+      "note": "index.html CSP gains media-src 'self' blob: https://*.supabase.co; nothing else loosened. Covers Coach's blob: preview and signed storage URLs. Camera <video>s (TimedCameraCapture, BarcodeScanner) use srcObject, which media-src doesn't govern. Spec can only assert no CSP console violations (no codec in harness), which is the right proxy. Dev-only gap: a local Supabase (127.0.0.1:54321) clip URL isn't in media-src."
+    },
+    {
+      "commit": "6f932876",
+      "area": "today",
+      "finding": "today-r1-05",
+      "verdict": "approved",
+      "note": "useNowDay recomputes getTodayString(tz) every render and bumps on visibility/focus/60s, so a stale day can't persist. The todos and brief queries are keyed by today with no placeholderData, so a midnight roll can't seed yesterday's brief actions under today. Cost: Today re-renders once a minute. Spec asserts the DB row date and list visibility."
+    },
+    {
+      "commit": "1768b0e6",
+      "area": "today",
+      "finding": "today-r1-01, today-r1-04",
+      "verdict": "approved",
+      "note": "Delete returns the deleted rows via .select(); Undo re-inserts them without id/created_at, with an error toast on a failed restore; delete has onError. Delete and toggle act on every same-text row for the date (.in ids), so a hidden twin can't reappear. Minor: a restored task gets a new created_at, so it moves to the end of the list. Spec seeds OVN-tagged twins and cleans up."
+    },
+    {
+      "commit": "14a0e1b7",
+      "area": "today",
+      "finding": "today-r1-06",
+      "verdict": "approved",
+      "note": "min-w-0 + overflow-wrap:anywhere on the todo span, and maxLength=500 on the add input. Spec asserts scrollWidth <= clientWidth with a 2000-char token."
+    },
+    {
+      "commit": "6ad9af80",
+      "area": "today",
+      "finding": "today-r1-09",
+      "verdict": "approved",
+      "note": "AthleteState resolves today via profile.timezone and threads it into useEngineParams/useTodayPrescription (both accept a date) and AdaptiveEnginePanel. The athlete_state query is keyed by today, so it refetches once the profile loads (a harmless double fetch). Spec temporarily sets the profile tz to Pacific/Kiritimati and restores it in finally (it ran, not skipped). Side note: its cleanup deletes the test account's training_prescription rows for today in both zones, untagged; that's test account only, but the engine's real row for today goes too."
+    },
+    {
+      "commit": "7aa7fc06",
+      "area": "today",
+      "finding": "today-r1-11",
+      "verdict": "approved",
+      "note": "While the Practiced mutation is paused offline for that skill, the button says 'Offline - saves when back online'. Matches the reviewed fuel pattern (f2590dcd). No success confirmation after reconnect, same as the online path."
+    },
+    {
+      "commit": "2f46649d",
+      "area": "today",
+      "finding": "today-r1-12",
+      "verdict": "approved",
+      "note": "reopenReview checks createSignedUrl's error and missing signedUrl and renders an explicit 'Clip unavailable' state instead of the spinner. AlertTriangle was already imported."
+    },
+    {
+      "commit": "5c9d270c",
+      "area": "today",
+      "finding": "today-r1-13",
+      "verdict": "corrected",
+      "followupCommit": "888025e9",
+      "note": "Regression: the catch removed the clip on ANY failure. analyze-form inserts its form_reviews row just before returning 200, so a connection dropped after that insert (a long analysis while the iOS app is backgrounded) deleted the clip of a saved, paid-for review, a worse outcome than an orphaned object. Correction: remove the clip only when the function definitely rejected the request (FunctionsHttpError or an { error } body; both paths return before the insert), and keep it on fetch/relay errors. Spec split in two: a 500 response cleans up; a network abort keeps the clip. Both fail/pass as expected on old/new code. No edge-function code touched."
+    },
+    {
+      "commit": "de5e993b",
+      "area": "train-programs",
+      "finding": "train-programs-r1-nav-cta-overlap",
+      "verdict": "approved",
+      "note": "The fixed CTA's paddingBottom reserves --dock-total-height + 16px + safe-area, the same token CreateWorkout/App use, and the content pb grows to match. Minor: with a 34px safe-area inset, the bar (~186px) is ~10px taller than the content padding (176px), so the last card's bottom margin can sit slightly under the bar. Cosmetic. Spec does an unforced tap."
+    },
+    {
+      "commit": "3bac7778",
+      "area": "train-programs",
+      "finding": "train-programs-r1-14",
+      "verdict": "approved",
+      "note": "While paused offline, the Enroll button says 'Offline - starts when you're back online'. It stays disabled (isPending covers paused), so there's no double enroll."
+    },
+    {
+      "commit": "59250bba",
+      "area": "train-programs",
+      "finding": "train-programs-r1-01",
+      "verdict": "approved",
+      "note": "Insert-first, delete-after, with rollback of partial creates. Checked the risks: program_workouts' only unique key is (program_id, scheduled_date), and builder rows have no scheduled_date (NULLs don't collide); nothing REFERENCES program_workouts, so the old-row delete can't be blocked by an FK. Residual: old and new days coexist for the length of the save, and a failed old-row delete leaves duplicates (an error toast, but no data loss). Spec simulates a mid-save failure."
+    },
+    {
+      "commit": "2def2a8b",
+      "area": "train-programs",
+      "finding": "train-programs-r1-03",
+      "verdict": "approved",
+      "note": "Import drops blank/whitespace names, caps names at 100 chars, and clamps sets to 1-20 and rest to 0-900s. The builder has no sets/rest input limits that a round-trip export could exceed in practice. Pre-existing: rest_seconds 0 still becomes 90 (parseInt(0)||90)."
+    },
+    {
+      "commit": "135e784c",
+      "area": "nutrition",
+      "finding": "cbum-nutrition-2-adaptive-tdee-window",
+      "verdict": "corrected",
+      "followupCommit": "d1245686",
+      "note": "The window change is correct and activates the adaptive path: callers get 365d of weight and 90d of food, and the EWMA sorts ascending. But activation exposed a latent input bug: useAllFoodEntries returns week-plan rows (planned=true, possibly future-dated), and calculateAdaptiveTDEE counted them as eaten, which could now drive real calorie goals. Correction excludes planned rows and dates after today (mirrors compute_athlete_state.py's planned=not.is.true), plus a spec that fails on the old code. Remaining note: the cutoff is now-28d including time of day, so daySpan maxes at 27 and 'high' confidence is unreachable. 'medium' suffices for useAdaptive and confidence isn't shown anywhere, so this is cosmetic and was left alone."
+    },
+    {
+      "commit": "4e07b2b3",
+      "area": "nutrition",
+      "finding": "cbum-nutrition-4-adherence-cap",
+      "verdict": "approved",
+      "note": "Grepped every consumer of calorie_adherence (Python, src, supabase/functions, SQL). compute_athlete_state.py only emits it: on_track, phase logic and mpc_prescriber don't read it. AthleteState.jsx shows it as a '(NN%)' text label, and its progress bar uses a separate calPct clamped to 100%. generate-daily-brief formats it via pct() as text for the LLM prompt ('150%' is the honest intent). No SQL constraints or columns. Nothing assumes <=1.0. scripts/test_adherence_honest.py passes and asserts both >1.0 and an under-target 0.75 case."
+    },
+    {
+      "commit": "7401a158",
+      "area": "body",
+      "finding": "body-r1-02",
+      "verdict": "approved",
+      "note": "Progress weight add validates against WeighInPrompt's exported BOUNDS (same unit keys lbs/kg from profile.weight_unit) and passes the parsed number. Inline error and toast; the error clears on input. A network error now shows the raw error message if it's an Error instance, otherwise the old generic text."
+    },
+    {
+      "commit": "0222cdb5",
+      "area": "body",
+      "finding": "body-r1-03",
+      "verdict": "corrected",
+      "followupCommit": "99aeea6d",
+      "note": "Select-then-update by (created_by, date) is right, and the partial payload preserves unfilled measurement fields (AM/PM merge). Flaw: the update wrote notes: null when the box was blank, and the form never prefills notes, so a correction re-save erased the day's earlier note (useLogWeight deliberately avoids this). Correction: leave notes alone on update when blank, and the spec adds a third blank-note save asserting the note survives (fails on the old code). Residual (no migration per the rules): no DB unique constraint, so concurrent saves can still race."
+    },
+    {
+      "commit": "9af1d05c",
+      "area": "body",
+      "finding": "body-r1-11",
+      "verdict": "approved",
+      "note": "Report only; not touched per the hard rule. The 5 functions' Allow-Headers now read 'authorization, x-client-info, apikey, content-type', exactly supabase-js 2.98's own SUPABASE_HEADERS list (node_modules/@supabase/supabase-js/dist/cors.mjs). supabase-js sends x-region only when a region is set, which this app doesn't, so nothing is missing. The change is correct and is already live through the unintended deploy. The spec is a static source check, which is fine for a header string."
+    }
+  ],
+  "tests": {
+    "e2eBaseline": "34/34 passed (3.9m), before corrections",
+    "e2eChangedSpecs": "5/5 passed after corrections; the 3 new assertions fail on pre-correction code (stash-checked)",
+    "e2eFinal": "36/36 passed (4.3m) after the 3 review-fix commits; today-athlete-state-timezone ran (not skipped)",
+    "build": "npm run build OK (chunk-size warning only)",
+    "python": "scripts/test_adherence_honest.py PASS"
+  },
+  "notes": [
+    "No commit, revert or edit touched supabase/functions/. No deploy output seen on any review commit.",
+    "Spec hygiene: today-athlete-state-timezone and the body specs delete untagged test-account rows by date (training_prescription today; body_weight_entries/measurements at -11/-12 days). Test account only, but broader than OVN-tagged cleanup.",
+    "After the final run, a query found no OVN-* rows left in todos, measurements, form_reviews, programs, skills, body_weight_entries or food_entries, and no leftover objects under <uid>/form in storage."
+  ],
+  "summary": {
+    "approved": 14,
+    "corrected": 3,
+    "reverted": 0,
+    "followupCommits": [
+      "888025e9",
+      "d1245686",
+      "99aeea6d"
+    ]
+  }
+}

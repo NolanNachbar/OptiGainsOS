@@ -105,7 +105,7 @@ export async function newWaterLogsSince(sinceIso) {
   const db = await testDb();
   const uid = await testUserId();
   const { data, error } = await db.from('water_logs').select('*')
-    .eq('created_by', uid).gt('created_at', sinceIso).order('created_at', { ascending: true });
+    .eq('created_by', uid).gt('logged_at', sinceIso).order('logged_at', { ascending: true });
   if (error) throw error;
   return data;
 }
@@ -151,8 +151,8 @@ export async function supplementLogsByType(typeId, sinceIso) {
   const db = await testDb();
   const uid = await testUserId();
   let q = db.from('supplement_logs').select('*').eq('created_by', uid).eq('supplement_type_id', typeId);
-  if (sinceIso) q = q.gt('created_at', sinceIso);
-  const { data, error } = await q.order('created_at', { ascending: true });
+  if (sinceIso) q = q.gt('taken_at', sinceIso);
+  const { data, error } = await q.order('taken_at', { ascending: true });
   if (error) throw error;
   return data;
 }

@@ -1,13 +1,25 @@
 {
- "area": "today",
+ "area": "analyze",
  "round": 1,
- "step": "stopped",
+ "step": "map+cases",
  "cleanStreak": 0,
  "done": [
   "train-logger (r1)",
-  "fuel (r1)"
+  "fuel (r1)",
+  "today (r1)",
+  "train-programs (r1)",
+  "body (r1)"
  ],
- "inFlight": null,
+ "inFlight": {
+  "step": "report finish",
+  "startedAt": "2026-09-28T18:40-06:00",
+  "agents": [
+   "report writer (sonnet)"
+  ],
+  "outputs": [
+   "../../OVERNIGHT_REPORT_2026-09-28.md (committed)"
+  ]
+ },
  "log": [
   "setup done 2026-09-27 22:10",
   "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request",
@@ -37,6 +49,18 @@
   "05:10 today verify: 10 confirmed (incl. new r1-17 CSP missing media-src blocks Coach clip playback), 7 rejected, r1-03 proposal. today fix launched; body map+cases (read-only) launched.",
   "05:15 fuel report committed ff24b926",
   "05:20 body map+cases done (13). body attacker launched (serial).",
-  "~05:25 session usage limit hit (resets 09:00); today fixer, train-programs attacker, body attacker all killed mid-run. 12:15 orchestrator resumed: heartbeat deleted (past 08:30). today fix partial: 98c8c0a4 CSP media-src, 6f932876 midnight, 1768b0e6 todo delete undo (r1-01/04) - UNREVIEWED; r1-06/09/11/12/13 not fixed. train-programs findings-r1-1 complete-ish (unverified). body attack never wrote findings. Test account checked vs baselines: 1 leftover OVN workout deleted, profile weight 184 intact, enrollments unchanged."
+  "~05:25 session usage limit hit (resets 09:00); today fixer, train-programs attacker, body attacker all killed mid-run. 12:15 orchestrator resumed: heartbeat deleted (past 08:30). today fix partial: 98c8c0a4 CSP media-src, 6f932876 midnight, 1768b0e6 todo delete undo (r1-01/04) - UNREVIEWED; r1-06/09/11/12/13 not fixed. train-programs findings-r1-1 complete-ish (unverified). body attack never wrote findings. Test account checked vs baselines: 1 leftover OVN workout deleted, profile weight 184 intact, enrollments unchanged.",
+  "12:20 Nolan: keep going. Resumed daytime (no heartbeat; orchestrator drives on notifications).",
+  "12:40 train-programs verify: 4 confirmed (r1-01 edit deletes days first, nav-cta-overlap, r1-14 offline enroll, r1-03 import validation), 3 rejected (r1-11-lead = known notes migration). Programs fix queued after today fixer (serial fixers). Nolan asked: CBum hypercritical critique (2 opus agents launched -> critique/), Experiments page idea (covered in cbum-training.md, then spec), adductors+glutes back in his REAL program (pending: couldn't locate his current program; asked Nolan).",
+  "body atk done: 7 bugs (r1-01 dup weigh-in, r1-02 no weight bounds, r1-03 dup measurements, r1-06 dose 0 fallback, r1-08/09 MorningCheckin unreachable, r1-11 analyze-physique CORS + orphaned storage, r1-12 no physique delete); baseline restored. body verify (opus) launched.",
+  "cbum nutrition/body critique done: 12 ranked fixes; 2 code bugs for a fixer: adaptive TDEE never activates (14-day window vs 21-day requirement), adherence caps at 100% when overeating.",
+  "cbum training critique done: 13 ranked + Experiments page design. Key: his 'current program' is the engine plan; engine has NO adductors landmark/exercise and 1 glute exercise (critique #3) -> adductors/glutes needs an engine change; asked Nolan. Also: progression coach contradicts RIR-0 prescription (programProgression.js:186), controlled_tests results + ProgressContent unreachable.",
+  "today fix complete: +5 (14a0e1b7 long todo wrap, 6ad9af80 athlete-state tz, 7aa7fc06 mind offline msg, 2f46649d coach clip error, 5c9d270c orphaned upload cleanup). Programs+nutrition fixer launched. Plan: one opus review for today+programs+nutrition(+body) fixes.",
+  "body verify: 4 confirmed (r1-02 weight bounds, r1-03 dup measurements, r1-11 CORS, r1-12 no physique delete), r1-08 proposal, 3 rejected. r1-11: 5 edge functions (analyze-physique, estimate-meal, read-nutrition-label, estimate-food-macros, analyze-form) allow only 'authorization, content-type' - supabase-js sends apikey/x-client-info -> preflight fails in prod too. Source confirmed; checking deployed copies. Redeploy = Nolan's call.",
+  "deployed-CORS check (haiku): all 5 deployed functions (analyze-physique, estimate-meal, read-nutrition-label, estimate-food-macros, analyze-form) allow only 'authorization, content-type' -> prod broken. Source fix goes in the body fixer; redeploy = Nolan's call.",
+  "programs+nutrition fix: programs 4 fixed (59250bba edit insert-first, de5e993b CTA dock padding, 3bac7778 offline enroll msg, 2def2a8b import validation); nutrition 2 fixed (135e784c adaptive TDEE window 28, 4e07b2b3 adherence uncapped). Body fixer launched.",
+  "body fix: 3 fixed (7401a158 weight bounds, 0222cdb5 measurements upsert, 9af1d05c CORS x5 source), r1-08/r1-12 proposals. UNINTENDED PROD DEPLOY: the 9af1d05c `git commit` printed `supabase functions deploy` output for all 18 functions (13:21:38 MDT); deployed code = main + the 5 CORS lines; health-webhook (never deployed before) is now live v1 (verify_jwt true). Trigger not found (no .git/hooks, no hooksPath, no Claude hooks). Rule: no agent commits/reverts touching supabase/functions until Nolan decides. Told Nolan.",
+  "review batch2 (opus): 17 commits, 14 approved, 3 corrected (888025e9 coach clip only deleted on rejection, d1245686 TDEE ignores planned/future rows, 99aeea6d measurements blank notes keep note), 0 reverted. e2e 36/36, build ok. today/train-programs/body r1 done. Report writer + analyze map+cases launched.",
+  "~16:50 session limit hit; report writer (partial report on disk) and analyze map+cases (no output) killed. 18:40 resumed. list_edge_functions after 3 later commits: all updated_at unchanged -> deploy trigger fires only on supabase/functions commits (or was one-off). Relaunched report writer; analyze parked. Nolan asked for a UI/UX polish loop (ui-ux-pro-max + iphone-sim) -> new branch ui-polish after the report commit."
  ]
 }
