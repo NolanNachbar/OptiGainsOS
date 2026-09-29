@@ -164,7 +164,19 @@ export default function ExerciseCard({
     // first N sets of last time, N = completedSets.length here, so both
     // sides cover the same amount of work. No last session, or fewer than N
     // sets logged last time (rep scheme not comparable), -> null ("–").
-    const lastComparableSets = lastPerformance?.sets?.slice(0, completedSets.length) ?? [];
+    // getLastExercisePerformance returns EVERY set from that log verbatim
+    // (weight/reps zeroed, not dropped, for an incomplete set -- it carries
+    // no `completed` or `set_type` field at all). Filtering to nonzero
+    // weight/reps before slicing keeps a zeroed leftover set from last time
+    // from occupying one of the first N slots and silently deflating
+    // lastVolume (the "+550%" symptom traced to exactly this: an
+    // incomplete/zero set from last session landing in the comparison
+    // window). This doesn't distinguish a real warmup set from a working
+    // set -- getLastExercisePerformance drops set_type entirely, so that
+    // distinction isn't recoverable here without changing its return shape.
+    const lastComparableSets = (lastPerformance?.sets ?? [])
+      .filter((s) => Number(s.weight) > 0 && Number(s.reps) > 0)
+      .slice(0, completedSets.length);
     const comparable = lastComparableSets.length === completedSets.length;
     const lastVolume = comparable
       ? lastComparableSets.reduce((sum, s) => sum + Number(s.weight || 0) * Number(s.reps || 0), 0)
