@@ -39,19 +39,22 @@ test('a food entry with null macros renders 0, not blank', async ({ page }) => {
     await signIn(page, '/fuel');
     await page.waitForTimeout(500);
 
+    // The Ledger meal-row grid (.tile-interactive) is the one element that
+    // owns both the food name and the data-field numeric columns; a bare
+    // `div` + hasText filter also matches its inner name/actions wrapper,
+    // which does NOT contain the numeric columns.
     const row = page
-      .locator('div')
+      .locator('.tile-interactive')
       .filter({ hasText: FOOD_NAME })
-      .filter({ has: page.getByRole('button', { name: 'Delete entry' }) })
       .last();
     await row.waitFor({ state: 'visible', timeout: 8000 });
 
-    const rowText = await row.innerText();
-    // Mobile inline strip: "0P · 0C · 0F", not "P · C · F".
-    expect(rowText).toMatch(/0P/);
-    expect(rowText).toMatch(/0C/);
-    expect(rowText).toMatch(/0F/);
-    expect(rowText).not.toMatch(/[^0-9]P\b/);
+    // Ledger meal-table row: numeric columns carry a data-field attribute
+    // (kcal/protein/carbs/fats) instead of a letter-suffixed inline strip.
+    await expect(row.locator('[data-field="protein"]')).toHaveText('0');
+    await expect(row.locator('[data-field="carbs"]')).toHaveText('0');
+    await expect(row.locator('[data-field="fats"]')).toHaveText('0');
+    await expect(row.locator('[data-field="kcal"]')).toHaveText('320');
   } finally {
     await cleanup(uid, db);
   }
