@@ -1,3 +1,6 @@
+> Superseded by `ui-audit/polish/DESIGN.md` (Ledger). This CLEAN rubric is no
+> longer the style authority — kept for history only.
+
 # OptiGains UI Audit Rubric — CLEAN (mobile-first 390px)
 
 Canonical reference: `ui-audit/design-system.html` (the "Clean" direction). The
