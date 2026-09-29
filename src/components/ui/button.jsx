@@ -1,4 +1,5 @@
 import * as React from "react";
+import { twMerge } from "tailwind-merge";
 
 const Button = React.forwardRef(({
   className = "",
@@ -89,12 +90,12 @@ const Button = React.forwardRef(({
     icon:    "h-9 w-9",
   };
 
-  const combinedClassName = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
+  const combinedClassName = twMerge(baseStyles, variants[variant], sizes[size], className);
 
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children, {
       ...props,
-      className: `${combinedClassName} ${children.props.className || ""}`,
+      className: twMerge(combinedClassName, children.props.className || ""),
       ref: ref,
     });
   }
