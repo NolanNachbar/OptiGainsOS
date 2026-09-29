@@ -1121,6 +1121,8 @@ export default function WorkoutDetail() {
     0
   );
 
+  const totalSetsCount = exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0);
+
   // Ledger "Next" module (DESIGN.md dB .nx): the exercises after the one
   // currently being worked, each showing target and last-time — all derived
   // from data already computed per-exercise below (programEx/targets/
@@ -1243,6 +1245,76 @@ export default function WorkoutDetail() {
     return <LoadingScreen />;
   }
 
+  // Session chips + muscle-view toggle — unchanged markup/handlers, just
+  // lifted out so both the full (!isLogging) card and the compact isLogging
+  // "Session details" disclosure (below the logger) can render the identical
+  // elements instead of forking the JSX. Every branch inside was already
+  // gated on isLogging itself, so relocating the container changes nothing
+  // about when each chip appears. Defined after the loading/not-found guards
+  // above (not a hook, so this is safe) since it reads workout.focus/exercises.
+  const chipsRow = (
+    <div className="flex flex-wrap gap-2">
+      <Badge variant="outline" className="capitalize">
+        {workout.focus}
+      </Badge>
+      {isProgramSource && (
+        <Badge variant="slate">Program Workout</Badge>
+      )}
+      <EquipmentProfileToggle swaps={equipmentSwaps} />
+      {isProgramSource && !isLogging && (
+        <OverrideProgramWorkout
+          programWorkout={programWorkout}
+          onDone={refetchProgramWorkout}
+        />
+      )}
+      {isLogging && (
+        <Badge variant="slate">Logging Active</Badge>
+      )}
+      {isLogging && (
+        <button
+          type="button"
+          onClick={() => setShowShotList((v) => !v)}
+          aria-pressed={showShotList}
+          className="min-h-[44px] -my-2 inline-flex items-center"
+        >
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+            showShotList
+              ? 'bg-brand/[0.16] border-brand/40 text-brand'
+              : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
+          }`}>
+            <Camera className="w-3.5 h-3.5" />
+            Shot list
+          </span>
+        </button>
+      )}
+      {/* Diagnostic status while the toggle is on — a silent fetch failure
+          or an empty result otherwise looks identical to "feature missing". */}
+      {isLogging && showShotList && (shotNotesError || shotNotesLoading || shotNoteCount === 0) && (
+        <span className="text-[11px] font-semibold text-warn self-center">
+          {shotNotesError
+            ? `Shot notes failed to load: ${shotNotesError.message || String(shotNotesError)}`
+            : shotNotesLoading
+              ? "Loading shot notes…"
+              : "No shot notes found for this account"}
+        </span>
+      )}
+    </div>
+  );
+
+  const muscleToggleRow = workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 ? (
+    <div className="flex items-center gap-2 shrink-0 lg:hidden">
+      <span className="section-label hidden sm:inline">Muscles worked</span>
+      <SegmentedControl
+        value={muscleView}
+        onChange={setMuscleView}
+        options={[
+          { value: "anterior", label: "Front" },
+          { value: "posterior", label: "Back" },
+        ]}
+      />
+    </div>
+  ) : null;
+
   return (
     <div className="min-h-screen relative">
       {isLogging && (
@@ -1256,7 +1328,7 @@ export default function WorkoutDetail() {
           startTime={startTime}
           canFinish={loggedSetsCount > 0}
           doneSets={loggedSetsCount}
-          totalSets={exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0)}
+          totalSets={totalSetsCount}
           restTimer={restTimer}
           restDuration={restDuration}
           onSkipRest={skipRestTimer}
@@ -1266,7 +1338,13 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-16 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] pb-32 lg:pb-6 flex flex-col'}`}>
+      {/* Mobile top padding while logging tracks the ACTUAL rendered height of
+          WorkoutLoggingHeader's fixed top bar (usually 0 — it only shows
+          content for the rare post-rest / save-failed states), instead of the
+          old pt-16 guess that reserved 64px of dead space above the logger
+          for most of the session. lg: keeps the static pt-32 (that bar always
+          carries the clock/actions there). */}
+      <div className={`max-w-6xl mx-auto p-4 md:p-6 ${isLogging ? 'pt-[calc(var(--logging-top-clearance,16px)+8px)] pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pt-32 lg:pb-6' : 'min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] pb-32 lg:pb-6 flex flex-col'}`}>
         <div className="lg:flex lg:items-start lg:gap-6 w-full">
         <div className="flex-1 min-w-0 rise-in">
         {!isLogging && (
@@ -1281,68 +1359,18 @@ export default function WorkoutDetail() {
           </Button>
         )}
 
-        <Card ref={workoutCardRef} className={`mb-6 ${isLogging ? 'mt-4' : ''}`}>
+        {/* Session card — full chrome (chips, hero metrics, Start/Edit/Clone,
+            muscle figure). Suppressed entirely while isLogging: the equivalent
+            info moves into the "Session details" disclosure BELOW the exercise
+            list (rendered further down, in the isLogging branch), so the
+            focused exercise sits at the top of the page instead of under this
+            card. */}
+        {!isLogging && (
+        <Card ref={workoutCardRef} className="mb-6">
           <CardHeader className="pt-4 pb-2">
             <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="capitalize">
-                  {workout.focus}
-                </Badge>
-                {isProgramSource && (
-                  <Badge variant="slate">Program Workout</Badge>
-                )}
-                <EquipmentProfileToggle swaps={equipmentSwaps} />
-                {isProgramSource && !isLogging && (
-                  <OverrideProgramWorkout
-                    programWorkout={programWorkout}
-                    onDone={refetchProgramWorkout}
-                  />
-                )}
-                {isLogging && (
-                  <Badge variant="slate">Logging Active</Badge>
-                )}
-                {isLogging && (
-                  <button
-                    type="button"
-                    onClick={() => setShowShotList((v) => !v)}
-                    aria-pressed={showShotList}
-                    className="min-h-[44px] -my-2 inline-flex items-center"
-                  >
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
-                      showShotList
-                        ? 'bg-brand/[0.16] border-brand/40 text-brand'
-                        : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
-                    }`}>
-                      <Camera className="w-3.5 h-3.5" />
-                      Shot list
-                    </span>
-                  </button>
-                )}
-                {/* Diagnostic status while the toggle is on — a silent fetch failure
-                    or an empty result otherwise looks identical to "feature missing". */}
-                {isLogging && showShotList && (shotNotesError || shotNotesLoading || shotNoteCount === 0) && (
-                  <span className="text-[11px] font-semibold text-warn self-center">
-                    {shotNotesError
-                      ? `Shot notes failed to load: ${shotNotesError.message || String(shotNotesError)}`
-                      : shotNotesLoading
-                        ? "Loading shot notes…"
-                        : "No shot notes found for this account"}
-                  </span>
-                )}
-              </div>
-              {workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 && (
-                <div className="flex items-center gap-2 shrink-0 lg:hidden">
-                  <span className="section-label hidden sm:inline">Muscles worked</span>
-                  <SegmentedControl
-                    value={muscleView}
-                    onChange={setMuscleView}
-                    options={[
-                      { value: "anterior", label: "Front" },
-                      { value: "posterior", label: "Back" },
-                    ]}
-                  />
-                </div>
-              )}
+              {chipsRow}
+              {muscleToggleRow}
             </div>
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row md:gap-8">
@@ -1376,7 +1404,7 @@ export default function WorkoutDetail() {
                 </div>
 
 
-                {!isLogging && !resumeSession && (
+                {!resumeSession && (
                   <div className="space-y-3">
                     <Button
                       onClick={handleStartLogging}
@@ -1414,8 +1442,8 @@ export default function WorkoutDetail() {
                 )}
               </div>
 
-              {/* Right: muscle figure sidebar — hidden while logging so set inputs sit at the top */}
-              {!isLogging && workout.exercises?.length > 0 && (() => {
+              {/* Right: muscle figure sidebar */}
+              {workout.exercises?.length > 0 && (() => {
                 const bodyData = getWorkoutBodyData(workout.exercises);
                 return bodyData.length > 0 ? (
                   <div className="flex flex-col items-center mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
@@ -1425,26 +1453,17 @@ export default function WorkoutDetail() {
               })()}
           </CardContent>
         </Card>
+        )}
 
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
-            {/* Pre-workout Notes — collapsed by default so the first exercise
-                stays above the fold. Auto-opens if notes already exist. */}
-            <details open={!!preWorkoutNotes} className="glass-inset group">
-              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
-                <span className="section-label">Pre-workout Notes</span>
-                <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
-              </summary>
-              <div className="px-4 pb-3">
-                <Textarea
-                  value={preWorkoutNotes}
-                  onChange={(e) => setPreWorkoutNotes(e.target.value)}
-                  placeholder="Anything notable going in? Energy, soreness, focus..."
-                  className="bg-transparent border-none focus-visible:ring-0 px-0 min-h-[60px] resize-none text-base"
-                />
-              </div>
-            </details>
+            {/* Sentinel for the "scrolled past the top of the logger" observer
+                below — the session Card that used to carry workoutCardRef is
+                suppressed while isLogging, so showTitleInHeader (desktop top
+                bar's "workout title when scrolled" heading) needs a stand-in
+                anchor at the same position instead of losing its signal. */}
+            <div ref={workoutCardRef} aria-hidden="true" className="h-px -mb-6" />
 
             {/* Recovery warnings (program mode) */}
             {recoveryWarnings.length > 0 && (
@@ -1549,6 +1568,53 @@ export default function WorkoutDetail() {
 
             {/* Add Exercise Form */}
             <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />
+
+            {/* Session details — the chips, hero metrics, muscle-view toggle,
+                and Pre-workout Notes that live in the full session Card when
+                not logging. Collapsed by default (never auto-opens, unlike
+                the old standalone Pre-workout Notes disclosure) and pinned
+                below the logger so the focused exercise stays at the top of
+                the page. Pre-workout Notes still writes the same
+                preWorkoutNotes state either way. */}
+            <details className="glass-inset group mt-2">
+              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden min-h-[44px]">
+                <span className="section-label">Session details</span>
+                <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="px-4 pb-4 space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  {chipsRow}
+                  {muscleToggleRow}
+                </div>
+                <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <Target className="w-5 h-5 text-ink-muted" />
+                    <div>
+                      <div className="section-label">Exercises</div>
+                      <div className="hero-metric text-[20px] text-ink">{workout.exercises?.length || 0}</div>
+                    </div>
+                  </div>
+                  {workout.duration_minutes != null && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-ink-faint" />
+                      <div>
+                        <div className="section-label">Duration</div>
+                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="section-label block mb-1.5">Pre-workout Notes</label>
+                  <Textarea
+                    value={preWorkoutNotes}
+                    onChange={(e) => setPreWorkoutNotes(e.target.value)}
+                    placeholder="Anything notable going in? Energy, soreness, focus..."
+                    className="bg-transparent border border-charcoal-border rounded-lg px-3 py-2 min-h-[60px] resize-none text-base"
+                  />
+                </div>
+              </div>
+            </details>
           </div>
         ) : (
           // View Mode - Show exercises read-only

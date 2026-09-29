@@ -39,6 +39,7 @@ export default function WorkoutLoggingHeader({
   const [showCalculators, setShowCalculators] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const bottomBarRef = useRef(null);
+  const topBarRef = useRef(null);
 
   // Publish the mobile bottom action bar's true footprint (its rendered height
   // PLUS the dock clearance + safe-area it floats above) as --logging-bar-clearance.
@@ -91,6 +92,37 @@ export default function WorkoutLoggingHeader({
     // ResizeObserver catches the one-row → two-row (rest active) height change and
     // resize catches viewport/safe-area shifts, so startTime alone (bar mount) is the
     // only re-run trigger needed.
+  }, [startTime]);
+
+  // Same measured-clearance pattern for the TOP bar. It's usually zero-height
+  // on mobile (hasMobileTopContent false most of the session — see below), so
+  // a page that reserves fixed padding for it (a guess like pt-16) leaves dead
+  // space above the logger for most of the session, then risks true overlap
+  // in the rare states where the bar does have content (post-rest "Rest 0:00",
+  // a dropped save). Publish the real rendered height as --logging-top-clearance
+  // so pages can pad exactly enough, in every state, instead of guessing.
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = topBarRef.current;
+    if (!el) {
+      root.style.setProperty("--logging-top-clearance", "0px");
+      return;
+    }
+    const publish = () => {
+      const rect = el.getBoundingClientRect();
+      root.style.setProperty("--logging-top-clearance", `${Math.max(0, Math.ceil(rect.height))}px`);
+    };
+    publish();
+    const raf = requestAnimationFrame(publish);
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    window.addEventListener("resize", publish);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", publish);
+      root.style.setProperty("--logging-top-clearance", "0px");
+    };
   }, [startTime]);
 
   useEffect(() => {
@@ -342,6 +374,7 @@ export default function WorkoutLoggingHeader({
     <>
       {/* ── Top bar: read-only timers (+ actions on desktop only) ────────── */}
       <div
+        ref={topBarRef}
         className={`fixed top-0 left-0 right-0 z-[9998] border-x-0 ${
           hasMobileTopContent ? 'glass-elevated glass-elevated--substacked' : 'lg:glass-elevated lg:glass-elevated--substacked'
         }`}

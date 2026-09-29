@@ -39,7 +39,7 @@
       { "click": "a[href*='workout-detail']" }, { "settle": 1400 },
       { "clickTextIfPresent": "Start Fresh" }, { "settle": 700 },
       { "clickIfPresent": "[data-tutorial='start-logging-btn']" }, { "settle": 1400 },
-      { "click": "[data-tutorial='exercise-card'] button" }, { "settle": 500 }
+      { "settle": 300 }, { "clickIfPresent": "[aria-label*='Mark set 1 complete']" }, { "settle": 500 }
     ],
     "sessionCreating": true, "serial": true,
     "note": "One set marked complete mid-logging" },
@@ -58,7 +58,7 @@
       { "click": "a[href*='workout-detail']" }, { "settle": 1400 },
       { "clickTextIfPresent": "Start Fresh" }, { "settle": 700 },
       { "clickIfPresent": "[data-tutorial='start-logging-btn']" }, { "settle": 1400 },
-      { "click": "[data-tutorial='exercise-card'] button" }, { "settle": 500 }
+      { "settle": 300 }, { "clickIfPresent": "[aria-label*='Mark set 1 complete']" }, { "settle": 500 }
     ],
     "sessionCreating": true, "serial": true,
     "note": "Phase 3b probe target - same setup as workout-set-complete, kept as a distinct id/baseline for the B (Ledger) active-logger set-complete state (checked-row highlight, +delta) so before/after compares don't collide with the pre-3b baseline entry." },
