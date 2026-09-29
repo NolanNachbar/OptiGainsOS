@@ -248,9 +248,15 @@ const CHECK_SCRIPT = () => {
     // circular button (e.g. a 48px FAB, radius 24px) lands the corner point
     // in the corner cutout outside the circle, sampling whatever sits behind
     // it there instead of the button itself - a false "0.8 covered" even
-    // when the whole visible disc is clear and clickable.
-    const br = parseFloat(getComputedStyle(e).borderRadius) || 0;
-    const inset = Math.max(4, br * 0.35);
+    // when the whole visible disc is clear and clickable. `rounded-full`
+    // computes to a 9999px border-radius regardless of box size, so the
+    // radius must be clamped to the box's own half-width/half-height first -
+    // an unclamped 9999px would inset every corner point thousands of px
+    // outside the viewport, silently dropping them and leaving only the
+    // center point sampled.
+    const brRaw = parseFloat(getComputedStyle(e).borderRadius) || 0;
+    const rad = Math.min(brRaw, r.width / 2, r.height / 2);
+    const inset = Math.max(4, rad * 0.35);
     const pts = [
       [r.left + r.width / 2, r.top + r.height / 2, 'center'],
       [r.left + inset, r.top + inset, 'top-left'],
@@ -259,9 +265,11 @@ const CHECK_SCRIPT = () => {
       [r.right - inset, r.bottom - inset, 'bottom-right'],
     ];
     let coveredCount = 0;
+    let sampledCount = 0;
     let coveredBy = null;
     for (const [x, y, corner] of pts) {
       if (x < 0 || x > vw || y < 0 || y > vh) continue;
+      sampledCount++;
       const stack = document.elementsFromPoint(x, y).filter((n) => n.tagName !== 'IPHONE-SIM');
       const hit = stack[0];
       if (!hit) continue;
@@ -272,13 +280,18 @@ const CHECK_SCRIPT = () => {
       // bug. Detect by the known literal class strings rather than rect-edge
       // math (post-scroll, inside iphone-sim's own frame, a true full-
       // viewport scrim's measured rect can land a few px off the exact 0/vw/vh
-      // edges that math expects). Note this deliberately does NOT exclude the
-      // FAB quick-add sheet's own `glass-elevated` panel: that's the one
-      // legitimate case (R1-02) where the modal's own panel covers the very
-      // control (the FAB's X) an athlete needs to close it, which the fixed
-      // pass must keep catching.
+      // edges that math expects). Walk up with closest() (a real hit is often
+      // a child of the panel, e.g. its own button), and only when the covered
+      // control ISN'T itself inside that same panel - an in-dialog control
+      // covered by another in-dialog element is still a real, checkable bug.
+      // This deliberately does NOT exclude the FAB quick-add sheet's own
+      // `glass-elevated` panel: that's the one legitimate case (R1-02) where
+      // the modal's own panel covers the very control (the FAB's X) an
+      // athlete needs to close it, which the fixed pass must keep catching.
+      const hitSheet = hit.closest('.glass-sheet');
       const hitClass = String(hit.className || '');
-      const isModalChrome = (hitClass.includes('bg-black/85') && hitClass.includes('inset-0')) || hitClass.includes('glass-sheet');
+      const isModalChrome = (hitClass.includes('bg-black/85') && hitClass.includes('inset-0'))
+        || (hitSheet && !e.closest('.glass-sheet'));
       if (!isSelfOrDescendant && !isModalChrome) {
         coveredCount++;
         if (!coveredBy) coveredBy = desc(hit).selector + (hit.className ? ` (${String(hit.className).slice(0, 40)})` : '');
@@ -286,7 +299,7 @@ const CHECK_SCRIPT = () => {
     }
     if (coveredCount > 0) {
       const safeAreaBand = r.bottom > vh - 40 || r.top < 40;
-      occluded.push({ ...desc(e), coveredFraction: +(coveredCount / pts.length).toFixed(2), coveredBy, inSafeAreaBand: safeAreaBand, position: pos });
+      occluded.push({ ...desc(e), coveredFraction: +(coveredCount / (sampledCount || 1)).toFixed(2), coveredBy, inSafeAreaBand: safeAreaBand, position: pos });
     }
   }
 

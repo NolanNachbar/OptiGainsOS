@@ -21,7 +21,10 @@ state.json, "UNINTENDED PROD DEPLOY" entry).
 ## Round structure (max 3 rounds)
 
 1. **Probe baseline**
-   `node ui-audit/polish/probe.mjs --out ui-audit/polish/rounds/r<N>/probe`
+   `node ui-audit/polish/probe.mjs --out rounds/r<N>/probe` (run from repo root;
+   `--out` resolves relative to `ui-audit/polish/`, not the repo root, so do
+   NOT repeat the `ui-audit/polish/` prefix here or it doubles into
+   `ui-audit/polish/ui-audit/polish/...`).
    Read-only except session-creating screens (serial, cleaned up automatically).
 
 2. **Critic (opus)** — reads `AUDIT_RUBRIC.md`, the ui-ux-pro-max quick-reference
@@ -40,7 +43,7 @@ state.json, "UNINTENDED PROD DEPLOY" entry).
    in `state.json.log`.
 
 4. **Re-probe ALL screens**
-   `node ui-audit/polish/probe.mjs --out ui-audit/polish/rounds/r<N>/probe-after`
+   `node ui-audit/polish/probe.mjs --out rounds/r<N>/probe-after`
    **Regression gate**: no screen may get worse on any deterministic check
    (smallTargets, smallText, overflow, occluded, contrastFails, problems,
    warnings, driftFindings counts must not increase for any screen — compare
@@ -64,7 +67,7 @@ contrastFails/smallText as major-tier, everything else minor).
 ## Regression-gate command
 
 ```
-node ui-audit/polish/probe.mjs --out ui-audit/polish/rounds/r<N>/probe-after
+node ui-audit/polish/probe.mjs --out rounds/r<N>/probe-after
 node ui-audit/polish/compare.mjs ui-audit/polish/rounds/r<N>/probe/summary.json ui-audit/polish/rounds/r<N>/probe-after/summary.json
 ```
 `compare.mjs` exits non-zero and prints every screen/check that regressed if
