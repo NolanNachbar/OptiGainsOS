@@ -11,7 +11,43 @@
  *   ProfileStatsCard — avatar + name + 3-stat block (Profile hub card).
  *   TabCount         — neutral count badge for tab labels (data, never coral).
  */
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { verdictKey } from "./helpers";
+
+/**
+ * Module — the Ledger full-bleed data module (DESIGN.md "Surfaces"): a flat
+ * `.surface` band (1px rule, no radius/shadow) with an optional label row —
+ * 13px semibold muted eyebrow on the left, an optional "Detail ›" link/button
+ * on the right. `bleed` (default true) pulls the module out to the viewport
+ * edge on mobile via negative margins (the page body still owns the px-4/
+ * px-6 gutter), matching the mockup's edge-to-edge module; desktop (lg:)
+ * keeps the existing inset column since the grid there isn't full-bleed.
+ */
+export function Module({ label, detail, detailHref, onDetailClick, children, className = "", bleed = true }) {
+  const bleedClass = bleed ? "-mx-4 sm:-mx-6 lg:mx-0" : "";
+  return (
+    <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`}>
+      {(label || detail) && (
+        <div className="flex items-center justify-between mb-2">
+          {label && <span className="text-[13px] font-semibold text-muted-2">{label}</span>}
+          {detail && (
+            detailHref ? (
+              <Link to={detailHref} className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+                {detail}<ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <button type="button" onClick={onDetailClick} className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+                {detail}<ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )
+          )}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
 
 export function SectionLabel({ icon: Icon, children, right, className = "" }) {
   return (
