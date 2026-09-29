@@ -1121,6 +1121,43 @@ export default function WorkoutDetail() {
     0
   );
 
+  // Ledger "Next" module (DESIGN.md dB .nx): the exercises after the one
+  // currently being worked, each showing target and last-time — all derived
+  // from data already computed per-exercise below (programEx/targets/
+  // originalEx/lastPerformance), so this adds no fetch and can't change
+  // offline behavior. "Current" is the first exercise with any un-completed
+  // set; everything after it in card order is "upcoming". If every exercise
+  // is fully logged (or there's only one), there's nothing upcoming to show.
+  const nextExercises = useMemo(() => {
+    const activeIdx = exerciseLogs.findIndex((ex) => ex.sets?.some((s) => !s.completed));
+    if (activeIdx === -1) return [];
+    return exerciseLogs.slice(activeIdx + 1).map((exerciseLog) => {
+      const programEx = isProgramSource
+        ? programWorkout?.exercises?.find((ex) => ex.name === exerciseLog.name) || null
+        : null;
+      const targets = programEx ? progressionTargetsMap[programEx.name] : null;
+      const originalEx = workout?.exercises?.find((e) => e.name === exerciseLog.name) || null;
+
+      let target = null;
+      if (isProgramSource && targets) {
+        const bits = [];
+        if (targets.workingWeight) bits.push(`${targets.workingWeight} ${weightUnit}`);
+        if (targets.dailyMin) bits.push(`min ${targets.dailyMin}`);
+        if (bits.length) target = bits.join(' · ');
+      } else if (!isProgramSource && originalEx) {
+        const setCount = Array.isArray(originalEx.sets) ? originalEx.sets.length : (originalEx.sets || 3);
+        target = `${setCount} × ${originalEx.reps || 10}`;
+      }
+
+      const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
+      const last = lastPerformance?.lastWeight != null && lastPerformance?.lastReps != null
+        ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
+        : null;
+
+      return { name: exerciseLog.name, target, last };
+    });
+  }, [exerciseLogs, isProgramSource, programWorkout, progressionTargetsMap, workout, weightUnit, allWorkoutLogs]);
+
   const markAllSetsComplete = () => {
     setExerciseLogs(prev => prev.map(ex => ({
       ...ex,
@@ -1489,6 +1526,23 @@ export default function WorkoutDetail() {
                 })}
               </SortableContext>
             </DndContext>
+
+            {/* Next (DESIGN.md dB .nx) — upcoming exercises, target + last time.
+                Rendered outside DndContext/SortableContext so it's not draggable. */}
+            {nextExercises.length > 0 && (
+              <div className="border-t border-charcoal-border pt-3 mt-1 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-ink-faint mb-2">Next</p>
+                <div className="space-y-2">
+                  {nextExercises.map((ex, i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 font-technical text-[13px]">
+                      <span className="text-ink-secondary font-semibold truncate">{ex.name}</span>
+                      <span className="text-ink-muted tabular-nums flex-shrink-0">{ex.target || '—'}</span>
+                      <span className="text-ink-faint tabular-nums flex-shrink-0">{ex.last || '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
             {isProgramSource && <CardioSessions programWorkout={programWorkout} />}
