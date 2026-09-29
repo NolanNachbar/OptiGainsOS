@@ -69,17 +69,32 @@ export default function Lifts() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                      {s.currentE1rm} <span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
-                    </p>
+                    {s.currentE1rm != null ? (
+                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
+                        {s.currentE1rm} <span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                      </p>
+                    ) : s.bestWeight != null ? (
+                      // Never trained ≤12 reps (calf raises and most isolation
+                      // work): no honest e1RM to show, so show the actual PR instead.
+                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
+                        {s.bestWeight}<span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                        {" × "}{s.bestReps}
+                      </p>
+                    ) : s.bodyweightReps != null ? (
+                      // Bodyweight movement, never logged with added load —
+                      // "0 lbs" is a lie, so report the rep count on its own.
+                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
+                        {s.bodyweightReps} reps
+                      </p>
+                    ) : (
+                      <p className="font-technical text-xs font-bold text-faint tabular-nums">—</p>
+                    )}
                     <p
                       className={`font-technical text-[10px] font-bold tabular-nums mt-0.5 ${
                         s.change4w == null
                           ? "text-faint"
                           : s.change4w > 0
                           ? "text-leaf"
-                          : s.change4w < 0
-                          ? "text-muted-2"
                           : "text-muted-2"
                       }`}
                     >
@@ -94,7 +109,19 @@ export default function Lifts() {
                 </button>
                 {isOpen && (
                   <div className="pb-3">
-                    <ExerciseProgressChart data={s.history} exerciseName={s.name} weightUnit={weightUnit} />
+                    {s.history.length > 0 ? (
+                      <ExerciseProgressChart data={s.history} exerciseName={s.name} weightUnit={weightUnit} />
+                    ) : (
+                      <p className="text-[11px] font-semibold text-muted-2 px-1 py-2">
+                        No sets of 12 reps or fewer logged for this lift, so there's no e1RM trend to
+                        chart —{" "}
+                        {s.bestWeight != null
+                          ? `best set logged is ${s.bestWeight} ${weightUnit} × ${s.bestReps}.`
+                          : s.bodyweightReps != null
+                          ? `best set logged is ${s.bodyweightReps} reps.`
+                          : "no completed sets logged yet."}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
