@@ -75,7 +75,8 @@
   { "id": "calculators-sheet", "path": "/today", "usageRank": 3, "files": ["src/components/ui/FloatingActionButton.jsx"],
     "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Calculators" }, { "settle": 800 }] },
   { "id": "weigh-in-sheet", "path": "/today", "usageRank": 2, "files": ["src/pages/Today.jsx"],
-    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Weigh In" }, { "settle": 800 }] },
+    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 },
+      { "click": "[role='menuitem']:has-text('Weigh In')" }, { "settle": 800 }] },
   { "id": "stream-note-sheet", "path": "/today", "usageRank": 3, "files": ["src/pages/Today.jsx"],
     "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Stream Note" }, { "settle": 800 }] },
 
