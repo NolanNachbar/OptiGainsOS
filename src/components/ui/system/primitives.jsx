@@ -24,13 +24,16 @@ import { verdictKey } from "./helpers";
  * px-6 gutter), matching the mockup's edge-to-edge module; desktop (lg:)
  * keeps the existing inset column since the grid there isn't full-bleed.
  */
-export function Module({ label, detail, detailHref, onDetailClick, children, className = "", bleed = true }) {
+export function Module({ label, detail, detailHref, onDetailClick, right, children, className = "", bleed = true, ...rest }) {
   const bleedClass = bleed ? "-mx-4 sm:-mx-6 lg:mx-0" : "";
   return (
-    <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`}>
-      {(label || detail) && (
-        <div className="flex items-center justify-between mb-2">
-          {label && <span className="text-[13px] font-semibold text-muted-2">{label}</span>}
+    <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`} {...rest}>
+      {(label || detail || right) && (
+        <div className="flex items-center justify-between gap-2 mb-2">
+          {label && <span className="text-[13px] font-semibold text-muted-2 truncate">{label}</span>}
+          {/* `right` is a free-form node (e.g. "1,034 kcal left") for when the
+              header's right slot isn't a "Detail ›" navigation affordance. */}
+          {right && !detail && <span className="shrink-0">{right}</span>}
           {detail && (
             detailHref ? (
               <Link to={detailHref} className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
