@@ -492,6 +492,40 @@ export default function ExerciseCard({
   const repsInputRefs = useRef({});
   const rirInputRefs = useRef({});
 
+  // Phase B: completing a set from the keypad (RIR-pill tap, or "Done ✓")
+  // must NOT call handleSetCompleted in the same synchronous handler that
+  // just committed the RIR/weight/reps value -- handleSetCompleted closes
+  // over the CURRENT-render's `exercise` prop, which is still the
+  // pre-commit value at that point (the parent's setState from commitRir
+  // hasn't re-rendered this component yet). Route through a pending index
+  // + effect instead: the commit's setState and this setPendingDoneIndex
+  // call batch into the same render, so by the time the effect below runs,
+  // `exercise` (and the `handleSetCompleted` closure built from it) is
+  // fresh -- the native tap-the-checkbox path gets this for free because a
+  // whole extra render happens between typing and tapping; this recreates
+  // that same ordering for the keypad's one-tap completion path.
+  const [pendingDoneIndex, setPendingDoneIndex] = useState(null);
+  useEffect(() => {
+    if (pendingDoneIndex == null) return;
+    handleSetCompleted(pendingDoneIndex, true);
+    setPendingDoneIndex(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingDoneIndex]);
+
+  const fieldRef = (setIndex, field) =>
+    field === 'weight' ? weightInputRefs.current[setIndex]
+    : field === 'reps' ? repsInputRefs.current[setIndex]
+    : rirInputRefs.current[setIndex];
+
+  // Blur the real input before closing so a later tap on it re-fires focus
+  // (and re-opens the sheet) instead of landing on an already-focused,
+  // silently-inert field -- inputMode="none" means no OS keyboard exists to
+  // fall back to.
+  const closeKeypad = () => {
+    if (activeField) fieldRef(activeField.setIndex, activeField.field)?.blur();
+    setActiveField(null);
+  };
+
   // Compact one-line row for every exercise other than the focused one
   // (mockup .nx: "name · target · last time"). Ledger rebuild (coordinator
   // review, r4d/step3): the old version was a boxed glass-inset card with a
@@ -1343,21 +1377,20 @@ export default function ExerciseCard({
         commitWeight={commitWeight}
         commitReps={commitReps}
         commitRir={commitRir}
-        onClose={() => setActiveField(null)}
+        onClose={closeKeypad}
         onDone={(setIndex) => {
           // Close FIRST, then complete the set -- otherwise the weight-typo
-          // guard's window.confirm() renders underneath the sheet.
-          setActiveField(null);
-          handleSetCompleted(setIndex, true);
+          // guard's window.confirm() renders underneath the sheet. Route
+          // through pendingDoneIndex (see above) rather than calling
+          // handleSetCompleted directly, so it sees this tick's committed
+          // value, not the pre-commit one.
+          closeKeypad();
+          setPendingDoneIndex(setIndex);
         }}
-        focusField={(field) => {
-          const idx = activeField.setIndex;
-          const ref =
-            field === 'weight' ? weightInputRefs.current[idx]
-            : field === 'reps' ? repsInputRefs.current[idx]
-            : rirInputRefs.current[idx];
-          ref?.focus();
-        }}
+        focusField={(field) => fieldRef(activeField.setIndex, field)?.focus()}
+        scrollActiveIntoView={() =>
+          fieldRef(activeField.setIndex, activeField.field)?.scrollIntoView({ block: "end", behavior: "smooth" })
+        }
       />,
       document.body
     )}
@@ -1389,6 +1422,7 @@ function rirPillTint(val, active) {
 function KeypadSheet({
   activeField, exercise, weightUnit, isHold, showRIR, lastPerformance,
   commitWeight, commitReps, commitRir, onClose, onDone, focusField,
+  scrollActiveIntoView,
 }) {
   const { setIndex, field } = activeField;
   const set = exercise.sets[setIndex];
@@ -1420,12 +1454,22 @@ function KeypadSheet({
     if (!el) return undefined;
     const publish = () => root.style.setProperty("--logging-bar-clearance", `${el.offsetHeight}px`);
     publish();
+    // handleInputFocus's own scroll already ran (or is running) by this
+    // point, but it fired before --logging-bar-clearance had this sheet's
+    // real height -- inputMode="none" means no visualViewport resize
+    // happens to re-trigger it. Re-scroll once the sheet's true height is
+    // published, so the active row lands above the sheet, not under it.
+    requestAnimationFrame(() => scrollActiveIntoView?.());
     const ro = new ResizeObserver(publish);
     ro.observe(el);
     return () => {
       ro.disconnect();
       root.style.setProperty("--logging-bar-clearance", "0px");
     };
+    // Intentionally mount-only: re-running this on every scrollActiveIntoView
+    // identity change (a new inline function each parent render) would
+    // re-publish/re-scroll constantly instead of once when the sheet opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Dismiss on an outside tap -- deliberately NOT calling preventDefault or
@@ -1448,7 +1492,11 @@ function KeypadSheet({
   const pressDigit = (d) => {
     if (field === "rir") return; // RIR uses the pill strip, not digits.
     const next = fresh ? d : buffer + d;
-    setBuffer(next);
+    // Mirror commitWeight's 2000 clamp in the display too, so a fat-fingered
+    // extra digit doesn't show 9999 on the sheet while 2000 is what actually
+    // gets saved underneath it.
+    const shown = field === "weight" && parseFloat(next) > 2000 ? "2000" : next;
+    setBuffer(shown);
     setFresh(false);
     commit(next);
   };
@@ -1472,7 +1520,7 @@ function KeypadSheet({
   const increment = weightUnit === "kg" ? 2.5 : 5;
   const pressStep = (dir) => {
     const current = buffer === "" ? 0 : parseFloat(buffer) || 0;
-    const next = Math.max(0, Math.round((current + dir * increment) * 100) / 100);
+    const next = Math.min(2000, Math.max(0, Math.round((current + dir * increment) * 100) / 100));
     const nextStr = String(next);
     setBuffer(nextStr);
     setFresh(true);
@@ -1543,19 +1591,33 @@ function KeypadSheet({
       </div>
 
       {field === "rir" ? (
-        <div className="px-4 pb-4 flex gap-1.5">
-          {[0, 1, 2, 3, 4, 5, 6].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onPointerDown={stop}
-              onClick={() => pickRir(v)}
-              aria-label={`RIR ${v === 6 ? "6+" : v}`}
-              className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, currentRir === v)}`}
-            >
-              {v === 6 ? "6+" : v}
-            </button>
-          ))}
+        <div className="px-4 pb-4 space-y-1.5">
+          <div className="flex gap-1.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onPointerDown={stop}
+                onClick={() => pickRir(v)}
+                aria-label={`RIR ${v === 6 ? "6+" : v}`}
+                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, currentRir === v)}`}
+              >
+                {v === 6 ? "6+" : v}
+              </button>
+            ))}
+          </div>
+          {/* A pill tap both sets RIR and finishes the set (it's always the
+              last field), but the set can also be finished without picking
+              one -- RIR is optional data, not a gate on completion. */}
+          <button
+            type="button"
+            onPointerDown={stop}
+            onClick={goNext}
+            aria-label="Done, mark set complete"
+            className="w-full min-h-[52px] rounded-xl bg-brand text-[#12161C] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+          >
+            Done ✓
+          </button>
         </div>
       ) : (
         <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
