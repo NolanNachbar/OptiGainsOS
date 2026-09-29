@@ -45,6 +45,11 @@ export function getRecentFoods(entries, limit = 10) {
         fiber_grams: entry.fiber_grams,
         meal_type: entry.meal_type,
         serving_size: entry.serving_size,
+        // Needed to resolve the entry's actual portion (formatEntryServing's
+        // grams-in-parens hint, and the one-tap re-log's exact serving) —
+        // previously dropped here, which silently blanked both.
+        serving_unit: entry.serving_unit,
+        serving_grams: entry.serving_grams,
       });
     }
     if (foodMap.size >= limit) break;

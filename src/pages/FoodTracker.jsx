@@ -1132,7 +1132,10 @@ const handleSaveMealTemplate = () => {
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
         serving_unit: data.serving_unit,
-        serving_grams: entryServingGrams(data),
+        // Quick re-log passes its own resolved serving_grams (copied straight
+        // from the past entry, no rescale needed since the amount/unit are
+        // unchanged); every other caller still resolves it from form state.
+        serving_grams: data.serving_grams ?? entryServingGrams(data),
         calories: Math.round(data.calories),
         protein_grams: data.protein_grams,
         carbs_grams: data.carbs_grams,
@@ -1143,16 +1146,46 @@ const handleSaveMealTemplate = () => {
         eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
       });
     },
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       invalidateFood(queryClient);
-      setShowAddDialog(false);
-      resetForm();
+      // A quick re-log never opened/populated the Add Food form, so there's
+      // nothing to close or reset for it — closing here would dismiss the
+      // Add Food dialog out from under someone still browsing the Recent list.
+      if (!variables?.__quickRelog) {
+        setShowAddDialog(false);
+        resetForm();
+      }
       toast.success("Food logged successfully!");
     },
     onError: () => {
       toast.error("Failed to log food");
     }
   });
+
+  // Re-log a Recent entry with one tap: same food, same last-used portion,
+  // logged straight to the current meal/date — no dialog detour through
+  // selectRecentFood's form-population dance (that path is for editing the
+  // portion before logging; this path is for repeating it verbatim).
+  const quickRelogFood = (entry) => {
+    if (addFoodMutation.isPending) return; // guard a double-tap duplicate
+    const servingStr = String(entry.serving_size || "");
+    const parts = servingStr.split(' ');
+    const originalAmount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
+    const originalUnit = parts.slice(1).join(' ') || entry.serving_unit || 'serving';
+    addFoodMutation.mutate({
+      __quickRelog: true,
+      food_name: entry.food_name,
+      meal_type: entry.meal_type,
+      serving_amount: originalAmount,
+      serving_unit: originalUnit,
+      serving_grams: entry.serving_grams ?? null,
+      calories: entry.calories || 0,
+      protein_grams: entry.protein_grams || 0,
+      carbs_grams: entry.carbs_grams || 0,
+      fats_grams: entry.fats_grams || 0,
+      fiber_grams: entry.fiber_grams ?? null,
+    });
+  };
 
   const deleteFoodMutation = useMutation({
     mutationFn: async (entry) => {
@@ -2674,16 +2707,27 @@ const handleSaveMealTemplate = () => {
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {recentExpanded && recentFoods.map((entry, i) => (
-                              <button key={i} onClick={() => selectRecentFood(entry)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                <div className="font-medium text-ink text-sm">{entry.food_name}</div>
-                                {/* add-food-dialog-3: never render a bare "1" — show
-                                    the amount WITH its unit, or omit when there's no
-                                    unit and the amount is the meaningless default 1. */}
-                                {formatEntryServing(entry) && (
-                                  <div className="text-[11px] text-ink-muted font-technical tabular-nums">{formatEntryServing(entry)}</div>
-                                )}
-                                <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
-                              </button>
+                              <div key={i} className="flex items-stretch border-b border-charcoal-border last:border-b-0">
+                                <button onClick={() => selectRecentFood(entry)} className="flex-1 min-w-0 text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
+                                  <div className="font-medium text-ink text-sm">{entry.food_name}</div>
+                                  {/* add-food-dialog-3: never render a bare "1" — show
+                                      the amount WITH its unit, or omit when there's no
+                                      unit and the amount is the meaningless default 1. */}
+                                  {formatEntryServing(entry) && (
+                                    <div className="text-[11px] text-ink-muted font-technical tabular-nums">{formatEntryServing(entry)}</div>
+                                  )}
+                                  <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => quickRelogFood(entry)}
+                                  disabled={addFoodMutation.isPending}
+                                  aria-label={`Log ${entry.food_name} again with the same portion`}
+                                  className="w-[44px] shrink-0 flex items-center justify-center min-h-[44px] text-ink-muted hover:text-brand hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)] disabled:opacity-50"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
                             ))}
                           </div>
                         )}
