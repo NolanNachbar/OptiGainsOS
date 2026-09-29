@@ -65,10 +65,15 @@
   { "id": "insights", "path": "/insights", "usageRank": 2, "files": ["src/pages/Insights.jsx"] },
   { "id": "recovery", "path": "/recovery", "usageRank": 2, "files": ["src/pages/Recovery.jsx"] },
   { "id": "athlete-state", "path": "/athlete-state", "usageRank": 3, "files": ["src/pages/AthleteState.jsx"] },
+  { "id": "body-lifts", "path": "/lifts", "usageRank": 3, "files": ["src/pages/Lifts.jsx", "src/components/progress/ExerciseProgressChart.jsx"],
+    "note": "Body > Lifts sub-tab (phase-2b): e1RM list + expandable per-lift chart" },
 
   { "id": "mind", "path": "/mind", "usageRank": 3, "files": ["src/pages/Mind.jsx"] },
   { "id": "coach", "path": "/coach", "usageRank": 3, "files": ["src/pages/Coach.jsx"] },
   { "id": "physique", "path": "/physique", "usageRank": 3, "files": ["src/pages/Physique.jsx"] },
+  { "id": "fuel-body", "path": "/fuel?tab=body", "usageRank": 2, "files": ["src/pages/Progress.jsx"],
+    "setup": [{ "settle": 700 }],
+    "note": "Fuel > Body (phase-2b): weight-trend module now rendered first, above Measurements/Photos tabs" },
   { "id": "career", "path": "/career", "usageRank": 4, "files": ["src/pages/Career.jsx"] },
 
   { "id": "profile", "path": "/profile", "usageRank": 3, "files": ["src/pages/Profile.jsx"] },
