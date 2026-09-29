@@ -90,7 +90,16 @@ const Button = React.forwardRef(({
     icon:    "h-11 w-11 md:h-9 md:w-9",
   };
 
-  const combinedClassName = twMerge(baseStyles, variants[variant], sizes[size], className);
+  // The mobile-first sizes carry an md: height/width; twMerge won't let an
+  // unprefixed h-*/w-* in className beat that md: class, so a caller's explicit
+  // h-11 would silently drop to 36px on desktop. Drop the md: dimension when the
+  // caller sets its own.
+  const cls = typeof className === "string" ? className : "";
+  let sizeClass = sizes[size] || "";
+  if (/(^|\s)h-/.test(cls)) sizeClass = sizeClass.replace(/\bmd:h-\S+/g, "");
+  if (/(^|\s)w-/.test(cls)) sizeClass = sizeClass.replace(/\bmd:w-\S+/g, "");
+
+  const combinedClassName = twMerge(baseStyles, variants[variant], sizeClass, className);
 
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children, {
