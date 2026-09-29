@@ -5,12 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, History, HelpCircle, Check, Heart, GripVertical, Camera } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, HelpCircle, Check, Heart, GripVertical, Camera } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
-import { lookupExercise, EXERCISE_DB } from "@/ml/exerciseDB";
+import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 import { estimateOneRepMax, isE1rmEligibleSet } from "@/utils/exerciseStats";
@@ -19,7 +18,6 @@ const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
 );
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { format } from "date-fns";
 
 export default function ExerciseCard({
   exercise,
@@ -96,7 +94,6 @@ export default function ExerciseCard({
     }
   };
 
-  const dbEntry = lookupExercise(exercise.name);
   const smartRest = getSmartRestDuration(exercise.name);
   const isProgramMode = !!programExercise;
   // Timed holds (planks, hangs, carries) log seconds in place of reps.
@@ -426,70 +423,25 @@ export default function ExerciseCard({
                 className="h-8 text-lg font-semibold"
               />
             ) : (
-              <div>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-[17px] font-extrabold text-ink">{exercise.name}</CardTitle>
-                  {dbEntry && (
-                    <Badge variant="outline" className="text-xs capitalize border-charcoal-border text-ink-muted">
-                      {dbEntry.type}
-                    </Badge>
-                  )}
-                  {onToggleLike && (
-                    <button
-                      type="button"
-                      onClick={onToggleLike}
-                      aria-label={liked ? "Unlike this exercise" : "Like this exercise — the engine will program it more"}
-                      aria-pressed={liked}
-                      title={liked ? "Liked — programmed more often" : "Like — program this more often"}
-                      className="min-h-[44px] min-w-[44px] -m-1.5 flex items-center justify-center touch-manipulation"
-                    >
-                      <Heart className={`w-[18px] h-[18px] transition-colors ${liked ? "fill-brand text-brand" : "text-ink-faint hover:text-brand"}`} strokeWidth={2.5} />
-                    </button>
-                  )}
-                </div>
-                {/* Program targets */}
-                {isProgramMode && progressionTargets && (
-                  <div className="flex items-center gap-2.5 mt-1 text-[11px] font-semibold text-ink-muted">
-                    {progressionTargets.workingWeight && (
-                      <span>
-                        Target <span className="font-technical font-extrabold text-ink">{progressionTargets.workingWeight}</span> {weightUnit}
-                      </span>
-                    )}
-                    {progressionTargets.dailyMin && (
-                      <span>
-                        Min <span className="font-technical font-extrabold text-ink">{progressionTargets.dailyMin}</span> {weightUnit}
-                      </span>
-                    )}
-                    {programExercise.rir_target && (
-                      <span>
-                        RIR <span className="font-technical font-extrabold text-ink">{programExercise.rir_target}</span>
-                      </span>
-                    )}
-                  </div>
-                )}
-                {/* Original exercise targets (non-program) */}
-                {!isProgramMode && originalExercise && (
-                  <p className="text-[10.5px] text-ink-muted mt-1 uppercase font-bold tracking-[0.06em]">
-                    Target <span className="font-technical text-ink">{Array.isArray(originalExercise.sets) ? originalExercise.sets.length : (originalExercise.sets || 3)}</span> × <span className="font-technical text-ink">{originalExercise.reps || 10}</span> reps
-                  </p>
-                )}
-                {/* Last performance data */}
-                {lastPerformance && (
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <History className="w-3 h-3 text-ink-faint" />
-                    <span className="text-[11px] font-semibold text-ink-muted">
-                      Last <span className="font-technical font-extrabold text-ink-secondary">
-                        {lastPerformance.lastWeight}
-                      </span><span className="text-[10px] text-ink-faint ml-0.5">{weightUnit}</span> × <span className="font-technical font-extrabold text-ink-secondary">{lastPerformance.lastReps}</span>
-                      {lastPerformance.lastDate && (
-                        <span className="text-ink-faint ml-1.5 font-technical text-[10px]">
-                          ({format(new Date(lastPerformance.lastDate), 'MMM d')})
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )}
-              </div>
+              // Ledger rebuild: the name is the only thing left in the header row
+              // itself — one line, truncated, no stacked sub-blocks. Everything
+              // that used to stack underneath it has a home elsewhere instead of
+              // being deleted outright:
+              //   - dbEntry type badge  -> dropped (decorative; program mode is
+              //     already implied by the rest of the card).
+              //   - Heart like/unlike   -> moved into the kebab menu below.
+              //   - Program/Original targets -> fully duplicated by the vitals
+              //     row's Target cell (see the `vitals` useMemo above, which
+              //     already computes this exact primary/sub pair) — dropped here,
+              //     not lost.
+              //   - Last performance (weight x reps) -> already shown live on
+              //     every set row via the Prev column and the +N up-delta badge;
+              //     only the session DATE had no other home and is the one
+              //     genuinely dropped field (minor — last-session recency, not a
+              //     number the athlete logs against).
+              // A page-level sticky name/meta/Finish row is Step 5 (this header
+              // stays a plain in-card title until then).
+              <CardTitle className="text-[17px] font-extrabold text-ink truncate">{exercise.name}</CardTitle>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -519,11 +471,26 @@ export default function ExerciseCard({
                 style={menuStyle}
                 className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
               >
-                {/* Replace exercise leads the menu: a mid-session equipment
-                    swap (Casper day, machine taken) is a routine workaround
-                    the athlete reaches for far more than notes/cues, per the
-                    overnight audit's UX pass (wishes.json). Destructive Remove
-                    stays anchored last regardless. */}
+                {/* Like/Unlike moved here from the header row (Ledger rebuild) —
+                    it steers future programming, same behavior as before. */}
+                {onToggleLike && (
+                  <button
+                    onClick={() => {
+                      onToggleLike();
+                      setOpenMenu(false);
+                    }}
+                    aria-pressed={liked}
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  >
+                    <Heart className={`w-4 h-4 ${liked ? "fill-brand text-brand" : ""}`} />
+                    {liked ? "Unlike this exercise" : "Like — program this more often"}
+                  </button>
+                )}
+                {/* Replace exercise leads the destructive/utility part of the menu:
+                    a mid-session equipment swap (Casper day, machine taken) is a
+                    routine workaround the athlete reaches for far more than
+                    notes/cues, per the overnight audit's UX pass (wishes.json).
+                    Destructive Remove stays anchored last regardless. */}
                 {onReplaceExercise && (
                 <button
                   onClick={() => {
@@ -586,77 +553,13 @@ export default function ExerciseCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {/* Advisory nudge (program mode) */}
-        {nudgeMessage && (
-          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-            <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
-              nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
-              nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
-              'bg-info/[0.15] text-info'
-            }`}>
-              {nudgeMessage.type === 'warning' ? (
-                <AlertTriangle className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingUp className="w-3.5 h-3.5" />
-              )}
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
-            <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Between-set coaching chip (Phase 3) */}
-        {coachingChip && (
-          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5 rise-in">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
-              <TrendingUp className="w-3.5 h-3.5" />
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
-            {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
-              <button
-                className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
-                onClick={() => {
-                  onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
-                  setCoachingChip(null);
-                }}
-              >
-                Apply
-              </button>
-            )}
-            <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Shot list — recommended shot for this exercise, only when the workout-level
-            toggle is on and a shot_note is defined (most exercises won't have one). */}
-        {showShotList && shotNote && (
-          <div className="mb-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
-              <Camera className="w-3.5 h-3.5" />
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>
-          </div>
-        )}
-
-        {/* Set progress segments — NEUTRAL, not hue-coded. rtb-2/3: completed/active/
-            pending was bg-teal/bg-brand, but a set-progress strip is structural
-            chrome, not a datum that owns a hue (teal is the single action color).
-            Repainted to a neutral ramp: completed = bright glass edge, active =
-            primary ink, pending = the shared empty track material. */}
-        <div className="flex gap-[5px] mb-3">
-          {exercise.sets.map((s, i) => (
-            <i
-              key={i}
-              className={`flex-1 h-1 rounded-full ${
-                s.completed ? 'bg-[var(--glass-edge-strong)]' : i === activeSetIndex ? 'bg-ink' : 'bg-track'
-              }`}
-            />
-          ))}
-        </div>
+        {/* Advisory nudge, between-set coaching chip, and shot-list note all moved
+            below the set table (Ledger rebuild, vertical-space budget): they're
+            occasional/contextual, not always-there chrome, so they no longer sit
+            between the header and the table pushing it toward the fold. The
+            set-progress segment strip that used to live here is dropped outright
+            — it duplicated the "N/M sets" count already in the page meta line
+            above the logger. */}
 
         {/* Per-exercise vitals (DESIGN.md dB .vit4): Target / Volume vs last /
             Best set. Only rendered cells with real data; the row itself is
@@ -969,6 +872,62 @@ export default function ExerciseCard({
           <Plus className="w-4 h-4 mr-1" />
           Add Set
         </Button>
+
+        {/* Advisory nudge (program mode) */}
+        {nudgeMessage && (
+          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+            <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
+              nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
+              nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
+              'bg-info/[0.15] text-info'
+            }`}>
+              {nudgeMessage.type === 'warning' ? (
+                <AlertTriangle className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingUp className="w-3.5 h-3.5" />
+              )}
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
+            <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Between-set coaching chip (Phase 3) */}
+        {coachingChip && (
+          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5 rise-in">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
+            {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
+              <button
+                className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
+                onClick={() => {
+                  onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
+                  setCoachingChip(null);
+                }}
+              >
+                Apply
+              </button>
+            )}
+            <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Shot list — recommended shot for this exercise, only when the workout-level
+            toggle is on and a shot_note is defined (most exercises won't have one). */}
+        {showShotList && shotNote && (
+          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
+              <Camera className="w-3.5 h-3.5" />
+            </i>
+            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>
+          </div>
+        )}
 
         {editingNotes ? (
           <div className="mt-3">
