@@ -567,11 +567,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               {/* Compact teal create — sits in the nav row, not floating. Hidden
                   when the active view already shows a teal 'Build a Program'. */}
               {!showsBuildCta && (
-                <Link to="/program-builder" className="ml-auto shrink-0">
-                  <Button variant="primary" size="icon" className="h-11 w-11 rounded-full" aria-label="Create program">
+                <Button asChild variant="primary" size="icon" className="ml-auto shrink-0 h-11 w-11 rounded-full" aria-label="Create program">
+                  <Link to="/program-builder">
                     <Plus className="w-5 h-5" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
             </div>
 

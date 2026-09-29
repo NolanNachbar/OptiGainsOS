@@ -140,11 +140,11 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               Your coaching brief lands here once today's data is in. Check back, or review your recent briefs.
             </p>
           </div>
-          <Link to="/brief-history">
-            <Button variant="dim" size="sm" className="text-muted-2 text-xs gap-1.5">
+          <Button asChild variant="dim" className="min-h-[44px] text-muted-2 text-xs gap-1.5">
+            <Link to="/brief-history">
               <History className="w-3.5 h-3.5" /> View Past Briefs
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     );
