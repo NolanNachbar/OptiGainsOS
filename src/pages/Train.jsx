@@ -1,8 +1,9 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import WeeklySchedule from "./WeeklySchedule";
 import Workouts from "./Workouts";
 import { SubTabs } from "@/components/ui/system";
-import { CalendarDays, Dumbbell, BookOpen, Activity } from "lucide-react";
+import { useEnrollments } from "@/hooks/useProgramQueries";
+import { CalendarDays, Dumbbell, BookOpen, Activity, PenLine } from "lucide-react";
 
 const TABS = [
   { id: "schedule", label: "Schedule", icon: CalendarDays },
@@ -26,8 +27,33 @@ export default function Train() {
   const activeTab = TAB_IDS.includes(normalizedParam) ? normalizedParam : "schedule";
   const handleTabChange = (tab) => setSearchParams({ tab });
 
+  // Active-program chip: program edit was 4 taps deep (Train → Programs →
+  // program detail → Edit). This surfaces the enrolled program + a direct Edit
+  // action at the top of the whole Train hub (every tab), so it's 2 taps from
+  // Today (Train nav, then Edit) — straight to /program-builder?edit=<id>,
+  // the same route ProgramDetail's own Edit button uses.
+  const { enrollments } = useEnrollments();
+  const activeEnrollment = enrollments.find((e) => e.status === "active");
+
   return (
     <div className="bg-charcoal min-h-full text-ink">
+      {activeEnrollment?.program && (
+        <div className="max-w-5xl mx-auto px-4 lg:px-0 pt-2">
+          <div className="surface flex items-center justify-between gap-3 px-4 py-2.5">
+            <div className="min-w-0">
+              <span className="text-[11px] font-semibold text-muted-2 block">Active program</span>
+              <span className="text-sm font-semibold text-ink truncate block">{activeEnrollment.program.title}</span>
+            </div>
+            <Link
+              to={`/program-builder?edit=${activeEnrollment.program.id}`}
+              className="shrink-0 flex items-center gap-1.5 min-h-[44px] px-3 text-[13px] font-semibold text-ink"
+            >
+              <PenLine className="w-4 h-4" />
+              Edit
+            </Link>
+          </div>
+        </div>
+      )}
       <SubTabs tabs={TABS} active={activeTab} onChange={handleTabChange} />
       <div className="max-w-5xl mx-auto py-2 px-4 lg:px-0">
         {activeTab === "schedule" && <WeeklySchedule />}
