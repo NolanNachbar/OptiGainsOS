@@ -60,7 +60,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.24, ease: EASE }}
                 className="fixed left-3 right-3 z-50 glass-elevated rounded-2xl p-1.5 overflow-hidden"
-                style={{ bottom: "var(--floating-chrome-bottom)" }}
+                style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 48px + 12px)' }}
                 role="menu"
               >
                 {actions.map((action) => (
@@ -85,6 +85,27 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                   </button>
                 ))}
               </motion.div>
+              {/* The sheet is raised clear of the FAB's own rect (R1-02), but the
+                  scrim (z-[10000]) still sits above the FAB's own z-50, so the
+                  original +/X reads as a dark silhouette a tap can't reach. Give
+                  the sheet a real close control at the FAB's exact geometry,
+                  above the scrim inside this same portal, so the +->X rotation
+                  stays reachable while it's open. The original button is hidden
+                  (not removed) via max-md:invisible below so there isn't a
+                  second control sharing the same accessible name. */}
+              <motion.button
+                type="button"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: EASE }}
+                onClick={() => setIsOpen(false)}
+                aria-label="Close quick-add menu"
+                className="fixed right-3 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)]"
+                style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+              >
+                <X className="w-6 h-6" />
+              </motion.button>
             </div>
           )}
         </AnimatePresence>,
@@ -161,7 +182,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
         // intrudes less of the content column, and tuck it lower toward the dock
         // (5rem above the dock baseline vs 6rem) so its overlap zone is minimal
         // and sits below most card content. 48px is still ≥44px tap minimum.
-        className="fixed right-3 md:bottom-6 md:right-6 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)]"
+        className={`fixed right-3 md:bottom-6 md:right-6 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)] ${isOpen ? "max-md:invisible" : ""}`}
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
         whileTap={{ scale: 0.9 }}
         data-tutorial="fab-button"
