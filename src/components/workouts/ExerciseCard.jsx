@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, HelpCircle, Check, Heart, GripVertical, Camera } from "lucide-react";
+import { Plus, Trash2, MoreVertical, FileText, RefreshCw, X, AlertTriangle, TrendingUp, HelpCircle, Check, Heart, GripVertical, Camera, Calculator } from "lucide-react";
 import { evaluateSetPerformance } from "@/utils/programProgression";
 import { getBetweenSetCoaching } from "@/utils/coachingEngine";
 import { getSmartRestDuration } from "@/utils/fatigueManagement";
@@ -73,6 +73,13 @@ export default function ExerciseCard({
   // too would be wasted work for data nobody sees), so this is null for
   // every non-focused row.
   e1rmHistory = null,
+  // Cancel workout / Calculators (Phase A, MF-referenced header rebuild):
+  // the header lost its own kebab down to just back/duration/rest/Finish, so
+  // these two live in the focused exercise's kebab instead, per Nolan's
+  // spec. Only wired on the focused card (WorkoutDetail passes these only to
+  // isFocused) — the compact .nx rows' kebab-less rows don't need them.
+  onRequestCancelWorkout = null,
+  onOpenCalculators = null,
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -90,6 +97,9 @@ export default function ExerciseCard({
   const menuContentRef = useRef(null);
   const [menuStyle, setMenuStyle] = useState({});
   const nudgeTimerRef = useRef(null);
+  // Whether the "Notes & cues" kebab item has something worth a dot — a live
+  // advisory nudge, a between-set coaching chip, or an on-toggle shot note.
+  const hasPendingNotes = !!(nudgeMessage || coachingChip || (showShotList && shotNote));
 
   // Select the value AND lift the field above the on-screen keyboard. Without the
   // scroll, focusing a bottom-row set input leaves it hidden behind the keyboard.
@@ -483,10 +493,7 @@ export default function ExerciseCard({
     <Card className="rise-in">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-brand font-technical font-extrabold text-[13px] flex-shrink-0">
-              {exerciseIndex + 1}
-            </div>
+          <div className="flex items-center gap-3 min-w-0">
             {editingName ? (
               <Input
                 autoFocus
@@ -536,8 +543,15 @@ export default function ExerciseCard({
               size="icon"
               ref={menuTriggerRef}
               onClick={() => setOpenMenu(!openMenu)}
+              className="relative"
             >
               <MoreVertical className="w-5 h-5" />
+              {/* Quiet signal that Notes & cues has something to say (a fresh
+                  nudge, coaching chip, or an on-toggle shot note) without
+                  putting any of that content in the main flow. */}
+              {hasPendingNotes && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
+              )}
             </Button>
             {openMenu && createPortal(
               <div
@@ -610,10 +624,13 @@ export default function ExerciseCard({
                     setShowCues(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2 relative"
                 >
                   <HelpCircle className="w-4 h-4" />
-                  How to
+                  Notes &amp; cues
+                  {hasPendingNotes && (
+                    <span className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
+                  )}
                 </button>
                 {isProgramMode && (
                   <button
@@ -637,6 +654,30 @@ export default function ExerciseCard({
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
                 </button>
+                {onOpenCalculators && (
+                  <button
+                    onClick={() => {
+                      onOpenCalculators();
+                      setOpenMenu(false);
+                    }}
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2 border-t border-charcoal-border mt-1 pt-2"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calculators
+                  </button>
+                )}
+                {onRequestCancelWorkout && (
+                  <button
+                    onClick={() => {
+                      onRequestCancelWorkout();
+                      setOpenMenu(false);
+                    }}
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel workout
+                  </button>
+                )}
               </div>,
               document.body
             )}
@@ -1014,61 +1055,14 @@ export default function ExerciseCard({
           Add Set
         </Button>
 
-        {/* Advisory nudge (program mode) */}
-        {nudgeMessage && (
-          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-            <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
-              nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
-              nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
-              'bg-info/[0.15] text-info'
-            }`}>
-              {nudgeMessage.type === 'warning' ? (
-                <AlertTriangle className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingUp className="w-3.5 h-3.5" />
-              )}
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
-            <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Between-set coaching chip (Phase 3) */}
-        {coachingChip && (
-          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5 rise-in">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
-              <TrendingUp className="w-3.5 h-3.5" />
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
-            {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
-              <button
-                className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
-                onClick={() => {
-                  onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
-                  setCoachingChip(null);
-                }}
-              >
-                Apply
-              </button>
-            )}
-            <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Shot list — recommended shot for this exercise, only when the workout-level
-            toggle is on and a shot_note is defined (most exercises won't have one). */}
-        {showShotList && shotNote && (
-          <div className="mt-3 px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-            <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
-              <Camera className="w-3.5 h-3.5" />
-            </i>
-            <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>
-          </div>
-        )}
+        {/* Advisory nudge, between-set coaching chip, and the shot-list note
+            do NOT render inline here any more (Phase A: "none of them sit in
+            the main flow"). They now render inside the "Notes & cues" kebab
+            dialog (below, shared with the how-to instructions) via
+            hasPendingNotes / the dialog body. A completed set that fires a
+            nudge or coaching chip auto-opens that dialog once (see the
+            useEffect beside showCues) so the feedback isn't silently lost
+            behind a menu tap, without giving it permanent layout space. */}
 
         {editingNotes ? (
           <div className="mt-3">
@@ -1151,7 +1145,11 @@ export default function ExerciseCard({
       </DialogContent>
     </Dialog>
 
-    {/* How-to / cues — instructions from the free-exercise-db library */}
+    {/* Notes & cues — advisory nudge, between-set coaching chip, the
+        on-toggle shot note, and how-to instructions from the free-exercise-db
+        library, all in one kebab-triggered dialog (Phase A: none of these
+        sit in the main logging flow; the kebab dot signals when the first
+        three have something live). */}
     <Dialog open={showCues} onOpenChange={setShowCues}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -1162,7 +1160,59 @@ export default function ExerciseCard({
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto">
+        <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto space-y-3">
+          {nudgeMessage && (
+            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+              <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
+                nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
+                nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
+                'bg-info/[0.15] text-info'
+              }`}>
+                {nudgeMessage.type === 'warning' ? (
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                ) : (
+                  <TrendingUp className="w-3.5 h-3.5" />
+                )}
+              </i>
+              <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
+              <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {coachingChip && (
+            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5">
+              <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
+                <TrendingUp className="w-3.5 h-3.5" />
+              </i>
+              <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
+              {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
+                <button
+                  className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
+                  onClick={() => {
+                    onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
+                    setCoachingChip(null);
+                  }}
+                >
+                  Apply
+                </button>
+              )}
+              <button onClick={() => setCoachingChip(null)} aria-label="Dismiss" className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted flex-shrink-0">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {showShotList && shotNote && (
+            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
+              <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
+                <Camera className="w-3.5 h-3.5" />
+              </i>
+              <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>
+            </div>
+          )}
+
           {cuesInfo === undefined ? (
             <p className="text-ink-muted">Loading…</p>
           ) : cuesInfo?.instructions?.length ? (

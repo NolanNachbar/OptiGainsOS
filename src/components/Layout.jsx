@@ -123,6 +123,15 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const { profile } = useProfile();
   const [showCalculators, setShowCalculators] = useState(false);
+  // Bridge for pages whose own FAB is suppressed (e.g. the active workout
+  // logger, whose kebab now carries "Calculators" per Phase A) to reach this
+  // Layout-owned modal without threading new props/context down. Layout is
+  // the single owner of showCalculators either way.
+  useEffect(() => {
+    const openCalculators = () => setShowCalculators(true);
+    window.addEventListener("open-calculators", openCalculators);
+    return () => window.removeEventListener("open-calculators", openCalculators);
+  }, []);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
   const mobileHeaderRef = useRef(null);
@@ -505,6 +514,7 @@ export default function Layout({ children, currentPageName }) {
           /program-builder, which owns a full-width sticky footer CTA. */}
       {showDock && (
       <nav
+        data-mobile-dock
         className="glass-elevated z-[9999] lg:hidden rounded-full grid px-[9px] py-2"
         style={{
           position: "fixed",

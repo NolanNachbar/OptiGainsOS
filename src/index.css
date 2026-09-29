@@ -360,6 +360,15 @@ body {
 /* Legacy pages hardcode dark-on-dark text utilities; keep paragraphs legible. */
 p { color: var(--text-primary); }
 
+/* Active workout logger ("keep the important things in sight"): hide the
+   global mobile header and the floating tab dock while logging, so only the
+   logger's own header, focused exercise, Next list, and rest bar persist on
+   screen. WorkoutDetail.jsx toggles this attribute on <body>. */
+body[data-logging-active] [data-mobile-header],
+body[data-logging-active] [data-mobile-dock] {
+  display: none;
+}
+
 /* Ledger has no brand hue, so chrome-level highlights (selection, focus ring)
    move off the biometric teal (--hue-teal, reserved for readiness/HRV data)
    onto the neutral off-white action color. */

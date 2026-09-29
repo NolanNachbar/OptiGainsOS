@@ -152,6 +152,28 @@ export default function WorkoutDetail() {
   const restTimerRef = useRef(null); // setInterval handle
   const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
+  // "Keep the important things in sight" (Nolan, r4d review): while a workout
+  // is actively logging, the only persistent chrome is this page's own logging
+  // header + rest bar — Layout's shared mobile page header (title/date/avatar)
+  // and the floating tab dock both get out of the way, the way Strong/Hevy do.
+  // Layout.jsx receives currentPageName as a static route prop, not isLogging,
+  // so it can't tell "viewing" from "logging" on the same /workout-detail
+  // route itself — a body data-attribute (flipped here, read by plain CSS in
+  // index.css) is the least invasive way to reach into Layout's DOM without
+  // threading isLogging through props Layout wasn't built to take. The resize
+  // dispatch nudges Layout's existing updateHeaderHeight effect (it already
+  // checks getComputedStyle(...).display !== "none") to recompute
+  // --layout-header-height to 0 the instant the header is hidden, so the sub-tab
+  // strip / sticky offsets that key off that var don't leave a stale gap.
+  useEffect(() => {
+    document.body.toggleAttribute("data-logging-active", isLogging);
+    window.dispatchEvent(new Event("resize"));
+    return () => {
+      document.body.removeAttribute("data-logging-active");
+      window.dispatchEvent(new Event("resize"));
+    };
+  }, [isLogging]);
+
   const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, saveFailed, retrySave } = useWorkoutSession();
 
   // Detect program source from URL params
@@ -1116,6 +1138,10 @@ export default function WorkoutDetail() {
   };
 
   const [showIncompletePrompt, setShowIncompletePrompt] = useState(false);
+  // Cancel-confirm now lives at the page level: the header lost its own
+  // kebab in the Phase A rebuild, so "Cancel workout" is reachable from the
+  // focused exercise's kebab (and the zero-exercise fallback below) instead.
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const hasIncompleteSets = () => {
     return exerciseLogs.some(ex => ex.sets?.some(s => !s.completed));
@@ -1326,8 +1352,7 @@ export default function WorkoutDetail() {
       {isLogging && (
         <WorkoutLoggingHeader
           workoutTitle={workout.title}
-          focusedExerciseName={effectiveFocusIndex >= 0 ? exerciseLogs[effectiveFocusIndex]?.name : null}
-          onCancel={handleCancelLogging}
+          onBack={() => navigate(-1)}
           onFinish={handleSaveWorkoutLog}
           isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
           weightUnit={weightUnit}
@@ -1481,6 +1506,23 @@ export default function WorkoutDetail() {
               </div>
             )}
 
+            {/* Zero-exercise fallback: with no exercises there's no focused
+                card, so its kebab (the only other place "Cancel workout"
+                lives after Phase A removed the header's own kebab) never
+                renders. Keep Cancel reachable here instead. */}
+            {exerciseLogs.length === 0 && (
+              <div className="glass px-4 py-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-ink-muted">No exercises in this workout yet.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelConfirm(true)}
+                  className="text-xs font-bold text-bad flex-shrink-0"
+                >
+                  Cancel workout
+                </button>
+              </div>
+            )}
+
             <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleExerciseDragEnd}>
               <SortableContext
                 items={exerciseLogs.map((_, i) => String(i))}
@@ -1558,6 +1600,16 @@ export default function WorkoutDetail() {
                           shotNote={shotNoteFor(exerciseLog.name)}
                           isFocused={exerciseIndex === effectiveFocusIndex}
                           onFocus={() => setFocusedExerciseIndex(exerciseIndex)}
+                          onOpenCalculators={
+                            exerciseIndex === effectiveFocusIndex
+                              ? () => window.dispatchEvent(new Event("open-calculators"))
+                              : null
+                          }
+                          onRequestCancelWorkout={
+                            exerciseIndex === effectiveFocusIndex
+                              ? () => setShowCancelConfirm(true)
+                              : null
+                          }
                           reorderMode={reorderMode}
                           onToggleReorderMode={() => setReorderMode((v) => !v)}
                           isLastRow={
@@ -1795,6 +1847,32 @@ export default function WorkoutDetail() {
             </Button>
             <Button variant="volt" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
               Complete All
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel workout confirm — moved here from WorkoutLoggingHeader's old
+          kebab in the Phase A rebuild; reachable from the focused exercise's
+          kebab, or the zero-exercise fallback link below. */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel Workout?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            This discards the in-progress session. Sets you've already logged will not be saved.
+          </DialogDescription>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
+              Keep Logging
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => { setShowCancelConfirm(false); handleCancelLogging(); }}
+            >
+              Cancel Workout
             </Button>
           </div>
         </DialogContent>
