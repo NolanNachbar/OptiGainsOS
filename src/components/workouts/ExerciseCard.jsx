@@ -48,6 +48,14 @@ export default function ExerciseCard({
   dragHandleProps = null,  // { attributes, listeners } from useSortable, spread onto the drag handle
   showShotList = false,     // "Shot list" toggle state, lifted from the workout page
   shotNote = null,          // recommended-shot text for this exercise, or null if none defined
+  // Focused-exercise model (Ledger rebuild): exactly one exercise is "focused"
+  // (full rich card — header, vitals, set table, tools); every other exercise
+  // in the session renders as a compact one-line row via this same component
+  // (same hooks/effects/keys/drag identity — only the JSX branch differs, so
+  // switching focus never unmounts/remounts a card mid-interaction). Tapping
+  // a compact row calls onFocus to make it the new focused exercise.
+  isFocused = true,
+  onFocus = null,
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -343,6 +351,61 @@ export default function ExerciseCard({
       }
     }
   };
+
+  // Compact one-line row for every exercise other than the focused one
+  // (DESIGN.md dB .nx sibling: "name · sets done/target · best set"). Muted
+  // + checked once every set is complete; otherwise reads like the old "Next"
+  // list. All hooks above still run every render regardless of isFocused, so
+  // toggling focus never changes this component's hook order.
+  if (!isFocused) {
+    const doneCount = exercise.sets.filter((s) => s.completed).length;
+    const totalCount = exercise.sets.length;
+    const isDone = totalCount > 0 && doneCount === totalCount;
+    const bestText = vitals?.best
+      ? `${vitals.best.weight}${weightUnit} × ${vitals.best.reps}`
+      : null;
+    const targetText = vitals?.target?.primary ?? null;
+    return (
+      <button
+        type="button"
+        onClick={() => onFocus?.()}
+        data-testid={`exercise-row-${exerciseIndex}`}
+        className="w-full min-h-[44px] flex items-center gap-3 px-4 py-2.5 rounded-[10px] glass-inset text-left transition-colors hover:bg-charcoal-borderSoft/40"
+      >
+        {dragHandleProps && (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            className="touch-none text-ink-faint flex-shrink-0 -ml-1"
+            {...dragHandleProps.attributes}
+            {...dragHandleProps.listeners}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4" strokeWidth={2.5} />
+          </span>
+        )}
+        <span
+          className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+            isDone ? "bg-up/20 text-up" : "border border-charcoal-border text-transparent"
+          }`}
+        >
+          <Check className="w-3 h-3" strokeWidth={3} />
+        </span>
+        <span className={`flex-1 min-w-0 truncate text-[14px] font-semibold ${isDone ? "text-ink-muted" : "text-ink"}`}>
+          {exercise.name}
+        </span>
+        <span className="flex-shrink-0 font-technical text-[12px] text-ink-muted tabular-nums">
+          {doneCount}/{totalCount || targetText || "—"}
+        </span>
+        {bestText && (
+          <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums hidden sm:inline">
+            {bestText}
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <>

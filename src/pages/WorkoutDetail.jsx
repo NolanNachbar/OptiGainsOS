@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -271,7 +271,33 @@ export default function WorkoutDetail() {
   const handleExerciseDragEnd = (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    moveExercise(Number(active.id), Number(over.id));
+    const fromIndex = Number(active.id);
+    const toIndex = Number(over.id);
+    moveExercise(fromIndex, toIndex);
+    // Focus follows the exercise it was pointed at through the reorder (same
+    // splice semantics as moveExercise itself), so dragging the focused card
+    // doesn't silently refocus whatever slid into its old slot.
+    setFocusedExerciseIndex((current) => {
+      if (current === null) return current;
+      if (current === fromIndex) return toIndex;
+      if (fromIndex < toIndex && current > fromIndex && current <= toIndex) return current - 1;
+      if (fromIndex > toIndex && current >= toIndex && current < fromIndex) return current + 1;
+      return current;
+    });
+  };
+
+  // Wraps the hook's removeExercise so focus follows a deletion instead of
+  // pointing at whatever exercise slides into the removed index. Resets to
+  // null (not immediately recomputed here) so the sticky-focus init effect
+  // re-derives "first incomplete exercise" against the post-removal list.
+  const handleRemoveExercise = (index) => {
+    removeExercise(index);
+    setFocusedExerciseIndex((current) => {
+      if (current === null) return current;
+      if (index < current) return current - 1;
+      if (index === current) return null;
+      return current;
+    });
   };
 
   // Fetch all workout logs for exercise history and autofill
@@ -1123,42 +1149,34 @@ export default function WorkoutDetail() {
 
   const totalSetsCount = exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0);
 
-  // Ledger "Next" module (DESIGN.md dB .nx): the exercises after the one
-  // currently being worked, each showing target and last-time — all derived
-  // from data already computed per-exercise below (programEx/targets/
-  // originalEx/lastPerformance), so this adds no fetch and can't change
-  // offline behavior. "Current" is the first exercise with any un-completed
-  // set; everything after it in card order is "upcoming". If every exercise
-  // is fully logged (or there's only one), there's nothing upcoming to show.
-  const nextExercises = useMemo(() => {
-    const activeIdx = exerciseLogs.findIndex((ex) => ex.sets?.some((s) => !s.completed));
-    if (activeIdx === -1) return [];
-    return exerciseLogs.slice(activeIdx + 1).map((exerciseLog) => {
-      const programEx = isProgramSource
-        ? programWorkout?.exercises?.find((ex) => ex.name === exerciseLog.name) || null
-        : null;
-      const targets = programEx ? progressionTargetsMap[programEx.name] : null;
-      const originalEx = workout?.exercises?.find((e) => e.name === exerciseLog.name) || null;
+  // Focused-exercise model (Ledger rebuild): exactly one exercise renders the
+  // full rich card; every other exercise (before or after it) renders as a
+  // compact one-line row (ExerciseCard's own isFocused=false branch), which
+  // already carries the "upcoming exercise" info the old standalone Next
+  // module used to compute separately — that block is gone now so upcoming
+  // exercises don't show up twice.
+  //
+  // STICKY on purpose: initialized once (below, via useLayoutEffect) to the
+  // first exercise with an incomplete set, then only ever changed by an
+  // explicit user action (tapping a compact row, or dragging/removing the
+  // exercise it points at). Recomputing "first incomplete" on every render
+  // would yank focus away the instant its last set is checked, taking Undo /
+  // Add Set / Remove Set with it mid-interaction.
+  const [focusedExerciseIndex, setFocusedExerciseIndex] = useState(null);
+  useLayoutEffect(() => {
+    if (focusedExerciseIndex !== null) return;
+    if (exerciseLogs.length === 0) return;
+    const idx = exerciseLogs.findIndex((ex) => ex.sets?.some((s) => !s.completed));
+    setFocusedExerciseIndex(idx === -1 ? 0 : idx);
+    // Only re-derive when the list goes from empty -> non-empty (session
+    // start/resume); focusedExerciseIndex !== null blocks every later run
+    // until something explicitly resets it to null (exercise removal below).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exerciseLogs.length === 0]);
 
-      let target = null;
-      if (isProgramSource && targets) {
-        const bits = [];
-        if (targets.workingWeight) bits.push(`${targets.workingWeight} ${weightUnit}`);
-        if (targets.dailyMin) bits.push(`min ${targets.dailyMin}`);
-        if (bits.length) target = bits.join(' · ');
-      } else if (!isProgramSource && originalEx) {
-        const setCount = Array.isArray(originalEx.sets) ? originalEx.sets.length : (originalEx.sets || 3);
-        target = `${setCount} × ${originalEx.reps || 10}`;
-      }
-
-      const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
-      const last = lastPerformance?.lastWeight != null && lastPerformance?.lastReps != null
-        ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
-        : null;
-
-      return { name: exerciseLog.name, target, last };
-    });
-  }, [exerciseLogs, isProgramSource, programWorkout, progressionTargetsMap, workout, weightUnit, allWorkoutLogs]);
+  const effectiveFocusIndex = exerciseLogs.length === 0
+    ? -1
+    : Math.min(focusedExerciseIndex ?? 0, exerciseLogs.length - 1);
 
   const markAllSetsComplete = () => {
     setExerciseLogs(prev => prev.map(ex => ({
@@ -1517,7 +1535,7 @@ export default function WorkoutDetail() {
                           onUpdateSet={handleUpdateSet}
                           onAddSet={addSet}
                           onRemoveSet={handleRemoveSet}
-                          onRemoveExercise={removeExercise}
+                          onRemoveExercise={handleRemoveExercise}
                           onUpdateNotes={updateExerciseNotes}
                           onUpdateName={updateExerciseName}
                           originalExercise={originalEx}
@@ -1538,6 +1556,8 @@ export default function WorkoutDetail() {
                           dragHandleProps={dragHandleProps}
                           showShotList={showShotList}
                           shotNote={shotNoteFor(exerciseLog.name)}
+                          isFocused={exerciseIndex === effectiveFocusIndex}
+                          onFocus={() => setFocusedExerciseIndex(exerciseIndex)}
                         />
                       )}
                     </SortableExerciseRow>
@@ -1545,23 +1565,6 @@ export default function WorkoutDetail() {
                 })}
               </SortableContext>
             </DndContext>
-
-            {/* Next (DESIGN.md dB .nx) — upcoming exercises, target + last time.
-                Rendered outside DndContext/SortableContext so it's not draggable. */}
-            {nextExercises.length > 0 && (
-              <div className="border-t border-charcoal-border pt-3 mt-1 mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-ink-faint mb-2">Next</p>
-                <div className="space-y-2">
-                  {nextExercises.map((ex, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 font-technical text-[13px]">
-                      <span className="text-ink-secondary font-semibold truncate">{ex.name}</span>
-                      <span className="text-ink-muted tabular-nums flex-shrink-0">{ex.target || '—'}</span>
-                      <span className="text-ink-faint tabular-nums flex-shrink-0">{ex.last || '—'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
             {isProgramSource && <CardioSessions programWorkout={programWorkout} />}
