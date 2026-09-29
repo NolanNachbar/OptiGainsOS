@@ -570,7 +570,12 @@ export default function FoodTracker() {
       }
       return { ...day, goal };
     });
-  }, [allFoodEntries, phaseHistory, profile?.daily_calorie_goal, tdee.tdee]);
+    // selectedDate isn't read above, but getDailyCalorieTrend windows off
+    // `new Date()` internally — without this dep the strip stays pinned to
+    // whatever "today" was at first render and never rolls forward past
+    // local midnight, so the selected (now-current) day can fall outside
+    // the 7 days shown and nothing highlights.
+  }, [allFoodEntries, phaseHistory, profile?.daily_calorie_goal, tdee.tdee, selectedDate]);
 
   // Recently-used foods surfaced at the top of the search panel
   const recentFoods = useMemo(() => getRecentFoods(allFoodEntries, 8), [allFoodEntries]);
@@ -1768,13 +1773,15 @@ const handleSaveMealTemplate = () => {
               {calorieTrend.map((day) => {
                 const isSelected = day.date === selectedDate;
                 const isTodayCol = day.date === format(new Date(), 'yyyy-MM-dd');
-                // One shared scale across all 7 days (goal × ~1.1 headroom, or the
+                // One shared scale across all 7 days (goal × ~1.2 headroom, or the
                 // tallest day if someone blew way past goal) so an over-target day
-                // visibly crosses its own dashed tick instead of clipping flat.
+                // visibly crosses its own dashed tick instead of clipping flat, and
+                // the tick itself sits a few px clear of the track's top edge
+                // instead of getting clipped by the track's overflow-hidden.
                 const scaleMax = Math.max(
                   ...calorieTrend.map((d) => Math.max(d.calories, d.goal || 0)),
                   1
-                ) * 1.02;
+                ) * 1.22;
                 const barPct = Math.min(100, (day.calories / scaleMax) * 100);
                 const tickPct = day.goal > 0 ? Math.min(100, (day.goal / scaleMax) * 100) : null;
                 return (
@@ -1788,10 +1795,19 @@ const handleSaveMealTemplate = () => {
                       isSelected ? 'glass-inset' : 'hover:bg-charcoal-surface2/60'
                     }`}
                   >
-                    <span className={`text-[11px] font-bold uppercase ${isTodayCol ? 'text-ink' : 'text-ink-muted'}`}>
+                    <span className={`text-[11px] font-bold uppercase ${isSelected || isTodayCol ? 'text-ink' : 'text-ink-muted'}`}>
                       {day.label[0]}
                     </span>
-                    <div className="relative w-full h-11 rounded-sm bg-charcoal-surface overflow-hidden">
+                    {/* Track uses the shared `track` material (same token as the
+                        macro bars below) so an empty day reads as a subtle rail,
+                        not a heavy filled box. Selection is carried by a visible
+                        ring on the track itself — independent of whether that
+                        day has any bar fill — so a 0-kcal selected day still
+                        reads as selected. */}
+                    <div
+                      className="relative w-full h-11 rounded-sm bg-track overflow-hidden"
+                      style={isSelected ? { boxShadow: 'inset 0 0 0 1px var(--text-secondary)' } : undefined}
+                    >
                       <div
                         className="absolute inset-x-0 bottom-0 rounded-sm"
                         style={{
@@ -1801,8 +1817,17 @@ const handleSaveMealTemplate = () => {
                       />
                       {tickPct != null && (
                         <span
-                          className="absolute inset-x-0 border-t border-dashed"
-                          style={{ bottom: `${tickPct}%`, borderColor: 'var(--text-secondary)' }}
+                          className="absolute inset-x-0 z-10 border-t-2 border-dashed pointer-events-none"
+                          style={{
+                            bottom: `${tickPct}%`,
+                            // On a selected day at/over goal the bright
+                            // (--text-primary) bar fill reaches the same
+                            // color as a --text-primary tick and swallows
+                            // it. Flip the tick to the page background at
+                            // that point so it still reads as a notch cut
+                            // into the fill, in both themes.
+                            borderColor: isSelected && barPct >= tickPct ? 'var(--color-bg)' : 'var(--text-primary)',
+                          }}
                         />
                       )}
                     </div>
@@ -2188,8 +2213,10 @@ const handleSaveMealTemplate = () => {
                                 </span>
                               )}
                             </div>
-                            {/* Muted quantity line under the name */}
-                            {formatEntryServing(entry) && (
+                            {/* Muted quantity line under the name. Gated on
+                                serving OR cost so an entry with a cost but no
+                                parseable serving still shows its $ amount. */}
+                            {(formatEntryServing(entry) || entry.cost_usd != null) && (
                               <span className="block text-[10.5px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
                                 {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
                                 {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
