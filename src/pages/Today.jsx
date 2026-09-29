@@ -674,16 +674,19 @@ export default function Today() {
             </span>
             <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
           </div>
-          {/* Purple was an off-palette accent for this line. Neutral text by
-              default; green only signals an actual positive-vs-goal delta
-              (trendAligned), never the raw sign of the trend. */}
-          <p
-            className="text-[13px] font-semibold mt-1"
-            style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
-          >
-            {trend.value !== "—" ? `${trend.value} lb/wk` : "—"}{" "}
-            <span className={trendAligned ? "" : "text-muted"}>· {trend.caption}</span>
-          </p>
+          {/* With no trend value yet (latestWeight null — "— lbs" above), the
+              rate line has nothing real to report: don't show a green
+              "on goal" rate alongside a blank headline number. Show only the
+              "log a few weigh-ins" hint instead. */}
+          {latestWeight && trend.value !== "—" ? (
+            <p
+              className="text-[13px] font-semibold mt-1"
+              style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
+            >
+              {`${trend.value} lb/wk`}{" "}
+              <span className={trendAligned ? "" : "text-muted"}>· {trend.caption}</span>
+            </p>
+          ) : null}
           {weightSpark ? (
             <div className="mt-2">
               <Spark {...weightSpark} />
