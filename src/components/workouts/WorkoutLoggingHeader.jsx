@@ -30,6 +30,10 @@ export default function WorkoutLoggingHeader({
   // in a gym is no trace at all.
   saveFailed = false,
   onRetrySave = null,
+  // Ledger compact meta line ("UPPER A · 38:12 · 7/18 SETS") — done/total set
+  // counts, existing state only (WorkoutDetail already computes both).
+  doneSets = 0,
+  totalSets = 0,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCalculators, setShowCalculators] = useState(false);
@@ -220,10 +224,30 @@ export default function WorkoutLoggingHeader({
   // competing before anything's been logged. Hold the clock until there's real
   // progress (canFinish), the same threshold that earns Finish its coral, so the
   // bar stays calm on entry and both go live together once the first set lands.
-  const elapsedCluster = startTime && canFinish ? (
-    <div className="flex items-center gap-1.5 font-technical min-w-0">
-      <Clock className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
-      <span className="font-extrabold text-ink text-sm tabular-nums">{formatTime(elapsedTime)}</span>
+  // Ledger compact meta line (DESIGN.md dB .num): "UPPER A · 38:12 · 7/18 SETS"
+  // in tabular numerals — the session title, live elapsed clock, and set
+  // progress in one row. Existing state only: startTime/elapsedTime already
+  // drove the old elapsedCluster, doneSets/totalSets are passed in from
+  // WorkoutDetail's existing exerciseLogs count. Progress (clock + set count)
+  // only appears once canFinish is true, same calm-until-progress threshold
+  // the rest of this bar already uses; the title alone shows from the start.
+  const metaLine = startTime ? (
+    <div className="flex items-baseline gap-1.5 min-w-0 font-technical">
+      <span className="text-[13px] font-bold uppercase tracking-[0.02em] text-ink-secondary truncate">
+        {workoutTitle}
+      </span>
+      {canFinish && (
+        <>
+          <span className="text-ink-faint text-[13px]">·</span>
+          <span className="text-ink text-[13px] font-extrabold tabular-nums whitespace-nowrap">
+            {formatTime(elapsedTime)}
+          </span>
+          <span className="text-ink-faint text-[13px]">·</span>
+          <span className="text-ink text-[13px] font-extrabold tabular-nums whitespace-nowrap">
+            {doneSets}/{totalSets} sets
+          </span>
+        </>
+      )}
     </div>
   ) : null;
 
@@ -348,17 +372,13 @@ export default function WorkoutLoggingHeader({
                   scrollable body title; this strip stays quiet (the bottom action
                   bar carries the live clock / rest countdown). */}
 
-              {/* Workout Timer — hidden on mobile (the bottom bar's elapsedCluster
-                  carries the live elapsed clock there); desktop keeps it up top
-                  next to the rest timer. Mirrors the Rest block's lg-gating so the
-                  same datum never renders twice on a phone. */}
+              {/* Ledger meta line — hidden on mobile (the bottom bar carries its
+                  own copy); desktop keeps it up top next to the rest timer.
+                  Mirrors the Rest block's lg-gating so the same datum never
+                  renders twice on a phone. */}
               {startTime && (
                 <div className="hidden lg:flex flex-col min-w-0">
-                  <span className="text-[10px] uppercase text-ink-muted font-bold tracking-[0.08em]">Workout</span>
-                  <div className="flex items-center gap-1 font-technical">
-                    <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-ink-muted flex-shrink-0" />
-                    <span className="font-extrabold text-ink text-sm md:text-base">{formatTime(elapsedTime)}</span>
-                  </div>
+                  {metaLine}
                 </div>
               )}
 
@@ -431,11 +451,11 @@ export default function WorkoutLoggingHeader({
             </>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              {/* No rest active → carry the live elapsed timer here (a real
+              {/* No rest active → carry the Ledger meta line here (a real
                   datum), never a dead static label. */}
               <div className="flex items-center gap-2 min-w-0">
                 {calcButton}
-                {elapsedCluster}
+                {metaLine}
               </div>
               {actionCluster}
             </div>

@@ -1218,6 +1218,8 @@ export default function WorkoutDetail() {
           weightUnit={weightUnit}
           startTime={startTime}
           canFinish={loggedSetsCount > 0}
+          doneSets={loggedSetsCount}
+          totalSets={exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0)}
           restTimer={restTimer}
           restDuration={restDuration}
           onSkipRest={skipRestTimer}
