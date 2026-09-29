@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, Fragment } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -1161,6 +1161,11 @@ export default function WorkoutDetail() {
     ? -1
     : Math.min(focusedExerciseIndex ?? 0, exerciseLogs.length - 1);
 
+  // Reorder mode (Ledger rebuild): one toggle, lifted here, governs whether
+  // ANY ExerciseCard shows its drag handle — hidden by default (mockup's
+  // flush rows carry no handle) until chosen from a card's kebab.
+  const [reorderMode, setReorderMode] = useState(false);
+
   const markAllSetsComplete = () => {
     setExerciseLogs(prev => prev.map(ex => ({
       ...ex,
@@ -1482,6 +1487,12 @@ export default function WorkoutDetail() {
                 strategy={verticalListSortingStrategy}
               >
                 {exerciseLogs.map((exerciseLog, exerciseIndex) => {
+                  // "Next" / "last time" module header (mockup .mod/.mh):
+                  // printed once, directly above the first UPCOMING compact
+                  // row (the exercise right after the focused one) — not
+                  // above already-done compact rows before it, which read as
+                  // history rather than "next".
+                  const showNextHeader = exerciseIndex === effectiveFocusIndex + 1;
                   const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
                   const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
                   const targets = programEx ? progressionTargetsMap[programEx.name] : null;
@@ -1494,8 +1505,14 @@ export default function WorkoutDetail() {
                   // reappear on the exercise below it.
                   const originalEx = workout?.exercises?.find(e => e.name === exerciseLog.name) || null;
                   return (
+                    <Fragment key={exerciseIndex}>
+                    {showNextHeader && (
+                      <div className="flex items-baseline justify-between px-1 pt-3 pb-1 mt-1 border-t border-charcoal-border">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">Next</span>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">last time</span>
+                      </div>
+                    )}
                     <SortableExerciseRow
-                      key={exerciseIndex}
                       id={String(exerciseIndex)}
                       exerciseIndex={exerciseIndex}
                       // Scroll the card (and the active set row it contains) clear of
@@ -1534,9 +1551,16 @@ export default function WorkoutDetail() {
                           shotNote={shotNoteFor(exerciseLog.name)}
                           isFocused={exerciseIndex === effectiveFocusIndex}
                           onFocus={() => setFocusedExerciseIndex(exerciseIndex)}
+                          reorderMode={reorderMode}
+                          onToggleReorderMode={() => setReorderMode((v) => !v)}
+                          isLastRow={
+                            exerciseIndex === exerciseLogs.length - 1
+                            || exerciseIndex + 1 === effectiveFocusIndex
+                          }
                         />
                       )}
                     </SortableExerciseRow>
+                    </Fragment>
                   );
                 })}
               </SortableContext>

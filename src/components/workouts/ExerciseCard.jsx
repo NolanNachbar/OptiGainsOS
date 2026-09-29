@@ -54,6 +54,16 @@ export default function ExerciseCard({
   // a compact row calls onFocus to make it the new focused exercise.
   isFocused = true,
   onFocus = null,
+  // Reorder mode (Ledger rebuild): drag handles are hidden on every row
+  // (focused card + compact .nx rows) until explicitly chosen from the
+  // kebab, matching the mockup's flush, handle-free rows. Both booleans are
+  // lifted to WorkoutDetail since one toggle governs every ExerciseCard.
+  reorderMode = false,
+  onToggleReorderMode = null,
+  // True when this is the last compact row in the "Next" module — suppresses
+  // its own bottom rule so the module's rows read as N-1 internal dividers,
+  // not N (which would double up against the module container's own edge).
+  isLastRow = false,
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -128,11 +138,28 @@ export default function ExerciseCard({
       (s) => s.completed && Number(s.weight) > 0 && Number(repsOf(s)) > 0
     );
     const currentVolume = completedSets.reduce((sum, s) => sum + Number(s.weight) * Number(repsOf(s)), 0);
-    const lastVolume = lastPerformance?.sets?.length
-      ? lastPerformance.sets.reduce((sum, s) => sum + Number(s.weight || 0) * Number(s.reps || 0), 0)
+    // Apples-to-apples comparison (coordinator review, r4d/step3): comparing
+    // in-progress volume (only the sets done SO FAR) against last session's
+    // FULL total made an honest mid-workout state read as "+550%" or a scary
+    // negative before the workout was even done. Compare against only the
+    // first N sets of last time, N = completedSets.length here, so both
+    // sides cover the same amount of work. No last session, or fewer than N
+    // sets logged last time (rep scheme not comparable), -> null ("–").
+    const lastComparableSets = lastPerformance?.sets?.slice(0, completedSets.length) ?? [];
+    const comparable = lastComparableSets.length === completedSets.length;
+    const lastVolume = comparable
+      ? lastComparableSets.reduce((sum, s) => sum + Number(s.weight || 0) * Number(s.reps || 0), 0)
       : 0;
-    const volume = currentVolume > 0 && lastVolume > 0
-      ? { current: Math.round(currentVolume), deltaPct: Math.round(((currentVolume - lastVolume) / lastVolume) * 100) }
+    // current shows whenever there's real volume so far; deltaPct is null
+    // ("–" in the UI) whenever the comparison isn't apples-to-apples
+    // (no last session, or fewer comparable sets logged last time).
+    const volume = currentVolume > 0
+      ? {
+          current: Math.round(currentVolume),
+          deltaPct: comparable && lastVolume > 0
+            ? Math.round(((currentVolume - lastVolume) / lastVolume) * 100)
+            : null,
+        }
       : null;
 
     let best = null;
@@ -350,26 +377,36 @@ export default function ExerciseCard({
   };
 
   // Compact one-line row for every exercise other than the focused one
-  // (DESIGN.md dB .nx sibling: "name · sets done/target · best set"). Muted
-  // + checked once every set is complete; otherwise reads like the old "Next"
-  // list. All hooks above still run every render regardless of isFocused, so
-  // toggling focus never changes this component's hook order.
+  // (mockup .nx: "name · target · last time"). Ledger rebuild (coordinator
+  // review, r4d/step3): the old version was a boxed glass-inset card with a
+  // big gap, an always-visible (usually empty) drag-handle slot, and an
+  // empty check circle — heavy for a row that mostly just says "up next".
+  // Rebuilt full-bleed and flush: no card chrome, no rounded box, just a 1px
+  // rule under each row (the LAST row's rule is suppressed by the caller via
+  // isLastRow, matching a module's closing edge instead of doubling it with
+  // the module container's own border). Upcoming rows read as plain text;
+  // done rows mute to ink-muted with a small check + "done/target" in place
+  // of the target string. All hooks above still run every render regardless
+  // of isFocused, so toggling focus never changes this component's hook
+  // order.
   if (!isFocused) {
     const doneCount = exercise.sets.filter((s) => s.completed).length;
     const totalCount = exercise.sets.length;
     const isDone = totalCount > 0 && doneCount === totalCount;
-    const bestText = vitals?.best
-      ? `${vitals.best.weight}${weightUnit} × ${vitals.best.reps}`
+    const targetText = vitals?.target?.primary ?? (totalCount ? `${totalCount} sets` : null);
+    const lastTimeText = lastPerformance?.lastWeight
+      ? `${lastPerformance.lastWeight}${weightUnit}×${lastPerformance.lastReps}`
       : null;
-    const targetText = vitals?.target?.primary ?? null;
     return (
       <button
         type="button"
         onClick={() => onFocus?.()}
         data-testid={`exercise-row-${exerciseIndex}`}
-        className="w-full min-h-[44px] flex items-center gap-3 px-4 py-2.5 rounded-[10px] glass-inset text-left transition-colors hover:bg-charcoal-borderSoft/40"
+        className={`w-full min-h-[48px] flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-charcoal-borderSoft/30 ${
+          isLastRow ? "" : "border-b border-charcoal-border"
+        }`}
       >
-        {dragHandleProps && (
+        {dragHandleProps && reorderMode && (
           <span
             role="button"
             tabIndex={-1}
@@ -382,22 +419,26 @@ export default function ExerciseCard({
             <GripVertical className="w-4 h-4" strokeWidth={2.5} />
           </span>
         )}
-        <span
-          className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-            isDone ? "bg-up/20 text-up" : "border border-charcoal-border text-transparent"
-          }`}
-        >
-          <Check className="w-3 h-3" strokeWidth={3} />
-        </span>
+        {isDone && (
+          <Check className="w-3.5 h-3.5 text-up flex-shrink-0" strokeWidth={3} />
+        )}
         <span className={`flex-1 min-w-0 truncate text-[14px] font-semibold ${isDone ? "text-ink-muted" : "text-ink"}`}>
           {exercise.name}
         </span>
-        <span className="flex-shrink-0 font-technical text-[12px] text-ink-muted tabular-nums">
-          {doneCount}/{totalCount || targetText || "—"}
-        </span>
-        {bestText && (
+        {isDone ? (
+          <span className="flex-shrink-0 font-technical text-[12px] text-ink-muted tabular-nums">
+            {doneCount}/{targetText || totalCount}
+          </span>
+        ) : (
+          targetText && (
+            <span className="flex-shrink-0 font-technical text-[12px] text-ink-secondary tabular-nums">
+              {targetText}
+            </span>
+          )
+        )}
+        {lastTimeText && (
           <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums hidden sm:inline">
-            {bestText}
+            {lastTimeText}
           </span>
         )}
       </button>
@@ -445,7 +486,7 @@ export default function ExerciseCard({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {dragHandleProps && (
+            {dragHandleProps && reorderMode && (
               <button
                 type="button"
                 {...dragHandleProps.attributes}
@@ -484,6 +525,24 @@ export default function ExerciseCard({
                   >
                     <Heart className={`w-4 h-4 ${liked ? "fill-brand text-brand" : ""}`} />
                     {liked ? "Unlike this exercise" : "Like — program this more often"}
+                  </button>
+                )}
+                {/* Reorder toggle (Ledger rebuild): drag handles are hidden by
+                    default on every row (focused card + compact .nx rows) —
+                    they added visual weight (empty-looking grip icons) most
+                    sessions never touch. Chosen here, WorkoutDetail flips
+                    dragHandleProps on for every ExerciseCard until toggled off
+                    again (or the athlete taps away — WorkoutDetail owns that). */}
+                {onToggleReorderMode && (
+                  <button
+                    onClick={() => {
+                      onToggleReorderMode();
+                      setOpenMenu(false);
+                    }}
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  >
+                    <GripVertical className="w-4 h-4" />
+                    {reorderMode ? "Done reordering" : "Reorder exercises"}
                   </button>
                 )}
                 {/* Replace exercise leads the destructive/utility part of the menu:
@@ -583,9 +642,13 @@ export default function ExerciseCard({
                   {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
                 </div>
                 <div className="text-[11px] mt-0.5">
-                  <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
-                    {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
-                  </span>
+                  {vitals.volume.deltaPct != null ? (
+                    <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
+                      {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
+                    </span>
+                  ) : (
+                    <span className="text-ink-muted">–</span>
+                  )}
                   <span className="text-ink-muted"> vs last</span>
                 </div>
               </div>
