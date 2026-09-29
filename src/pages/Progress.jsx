@@ -111,6 +111,11 @@ function WeightTrendModule() {
   }, [weight30d]);
   const latest = weight30d[weight30d.length - 1];
   const hasRate = trendStats.dataPoints >= 2;
+  // A weigh-in inside the 30-day window can still be a week+ stale — say so
+  // rather than let the trend number read as "today's weight". Same rule as
+  // Today's weight module.
+  const isStale = latest
+    && differenceInCalendarDays(new Date(), parseISO(latest.recorded_date)) > 7;
 
   return (
     <Module label="Weight trend · 30 days" className="mb-2">
@@ -129,6 +134,11 @@ function WeightTrendModule() {
               </span>
             )}
           </div>
+          {isStale && (
+            <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
+              as of {format(parseISO(latest.recorded_date), "MMM d")}
+            </p>
+          )}
           {weight30d.length >= 2 ? (
             <div className="mt-2">
               <WeightTrendChart trended={weight30d} />

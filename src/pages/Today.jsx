@@ -31,7 +31,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { MetricTile, SectionLabel, SegmentedControl, Module } from "@/components/ui/system";
 import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame, Check } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
 // Full thousands-separated integer — used for the kcal ring's TARGET caption so
@@ -519,6 +519,11 @@ export default function Today() {
     return calculateEWMA(sorted, 0.1);
   }, [weightEntries, today]);
   const latestWeight = weight30d[weight30d.length - 1];
+  // A weigh-in inside the last 30 days can still be a week+ stale (no new
+  // entry since) — the trend number alone reads as "today's weight" unless
+  // the module says otherwise.
+  const isWeightStale = latestWeight
+    && Math.round((new Date(`${today}T00:00:00`) - new Date(`${latestWeight.recorded_date}T00:00:00`)) / 86400000) > 7;
   // Same gray-history/off-white-now-dot sparkline convention as readinessSpark,
   // built from the EWMA trend line (not the raw noisy daily weigh-ins).
   const weightSpark = useMemo(() => {
@@ -685,6 +690,11 @@ export default function Today() {
               {latestWeight ? fmt(latestWeight.trendWeight, 1) : "—"}
             </span>
             <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
+            {isWeightStale && (
+              <span className="ml-auto text-[11px] font-semibold text-muted-2">
+                as of {format(parseISO(latestWeight.recorded_date), "MMM d")}
+              </span>
+            )}
           </div>
           {/* With no trend value yet (latestWeight null — "— lbs" above), the
               rate line has nothing real to report: don't show a green
