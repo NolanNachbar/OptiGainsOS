@@ -1,0 +1,528 @@
+{
+ "id": "physique",
+ "path": "/physique",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "STATE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "RECOVERY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "PHYSIQUE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "COACH",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label",
+    "text": "POSE FOR THIS SHOT",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Front relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Front double biceps",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Side relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Side chest",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Abs & thighs",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Back relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Back double biceps",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-2",
+    "text": "LATEST",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1.5",
+    "text": "FOCUS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".mt-1.5.text-[11px]",
+    "text": "At a leaner BF: further definition in lower body and abdomen",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-muted-2",
+    "text": "At a leaner BF:",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-2",
+    "text": "TREND",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "tspan",
+    "selector": "tspan",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-2",
+    "text": "HISTORY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Back double biceps",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Back relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Abs & thighs",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Side chest",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Front double biceps",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Front relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 15, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Back relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Back relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Abs & thighs",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Side chest",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Front double biceps",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".truncate",
+    "text": "Front relaxed",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px]",
+    "text": "Jun 7, 2026",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Side chest",
+    "rect": {
+     "left": 365,
+     "right": 446
+    }
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Abs & thighs",
+    "rect": {
+     "left": 452,
+     "right": 543
+    }
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Back relaxed",
+    "rect": {
+     "left": 549,
+     "right": 641
+    }
+   },
+   {
+    "tag": "button",
+    "selector": ".shrink-0.whitespace-nowrap",
+    "text": "Back double biceps",
+    "rect": {
+     "left": 647,
+     "right": 774
+    }
+   }
+  ],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1780866100140.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  },
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1780866128034.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  },
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1780866066420.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  },
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1781566371903.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  },
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1780866111519.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  },
+  {
+   "type": "http",
+   "status": 400,
+   "url": "https://fizdftijlbcnjmemrvao.supabase.co/storage/v1/object/sign/physique/169d2f0b-cf5a-44fb-8551-845004725a26/1780866083599.jpeg"
+  },
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  }
+ ],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\na \"STATE\" @111\na \"RECOVERY\" @111\na \"PHYSIQUE\" @111\na \"COACH\" @111\nbutton \"Guided session\" @214\nbutton \"Front relaxed\" @266\nbutton \"Front double biceps\" @266\nbutton \"Side relaxed\" @266\nbutton \"Side chest\" @266\nbutton \"Abs & thighs\" @266\nbutton \"Back relaxed\" @266\nbutton \"Back double biceps\" @266\nbutton \"Upload Front relaxed shot\" @390\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": [
+  {
+   "file": "src/pages/Physique.jsx",
+   "issue": "file not found for lint"
+  }
+ ]
+}

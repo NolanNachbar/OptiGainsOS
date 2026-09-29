@@ -1,0 +1,67 @@
+{
+ "id": "brief-history",
+ "path": "/brief-history",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "DAILY BRIEF",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "BRIEF HISTORY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Analyze",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\na \"DAILY BRIEF\" @111\na \"BRIEF HISTORY\" @111\na \"Back to home\" @370\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811\na \"Analyze\" @811",
+ "tokenLint": []
+}

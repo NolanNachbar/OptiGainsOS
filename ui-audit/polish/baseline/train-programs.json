@@ -1,0 +1,127 @@
+{
+ "id": "train-programs",
+ "path": "/train?tab=programs",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "ACTIVE 1",
+    "size": "99x40"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "MY PROGRAMS",
+    "size": "131x40"
+   },
+   {
+    "tag": "a",
+    "selector": ".ml-auto.shrink-0",
+    "text": "",
+    "size": "36x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Create program",
+    "size": "36x36"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "SCHEDULE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "LIBRARY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "PROGRAMS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "ACTIVITY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "ACTIVE 1",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[11px]",
+    "text": "1",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "MY PROGRAMS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.mb-3",
+    "text": "PAST PROGRAMS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"SCHEDULE\" @111\nbutton \"LIBRARY\" @111\nbutton \"PROGRAMS\" @111\nbutton \"ACTIVITY\" @111\nbutton \"ACTIVE 1\" @178\nbutton \"MY PROGRAMS\" @178\na \"\" @180\nbutton \"Create program\" @180\na \"Strength + BUD/S Conditioning Daily bench peaking \" @246\na \"Bench Everyday Peaking Phase Peaking protocol for \" @476\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": []
+}

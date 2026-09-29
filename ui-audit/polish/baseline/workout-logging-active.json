@@ -1,0 +1,285 @@
+{
+ "id": "workout-logging-active",
+ "path": "/train?tab=library",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Full gym",
+    "size": "86x27"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Shot list",
+    "size": "87x27"
+   },
+   {
+    "tag": "button",
+    "selector": ".min-h-[32px].min-w-[32px]",
+    "text": "Unlike this exercise",
+    "size": "32x32"
+   },
+   {
+    "tag": "button",
+    "selector": ".h-9.w-8",
+    "text": "Drag to reorder exercise",
+    "size": "32x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "",
+    "size": "36x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "size": "81x17"
+   },
+   {
+    "tag": "input",
+    "selector": ".h-11.w-full",
+    "text": "Set 1 reps in reserve",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "size": "81x17"
+   },
+   {
+    "tag": "input",
+    "selector": ".h-11.w-full",
+    "text": "Set 2 reps in reserve",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "size": "81x17"
+   },
+   {
+    "tag": "input",
+    "selector": ".h-11.w-full",
+    "text": "Set 3 reps in reserve",
+    "size": "40x44"
+   },
+   {
+    "tag": "input",
+    "selector": ".flex-1.self-stretch",
+    "text": "Exercise name",
+    "size": "211x43"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Full gym",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Shot list",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "PRE-WORKOUT NOTES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10.5px].text-ink-muted",
+    "text": "TARGET 3 × 10 REPS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-ink",
+    "text": "3",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-ink",
+    "text": "10",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-semibold",
+    "text": "Last 1000lbs × 108(Sep 27)",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "1000",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].text-ink-faint",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "108",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-ink-faint.ml-1.5",
+    "text": "(Sep 27)",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".pl-0.5",
+    "text": "SET",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "LAST",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-center",
+    "text": "LBS",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-center",
+    "text": "REPS",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-center.flex",
+    "text": "RIR",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-center",
+    "text": "DONE",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".font-technical.text-[11px]",
+    "text": "Use last set 1000 by 108",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "Active workout logging screen (creates a workout_sessions row - serial + cleaned up)",
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Calculators\" @738\nbutton \"Cancel\" @738\nbutton \"Finish\" @738\nbutton \"Full gym\" @205\nbutton \"Shot list\" @205\ntextarea \"Anything notable going in? Energy, soreness, focus\" @411\nbutton \"Unlike this exercise\" @447\nbutton[button] \"Drag to reorder exercise\" @466\nbutton \"\" @466\nbutton \"Use last set 1000 by 108\" @581\ninput:number \"Set 1 weight in lbs\" @567\ninput:number \"Set 1 reps\" @567\ninput:number \"Set 1 reps in reserve\" @567\nbutton[checkbox] \"Mark set 1 complete\" @567\nbutton \"Remove set 1\" @567\nbutton \"Use last set 1000 by 108\" @635\ninput:number \"Set 2 weight in lbs\" @621\ninput:number \"Set 2 reps\" @621\ninput:number \"Set 2 reps in reserve\" @621\nbutton[checkbox] \"Mark set 2 complete\" @621\nbutton \"Remove set 2\" @621\nbutton \"Use last set 1000 by 108\" @689\ninput:number \"Set 3 weight in lbs\" @675\ninput:number \"Set 3 reps\" @675\ninput:number \"Set 3 reps in reserve\" @675\nbutton[checkbox] \"Mark set 3 complete\" @675\nbutton \"Remove set 3\" @675\nbutton \"Add Set\" @732\ninput:text \"Exercise name\" @833\nbutton \"Toggle options\" @833\nbutton \"Add exercise\" @833\nbutton \"\" @833\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819",
+ "tokenLint": [
+  {
+   "file": "src/components/workouts/ExerciseCard.jsx",
+   "drift": "inset specular shadow-[inset...]",
+   "count": 1,
+   "sampleLines": [
+    114
+   ]
+  },
+  {
+   "file": "src/components/workouts/ExerciseCard.jsx",
+   "drift": "arbitrary radius rounded-[...]",
+   "count": 4,
+   "sampleLines": [
+    112,
+    477,
+    498
+   ]
+  }
+ ]
+}

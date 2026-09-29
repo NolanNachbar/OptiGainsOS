@@ -1,0 +1,102 @@
+{
+ "id": "fuel-water",
+ "path": "/fuel?tab=hydration",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "NUTRITION & MEALS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "BODY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "HYDRATION",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label",
+    "text": "SUPPLEMENTS & WATER",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.mb-3",
+    "text": "TODAY'S LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.mb-3",
+    "text": "TAKEN TODAY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "12:36 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "12:32 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "Hydration/Water sub-tab is URL-driven (Fuel.jsx reads ?tab=hydration, matching its own SubTabs onChange), not an in-page clickable 'Water' text - there is no such text on /fuel at all until this tab is already active, so the old clickText step could never find it.",
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"NUTRITION & MEALS\" @111\nbutton \"BODY\" @111\nbutton \"HYDRATION\" @111\nbutton \"Add Supplement\" @174\nbutton \"+100ml\" @298\nbutton \"+250ml\" @298\nbutton \"+500ml\" @298\nbutton \"Edit supplement\" @435\nbutton \"Delete supplement\" @435\ninput:number \"5 G\" @479\nbutton \"Log Again\" @479\nbutton \"Delete supplement log\" @594\nbutton \"Delete supplement log\" @650\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": []
+}

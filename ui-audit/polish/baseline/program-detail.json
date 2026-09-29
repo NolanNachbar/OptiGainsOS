@@ -1,0 +1,98 @@
+{
+ "id": "program-detail",
+ "path": "/train?tab=programs",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".mt-0.5.min-h-[44px]",
+    "text": "More",
+    "size": "29x44"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "small",
+    "selector": ".text-[10px].font-semibold",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "small",
+    "selector": ".text-[10px].font-semibold",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "small",
+    "selector": ".text-[10px].font-semibold",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "small",
+    "selector": ".text-[10px].font-semibold",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "small",
+    "selector": ".text-[10px].font-semibold",
+    "text": "lbs",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".fixed.right-3",
+    "text": "Quick add",
+    "coveredFraction": 0.8,
+    "coveredBy": ".inline-flex.items-center (inline-flex items-center justify-center )",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "positive-control screen: mobile bottom CTA vs bottom dock (de5e993b)",
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Start Next Workout\" @743\nbutton \"Back to Workouts\" @115\nbutton \"More\" @339\nbutton \"Start Next Workout\" @451\nbutton \"Manage\" @503\nbutton \"Cycle 1, Day 1: Upper Volume, completed\" @667\nbutton \"Cycle 1, Day 2: Lower Strength, completed\" @667\nbutton \"Cycle 1, Day 3: Pyramid + Accessories, completed\" @667\nbutton \"Cycle 1, Day 4: Thursday — Two-A-Day, completed\" @667\nbutton \"Cycle 1, Day 5: Friday — Two-A-Day, completed\" @758\nbutton \"Cycle 1, Day 6: Saturday — Two-A-Day, completed\" @758\nbutton \"Cycle 1, Day 7: Sunday — Two-A-Day, upcoming\" @758\nbutton \"Show all 13 cycles\" @857\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Quick add\" @756",
+ "tokenLint": []
+}

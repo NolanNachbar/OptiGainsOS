@@ -1,0 +1,67 @@
+{
+ "id": "quick-workout",
+ "path": "/quick-workout",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "input",
+    "selector": ".flex-1.self-stretch",
+    "text": "Exercise name",
+    "size": "247x43"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".block.text-[10px]",
+    "text": "COACH",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.mb-2.5",
+    "text": "RECENT LIFTS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Calculators\" @730\nbutton \"Cancel\" @730\nbutton \"Finish\" @730\nbutton \"Rename session\" @117\nbutton \"COACH Your last 3 Weighted Pull-up sessions averag\" @245\nbutton \"OVN-r1-03 Lift\" @398\nbutton \"Leg Press\" @454\nbutton \"Bench Press (Daily Single)\" @510\nbutton \"Bench Press (Back-off Vol)\" @566\nbutton \"Reverse Grip Incline Smith Machine Press\" @622\nbutton \"Chest-Supported Row\" @678\ninput:text \"Exercise name\" @787\nbutton \"Toggle options\" @787\nbutton \"Add exercise\" @787\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": []
+}

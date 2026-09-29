@@ -1,0 +1,127 @@
+{
+ "id": "recovery",
+ "path": "/recovery",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Sync wearable",
+    "size": "396x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Sync",
+    "size": "55x30"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "STATE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "RECOVERY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "PHYSIQUE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "COACH",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "h3",
+    "selector": ".text-lg.font-bold",
+    "text": "TODAY'S READINESS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1",
+    "text": "BODY BATTERY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1",
+    "text": "SLEEP SCORE",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".text-lg.font-bold",
+    "text": "TRAINING LOAD (ACWR)",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label",
+    "text": "CURRENT RATIO",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\na \"STATE\" @111\na \"RECOVERY\" @111\na \"PHYSIQUE\" @111\na \"COACH\" @111\nbutton \"Sync wearable\" @632\nbutton \"Sync\" @728\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": [
+  {
+   "file": "src/pages/Recovery.jsx",
+   "issue": "file not found for lint"
+  }
+ ]
+}

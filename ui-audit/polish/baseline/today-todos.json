@@ -1,0 +1,229 @@
+{
+ "id": "today-todos",
+ "path": "/today",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "a",
+    "selector": "a",
+    "text": "View Past Briefs",
+    "size": "135x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "View Past Briefs",
+    "size": "135x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Add action",
+    "size": "44x36"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "div",
+    "selector": ".mt-0.5.uppercase",
+    "text": "READINESS",
+    "fontSize": 8.84,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "QUICK ACTIONS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "Today's meals",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "FUEL TODAY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "cut phase",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "/1,800 · 7d",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "text",
+    "selector": "text",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "/247g · 7d",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "text",
+    "selector": "text",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "on goal",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "VITALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "HRV",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "ms",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "RHR",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "bpm",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "SLEEP",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "BATT",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "%",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "TODAY'S DETAIL",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "Brief · state · muscle",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "TODAY'S ACTIONS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "Today's Actions card has no tab labeled 'To-Do' - it's a single always-visible card headed 'Today's Actions'. This screen instead captures the distinct 'adding a new action' input state (tap +), since plain /today is already covered by the 'today' screen.",
+ "controlsSnapshot": "a \"Profile\" @55\ninput:text \"Bodyweight in lbs\" @336\nbutton \"Log weight\" @419\na \"Log a workout\" @497\na \"Log food Today's meals\" @589\na \"FUEL TODAY cut phase 1.6k /1,800 · 7d 186 /247g · \" @677\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Quick add\" @756",
+ "tokenLint": [
+  {
+   "file": "src/pages/Today.jsx",
+   "drift": "raw hex color",
+   "count": 1,
+   "sampleLines": [
+    266
+   ]
+  },
+  {
+   "file": "src/components/dashboard/TodayActions.jsx",
+   "drift": "raw hex color",
+   "count": 1,
+   "sampleLines": [
+    12
+   ]
+  }
+ ]
+}

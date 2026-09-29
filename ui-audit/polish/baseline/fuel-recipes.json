@@ -1,0 +1,361 @@
+{
+ "id": "fuel-recipes",
+ "path": "/fuel",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Copy a day",
+    "size": "115x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Intake stats",
+    "size": "147x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Unstar",
+    "size": "36x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Edit template",
+    "size": "36x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Apply",
+    "size": "82x36"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Regenerate",
+    "size": "110x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex-1.py-1.5",
+    "text": "Day 1",
+    "size": "108x28"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex-1.py-1.5",
+    "text": "Day 2",
+    "size": "108x28"
+   },
+   {
+    "tag": "button",
+    "selector": ".flex-1.py-1.5",
+    "text": "Day 3",
+    "size": "108x28"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "NUTRITION & MEALS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "BODY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "HYDRATION",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.flex",
+    "text": "DAILY LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[8px].font-bold",
+    "text": "LEFT",
+    "fontSize": 8,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "P",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "C",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "F",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "Fb",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].text-ink-faint",
+    "text": "fiber · 14 g / 1000 kcal",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "01. BREAKFAST",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "02. LUNCH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "03. DINNER",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "04. SNACK",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "NUTRITION GOALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].font-semibold",
+    "text": "carb-cycled targets · shopping list · approve",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".cta-action.lg:hidden",
+    "text": "Add food",
+    "coveredFraction": 1,
+    "coveredBy": ".px-4.pb-4 (px-4 pb-4 pt-0 space-y-3)",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.flex",
+    "text": "Profile",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "NUTRITION & MEALS",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "BODY",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "HYDRATION",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "Previous day",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".flex.items-center",
+    "text": "Next day",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Copy a day",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Intake stats",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".w-full.min-h-[44px]",
+    "text": "ADD ITEM",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   }
+  ],
+  "contrastFails": [
+   {
+    "tag": "div",
+    "selector": ".text-xs.text-bad",
+    "text": "Fats / 63g",
+    "ratio": 3.56,
+    "threshold": 4.5,
+    "fontSize": 12
+   }
+  ]
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"NUTRITION & MEALS\" @111\nbutton \"BODY\" @111\nbutton \"HYDRATION\" @111\nbutton \"Previous day\" @170\ninput:date \"Select date\" @170\nbutton \"Next day\" @170\nbutton \"Add food\" @724\nbutton \"Copy a day\" @405\nbutton \"Intake stats\" @405\nbutton \"ADD ITEM\" @486\nbutton \"ADD ITEM\" @584\nbutton \"ADD ITEM\" @681\nbutton \"ADD ITEM\" @779\nbutton \"NUTRITION GOALS 1800kcal\" @841\nbutton \"TEMPLATES, RECIPES & IDEAS\" @900\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Close\" @224\nbutton \"Build New Meal\" @314\nbutton \"Unstar\" @392\nbutton \"Edit template\" @392\nbutton \"Apply\" @392\nbutton \"NEW\" @486\nbutton \"Edit recipe\" @550\nbutton \"Log\" @550\nbutton \"Regenerate\" @665\nbutton \"Day 1\" @723\nbutton \"Day 2\" @723\nbutton \"Day 3\" @723\nbutton \"\" @763\nbutton \"\" @763",
+ "tokenLint": [
+  {
+   "file": "src/pages/FoodTracker.jsx",
+   "drift": "text-white",
+   "count": 2,
+   "sampleLines": [
+    3268,
+    3397
+   ]
+  }
+ ]
+}

@@ -1,0 +1,151 @@
+{
+ "id": "train-library",
+ "path": "/train?tab=library",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Import file format guide",
+    "size": "36x36"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "SCHEDULE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "LIBRARY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "PROGRAMS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "ACTIVITY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "DURATION",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "DURATION",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "DURATION",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "DURATION",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "DURATION",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"SCHEDULE\" @111\nbutton \"LIBRARY\" @111\nbutton \"PROGRAMS\" @111\nbutton \"ACTIVITY\" @111\nbutton \"Filters\" @174\nbutton \"Import\" @174\nbutton \"Import file format guide\" @178\na \"OVN-r1-03 Test Workout OVN-r1-03 Lift DURATION — E\" @226\nbutton \"Workout options\" @234\na \"Two-a-Day — Upper B Bench Press (Daily Single) +10\" @364\nbutton \"Workout options\" @372\na \"Lower B — Hinge Deadlift (Top Set) +7 more DURATIO\" @502\nbutton \"Workout options\" @510\na \"Upper B — Pull Weighted Pull-up +13 more DURATION \" @639\nbutton \"Workout options\" @648\na \"Two-a-Day — Lower Hinge Primary — Jun 16 Deadlift \" @777\nbutton \"Workout options\" @785\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": []
+}

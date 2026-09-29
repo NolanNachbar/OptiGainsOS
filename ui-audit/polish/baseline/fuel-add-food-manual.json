@@ -1,0 +1,383 @@
+{
+ "id": "fuel-add-food-manual",
+ "path": "/food-tracker?addFood=true",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Copy a day",
+    "size": "115x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Intake stats",
+    "size": "147x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Crunchy Peanut Butter",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Gold Standard 100% Whey (Milk Chocolate)",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Large White Eggs",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Old Fashioned Whole Grain Oats",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite OVN-r1-01 midnight snack",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite OVN-r1-05 huge snack",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite OVN-r1-09 offline snack",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Plain Greek Nonfat Yogurt",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Potatoes, Russet, Flesh And Skin, Baked",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Vitamin D Whole Milk",
+    "size": "40x44"
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Whole Strawberries",
+    "size": "40x44"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".section-label.flex",
+    "text": "DAILY LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[8px].font-bold",
+    "text": "LEFT",
+    "fontSize": 8,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "P",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "C",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "F",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "Fb",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].text-ink-faint",
+    "text": "fiber · 14 g / 1000 kcal",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "01. BREAKFAST",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "02. LUNCH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "03. DINNER",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "04. SNACK",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "NUTRITION GOALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[11px]",
+    "text": "Describe it or snap a photo — splits into items",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "97",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "275",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "31",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "288",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "40",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "145",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "MY FOODS (15)",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".mt-1.text-[11px]",
+    "text": "Estimated from the name + portion. Best with an explicit amo",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "MANUAL ENTRY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10.5px].text-ink-muted",
+    "text": "Optional. Weigh one serving once and every log after it is e",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".cta-action.lg:hidden",
+    "text": "Add food",
+    "coveredFraction": 1,
+    "coveredBy": ".flex.gap-2 (flex gap-2 mt-1)",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.flex",
+    "text": "Profile",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".flex-1.text-left",
+    "text": "Gold Standard 100% Whey (Milk Chocolate) 120 kcal · P 24g · ",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".px-3.py-3",
+    "text": "Favorite Gold Standard 100% Whey (Milk Chocolate)",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "Add Food dialog, manual macro entry fields visible. The dialog autofocuses its search input, which pops iphone-sim's simulated keyboard - a pointer-events:auto overlay spanning from mid-screen to the bottom that silently swallows clicks on the Manual entry toggle beneath it (click 'succeeds' with no error, but the disclosure never opens). Blurring first dismisses it, same as tapping the sim's own Done key.",
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Previous day\" @121\ninput:date \"Select date\" @121\nbutton \"Next day\" @121\nbutton \"Add food\" @724\nbutton \"Copy a day\" @356\nbutton \"Intake stats\" @356\nbutton \"ADD ITEM\" @437\nbutton \"ADD ITEM\" @535\nbutton \"ADD ITEM\" @632\nbutton \"ADD ITEM\" @730\nbutton \"NUTRITION GOALS 1800kcal\" @792\nbutton \"TEMPLATES, RECIPES & IDEAS\" @851\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Close\" @126\nbutton \"Crunchy Peanut Butter 124 kcal · P 5g · C 6g · F 1\" @-25\nbutton \"Favorite Crunchy Peanut Butter\" @-16\nbutton \"Gold Standard 100% Whey (Milk Chocolate) 120 kcal \" @38\nbutton \"Favorite Gold Standard 100% Whey (Milk Chocolate)\" @47\nbutton \"Large White Eggs 140 kcal · P 12g · C 0g · F 10g\" @101\nbutton \"Favorite Large White Eggs\" @110\nbutton \"Old Fashioned Whole Grain Oats 375 kcal · P 13g · \" @164\nbutton \"Favorite Old Fashioned Whole Grain Oats\" @173\nbutton \"OVN-r1-01 midnight snack 100 kcal · P 0g · C 0g · \" @227\nbutton \"Favorite OVN-r1-01 midnight snack\" @236\nbutton \"OVN-r1-05 huge snack 57900 kcal · P 0g · C 0g · F \" @290\nbutton \"Favorite OVN-r1-05 huge snack\" @299\nbutton \"OVN-r1-09 offline snack 100 kcal · P 0g · C 0g · F\" @353\nbutton \"Favorite OVN-r1-09 offline snack\" @362\nbutton \"Plain Greek Nonfat Yogurt 59 kcal · P 10g · C 5g ·\" @416\nbutton \"Favorite Plain Greek Nonfat Yogurt\" @425\nbutton \"Potatoes, Russet, Flesh And Skin, Baked 95 kcal · \" @479\nbutton \"Favorite Potatoes, Russet, Flesh And Skin, Baked\" @488\nbutton \"Vitamin D Whole Milk 62 kcal · P 3g · C 5g · F 3g\" @542\nbutton \"Favorite Vitamin D Whole Milk\" @551\nbutton \"Whole Strawberries 36 kcal · P 1g · C 9g · F 0g\" @605\nbutton \"Favorite Whole Strawberries\" @614\ninput:text \"e.g., 8 oz grilled chicken breast\" @719\nbutton \"Estimate\" @719\nbutton \"MANUAL ENTRY\" @820\ninput:text \"e.g., Chicken Breast\" @897",
+ "tokenLint": [
+  {
+   "file": "src/pages/FoodTracker.jsx",
+   "drift": "text-white",
+   "count": 2,
+   "sampleLines": [
+    3268,
+    3397
+   ]
+  }
+ ]
+}

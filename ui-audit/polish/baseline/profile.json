@@ -1,0 +1,83 @@
+{
+ "id": "profile",
+ "path": "/profile",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "p",
+    "selector": ".text-ink-secondary.text-[10px]",
+    "text": "WORKOUTS",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-ink-secondary.text-[10px]",
+    "text": "VOL (LBS)",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-ink-secondary.text-[10px]",
+    "text": "STREAK",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".mt-1.text-center",
+    "text": "Train. Fuel. Recover.",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Identity\" @301\nbutton \"Body & Nutrition\" @350\nbutton \"Settings\" @399\nbutton \"Sign Out\" @459\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": [
+  {
+   "file": "src/pages/Profile.jsx",
+   "drift": "inset specular shadow-[inset...]",
+   "count": 1,
+   "sampleLines": [
+    592
+   ]
+  }
+ ]
+}

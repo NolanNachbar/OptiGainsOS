@@ -1,0 +1,102 @@
+{
+ "id": "weekly-schedule",
+ "path": "/weekly-schedule",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".section-label.inline-block",
+    "text": "STRENGTH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.!text-muted-2",
+    "text": "TODAY, LOGGED",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "VIEW EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.mb-2",
+    "text": "THIS PROGRAM",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.truncate",
+    "text": "STRENGTH + BUD/S CONDITIONING",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".fixed.right-3",
+    "text": "Quick add",
+    "coveredFraction": 0.8,
+    "coveredBy": ".w-full.min-h-[44px] (w-full min-h-[44px] px-4 py-3 flex items)",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Previous week\" @133\nbutton \"Next week\" @133\nbutton \"Use a template\" @189\nbutton \"MO 28 Lifting Session STRENGTH\" @255\nbutton \"TU 29 Rest\" @306\nbutton \"WE 30 Rest\" @350\nbutton \"TH 1 Rest\" @394\nbutton \"FR 2 Rest\" @438\nbutton \"SA 3 Rest\" @482\nbutton \"SU 4 Rest\" @526\nbutton \"VIEW EXERCISES\" @750\nbutton \"Log another session\" @806\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Quick add\" @756",
+ "tokenLint": [
+  {
+   "file": "src/pages/WeeklySchedule.jsx",
+   "drift": "arbitrary radius rounded-[...]",
+   "count": 4,
+   "sampleLines": [
+    528,
+    534,
+    771
+   ]
+  }
+ ]
+}

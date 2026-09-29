@@ -1,0 +1,219 @@
+{
+ "id": "food-tracker-search",
+ "path": "/food-tracker",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Copy a day",
+    "size": "115x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Intake stats",
+    "size": "147x30"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".section-label.flex",
+    "text": "DAILY LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[8px].font-bold",
+    "text": "LEFT",
+    "fontSize": 8,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "P",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "C",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "F",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "Fb",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].text-ink-faint",
+    "text": "fiber · 14 g / 1000 kcal",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "01. BREAKFAST",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "02. LUNCH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "03. DINNER",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "04. SNACK",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "NUTRITION GOALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".cta-action.lg:hidden",
+    "text": "Add food",
+    "coveredFraction": 0.8,
+    "coveredBy": ".flex.items-center (flex items-center justify-between px-4 p)",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Previous day\" @121\ninput:date \"Select date\" @121\nbutton \"Next day\" @121\nbutton \"Add food\" @724\nbutton \"Copy a day\" @356\nbutton \"Intake stats\" @356\nbutton \"ADD ITEM\" @437\nbutton \"ADD ITEM\" @535\nbutton \"ADD ITEM\" @632\nbutton \"ADD ITEM\" @730\nbutton \"NUTRITION GOALS 1800kcal\" @792\nbutton \"TEMPLATES, RECIPES & IDEAS\" @851\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819",
+ "tokenLint": [
+  {
+   "file": "src/pages/FoodTracker.jsx",
+   "drift": "text-white",
+   "count": 2,
+   "sampleLines": [
+    3268,
+    3397
+   ]
+  }
+ ]
+}

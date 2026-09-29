@@ -10,7 +10,7 @@
 import { launchIPhone } from '/home/nolan/projects/iphone-sim/index.mjs';
 import { mkdirSync } from 'node:fs';
 
-export const ORIGIN = 'http://localhost:5173';
+export const ORIGIN = process.env.ORIGIN || 'http://localhost:5173';
 export const SHOTS = new URL('./shots/', import.meta.url).pathname;
 mkdirSync(SHOTS, { recursive: true });
 

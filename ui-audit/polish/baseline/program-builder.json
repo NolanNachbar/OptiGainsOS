@@ -1,0 +1,46 @@
+{
+ "id": "program-builder",
+ "path": "/program-builder",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "p",
+    "selector": ".section-label.md:hidden",
+    "text": "STEP 1/4 · DETAILS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical",
+    "text": "STEP 1/4",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "TOTAL TRAINING DAYS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "OPTIONAL DETAILS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Import JSON\" @125\nbutton \"Cancel\" @125\ninput:text \"e.g., Push Pull Legs Hypertrophy\" @248\nbutton \"Decrease cycle length\" @349\ninput:number \"7\" @349\nbutton \"Increase cycle length\" @349\nbutton \"Decrease number of cycles\" @448\ninput:number \"4\" @448\nbutton \"Increase number of cycles\" @448\nbutton \"Strength\" @547\nbutton \"OPTIONAL DETAILS\" @718\nbutton \"Next\" @816",
+ "tokenLint": []
+}

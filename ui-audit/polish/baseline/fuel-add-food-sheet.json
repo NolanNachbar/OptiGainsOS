@@ -1,0 +1,302 @@
+{
+ "id": "fuel-add-food-sheet",
+ "path": "/food-tracker?addFood=true",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Copy a day",
+    "size": "115x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Intake stats",
+    "size": "147x30"
+   },
+   {
+    "tag": "button",
+    "selector": ".w-full.px-3",
+    "text": "Recent",
+    "size": "360x28"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".section-label.flex",
+    "text": "DAILY LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[8px].font-bold",
+    "text": "LEFT",
+    "fontSize": 8,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "P",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/247g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "C",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/61g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "F",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/63g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10.5px].font-bold",
+    "text": "Fb",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].text-ink-faint",
+    "text": "fiber · 14 g / 1000 kcal",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10.5px]",
+    "text": "0/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".opacity-60",
+    "text": "/25g",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "01. BREAKFAST",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "02. LUNCH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "03. DINNER",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.tracking-[0.12em]",
+    "text": "04. SNACK",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "NUTRITION GOALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[11px]",
+    "text": "Describe it or snap a photo — splits into items",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "97",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "275",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "31",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "288",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "40",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[11px].text-ink-muted",
+    "text": "145",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "MY FOODS (15)",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".mt-1.text-[11px]",
+    "text": "Estimated from the name + portion. Best with an explicit amo",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "MANUAL ENTRY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".cta-action.lg:hidden",
+    "text": "Add food",
+    "coveredFraction": 1,
+    "coveredBy": ".w-full.text-left (w-full text-left px-4 py-3 min-h-[44px] )",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.flex",
+    "text": "Profile",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": "Add Food dialog open, search/manual entry tab. The global FAB is suppressed on /fuel (Layout.jsx showFab list) - its real 'Log Food' action navigates straight to this ?addFood=true URL, so the screen does too rather than clicking a FAB that doesn't exist here.",
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"Previous day\" @121\ninput:date \"Select date\" @121\nbutton \"Next day\" @121\nbutton \"Add food\" @724\nbutton \"Copy a day\" @356\nbutton \"Intake stats\" @356\nbutton \"ADD ITEM\" @437\nbutton \"ADD ITEM\" @535\nbutton \"ADD ITEM\" @632\nbutton \"ADD ITEM\" @730\nbutton \"NUTRITION GOALS 1800kcal\" @792\nbutton \"TEMPLATES, RECIPES & IDEAS\" @851\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819\nbutton \"Close\" @126\nbutton \"Log a whole meal Describe it or snap a photo — spl\" @244\ninput:text \"Search for a food...\" @348\nbutton \"Scan barcode\" @348\nbutton \"Recent\" @409\nbutton \"Pasta (Cooked) 97 139 kcal · P 5g · C 28g · F 1g\" @437\nbutton \"Pork Loin 275 544 kcal · P 89g · C 0g · F 21g\" @516\nbutton \"Gold Standard 100% Whey (Milk Chocolate) 31 120 kc\" @596\nbutton \"Chicken Breast 288 541 kcal · P 103g · C 0g · F 14\" @675\nbutton \"Peanut Butter 40 262 kcal · P 9g · C 8g · F 21g\" @755\nbutton \"Eggs 145 203 kcal · P 17g · C 0g · F 15g\" @834\nbutton \"Import CSV\" @922\nbutton \"\" @922",
+ "tokenLint": [
+  {
+   "file": "src/pages/FoodTracker.jsx",
+   "drift": "text-white",
+   "count": 2,
+   "sampleLines": [
+    3268,
+    3397
+   ]
+  }
+ ]
+}

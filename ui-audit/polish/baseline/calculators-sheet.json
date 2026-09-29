@@ -1,0 +1,20 @@
+{
+ "id": "calculators-sheet",
+ "path": "/today",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "setupError": {
+  "stepError": "{\"click\":\"[data-tutorial='fab-button']\"}: locator.click: Timeout 4000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-tutorial=\\'fab-button\\']:visible').first()\u001b[22m\n"
+ },
+ "controlsSnapshot": "input:email \"your@email.com\" @685\ninput:password \"Password\" @756\nbutton \"Sign in\" @812\na \"Forgot password\" @866",
+ "tokenLint": []
+}

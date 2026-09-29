@@ -58,6 +58,11 @@ ui-audit/round-*/
 # Scratch/probe tooling (local only)
 ui-audit/_probe/
 
+# ui-audit/polish: keep the harness + downscaled screenshots, drop full-size
+# shots (regenerated every run, not worth the repo weight)
+ui-audit/polish/**/*.png
+!ui-audit/polish/**/*-s.png
+
 # Python bytecode — build artifacts, never source
 __pycache__/
 *.pyc

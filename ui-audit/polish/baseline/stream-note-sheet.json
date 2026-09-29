@@ -1,0 +1,275 @@
+{
+ "id": "stream-note-sheet",
+ "path": "/today",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "Capture",
+    "size": "370x25"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "div",
+    "selector": ".mt-0.5.uppercase",
+    "text": "READINESS",
+    "fontSize": 8.84,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "QUICK ACTIONS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "Today's meals",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "FUEL TODAY",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "cut phase",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "/1,800 · 7d",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "text",
+    "selector": "text",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "/247g · 7d",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "text",
+    "selector": "text",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[11px].font-bold",
+    "text": "on goal",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "VITALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "HRV",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "ms",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "RHR",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "bpm",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "SLEEP",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "BATT",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "%",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "TODAY'S DETAIL",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "Brief · state · muscle",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".flex.items-center",
+    "text": "TODAY'S ACTIONS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [
+   {
+    "tag": "button",
+    "selector": ".fixed.right-3",
+    "text": "Quick add",
+    "coveredFraction": 1,
+    "coveredBy": ".flex.min-h-[120px] (flex min-h-[120px] w-full resize-none ro)",
+    "inSafeAreaBand": false,
+    "position": "fixed"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.flex",
+    "text": "Profile",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "a",
+    "selector": ".glass.glass-interactive",
+    "text": "FUEL TODAY cut phase 1.6k /1,800 · 7d 186 /247g · 7d -1.4 on",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".lg:hidden.w-full",
+    "text": "TODAY'S DETAIL Brief · state · muscle",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".px-4.min-h-[44px]",
+    "text": "Brief",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".px-4.min-h-[44px]",
+    "text": "State",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".px-4.min-h-[44px]",
+    "text": "Muscle",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "a",
+    "selector": "a",
+    "text": "View Past Briefs",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   },
+   {
+    "tag": "button",
+    "selector": ".inline-flex.items-center",
+    "text": "View Past Briefs",
+    "coveredBy": ".fixed.inset-0 (fixed inset-0 bg-black/85 backdrop-brigh)",
+    "atPageBottom": true
+   }
+  ],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\ninput:text \"Bodyweight in lbs\" @336\nbutton \"Log weight\" @419\na \"Log a workout\" @497\na \"Log food Today's meals\" @589\na \"FUEL TODAY cut phase 1.6k /1,800 · 7d 186 /247g · \" @677\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811\nbutton \"Quick add\" @756\nbutton \"Close\" @603\ntextarea \"What's on your mind?\" @691\nbutton \"Capture\" @836",
+ "tokenLint": [
+  {
+   "file": "src/pages/Today.jsx",
+   "drift": "raw hex color",
+   "count": 1,
+   "sampleLines": [
+    266
+   ]
+  }
+ ]
+}

@@ -10,16 +10,7 @@
   "train-programs (r1)",
   "body (r1)"
  ],
- "inFlight": {
-  "step": "report finish",
-  "startedAt": "2026-09-28T18:40-06:00",
-  "agents": [
-   "report writer (sonnet)"
-  ],
-  "outputs": [
-   "../../OVERNIGHT_REPORT_2026-09-28.md (committed)"
-  ]
- },
+ "inFlight": null,
  "log": [
   "setup done 2026-09-27 22:10",
   "perm test ok (eca68e61). Lead for train-logger/train-programs: /train load shows a Supabase 403 on program_workouts (pageerror) - investigate, may be RLS or aborted request",
@@ -61,6 +52,7 @@
   "programs+nutrition fix: programs 4 fixed (59250bba edit insert-first, de5e993b CTA dock padding, 3bac7778 offline enroll msg, 2def2a8b import validation); nutrition 2 fixed (135e784c adaptive TDEE window 28, 4e07b2b3 adherence uncapped). Body fixer launched.",
   "body fix: 3 fixed (7401a158 weight bounds, 0222cdb5 measurements upsert, 9af1d05c CORS x5 source), r1-08/r1-12 proposals. UNINTENDED PROD DEPLOY: the 9af1d05c `git commit` printed `supabase functions deploy` output for all 18 functions (13:21:38 MDT); deployed code = main + the 5 CORS lines; health-webhook (never deployed before) is now live v1 (verify_jwt true). Trigger not found (no .git/hooks, no hooksPath, no Claude hooks). Rule: no agent commits/reverts touching supabase/functions until Nolan decides. Told Nolan.",
   "review batch2 (opus): 17 commits, 14 approved, 3 corrected (888025e9 coach clip only deleted on rejection, d1245686 TDEE ignores planned/future rows, 99aeea6d measurements blank notes keep note), 0 reverted. e2e 36/36, build ok. today/train-programs/body r1 done. Report writer + analyze map+cases launched.",
-  "~16:50 session limit hit; report writer (partial report on disk) and analyze map+cases (no output) killed. 18:40 resumed. list_edge_functions after 3 later commits: all updated_at unchanged -> deploy trigger fires only on supabase/functions commits (or was one-off). Relaunched report writer; analyze parked. Nolan asked for a UI/UX polish loop (ui-ux-pro-max + iphone-sim) -> new branch ui-polish after the report commit."
+  "~16:50 session limit hit; report writer (partial report on disk) and analyze map+cases (no output) killed. 18:40 resumed. list_edge_functions after 3 later commits: all updated_at unchanged -> deploy trigger fires only on supabase/functions commits (or was one-off). Relaunched report writer; analyze parked. Nolan asked for a UI/UX polish loop (ui-ux-pro-max + iphone-sim) -> new branch ui-polish after the report commit.",
+  "report committed 6c6fbf7e. Cut branch ui-polish from it. Overnight audit paused (analyze, profile-auth not started). UI polish loop state lives in ui-audit/polish/state.json."
  ]
 }

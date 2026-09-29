@@ -1,0 +1,59 @@
+{
+ "id": "create-workout",
+ "path": "/create-workout",
+ "checks": {
+  "smallTargets": [
+   {
+    "tag": "input",
+    "selector": ".flex-1.self-stretch",
+    "text": "e.g., Push Pull Legs, Upper/Lower",
+    "size": "315x43"
+   },
+   {
+    "tag": "input",
+    "selector": ".flex-1.self-stretch",
+    "text": "e.g., Push-ups, Barbell Squat",
+    "size": "291x43"
+   }
+  ],
+  "smallText": [
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\ninput:text \"e.g., Upper Body Strength\" @196\nbutton \"Add description\" @259\ninput:text \"e.g., Push Pull Legs, Upper/Lower\" @336\nbutton \"Toggle options\" @336\nbutton \"Strength\" @413\ninput:number \"30\" @413\ninput:text \"e.g., Push-ups, Barbell Squat\" @602\nbutton \"Toggle options\" @602\ninput:number \"3\" @683\ninput:text \"e.g., 10-12\" @683\ninput:number \"180\" @683\ntextarea \"Form cues, variations, etc.\" @764\nbutton \"Add Exercise\" @868\nbutton \"Cancel\" @882\nbutton \"Save Workout\" @882\na \"Today\" @819\na \"Train\" @819\na \"Fuel\" @819\na \"Body\" @819",
+ "tokenLint": []
+}

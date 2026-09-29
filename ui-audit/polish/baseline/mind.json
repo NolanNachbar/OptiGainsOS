@@ -1,0 +1,133 @@
+{
+ "id": "mind",
+ "path": "/mind",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "CAPTURE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "READING",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "STUDY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "SKILLS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.mb-3",
+    "text": "NEW LEARNING LOG",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".section-label.mb-3",
+    "text": "RECENT STREAMS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "Sep 27, 7:39 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "Sep 27, 7:33 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "Jun 21, 9:51 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "Jun 21, 9:35 PM",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Mind",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"CAPTURE\" @135\nbutton \"READING\" @135\nbutton \"STUDY\" @135\nbutton \"SKILLS\" @135\ntextarea \"What did you learn today? Notes on books, courses,\" @242\nbutton \"Capture\" @387\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811\na \"Mind\" @811",
+ "tokenLint": [
+  {
+   "file": "src/pages/Mind.jsx",
+   "drift": "arbitrary radius rounded-[...]",
+   "count": 2,
+   "sampleLines": [
+    739,
+    801
+   ]
+  }
+ ]
+}

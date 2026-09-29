@@ -1,0 +1,109 @@
+{
+ "id": "train-hub",
+ "path": "/train",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "SCHEDULE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "LIBRARY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "PROGRAMS",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "button",
+    "selector": ".relative.shrink-0",
+    "text": "ACTIVITY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.inline-block",
+    "text": "STRENGTH",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.!text-muted-2",
+    "text": "TODAY, LOGGED",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label",
+    "text": "VIEW EXERCISES",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.mb-2",
+    "text": "THIS PROGRAM",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".section-label.truncate",
+    "text": "STRENGTH + BUD/S CONDITIONING",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\nbutton \"SCHEDULE\" @111\nbutton \"LIBRARY\" @111\nbutton \"PROGRAMS\" @111\nbutton \"ACTIVITY\" @111\nbutton \"Previous week\" @190\nbutton \"Next week\" @190\nbutton \"Use a template\" @246\nbutton \"MO 28 Lifting Session STRENGTH\" @312\nbutton \"TU 29 Rest\" @363\nbutton \"WE 30 Rest\" @407\nbutton \"TH 1 Rest\" @451\nbutton \"FR 2 Rest\" @495\nbutton \"SA 3 Rest\" @539\nbutton \"SU 4 Rest\" @583\nbutton \"VIEW EXERCISES\" @807\nbutton \"Log another session\" @863\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": []
+}

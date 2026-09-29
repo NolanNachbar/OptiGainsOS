@@ -1,0 +1,83 @@
+[
+  { "id": "fuel-today", "path": "/fuel", "usageRank": 1, "files": ["src/pages/FoodTracker.jsx"] },
+  { "id": "fuel-add-food-sheet", "path": "/food-tracker?addFood=true", "usageRank": 1, "files": ["src/pages/FoodTracker.jsx"],
+    "setup": [{ "settle": 900 }],
+    "note": "Add Food dialog open, search/manual entry tab. The global FAB is suppressed on /fuel (Layout.jsx showFab list) - its real 'Log Food' action navigates straight to this ?addFood=true URL, so the screen does too rather than clicking a FAB that doesn't exist here." },
+  { "id": "fuel-add-food-manual", "path": "/food-tracker?addFood=true", "usageRank": 1, "files": ["src/pages/FoodTracker.jsx"],
+    "setup": [{ "settle": 1500 }, { "blur": true }, { "click": "button:has-text('Manual entry')" }, { "settle": 700 }],
+    "note": "Add Food dialog, manual macro entry fields visible. The dialog autofocuses its search input, which pops iphone-sim's simulated keyboard - a pointer-events:auto overlay spanning from mid-screen to the bottom that silently swallows clicks on the Manual entry toggle beneath it (click 'succeeds' with no error, but the disclosure never opens). Blurring first dismisses it, same as tapping the sim's own Done key." },
+  { "id": "fuel-recipes", "path": "/fuel", "usageRank": 2, "files": ["src/pages/FoodTracker.jsx"],
+    "setup": [{ "clickText": "Recipes" }, { "settle": 800 }] },
+  { "id": "fuel-water", "path": "/fuel?tab=hydration", "usageRank": 3, "files": ["src/pages/Fuel.jsx", "src/pages/Supplements.jsx"],
+    "setup": [{ "settle": 700 }],
+    "note": "Hydration/Water sub-tab is URL-driven (Fuel.jsx reads ?tab=hydration, matching its own SubTabs onChange), not an in-page clickable 'Water' text - there is no such text on /fuel at all until this tab is already active, so the old clickText step could never find it." },
+  { "id": "food-tracker-search", "path": "/food-tracker", "usageRank": 2, "files": ["src/pages/FoodTracker.jsx"] },
+
+  { "id": "today", "path": "/today", "usageRank": 1, "files": ["src/pages/Today.jsx"] },
+  { "id": "today-fab-menu", "path": "/today", "usageRank": 1, "files": ["src/components/ui/FloatingActionButton.jsx"],
+    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 600 }],
+    "note": "FAB action menu open" },
+  { "id": "today-todos", "path": "/today", "usageRank": 1, "files": ["src/pages/Today.jsx", "src/components/dashboard/TodayActions.jsx"],
+    "setup": [{ "click": "button[aria-label='Add action']" }, { "settle": 600 }],
+    "note": "Today's Actions card has no tab labeled 'To-Do' - it's a single always-visible card headed 'Today's Actions'. This screen instead captures the distinct 'adding a new action' input state (tap +), since plain /today is already covered by the 'today' screen." },
+  { "id": "brief-history", "path": "/brief-history", "usageRank": 3, "files": ["src/pages/BriefHistory.jsx"] },
+
+  { "id": "train-hub", "path": "/train", "usageRank": 1, "files": ["src/pages/Train.jsx"] },
+  { "id": "train-library", "path": "/train?tab=library", "usageRank": 1, "files": ["src/pages/Train.jsx"] },
+  { "id": "workout-detail", "path": "/train?tab=library", "usageRank": 1, "files": ["src/pages/WorkoutDetail.jsx"],
+    "setup": [{ "click": "a[href*='workout-detail']" }, { "settle": 1400 }] },
+  { "id": "workout-logging-active", "path": "/train?tab=library", "usageRank": 1, "files": ["src/pages/WorkoutDetail.jsx", "src/components/workouts/ExerciseCard.jsx"],
+    "setup": [
+      { "click": "a[href*='workout-detail']" }, { "settle": 1400 },
+      { "clickTextIfPresent": "Start Fresh" }, { "settle": 700 },
+      { "click": "[data-tutorial='start-logging-btn']" }, { "settle": 1400 }
+    ],
+    "sessionCreating": true, "serial": true,
+    "note": "Active workout logging screen (creates a workout_sessions row - serial + cleaned up)" },
+  { "id": "workout-set-complete", "path": "/train?tab=library", "usageRank": 1, "files": ["src/components/workouts/ExerciseCard.jsx"],
+    "setup": [
+      { "click": "a[href*='workout-detail']" }, { "settle": 1400 },
+      { "clickTextIfPresent": "Start Fresh" }, { "settle": 700 },
+      { "clickIfPresent": "[data-tutorial='start-logging-btn']" }, { "settle": 1400 },
+      { "click": "[data-tutorial='exercise-card'] button" }, { "settle": 500 }
+    ],
+    "sessionCreating": true, "serial": true,
+    "note": "One set marked complete mid-logging" },
+  { "id": "workout-finish-dialog", "path": "/train?tab=library", "usageRank": 1, "files": ["src/components/workouts/WorkoutLoggingHeader.jsx"],
+    "setup": [
+      { "click": "a[href*='workout-detail']" }, { "settle": 1400 },
+      { "clickTextIfPresent": "Start Fresh" }, { "settle": 700 },
+      { "clickIfPresent": "[data-tutorial='start-logging-btn']" }, { "settle": 1400 },
+      { "settle": 300 }, { "clickIfPresent": "[aria-label*='Mark set 1 complete']" }, { "settle": 700 },
+      { "clickIfPresent": "[data-tutorial='finish-workout-btn']:visible" }, { "settle": 700 }
+    ],
+    "sessionCreating": true, "serial": true,
+    "note": "Finish Workout confirm dialog (the test fixture's first library workout is not always the same one - if it happens to have no exercises, Finish is legitimately inert per WorkoutLoggingHeader's own design and this screen instead captures that empty-workout state, not a setup bug)" },
+  { "id": "train-programs", "path": "/train?tab=programs", "usageRank": 1, "files": ["src/pages/Train.jsx"] },
+  { "id": "program-detail", "path": "/train?tab=programs", "usageRank": 1, "files": ["src/pages/ProgramDetail.jsx"],
+    "setup": [{ "click": "a[href*='/program/']" }, { "settle": 1400 }],
+    "note": "positive-control screen: mobile bottom CTA vs bottom dock (de5e993b)" },
+  { "id": "program-builder", "path": "/program-builder", "usageRank": 3, "files": ["src/pages/ProgramBuilder.jsx"] },
+  { "id": "create-workout", "path": "/create-workout", "usageRank": 2, "files": ["src/pages/CreateWorkout.jsx"] },
+  { "id": "quick-workout", "path": "/quick-workout", "usageRank": 3, "files": ["src/pages/QuickWorkout.jsx"] },
+  { "id": "weekly-schedule", "path": "/weekly-schedule", "usageRank": 2, "files": ["src/pages/WeeklySchedule.jsx"] },
+
+  { "id": "insights", "path": "/insights", "usageRank": 2, "files": ["src/pages/Insights.jsx"] },
+  { "id": "recovery", "path": "/recovery", "usageRank": 2, "files": ["src/pages/Recovery.jsx"] },
+  { "id": "athlete-state", "path": "/athlete-state", "usageRank": 3, "files": ["src/pages/AthleteState.jsx"] },
+
+  { "id": "mind", "path": "/mind", "usageRank": 3, "files": ["src/pages/Mind.jsx"] },
+  { "id": "coach", "path": "/coach", "usageRank": 3, "files": ["src/pages/Coach.jsx"] },
+  { "id": "physique", "path": "/physique", "usageRank": 3, "files": ["src/pages/Physique.jsx"] },
+  { "id": "career", "path": "/career", "usageRank": 4, "files": ["src/pages/Career.jsx"] },
+
+  { "id": "profile", "path": "/profile", "usageRank": 3, "files": ["src/pages/Profile.jsx"] },
+  { "id": "calculators-sheet", "path": "/today", "usageRank": 3, "files": ["src/components/ui/FloatingActionButton.jsx"],
+    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Calculators" }, { "settle": 800 }] },
+  { "id": "weigh-in-sheet", "path": "/today", "usageRank": 2, "files": ["src/pages/Today.jsx"],
+    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Weigh In" }, { "settle": 800 }] },
+  { "id": "stream-note-sheet", "path": "/today", "usageRank": 3, "files": ["src/pages/Today.jsx"],
+    "setup": [{ "click": "[data-tutorial='fab-button']" }, { "settle": 500 }, { "clickText": "Stream Note" }, { "settle": 800 }] },
+
+  { "id": "dead-route-guard", "path": "/workouts/detail?id=null", "usageRank": 5, "files": ["src/pages/WorkoutDetail.jsx"] }
+]

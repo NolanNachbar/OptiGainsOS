@@ -1,0 +1,972 @@
+{
+ "id": "athlete-state",
+ "path": "/athlete-state",
+ "checks": {
+  "smallTargets": [],
+  "smallText": [
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "STATE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "RECOVERY",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "PHYSIQUE",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "a",
+    "selector": ".shrink-0.px-3",
+    "text": "COACH",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "RECOVERY",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].font-semibold",
+    "text": "/100",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10.5px].font-semibold",
+    "text": "HRV 64ms",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "TSB",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10.5px].font-semibold",
+    "text": "recovering",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "VDOT",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-[9.5px]",
+    "text": "DAYS TO PST",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10.5px].font-semibold",
+    "text": "Aug 31 deadline",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "STRENGTH GOALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-muted-2",
+    "text": "-1.9 lbs/wk",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "14 sessions",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "LOAD READY",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-teal",
+    "text": "+9.9 lbs/wk",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "9 sessions",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "LOAD READY",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-muted-2",
+    "text": "-24.1 lbs/wk",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "9 sessions",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".lg:hidden.section-label",
+    "text": "DETAILS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.section-label",
+    "text": "BODY ANALYTICS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[10.5px]",
+    "text": "Fatigue · Volume · Endurance · Nutrition",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[10px].uppercase",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-semibold.text-muted-2",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": "span",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-muted-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".font-technical.text-[10px]",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h2",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.section-label",
+    "text": "ENGINE INTERNALS",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[10.5px]",
+    "text": "Adaptive engine · Weekly plan · Pace zones",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".text-lg.font-bold",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.flex",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".font-technical.text-[10px]",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label.mb-1",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".section-label",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "h3",
+    "selector": ".text-lg.font-bold",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.text-[10px]",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".glass-inset.px-2",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "p",
+    "selector": ".text-[10px].font-semibold",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".section-label.!text-ink",
+    "text": "",
+    "fontSize": 10.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".ml-auto.text-[10px]",
+    "text": "",
+    "fontSize": 10,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9.5px].uppercase",
+    "text": "",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9px].font-semibold",
+    "text": "",
+    "fontSize": 9,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9.5px].uppercase",
+    "text": "",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9px].font-semibold",
+    "text": "",
+    "fontSize": 9,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9.5px].uppercase",
+    "text": "",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9px].font-semibold",
+    "text": "",
+    "fontSize": 9,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9.5px].uppercase",
+    "text": "",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".text-[9px].font-semibold",
+    "text": "",
+    "fontSize": 9,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "div",
+    "selector": ".flex.items-center",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-faint",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".font-technical.font-extrabold",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-faint",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-faint",
+    "text": "",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[11px]",
+    "text": "upload · AI body-comp estimate · trend",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".block.text-[11px]",
+    "text": "HRV · RHR · sleep · ACWR trends",
+    "fontSize": 11,
+    "severity": "sub-12px-body"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Today",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Train",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Fuel",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   },
+   {
+    "tag": "span",
+    "selector": ".text-[9.5px].font-bold",
+    "text": "Body",
+    "fontSize": 9.5,
+    "severity": "sub-11px"
+   }
+  ],
+  "docOverflow": false,
+  "overflowingEls": [],
+  "occluded": [],
+  "contrastFails": []
+ },
+ "problems": [],
+ "warnings": [],
+ "note": null,
+ "controlsSnapshot": "a \"Profile\" @55\na \"STATE\" @111\na \"RECOVERY\" @111\na \"PHYSIQUE\" @111\na \"COACH\" @111\nbutton \"BODY ANALYTICS Fatigue · Volume · Endurance · Nutr\" @716\nbutton \"ENGINE INTERNALS Adaptive engine · Weekly plan · P\" @788\na \"Physique photos upload · AI body-comp estimate · t\" @876\na \"Today\" @811\na \"Train\" @811\na \"Fuel\" @811\na \"Body\" @811",
+ "tokenLint": [
+  {
+   "file": "src/pages/AthleteState.jsx",
+   "drift": "raw hex color",
+   "count": 1,
+   "sampleLines": [
+    349
+   ]
+  }
+ ]
+}
