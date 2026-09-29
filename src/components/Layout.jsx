@@ -277,7 +277,7 @@ export default function Layout({ children, currentPageName }) {
   // 48px body, tucked low toward the dock) so its body intrudes minimally on the
   // content column during scroll; --fab-clearance single-sources the bottom
   // reservation so screens don't each pad by hand.
-  const showFab = !["/create-workout", "/quick-workout", "/program-builder", "/workout-detail",
+  const showFab = !["/create-workout", "/quick-workout", "/program-builder", "/program/", "/workout-detail",
     "/train",
     "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
     "/fuel", "/food-tracker",

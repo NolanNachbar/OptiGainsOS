@@ -398,7 +398,7 @@ export default function ProgramDetail() {
                       onClick={() => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } })}
                       variant="volt"
                       size="lg"
-                      className="w-full"
+                      className="hidden md:flex w-full"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       {user ? "Start Program" : "Sign in to Start"}
@@ -422,14 +422,14 @@ export default function ProgramDetail() {
                     onClick={handleStartWorkout}
                     variant="volt"
                     size="lg"
-                    className="w-full"
+                    className="hidden md:flex w-full"
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Start Next Workout
                   </Button>
                 )}
                 {enrollment?.status === "paused" && (
-                  <Button variant="volt" size="lg" className="w-full" onClick={handleResume}>
+                  <Button variant="volt" size="lg" className="hidden md:flex w-full" onClick={handleResume}>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
