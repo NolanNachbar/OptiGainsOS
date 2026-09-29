@@ -50,12 +50,24 @@ const DRIFT_PATTERNS = [
   { re: /#[0-9a-fA-F]{3,8}\b/g, label: 'raw hex color' },
 ];
 
+// Strip comments before linting so a raw hex/color literal mentioned inside a
+// //... line comment or /* ... */ block comment (including a JSX {/* ... */}
+// comment, which is just a block comment inside braces) doesn't get flagged
+// as drift - it's not shipped CSS. Best-effort only (a "//" inside a string
+// literal, e.g. a URL, can still be stripped) since this only feeds a lint
+// report, never a code rewrite.
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
 function tokenLint(files) {
   const findings = [];
   for (const f of files || []) {
     const p = join(REPO, f);
     if (!existsSync(p)) { findings.push({ file: f, issue: 'file not found for lint' }); continue; }
-    const src = readFileSync(p, 'utf8');
+    const src = stripComments(readFileSync(p, 'utf8'));
     for (const { re, label } of DRIFT_PATTERNS) {
       const matches = [...src.matchAll(re)];
       if (matches.length) {
@@ -168,16 +180,30 @@ const CHECK_SCRIPT = () => {
     return (r.width < 44 || r.height < 44) && r.top < vh && r.bottom > 0;
   }).map((e) => ({ ...desc(e), size: (() => { const r = e.getBoundingClientRect(); return `${Math.round(r.width)}x${Math.round(r.height)}`; })() }));
 
-  // (b) small text: body text < 12px, any text < 11px
+  // (b) small text: body text < 12px, any text < 11px. The rubric
+  // deliberately uses a 10.5px `.section-label` eyebrow token (uppercase,
+  // tracked-out) - that pattern (and any other uppercase/tracked label at
+  // >=10.5px) is intentional, not drift, so it's excluded from both severity
+  // buckets rather than counted as a violation.
   const textNodesEls = [...document.querySelectorAll('body *')].filter((e) => {
     if (!vis(e)) return false;
     const hasDirectText = [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 0);
     return hasDirectText;
   });
+  const letterSpacingRatio = (cs, px) => {
+    const ls = cs.letterSpacing;
+    if (!ls || ls === 'normal') return 0;
+    const lsPx = parseFloat(ls);
+    if (Number.isNaN(lsPx) || !px) return 0;
+    return lsPx / px;
+  };
   const smallText = [];
   for (const e of textNodesEls) {
     const cs = getComputedStyle(e);
     const px = parseFloat(cs.fontSize);
+    const isEyebrow = e.classList.contains('section-label')
+      || (cs.textTransform === 'uppercase' && letterSpacingRatio(cs, px) >= 0.06);
+    if (isEyebrow && px >= 10.5) continue;
     if (px < 11) smallText.push({ ...desc(e), fontSize: px, severity: 'sub-11px' });
     else if (px < 12) smallText.push({ ...desc(e), fontSize: px, severity: 'sub-12px-body' });
   }
@@ -198,18 +224,39 @@ const CHECK_SCRIPT = () => {
   // read as "under the dock" purely because it's below the fold, which is
   // not a bug. That in-flow case is covered by a second pass after scrolling
   // to the bottom of the page (see occlusionStaticPass below).
+  // A control counts as "effectively fixed/sticky" if IT OR ANY ANCESTOR is,
+  // not just its own computed position. A static button inside a fixed
+  // bottom bar (e.g. ProgramDetail's sticky CTA) is fixed in effect - it
+  // never needs scrolling to reach - so it belongs in this pass with the
+  // same 5-point check, not in the static/in-flow pass below which only
+  // samples one center point.
+  const effectivePos = (e) => {
+    for (let n = e; n; n = n.parentElement) {
+      const p = getComputedStyle(n).position;
+      if (p === 'fixed' || p === 'sticky') return p;
+    }
+    return 'static';
+  };
   const occluded = [];
   for (const e of interactive) {
-    const pos = getComputedStyle(e).position;
+    const pos = effectivePos(e);
     if (pos !== 'fixed' && pos !== 'sticky') continue;
     const r = e.getBoundingClientRect();
     if (r.bottom <= 0 || r.top >= vh || r.right <= 0 || r.left >= vw) continue; // fully off-screen
+    // Inset the 4 corner sample points by the control's own border-radius
+    // (scaled) rather than a flat 4px: a flat 4px inset on a rounded-full
+    // circular button (e.g. a 48px FAB, radius 24px) lands the corner point
+    // in the corner cutout outside the circle, sampling whatever sits behind
+    // it there instead of the button itself - a false "0.8 covered" even
+    // when the whole visible disc is clear and clickable.
+    const br = parseFloat(getComputedStyle(e).borderRadius) || 0;
+    const inset = Math.max(4, br * 0.35);
     const pts = [
       [r.left + r.width / 2, r.top + r.height / 2, 'center'],
-      [r.left + 4, r.top + 4, 'top-left'],
-      [r.right - 4, r.top + 4, 'top-right'],
-      [r.left + 4, r.bottom - 4, 'bottom-left'],
-      [r.right - 4, r.bottom - 4, 'bottom-right'],
+      [r.left + inset, r.top + inset, 'top-left'],
+      [r.right - inset, r.top + inset, 'top-right'],
+      [r.left + inset, r.bottom - inset, 'bottom-left'],
+      [r.right - inset, r.bottom - inset, 'bottom-right'],
     ];
     let coveredCount = 0;
     let coveredBy = null;
@@ -219,12 +266,20 @@ const CHECK_SCRIPT = () => {
       const hit = stack[0];
       if (!hit) continue;
       const isSelfOrDescendant = hit === e || e.contains(hit) || hit.contains(e);
-      // A full-viewport scrim (a modal/dialog backdrop) intentionally makes
-      // everything behind it inert - that's the modal working as designed,
-      // not a rubric occlusion bug. Skip coverage attributed to one.
-      const hitRect = hit.getBoundingClientRect();
-      const isFullViewportScrim = hitRect.width >= vw - 4 && hitRect.height >= vh - 4 && hitRect.top <= 4 && hitRect.left <= 4;
-      if (!isSelfOrDescendant && !isFullViewportScrim) {
+      // A modal scrim, or a shared Dialog panel (`glass-sheet`, from
+      // dialog.jsx's DialogContent), intentionally makes everything behind it
+      // inert - that's the modal working as designed, not a rubric occlusion
+      // bug. Detect by the known literal class strings rather than rect-edge
+      // math (post-scroll, inside iphone-sim's own frame, a true full-
+      // viewport scrim's measured rect can land a few px off the exact 0/vw/vh
+      // edges that math expects). Note this deliberately does NOT exclude the
+      // FAB quick-add sheet's own `glass-elevated` panel: that's the one
+      // legitimate case (R1-02) where the modal's own panel covers the very
+      // control (the FAB's X) an athlete needs to close it, which the fixed
+      // pass must keep catching.
+      const hitClass = String(hit.className || '');
+      const isModalChrome = (hitClass.includes('bg-black/85') && hitClass.includes('inset-0')) || hitClass.includes('glass-sheet');
+      if (!isSelfOrDescendant && !isModalChrome) {
         coveredCount++;
         if (!coveredBy) coveredBy = desc(hit).selector + (hit.className ? ` (${String(hit.className).slice(0, 40)})` : '');
       }
@@ -291,9 +346,35 @@ const OCCLUSION_STATIC_PASS = () => {
     const sel = e.id ? `#${e.id}` : (e.className && typeof e.className === 'string' ? `.${e.className.trim().split(/\s+/).slice(0, 2).join('.')}` : e.tagName.toLowerCase());
     return { tag: e.tagName.toLowerCase(), selector: sel, text: t };
   };
+  // An open modal/sheet (Dialog, or the FAB quick-add menu - both render the
+  // identical literal "fixed inset-0 bg-black/85 ..." scrim div) legitimately
+  // makes the ENTIRE page behind it inert. That scrim is meant to cover the
+  // full viewport, but this sim runs the app inside iphone-sim's own frame,
+  // and after scrollTo() below the scrim's measured rect can land a few px
+  // off the exact 0/vw/vh edges this pass's own corner math expects - which
+  // let ~50 "clipped at page bottom" false positives through (every
+  // background control behind an open dialog, on workout-finish-dialog and
+  // today-fab-menu alike). Detect the scrim directly by its known class
+  // string instead of trusting rect-edge math post-scroll, and when it's
+  // open, skip this whole pass - nothing behind a real, working modal is a
+  // rubric occlusion bug.
+  const hasOpenModal = [...document.querySelectorAll('div')].some((e) => {
+    if (!vis(e)) return false;
+    const cls = String(e.className || '');
+    return cls.includes('bg-black/85') && cls.includes('inset-0');
+  });
+  if (hasOpenModal) return [];
+
   window.scrollTo(0, document.body.scrollHeight);
+  const effectivePos = (e) => {
+    for (let n = e; n; n = n.parentElement) {
+      const p = getComputedStyle(n).position;
+      if (p === 'fixed' || p === 'sticky') return p;
+    }
+    return 'static';
+  };
   const interactive = [...document.querySelectorAll('button,a[href],input,textarea,select,[role=button],[role=combobox],[role=option],[role=tab],[role=switch],[role=checkbox],[role=menuitem]')]
-    .filter(vis).filter((e) => { const p = getComputedStyle(e).position; return p !== 'fixed' && p !== 'sticky'; });
+    .filter(vis).filter((e) => { const p = effectivePos(e); return p !== 'fixed' && p !== 'sticky'; });
   const clipped = [];
   for (const e of interactive) {
     const r = e.getBoundingClientRect();
@@ -451,7 +532,10 @@ async function main() {
     const c = r.checks || {};
     const counts = {
       smallTargets: c.smallTargets?.length || 0,
-      smallText: c.smallText?.length || 0,
+      // Gate only on the real sub-11px violations; sub-12px-body items stay
+      // in the per-screen JSON as an informational list (rubric intentionally
+      // uses 11-11.5px chips/captions/unit suffixes, which aren't drift).
+      smallText: (c.smallText || []).filter((t) => t.severity === 'sub-11px').length,
       overflow: c.docOverflow ? 1 : 0,
       overflowingEls: c.overflowingEls?.length || 0,
       occluded: c.occluded?.length || 0,
