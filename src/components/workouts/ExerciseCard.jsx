@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,53 @@ export default function ExerciseCard({
 
   // Presentation only: the first un-completed set is the "active" set.
   const activeSetIndex = exercise.sets.findIndex((s) => !s.completed);
+
+  // Ledger per-exercise vitals (DESIGN.md dB .vit4): Target / Volume vs last /
+  // Best set — all derived from props already in memory (programExercise,
+  // progressionTargets, originalExercise, lastPerformance, exercise.sets), so
+  // this adds no fetch and can't change offline behavior. Any cell whose data
+  // doesn't exist is simply omitted (rendered null below), per spec "only
+  // where data exists". The Target cell reuses exactly the same conditional
+  // logic as the pre-existing header target line — same data, same rule.
+  const vitals = useMemo(() => {
+    let target = null;
+    if (isProgramMode && progressionTargets) {
+      const bits = [];
+      if (progressionTargets.workingWeight) bits.push(`${progressionTargets.workingWeight} ${weightUnit}`);
+      if (progressionTargets.dailyMin) bits.push(`min ${progressionTargets.dailyMin}`);
+      if (bits.length) {
+        target = { primary: bits.join(' · '), sub: programExercise?.rir_target ? `RIR ${programExercise.rir_target}` : null };
+      }
+    } else if (!isProgramMode && originalExercise) {
+      const setCount = Array.isArray(originalExercise.sets) ? originalExercise.sets.length : (originalExercise.sets || 3);
+      target = { primary: `${setCount} × ${originalExercise.reps || 10}`, sub: null };
+    }
+
+    const repsOf = (s) => (isHold ? s.duration_s : s.reps);
+    const completedSets = exercise.sets.filter(
+      (s) => s.completed && Number(s.weight) > 0 && Number(repsOf(s)) > 0
+    );
+    const currentVolume = completedSets.reduce((sum, s) => sum + Number(s.weight) * Number(repsOf(s)), 0);
+    const lastVolume = lastPerformance?.sets?.length
+      ? lastPerformance.sets.reduce((sum, s) => sum + Number(s.weight || 0) * Number(s.reps || 0), 0)
+      : 0;
+    const volume = currentVolume > 0 && lastVolume > 0
+      ? { current: Math.round(currentVolume), deltaPct: Math.round(((currentVolume - lastVolume) / lastVolume) * 100) }
+      : null;
+
+    let best = null;
+    if (completedSets.length > 0) {
+      const bestSet = completedSets.reduce((a, b) => (Number(b.weight) > Number(a.weight) ? b : a));
+      best = {
+        weight: bestSet.weight,
+        reps: repsOf(bestSet),
+        e1rm: !isHold && isE1rmEligibleSet(bestSet) ? Math.round(estimateOneRepMax(bestSet.weight, bestSet.reps)) : null,
+      };
+    }
+
+    if (!target && !volume && !best) return null;
+    return { target, volume, best };
+  }, [isProgramMode, progressionTargets, programExercise, originalExercise, exercise.sets, isHold, lastPerformance, weightUnit]);
 
   // Set-grid template (DESIGN.md dB .st) — SET | PREV | LOAD | REPS | (RIR) |
   // E1RM | ✓ | ✕. LOAD/REPS/RIR are real <input>s and ✓/✕ are real buttons,
@@ -547,6 +594,49 @@ export default function ExerciseCard({
             />
           ))}
         </div>
+
+        {/* Per-exercise vitals (DESIGN.md dB .vit4): Target / Volume vs last /
+            Best set. Only rendered cells with real data; the row itself is
+            skipped entirely when there's nothing to show. */}
+        {vitals && (
+          <div
+            className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mb-3 font-technical"
+            style={{ gridTemplateColumns: `repeat(${[vitals.target, vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
+          >
+            {vitals.target && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Target</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">{vitals.target.primary}</div>
+                {vitals.target.sub && <div className="text-[11px] text-ink-muted mt-0.5">{vitals.target.sub}</div>}
+              </div>
+            )}
+            {vitals.volume && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+                </div>
+                <div className="text-[11px] mt-0.5">
+                  <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
+                    {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
+                  </span>
+                  <span className="text-ink-muted"> vs last</span>
+                </div>
+              </div>
+            )}
+            {vitals.best && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.best.weight}×{vitals.best.reps}
+                </div>
+                {vitals.best.e1rm != null && (
+                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Column header */}
         <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
