@@ -11,20 +11,23 @@ const Button = React.forwardRef(({
 }, ref) => {
   const baseStyles = "inline-flex items-center justify-center gap-1.5 font-semibold cursor-pointer transition-[transform,background-color,border-color,box-shadow,color,opacity] duration-200 ease-[var(--ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:-translate-y-px active:translate-y-0 active:opacity-90 whitespace-nowrap tracking-[-0.01em]";
 
-  // Teal (var(--color-brand) #19C8A6) is THE single action color: a flat solid
-  // fill, never a blend or ramp. Solid-action variants share this teal `action`
-  // fill; everything secondary is frosted-glass ghost material.
+  // Off-white (var(--color-brand)) is THE single action color (Ledger: no
+  // brand hue): a flat solid fill, never a blend or ramp. Solid-action
+  // variants share this `action` fill; everything secondary is glass ghost
+  // material.
   // Disabled action must stop reading as a live CTA: drop the fill, neon
   // shadow + specular and fall back to a neutral charcoal-surface fill with
   // muted ink (text-ink-muted clears ≥3:1 on charcoal-surface; text-ink-faint
   // measured ~1.77:1 = effectively invisible) so the disabled state is
   // unmistakably inert yet still legible.
-  // Flat teal action — the Clean system bans ambient color glow ("Flat teal
-  // fill ... everything else is neutral"). The lift is a NEUTRAL black drop
-  // shadow on the elevation scale (matches --shadow-md), never a colored brand
+  // Flat off-white action — Ledger bans ambient color glow, and there's no
+  // brand hue left to glow with anyway. The lift is a NEUTRAL black drop
+  // shadow on the elevation scale (matches --shadow-md), never a colored
   // bloom. Flat solid fill and no inset specular. Do NOT re-add
   // `shadow-neon` or any rgba(brand) drop shadow here — that is the halo.
-  const action = "text-[var(--color-action-dark)] rounded-xl font-extrabold " +
+  // Weight dropped extrabold->semibold: SF Pro's extrabold reads noticeably
+  // heavier/blockier than Manrope's at the same numeric weight.
+  const action = "text-[var(--color-action-dark)] rounded-xl font-semibold " +
     "bg-[var(--color-brand)] hover:bg-[var(--brand-bright)] " +
     "[box-shadow:0_6px_18px_rgba(0,0,0,0.42)] " +
     "disabled:bg-none disabled:shadow-none disabled:[box-shadow:none] disabled:bg-charcoal-surface disabled:border disabled:border-charcoal-border disabled:text-ink-muted disabled:opacity-100";

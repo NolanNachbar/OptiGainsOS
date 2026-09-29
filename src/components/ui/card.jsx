@@ -1,10 +1,12 @@
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 
+// Ledger modules are flat full-bleed surfaces — `.glass` itself now forces
+// border-radius:0 (src/index.css), so no rounded-* class here.
 const Card = React.forwardRef(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`rounded-2xl glass text-ink transition-colors duration-200 ease-[var(--ease)] ${className}`}
+    className={`glass text-ink transition-colors duration-200 ease-[var(--ease)] ${className}`}
     {...props}
   />
 ));

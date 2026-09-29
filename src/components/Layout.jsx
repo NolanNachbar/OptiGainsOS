@@ -105,9 +105,11 @@ function isNavActive(item, pathname) {
 }
 
 function Wordmark({ size = 17 }) {
+  // Ledger: no brand hue. The wordmark reads as one neutral ink voice instead
+  // of a teal-accented second half (that accent no longer exists).
   return (
     <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size }}>
-      OPTI<span style={{ color: "var(--hue-teal)" }}>GAINS</span>
+      OPTIGAINS
     </span>
   );
 }
