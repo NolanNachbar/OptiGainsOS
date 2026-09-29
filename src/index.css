@@ -1,32 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ══════════════════════════════════════════════════════════════════════════
-   OPTIGAINS OS — "CLEAN" DESIGN SYSTEM
-   Flat, dark, data-forward. Numbers first; everything else gets quiet.
+/* Ledger module radius override. Plain rule (not @layer components) so it
+   wins over a call site's `rounded-2xl`/`rounded-xl` (Card.jsx/AppCard.jsx
+   both set those) without needing !important sprinkled everywhere — Tailwind
+   utilities are injected via @tailwind utilities above, and a later plain
+   rule of equal specificity wins in source order. Modules are full-bleed:
+   no radius, no shadow, no nesting (the .surface/.glass/.tile rule below in
+   @layer components still sets box-shadow: none via --shadow-1, this only
+   handles radius). `.glass-inset` (recessed metric cells) and controls
+   (button/input/badge/chip/tab) are NOT covered by this selector list and
+   keep their own small radius from the compressed tailwind.config.js scale. */
+.surface, .surface-2, .tile, .glass {
+  border-radius: 0;
+}
 
-   Identity:   #0F1216 field · solid charcoal cards · hue-coded data (each
-               datum owns one hue) · teal is THE action color · flat dock ·
-               Manrope everywhere · tabular numerals.
-   Materials:  cards are SOLID charcoal, each a step lighter as it rises,
-               lifted by soft shadow. No translucency, no blur, no inset
-               specular highlight, no ambient gradient — depth is the surface
-               tone plus shadow.
+/* ══════════════════════════════════════════════════════════════════════════
+   OPTIGAINS OS — "LEDGER" DESIGN SYSTEM (Direction B, ui-audit/polish/DESIGN.md)
+   Supersedes CLEAN. MacroFactor-style data ledger: charts lead, numbers sit
+   in tabular columns, one neutral off-white carries every action, color is
+   spent only where a macro is named or a delta is positive.
+
+   Identity:   #0B0C0E field · full-bleed modules (1px rule, 8px bg gap, no
+               radius/shadow/nesting) · off-white is THE action color (no
+               brand hue) · SF Pro · tabular numerals.
+   Materials:  modules are flat — depth is a rule + background gap, never
+               shadow. Raised chrome (dock/sheet/rest bar) is the one lifted
+               layer, via tone only (still no glow shadow).
    Motion:     one easing (cubic-bezier(.2,.7,.3,1)), 180–320ms, entrances
                rise 8px; nothing moves without communicating state.
    ══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── The field ──────────────────────────────────────────────────────── */
-  --color-bg:          #0F1216;
-  --color-surface:     #181C22;   /* solid charcoal card (level 1) */
-  --color-surface-2:   #1F242B;   /* raised card (level 2) */
-  --color-elevated:    #23282F;   /* float (level 3) */
-  --color-border:      #272D35;
-  --color-border-soft: #20252D;
+  --color-bg:          #0B0C0E;
+  --color-surface:     #141619;   /* full-bleed module */
+  --color-surface-2:   #1C1F23;   /* raised chrome: dock, sheet, selected row */
+  --color-elevated:    #20242A;   /* float: menus/popovers, one step above raised */
+  --color-border:      #25282D;   /* the module rule */
+  --color-border-soft: #1E2125;   /* quieter in-module hairline (table rows) */
   /* The single "empty track" material — the unfilled portion of every
      progress / segment / ring track (readiness + macro bars, NumberPicker
      ticks, calorie-ring stroke) AND the base fill of every skeleton /
@@ -39,38 +52,42 @@
   --color-track:       rgba(255, 255, 255, 0.08);
 
   /* ── Ink ────────────────────────────────────────────────────────────── */
-  --text-primary:   #F2F4F7;
-  --text-secondary: rgba(242, 244, 247, 0.72);
-  --text-muted:     rgba(242, 244, 247, 0.50);
-  --text-faint:     rgba(242, 244, 247, 0.38);
+  --text-primary:   #ECEEF1;
+  --text-secondary: #C6CAD1;
+  --text-muted:     #959CA6;
+  /* Deliberately NOT as dim as the module rule color (#25282D-ish t3 tier) —
+     that measured ~2.9:1 on the module bg, a contrastFails regression vs the
+     old CLEAN faint (~3.4:1). This is a mid gray, dimmer than muted but still
+     legible as UI text; t3-dim grays are reserved for rules/chart axes only,
+     never text. */
+  --text-faint:     #7B828C;
 
-  /* ── Teal — THE action color ────────────────────────────────────────── */
-  --color-brand:     #19C8A6;
-  --color-brand-rgb: 25 200 166;
-  --brand-bright:    #1ED9B4;   /* hover */
-  --brand-deep:      #12A589;   /* pressed / borders */
-  --color-action-dark: #05231D; /* dark ink on the teal action button */
-  --brand-tint:      #CFF7EE;   /* active tab ink on teal pill */
+  /* ── Off-white — THE action color (no brand hue, Ledger) ──────────────── */
+  --color-brand:     #ECEEF1;
+  --color-brand-rgb: 236 238 241;
+  --brand-bright:    #FFFFFF;   /* hover */
+  --brand-deep:      #D8DBE0;   /* pressed / borders */
+  --color-action-dark: #0B0C0E; /* dark ink on the off-white action button */
+  --brand-tint:      var(--text-primary);   /* active nav ink — no accent pill */
 
   /* ── Hue-coded data (each datum owns one — never decoration) ────────── */
-  --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity */
+  --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity (biometric, unrelated to the old brand teal) */
   --hue-teal-2: #4ECDC4;                                 /* HRV */
-  --hue-coral:  #EF7368;  --hue-coral-rgb: 239 115 104;  /* RHR · protein */
+  --hue-coral:  #EE7B61;  --hue-coral-rgb: 238 123 97;   /* RHR · protein (Ledger protein hue) */
   --hue-violet: #9B8CFF;  --hue-violet-rgb: 155 140 255; /* sleep · fatigue (ATL) */
-  --hue-green:  #7BC96F;  --hue-green-rgb: 123 201 111;  /* body battery · done states */
-  --hue-blue:   #5BA8F5;  --hue-blue-rgb: 91 168 245;    /* carbs · swim · cardio */
-  --hue-gold:   #F2B36B;  --hue-gold-rgb: 242 179 107;   /* kcal · deadline */
-  /* Fat sits one slot from kcal-gold on every macro surface, so it must read as
-     an unmistakably DIFFERENT hue, not a paler gold. Shifted to a cooler,
-     greener chartreuse-yellow (less amber/orange) so fat and calories never
-     collide. */
-  --hue-yellow: #E8D44A;  --hue-yellow-rgb: 232 212 74;  /* fat */
+  --hue-green:  #7CC389;  --hue-green-rgb: 124 195 137;  /* body battery · done states · positive delta (Ledger "gain") */
+  --hue-blue:   #6EA6DA;  --hue-blue-rgb: 110 166 218;   /* carbs · swim · cardio (Ledger carbs hue) */
+  /* Ledger gives calories no dedicated hue — it's the hero number, not a
+     colored datum. Retargeted to neutral ink so `.chip-gold` reads as a plain
+     glass pill instead of reviving the old kcal-gold/fat collision. */
+  --hue-gold:   var(--text-secondary);  --hue-gold-rgb: 198 202 209;   /* kcal · deadline — neutral now */
+  --hue-yellow: #E2B84E;  --hue-yellow-rgb: 226 184 78;  /* fat (Ledger fat hue) */
 
   /* ── Physiological spectrum (biometrics ONLY) ───────────────────────── */
-  --ok:   #7BC96F;  --ok-rgb:   123 201 111;
+  --ok:   #7CC389;  --ok-rgb:   124 195 137;
   --warn: #E2A23C;  --warn-rgb: 226 162 60;
   /* Destructive red — a deeper, cooler true-red, deliberately distinct from
-     teal (--color-brand #19C8A6). Teal is the single ACTION color; this is
+     the off-white action color. Off-white is the single ACTION color; this is
      the physiological-spectrum "bad" / destructive hue. They must never be the
      same RGB, or a red destructive control becomes impossible to express
      (button destructive, badge red, ConfirmDialog, "bad" biometric readouts).
@@ -83,12 +100,12 @@
      near-equal twin. This is the single allowed non-action-color hue; it stays
      reserved for genuine destruction. */
   --bad:  #E5484D;  --bad-rgb:  229 72 77;
-  --info: #5BA8F5;  --info-rgb: 91 168 245;
+  --info: #6EA6DA; --info-rgb: 110 166 218;
   /* ── CANONICAL COLOR LAW (SYS-09) — the one rule behind the drift ──────────
      Most spectrum-misuse defects collapse to a single under-enforced rule:
-     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and teal
-     (--color-brand #19C8A6) is the ONLY action color. Keep this greppable so
-     future drift is obvious.
+     the physiological spectrum is a BIOMETRIC READOUT vocabulary, and
+     off-white (--color-brand) is the ONLY action color. Keep this greppable
+     so future drift is obvious.
 
      (a) ok / warn / bad / info spectrum is reserved for BIOMETRIC readouts ONLY
          — readiness, HRV, RHR, sleep, ACWR, fatigue/recovery balance, body
@@ -105,48 +122,50 @@
      (c) FORM-VALIDATION / ATTENTION (required-field nudges, "please fix",
          soft warnings, empty-state prompts) is NOT biometric: render it as
          neutral glass + ink hierarchy (text-strong / text-muted / text-faint),
-         putting teal ONLY on the actual action (the submit/confirm control).
-         A warn-yellow validation banner = DRIFT (it poaches the spectrum).
+         putting the off-white action color ONLY on the actual action (the
+         submit/confirm control). A warn-yellow validation banner = DRIFT (it
+         poaches the spectrum).
      (d) EACH DATUM OWNS ONE HUE — color is data, not garnish. Macros are
-         fixed: kcal owns GOLD (--hue-gold), Protein = CORAL (--hue-coral),
-         Carbs = BLUE/carb (--hue-blue), Fat = YELLOW (--hue-yellow). Never
-         recolor a macro to fit a layout; never reuse coral as decoration. A
-         second action color, or a datum wearing a borrowed hue, is DRIFT. */
-  --color-positive: #5EDCD2;
+         fixed: Protein = CORAL (--hue-coral), Carbs = BLUE/carb (--hue-blue),
+         Fat = YELLOW (--hue-yellow). Calories/kcal own NO hue in Ledger — it's
+         the hero number, not a colored datum (--hue-gold is neutral ink; see
+         DESIGN.md). Never recolor a macro to fit a layout; never reuse coral
+         as decoration. A second action color, or a datum wearing a borrowed
+         hue, is DRIFT. */
+  --color-positive: #7CC389;
   --color-danger:   #E5484D;
-  --color-cardio:   #5BA8F5;
+  --color-cardio:   #6EA6DA;
 
   /* ── Data-viz series ────────────────────────────────────────────────── */
-  --viz-1: #5EDCD2;  /* teal — the protagonist series */
-  --viz-2: #5BA8F5;  /* blue */
-  --viz-3: #7BC96F;  /* green */
+  --viz-1: #ECEEF1;  /* off-white — the protagonist series (Ledger: no brand hue) */
+  --viz-2: #6EA6DA;  /* blue */
+  --viz-3: #7CC389;  /* green */
   --viz-4: #9B8CFF;  /* violet */
-  --viz-5: #5B6577;  /* slate — context series */
+  --viz-5: #4A5058;  /* gray — context series, matched to the module rule */
 
   /* ── Glass material parameters ──────────────────────────────────────── */
-  /* CLEAN: surfaces are SOLID, not translucent; specular is off (no glass
-     highlight). The .glass* class names are retained so callers don't churn,
-     but they now paint solid charcoal. */
-  --glass-bg:          #181C22;
-  --glass-inset-bg:    #14181D;
-  --glass-edge:        #272D35;
-  --glass-edge-strong: #333A44;
+  /* Ledger: full-bleed modules are FLAT — solid, no shadow (--shadow-1 below
+     is none). The .glass* class names are retained so callers don't churn.
+     Floating/raised chrome (dock, sheet, rest bar) is the one place Ledger
+     borrows Direction A's translucent-material identity (translucent iOS tab
+     bar), still opaque enough that busy content doesn't bleed through. */
+  --glass-bg:          #141619;
+  --glass-inset-bg:    #0F1113;
+  --glass-edge:        #25282D;
+  --glass-edge-strong: #3A4048;
   --glass-specular:    rgba(255, 255, 255, 0);
   /* Floating-chrome tint (dock, sticky headers, dropdowns, chart tooltips —
-     everything on .glass-elevated). Raised from 0.18 → 0.55 because at the
-     prior alpha page content read clearly THROUGH the floating dock (Fuel
-     weight history, RecoveryDetail axis) — chrome must de-emphasize what's
-     beneath it, not leave it half-legible. Paired with a stronger blur on
-     .glass-elevated. Still translucent (the liquid-glass identity), just
-     opaque enough to win over busy content. */
-  --dock-tint:         #1F242B;
+     everything on .glass-elevated). Translucent + blurred (A's tab-bar
+     material) but opaque enough that page content doesn't register through
+     it. */
+  --dock-tint:         rgba(28, 31, 35, 0.86);
   /* Sheet/dialog material — heavier & near-opaque so busy page content
-     never bleeds through behind a form (dock-tint is too transparent).
-     Raised to 0.98 so bright/coral page content can't register through
-     the translucent sheet (SYS-07). */
-  --sheet-bg:          #181C22;
-  --shadow-1: 0 6px 18px rgba(0, 0, 0, 0.42);
-  --shadow-2: 0 16px 40px rgba(0, 0, 0, 0.52);
+     never bleeds through behind a form (dock-tint is too transparent). */
+  --sheet-bg:          #1C1F23;
+  /* Modules are flat (no shadow); only floating chrome (dock/sheet/rest bar)
+     keeps a shadow, and even that is a quiet neutral lift, not a glow. */
+  --shadow-1: none;
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.45);
 
   /* THE one easing. RULE: every transition-colors / transition-transform /
      transition-all (and any bespoke `transition:`) MUST carry an explicit
@@ -241,7 +260,7 @@
   --floating-chrome-bottom: calc(var(--dock-total-height) + env(safe-area-inset-bottom) + 12px + var(--keyboard-inset));
 
   /* ── Type ───────────────────────────────────────────────────────────── */
-  --font-ui: 'Manrope', system-ui, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 }
 
 /* Bottom clearance for Layout's main content column. The active value (dock-
@@ -272,39 +291,41 @@ html.light {
   --text-muted:     rgba(23, 27, 34, 0.55);
   --text-faint:     rgba(23, 27, 34, 0.40);
 
-  --color-brand:     #0E8C76;
-  --color-brand-rgb: 14 140 118;
-  --brand-bright:    #12A589;
-  --brand-deep:      #0A6B5B;
-  --color-action-dark: #EAFBF5;
-  --brand-tint:      #0A3A30;
+  /* Ledger: no brand hue. Off-white becomes dark ink on a paper field — the
+     primary action is a solid dark-ink fill with a light ink label, the light-
+     mode mirror of the dark theme's off-white-on-dark. */
+  --color-brand:     #171B22;
+  --color-brand-rgb: 23 27 34;
+  --brand-bright:    #000000;
+  --brand-deep:      #2C333E;
+  --color-action-dark: #FFFFFF;
+  --brand-tint:      var(--text-primary);
 
   --hue-teal:   #14A89D;  --hue-teal-rgb: 20 168 157;
   --hue-teal-2: #109488;
-  --hue-coral:  #E05348;  --hue-coral-rgb: 224 83 72;
+  --hue-coral:  #D9654E;  --hue-coral-rgb: 217 101 78;   /* protein */
   --hue-violet: #6F5BE6;  --hue-violet-rgb: 111 91 230;
-  --hue-green:  #4D9A41;  --hue-green-rgb: 77 154 65;
-  --hue-blue:   #2F6FD0;  --hue-blue-rgb: 47 111 208;
-  --hue-gold:   #C07F2A;  --hue-gold-rgb: 192 127 42;
-  /* Light-theme fat — cooler/greener olive-yellow, pulled clear of kcal-gold
-     (#C07F2A) which the two were nearly sharing before (see :root rationale). */
-  --hue-yellow: #9A9A1E;  --hue-yellow-rgb: 154 154 30;
+  --hue-green:  #4F9A5C;  --hue-green-rgb: 79 154 92;    /* gain */
+  --hue-blue:   #3C7FB0;  --hue-blue-rgb: 60 127 176;    /* carbs */
+  /* No dedicated kcal hue in Ledger — neutral ink, matching :root. */
+  --hue-gold:   var(--text-secondary);  --hue-gold-rgb: 23 27 34;
+  --hue-yellow: #A9821F;  --hue-yellow-rgb: 169 130 31;  /* fat */
 
-  --ok:   #4D9A41;  --ok-rgb:   77 154 65;
+  --ok:   #4F9A5C;  --ok-rgb:   79 154 92;
   --warn: #C07F2A;  --warn-rgb: 192 127 42;
-  /* Destructive red — deeper, cooler true-red distinct from coral
-     (--color-brand #E05348) in the light theme. See :root for rationale. */
+  /* Destructive red — deeper, cooler true-red distinct from the off-white/ink
+     action color in the light theme. See :root for rationale. */
   --bad:  #CE2C31;  --bad-rgb:  206 44 49;
-  --info: #2F6FD0;  --info-rgb: 47 111 208;
-  --color-positive: #14A89D;
+  --info: #3C7FB0;  --info-rgb: 60 127 176;
+  --color-positive: #4F9A5C;
   --color-danger:   #CE2C31;
-  --color-cardio:   #2F6FD0;
+  --color-cardio:   #3C7FB0;
 
-  --viz-1: #14A89D;
-  --viz-2: #2F6FD0;
-  --viz-3: #4D9A41;
+  --viz-1: #171B22;
+  --viz-2: #3C7FB0;
+  --viz-3: #4F9A5C;
   --viz-4: #6F5BE6;
-  --viz-5: #8A93A1;
+  --viz-5: #A6ACB6;
 
   --glass-bg:          rgba(255, 255, 255, 0.72);
   --glass-inset-bg:    rgba(18, 24, 34, 0.04);
@@ -334,10 +355,13 @@ body {
 /* Legacy pages hardcode dark-on-dark text utilities; keep paragraphs legible. */
 p { color: var(--text-primary); }
 
-::selection { background: rgba(var(--hue-teal-rgb) / 0.30); }
+/* Ledger has no brand hue, so chrome-level highlights (selection, focus ring)
+   move off the biometric teal (--hue-teal, reserved for readiness/HRV data)
+   onto the neutral off-white action color. */
+::selection { background: rgba(var(--color-brand-rgb) / 0.30); }
 
 :focus-visible {
-  outline: 2px solid rgba(var(--hue-teal-rgb) / 0.55);
+  outline: 2px solid rgba(var(--color-brand-rgb) / 0.55);
   outline-offset: 2px;
 }
 
@@ -395,10 +419,13 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
 /* ══ Typography voices ═══════════════════════════════════════════════════ */
 
-/* Display — Manrope extra-bold, tight. The product's headline voice. */
+/* Display — SF Pro semibold, tight. The product's headline voice. Weight
+   dropped 800->700 vs the old Manrope voice: SF Pro's 800 optical weight
+   reads noticeably heavier/blockier than Manrope's at the same numeric
+   weight, so straight reuse of the old weight looked off-face. */
 .type-display {
   font-family: var(--font-ui);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.06;
   color: var(--text-primary);
@@ -434,13 +461,15 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   letter-spacing: -0.01em;
 }
 
-/* The one big number that matters on a screen. */
+/* The one big number that matters on a screen. Ledger's hero figures are 34
+   semibold at ~-2.5% tracking (specs.md); weight dropped 800->600 for the
+   same SF Pro optical-weight reason as .type-display above. */
 .hero-metric {
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .text-secondary { color: var(--text-secondary); }
@@ -449,17 +478,20 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 .text-ink       { color: var(--text-primary); }
 
 /* ══ Materials ════════════════════════════════════════════════════════════
-   CLEAN: one material, solid charcoal. Cards are opaque, lifted by soft
-   shadow; each elevation step is a tone lighter. No translucency, no blur,
-   no inset specular highlight. The .glass* names are retained so callers
-   don't churn — they paint solid surfaces now.
+   LEDGER: modules are FLAT full-bleed surfaces — a 1px rule, no radius, no
+   shadow, no nesting (depth is the 8px background gap between modules, not
+   elevation). The .glass* names are retained so callers don't churn — they
+   still paint the module surface, just flat now. Floating/raised chrome
+   (dock, sheet) is the one place that keeps translucency/blur/lift, borrowed
+   from Direction A.
    ═══════════════════════════════════════════════════════════════════════ */
 @layer components {
-  /* Card surface — every data card. Solid, hairline border, soft shadow. */
+  /* Module surface — every data module. Flat, hairline border, no shadow.
+     Radius is forced to 0 by the plain (non-@layer) override below `@tailwind
+     utilities`, which wins over a call site's `rounded-2xl`/`rounded-xl`. */
   .surface, .surface-2, .tile, .glass {
     background: var(--glass-bg);
     border: 0.5px solid var(--glass-edge);
-    border-radius: 16px;
     box-shadow: var(--shadow-1);
   }
   .tile { transition: background .2s var(--ease), border-color .2s var(--ease); }
@@ -485,10 +517,14 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     background: var(--glass-inset-bg);
   }
 
-  /* Floating chrome — dock, sidebar, sheets, floating controls. Solid and
-     opaque (CLEAN: no backdrop blur); it sits ABOVE content on shadow alone. */
+  /* Floating chrome — dock, sidebar, sheets, floating controls. Ledger
+     borrows Direction A's translucent iOS tab-bar material here (blur +
+     saturate over --dock-tint's translucent fill), the one place in the
+     system that isn't flat. */
   .glass-elevated {
     background: var(--dock-tint);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-2);
   }
@@ -522,15 +558,17 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     border-color: var(--glass-edge-strong);
   }
 
-  /* The teal action CTA — og-cta. Flat solid fill, no gradient, no inset
-     highlight (CLEAN). Painted with teal (--color-brand). `.cta-coral` is kept
-     as a back-compat alias selector so un-swept callers keep working. */
+  /* The off-white action CTA — og-cta. Flat solid fill, no gradient, no inset
+     highlight, no colored glow (Ledger: no brand hue to glow with — the B
+     mockup's `.btn` has no shadow at all). Painted with off-white
+     (--color-brand). `.cta-coral` is kept as a back-compat alias selector so
+     un-swept callers keep working. Weight dropped 800->600 for SF Pro. */
   .cta-action, .cta-coral {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; border-radius: 14px; white-space: nowrap;
-    font-size: 15px; font-weight: 800; color: var(--color-action-dark);
+    font-size: 15px; font-weight: 600; color: var(--color-action-dark);
     background: var(--color-brand);
-    box-shadow: 0 2px 8px rgba(var(--color-brand-rgb) / 0.30);
+    box-shadow: none;
     transition: transform .2s var(--ease), background .2s var(--ease);
   }
   .cta-action:hover, .cta-coral:hover { transform: translateY(-1px); background: var(--brand-bright); }

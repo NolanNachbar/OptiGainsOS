@@ -72,19 +72,25 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Manrope', 'system-ui', 'sans-serif'],
-        // Numerals are Manrope + tabular-nums in this identity; `font-mono`
-        // stays mapped so legacy micro-labels inherit the new voice.
-        mono: ['Manrope', 'system-ui', 'sans-serif'],
+        // Ledger: SF Pro via the system stack (the Manrope Google-font import
+        // is dropped in index.css). Numerals stay tabular-nums via the
+        // .font-technical/.hero-metric utilities; `font-mono` stays mapped so
+        // legacy micro-labels inherit the same voice.
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'system-ui', 'sans-serif'],
+        mono: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'system-ui', 'sans-serif'],
       },
+      // Ledger controls keep a SMALL radius (modules get 0 via the index.css
+      // override, not via this scale). Compressed from CLEAN's 8-24px ramp to
+      // ~8-10px so Button/Input/Badge/Select (`rounded-xl`/`rounded-lg`
+      // callers) read as tight control corners, not the old card radius.
       borderRadius: {
         'sm': '8px',
-        'DEFAULT': '10px',
-        'md': '12px',
-        'lg': '13px',
-        'xl': '16px',
-        '2xl': '20px',
-        '3xl': '24px',
+        'DEFAULT': '9px',
+        'md': '9px',
+        'lg': '10px',
+        'xl': '10px',
+        '2xl': '10px',
+        '3xl': '10px',
         'full': '9999px',
       },
       boxShadow: {
