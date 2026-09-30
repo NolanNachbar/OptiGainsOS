@@ -406,8 +406,12 @@ _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 # Assistance pools appended after the main goal lift (rotated by date, not
 # knapsack-selected). Bench → paused-comp 315; deadlift → 500 conventional via
 # submaximal work rather than heavy grinding.
+# "Weighted Dip" is deliberately NOT in this rotation pool (Nolan, 2026-09-30):
+# it is now always added to Upper A on top of whichever of these three rotates
+# in, so leaving it in the rotation pool too would risk picking it twice on the
+# week the rotation lands on it. See the unconditional add in _build_session.
 BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press",
-                       "Incline Bench Press", "Weighted Dip"]
+                       "Incline Bench Press"]
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
 
 # Chest hypertrophy press pool. The bench top set is a STRENGTH movement — 1-3 reps
@@ -1451,6 +1455,23 @@ def _balance_press_pull(exercises: list, split: str, focus_muscle: str = None,
                 1 for x in exercises
                 if not x.get("is_backoff") and x.get("pattern") == pattern) > 1
             is_assist = bool(e.get("is_assistance"))
+            # An assistance pick that duplicates the GOAL LIFT's own pattern
+            # (Larsen Press vs. Bench Press, both horizontal_push) can never
+            # actually win that pattern slot — the goal lift is protected
+            # above in _essential and is never dropped here, so
+            # _alternate_antagonists' later dedup pass will always remove the
+            # assistance duplicate regardless of what this balance pass keeps.
+            # Left at tier 2 (assistance) it could survive this pass only to
+            # be silently deduped afterward, consuming a press slot that then
+            # never materializes — exactly what happened to Upper A once the
+            # dip's extra budget let Larsen Press (tier 2, survives) sit next
+            # to Bench (goal, protected) and get erased by dedup after this
+            # function returned (2026-09-30). Rank it at tier 0, same as a
+            # plain duplicate, so it is dropped HERE instead, freeing the
+            # slot for a real, distinct press to fill it.
+            dup_of_goal = bool(pattern) and any(
+                x.get("is_goal") and x.get("pattern") == pattern
+                and not x.get("is_backoff") for x in exercises)
             # The LAST remaining non-goal chest press is lowest priority to drop,
             # not protected outright (2026-09-30, 3rd pass): an earlier version
             # made it untouchable, which — stacked on the goal lift and mandatory
@@ -1483,6 +1504,7 @@ def _balance_press_pull(exercises: list, split: str, focus_muscle: str = None,
             # whether it also happens to be assistance or (on the multi-chest-
             # press days) would otherwise have looked like a duplicate.
             tier = (3 if is_last_chest else
+                    0 if dup_of_goal else
                     2 if is_assist else
                     0 if is_dup else 1)
             return (tier, e.get("fatigue_cost", 2.0))
@@ -1593,6 +1615,28 @@ def _build_session(
         if split != "full_body_chest":
             excluded_names.add("Bench Press (Top Set)")
 
+    if split == "upper_a":
+        # Nolan, 2026-09-30: he likes doing dips, but as loaded Weighted Dip
+        # (added unconditionally below, alongside bench assistance), not the
+        # bodyweight Dip Pyramid — never program Dip Pyramid on Upper A. Left
+        # untouched on every other split (including if pinned elsewhere).
+        excluded_names.add("Dip Pyramid")
+        # Also excludes the third dip-family catalog entry, plain "Dips"
+        # (COMPOUND_PERIPHERAL, pattern="dip", muscles=[chest, triceps]) — not
+        # asked for directly, but leaving it eligible let the knapsack pick it
+        # for a triceps/shoulders slot once Dip Pyramid above was excluded,
+        # duplicating Weighted Dip's own "dip" pattern. Worse, both are
+        # chest-tagged, so the backstop trim's blanket focus-muscle protection
+        # (muscles[0] == focus_muscle, below) shielded BOTH from the tail trim
+        # ahead of Chest-Supported Row — the one real back compound Upper A
+        # needs — so Row got cut instead and the later press/pull rebalance
+        # had to gut several legitimate press picks to recover, collapsing a
+        # 7-budget default session to 5 items (2026-09-30, discovered via
+        # direct verification after the 9-item change). One dip movement
+        # (Weighted Dip) is what Nolan asked for; excluding "Dips" too removes
+        # the whole collision at its source instead of patching the fallout.
+        excluded_names.add("Dips")
+
     # Upper A/B share the same 11-muscle domain (see UPPER_A/B_MUSCLES comment) so
     # the knapsack alone always converges on the same compound per muscle. Bias
     # press patterns on A and pull patterns on B so the two variants actually read
@@ -1626,6 +1670,18 @@ def _build_session(
     # lowers that muscle's weekly volume. That is the intended trade — fewer,
     # harder stations rather than the same volume smeared wider. [COACH]
     target_exercises = int(target_exercises or 0)
+    # Nolan, 2026-09-30: "add [Weighted Dip] on to Upper A" — it always rides
+    # on top of Upper A's usual budget (4/6/8/12 at the various learned sizes),
+    # so the budget the muscle-slot allocator and the size trim work against is
+    # bumped by one FOR UPPER A ONLY before either runs — otherwise the first
+    # pass would just trim something else right back out to make room, or the
+    # extra muscle slot this unlocks (letting the dip's own press count land
+    # cleanly) would never open up. `_pre_dip_target` keeps the ORIGINAL budget
+    # tier (4/6/8/12) around for the live-ceiling comparison below, which still
+    # needs to recognise "default-or-smaller" by the old tiers, not the bumped one.
+    _pre_dip_target = target_exercises
+    if split == "upper_a" and target_exercises > 0:
+        target_exercises += 1
     if target_exercises > 0 and len(relevant) > 1:
         _goal_muscles = {
             (e.get("muscles") or [""])[0] for e in EXERCISES
@@ -1989,6 +2045,22 @@ def _build_session(
                 exercises.append(
                     _assistance_slot(bench_assist, wt, intensity, readiness_z))
 
+            # Nolan, 2026-09-30: "I do like doing dips ... add it on to Upper A
+            # ... but weighted [not Dip Pyramid]." Unconditional and ON TOP of
+            # whichever of the three BENCH_ASSISTANCE movements rotated in
+            # above — this is what the budget bump just above makes room for,
+            # taking Upper A from 8 to 9 exercises by design. Upper A only:
+            # Upper B's second chest press still comes from the separate
+            # CHEST_HYPERTROPHY_PRESS rotation, which may or may not land on
+            # Weighted Dip on its own schedule. Carries is_assistance through
+            # from the catalog entry, so on a genuinely tight budget it is
+            # trimmed the same way the other bench-assistance pick is —
+            # dropped only if the budget can't fit it, same as Nolan asked.
+            if (split == "upper_a" and canon("Weighted Dip") not in blocked
+                    and not any(e.get("name") == "Weighted Dip" for e in exercises)):
+                exercises.append(
+                    _assistance_slot("Weighted Dip", wt, intensity, readiness_z))
+
         # Deadlift top set → build the conventional 500 via SUBMAX assistance,
         # only on the day deadlift/hamstrings is actually the focus.
         if ex_copy.get("name") == "Deadlift (Top Set)" and is_focus_slot:
@@ -2215,25 +2287,44 @@ def _build_session(
             exercises = _balance_press_pull(exercises, split, focus_muscle)
             exercises = _alternate_antagonists(exercises, focus_muscle)
 
-    # Upper A/B live-ceiling cap (2026-09-30, 2nd pass): smoke.py's LIVE P1-6
-    # check ceilings every program_workouts row at 8 exercises
-    # (MAX_EXERCISES_PER_SESSION there) — a separate, harder invariant than this
-    # function's own target_exercises budget. The mandatory bicep/tricep/side-delt
-    # isolations "ride on top" of target_exercises by design (see their comment
-    # above), which is exactly what pushed a default 8-slot Upper A session to 9
-    # countable rows: the budget alone doesn't see them coming. Nolan's alternation
-    # rule allows an EQUAL press/pull split, not only "extra on lead", so when a
+    # Upper A/B live-ceiling cap (2026-09-30, 2nd pass; raised for Upper A
+    # 3rd pass, same date): smoke.py's LIVE P1-6 check ceilings every
+    # program_workouts row at 8 exercises (MAX_EXERCISES_PER_SESSION there) —
+    # a separate, harder invariant than this function's own target_exercises
+    # budget. The mandatory bicep/tricep/side-delt isolations "ride on top" of
+    # target_exercises by design (see their comment above), which is exactly
+    # what pushed a default 8-slot Upper A session to 9 countable rows: the
+    # budget alone doesn't see them coming. Nolan's alternation rule allows an
+    # EQUAL press/pull split, not only "extra on lead", so when a
     # default-or-smaller-budget session lands one over this ceiling with the
     # allowed +1-on-lead, force an even split instead of the usual 0-1 band —
-    # that's the one exercise this cap needs back. Skipped for an explicit larger
-    # learned budget (session_size_learned=12): that session is over 8 on purpose
-    # and isn't what this cap exists to catch.
-    _UPPER_AB_LIVE_CAP = 8   # mirrors smoke.py's MAX_EXERCISES_PER_SESSION
-    if split in _UPPER_AB_LEAD and target_exercises <= _UPPER_AB_LIVE_CAP:
+    # that's the one exercise this cap needs back.
+    #
+    # Upper A's ceiling is 9, not 8 (Nolan, 2026-09-30): "I do like doing dips
+    # ... maybe just add it on to Upper A" — Weighted Dip is meant to land as a
+    # genuine 9th exercise, on top of the usual 8, not be capped back off by
+    # this same invariant. Upper B's ceiling is unchanged at 8. smoke.py's
+    # MAX_EXERCISES_PER_SESSION carries the matching per-split exception.
+    # "default-or-smaller" is judged against `_pre_dip_target` (the ORIGINAL
+    # 4/6/8/12 budget tier, before this function's own +1 bump for Upper A
+    # above) — otherwise Upper A's bumped target (5/7/9/13) would never read as
+    # "default-or-smaller" and this cap would stop applying to it at all.
+    _UPPER_AB_LIVE_CAP = {"upper_a": 9, "upper_b": 8}
+    if split in _UPPER_AB_LEAD and _pre_dip_target <= 8:
+        _cap = _UPPER_AB_LIVE_CAP[split]
         _total = sum(1 for e in exercises if not e.get("is_backoff"))
-        if _total > _UPPER_AB_LIVE_CAP:
-            exercises = _balance_press_pull(exercises, split, focus_muscle, max_diff=0)
+        if _total > _cap:
+            # Try the normal 0-1 band first — for Upper A, 5 press / 4 pull is
+            # exactly 9 and already satisfies the raised cap without having to
+            # force an even split (which would needlessly cost the dip's own
+            # extra press slot). Only escalate to an exact 0-diff split if that
+            # still isn't enough (e.g. a neutral/core item pushed it further).
+            exercises = _balance_press_pull(exercises, split, focus_muscle, max_diff=1)
             exercises = _alternate_antagonists(exercises, focus_muscle)
+            _total = sum(1 for e in exercises if not e.get("is_backoff"))
+            if _total > _cap:
+                exercises = _balance_press_pull(exercises, split, focus_muscle, max_diff=0)
+                exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,

@@ -1301,6 +1301,20 @@ check("F19 Upper B keeps a compound press",
           for w in ("bench", "press", "dip")),
       f"upper_b={[e['name'] for e in _ub]}")
 
+# Nolan, 2026-09-30: "I do like doing dips so maybe just add it on to upper a
+# but maybe not pyramid anymore just weighted." Weighted Dip always rides on
+# top of Upper A's usual budget (9th exercise at default), Dip Pyramid is
+# never programmed on Upper A again, and the raised live-ceiling (9, not 8)
+# still holds at default budget — see the per-split _UPPER_AB_LIVE_CAP above.
+check("F19 Upper A default session contains Weighted Dip",
+      any(e["name"] == "Weighted Dip" for e in _ua),
+      f"upper_a={[e['name'] for e in _ua]}")
+check("F19 Upper A default session never contains Dip Pyramid",
+      not any(e["name"] == "Dip Pyramid" for e in _ua),
+      f"upper_a={[e['name'] for e in _ua]}")
+check("F19 Upper A default session has <= 9 exercises",
+      len(_ua) <= 9, f"n={len(_ua)} upper_a={[e['name'] for e in _ua]}")
+
 # Pattern-based versions of the two checks above (2026-09-30, 2nd pass): the name
 # substring match is loose (e.g. "press" also matches Overhead Press, which is
 # NOT a chest press) and _clean strips `pattern` from the output rows, so this
@@ -1382,7 +1396,10 @@ for _i in range(371):
 # combination Nolan happened to be on. session_size_learned=12 is EXPECTED to
 # exceed the live-ceiling check by design (an explicit larger learned budget),
 # so the ceiling assertion below is scoped to the other three.
-_UPPER_AB_LIVE_CAP = 8   # mirrors smoke.py's MAX_EXERCISES_PER_SESSION
+# mirrors smoke.py's MAX_EXERCISES_PER_SESSION: Upper A's ceiling is 9, not 8
+# (Nolan, 2026-09-30) — Weighted Dip is meant to land as a genuine 9th
+# exercise, on top of the usual 8. Upper B is unchanged at 8.
+_UPPER_AB_LIVE_CAP = {"upper_a": 9, "upper_b": 8}
 _budget_grid = [(_phase, _learned)
                 for _phase in (None, "cut")
                 for _learned in (4, 8, 12, None)]
@@ -1414,7 +1431,7 @@ for _phase, _learned in _budget_grid:
             _other_n = _cats.count(_other_cat)
             if not (0 <= (_lead_n - _other_n) <= 1):
                 _sweep_fail_bal.append(_tag + (_lead_n, _other_n))
-            if _learned != 12 and len(_ex) > _UPPER_AB_LIVE_CAP:
+            if _learned != 12 and len(_ex) > _UPPER_AB_LIVE_CAP[_split]:
                 _sweep_fail_cap.append(_tag + (len(_ex),))
             # Pattern-based compound checks, swept (2026-09-30, 3rd pass, per
             # advisor): NOT goal-lift-excluded here, unlike the single-fixture
@@ -1453,7 +1470,8 @@ check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) 
       "— counts balance within one",
       not _sweep_fail_bal, f"failures={_sweep_fail_bal[:5]}")
 check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets, "
-      f"excl. learned=12) — exercise count <= {_UPPER_AB_LIVE_CAP} (smoke.py P1-6)",
+      f"excl. learned=12) — exercise count <= {_UPPER_AB_LIVE_CAP} per split "
+      "(smoke.py P1-6)",
       not _sweep_fail_cap, f"failures={_sweep_fail_cap[:5]}")
 check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
       "— Upper A always keeps a genuine pull compound",

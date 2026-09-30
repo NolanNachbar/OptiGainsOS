@@ -539,19 +539,40 @@ else:
     # ── 3. exercise-count and set ceilings ───────────────────────────────────
     # P1-6: volume crept from 19 to 24 sets with nothing bounding it. These are
     # ceilings, not targets — they exist to catch runaway prescription.
-    MAX_EXERCISES_PER_SESSION = 8
+    #
+    # Upper A's ceiling is 9, not 8 (Nolan, 2026-09-30): "I do like doing dips
+    # ... maybe just add it on to upper a ... just weighted." Weighted Dip is
+    # meant to land as a genuine 9th exercise on Upper A, on top of the usual
+    # 8 — every other split (including Upper B) keeps the original ceiling of
+    # 8. Rows are matched to a split via the same title->split classifier the
+    # generator itself round-trips through (split_from_title / build_title,
+    # see session_generator.py and validate_convergence_fixes.py's F8), so
+    # this never depends on titles changing — a row whose title the
+    # classifier can't place falls back to the stricter, original 8-cap.
+    from engine.session_generator import split_from_title
+    DEFAULT_MAX_EXERCISES_PER_SESSION = 8
+    MAX_EXERCISES_PER_SESSION_BY_SPLIT = {"upper_a": 9}
     MAX_SETS_PER_SESSION = 30
     _over_ex, _over_sets = [], []
     for _r in _pw:
         _ex = _r.get("exercises") or []
         if not isinstance(_ex, list):
             continue
-        if len(_ex) > MAX_EXERCISES_PER_SESSION:
-            _over_ex.append(f"{_r['scheduled_date']}={len(_ex)}")
+        try:
+            _split = split_from_title(_r.get("title") or "")
+        except Exception:
+            _split = None
+        _cap = MAX_EXERCISES_PER_SESSION_BY_SPLIT.get(
+            _split, DEFAULT_MAX_EXERCISES_PER_SESSION)
+        if len(_ex) > _cap:
+            _over_ex.append(f"{_r['scheduled_date']}={len(_ex)} (cap={_cap}, "
+                             f"split={_split})")
         _sets = sum(int(e.get("sets") or 0) for e in _ex if isinstance(e, dict))
         if _sets > MAX_SETS_PER_SESSION:
             _over_sets.append(f"{_r['scheduled_date']}={_sets}")
-    check(f"P1-6 exercise count ≤ {MAX_EXERCISES_PER_SESSION} per session",
+    check(f"P1-6 exercise count per session within per-split ceiling "
+          f"(default {DEFAULT_MAX_EXERCISES_PER_SESSION}, "
+          f"upper_a {MAX_EXERCISES_PER_SESSION_BY_SPLIT['upper_a']})",
           not _over_ex, ", ".join(_over_ex[:4]))
     check(f"P1-6 total sets ≤ {MAX_SETS_PER_SESSION} per session",
           not _over_sets, ", ".join(_over_sets[:4]))
