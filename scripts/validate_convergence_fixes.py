@@ -1176,12 +1176,12 @@ _PLAN = [
     {"name": "Weighted Pull-up", "sets": 3, "rep_target": "6-8", "rir_target": 1, "rest_seconds": 150},
 ]
 
-def _presc(action="STRENGTH", **kw):
+def _presc(action="STRENGTH", split="upper_a", **kw):
     return _SG().generate(
         banister_state={}, interference={}, overreach={}, acwr=1.0,
         strength={"Bench (paused comp)": {"current_e1rm": 300}}, latest_pst={},
         nutrition_mod={}, vdot_zones={}, mileage_cap=20.0,
-        mpc_action=action, mpc_intensity=1.0, split_override="upper_a", **kw)
+        mpc_action=action, mpc_intensity=1.0, split_override=split, **kw)
 
 _free = _presc()
 _pin = _presc(planned_exercises=_PLAN)
@@ -1220,13 +1220,78 @@ check("F17 a REST day stays empty regardless of the plan",
 # pull-up is siphoned into calisthenics_block; if that still happened while
 # pinned, the checks above would pass on a strength_block that silently dropped a
 # planned lift, and the Train tab's one list would have no single block to match.
+# Checked on the "pull" split rather than upper_a/upper_b: those two now keep a
+# press/pull-classified calisthenics movement (pull-up, push-up, dip) IN
+# strength_block on purpose, because the F19 strict alternation below needs it
+# in the ordered list a Weighted Pull-up was Nolan's own example of a Upper B
+# opener (2026-09-30) — so upper_a/upper_b no longer exercise this teeth check.
 check("F17 the calisthenics split is live on an unpinned session (teeth)",
-      _free["calisthenics_block"] != {}, f"unpinned cal={_free['calisthenics_block']}")
+      _presc(split="pull")["calisthenics_block"] != {},
+      f"unpinned cal={_presc(split='pull')['calisthenics_block']}")
 check("F17 pinning routes calisthenics into the one list, not a second block",
       _pin["calisthenics_block"] == {}, f"got {_pin['calisthenics_block']}")
 check("F17 a pinned session's whole plan lands in strength_block",
       len(_pin["strength_block"]) == len(_PLAN),
       f"{len(_pin['strength_block'])} of {len(_PLAN)}")
+
+
+# ── F19: Upper A/B press/pull strict alternation (2026-09-30) ─────────────────
+# Nolan: "They both alternate but upper A starts with a press and upper B starts
+# with a pull. There shouldn't be two press exercises in a row or two pull
+# exercises in a row." Isolations count too — triceps/lateral raise/dips/OHP read
+# as press, curls/face pull/rear delt/shrugs read as pull. Counts must be equal or
+# off by one, with the extra on the day's lead category (A: press, B: pull), and
+# each day keeps its real compound on the non-lead side (a back compound on A, a
+# press compound on B) so the alternation isn't satisfied by isolations alone.
+print("\n--- F19: Upper A/B press/pull strict alternation ---")
+from engine.session_generator import _UPPER_PRESS_MUSCLES, _UPPER_PULL_MUSCLES, EXERCISES as _ALL_EX
+
+_BASE_MUSCLE = {}
+for _e in _ALL_EX:
+    _BASE_MUSCLE.setdefault(_bl(_e["name"]), (_e.get("muscles") or [None])[0])
+
+def _ab_cat(name):
+    m = _BASE_MUSCLE.get(_bl(name))
+    if m in _UPPER_PRESS_MUSCLES: return "press"
+    if m in _UPPER_PULL_MUSCLES: return "pull"
+    return "neutral"
+
+def _upper_session(split):
+    return _SG().generate(
+        banister_state={}, interference={}, overreach={}, acwr=1.0,
+        strength={"Bench (paused comp)": {"current_e1rm": 300}}, latest_pst={},
+        nutrition_mod={}, vdot_zones={}, mileage_cap=20.0,
+        mpc_action="STRENGTH", mpc_intensity=1.0, split_override=split)
+
+_ua = _upper_session("upper_a")["strength_block"]
+_ub = _upper_session("upper_b")["strength_block"]
+_ua_cats = [_ab_cat(e["name"]) for e in _ua if _ab_cat(e["name"]) != "neutral"]
+_ub_cats = [_ab_cat(e["name"]) for e in _ub if _ab_cat(e["name"]) != "neutral"]
+
+check("F19 Upper A opens on a press", _ua_cats[:1] == ["press"],
+      f"upper_a={[e['name'] for e in _ua]}")
+check("F19 Upper B opens on a pull", _ub_cats[:1] == ["pull"],
+      f"upper_b={[e['name'] for e in _ub]}")
+check("F19 Upper A has no two adjacent same-category movements",
+      all(_ua_cats[i] != _ua_cats[i + 1] for i in range(len(_ua_cats) - 1)),
+      f"cats={_ua_cats} names={[e['name'] for e in _ua]}")
+check("F19 Upper B has no two adjacent same-category movements",
+      all(_ub_cats[i] != _ub_cats[i + 1] for i in range(len(_ub_cats) - 1)),
+      f"cats={_ub_cats} names={[e['name'] for e in _ub]}")
+_ua_p, _ua_q = _ua_cats.count("press"), _ua_cats.count("pull")
+_ub_p, _ub_q = _ub_cats.count("press"), _ub_cats.count("pull")
+check("F19 Upper A press/pull counts balance, extra on press",
+      0 <= (_ua_p - _ua_q) <= 1, f"press={_ua_p} pull={_ua_q}")
+check("F19 Upper B press/pull counts balance, extra on pull",
+      0 <= (_ub_q - _ub_p) <= 1, f"press={_ub_p} pull={_ub_q}")
+check("F19 Upper A keeps a real back compound (row/pulldown/pull-up)",
+      any(w in e["name"].lower() for e in _ua
+          for w in ("row", "pulldown", "pull-up", "pullup")),
+      f"upper_a={[e['name'] for e in _ua]}")
+check("F19 Upper B keeps a compound press",
+      any(w in e["name"].lower() for e in _ub
+          for w in ("bench", "press", "dip")),
+      f"upper_b={[e['name'] for e in _ub]}")
 
 
 # ── F18: the browser's equipment table matches the Python source ─────────────
