@@ -97,14 +97,22 @@ export default function QuickWorkout() {
   const defaultTitle = "Quick Workout";
   const isCustomTitle = !!prescribed || workoutTitle !== defaultTitle;
   const [editingTitle, setEditingTitle] = useState(false);
-  const [showTitleInHeader, setShowTitleInHeader] = useState(false);
   const [resumeSession, setResumeSession] = useState(null);
+  // Review r4f BLOCKER: page-level cancel-confirm, matching WorkoutDetail's
+  // own showCancelConfirm/Dialog — Cancel workout is reachable from any
+  // exercise's kebab (onRequestCancelWorkout below), rather than the dead
+  // onCancel prop WorkoutLoggingHeader silently ignored since Phase A moved
+  // Cancel out of the header entirely.
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Review r4f MAJOR 3: QuickWorkout's DndContext/SortableContext/
+  // handleExerciseDragEnd wiring already exists below — reorderMode just
+  // needs to be lifted here and threaded through, same as WorkoutDetail.
+  const [reorderMode, setReorderMode] = useState(false);
   // Seed session notes with the pre-train check-in entered on Today (if any),
   // tagged PRE: so notes_parser.py attributes it to this session.
   const [sessionNotes, setSessionNotes] = useState(
     () => (location.state?.preNote ? `PRE: ${location.state.preNote}` : "")
   );
-  const workoutTitleRef = useRef(null);
   const sessionInitialized = useRef(false);
 
   // Rest timer — mirrors WorkoutDetail: an absolute end timestamp ticked every
@@ -252,21 +260,6 @@ export default function QuickWorkout() {
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise?.name);
     return replaceExerciseRaw(oldName, newExercise, suggestion || lastPerf?.lastWeight || 0);
   };
-
-  // Observe when workout title scrolls out of view
-  useEffect(() => {
-    if (!workoutTitleRef.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowTitleInHeader(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
-    );
-
-    observer.observe(workoutTitleRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   // On mount: check for an existing in-progress quick workout session
   useEffect(() => {
@@ -440,6 +433,14 @@ export default function QuickWorkout() {
     createSession({ exercises: [], startTime: Date.now() });
   };
 
+  // Review r4f BLOCKER: the logic that used to sit inline in the header's
+  // now-dead onCancel prop — reused by the page-level cancel-confirm Dialog
+  // below, reachable from any exercise's kebab (onRequestCancelWorkout).
+  const handleCancelLogging = () => {
+    cancelSession();
+    navigate("/dashboard");
+  };
+
   const handleSave = () => {
     if (exercises.length === 0) {
       toast.error("Add at least one exercise before saving");
@@ -464,10 +465,12 @@ export default function QuickWorkout() {
     <div className="min-h-screen relative">
       <WorkoutLoggingHeader
         workoutTitle={workoutTitle}
-        showTitleInHeader={showTitleInHeader}
-        onCancel={() => {
-          cancelSession();
-          navigate("/dashboard");
+        // Review r4f BLOCKER: give QuickWorkout the same back-chevron chrome
+        // as WorkoutDetail — same fallback pattern (no in-app history, e.g. a
+        // deep link or PWA cold start, must not exit the app entirely).
+        onBack={() => {
+          if (window.history.state?.idx > 0) navigate(-1);
+          else navigate("/dashboard");
         }}
         onFinish={handleSave}
         isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
@@ -480,6 +483,8 @@ export default function QuickWorkout() {
         // timer at rest until the prompt is resolved (null hides the cluster).
         startTime={resumeSession ? null : startTime}
         canFinish={exercises.length > 0}
+        doneSets={exercises.reduce((n, ex) => n + (ex.sets?.filter((s) => s.completed).length || 0), 0)}
+        totalSets={exercises.reduce((n, ex) => n + (ex.sets?.length || 0), 0)}
         restTimer={restTimer}
         restDuration={restDuration}
         onSkipRest={skipRestTimer}
@@ -497,7 +502,7 @@ export default function QuickWorkout() {
             : ""
         }`}
       >
-        <div ref={workoutTitleRef} className="mb-6 hidden lg:block">
+        <div className="mb-6 hidden lg:block">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-ink-muted" />
             {editingTitle ? (
@@ -762,6 +767,17 @@ export default function QuickWorkout() {
                         liked={isExerciseLiked(profile, exercise.name)}
                         onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exercise.name })}
                         dragHandleProps={dragHandleProps}
+                        // Review r4f BLOCKER: QuickWorkout has no single
+                        // "focused exercise" concept (every card renders full,
+                        // unlike WorkoutDetail's one-focused/rest-compact
+                        // model), so these are wired onto every card's kebab
+                        // rather than gated to one index — reachable from
+                        // wherever the athlete's eyes already are.
+                        onOpenCalculators={() => window.dispatchEvent(new Event("open-calculators"))}
+                        onRequestCancelWorkout={() => setShowCancelConfirm(true)}
+                        // Review r4f MAJOR 3: restore drag reorder.
+                        reorderMode={reorderMode}
+                        onToggleReorderMode={() => setReorderMode((v) => !v)}
                       />
                     )}
                   </SortableExerciseRow>
@@ -835,6 +851,32 @@ export default function QuickWorkout() {
                 paired with the neutral-outline Start Fresh. */}
             <Button variant="volt" size="lg" className="flex-1" onClick={handleResumeSession}>
               Resume
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel workout confirm — review r4f BLOCKER. Mirrors WorkoutDetail's
+          own Dialog copy/structure exactly; reachable from any exercise's
+          kebab (onRequestCancelWorkout above). */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel Workout?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            Your progress for this workout will be lost. Are you sure you want to cancel?
+          </DialogDescription>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
+              Keep Going
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => { setShowCancelConfirm(false); handleCancelLogging(); }}
+            >
+              Cancel Workout
             </Button>
           </div>
         </DialogContent>
