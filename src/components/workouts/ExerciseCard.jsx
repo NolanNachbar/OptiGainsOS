@@ -564,7 +564,7 @@ export default function ExerciseCard({
         type="button"
         onClick={() => onFocus?.()}
         data-testid={`exercise-row-${exerciseIndex}`}
-        className={`w-full min-h-[48px] flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-charcoal-borderSoft/30 ${
+        className={`w-full min-h-[48px] flex items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-charcoal-borderSoft/30 ${
           isLastRow ? "" : "border-b border-charcoal-border"
         }`}
       >
@@ -587,29 +587,38 @@ export default function ExerciseCard({
         <span className={`flex-1 min-w-0 truncate text-[14px] font-semibold ${isDone ? "text-ink-muted" : "text-ink"}`}>
           {exercise.name}
         </span>
+        {/* Two right-side columns on one line: target (muted) and last time
+            (full contrast, "–" when there's none). Previously "last time"
+            was hidden below the `sm:` breakpoint, so on the 428px logging
+            viewport the Next list only ever showed the target column and
+            read as if it were showing last-time values (coordinator, r4f). */}
         {isDone ? (
-          <span className="flex-shrink-0 font-technical text-[12px] text-ink-muted tabular-nums">
+          <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums">
             {doneCount}/{targetText || totalCount}
           </span>
         ) : (
           targetText && (
-            <span className="flex-shrink-0 font-technical text-[12px] text-ink-secondary tabular-nums">
+            <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums">
               {targetText}
             </span>
           )
         )}
-        {lastTimeText && (
-          <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums hidden sm:inline">
-            {lastTimeText}
-          </span>
-        )}
+        <span className="flex-shrink-0 font-technical text-[12px] text-ink-secondary tabular-nums">
+          {lastTimeText || "–"}
+        </span>
       </button>
     );
   }
 
   return (
     <>
-    <Card className="rise-in">
+    {/* Full-bleed module per DESIGN.md, matching the Next list below it: 1px
+        top/bottom rule, no radius, no shadow. Card/.glass applies a border +
+        shadow on all four sides (radius was already 0, so that border+shadow
+        combo — not radius — is what read as a "rounded, inset card" per the
+        coordinator, r4f), so this module now uses a plain div instead of
+        Card. */}
+    <div className="rise-in bg-charcoal-surface border-t border-b border-charcoal-border">
       <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -728,16 +737,9 @@ export default function ExerciseCard({
                   Replace exercise
                 </button>
                 )}
-                <button
-                  onClick={() => {
-                    setEditingNotes(true);
-                    setOpenMenu(false);
-                  }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  Add notes
-                </button>
+                {/* "Add notes" removed from here — the toolbar row above the
+                    exercise name already has its own Add-notes button, so
+                    this kebab entry was a duplicate (coordinator, r4f). */}
                 <button
                   onClick={() => {
                     setShowCues(true);
@@ -808,37 +810,59 @@ export default function ExerciseCard({
             fast-access variants of items also reachable from the kebab
             above, so the athlete doesn't have to open the menu for the
             three things they'd reach for mid-set. 44px targets, muted
-            icons, no labels — required aria-labels carry the meaning. */}
-        <div className="flex items-center gap-1 mt-1 -ml-2">
-          <button
-            type="button"
-            onClick={() => setShowCues(true)}
-            aria-label="Exercise history and info"
-            className="relative h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-          >
-            <HelpCircle className="w-[18px] h-[18px]" />
-            {hasPendingNotes && (
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
-            )}
-          </button>
-          {onReplaceExercise && (
+            icons, no labels — required aria-labels carry the meaning.
+            Target moved onto this same row (coordinator, r4f) — it used to
+            stack as its own two-line block ("TARGET" over "1 × 10") inside
+            the vitals grid below, which Nolan specifically dislikes.
+            Right-aligned, one line, muted labels + full-contrast values, so
+            it reads as a caption on the toolbar rather than its own module
+            cell. Volume/Best set stay in the vitals grid below exactly as
+            before — they only exist once there's logged data, unlike Target
+            which is static program info available from the first render. */}
+        <div className="flex items-center justify-between gap-2 mt-1 -ml-2">
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setShowReplaceDialog(true)}
-              aria-label="Swap exercise"
+              onClick={() => setShowCues(true)}
+              aria-label="Exercise history and info"
+              className="relative h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
+            >
+              <HelpCircle className="w-[18px] h-[18px]" />
+              {hasPendingNotes && (
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
+              )}
+            </button>
+            {onReplaceExercise && (
+              <button
+                type="button"
+                onClick={() => setShowReplaceDialog(true)}
+                aria-label="Swap exercise"
+                className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
+              >
+                <RefreshCw className="w-[18px] h-[18px]" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setEditingNotes(true)}
+              aria-label="Add notes"
               className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
             >
-              <RefreshCw className="w-[18px] h-[18px]" />
+              <FileText className="w-[18px] h-[18px]" />
             </button>
+          </div>
+          {vitals?.target && (
+            <div className="font-technical text-[13px] tabular-nums truncate pr-1">
+              <span className="text-ink-muted">Target </span>
+              <span className="text-ink font-bold">{vitals.target.primary}</span>
+              {vitals.target.sub && (
+                <>
+                  <span className="text-ink-muted"> · </span>
+                  <span className="text-ink font-bold">{vitals.target.sub}</span>
+                </>
+              )}
+            </div>
           )}
-          <button
-            type="button"
-            onClick={() => setEditingNotes(true)}
-            aria-label="Add notes"
-            className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-          >
-            <FileText className="w-[18px] h-[18px]" />
-          </button>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
@@ -861,8 +885,14 @@ export default function ExerciseCard({
                 e1RM · last {e1rmSpark.count} sessions
               </span>
               {e1rmSpark.delta !== 0 && (
+                // Real minus sign (U+2212, not a hyphen) + a space before the
+                // unit (coordinator, r4f: was "-6lbs" jammed together with a
+                // plain hyphen). weightUnit is the one unit label this whole
+                // card already uses everywhere else (column header, Volume,
+                // the e1RM figure itself) — kept here rather than inventing a
+                // second "lb" spelling, so the screen stays on one label.
                 <span className={`text-[11px] font-bold ${e1rmSpark.delta > 0 ? "text-leaf" : "text-ink-muted"}`}>
-                  {e1rmSpark.delta > 0 ? "+" : ""}{e1rmSpark.delta}{weightUnit}
+                  {e1rmSpark.delta > 0 ? "+" : "−"}{Math.abs(e1rmSpark.delta)} {weightUnit}
                 </span>
               )}
             </div>
@@ -895,21 +925,21 @@ export default function ExerciseCard({
           </div>
         )}
 
-        {/* Per-exercise vitals (DESIGN.md dB .vit4): Target / Volume vs last /
-            Best set. Only rendered cells with real data; the row itself is
-            skipped entirely when there's nothing to show. */}
-        {vitals && (
+        {/* Per-exercise vitals (DESIGN.md dB .vit4): Volume vs last / Best
+            set. Only rendered cells with real data; the row itself is
+            skipped entirely when there's nothing to show. Target used to
+            live here as a third stacked cell ("TARGET" over "1 × 10") —
+            moved up onto the icon-toolbar row above (coordinator, r4f:
+            Nolan dislikes vertical stacking, and Target is static program
+            info that's available before there's any set data, unlike these
+            two, which appear only once the athlete has actually logged
+            something). vitals.target itself is unchanged (still computed
+            above) — only where it renders moved. */}
+        {(vitals?.volume || vitals?.best) && (
           <div
             className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mb-3 font-technical"
-            style={{ gridTemplateColumns: `repeat(${[vitals.target, vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
+            style={{ gridTemplateColumns: `repeat(${[vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
           >
-            {vitals.target && (
-              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Target</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">{vitals.target.primary}</div>
-                {vitals.target.sub && <div className="text-[11px] text-ink-muted mt-0.5">{vitals.target.sub}</div>}
-              </div>
-            )}
             {vitals.volume && (
               <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
                 <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
@@ -1242,7 +1272,7 @@ export default function ExerciseCard({
           </p>
         ) : null}
       </CardContent>
-    </Card>
+    </div>
 
     {/* Replace exercise dialog (triggered from menu) */}
     <Dialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
