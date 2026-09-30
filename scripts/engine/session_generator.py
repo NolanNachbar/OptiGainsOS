@@ -1372,17 +1372,25 @@ def _balance_press_pull(exercises: list, split: str, focus_muscle: str = None) -
         return "neutral"
 
     def _essential(e):
-        # _is_chest_press is also protected: trimming the ONE non-goal chest press
-        # off Upper B (Incline DB Press has the lowest fatigue_cost of the two
-        # press candidates, so it was the trim's first pick) satisfies the count
-        # right up until the CHEST_HYPERTROPHY_PRESS backfill runs a few lines
-        # later, sees no chest press left, and re-adds one — undoing the balance
-        # this function exists to hold. Protecting it here means the trim reaches
-        # for Overhead Press instead, which the backfill doesn't care about.
+        # The LAST remaining non-goal chest press is also protected, but only the
+        # last: trimming it satisfies the count right up until the
+        # CHEST_HYPERTROPHY_PRESS backfill runs a few lines later, sees no chest
+        # press left, and re-adds one — undoing the balance this function exists
+        # to hold. Protecting every chest-press candidate instead of just the last
+        # one is too broad: on Upper A the knapsack can carry three at once
+        # (Reverse Grip assistance, Incline DB, Dip Pyramid), and blanket-
+        # protecting all three left only Overhead Press trimmable, which couldn't
+        # reach balance on its own — the assistance stack and the extra dip is
+        # exactly the padding this fix exists to remove. Checking "<=1 chest press
+        # left" instead means the trim still clears the assistance/duplicate
+        # presses first, and only refuses to touch the final one.
+        if _is_chest_press(e) and sum(
+                1 for x in exercises
+                if _is_chest_press(x) and not x.get("is_backoff")) <= 1:
+            return True
         return bool(e.get("is_goal") or e.get("is_mandatory_iso")
                     or e.get("is_iso_supplement")
-                    or (e.get("muscles") or [None])[0] == focus_muscle
-                    or _is_chest_press(e))
+                    or (e.get("muscles") or [None])[0] == focus_muscle)
 
     def _counts():
         p = sum(1 for e in exercises if not e.get("is_backoff") and _cat(e) == "press")
@@ -2063,11 +2071,21 @@ def _build_session(
     # an imbalanced total still ends up dumping the surplus at the tail. No-ops for
     # every other split. See _balance_press_pull for why the surplus is structural
     # (mandatory isolations + bench assistance are always press-heavy).
+    #
+    # Balance, then alternate, THEN balance again: _alternate_antagonists' own
+    # pattern-dedup (one movement per pressing/pulling PATTERN — see its :0 —
+    # e.g. Reverse Grip Incline and Incline DB Press are both incline_push) can
+    # drop a unit balance already counted, silently reopening the gap it just
+    # closed. A second pass is a no-op once the count is already right (the loop
+    # inside _balance_press_pull breaks immediately), so this costs nothing on
+    # every split it doesn't apply to and on an already-balanced session.
     exercises = _balance_press_pull(exercises, split, focus_muscle)
 
     # Alternate chest/back compounds so we never stack three chest movements in a
     # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
     # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
+    exercises = _alternate_antagonists(exercises, focus_muscle)
+    exercises = _balance_press_pull(exercises, split, focus_muscle)
     exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Chest hypertrophy press. Every day that benches gets one pressing movement
@@ -2096,6 +2114,9 @@ def _build_session(
             exercises.append(
                 _chest_press_slot(_press_pool[assist_week % len(_press_pool)],
                                   wt, intensity, readiness_z))
+            # Adding a press here can only ever tip Upper A/B further toward
+            # press — re-balance before the reorder, same reasoning as above.
+            exercises = _balance_press_pull(exercises, split, focus_muscle)
             exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap

@@ -1293,6 +1293,55 @@ check("F19 Upper B keeps a compound press",
           for w in ("bench", "press", "dip")),
       f"upper_b={[e['name'] for e in _ub]}")
 
+# The single fixture above is only today's date. `assist_week` (sim_date's ISO
+# week number) rotates the mandatory-isolation pick, the bench-assistance pick,
+# and the CHEST_HYPERTROPHY_PRESS pool every week — SessionGenerator.generate()
+# hardcodes sim_date = date.today() so a rotation week that breaks alternation
+# would only show up on the calendar week it lands on, and pass every other day
+# this suite happens to run. Sweep all 53 ISO weeks via the module-level
+# generate() (it takes sim_date directly, unlike the class wrapper) so a bad
+# rotation fails HERE instead of silently reaching the gated prod `generate` job
+# on the one week it rotates into a broken pick.
+from engine.session_generator import generate as _gen_session
+from datetime import date as _date, timedelta as _timedelta
+
+def _sweep_session(split, sim_date):
+    exercises, _ = _gen_session(action="STRENGTH", intensity=1.0,
+                                sim_date=sim_date, split_override=split)
+    return exercises
+
+_seen_weeks = set()
+_sweep_dates = []
+for _i in range(371):
+    _d = _date(2026, 1, 5) + _timedelta(days=_i)
+    _wk = _d.isocalendar()[1]
+    if _wk not in _seen_weeks:
+        _seen_weeks.add(_wk)
+        _sweep_dates.append(_d)
+
+_sweep_fail_open, _sweep_fail_adj, _sweep_fail_bal = [], [], []
+for _d in _sweep_dates:
+    for _split, _lead_cat, _other_cat in (("upper_a", "press", "pull"),
+                                           ("upper_b", "pull", "press")):
+        _ex = _sweep_session(_split, _d)
+        _cats = [_ab_cat(e["name"]) for e in _ex if _ab_cat(e["name"]) != "neutral"]
+        _wk = _d.isocalendar()[1]
+        if not _cats or _cats[0] != _lead_cat:
+            _sweep_fail_open.append((_wk, _split, _cats[:1]))
+        if any(_cats[i] == _cats[i + 1] for i in range(len(_cats) - 1)):
+            _sweep_fail_adj.append((_wk, _split, _cats))
+        _lead_n = _cats.count(_lead_cat)
+        _other_n = _cats.count(_other_cat)
+        if not (0 <= (_lead_n - _other_n) <= 1):
+            _sweep_fail_bal.append((_wk, _split, _lead_n, _other_n))
+
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — opens on the day's lead category",
+      not _sweep_fail_open, f"failures={_sweep_fail_open[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — no adjacent same-category movements",
+      not _sweep_fail_adj, f"failures={_sweep_fail_adj[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — counts balance within one",
+      not _sweep_fail_bal, f"failures={_sweep_fail_bal[:5]}")
+
 
 # ── F18: the browser's equipment table matches the Python source ─────────────
 # src/data/equipmentProfiles.json is generated from equipment_profiles.py so the
