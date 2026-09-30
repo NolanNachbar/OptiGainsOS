@@ -89,18 +89,27 @@ const MIN_LANDMARK_GAP = 150;
 // landmark are dropped, so dragging never produces two stops close enough to
 // read as the same number.
 const STOP_MERGE_RADIUS = 25;
+// Guard against a degenerate range (maintenance unknown and falling back to
+// a target that's at or barely above Peak cut, e.g. a fresh account): Peak
+// cut, Maintain and Peak bulk must always exist and be strictly ordered, so
+// Maintain's *slider-range* value is floored this far above Peak cut even
+// when the real/fallback maintenance sits right on top of it. This never
+// changes what's shown as the real maintenance number elsewhere (delta text
+// etc.) — it only keeps the slider itself from collapsing to a point.
+const MIN_MAINTAIN_ABOVE_CUT = 200;
 
-function buildLandmarks(maintenance) {
-  // Peak bulk is maintenance x 1.25, but when maintenance is unknown and
-  // falls back to a small current target (a fresh account, or exactly the
-  // test account's fixture, which has no engine history at all) that can sit
-  // AT or BELOW the fixed Peak cut floor — clamp the top to at least one step
-  // above Peak cut so the slider is never a zero- or negative-width range.
+function buildLandmarks(rawMaintenance) {
+  const maintenance = Number.isFinite(rawMaintenance)
+    ? Math.max(rawMaintenance, PEAK_CUT_KCAL + MIN_MAINTAIN_ABOVE_CUT)
+    : PEAK_CUT_KCAL + MIN_MAINTAIN_ABOVE_CUT;
+  // Peak bulk is maintenance x 1.25; the maintenance floor above already
+  // keeps this comfortably above Peak cut, but clamp anyway as a second
+  // guard against a negative- or zero-width slider.
   const sliderTop = Math.max(round50(maintenance * (1 + PEAK_BULK_SURPLUS)), PEAK_CUT_KCAL + SLIDER_STEP);
-  // Same low-maintenance case can push a *fractional* landmark (Cut, sized off
-  // maintenance) below Peak cut, which would break both the "smallest is
-  // always Peak cut" assumption below and true numeric ordering — clamp every
-  // landmark into [Peak cut, sliderTop] before sorting, not after.
+  // Clamp every landmark into [Peak cut, sliderTop] before sorting, not
+  // after, so the "smallest is always Peak cut" assumption below and true
+  // numeric ordering both hold even for a fractional landmark (Cut, sized
+  // off maintenance) that would otherwise land at or below Peak cut.
   let kept = LANDMARK_DEFS.map((d) => {
     const raw = d.key === "peak_cut" ? PEAK_CUT_KCAL : d.key === "maintain" ? maintenance : maintenance * (1 + d.frac);
     // Maintain is kept exact (the engine's real TDEE, not nudged to a grid);
@@ -114,6 +123,9 @@ function buildLandmarks(maintenance) {
   // (Cut/Mini cut sit below Maintain, which sits before them in the
   // definition order), so sort before the neighbour-gap dedupe below runs.
   kept.sort((a, b) => a.kcal - b.kcal);
+  // Peak cut / Maintain / Peak bulk must never be dropped, even if two of
+  // them end up crowded together — only a non-protected landmark (Cut, Mini
+  // cut, Lean bulk, Bulk) can be dropped for crowding a neighbour.
   let changed = true;
   while (changed) {
     changed = false;
@@ -121,7 +133,8 @@ function buildLandmarks(maintenance) {
       if (kept[i].kcal - kept[i - 1].kcal < MIN_LANDMARK_GAP) {
         const prevProtected = PROTECTED_LANDMARKS.has(kept[i - 1].key);
         const curProtected = PROTECTED_LANDMARKS.has(kept[i].key);
-        const dropIdx = prevProtected && !curProtected ? i : !prevProtected && curProtected ? i - 1 : i;
+        if (prevProtected && curProtected) continue; // both fixed — leave the narrow gap as-is
+        const dropIdx = curProtected ? i - 1 : i;
         kept.splice(dropIdx, 1);
         changed = true;
         break;
@@ -153,6 +166,18 @@ function buildStops(landmarks) {
 
 function nearestStop(value, stops) {
   return stops.reduce((best, s) => (Math.abs(s.kcal - value) < Math.abs(best.kcal - value) ? s : best), stops[0]).kcal;
+}
+
+// Index form of the above — this is what the native range input's value is
+// driven by (see the slider render), since an index-based input is what
+// makes each arrow-key press land on the adjacent stop instead of re-snapping
+// back to the same one.
+function nearestStopIndex(value, stops) {
+  let bestIdx = 0;
+  for (let i = 1; i < stops.length; i++) {
+    if (Math.abs(stops[i].kcal - value) < Math.abs(stops[bestIdx].kcal - value)) bestIdx = i;
+  }
+  return bestIdx;
 }
 
 // Large-figure label under the kcal readout: the landmark it's sitting on, or
@@ -270,6 +295,11 @@ export default function WeeklyPlanCard({ bare = false }) {
   const [showOverride, setShowOverride] = useState(false);
   const [overrideCal, setOverrideCal] = useState("");
   const [overrideProtein, setOverrideProtein] = useState("");
+  // Snapshot of the kcal value the sheet opened with, so an untouched save
+  // (see saveSlider) can tell "he never moved it" apart from "he moved it
+  // back to where it started" — both must skip the phase move, not just the
+  // former, so this is compared by value, not by a dirty flag.
+  const [openValue, setOpenValue] = useState(null);
 
   // The engine's real TDEE — the slider's "Maintain" center and the anchor
   // every other landmark and the delta readout are computed from. Two places
@@ -289,14 +319,24 @@ export default function WeeklyPlanCard({ bare = false }) {
   const stops = useMemo(() => buildStops(landmarks), [landmarks]);
   const sliderMin = landmarks[0].kcal; // always Peak cut, protected
   const sliderMax = landmarks[landmarks.length - 1].kcal; // always Peak bulk, protected
-  const sliderValue = nearestStop(Number(overrideCal) || maintenance, stops);
+  // The native <input> is INDEX-based (min=0, max=stops.length-1, step=1) so
+  // that native keyboard/screen-reader increment behavior lands on the next
+  // distinct stop every press — a value-based input with step=1 re-snaps via
+  // nearestStop on every change, which pulls a 1 kcal keyboard nudge right
+  // back to the SAME stop and makes arrow keys dead. aria-valuemin/max/now
+  // stay in kcal terms (see the input below) so screen readers still hear
+  // calories, not a raw index.
+  const sliderIndex = nearestStopIndex(Number(overrideCal) || maintenance, stops);
+  const sliderValue = stops[sliderIndex]?.kcal ?? maintenance;
   const sliderPct = (kcal) => ((kcal - sliderMin) / (sliderMax - sliderMin)) * 100;
   // Cool (cut) → off-white (maintain) → warm (bulk), the existing macro hues
   // (Ledger's carbs-blue / fat-gold) instead of a new brand color.
   const trackGradient = "linear-gradient(90deg, rgba(var(--hue-blue-rgb) / 0.55), rgba(var(--color-brand-rgb) / 0.35) 50%, rgba(var(--hue-yellow-rgb) / 0.55))";
 
   const openOverride = () => {
-    setOverrideCal(String(nearestStop(calTarget || maintenance, stops)));
+    const startVal = nearestStop(calTarget || maintenance, stops);
+    setOverrideCal(String(startVal));
+    setOpenValue(startVal);
     setOverrideProtein(proteinTarget ? String(Math.round(proteinTarget)) : "");
     setShowOverride(true);
   };
@@ -345,11 +385,25 @@ export default function WeeklyPlanCard({ bare = false }) {
   // maintenance+100 -> bulk, else maintain; skipped entirely if the phase
   // he's already in already matches (re-picking a phase you're already in
   // would otherwise reset the cut's 4-6 week clock for nothing).
+  //
+  // Two more cases must ALSO skip the phase move, not just "already matches":
+  //  - Maintenance unknown: there's no real TDEE to judge cut/bulk against
+  //    (maintenance here is a calTarget fallback, not a phase signal), so
+  //    deriving a phase from it is meaningless and would silently flip the
+  //    tracked phase to "maintain" on a plain untouched save.
+  //  - The slider wasn't actually moved from where the sheet opened: even
+  //    with a real maintenance, quantization/landmark snapping could pick a
+  //    different phase bucket than the currently-tracked one for the exact
+  //    value the sheet opened on, which would wrongly re-trigger a phase
+  //    change (and reset the cut clock) on a save that changed nothing.
   const saveSlider = async () => {
-    const targetPhase = sliderValue < maintenance - 100 ? "cut" : sliderValue > maintenance + 100 ? "bulk" : "maintain";
+    const untouched = sliderValue === openValue;
     const currentPhase = dietPhase || (isCut ? "cut" : "maintain");
     try {
-      if (targetPhase !== currentPhase) await setPhase.mutateAsync(targetPhase);
+      if (maintenanceKnown && !untouched) {
+        const targetPhase = sliderValue < maintenance - 100 ? "cut" : sliderValue > maintenance + 100 ? "bulk" : "maintain";
+        if (targetPhase !== currentPhase) await setPhase.mutateAsync(targetPhase);
+      }
       await setOverride.mutateAsync({ clear: false });
     } catch (e) {
       toast.error(e.message || "Couldn't save the target");
@@ -791,17 +845,22 @@ export default function WeeklyPlanCard({ bare = false }) {
                 <input
                   type="range"
                   className="diet-slider relative w-full"
-                  min={sliderMin}
-                  max={sliderMax}
-                  // step="1" on purpose: the visible stops (landmarks + 50
-                  // kcal fillers, see buildStops) aren't evenly spaced from
-                  // `min`, so a uniform native step can't represent them —
-                  // every change snaps to the nearest one in JS instead.
-                  // Home/End still land exactly on sliderMin/sliderMax
-                  // (Peak cut / Peak bulk) since those ARE the input bounds.
+                  // INDEX-based on purpose: the visible stops (landmarks +
+                  // 50 kcal fillers, see buildStops) aren't evenly spaced in
+                  // kcal, so a kcal-valued input with a uniform step can't
+                  // represent them without re-snapping in JS on every change
+                  // — and that re-snap is what made arrow keys dead (a 1
+                  // kcal keyboard nudge almost always re-snaps back to the
+                  // SAME stop). Indexing the stop list instead means every
+                  // native value IS a distinct stop, so each arrow press
+                  // moves exactly one. Home/End land on index 0 / last,
+                  // which are always Peak cut / Peak bulk (buildLandmarks
+                  // never drops either).
+                  min={0}
+                  max={stops.length - 1}
                   step={1}
-                  value={sliderValue}
-                  onChange={(e) => setOverrideCal(String(nearestStop(Number(e.target.value), stops)))}
+                  value={sliderIndex}
+                  onChange={(e) => setOverrideCal(String(stops[Number(e.target.value)]?.kcal ?? maintenance))}
                   aria-label="Daily calorie target"
                   aria-valuemin={sliderMin}
                   aria-valuemax={sliderMax}
@@ -810,18 +869,34 @@ export default function WeeklyPlanCard({ bare = false }) {
                 />
               </div>
               <div className="relative h-8 mt-0.5">
-                {landmarks.map((l) => (
-                  <div
-                    key={l.key}
-                    className="absolute -translate-x-1/2 text-center w-16"
-                    style={{ left: `${sliderPct(l.kcal)}%` }}
-                  >
-                    <div className="w-px h-1.5 bg-charcoal-border mx-auto" />
-                    <div className="text-[9px] uppercase tracking-wider text-ink-faint font-bold mt-0.5 leading-tight">
-                      {l.label}
+                {landmarks.map((l) => {
+                  // Only the three protected landmarks get visible text —
+                  // at 390px width, labeling all 7 landmarks collides. The
+                  // rest are bare ticks; their names still surface in the
+                  // big readout above when the thumb is on/near them (see
+                  // landmarkText). Peak cut/Peak bulk are pinned to the
+                  // track ends with edge alignment instead of the centered
+                  // translate used for everything else, so their text can
+                  // never overflow the dialog.
+                  const edge = l.key === "peak_cut" ? "left" : l.key === "peak_bulk" ? "right" : null;
+                  const showLabel = PROTECTED_LANDMARKS.has(l.key);
+                  return (
+                    <div
+                      key={l.key}
+                      className={edge ? "absolute text-center w-16" : "absolute -translate-x-1/2 text-center w-16"}
+                      style={edge ? { [edge]: 0 } : { left: `${sliderPct(l.kcal)}%` }}
+                    >
+                      <div className={edge === "left" ? "w-px h-1.5 bg-charcoal-border" : edge === "right" ? "w-px h-1.5 bg-charcoal-border ml-auto" : "w-px h-1.5 bg-charcoal-border mx-auto"} />
+                      {showLabel && (
+                        <div
+                          className={`text-[9px] uppercase tracking-wider text-ink-faint font-bold mt-0.5 leading-tight ${edge === "left" ? "text-left" : edge === "right" ? "text-right" : "text-center"}`}
+                        >
+                          {l.label}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
