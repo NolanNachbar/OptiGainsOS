@@ -519,6 +519,21 @@ export default function ExerciseCard({
   const [pendingDoneIndex, setPendingDoneIndex] = useState(null);
   useEffect(() => {
     if (pendingDoneIndex == null) return;
+    // Review r4f MAJOR 1: this effect fires both when a set is being
+    // completed for the first time AND when the keypad is just correcting a
+    // value (weight/reps/RIR) on a set that's already done -- onDone/pickRir
+    // don't distinguish the two, they always route through here. Re-calling
+    // handleSetCompleted(true) on an already-completed set re-fires its
+    // "completed" branch: onStartRestTimer unconditionally overwrites the
+    // rest timer with a fresh full-duration deadline (no guard for one
+    // already running), and the weight-typo guard / progression nudge can
+    // re-trigger too. If the set is already done, the field's value was
+    // already committed by commitWeight/commitReps/commitRir above -- just
+    // close out the pending-done gesture without re-running completion.
+    if (exercise.sets[pendingDoneIndex]?.completed) {
+      setPendingDoneIndex(null);
+      return;
+    }
     handleSetCompleted(pendingDoneIndex, true);
     setPendingDoneIndex(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -537,6 +552,19 @@ export default function ExerciseCard({
     if (activeField) fieldRef(activeField.setIndex, activeField.field)?.blur();
     setActiveField(null);
   };
+
+  // Review r4f minor: when isFocused flips false (auto-advance moved focus
+  // elsewhere, or the exercise was removed/reordered out from under it), the
+  // compact-row branch below unmounts the keypad sheet's portal, but this
+  // component itself stays mounted -- activeField is its own state and
+  // survives the switch. If this exercise is re-focused later, the stale
+  // activeField reopens the sheet on a field the user never tapped this
+  // time. Every OTHER way of leaving a field (tapping another row/chip, the
+  // outside-pointerdown listener) already clears it via closeKeypad; this
+  // covers the one path that doesn't -- isFocused itself changing.
+  useEffect(() => {
+    if (!isFocused) setActiveField(null);
+  }, [isFocused]);
 
   // Compact one-line row for every exercise other than the focused one
   // (mockup .nx: "name · target · last time"). Ledger rebuild (coordinator
