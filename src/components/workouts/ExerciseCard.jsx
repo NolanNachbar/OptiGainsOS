@@ -710,6 +710,11 @@ export default function ExerciseCard({
               ref={menuTriggerRef}
               onClick={() => setOpenMenu(!openMenu)}
               className="relative"
+              // Icon-only trigger had no accessible name at all (MoreVertical
+              // carries no text) -- named to match the sibling drag handle's
+              // own aria-label just above, and so the new r4f e2e specs have
+              // a stable, semantic way to reach Cancel workout / Calculators.
+              aria-label="Exercise options"
             >
               <MoreVertical className="w-5 h-5" />
               {/* Quiet signal that Notes & cues has something to say (a fresh
