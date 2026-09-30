@@ -167,7 +167,31 @@ export default function WorkoutLoggingHeader({
         className="fixed top-0 left-0 right-0 z-[9998] border-x-0 glass-elevated glass-elevated--substacked"
         style={{ top: 'var(--layout-header-height, 0px)' }}
       >
-        <div className="max-w-4xl mx-auto px-3 md:px-8 lg:pl-[248px] pt-2">
+        {/* Safe-area fix (coordinator, r4f): pt-2 alone left the clock/Rest/
+            Finish row under the iOS status bar when this runs as an
+            installed PWA (no browser chrome to push it down) — Finish sat
+            under the wifi/battery glyphs and was untappable. Inline style
+            (not a Tailwind pt-[...] arbitrary class) to match Layout.jsx's
+            already-working header pattern exactly: a Tailwind arbitrary
+            class turns into a *separate, CSS-escaped* selector, and the
+            iphone-sim probe's env()-rewrite only rewrites plain (unescaped)
+            "env(" text — it never touches the escaped selector, so the
+            rewritten class name on the element stops matching its own
+            (unrewritten) selector and the rule silently fails to apply in
+            probe screenshots (verified: computed padding-top came back 0px
+            with the class form, and the header visibly ran the elapsed-time
+            readout under the status bar). An inline style has no separate
+            selector to fall out of sync with, so it rewrites cleanly here
+            exactly as it already does for Layout.jsx. env() reads 0 on
+            Linux/WebKit probes; iphone-sim rewrites it to the calibrated
+            inset for screenshots, same as the real per-device value would
+            apply. The bar's real (now taller) height still gets measured by
+            the ResizeObserver below into --logging-top-clearance, so the
+            page's content offset follows automatically. */}
+        <div
+          className="max-w-4xl mx-auto px-3 md:px-8 lg:pl-[248px]"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
+        >
           <div className="flex items-center gap-2">
             {onBack && (
               <Button
@@ -247,7 +271,15 @@ export default function WorkoutLoggingHeader({
               onClick={onFinish}
               disabled={isSaving || !canFinish}
               variant={canFinish ? "volt" : "dim"}
-              className="min-h-[36px] lg:h-9 text-sm px-3.5 flex-shrink-0"
+              // Button's shared baseStyles apply disabled:opacity-50 to every
+              // variant uniformly, which stacks on top of "dim"'s already-
+              // muted ink/border and reads as a washed-out smear rather than
+              // a legible inert outline (coordinator, r4f). Override back to
+              // full opacity here only — "dim" itself is already the correct
+              // outlined/ghost inert look (transparent fill, charcoal-border
+              // ring, muted ink), it just needs to not ALSO get the generic
+              // disabled fade on top of it.
+              className="min-h-[36px] lg:h-9 text-sm px-3.5 flex-shrink-0 disabled:opacity-100"
               data-tutorial="finish-workout-btn"
             >
               {isSaving ? (
