@@ -823,12 +823,14 @@ export default function Today() {
         </Module>
 
         {/* 6 — To-do checklist. Self-hides when empty. */}
-        <TodayActions today={today} briefActions={briefActions} isError={briefError} />
+        <div className="-mx-4 sm:-mx-6 lg:mx-0">
+          <TodayActions today={today} briefActions={briefActions} isError={briefError} />
+        </div>
 
         {/* Below the fold: everything else — secondary or collapsed.
             Carb timing chip → Vitals + Brief/State/Muscle detail disclosure. */}
         {carbTimingToday && carbTimingToday.length > 0 && (
-          <div className="glass px-4 sm:px-5 py-3.5">
+          <div className="glass px-4 sm:px-5 py-3.5 -mx-4 sm:-mx-6 lg:mx-0">
             <div className="flex items-center gap-2 mb-1.5">
               <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
               <span className="section-label">
@@ -852,7 +854,7 @@ export default function Today() {
             card switched by the lighter inset SegmentedControl, plus the Vitals
             row. Now demoted below the four primary modules; still behind a
             mobile disclosure so it doesn't add scroll weight when collapsed. */}
-        <div className="surface overflow-hidden">
+        <div className="surface overflow-hidden -mx-4 sm:-mx-6 lg:mx-0">
           <div className="px-4 pt-3 lg:pt-4">
             <SectionLabel>Vitals</SectionLabel>
             <div className="vit4 grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">

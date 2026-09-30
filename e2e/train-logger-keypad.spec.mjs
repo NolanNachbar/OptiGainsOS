@@ -27,9 +27,19 @@ async function cleanup(workoutId) {
   await db.from('workouts').delete().eq('id', workoutId);
 }
 
+// Orphans from an interrupted run (workout_id already nulled) would trip the
+// no-exact-dupes index, so clear any log carrying this test's exercise first.
+async function clearOrphans() {
+  const db = await testDb();
+  const { data } = await db.from('workout_logs').select('id,exercises').is('workout_id', null);
+  const ids = (data || []).filter((l) => JSON.stringify(l.exercises).includes(EXERCISE)).map((l) => l.id);
+  if (ids.length) await db.from('workout_logs').delete().in('id', ids);
+}
+
 test('a full set logged entirely through the keypad sheet saves weight, reps and RIR', async ({ page }) => {
   const db = await testDb();
   const uid = await testUserId();
+  await clearOrphans();
 
   const workout = await db.from('workouts').insert({
     created_by: uid,
@@ -91,11 +101,16 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
 
     await page.getByRole('button', { name: 'Finish', exact: true }).click();
     await page.getByRole('button', { name: 'Log Workout' }).click();
-    await page.waitForTimeout(1200);
-
-    const { data: logs, error } = await db.from('workout_logs').select('*').eq('workout_id', workoutId);
-    expect(error).toBeNull();
-    expect(logs?.length).toBe(1);
+    // Poll rather than sleep: a slow save that lands after cleanup deletes
+    // the workout gets its workout_id nulled and then collides with every
+    // later run on the (created_by, log_date, exercises) unique index.
+    let logs = [];
+    await expect.poll(async () => {
+      const { data, error } = await db.from('workout_logs').select('*').eq('workout_id', workoutId);
+      expect(error).toBeNull();
+      logs = data || [];
+      return logs.length;
+    }, { timeout: 10000 }).toBe(1);
     const set1 = logs[0].exercises[0].sets[0];
     expect(set1.weight).toBe(185);
     expect(set1.reps).toBe(8);
