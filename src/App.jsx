@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveWorkoutSession } from '@/hooks/useActiveWorkoutSession';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,6 +58,28 @@ const Coach = lazy(() => import('./pages/Coach'));
 
 const queryClient = new QueryClient();
 
+// /workout-detail?id=... (a library workout) or ?source=program&programWorkoutId=...
+// (a program workout -- see useActiveWorkoutSession.js, PrescribedSessionCard.jsx,
+// ProgramDetail.jsx, WeeklySchedule.jsx, none of which pass `id` at all) reuses
+// the SAME component instance across different workouts -- react-router only
+// remounts on a path-param change, not a search-param one, so navigating from
+// one workout's detail page straight to another's (e.g. via a "next workout"
+// link) leaves WorkoutDetail mounted throughout. That matters because
+// useWorkoutSession's activeLoggingSessions registration is cleaned up only on
+// unmount (r6 review, major): without a remount, a session id registered for
+// the first workout never gets unregistered when the second workout's id
+// loads, leaking it into the registry and hiding it from the global
+// auto-finish sweep forever. Keying on BOTH id and programWorkoutId (not just
+// id) forces React to tear down and rebuild WorkoutDetail (and therefore
+// useWorkoutSession) whenever either changes -- keying on id alone would key
+// every program workout to the same 'none', since program links never carry
+// id -- so the old session's unregister cleanup always runs.
+function WorkoutDetailRoute() {
+  const [searchParams] = useSearchParams();
+  const routeKey = `${searchParams.get('id') || ''}|${searchParams.get('programWorkoutId') || ''}`;
+  return <WorkoutDetail key={routeKey} />;
+}
+
 const protectedRoutes = [
   { path: "/today", name: "Today", component: Today },
   { path: "/fuel", name: "Fuel", component: Fuel },
@@ -68,7 +90,6 @@ const protectedRoutes = [
   { path: "/food-tracker", name: "FoodTracker", component: FoodTracker },
   { path: "/create-workout", name: "CreateWorkout", component: CreateWorkout },
   { path: "/profile", name: "Profile", component: Profile },
-  { path: "/workout-detail", name: "WorkoutDetail", component: WorkoutDetail },
   { path: "/quick-workout", name: "QuickWorkout", component: QuickWorkout },
   { path: "/recovery", name: "Recovery", component: RecoveryDetail },
   { path: "/mind", name: "Mind", component: Mind },
@@ -220,6 +241,18 @@ function App() {
                           <ProgramDetail />
                         </ErrorBoundary>
                       </Layout>
+                    }
+                  />
+                  <Route
+                    path="/workout-detail"
+                    element={
+                      <ProtectedRoute>
+                        <Layout currentPageName="WorkoutDetail">
+                          <ErrorBoundary>
+                            <WorkoutDetailRoute />
+                          </ErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
                     }
                   />
                   {protectedRoutes.map(({ path, name, component: Page }) => (
