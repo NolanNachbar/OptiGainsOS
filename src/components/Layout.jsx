@@ -133,14 +133,34 @@ const TAB_ROOT_PAGES = new Set(["Today", "Train", "Workouts", "Fuel", "FoodTrack
 // these pages' own in-page back links already do (return to the prior route).
 const DRILL_DOWN_PAGES = new Set(["WorkoutDetail", "ProgramDetail", "ProgramBuilder", "QuickWorkout", "Profile", "BriefHistory"]);
 
+// Where the back chevron sends him when there's no in-app history to pop
+// (see the isDrillDown back button below) -- each drill-down's logical
+// parent tab, not a bare page reload of the drill-down itself.
+const DRILL_DOWN_ROOTS = {
+  WorkoutDetail: "/train",
+  ProgramDetail: "/train",
+  ProgramBuilder: "/train",
+  QuickWorkout: "/train",
+  Profile: "/today",
+  BriefHistory: "/today",
+};
+
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   // App-wide backstop for the 3h auto-finish rule (see useGlobalAutoFinish):
   // runs on every route Layout wraps, not just the workout page itself, so a
-  // forgotten Finish gets caught whichever page he opens next.
-  useGlobalAutoFinish(profile?.timezone);
+  // forgotten Finish gets caught whichever page he opens next. `ready` holds
+  // the sweep off until the profile query resolves, so the very first sweep
+  // never runs with an unconfirmed timezone (r5 review, major). Once resolved,
+  // a profile with no timezone set falls back to the device's own timezone
+  // explicitly, rather than relying on localDateOf's implicit fallback deep
+  // inside the write path.
+  useGlobalAutoFinish(
+    profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    !profileLoading
+  );
   const [showCalculators, setShowCalculators] = useState(false);
   // Bridge for pages whose own FAB is suppressed (e.g. the active workout
   // logger, whose kebab now carries "Calculators" per Phase A) to reach this
@@ -413,6 +433,8 @@ export default function Layout({ children, currentPageName }) {
                   type="button"
                   onClick={() => setQuickAddOpen(true)}
                   aria-label="Quick add"
+                  aria-haspopup="menu"
+                  aria-expanded={quickAddOpen}
                   data-testid="quick-add-button-desktop"
                   className="flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] transition-transform duration-150 [transition-timing-function:var(--ease)] hover:scale-105"
                 >
@@ -458,7 +480,21 @@ export default function Layout({ children, currentPageName }) {
               <>
                 <button
                   type="button"
-                  onClick={() => navigate(-1)}
+                  onClick={() => {
+                    // A deep link straight into a drill-down (push
+                    // notification, shared link, or a PWA cold-launch that
+                    // resumed on this exact route) has no prior history
+                    // entry in this session. navigate(-1) there either
+                    // no-ops or, worse, pops a standalone iOS PWA out of its
+                    // own installed app shell. history.state?.idx is 0 (or
+                    // missing) only when there's nowhere real to go back to;
+                    // fall back to the drill-down's own logical tab root.
+                    if (!window.history.state?.idx) {
+                      navigate(DRILL_DOWN_ROOTS[currentPageName] || "/today", { replace: true });
+                    } else {
+                      navigate(-1);
+                    }
+                  }}
                   aria-label="Back"
                   className="shrink-0 flex items-center justify-center h-11 w-11 -ml-2"
                 >
@@ -613,6 +649,8 @@ export default function Layout({ children, currentPageName }) {
             type="button"
             onClick={() => setQuickAddOpen(true)}
             aria-label="Quick add"
+            aria-haspopup="menu"
+            aria-expanded={quickAddOpen}
             data-testid="quick-add-button"
             className="flex items-center justify-center w-12 h-12 -mt-4 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] shadow-[0_4px_12px_rgba(0,0,0,0.35)] transition-transform duration-150 [transition-timing-function:var(--ease)] active:scale-95"
           >
