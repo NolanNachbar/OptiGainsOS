@@ -125,7 +125,7 @@ export default function QuickWorkout() {
 
   const { sessionIdRef, checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, getSessionStatus, saveFailed, retrySave } = useWorkoutSession();
 
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, settled: profileSettled } = useProfile();
   const toggleLike = useToggleExerciseLike();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
@@ -262,14 +262,17 @@ export default function QuickWorkout() {
   };
 
   // On mount: check for an existing in-progress quick workout session.
-  // Gated on profileLoading, same as the global sweep in useGlobalAutoFinish
-  // (Layout.jsx) -- a cold deep-link straight into this page could otherwise
-  // run autoFinishSession before the profile query resolves, filing a swept
+  // Gated on profileSettled (r6 review, major: `!isLoading` alone reads false
+  // for one render while a disabled->enabled profile query is still spinning
+  // up, before it's fetched anything -- `settled` requires isFetched/isSuccess
+  // or an error), same as the global sweep in useGlobalAutoFinish (Layout.jsx)
+  // -- a cold deep-link straight into this page could otherwise run
+  // autoFinishSession before the profile query resolves, filing a swept
   // workout under the device's timezone instead of his actual profile one.
-  // Once resolved, a profile with no timezone set falls back to the device's
+  // Once settled, a profile with no timezone set falls back to the device's
   // own Intl timezone explicitly.
   useEffect(() => {
-    if (!user || profileLoading || sessionInitialized.current) return;
+    if (!user || !profileSettled || sessionInitialized.current) return;
     sessionInitialized.current = true;
     const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     checkForActiveSession({}).then((session) => {
@@ -321,7 +324,7 @@ export default function QuickWorkout() {
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, profileLoading]);
+  }, [user, profileSettled]);
 
   // Auto-save after every set update (fires when exercises state changes)
   useEffect(() => {

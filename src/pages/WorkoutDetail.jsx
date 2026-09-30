@@ -183,7 +183,7 @@ export default function WorkoutDetail() {
   const programWorkoutId = urlParams.get('programWorkoutId');
 
   // Fetch user profile to get weight unit preference
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, settled: profileSettled } = useProfile();
 
   // Equipment substitution. rawWorkout is what's stored; `workout` is what he can
   // actually run where he is today. A library workout never passes through the
@@ -364,17 +364,20 @@ export default function WorkoutDetail() {
   const isTutorialDemo = urlParams.get('tutorial') === 'demo';
 
   // On mount, check for an in-progress session to offer resumption. Gated on
-  // profileLoading, same as the global sweep in useGlobalAutoFinish
-  // (Layout.jsx) -- a cold deep-link straight into this page could otherwise
-  // run autoFinishSession before the profile query resolves, filing a swept
+  // profileSettled (r6 review, major: `!isLoading` alone reads false for one
+  // render while a disabled->enabled profile query is still spinning up,
+  // before it's fetched anything -- `settled` requires isFetched/isSuccess or
+  // an error), same as the global sweep in useGlobalAutoFinish (Layout.jsx)
+  // -- a cold deep-link straight into this page could otherwise run
+  // autoFinishSession before the profile query resolves, filing a swept
   // workout under the device's timezone instead of his actual profile one.
-  // Once resolved, a profile with no timezone set falls back to the device's
+  // Once settled, a profile with no timezone set falls back to the device's
   // own Intl timezone explicitly. mountCheckDoneRef keeps this a true
-  // "on mount" check (once profileLoading first clears) rather than
-  // re-running every time profileLoading happens to re-flip.
+  // "on mount" check (once profileSettled first flips true) rather than
+  // re-running every time profileSettled happens to re-flip.
   const mountCheckDoneRef = useRef(false);
   useEffect(() => {
-    if (isTutorialDemo || profileLoading || mountCheckDoneRef.current) {
+    if (isTutorialDemo || !profileSettled || mountCheckDoneRef.current) {
       return;
     }
     mountCheckDoneRef.current = true;
@@ -440,7 +443,7 @@ export default function WorkoutDetail() {
       setResumeSession(session);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileLoading]);
+  }, [profileSettled]);
 
   // Flipping the equipment toggle mid-session rewrites the live logger too.
   // The seeding effect below only runs on an empty log, so without this the

@@ -148,18 +148,21 @@ const DRILL_DOWN_ROOTS = {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, settled: profileSettled } = useProfile();
   // App-wide backstop for the 3h auto-finish rule (see useGlobalAutoFinish):
   // runs on every route Layout wraps, not just the workout page itself, so a
   // forgotten Finish gets caught whichever page he opens next. `ready` holds
-  // the sweep off until the profile query resolves, so the very first sweep
-  // never runs with an unconfirmed timezone (r5 review, major). Once resolved,
-  // a profile with no timezone set falls back to the device's own timezone
-  // explicitly, rather than relying on localDateOf's implicit fallback deep
-  // inside the write path.
+  // the sweep off until the profile query has actually settled for this user
+  // (r6 review, major: `!isLoading` alone reads false for one render while a
+  // disabled->enabled query is still spinning up, before it's fetched
+  // anything -- `settled` from useProfile requires isFetched/isSuccess or an
+  // error, so the sweep never runs against an unconfirmed timezone). Once
+  // settled, a profile with no timezone set falls back to the device's own
+  // timezone explicitly, rather than relying on localDateOf's implicit
+  // fallback deep inside the write path.
   useGlobalAutoFinish(
     profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-    !profileLoading
+    profileSettled
   );
   const [showCalculators, setShowCalculators] = useState(false);
   // Bridge for pages whose own FAB is suppressed (e.g. the active workout

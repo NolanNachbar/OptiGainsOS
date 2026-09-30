@@ -13,7 +13,7 @@ const NO_ROWS = [];
 export function useProfile() {
   const { user } = useAuth();
 
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile, isLoading, isFetched, status, error } = useQuery({
     queryKey: queryKeys.userProfile(user?.id),
     queryFn: async () => {
       const profiles = await db.entities.UserProfile.filter({ created_by: user.id });
@@ -22,7 +22,16 @@ export function useProfile() {
     enabled: !!user,
   });
 
-  return { profile, isLoading, error };
+  // "Settled for the current user": the query has either finished its first
+  // fetch or errored out. isLoading alone isn't enough -- a query that flips
+  // from disabled (no user yet) to enabled (!!user) reads isLoading === false
+  // for one render before it actually starts fetching, which would let a
+  // caller read profile === undefined as "no timezone set" instead of "not
+  // loaded yet". Callers that need to know the profile query has truly
+  // resolved for this user should gate on `settled`, not `!isLoading`.
+  const settled = !!user && (isFetched || status === "error");
+
+  return { profile, isLoading, isFetched, status, settled, error };
 }
 
 // Is this exercise "liked" (in exercise_preferences.preferred)? Case-insensitive.
