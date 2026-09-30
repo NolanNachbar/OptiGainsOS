@@ -1244,17 +1244,25 @@ check("F17 a pinned session's whole plan lands in strength_block",
 # each day keeps its real compound on the non-lead side (a back compound on A, a
 # press compound on B) so the alternation isn't satisfied by isolations alone.
 print("\n--- F19: Upper A/B press/pull strict alternation ---")
-from engine.session_generator import _UPPER_PRESS_MUSCLES, _UPPER_PULL_MUSCLES, EXERCISES as _ALL_EX
+from engine.session_generator import (_UPPER_PRESS_MUSCLES, _UPPER_PULL_MUSCLES,
+                                       _CHEST_PRESS_PATTERNS, EXERCISES as _ALL_EX)
 
 _BASE_MUSCLE = {}
+_BASE_PATTERN = {}
 for _e in _ALL_EX:
     _BASE_MUSCLE.setdefault(_bl(_e["name"]), (_e.get("muscles") or [None])[0])
+    _BASE_PATTERN.setdefault(_bl(_e["name"]), _e.get("pattern"))
+
+_PULL_COMPOUND_PATTERNS = ("horizontal_pull", "vertical_pull")
 
 def _ab_cat(name):
     m = _BASE_MUSCLE.get(_bl(name))
     if m in _UPPER_PRESS_MUSCLES: return "press"
     if m in _UPPER_PULL_MUSCLES: return "pull"
     return "neutral"
+
+def _ab_pattern(name):
+    return _BASE_PATTERN.get(_bl(name))
 
 def _upper_session(split):
     return _SG().generate(
@@ -1293,6 +1301,49 @@ check("F19 Upper B keeps a compound press",
           for w in ("bench", "press", "dip")),
       f"upper_b={[e['name'] for e in _ub]}")
 
+# Pattern-based versions of the two checks above (2026-09-30, 2nd pass): the name
+# substring match is loose (e.g. "press" also matches Overhead Press, which is
+# NOT a chest press) and _clean strips `pattern` from the output rows, so this
+# looks it up via the same catalog-derived table _BASE_MUSCLE uses, mirroring
+# _is_chest_press for Upper B and the row/pulldown/pull-up compound patterns for
+# Upper A. This is the non-lead side specifically — Upper A's press side already
+# has Bench; the real question is whether a genuine pull COMPOUND (not just an
+# isolation) survived the trim on the non-lead side, and vice versa for Upper B.
+# The fixture's goal lift is Bench, whose pattern (horizontal_push) is itself one
+# of _CHEST_PRESS_PATTERNS — so the naive "any item matches a chest-press pattern"
+# check on Upper B is trivially satisfied by Bench alone and has no teeth (it
+# would pass even if the non-lead-side chest press this check exists to catch had
+# been dropped). Exclude the goal lift's own base name so the check is actually
+# looking at the non-lead-side ADDITION, not the always-present goal lift.
+_GOAL_LIFT_BASE = "bench press"
+check("F19 Upper A has a genuine pull compound (pattern-based, non-lead side)",
+      any(_ab_pattern(e["name"]) in _PULL_COMPOUND_PATTERNS for e in _ua),
+      f"upper_a={[(e['name'], _ab_pattern(e['name'])) for e in _ua]}")
+check("F19 Upper B has a genuine chest-press compound (pattern-based, non-lead "
+      "side, excluding the goal lift itself)",
+      any(_ab_pattern(e["name"]) in _CHEST_PRESS_PATTERNS
+          for e in _ub if _bl(e["name"]) != _GOAL_LIFT_BASE),
+      f"upper_b={[(e['name'], _ab_pattern(e['name'])) for e in _ub]}")
+
+# Neutral/core items (e.g. neck) are exempt from alternation and belong at the
+# very end — but the checks above filter them out BEFORE the adjacency check,
+# so a neutral item sitting in the MIDDLE of the list would be invisible to it.
+# Check separately, on the unfiltered category list, that nothing neutral
+# appears before the last press/pull-classified item.
+def _neutral_trails(exercises):
+    cats = [_ab_cat(e["name"]) for e in exercises]
+    _alt_idx = [i for i, c in enumerate(cats) if c != "neutral"]
+    if not _alt_idx:
+        return True
+    return all(c != "neutral" for c in cats[:max(_alt_idx) + 1])
+
+check("F19 Upper A neutral/core items only trail the alternated block",
+      _neutral_trails(_ua),
+      f"cats={[_ab_cat(e['name']) for e in _ua]} names={[e['name'] for e in _ua]}")
+check("F19 Upper B neutral/core items only trail the alternated block",
+      _neutral_trails(_ub),
+      f"cats={[_ab_cat(e['name']) for e in _ub]} names={[e['name'] for e in _ub]}")
+
 # The single fixture above is only today's date. `assist_week` (sim_date's ISO
 # week number) rotates the mandatory-isolation pick, the bench-assistance pick,
 # and the CHEST_HYPERTROPHY_PRESS pool every week — SessionGenerator.generate()
@@ -1319,28 +1370,108 @@ for _i in range(371):
         _seen_weeks.add(_wk)
         _sweep_dates.append(_d)
 
-_sweep_fail_open, _sweep_fail_adj, _sweep_fail_bal = [], [], []
-for _d in _sweep_dates:
-    for _split, _lead_cat, _other_cat in (("upper_a", "press", "pull"),
-                                           ("upper_b", "pull", "press")):
-        _ex = _sweep_session(_split, _d)
-        _cats = [_ab_cat(e["name"]) for e in _ex if _ab_cat(e["name"]) != "neutral"]
-        _wk = _d.isocalendar()[1]
-        if not _cats or _cats[0] != _lead_cat:
-            _sweep_fail_open.append((_wk, _split, _cats[:1]))
-        if any(_cats[i] == _cats[i + 1] for i in range(len(_cats) - 1)):
-            _sweep_fail_adj.append((_wk, _split, _cats))
-        _lead_n = _cats.count(_lead_cat)
-        _other_n = _cats.count(_other_cat)
-        if not (0 <= (_lead_n - _other_n) <= 1):
-            _sweep_fail_bal.append((_wk, _split, _lead_n, _other_n))
+# Budget grid (2026-09-30, 2nd pass): the original Oct 1/5/9 bug report was a
+# TIGHT-budget session, not the default 8-slot one — the 53-week sweep above
+# only ever exercised the default budget/phase, which would have passed even
+# with the tight-budget regression this pass fixed (the focus-muscle slot and
+# the last-chest-press slot both blocking the trim to death on a 4-exercise
+# session, and the mandatory isolations pushing a default 8-slot Upper A to 9
+# countable rows against smoke.py's live P1-6 ceiling). Sweep phase (None/cut)
+# x session_size_learned (4=MIN, 8, 12=MAX, None=unlearned-default) so a
+# regression at any budget shows up here instead of only on the specific
+# combination Nolan happened to be on. session_size_learned=12 is EXPECTED to
+# exceed the live-ceiling check by design (an explicit larger learned budget),
+# so the ceiling assertion below is scoped to the other three.
+_UPPER_AB_LIVE_CAP = 8   # mirrors smoke.py's MAX_EXERCISES_PER_SESSION
+_budget_grid = [(_phase, _learned)
+                for _phase in (None, "cut")
+                for _learned in (4, 8, 12, None)]
 
-check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — opens on the day's lead category",
+_sweep_fail_open, _sweep_fail_adj, _sweep_fail_bal, _sweep_fail_cap = [], [], [], []
+_sweep_fail_a_compound, _sweep_fail_b_compound, _sweep_fail_neutral = [], [], []
+# Default-budget-only, goal-lift-excluded guarantee: at (phase=None,
+# learned=None) the CHEST_HYPERTROPHY_PRESS backfill gate should never
+# actually cost the day its second chest press — confirmed by direct sweep
+# (53/53 weeks pass) before adding this assertion. This is what gives the
+# single-fixture "teeth" check above real week-over-week coverage instead of
+# trusting one date.
+_sweep_fail_a_nongoal_press, _sweep_fail_b_nongoal_press = [], []
+for _phase, _learned in _budget_grid:
+    for _d in _sweep_dates:
+        for _split, _lead_cat, _other_cat in (("upper_a", "press", "pull"),
+                                               ("upper_b", "pull", "press")):
+            _ex, _ = _gen_session(action="STRENGTH", intensity=1.0, sim_date=_d,
+                                  split_override=_split, phase=_phase,
+                                  session_size_learned=_learned)
+            _cats = [_ab_cat(e["name"]) for e in _ex if _ab_cat(e["name"]) != "neutral"]
+            _wk = _d.isocalendar()[1]
+            _tag = (_wk, _phase, _learned, _split)
+            if not _cats or _cats[0] != _lead_cat:
+                _sweep_fail_open.append(_tag + (_cats[:1],))
+            if any(_cats[i] == _cats[i + 1] for i in range(len(_cats) - 1)):
+                _sweep_fail_adj.append(_tag + (_cats,))
+            _lead_n = _cats.count(_lead_cat)
+            _other_n = _cats.count(_other_cat)
+            if not (0 <= (_lead_n - _other_n) <= 1):
+                _sweep_fail_bal.append(_tag + (_lead_n, _other_n))
+            if _learned != 12 and len(_ex) > _UPPER_AB_LIVE_CAP:
+                _sweep_fail_cap.append(_tag + (len(_ex),))
+            # Pattern-based compound checks, swept (2026-09-30, 3rd pass, per
+            # advisor): NOT goal-lift-excluded here, unlike the single-fixture
+            # "teeth" check above — a tight budget can legitimately have no
+            # SECOND, non-goal chest press on Upper B (the CHEST_HYPERTROPHY_PRESS
+            # backfill is itself gated off at tight budgets, see _build_session),
+            # and Bench alone already satisfies "the day has a chest-press-
+            # pattern movement". Excluding the goal lift here would fail
+            # correctly-behaving tight-budget sessions, not catch a regression —
+            # that's what the default-budget single-fixture check above is for.
+            if not any(_ab_pattern(e["name"]) in _PULL_COMPOUND_PATTERNS for e in _ex) \
+                    and _split == "upper_a":
+                _sweep_fail_a_compound.append(_tag)
+            if not any(_ab_pattern(e["name"]) in _CHEST_PRESS_PATTERNS for e in _ex) \
+                    and _split == "upper_b":
+                _sweep_fail_b_compound.append(_tag)
+            if not _neutral_trails(_ex):
+                _sweep_fail_neutral.append(_tag)
+            if _phase is None and _learned is None:
+                _has_nongoal_chest = any(
+                    _ab_pattern(e["name"]) in _CHEST_PRESS_PATTERNS
+                    and _bl(e["name"]) != _GOAL_LIFT_BASE for e in _ex)
+                if not _has_nongoal_chest:
+                    if _split == "upper_a":
+                        _sweep_fail_a_nongoal_press.append(_tag)
+                    else:
+                        _sweep_fail_b_nongoal_press.append(_tag)
+
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— opens on the day's lead category",
       not _sweep_fail_open, f"failures={_sweep_fail_open[:5]}")
-check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — no adjacent same-category movements",
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— no adjacent same-category movements",
       not _sweep_fail_adj, f"failures={_sweep_fail_adj[:5]}")
-check(f"F19 sweep ({len(_sweep_dates)} ISO weeks) — counts balance within one",
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— counts balance within one",
       not _sweep_fail_bal, f"failures={_sweep_fail_bal[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets, "
+      f"excl. learned=12) — exercise count <= {_UPPER_AB_LIVE_CAP} (smoke.py P1-6)",
+      not _sweep_fail_cap, f"failures={_sweep_fail_cap[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— Upper A always keeps a genuine pull compound",
+      not _sweep_fail_a_compound, f"failures={_sweep_fail_a_compound[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— Upper B always keeps a chest-press-pattern movement (incl. the goal lift)",
+      not _sweep_fail_b_compound, f"failures={_sweep_fail_b_compound[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks x {len(_budget_grid)} budgets) "
+      "— neutral/core items only trail the alternated block",
+      not _sweep_fail_neutral, f"failures={_sweep_fail_neutral[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks, default budget only) "
+      "— Upper A keeps a non-goal chest-press compound (CHEST_HYPERTROPHY_PRESS "
+      "backfill gate never actually costs the default session its 2nd press)",
+      not _sweep_fail_a_nongoal_press, f"failures={_sweep_fail_a_nongoal_press[:5]}")
+check(f"F19 sweep ({len(_sweep_dates)} ISO weeks, default budget only) "
+      "— Upper B keeps a non-goal chest-press compound (CHEST_HYPERTROPHY_PRESS "
+      "backfill gate never actually costs the default session its 2nd press)",
+      not _sweep_fail_b_nongoal_press, f"failures={_sweep_fail_b_nongoal_press[:5]}")
 
 
 # ── F18: the browser's equipment table matches the Python source ─────────────
