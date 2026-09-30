@@ -1,15 +1,17 @@
 /**
  * Today — the decision-first home of OptiGainsOS.
  *
- * A dashboard of dense modules, fixed order for now (LAUNCH_PLAN step 2):
- *   1. Readiness — compact score + verdict + 14-day sparkline
- *   2. Weigh in — daily-ritual row, self-hides once logged
- *   3. Session — active-session banner or the prescribed/program session
- *   4. Weekly training — rings, only rendered when an active program has a
- *      days_per_week target (mf-app-screens.md "Weekly Workouts" pattern)
- *   5. To-do checklist — self-hides when empty
- *   6. Nutrition — calorie + P/C/F bars with a Consumed/Remaining toggle
- *   7. Weight trend — raw scale-weight scatter + smoothed EWMA trend line
+ * A dashboard of dense modules, fixed order for now (r7 density pass —
+ * nutrition must be visible without scrolling at 428x926):
+ *   1. Nutrition — calorie + P/C/F bars, Consumed/Remaining toggle inline in
+ *      the module header row
+ *   2. Session — active-session banner or the prescribed/program session
+ *   3. Weight trend — raw scale-weight scatter + smoothed EWMA trend line,
+ *      with the weigh-in input folded into this module's header/row
+ *   4. Weekly training — compact horizontal rings row, only rendered when
+ *      the active enrollment's schedule has a nonzero target this week
+ *   5. Readiness — compact one-line score + verdict
+ *   6. To-do checklist — self-hides when empty
  *   Below the fold: carb timing, Vitals + Brief/State/Muscle detail card,
  *   quick actions.
  */
@@ -30,7 +32,7 @@ import { useEnrollments } from "@/hooks/useProgramQueries";
 import { useTodayBodyWeight, useLastBodyWeight, useLogWeight } from "@/hooks/useWeighIn";
 import { BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
-import { getTodayProgramWorkout } from "@/utils/programSchedule";
+import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import { getWeekStart } from "@/utils/dateUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -39,7 +41,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { MetricTile, SectionLabel, SegmentedControl, Module, MiniRing } from "@/components/ui/system";
 import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame, Check } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
 // Full thousands-separated integer — used for the kcal ring's TARGET caption so
@@ -51,22 +53,6 @@ const sentence = (s) => {
   const t = String(s || "").replace(/_/g, " ").trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
 };
-
-// Shared Ledger chart convention (DESIGN.md "Charts"): a gray history polyline
-// with a single off-white "now" dot on the last point. Used by both the
-// Readiness and Weight-trend modules on Today, each feeding it a normalized
-// {points, W, H} built from its own data.
-function Spark({ points, W, H }) {
-  if (!points || points.length < 2) return null;
-  const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const last = points[points.length - 1];
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none" aria-hidden="true">
-      <path d={path} fill="none" stroke="var(--text-faint)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-      <circle cx={last.x} cy={last.y} r="2.75" fill="var(--text-primary)" />
-    </svg>
-  );
-}
 
 // Weight-trend chart: pale raw scale-weight scatter dots underneath a bold
 // smoothed EWMA trend polyline, same chart (mf-app-screens.md Body pattern
@@ -89,11 +75,13 @@ function WeightSpark({ trendPoints, scatterPoints, W, H }) {
   );
 }
 
-// Compact weigh-in row (B mockup): an unweighed morning is the NORMAL case (he
-// weighs in every day), so this is its own ~56px module above the to-do list,
-// not a rare-state card buried inside Session. One inline field + one button;
-// the full WeighInPrompt sheet (with the stale-days warning copy) is still
-// used verbatim by the pre-session check-in gate in PrescribedSessionCard.
+// Compact inline weigh-in field, folded into the Weight trend module's own
+// header/row (r7 density pass) instead of owning a separate module above the
+// to-do list. No "Weigh in · last N lb" leading text — the trend module
+// already shows the current trend weight right above this row, so repeating
+// the last raw reading here would just be a duplicate of that number. The
+// full WeighInPrompt sheet (with the stale-days warning copy) is still used
+// verbatim by the pre-session check-in gate in PrescribedSessionCard.
 function WeighInRow({ today, weightUnit }) {
   const { todayWeight, isLoading, isFetching } = useTodayBodyWeight(today);
   const { lastWeight } = useLastBodyWeight(today);
@@ -135,26 +123,17 @@ function WeighInRow({ today, weightUnit }) {
     );
   };
 
-  // One row, no separate module label — the row's own leading text carries
-  // "Weigh in" (coordinator: "Weigh in · last 184 lb"). Both the input and the
-  // Log button are 44px tall (the tap-target floor), so the row is closer to
-  // 56px than a purely visual 56px chip would be — that's the accessibility
-  // floor, not a miss on the "about 56px" target.
   return (
-    <div className="surface px-4 sm:px-5 lg:px-4 py-3 -mx-4 sm:-mx-6 lg:mx-0">
+    <div className="mt-2">
       {already ? (
-        <div className="flex items-center justify-between gap-3 min-h-[26px]">
-          <span className="text-[13px] font-semibold text-muted-2">
-            Logged today <span className="tabular-nums text-ink font-semibold">· {fmt(todayWeight.weight, 1)} {weightUnit}</span>
-          </span>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[13px] font-semibold text-muted-2">Logged today</span>
           <Check className="w-4 h-4 text-leaf shrink-0" />
         </div>
       ) : (
         <form onSubmit={submit}>
           <div className="flex items-center gap-3">
-            <span className="text-[13px] font-semibold text-muted-2 shrink-0 truncate">
-              {reference != null ? `Weigh in · last ${fmt(reference, 1)} ${weightUnit}` : "Weigh in"}
-            </span>
+            <span className="text-[13px] font-semibold text-muted-2 shrink-0">Weigh in</span>
             <input
               type="text"
               inputMode="decimal"
@@ -237,30 +216,6 @@ export default function Today() {
   const { prescription, isLoading: prescriptionLoading, isError: prescriptionError } = useTodayPrescription(today);
   const { state, isLoading: stateLoading, isError: stateError } = useAthleteState(today);
 
-  // 14-day readiness-score history for the hero sparkline (B mockup: "Readiness
-  // · 14 days" with a gray history line + off-white "now" dot). No existing
-  // hook returns a score history (useAthleteState only reads the single latest
-  // row), so this queries the same athlete_state table directly — same source
-  // Today's own readiness ring already reads, just a date range instead of one row.
-  const { data: readinessHistory = [] } = useQuery({
-    queryKey: ["readinessHistory14d", today, user?.id],
-    queryFn: async () => {
-      const since = new Date(`${today}T00:00:00`);
-      since.setDate(since.getDate() - 13);
-      const { data, error } = await supabase
-        .from("athlete_state")
-        .select("date, recovery")
-        .eq("created_by", user.id)
-        .gte("date", since.toISOString().slice(0, 10))
-        .lte("date", today)
-        .order("date", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user && !!today,
-    staleTime: 5 * 60 * 1000,
-  });
-
   // Actual (not target) carbs eaten around today's session(s) — pulled straight
   // from the logged food_entries.eaten_at/carbs_grams, never the engine's static
   // carb-window target. If today's session hasn't actually been logged yet, the
@@ -326,7 +281,7 @@ export default function Today() {
   // and the schedule lands a workout on today). When present, the session CTA
   // routes to the program logger so the day completes the program and drives
   // progression instead of being logged as an ad-hoc quick workout.
-  const { enrollments } = useEnrollments();
+  const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
   const activeEnrollment = useMemo(
     () => enrollments.find((e) => e.status === "active") || null,
     [enrollments]
@@ -348,15 +303,32 @@ export default function Today() {
       : null;
   }, [activeEnrollment, profile?.timezone]);
 
-  // Weekly training progress rings — "only if a target exists" (LAUNCH_PLAN
-  // step 2): the target is the active program's days_per_week, the same
-  // stored field WeeklySchedule.jsx already reads for its own progress stat.
-  // No schema change, no invented field. Completed-this-week is derived from
-  // recentLogs (already fetched below for the muscle heatmap; its 10-day
-  // window always covers the current week), counting distinct log_dates on
-  // or after this week's start (Monday, same weekStartsOn:1 convention as
-  // programProgression.js / WeeklySchedule.jsx).
-  const weeklyTarget = activeEnrollment?.program?.days_per_week || null;
+  // Weekly training progress rings — "only if a target exists". The target is
+  // NOT program.days_per_week (that's the program's persisted cycle length —
+  // see ProgramBuilder.jsx/ProgramCard.jsx/programSchedule.js, none of which
+  // read it alone as a weekly workout count). Instead it's the number of the
+  // active enrollment's SCHEDULED program workouts (training days with real
+  // exercises/cardio, not rest days) that fall in the current calendar week,
+  // built from the same getProgramSchedule() helper WeeklySchedule.jsx uses.
+  const scheduleEntries = useMemo(() => {
+    if (!activeEnrollment?.program?.workouts) return [];
+    return getProgramSchedule(activeEnrollment, activeEnrollment.program.workouts, profile?.timezone);
+  }, [activeEnrollment, profile?.timezone]);
+
+  const weekStartStr = useMemo(
+    () => format(getWeekStart(profile?.timezone), "yyyy-MM-dd"),
+    [profile?.timezone]
+  );
+  const weekEndStr = useMemo(
+    () => format(addDays(getWeekStart(profile?.timezone), 6), "yyyy-MM-dd"),
+    [profile?.timezone]
+  );
+
+  const weeklyTarget = useMemo(() => {
+    if (!activeEnrollment) return null;
+    return scheduleEntries.filter((e) => e.date >= weekStartStr && e.date <= weekEndStr
+      && ((e.exercises?.length > 0) || (e.cardio_sessions?.length > 0))).length;
+  }, [scheduleEntries, activeEnrollment, weekStartStr, weekEndStr]);
 
   // Subjective readiness check-in for today (ported from Dashboard). When a
   // COMPLETED row exists (energy logged), MorningCheckin renders its read-only
@@ -390,13 +362,17 @@ export default function Today() {
   });
 
   // Recent logs → muscle fatigue heatmap (same source the old dashboard used).
-  const { data: recentLogs = [], isError: heatmapError } = useQuery({
-    queryKey: ["todayHeatmapLogs_v2", user?.id],
+  // enrollment_id rides along so the weekly-rings completed-count below can
+  // filter to sessions actually tied to the active enrollment, not just any
+  // logged strength day (an ad hoc/quick workout must not advance a
+  // program-specific weekly target it was never part of).
+  const { data: recentLogs = [], isLoading: recentLogsLoading, isError: heatmapError } = useQuery({
+    queryKey: ["todayHeatmapLogs_v3", user?.id],
     queryFn: async () => {
       const since = new Date(); since.setDate(since.getDate() - 10);
       const { data, error } = await supabase
         .from("workout_logs")
-        .select("log_date, exercises")
+        .select("log_date, exercises, enrollment_id")
         .eq("created_by", user.id)
         .gte("log_date", since.toISOString().slice(0, 10))
         .order("log_date", { ascending: false });
@@ -409,17 +385,24 @@ export default function Today() {
 
   const fatigueData = useMemo(() => getRecoveryHeatmapData(recentLogs), [recentLogs]);
 
+  // Completed = distinct days this week with a logged workout tied to the
+  // active enrollment (enrollment_id on workout_logs), not any logged day.
   const weeklyCompleted = useMemo(() => {
-    if (!weeklyTarget) return 0;
-    const weekStartStr = format(getWeekStart(profile?.timezone), "yyyy-MM-dd");
+    if (!activeEnrollment || !weeklyTarget) return 0;
     const days = new Set(
       recentLogs
-        .filter((l) => l.log_date >= weekStartStr && l.log_date <= today
+        .filter((l) => l.enrollment_id === activeEnrollment.id
+          && l.log_date >= weekStartStr && l.log_date <= today
           && Array.isArray(l.exercises) && l.exercises.length > 0)
         .map((l) => l.log_date)
     );
     return days.size;
-  }, [recentLogs, weeklyTarget, profile?.timezone, today]);
+  }, [recentLogs, weeklyTarget, activeEnrollment, weekStartStr, today]);
+
+  // Loading/error: never show a confident "0/N" while recentLogs or
+  // enrollments are still resolving, or after either failed to load — hide
+  // the rings module entirely in those cases instead (see render below).
+  const weeklyRingsUnknown = enrollmentsLoading || enrollmentsError || (!!activeEnrollment && (recentLogsLoading || heatmapError));
 
   // Did the athlete already log a strength session today? Drives the
   // PrescribedSessionCard done-state instead of nagging "Begin Session".
@@ -524,27 +507,6 @@ export default function Today() {
       fats: acc.fats + (Number(e.fats_grams) || 0),
     }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
   }, [allFoodEntries, today]);
-  // Readiness sparkline points — normalized into a 250×48 viewBox matching the
-  // B mockup's hero chart. Gray history polyline + an off-white "now" dot on
-  // the last point (DESIGN.md Charts: "gray history, off-white 'now' dot").
-  const readinessSpark = useMemo(() => {
-    const scores = readinessHistory
-      .map((r) => ({ date: r.date, score: r.recovery?.score }))
-      .filter((r) => r.score != null);
-    if (scores.length < 2) return null;
-    const W = 250, H = 48, PAD = 4;
-    const vals = scores.map((s) => Number(s.score));
-    const min = Math.min(...vals), max = Math.max(...vals);
-    const span = max - min || 1;
-    const step = (W - PAD * 2) / (scores.length - 1);
-    const points = vals.map((v, i) => {
-      const x = PAD + i * step;
-      const y = PAD + (1 - (v - min) / span) * (H - PAD * 2);
-      return { x, y };
-    });
-    return { points, W, H };
-  }, [readinessHistory]);
-
   const nutritionCols = [
     { label: "Kcal", consumed: todayTotals.calories, goal: dailyTargets.calories, hue: "var(--text-primary)", unit: "" },
     { label: "Protein", consumed: todayTotals.protein, goal: dailyTargets.protein, hue: "var(--hue-coral)", unit: "g" },
@@ -552,22 +514,32 @@ export default function Today() {
     { label: "Fat", consumed: todayTotals.fats, goal: dailyTargets.fats, hue: "var(--hue-yellow)", unit: "g" },
   ];
 
-  // lb/wk trend. On- vs off-goal is read from trendAligned (the sign of the
-  // trend relative to the current phase), not from a hard-coded hue — the
-  // render side colors it green only when aligned, neutral text otherwise
-  // (DESIGN.md: no brand/off-palette accent on a plain data line).
-  const trendPerWk = nutrition?.weight_trend_lbs_per_week;
+  const weightUnit = profile?.weight_unit || "lbs";
+  const LBS_PER_KG = 0.45359237;
+
+  // weight_trend_lbs_per_week is always computed in lbs by the engine
+  // (confirmed against Progress.jsx/AthleteState.jsx, which render it
+  // unconverted too), so a kg-unit profile needs the number itself
+  // converted, not just the unit suffix swapped. On- vs off-goal is read
+  // from trendAligned (the sign of the trend relative to the current
+  // phase), not from a hard-coded hue — the render side colors it green
+  // only when aligned, neutral text otherwise (DESIGN.md: no brand/
+  // off-palette accent on a plain data line).
+  const trendPerWkLbs = nutrition?.weight_trend_lbs_per_week;
+  const trendPerWk = trendPerWkLbs == null ? null
+    : weightUnit === "kg" ? trendPerWkLbs * LBS_PER_KG
+    : trendPerWkLbs;
   const trendAligned = (() => {
-    if (trendPerWk == null) return null;
+    if (trendPerWkLbs == null) return null;
     const phase = nutrition?.phase;
-    return phase === "cut" ? trendPerWk < 0
-      : phase === "bulk" ? trendPerWk > 0
-      : Math.abs(trendPerWk) <= 0.5; // maintenance: holding is on-goal
+    return phase === "cut" ? trendPerWkLbs < 0
+      : phase === "bulk" ? trendPerWkLbs > 0
+      : Math.abs(trendPerWkLbs) <= 0.5; // maintenance: holding is on-goal (lbs threshold)
   })();
   const trend = {
     value: trendPerWk == null ? "—"
       : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
-    caption: trendAligned == null ? "lb/wk" : trendAligned ? "on goal" : "off goal",
+    caption: trendAligned == null ? `${weightUnit}/wk` : trendAligned ? "on goal" : "off goal",
   };
 
   // Weight-trend module (Today, above the fold): reuses the same
@@ -576,14 +548,25 @@ export default function Today() {
   // the full stat-trio + big chart, so it fits the module budget here. Tapping
   // "Detail ›" still routes to the full chart (Fuel → Body → Weight).
   const { weightEntries } = useBodyWeightEntries();
-  const weightUnit = profile?.weight_unit || "lbs";
-  // EWMA over the FULL history, then sliced to the last 30 days for display —
-  // computing it only over the 30-day window (the previous bug here) seeds
-  // the smoothing with no prior trend, so Today's number could read
-  // differently than the same trend on the Body page. WeightProgressChart.jsx
-  // and Progress.jsx both run calculateEWMA over the full, unwindowed
-  // weightEntries; this now matches that convention.
-  const trendedAll = useMemo(() => calculateEWMA(weightEntries, 0.1), [weightEntries]);
+  // body_weight_entries records no per-entry unit (useWeighIn.js: "No unit
+  // conversion: the value is stored exactly as entered, profile weight_unit
+  // is display only"), so an athlete who switched lbs<->kg at some point has
+  // raw numeric entries in two different units sitting in the same
+  // weightEntries array with nothing to distinguish them. Since we can't
+  // convert what isn't recorded, the EWMA input is instead RESTRICTED to the
+  // display window plus a lead-in (60 days total, ending today) so a stale
+  // unit switch further back can't bleed into the trend or the chart's
+  // shared y-scale. The lead-in (vs. computing EWMA over just the 30-day
+  // display window) still lets the smoothing warm up with real prior data
+  // instead of starting cold on the window's first point.
+  const EWMA_WINDOW_DAYS = 60;
+  const boundedWeightEntries = useMemo(() => {
+    const since = new Date(`${today}T00:00:00`);
+    since.setDate(since.getDate() - (EWMA_WINDOW_DAYS - 1));
+    const sinceStr = since.toISOString().slice(0, 10);
+    return weightEntries.filter((e) => e.recorded_date >= sinceStr && e.recorded_date <= today);
+  }, [weightEntries, today]);
+  const trendedAll = useMemo(() => calculateEWMA(boundedWeightEntries, 0.1), [boundedWeightEntries]);
   const weight30d = useMemo(() => {
     const since = new Date(`${today}T00:00:00`);
     since.setDate(since.getDate() - 29);
@@ -597,14 +580,19 @@ export default function Today() {
   const isWeightStale = latestWeight
     && Math.round((new Date(`${today}T00:00:00`) - new Date(`${latestWeight.recorded_date}T00:00:00`)) / 86400000) > 7;
   // Scale-weight scatter + smoothed trend line, same chart (mf-app-screens.md
-  // Body pattern #1). Points are x-positioned by actual elapsed days (not row
-  // index), so a gap between weigh-ins reads as a gap on the chart.
+  // Body pattern #1). Points are x-positioned by actual elapsed days from a
+  // FIXED 30-day frame ending today (t0 = today - 29), not from the first
+  // logged entry inside the window — otherwise a leading/trailing gap (no
+  // weigh-ins in the first or last few days of the window) silently stretches
+  // the logged points across the full chart width instead of compressing them
+  // into the true fraction of the frame they actually occupy.
   const weightSpark = useMemo(() => {
     if (weight30d.length < 2) return null;
     const W = 250, H = 48, PAD = 4;
-    const t0 = new Date(`${weight30d[0].recorded_date}T00:00:00`);
+    const t0 = new Date(`${today}T00:00:00`);
+    t0.setDate(t0.getDate() - 29);
+    const totalDays = 29;
     const dayOf = (e) => Math.round((new Date(`${e.recorded_date}T00:00:00`) - t0) / 86400000);
-    const totalDays = Math.max(1, dayOf(weight30d[weight30d.length - 1]));
     const rawVals = weight30d.map((e) => Number(e.weight));
     const trendVals = weight30d.map((e) => Number(e.trendWeight));
     const min = Math.min(...rawVals, ...trendVals), max = Math.max(...rawVals, ...trendVals);
@@ -614,7 +602,7 @@ export default function Today() {
     const trendPoints = weight30d.map((e) => ({ x: xOf(e), y: yOf(Number(e.trendWeight)) }));
     const scatterPoints = weight30d.map((e) => ({ x: xOf(e), y: yOf(Number(e.weight)) }));
     return { trendPoints, scatterPoints, W, H };
-  }, [weight30d]);
+  }, [weight30d, today]);
 
   return (
     <div
@@ -646,47 +634,74 @@ export default function Today() {
         </div>
       )}
 
-      {/* Ledger module stack (DESIGN.md / directions "B"): a single flat column,
-          8px gaps, one order top → bottom for every breakpoint —
-            1. Readiness  2. Weigh in  3. Session  4. To-do  5. Nutrition
-            6. Weight trend  7. everything else (secondary / below the fold).
-          Target: modules 1-4 visible without scrolling at 428×926, including
-          the ordinary unweighed-morning state (weigh-in row not yet logged). */}
+      {/* Ledger module stack (r7 density pass): a single flat column, 8px
+          gaps, one order top → bottom for every breakpoint —
+            1. Nutrition  2. Session  3. Weight trend (+ weigh-in)
+            4. Weekly training  5. Readiness  6. To-do
+          7. everything else (secondary / below the fold).
+          Target: nutrition must be visible without scrolling at 428×926. */}
       <div className="space-y-2">
-        {/* 1 — Readiness: a big tabular number + one plain-language verdict
-            line (no ACWR/Form/HRV jargon — that lives one tap away in the
-            State detail tab below) + the 14-day sparkline alongside it. No
-            ring: a band-colored arc read as an off-palette accent color. */}
-        <Module label="Readiness · 14 days">
-          {(prescriptionLoading || stateLoading) ? (
-            <div className="pulse-loop space-y-3">
-              <div className="h-9 bg-track rounded-lg w-16" />
-              <div className="h-3 bg-track rounded-lg w-2/3" />
+        {/* 1 — Nutrition: flat 4-column Kcal/Protein/Carbs/Fat, 8px bars,
+            macro hues on the labels (DESIGN.md — calories own no hue), with
+            the Consumed/Remaining toggle inline in the module's own header
+            row (mf-app-screens.md "Nutrition & Targets widget" — a bar-fill
+            toggle, never a ring), not on its own line above the grid. */}
+        <Module>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[13px] font-semibold text-muted-2 truncate">Nutrition</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <SegmentedControl
+                options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
+                value={nutritionView}
+                onChange={setNutritionViewPersist}
+                size="sm"
+                className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
+              />
+              <Link to="/fuel" className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+                Detail<ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          ) : (
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="shrink-0 max-w-[55%]">
-                <div className="type-display text-[34px] font-semibold tabular-nums leading-none text-ink">
-                  {score == null ? "—" : Math.round(score)}
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {nutritionCols.map((c) => {
+              const hasGoal = c.goal != null && c.goal > 0;
+              const remainingRaw = hasGoal ? Math.round(c.goal - c.consumed) : null;
+              // "over" is read from the ROUNDED delta, not the raw comparison
+              // — otherwise a sub-0.5 overage (e.g. consumed = goal + 0.3)
+              // rounds remainingRaw to -0 while `over` still says true,
+              // rendering the self-contradictory "0g over".
+              const over = hasGoal && remainingRaw < 0;
+              const pct = hasGoal ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
+              // Overshoot previously clamped to "0 left", which reads as
+              // "exactly at target" even when well over it. Remaining view now
+              // says "N over"; Consumed view shows consumed/goal directly.
+              const caption = !hasGoal
+                ? "—"
+                : nutritionView === "consumed"
+                  ? `${withThousands(Math.round(c.consumed))}${c.unit}/${withThousands(c.goal)}${c.unit}`
+                  : over
+                    ? `${withThousands(Math.abs(remainingRaw))}${c.unit} over`
+                    : `${withThousands(remainingRaw)}${c.unit} left`;
+              return (
+                <div key={c.label} className="min-w-0">
+                  <div className="text-[11px] font-semibold mb-1.5 truncate" style={{ color: c.hue }}>{c.label}</div>
+                  <div className="h-2 rounded-full bg-track overflow-hidden">
+                    <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
+                  </div>
+                  {/* 7d-avg captions were dropped from this module: at 4 narrow
+                      columns the "N left" line and the caption underneath it
+                      overlapped. The averages themselves aren't stranded —
+                      AthleteState and Progress both still surface them. */}
+                  <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
+                    {caption}
+                  </div>
                 </div>
-                <p className="font-technical text-[13px] font-semibold text-secondary leading-snug mt-1.5">
-                  {verdict}
-                </p>
-              </div>
-              {readinessSpark && (
-                <div className="flex-1 min-w-0">
-                  <Spark {...readinessSpark} />
-                </div>
-              )}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </Module>
 
-        {/* 2 — Weigh in: a daily ritual, not a rare state — its own compact
-            module, not folded inside Session (see WeighInRow above). */}
-        <WeighInRow today={today} weightUnit={weightUnit} />
-
-        {/* 3 — Start/Resume session (Ledger ".sess" row): workout name, an
+        {/* 2 — Start/Resume session (Ledger ".sess" row): workout name, an
             "N ex · N sets · ~N min" meta line, one off-white action. The
             in-progress "tap to continue" banner sits inside this same module
             when a session is live; otherwise the compact prescribed/program
@@ -725,85 +740,12 @@ export default function Today() {
           )}
         </Module>
 
-        {/* 3.5 — Weekly training progress rings: only rendered when an active
-            program has a stored days_per_week target (LAUNCH_PLAN step 2:
-            "only if a target exists" — no default/invented target, no zero
-            ring). mf-app-screens.md's "Weekly Workouts" pattern reserves
-            rings specifically for progress-toward-a-weekly-target; a Sets
-            ring (MacroFactor also shows Muscles/Sets/Exercises) is skipped
-            since OptiGains doesn't store a weekly planned-sets target —
-            Needs Nolan if that's wanted later. */}
-        {weeklyTarget > 0 && (
-          <Module label="Weekly training">
-            <div className="flex items-center justify-center py-1">
-              <MiniRing
-                label="Workouts"
-                value={`${weeklyCompleted}/${weeklyTarget}`}
-                frac={weeklyCompleted / weeklyTarget}
-                hue="var(--hue-teal)"
-                size={64}
-              />
-            </div>
-          </Module>
-        )}
-
-        {/* 4 — To-do checklist. Self-hides when empty. */}
-        <TodayActions today={today} briefActions={briefActions} isError={briefError} />
-
-        {/* 5 — Nutrition: flat 4-column Kcal/Protein/Carbs/Fat, 8px bars,
-            macro hues on the labels (DESIGN.md — calories own no hue), with a
-            Consumed/Remaining toggle (mf-app-screens.md "Nutrition & Targets
-            widget" — a bar-fill toggle, never a ring). */}
-        <Module label="Nutrition" detail="Detail" detailHref="/fuel">
-          <div className="flex justify-end mb-2 -mt-1">
-            <SegmentedControl
-              options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
-              value={nutritionView}
-              onChange={setNutritionViewPersist}
-              size="sm"
-              className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {nutritionCols.map((c) => {
-              const hasGoal = c.goal != null && c.goal > 0;
-              const over = hasGoal && c.consumed > c.goal;
-              const remainingRaw = hasGoal ? Math.round(c.goal - c.consumed) : null;
-              const pct = hasGoal ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
-              // Overshoot previously clamped to "0 left", which reads as
-              // "exactly at target" even when well over it. Remaining view now
-              // says "N over"; Consumed view shows consumed/goal directly.
-              const caption = !hasGoal
-                ? "—"
-                : nutritionView === "consumed"
-                  ? `${withThousands(Math.round(c.consumed))}${c.unit}/${withThousands(c.goal)}${c.unit}`
-                  : over
-                    ? `${withThousands(Math.abs(remainingRaw))}${c.unit} over`
-                    : `${withThousands(remainingRaw)}${c.unit} left`;
-              return (
-                <div key={c.label} className="min-w-0">
-                  <div className="text-[11px] font-semibold mb-1.5 truncate" style={{ color: c.hue }}>{c.label}</div>
-                  <div className="h-2 rounded-full bg-track overflow-hidden">
-                    <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
-                  </div>
-                  {/* 7d-avg captions were dropped from this module: at 4 narrow
-                      columns the "N left" line and the caption underneath it
-                      overlapped. The averages themselves aren't stranded —
-                      AthleteState and Progress both still surface them. */}
-                  <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
-                    {caption}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Module>
-
-        {/* 6 — Weight trend: EWMA trend value + compact 30-day sparkline,
+        {/* 3 — Weight trend: EWMA trend value + compact 30-day sparkline,
             reusing the same useBodyWeightEntries/calculateEWMA the full
-            WeightProgressChart (Fuel → Body) uses. Two separate lines (number+
-            unit, then trend+caption) rather than one wrapping flex row, so the
-            unit label can't collide with the line above it on a narrow phone. */}
+            WeightProgressChart (Fuel → Body) uses, with the weigh-in input
+            folded into this module's own row (see WeighInRow) instead of
+            owning a separate module — the duplicated "last N lb" text is
+            dropped since the trend number right above it already says it. */}
         <Module label="Weight trend · 30 days" detail="Detail" detailHref="/fuel?tab=body">
           <div className="flex items-baseline gap-1.5">
             <span className="type-display text-2xl font-semibold tabular-nums">
@@ -825,7 +767,7 @@ export default function Today() {
               className="text-[13px] font-semibold mt-1"
               style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
             >
-              {`${trend.value} lb/wk`}{" "}
+              {`${trend.value} ${weightUnit}/wk`}{" "}
               <span className={trendAligned ? "" : "text-muted"}>· {trend.caption}</span>
             </p>
           ) : null}
@@ -836,7 +778,52 @@ export default function Today() {
           ) : (
             <p className="text-[12px] text-muted-2 font-semibold mt-2">Log a few weigh-ins to see a trend</p>
           )}
+          <WeighInRow today={today} weightUnit={weightUnit} />
         </Module>
+
+        {/* 4 — Weekly training progress rings: only rendered once we know an
+            active enrollment has a nonzero scheduled-workouts-this-week
+            target (never a default/invented target, never a zero ring, and
+            never a confident "0/N" while still loading/erroring — see
+            weeklyRingsUnknown above). A compact horizontal row, not a large
+            centered single ring. mf-app-screens.md's "Weekly Workouts"
+            pattern reserves rings specifically for progress-toward-a-
+            weekly-target; a Sets ring (MacroFactor also shows Muscles/Sets/
+            Exercises) is skipped since OptiGains doesn't store a weekly
+            planned-sets target — Needs Nolan if that's wanted later. */}
+        {!weeklyRingsUnknown && weeklyTarget > 0 && (
+          <Module label="Weekly training">
+            <div className="flex items-center justify-between gap-3 py-0.5">
+              <span className="text-[13px] font-semibold text-muted-2">This week</span>
+              <MiniRing
+                label="Workouts"
+                value={`${weeklyCompleted}/${weeklyTarget}`}
+                frac={weeklyCompleted / weeklyTarget}
+                hue="var(--hue-teal)"
+                size={44}
+              />
+            </div>
+          </Module>
+        )}
+
+        {/* 5 — Readiness: compact one line (score + short verdict), no big
+            hero number/sparkline block — that detail still lives one tap
+            away in the State detail tab below. */}
+        <Module label="Readiness">
+          {(prescriptionLoading || stateLoading) ? (
+            <div className="pulse-loop h-5 bg-track rounded-lg w-2/3" />
+          ) : (
+            <p className="flex items-baseline gap-2 text-[13px] font-semibold">
+              <span className="type-display text-lg tabular-nums leading-none text-ink">
+                {score == null ? "—" : Math.round(score)}
+              </span>
+              <span className="font-technical text-secondary truncate">{verdict}</span>
+            </p>
+          )}
+        </Module>
+
+        {/* 6 — To-do checklist. Self-hides when empty. */}
+        <TodayActions today={today} briefActions={briefActions} isError={briefError} />
 
         {/* Below the fold: everything else — secondary or collapsed.
             Carb timing chip → Vitals + Brief/State/Muscle detail disclosure. */}
