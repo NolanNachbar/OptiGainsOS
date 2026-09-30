@@ -67,6 +67,18 @@
      three surface tiers. */
   --text-faint:     #838A94;
 
+  /* ── Keypad key surface (review r4f minor) ─────────────────────────────
+     The Phase B custom bottom-sheet keypad's digit keys used undocumented
+     hardcoded hex with no existing token matching closely enough to
+     substitute without a visible shift (--color-elevated/--text-primary are
+     both close but not equal). Named here instead of reusing a near value,
+     so a future palette/light-mode pass has something to update rather than
+     silently drifting. Used only by KeypadSheet in ExerciseCard.jsx. */
+  --key-surface:        #2A2E35;   /* digit key background */
+  --key-surface-active: #363B44;   /* digit key pressed state */
+  --key-text:           #F5F3EE;   /* digit key label + sheet's current-value readout */
+  --key-ink-on-brand:   #12161C;   /* ink on a brand-filled button inside the sheet */
+
   /* ── Off-white — THE action color (no brand hue, Ledger) ──────────────── */
   --color-brand:     #ECEEF1;
   --color-brand-rgb: 236 238 241;
@@ -295,6 +307,14 @@ html.light {
   --text-secondary: rgba(23, 27, 34, 0.74);
   --text-muted:     rgba(23, 27, 34, 0.55);
   --text-faint:     rgba(23, 27, 34, 0.40);
+
+  /* Keypad key surface (light mode) — a raised neutral key face distinct
+     from --color-surface-2, dark ink label. See :root above for where
+     these are used. */
+  --key-surface:        #E4E6EA;
+  --key-surface-active: #D3D6DC;
+  --key-text:           var(--text-primary);
+  --key-ink-on-brand:   var(--color-action-dark);
 
   /* Ledger: no brand hue. Off-white becomes dark ink on a paper field — the
      primary action is a solid dark-ink fill with a light ink label, the light-

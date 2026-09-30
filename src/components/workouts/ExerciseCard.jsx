@@ -110,6 +110,16 @@ export default function ExerciseCard({
   // already-open keyboard where no resize fires.
   const handleInputFocus = (e) => {
     e.target.select();
+    // Review r4f minor: when the custom keypad sheet is active, its own
+    // effect calls scrollActiveIntoView() via requestAnimationFrame once the
+    // sheet's real height is published, and that already owns positioning
+    // for this field (inputMode="none" means no OS keyboard, so no
+    // visualViewport resize ever fires to cancel this function's own
+    // fallback timer anyway). Without this guard the two scrolls race: the
+    // sheet settles the row correctly, then ~400ms later this fallback fires
+    // and re-centers the same field, visibly jiggling the page a second
+    // time right after it had already settled.
+    if (useKeypad) return;
     const el = e.target;
     const bringIntoView = () => el.scrollIntoView({ block: "center", behavior: "smooth" });
     const vv = window.visualViewport;
@@ -1631,7 +1641,7 @@ function KeypadSheet({
 
   const currentRir = set?.rir != null ? set.rir : (set?.rpe != null ? 10 - set.rpe : null);
 
-  const key = "min-h-[52px] rounded-xl bg-[#2A2E35] text-[#F5F3EE] text-xl font-bold flex items-center justify-center active:bg-[#363B44] touch-manipulation select-none";
+  const key = "min-h-[52px] rounded-xl bg-[var(--key-surface)] text-[var(--key-text)] text-xl font-bold flex items-center justify-center active:bg-[var(--key-surface-active)] touch-manipulation select-none";
   const stop = (e) => e.preventDefault();
 
   return (
@@ -1639,7 +1649,7 @@ function KeypadSheet({
       ref={sheetRef}
       role="group"
       aria-label="Set entry keypad"
-      className="fixed inset-x-0 bottom-0 z-[70] bg-[#1C1F23] border-t border-charcoal-border rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom,0px)]"
+      className="fixed inset-x-0 bottom-0 z-[70] bg-charcoal-surface2 border-t border-charcoal-border rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom,0px)]"
       onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
       onTouchEnd={(e) => {
         if (touchStartY.current == null) return;
@@ -1653,7 +1663,7 @@ function KeypadSheet({
       <div className="flex items-end justify-between px-4 pt-1 pb-3">
         <div>
           <div className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">{label}</div>
-          <div className="text-3xl font-extrabold tabular-nums text-[#F5F3EE] mt-0.5">
+          <div className="text-3xl font-extrabold tabular-nums text-[var(--key-text)] mt-0.5">
             {buffer === "" ? "—" : buffer}
           </div>
         </div>
@@ -1684,7 +1694,7 @@ function KeypadSheet({
             onPointerDown={stop}
             onClick={goNext}
             aria-label="Done, mark set complete"
-            className="w-full min-h-[52px] rounded-xl bg-brand text-[#12161C] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+            className="w-full min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
           >
             Done ✓
           </button>
@@ -1722,7 +1732,7 @@ function KeypadSheet({
               onPointerDown={stop}
               onClick={goNext}
               aria-label={isLastField ? "Done, mark set complete" : "Next field"}
-              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[#12161C] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
               {isLastField ? "Done ✓" : "Next"}
             </button>

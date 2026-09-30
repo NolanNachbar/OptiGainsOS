@@ -30,6 +30,10 @@ background gap between modules, not shadow or radius.
 | `--text-secondary` | `#C6CAD1` | secondary labels/body |
 | `--text-muted` | `#959CA6` | module eyebrows, captions, inactive tabs |
 | `--text-faint` | `#7B828C` | quietest UI text (never as dim as the rule color) |
+| `--key-surface` | `#2A2E35` | Phase B keypad sheet: digit key background |
+| `--key-surface-active` | `#363B44` | Phase B keypad sheet: digit key pressed state |
+| `--key-text` | `#F5F3EE` | Phase B keypad sheet: digit key label + current-value readout |
+| `--key-ink-on-brand` | `#12161C` | Phase B keypad sheet: ink on a brand-filled button inside the sheet |
 | protein | `#EE7B61` | only where protein is named |
 | carbs | `#6EA6DA` | only where carbs is named |
 | fat | `#E2B84E` | only where fat is named |
