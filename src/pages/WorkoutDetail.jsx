@@ -183,7 +183,7 @@ export default function WorkoutDetail() {
   const programWorkoutId = urlParams.get('programWorkoutId');
 
   // Fetch user profile to get weight unit preference
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
 
   // Equipment substitution. rawWorkout is what's stored; `workout` is what he can
   // actually run where he is today. A library workout never passes through the
@@ -363,11 +363,22 @@ export default function WorkoutDetail() {
   // Check for tutorial demo mode
   const isTutorialDemo = urlParams.get('tutorial') === 'demo';
 
-  // On mount, check for an in-progress session to offer resumption
+  // On mount, check for an in-progress session to offer resumption. Gated on
+  // profileLoading, same as the global sweep in useGlobalAutoFinish
+  // (Layout.jsx) -- a cold deep-link straight into this page could otherwise
+  // run autoFinishSession before the profile query resolves, filing a swept
+  // workout under the device's timezone instead of his actual profile one.
+  // Once resolved, a profile with no timezone set falls back to the device's
+  // own Intl timezone explicitly. mountCheckDoneRef keeps this a true
+  // "on mount" check (once profileLoading first clears) rather than
+  // re-running every time profileLoading happens to re-flip.
+  const mountCheckDoneRef = useRef(false);
   useEffect(() => {
-    if (isTutorialDemo) {
+    if (isTutorialDemo || profileLoading || mountCheckDoneRef.current) {
       return;
     }
+    mountCheckDoneRef.current = true;
+    const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     const workoutId = urlParams.get('id');
     checkForActiveSession({ workoutId, programWorkoutId }).then((session) => {
       if (!session) return;
@@ -381,7 +392,7 @@ export default function WorkoutDetail() {
       // STALE_SESSION_MS — a session older than a day gets the dialog below,
       // because back-dating a log that far retroactively moves MRV and volume.
       if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
-        autoFinishSession(session, profile?.timezone).then((result) => {
+        autoFinishSession(session, timezone).then((result) => {
           if (result === "logged") {
             invalidateWorkoutLogs(queryClient);
             return;
@@ -429,7 +440,7 @@ export default function WorkoutDetail() {
       setResumeSession(session);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [profileLoading]);
 
   // Flipping the equipment toggle mid-session rewrites the live logger too.
   // The seeding effect below only runs on an empty log, so without this the

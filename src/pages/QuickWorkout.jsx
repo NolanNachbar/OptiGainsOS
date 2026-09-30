@@ -125,7 +125,7 @@ export default function QuickWorkout() {
 
   const { sessionIdRef, checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, getSessionStatus, saveFailed, retrySave } = useWorkoutSession();
 
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const toggleLike = useToggleExerciseLike();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
@@ -261,10 +261,17 @@ export default function QuickWorkout() {
     return replaceExerciseRaw(oldName, newExercise, suggestion || lastPerf?.lastWeight || 0);
   };
 
-  // On mount: check for an existing in-progress quick workout session
+  // On mount: check for an existing in-progress quick workout session.
+  // Gated on profileLoading, same as the global sweep in useGlobalAutoFinish
+  // (Layout.jsx) -- a cold deep-link straight into this page could otherwise
+  // run autoFinishSession before the profile query resolves, filing a swept
+  // workout under the device's timezone instead of his actual profile one.
+  // Once resolved, a profile with no timezone set falls back to the device's
+  // own Intl timezone explicitly.
   useEffect(() => {
-    if (!user || sessionInitialized.current) return;
+    if (!user || profileLoading || sessionInitialized.current) return;
     sessionInitialized.current = true;
+    const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     checkForActiveSession({}).then((session) => {
       if (session) {
         const ageMs = Date.now() - new Date(session.start_time).getTime();
@@ -273,7 +280,7 @@ export default function QuickWorkout() {
         // AUTO_FINISH_STALE_MS for why silence and age are separate clocks.
         const silenceMs = sessionSilenceMs(session);
         if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
-          autoFinishSession(session, profile?.timezone).then((result) => {
+          autoFinishSession(session, timezone).then((result) => {
             // Only open a new session once the old one is actually closed.
             // Creating it unconditionally would leave two rows in_progress.
             if (result === "logged" || result === "cancelled") {
@@ -314,7 +321,7 @@ export default function QuickWorkout() {
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, profileLoading]);
 
   // Auto-save after every set update (fires when exercises state changes)
   useEffect(() => {
