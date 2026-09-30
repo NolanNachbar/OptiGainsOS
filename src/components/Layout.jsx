@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
-import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Brain } from "lucide-react";
+import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Brain, Plus, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
-import FloatingActionButton from "@/components/ui/FloatingActionButton";
+import QuickAddMenu from "@/components/ui/QuickAddMenu";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -119,8 +119,22 @@ function Wordmark({ size = 17 }) {
   );
 }
 
+// Tab-root pages get the large, bold, left-aligned MacroFactor-style title
+// (30-34px) + a one-line muted subtitle + the avatar on the same row.
+// Everything else keeps the smaller default title treatment unless it's a
+// drill-down page (below).
+const TAB_ROOT_PAGES = new Set(["Today", "Train", "Workouts", "Fuel", "FoodTracker", "AthleteState"]);
+
+// Drill-down pages that already have their own in-page back navigation get a
+// compact, centered title + a back chevron in the Layout header instead —
+// this does NOT add new navigation, it just gives the existing "go back"
+// affordance a consistent chrome position. navigate(-1) mirrors what each of
+// these pages' own in-page back links already do (return to the prior route).
+const DRILL_DOWN_PAGES = new Set(["WorkoutDetail", "ProgramDetail", "ProgramBuilder", "QuickWorkout", "Profile", "BriefHistory"]);
+
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { profile } = useProfile();
   const [showCalculators, setShowCalculators] = useState(false);
   // Bridge for pages whose own FAB is suppressed (e.g. the active workout
@@ -134,6 +148,12 @@ export default function Layout({ children, currentPageName }) {
   }, []);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
+  // Quick-add: the raised '+' in the mobile dock's center slot (and a small
+  // sidebar trigger on desktop) opens the existing tiered quick-add menu
+  // (QuickAddMenu.jsx) as a controlled bottom sheet / fan-out. This replaces
+  // the old floating FAB, which owned its own open state and its own fixed
+  // trigger button.
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const mobileHeaderRef = useRef(null);
   const stripScrollRef = useRef(null);
   const [stripOverflows, setStripOverflows] = useState(false);
@@ -195,7 +215,12 @@ export default function Layout({ children, currentPageName }) {
     updateHeaderHeight();
     window.addEventListener("resize", updateHeaderHeight);
     return () => window.removeEventListener("resize", updateHeaderHeight);
-  }, []);
+    // Tab-root vs. drill-down headers render at different heights (30-34px
+    // title vs. compact centered title), so a route change alone can change
+    // --layout-header-height without a window resize firing. Re-measure on
+    // every navigation too, or the sticky sub-tab strip below can latch onto
+    // a stale top offset from the previous page's header.
+  }, [location.pathname]);
 
   // Gate the right-edge scroll-fade behind a real overflow check so it never
   // renders a false "scrollable" affordance when the strip's pills already fit
@@ -255,6 +280,9 @@ export default function Layout({ children, currentPageName }) {
     ? pageSubtitle[currentPageName]
     : format(new Date(), "EEEE, MMMM d");
 
+  const isTabRoot = TAB_ROOT_PAGES.has(currentPageName);
+  const isDrillDown = DRILL_DOWN_PAGES.has(currentPageName);
+
   // The active top-level section. Its cross-route children populate the mobile
   // sub-tab strip when the section opts in (mobileStrip:true); sections with an
   // in-page <SubTabs> (Train/Fuel) or none (Today) show no pills.
@@ -282,28 +310,35 @@ export default function Layout({ children, currentPageName }) {
   const dockItems = activeIsDemoted
     ? [...primaryDockItems, activeSection]
     : primaryDockItems;
-
-  // The global FAB floats above the dock on the Today home, suppressed on
-  // focused/logging routes and on surfaces with their own teal CTA (Train owns
-  // an in-context create '+', so the global FAB stays off there). Hoist the
-  // predicate so the content padding below can reserve clearance for the FAB's
-  // floated footprint via --fab-clearance — otherwise the last in-flow card ends
-  // under the FAB and the teal '+' bleeds over its corner. The FAB itself
-  // (FloatingActionButton.jsx) hugs the viewport's bottom-right gutter (right-3,
-  // 48px body, tucked low toward the dock) so its body intrudes minimally on the
-  // content column during scroll; --fab-clearance single-sources the bottom
-  // reservation so screens don't each pad by hand.
-  const showFab = !["/create-workout", "/quick-workout", "/program-builder", "/program/", "/workout-detail",
-    "/train",
-    "/profile", "/onboarding", "/login", "/forgot-password", "/reset-password",
-    "/fuel", "/food-tracker",
-    "/athlete-state", "/recovery", "/physique", "/coach",
-    "/insights", "/brief-history", "/mind", "/career"].some((p) => location.pathname.startsWith(p));
+  // The raised '+' always sits in the dock's center slot (like MacroFactor),
+  // between Train and Fuel — i.e. after the first two primary items. Any
+  // transient demoted section appended above lands after Body, to the right
+  // of the '+', never disturbing its fixed position.
+  const dockLeftItems = dockItems.slice(0, 2);
+  const dockRightItems = dockItems.slice(2);
 
   // The mobile dock is suppressed on /program-builder: that screen owns a
   // full-width sticky footer (its save/next CTA), so the floating dock would
   // stack over it and steal the thumb zone. Suppress HERE only.
   const showDock = !location.pathname.startsWith("/program-builder");
+
+  const renderDockLink = (item) => {
+    const isActive = isNavActive(item, location.pathname);
+    return (
+      <Link
+        key={item.title}
+        to={item.url}
+        className={`flex flex-col items-center gap-[2px] py-1 rounded-full min-w-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+          isActive
+            ? "text-[var(--brand-tint)] bg-brand/[0.18]"
+            : "text-ink-faint hover:text-ink-muted"
+        }`}
+      >
+        <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
+        <span className="text-[9.5px] font-bold">{item.title}</span>
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -366,6 +401,18 @@ export default function Layout({ children, currentPageName }) {
                 {format(new Date(), "EEE MMM d")}
               </span>
               <div className="flex items-center gap-2">
+                {/* Desktop quick-add trigger — the sidebar's equivalent of the
+                    mobile dock's raised '+'. Opens the same controlled
+                    QuickAddMenu, which still renders its own desktop fan-out. */}
+                <button
+                  type="button"
+                  onClick={() => setQuickAddOpen(true)}
+                  aria-label="Quick add"
+                  data-testid="quick-add-button-desktop"
+                  className="flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] transition-transform duration-150 [transition-timing-function:var(--ease)] hover:scale-105"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={2.5} />
+                </button>
                 <ThemeToggle />
                 <Link to="/profile">
                   <UserAvatar
@@ -382,7 +429,11 @@ export default function Layout({ children, currentPageName }) {
 
         <div className="flex-1 flex flex-col min-w-0 min-h-screen">
           {/* Mobile top header — title voice + the gold deadline chip. Pad the
-              top by the safe-area inset so it sits below the status bar. */}
+              top by the safe-area inset so it sits below the status bar.
+              Tab-root pages (Today/Train/Fuel/Body) get a large bold
+              left-aligned title with the avatar on the same row; drill-down
+              pages that already have their own back navigation get a
+              compact centered title + back chevron instead. */}
           <header
             ref={mobileHeaderRef}
             data-mobile-header
@@ -398,25 +449,48 @@ export default function Layout({ children, currentPageName }) {
               background: "var(--color-bg)",
             }}
           >
-            <div className="flex-1 min-w-0">
-              <h1 className="type-display text-[22px] truncate">{pageDisplayName}</h1>
-              {mobileSubtitle && (
-                // text-ink-secondary (72%) not text-muted-2 (50%): the date
-                // subtitle read too dim on charcoal; secondary is the AA-safe
-                // secondary-contrast tier.
-                <div className="text-[12px] font-semibold text-ink-secondary truncate">
-                  {mobileSubtitle}
+            {isDrillDown ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  aria-label="Back"
+                  className="shrink-0 flex items-center justify-center h-11 w-11 -ml-2"
+                >
+                  <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+                </button>
+                <div className="flex-1 min-w-0 text-center">
+                  <h1 className="type-display text-[17px] truncate">{pageDisplayName}</h1>
                 </div>
-              )}
-            </div>
-            <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
-              <UserAvatar
-                url={profile?.avatar_url}
-                name={profile?.display_name || profile?.username}
-                size="sm"
-                className="w-8 h-8 text-xs border border-charcoal-border"
-              />
-            </Link>
+                {/* Spacer mirrors the back button's width so the title stays
+                    visually centered in the row instead of drifting right. */}
+                <div className="shrink-0 h-11 w-11" aria-hidden="true" />
+              </>
+            ) : (
+              <>
+                <div className="flex-1 min-w-0">
+                  <h1 className={`type-display truncate ${isTabRoot ? "text-[32px]" : "text-[22px]"}`}>
+                    {pageDisplayName}
+                  </h1>
+                  {mobileSubtitle && (
+                    // text-ink-secondary (72%) not text-muted-2 (50%): the date
+                    // subtitle read too dim on charcoal; secondary is the AA-safe
+                    // secondary-contrast tier.
+                    <div className="text-[12px] font-semibold text-ink-secondary truncate">
+                      {mobileSubtitle}
+                    </div>
+                  )}
+                </div>
+                <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
+                  <UserAvatar
+                    url={profile?.avatar_url}
+                    name={profile?.display_name || profile?.username}
+                    size="sm"
+                    className="w-8 h-8 text-xs border border-charcoal-border"
+                  />
+                </Link>
+              </>
+            )}
           </header>
 
           {/* Mobile sub-tab strip — mirrors the desktop sidebar children for the
@@ -424,7 +498,7 @@ export default function Layout({ children, currentPageName }) {
               the section opts in AND a child tab is active, so it never paints an
               empty band on sections that own their in-page tabs (Train/Fuel) or
               have none (Today). The Calculators / Stream-Note utilities are not
-              duplicated here, they live in the global FAB's fan-out menu, so the
+              duplicated here, they live in the global quick-add menu, so the
               row stays a clean tab strip instead of an orphaned 'Tools' toolbar. */}
           {hasSubTabs && (
             <div
@@ -485,7 +559,7 @@ export default function Layout({ children, currentPageName }) {
               offset is single-sourced with the sticky save-bar / footer
               consumers (Profile save bar, ProgramBuilder footer). */}
           <main className="flex-1 flex flex-col min-h-0">
-            {/* Dock/FAB bottom clearance lives on the CONTENT div, not <main>.
+            {/* Dock bottom clearance lives on the CONTENT div, not <main>.
                 <main> is flex-1 + min-h-0, so on a short page it collapses to the
                 remaining viewport height and any paddingBottom set on it gets
                 clipped; on a tall scrolling page (Recovery/AthleteState) the
@@ -494,13 +568,12 @@ export default function Layout({ children, currentPageName }) {
                 slid under the floating dock. Pinning the clearance to the actual
                 content wrapper makes the reserved space travel WITH the content
                 so the last in-flow element always clears the dock (lg: no dock,
-                so drop it). When the floated FAB is present, reserve its full
-                footprint (--fab-clearance) instead of the dock-only clearance. */}
+                so drop it). The quick-add '+' now lives inside the dock itself
+                (no more separately-floated FAB), so a single dock-clearance
+                reservation covers both. */}
             <div
               className="flex-1 min-h-0 content-bottom-clearance"
-              style={{ "--content-pb": showFab
-                ? "var(--fab-clearance)"
-                : "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
+              style={{ "--content-pb": "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
             >
               {children}
             </div>
@@ -508,14 +581,17 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Mobile — the floating liquid-glass dock (4 primary sections; Analyze
-          is demoted to the sidebar/strip, so the grid auto-sizes to the dock
-          items rather than a hard-coded 5 columns). Suppressed on
-          /program-builder, which owns a full-width sticky footer CTA. */}
+      {/* Mobile — the floating liquid-glass dock. 4 primary sections plus a
+          raised center '+' (MacroFactor-style quick add) in a fixed middle
+          slot between Train and Fuel; Analyze is demoted to the
+          sidebar/strip and, when it's the active surface, appends a 5th
+          section slot to the RIGHT of the '+' so the '+' position never
+          shifts. Suppressed on /program-builder, which owns a full-width
+          sticky footer CTA. */}
       {showDock && (
       <nav
         data-mobile-dock
-        className="glass-elevated z-[9999] lg:hidden rounded-full grid px-[9px] py-2"
+        className="glass-elevated z-[9999] lg:hidden rounded-full grid items-center px-[9px] py-2"
         style={{
           position: "fixed",
           left: 18,
@@ -523,43 +599,36 @@ export default function Layout({ children, currentPageName }) {
           // --keyboard-inset keeps the dock glued to the VISUAL viewport bottom on
           // iOS instead of drifting to mid-screen while the keyboard is open.
           bottom: "calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset))",
-          gridTemplateColumns: `repeat(${dockItems.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${dockItems.length + 1}, minmax(0, 1fr))`,
         }}
       >
-        {dockItems.map((item) => {
-          const isActive = isNavActive(item, location.pathname);
-          return (
-            <Link
-              key={item.title}
-              to={item.url}
-              className={`flex flex-col items-center gap-[2px] py-1 rounded-full min-w-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
-                isActive
-                  ? "text-[var(--brand-tint)] bg-brand/[0.18]"
-                  : "text-ink-faint hover:text-ink-muted"
-              }`}
-            >
-              <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
-              <span className="text-[9.5px] font-bold">{item.title}</span>
-            </Link>
-          );
-        })}
+        {dockLeftItems.map(renderDockLink)}
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setQuickAddOpen(true)}
+            aria-label="Quick add"
+            data-testid="quick-add-button"
+            className="flex items-center justify-center w-12 h-12 -mt-4 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] shadow-[0_4px_12px_rgba(0,0,0,0.35)] transition-transform duration-150 [transition-timing-function:var(--ease)] active:scale-95"
+          >
+            <Plus className="w-6 h-6" strokeWidth={2.5} />
+          </button>
+        </div>
+        {dockRightItems.map(renderDockLink)}
       </nav>
       )}
 
-      {/* Floating action button — quick global add (workout/food/weigh-in/note).
-          Shown on the Today home; suppressed on focused form/logging routes and on
-          Fuel/FoodTracker, which carry their own teal add FAB, so two teal FABs
-          never share a screen. Also suppressed on the read-only review surfaces
-          (Body / Analyze / Mind / Career), where a global '+' has no clear add
-          intent, collides with data tiles and brief cards, and on Career/Physique
-          would be a second teal action competing with the screen's own teal CTA. */}
-      {showFab && (
-        <FloatingActionButton
-          onWeighIn={() => setShowWeighIn(true)}
-          onCalculators={() => setShowCalculators(true)}
-          onStreamNote={() => setShowNoteModal(true)}
-        />
-      )}
+      {/* Quick-add menu — the tiered quick-add sheet (mobile bottom sheet /
+          desktop fan-out), driven by the raised '+' in the dock (mobile) or
+          the sidebar (desktop). Fully controlled: QuickAddMenu owns no open
+          state or trigger of its own. */}
+      <QuickAddMenu
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onWeighIn={() => setShowWeighIn(true)}
+        onCalculators={() => setShowCalculators(true)}
+        onStreamNote={() => setShowNoteModal(true)}
+      />
       <WeighInModal open={showWeighIn} onOpenChange={setShowWeighIn} />
       <CalculatorsModal
         isOpen={showCalculators}

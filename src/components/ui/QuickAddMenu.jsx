@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
+import { X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
 
 const EASE = [0.2, 0.7, 0.3, 1];
 
@@ -19,11 +18,17 @@ const actions = [
   { label: "Stream Note", icon: Brain, action: "streamNote", tier: "demoted" },
 ];
 
-export default function FloatingActionButton({ onWeighIn, onCalculators, onStreamNote }) {
-  const [isOpen, setIsOpen] = useState(false);
+// QuickAddMenu — the tiered quick-add menu (mobile bottom sheet / desktop
+// fan-out), fully controlled by its caller. Ledger phase 2b: this used to be
+// FloatingActionButton, an uncontrolled component that also rendered its own
+// fixed +/X trigger. The trigger is gone (Layout now renders the raised '+'
+// itself — the tab bar's center slot on mobile, a sidebar icon on desktop) —
+// this component owns only the menu body (backdrop + sheet/fan), driven by
+// `open`/`onClose` from that trigger.
+export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, onStreamNote }) {
   const navigate = useNavigate();
   const handleAction = (action) => {
-    setIsOpen(false);
+    onClose?.();
     if (action.path) {
       navigate(action.path);
     } else if (action.action === "weighIn") {
@@ -45,7 +50,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
           dropped here; the md+ fan below keeps that layout. */}
       {createPortal(
         <AnimatePresence>
-          {isOpen && (
+          {open && (
             <div className="md:hidden fixed inset-0 z-[10000]">
               {/* Backdrop — deep + blurred so text behind reads unreadable. */}
               <motion.div
@@ -54,7 +59,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: EASE }}
                 className="fixed inset-0 bg-black/85 backdrop-brightness-50"
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
               />
               {/* Contained sheet pinned flush to the bottom edge inside the
                   shared floating-chrome clearance. Rises 8px on var(--ease). */}
@@ -107,31 +112,25 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
                   );
                 })}
               </motion.div>
-              {/* The sheet is raised clear of the FAB's own rect (R1-02), but the
-                  scrim (z-[10000]) still sits above the FAB's own z-50, so the
-                  original +/X reads as a dark silhouette a tap can't reach. Give
-                  the sheet a real close control at the FAB's exact geometry,
-                  above the scrim inside this same portal, so the +->X rotation
-                  stays reachable while it's open. The original button is hidden
-                  (not removed) via max-md:invisible below so there isn't a
-                  second control sharing the same accessible name. */}
+              {/* The scrim (z-[10000]) sits above the dock's raised '+' trigger
+                  (z-[9999], part of data-mobile-dock), so that trigger reads as
+                  a dark silhouette under the scrim a tap can't cleanly land on.
+                  Give the sheet its own visible close control at the same
+                  bottom-center spot the dock's '+' occupies, above the scrim in
+                  this same portal, so there's always one reachable, visible
+                  close affordance right where the eye expects it. */}
               <motion.button
                 type="button"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: EASE }}
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
                 aria-label="Close quick-add menu"
-                // var(--floating-chrome-bottom): was a bare `calc(5rem + safe-
-                // area)` flush against the dock's ASSUMED height with zero
-                // margin. SF Pro's slightly taller default line-height grew
-                // the dock's actual painted height by a couple px, which was
-                // enough to clip this button's bottom corner under it (a
-                // probe-caught occlusion regression). The shared token adds
-                // its already-designed-in 12px breathing gap, so it no longer
-                // depends on the dock rendering at exactly its nominal height.
-                className="fixed right-3 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)]"
+                // var(--floating-chrome-bottom): the dock's full painted
+                // footprint + safe-area + the shared 12px breathing gap, so
+                // this sits right where the raised '+' visually is.
+                className="fixed left-1/2 -translate-x-1/2 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)]"
                 style={{ bottom: 'var(--floating-chrome-bottom)' }}
               >
                 <X className="w-6 h-6" />
@@ -144,7 +143,7 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
 
       {/* ── md+: backdrop + fan-out (unchanged language) ─────────────────── */}
       <AnimatePresence>
-        {isOpen && (
+        {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -152,13 +151,13 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
             transition={{ duration: 0.2, ease: EASE }}
             className="hidden md:block fixed inset-0 bg-black/40 z-40"
             style={{ top: "var(--layout-header-height, 56px)" }}
-            onClick={() => setIsOpen(false)}
+            onClick={onClose}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {isOpen && (
+        {open && (
           <div className="hidden md:flex fixed md:bottom-[88px] md:right-6 z-50 flex-col items-end gap-3">
             {actions.map((action, index) => {
               const demoted = action.tier === "demoted";
@@ -202,38 +201,6 @@ export default function FloatingActionButton({ onWeighIn, onCalculators, onStrea
           </div>
         )}
       </AnimatePresence>
-
-      {/* Main FAB button — always fixed */}
-      <motion.button
-        onClick={() => {
-          setIsOpen(!isOpen);
-        }}
-        // Flat-depth (Clean): a tighter directional NEUTRAL drop shadow, not a
-        // brand-tinted bloom radiating on all sides. Flat solid brand fill, no
-        // gradient and no inset specular. (Mirrors button.jsx's volt/coral fix.)
-        //
-        // Position: the page content column sits at the px-4 (16px) gutter, so a
-        // FAB at the old right-[18px] with a 52px body sat directly over each
-        // card's right edge during scroll. Tuck it into the gutter (right-3 =
-        // 12px, hugging the viewport edge) and shrink the body to 48px so it
-        // intrudes less of the content column, and tuck it lower toward the dock
-        // (5rem above the dock baseline vs 6rem) so its overlap zone is minimal
-        // and sits below most card content. 48px is still ≥44px tap minimum.
-        className={`fixed right-3 md:bottom-6 md:right-6 z-50 w-12 h-12 text-[var(--color-action-dark)] rounded-full flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] bg-[var(--color-brand)] [box-shadow:0_2px_8px_rgba(0,0,0,0.35)] ${isOpen ? "max-md:invisible" : ""}`}
-        style={{ bottom: 'var(--floating-chrome-bottom)' }}
-        whileTap={{ scale: 0.9 }}
-        data-tutorial="fab-button"
-        aria-label={isOpen ? "Close quick-add menu" : "Quick add"}
-        aria-expanded={isOpen}
-        title="Quick add"
-      >
-        <motion.div
-          animate={{ rotate: isOpen ? 135 : 0 }}
-          transition={{ duration: 0.2, ease: [0.2, 0.7, 0.3, 1] }}
-        >
-          {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-        </motion.div>
-      </motion.button>
     </>
   );
 }
