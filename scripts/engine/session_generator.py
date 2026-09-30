@@ -406,8 +406,12 @@ _EX_BY_NAME = {e["name"]: e for e in EXERCISES}
 # Assistance pools appended after the main goal lift (rotated by date, not
 # knapsack-selected). Bench → paused-comp 315; deadlift → 500 conventional via
 # submaximal work rather than heavy grinding.
+# "Weighted Dip" is deliberately NOT in this rotation pool (Nolan, 2026-09-30):
+# it is now always added to Upper A on top of whichever of these three rotates
+# in, so leaving it in the rotation pool too would risk picking it twice on the
+# week the rotation lands on it. See the unconditional add in _build_session.
 BENCH_ASSISTANCE    = ["Reverse Grip Incline Smith Machine Press", "Larsen Press",
-                       "Incline Bench Press", "Weighted Dip"]
+                       "Incline Bench Press"]
 DEADLIFT_ASSISTANCE = ["Deficit Deadlift", "Deadlift (Speed/Light)", "Paused Deadlift"]
 
 # Chest hypertrophy press pool. The bench top set is a STRENGTH movement — 1-3 reps
@@ -468,12 +472,15 @@ def _pick_assistance(lift: str, pool: list, weakness: dict, assist_week: int) ->
 
 # ── Muscle groups per session type ───────────────────────────────────────────
 
-# Upper A and B hit the SAME muscles every session — full upper every time.
-# The difference is ORDER: A is push-first (bench before pull-ups), B is pull-first.
-# The stable fatigue_cost sort in _build_session preserves insertion order for ties
-# (bench and pull-up both at 4.0), so the muscle list order drives exercise order
-# within a fatigue tier. That sort also applies an emphasis nudge (see _order_key),
-# so priority isolations like side delts lead the isolation block rather than trail it.
+# Upper A and B hit the SAME muscles every session — full upper every time. The
+# difference is EMPHASIS: A leads with press (bench), B leads with pull (pull-up),
+# and both STRICTLY ALTERNATE press/pull thereafter — no two press or two pull
+# movements adjacent (Nolan, 2026-09-30). This list's own order sets which muscle
+# is the day's FOCUS (list[0], front-loaded — see _order_key's focus_bonus) and
+# is the tie-break for which candidates the budget trim protects first; the actual
+# press/pull interleave and count-balancing live in _build_session's dedicated
+# alternation logic (_UPPER_PRESS_MUSCLES / _UPPER_PULL_MUSCLES), not in this
+# list's ordering.
 UPPER_A_MUSCLES = ["chest", "upper_chest", "shoulders", "triceps", "side_delts",
                    "lats", "upper_back", "biceps", "rear_delts", "traps", "neck"]
 UPPER_B_MUSCLES = ["lats", "upper_back", "biceps", "rear_delts",
@@ -888,6 +895,36 @@ _UPPER_VARIANT_PATTERN_BIAS = {
     "upper_a": {**{p: 1.5 for p in _PUSH_PATTERNS}, **{p: -1.5 for p in _PULL_PATTERNS}},
     "upper_b": {**{p: -1.5 for p in _PUSH_PATTERNS}, **{p: 1.5 for p in _PULL_PATTERNS}},
 }
+
+# Press/pull classification for the Upper A/B STRICT ALTERNATION (Nolan,
+# 2026-09-30): "They both alternate but upper A starts with a press and upper B
+# starts with a pull. There shouldn't be two press exercises in a row or two pull
+# exercises in a row." Every upper-domain muscle is classified once, isolations
+# included — triceps/side delts (pushdown, lateral raise) read as press, biceps/
+# rear delts/traps (curl, face pull, shrug) read as pull, same call Nolan made
+# naming the movements explicitly. "neck" is neither and is exempt, same as core
+# on other splits — it goes at the very end, never mid-alternation.
+_UPPER_PRESS_MUSCLES = {"chest", "upper_chest", "shoulders", "triceps", "side_delts"}
+_UPPER_PULL_MUSCLES  = {"lats", "upper_back", "biceps", "rear_delts", "traps"}
+_UPPER_AB_LEAD  = {"upper_a": "press", "upper_b": "pull"}
+_UPPER_AB_OTHER = {"upper_a": "pull",  "upper_b": "press"}
+
+
+def _ab_cat(e: dict) -> str:
+    """Shared press/pull/neutral classifier for the Upper A/B alternation rule.
+    Used by _balance_press_pull and by the CHEST_HYPERTROPHY_PRESS backfill gate
+    in _build_session — both need the identical classification so the backfill's
+    "would this break balance" check agrees with the balancer's own counts."""
+    m = (e.get("muscles") or [None])[0]
+    if m in _UPPER_PRESS_MUSCLES: return "press"
+    if m in _UPPER_PULL_MUSCLES:  return "pull"
+    return "neutral"
+
+
+def _ab_counts(exercises: list) -> tuple:
+    p = sum(1 for e in exercises if not e.get("is_backoff") and _ab_cat(e) == "press")
+    q = sum(1 for e in exercises if not e.get("is_backoff") and _ab_cat(e) == "pull")
+    return p, q
 
 
 def _converge_split(recent_types, split_framework, frequency_targets,
@@ -1321,6 +1358,165 @@ def _alternate_antagonists(exercises: list, focus_muscle: str = None) -> list:
     return [ex for u in ordered for ex in u]
 
 
+def _balance_press_pull(exercises: list, split: str, focus_muscle: str = None,
+                         max_diff: int = 1) -> list:
+    """Upper A/B strictly ALTERNATE press/pull (Nolan, 2026-09-30): "There shouldn't
+    be two press exercises in a row or two pull exercises in a row" — Upper A opens
+    on a press, Upper B opens on a pull. _alternate_antagonists (called right after
+    this) only REORDERS; it can't fix an imbalanced total, and it falls back to
+    stacking same-chain work at the tail once one chain outnumbers the other with
+    nothing left to pair against. The additions that ride on top of the knapsack's
+    own muscle slots are always press-heavy regardless of split — the mandatory
+    bicep/tricep/side-delt isolations are 2 press + 1 pull, and the bench assistance
+    stack only exists on the chest-focus day (Upper A) — so unchecked, that's
+    exactly what stacked Oct 1/5/9's Upper A into Bench, Weighted Pull-up, Reverse
+    Grip Incline Smith Press, Curl, Seated DB OHP, Dip Pyramid, Lateral Raise,
+    Triceps Pushdown: five press against one real back movement.
+
+    Trims the OVERSUPPLIED category's lowest-priority entries down to where the two
+    counts are equal or differ by at most 1, with the extra always on the day's LEAD
+    category (press on Upper A, pull on Upper B), never the other side. A goal lift
+    and the guaranteed mandatory/supplement isolations are never touched — dropping
+    those would trade the alternation bug for a missing-back-work or
+    missing-press-work bug, which is the thing this exists to prevent in the first
+    place. The day's focus-muscle slot is protected the SAME way only when nothing
+    else already guarantees that muscle a spot (2026-09-30, 2nd pass): on Upper A,
+    focus_muscle is chest, and Bench — the goal lift — already covers it, so a
+    SECOND, non-goal chest pick isn't a second guarantee, it's just padding with a
+    protected tag on it. Blanket-protecting it anyway, stacked on the goal lift and
+    the mandatory isolations, left zero trimmable candidates on a 4-exercise Upper A
+    budget (Weighted Dip, the day's only surplus press item, had nowhere to go).
+
+    Drop priority is NOT "assistance first": a compound whose PATTERN duplicates
+    another compound already in the session goes first, because
+    _alternate_antagonists' own one-movement-per-pattern dedup (see there) would
+    drop it a few lines later anyway — trimming it here costs nothing. Only once
+    those are gone does it fall back to plain compounds/isolations, lowest
+    fatigue_cost first. Assistance work (Reverse Grip Incline, the bench-day liked
+    movement) is dropped LAST, not first: the dedup comment is explicit that it is
+    supposed to WIN its pattern slot over the knapsack's redundant pick (Incline DB
+    Press, both incline_push) — dropping the assistance pick first, as an earlier
+    version of this function did, inverted that on every Upper A session.
+
+    The chest press is NOT protected here, not even the last one (2026-09-30,
+    2nd pass): an earlier version protected the last remaining non-goal chest
+    press so the CHEST_HYPERTROPHY_PRESS backfill wouldn't immediately re-add one
+    and undo the trim. On a tight budget (session_size_learned=4, or a cut day)
+    that protection — stacked on top of the untouchable goal lift and mandatory
+    bicep/tricep/side-delt isolations — left ZERO trimmable press candidates,
+    so the loop below gave up with the imbalance still standing (Upper A at
+    learned=4: Bench/Dip/Lateral/Triceps = 4 press against Pull-up/Curl = 2
+    pull, tail press-press adjacent). Nolan's explicit alternation rule outranks
+    the backfill's [COACH] heuristic, so the backfill is gated instead (see its
+    call site in _build_session) to skip re-adding a press when doing so would
+    push the count back out of band — the protection moved to the source of the
+    re-add rather than staying here where it blocked the trim outright.
+    """
+    lead = _UPPER_AB_LEAD.get(split)
+    if not lead:
+        return exercises
+    other = _UPPER_AB_OTHER[split]
+
+    def _essential(e):
+        if e.get("is_goal") or e.get("is_mandatory_iso") or e.get("is_iso_supplement"):
+            return True
+        if (e.get("muscles") or [None])[0] == focus_muscle:
+            # Blanket-protecting the focus muscle's slot double-guarantees it on
+            # Upper A, where focus_muscle is chest — the same muscle Bench (the
+            # goal lift) already covers. A goal lift is protected above on its own
+            # terms; ALSO protecting a second, non-goal chest pick (Weighted Dip,
+            # an assistance movement with nothing else trimmable at a 4-exercise
+            # budget) left zero candidates and the trim gave up mid-imbalance
+            # (2026-09-30, 2nd pass — same shape as the chest-press over-
+            # protection bug above, just on this guard instead). Only protect the
+            # focus-muscle slot when nothing ELSE already guarantees that muscle
+            # a spot in the session.
+            if not any(x.get("is_goal") and (x.get("muscles") or [None])[0] == focus_muscle
+                       for x in exercises):
+                return True
+        return False
+
+    for _ in range(len(exercises) + 1):     # bounded: each pass either trims or stops
+        p, q = _ab_counts(exercises)
+        lead_count, other_count = (p, q) if lead == "press" else (q, p)
+        diff = lead_count - other_count
+        if 0 <= diff <= max_diff:
+            break
+        over_cat = other if diff < 0 else lead   # short on lead → trim other; lead surplus → trim lead
+        candidates = [i for i, e in enumerate(exercises)
+                      if not e.get("is_backoff") and _ab_cat(e) == over_cat and not _essential(e)]
+        if not candidates:
+            break   # nothing left to cut without touching required work — best effort
+
+        def _drop_key(i):
+            e = exercises[i]
+            pattern = e.get("pattern") or ""
+            is_dup = bool(pattern) and sum(
+                1 for x in exercises
+                if not x.get("is_backoff") and x.get("pattern") == pattern) > 1
+            is_assist = bool(e.get("is_assistance"))
+            # An assistance pick that duplicates the GOAL LIFT's own pattern
+            # (Larsen Press vs. Bench Press, both horizontal_push) can never
+            # actually win that pattern slot — the goal lift is protected
+            # above in _essential and is never dropped here, so
+            # _alternate_antagonists' later dedup pass will always remove the
+            # assistance duplicate regardless of what this balance pass keeps.
+            # Left at tier 2 (assistance) it could survive this pass only to
+            # be silently deduped afterward, consuming a press slot that then
+            # never materializes — exactly what happened to Upper A once the
+            # dip's extra budget let Larsen Press (tier 2, survives) sit next
+            # to Bench (goal, protected) and get erased by dedup after this
+            # function returned (2026-09-30). Rank it at tier 0, same as a
+            # plain duplicate, so it is dropped HERE instead, freeing the
+            # slot for a real, distinct press to fill it.
+            dup_of_goal = bool(pattern) and any(
+                x.get("is_goal") and x.get("pattern") == pattern
+                and not x.get("is_backoff") for x in exercises)
+            # The LAST remaining non-goal chest press is lowest priority to drop,
+            # not protected outright (2026-09-30, 3rd pass): an earlier version
+            # made it untouchable, which — stacked on the goal lift and mandatory
+            # isolations — left zero trimmable candidates on a tight budget and
+            # the loop gave up mid-imbalance. But dropping it at the SAME priority
+            # as any other plain compound broke the default Upper B session: it
+            # has a lower fatigue_cost than the day's other press candidate, so it
+            # got picked first, and the backfill below correctly refuses to
+            # re-add one once the count is already balanced — silently losing the
+            # CHEST_HYPERTROPHY_PRESS guarantee on the most common Upper B
+            # session. Tier 3, below assistance, makes it the true last resort:
+            # everything else goes first, and it's still droppable when nothing
+            # else can close the gap (Weighted Dip at a 4-exercise Upper A
+            # budget, where it's the only candidate regardless of tier).
+            is_last_chest = _is_chest_press(e) and sum(
+                1 for x in exercises
+                if _is_chest_press(x) and not x.get("is_backoff")) <= 1
+            # tier 0: duplicate-pattern compound (dedup would drop it anyway) —
+            # unless it's ALSO the liked assistance pick (Reverse Grip Incline
+            # duplicates Incline DB Press's incline_push pattern AND is
+            # assistance), which stays protected by the assistance/last-chest
+            # tiers below rather than being trimmed here as if it were a
+            # redundant pick — it's the one meant to WIN that pattern slot.
+            # tier 1: plain, non-duplicate, non-assistance, not the last chest press.
+            # tier 2: assistance — the liked movement, dropped after plain work.
+            # tier 3: the last remaining non-goal chest press — true last resort.
+            # is_last_chest and is_dup can never both be true (a duplicate means
+            # at least 2 chest presses survive), so checking is_last_chest first
+            # is safe and keeps the true last-resort item lowest regardless of
+            # whether it also happens to be assistance or (on the multi-chest-
+            # press days) would otherwise have looked like a duplicate.
+            tier = (3 if is_last_chest else
+                    0 if dup_of_goal else
+                    2 if is_assist else
+                    0 if is_dup else 1)
+            return (tier, e.get("fatigue_cost", 2.0))
+
+        drop_i = min(candidates, key=_drop_key)
+        exercises.pop(drop_i)
+        # its back-off (if any) is the same movement, not a separate alternation slot
+        while drop_i < len(exercises) and exercises[drop_i].get("is_backoff"):
+            exercises.pop(drop_i)
+    return exercises
+
+
 def _build_session(
     split: str,
     intensity: float,
@@ -1419,6 +1615,28 @@ def _build_session(
         if split != "full_body_chest":
             excluded_names.add("Bench Press (Top Set)")
 
+    if split == "upper_a":
+        # Nolan, 2026-09-30: he likes doing dips, but as loaded Weighted Dip
+        # (added unconditionally below, alongside bench assistance), not the
+        # bodyweight Dip Pyramid — never program Dip Pyramid on Upper A. Left
+        # untouched on every other split (including if pinned elsewhere).
+        excluded_names.add("Dip Pyramid")
+        # Also excludes the third dip-family catalog entry, plain "Dips"
+        # (COMPOUND_PERIPHERAL, pattern="dip", muscles=[chest, triceps]) — not
+        # asked for directly, but leaving it eligible let the knapsack pick it
+        # for a triceps/shoulders slot once Dip Pyramid above was excluded,
+        # duplicating Weighted Dip's own "dip" pattern. Worse, both are
+        # chest-tagged, so the backstop trim's blanket focus-muscle protection
+        # (muscles[0] == focus_muscle, below) shielded BOTH from the tail trim
+        # ahead of Chest-Supported Row — the one real back compound Upper A
+        # needs — so Row got cut instead and the later press/pull rebalance
+        # had to gut several legitimate press picks to recover, collapsing a
+        # 7-budget default session to 5 items (2026-09-30, discovered via
+        # direct verification after the 9-item change). One dip movement
+        # (Weighted Dip) is what Nolan asked for; excluding "Dips" too removes
+        # the whole collision at its source instead of patching the fallout.
+        excluded_names.add("Dips")
+
     # Upper A/B share the same 11-muscle domain (see UPPER_A/B_MUSCLES comment) so
     # the knapsack alone always converges on the same compound per muscle. Bias
     # press patterns on A and pull patterns on B so the two variants actually read
@@ -1452,6 +1670,18 @@ def _build_session(
     # lowers that muscle's weekly volume. That is the intended trade — fewer,
     # harder stations rather than the same volume smeared wider. [COACH]
     target_exercises = int(target_exercises or 0)
+    # Nolan, 2026-09-30: "add [Weighted Dip] on to Upper A" — it always rides
+    # on top of Upper A's usual budget (4/6/8/12 at the various learned sizes),
+    # so the budget the muscle-slot allocator and the size trim work against is
+    # bumped by one FOR UPPER A ONLY before either runs — otherwise the first
+    # pass would just trim something else right back out to make room, or the
+    # extra muscle slot this unlocks (letting the dip's own press count land
+    # cleanly) would never open up. `_pre_dip_target` keeps the ORIGINAL budget
+    # tier (4/6/8/12) around for the live-ceiling comparison below, which still
+    # needs to recognise "default-or-smaller" by the old tiers, not the bumped one.
+    _pre_dip_target = target_exercises
+    if split == "upper_a" and target_exercises > 0:
+        target_exercises += 1
     if target_exercises > 0 and len(relevant) > 1:
         _goal_muscles = {
             (e.get("muscles") or [""])[0] for e in EXERCISES
@@ -1471,20 +1701,73 @@ def _build_session(
         # budget back above what the cut multiplier decided.
         _n_slots = target_exercises
         if _n_slots < len(relevant):
-            # calves are protected on lower and full-body days for the same reason
-            # the trim below protects them: TBJP's lower template ends with a calf
-            # raise, and calves sit last in every leg domain list, so an unprotected
-            # calves entry loses its slot before it ever becomes an exercise.
-            _calf_protected = _split_type_of(split) in ("lower", "full_body")
-            _protected = [m for m in relevant
-                          if m in _goal_muscles or m == focus_muscle
-                          or (_calf_protected and m == "calves")]
-            _rest = [m for m in relevant if m not in _protected]
-            # stable sort on "allocator gave this muscle nothing" only — everything
-            # else keeps the domain list's own emphasis order
-            _rest.sort(key=lambda m: 1 if float(wt.get(m, 0) or 0) <= 0 else 0)
-            _keep = set(_protected) | set(_rest[:max(0, _n_slots - len(_protected))])
-            relevant = [m for m in relevant if m in _keep]
+            if split in _UPPER_AB_LEAD:
+                # Upper A/B strictly ALTERNATE press/pull (Nolan, 2026-09-30): no two
+                # press-category or two pull-category movements adjacent, A opens on
+                # a press, B opens on a pull. Alternation only reads as alternation if
+                # the two counts are balanced, so the trim budgets press and pull
+                # muscle slots separately instead of walking one domain-ordered list —
+                # the old single-list trim let 5 press muscles survive before the
+                # first pull muscle on a tight budget (the Oct 1/5/9 Upper A bug:
+                # one back movement against five press). Every muscle in the domain
+                # is classified press/pull/neutral once, at module scope
+                # (_UPPER_PRESS_MUSCLES / _UPPER_PULL_MUSCLES) — see there for the
+                # isolation call (triceps/lateral raise → press; curls/face pull/
+                # rear delt/shrugs → pull).
+                _protected_muscles = _goal_muscles | {focus_muscle}
+                def _cat_rank(m):
+                    # protected first (goal lift / focus muscle), then demote a
+                    # muscle the allocator gave nothing this week — same tie-break
+                    # the old single-list trim used, just scoped per category now.
+                    return (0 if m in _protected_muscles else 1,
+                            1 if float(wt.get(m, 0) or 0) <= 0 else 0)
+                _press_avail = sorted([m for m in relevant if m in _UPPER_PRESS_MUSCLES],
+                                      key=_cat_rank)
+                _pull_avail  = sorted([m for m in relevant if m in _UPPER_PULL_MUSCLES],
+                                      key=_cat_rank)
+                _neutral_avail = [m for m in relevant
+                                  if m not in _UPPER_PRESS_MUSCLES
+                                  and m not in _UPPER_PULL_MUSCLES]
+                # Floor of 2 a side so a real back compound (row/pulldown/pull-up)
+                # survives on Upper A and a real compound press survives on Upper B,
+                # even on a tight budget — matches the mandatory bicep/tricep/side-delt
+                # isolation floor elsewhere in this function.
+                _p = min(len(_press_avail), 2)
+                _q = min(len(_pull_avail), 2)
+                _lead, _other = _UPPER_AB_LEAD[split], _UPPER_AB_OTHER[split]
+                _remaining = max(0, _n_slots - _p - _q)
+                _turn = 0
+                while _remaining > 0 and (_p < len(_press_avail) or _q < len(_pull_avail)):
+                    _cat = _lead if _turn % 2 == 0 else _other
+                    if _cat == "press" and _p < len(_press_avail):
+                        _p += 1; _remaining -= 1
+                    elif _cat == "pull" and _q < len(_pull_avail):
+                        _q += 1; _remaining -= 1
+                    elif _p < len(_press_avail):
+                        _p += 1; _remaining -= 1
+                    elif _q < len(_pull_avail):
+                        _q += 1; _remaining -= 1
+                    else:
+                        break
+                    _turn += 1
+                _keep = set(_press_avail[:_p]) | set(_pull_avail[:_q])
+                _keep |= set(_neutral_avail[:max(0, _n_slots - len(_keep))])
+                relevant = [m for m in relevant if m in _keep]
+            else:
+                # calves are protected on lower and full-body days for the same reason
+                # the trim below protects them: TBJP's lower template ends with a calf
+                # raise, and calves sit last in every leg domain list, so an unprotected
+                # calves entry loses its slot before it ever becomes an exercise.
+                _calf_protected = _split_type_of(split) in ("lower", "full_body")
+                _protected = [m for m in relevant
+                              if m in _goal_muscles or m == focus_muscle
+                              or (_calf_protected and m == "calves")]
+                _rest = [m for m in relevant if m not in _protected]
+                # stable sort on "allocator gave this muscle nothing" only — everything
+                # else keeps the domain list's own emphasis order
+                _rest.sort(key=lambda m: 1 if float(wt.get(m, 0) or 0) <= 0 else 0)
+                _keep = set(_protected) | set(_rest[:max(0, _n_slots - len(_protected))])
+                relevant = [m for m in relevant if m in _keep]
 
     used_patterns: set = set()
     chosen_names: set = set()
@@ -1693,6 +1976,11 @@ def _build_session(
         focus_bonus = 6.0 if (muscle == focus_muscle and not ex.get("is_goal")) else 0.0
         return (is_goal_tier, fc + nudge + focus_bonus)
     slots.sort(key=_order_key, reverse=True)
+    # For upper_a/upper_b this initial order is provisional — _alternate_antagonists
+    # (below, after the back-off/assistance stack is appended) does the real
+    # press/pull interleave over the FULL exercise list, and _balance_press_pull
+    # (also below) trims the surplus first so that interleave can actually keep to
+    # a strict alternation instead of dumping a same-category tail.
 
     exercises = []
     for ex_copy, muscle in slots:
@@ -1756,6 +2044,22 @@ def _build_session(
                 bench_assist = _pick_assistance("bench", _bench_pool, weakness, assist_week)
                 exercises.append(
                     _assistance_slot(bench_assist, wt, intensity, readiness_z))
+
+            # Nolan, 2026-09-30: "I do like doing dips ... add it on to Upper A
+            # ... but weighted [not Dip Pyramid]." Unconditional and ON TOP of
+            # whichever of the three BENCH_ASSISTANCE movements rotated in
+            # above — this is what the budget bump just above makes room for,
+            # taking Upper A from 8 to 9 exercises by design. Upper A only:
+            # Upper B's second chest press still comes from the separate
+            # CHEST_HYPERTROPHY_PRESS rotation, which may or may not land on
+            # Weighted Dip on its own schedule. Carries is_assistance through
+            # from the catalog entry, so on a genuinely tight budget it is
+            # trimmed the same way the other bench-assistance pick is —
+            # dropped only if the budget can't fit it, same as Nolan asked.
+            if (split == "upper_a" and canon("Weighted Dip") not in blocked
+                    and not any(e.get("name") == "Weighted Dip" for e in exercises)):
+                exercises.append(
+                    _assistance_slot("Weighted Dip", wt, intensity, readiness_z))
 
         # Deadlift top set → build the conventional 500 via SUBMAX assistance,
         # only on the day deadlift/hamstrings is actually the focus.
@@ -1911,9 +2215,26 @@ def _build_session(
                 exercises.pop(i)
                 _over -= 1
 
+    # Upper A/B strict alternation needs balanced press/pull COUNTS before
+    # _alternate_antagonists can interleave them — that function only reorders, so
+    # an imbalanced total still ends up dumping the surplus at the tail. No-ops for
+    # every other split. See _balance_press_pull for why the surplus is structural
+    # (mandatory isolations + bench assistance are always press-heavy).
+    #
+    # Balance, then alternate, THEN balance again: _alternate_antagonists' own
+    # pattern-dedup (one movement per pressing/pulling PATTERN — see its :0 —
+    # e.g. Reverse Grip Incline and Incline DB Press are both incline_push) can
+    # drop a unit balance already counted, silently reopening the gap it just
+    # closed. A second pass is a no-op once the count is already right (the loop
+    # inside _balance_press_pull breaks immediately), so this costs nothing on
+    # every split it doesn't apply to and on an already-balanced session.
+    exercises = _balance_press_pull(exercises, split, focus_muscle)
+
     # Alternate chest/back compounds so we never stack three chest movements in a
     # row (bench, row, incline, pull-up, dip). Runs after all slots are assembled
     # and before the philosophy/clean pass so pattern + is_backoff tags are intact.
+    exercises = _alternate_antagonists(exercises, focus_muscle)
+    exercises = _balance_press_pull(exercises, split, focus_muscle)
     exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Chest hypertrophy press. Every day that benches gets one pressing movement
@@ -1934,7 +2255,26 @@ def _build_session(
     # rides on top of target_exercises instead of competing for a slot: it is one
     # working set or two. The antagonist pass re-runs afterward so the press is placed
     # against the day's pulls rather than tacked onto the end.
-    if (any(e.get("name") == "Bench Press (Top Set)" for e in exercises)
+    # Upper A/B gate (2026-09-30, 2nd pass): this backfill unconditionally adds a
+    # press. _balance_press_pull no longer protects the last chest press from its
+    # own trim (see there for why — that protection was blocking the trim on tight
+    # budgets), which means THIS is now the only place deciding whether a chest
+    # press belongs in the session at all on those two splits. Nolan's explicit
+    # alternation/balance rule outranks this [COACH] heuristic, so on upper_a/
+    # upper_b the add is skipped outright when it would push the day's press/pull
+    # counts back out of the 0-1 band — better a tight-budget Upper A/B session
+    # with no bonus chest press than one that re-breaks the alternation this
+    # function exists to guarantee.
+    _ab_gate_ok = True
+    if split in _UPPER_AB_LEAD:
+        _lead = _UPPER_AB_LEAD[split]
+        _p, _q = _ab_counts(exercises)
+        _p2 = _p + 1   # the backfill always adds a press
+        _lead_c, _other_c = (_p2, _q) if _lead == "press" else (_q, _p2)
+        _ab_gate_ok = 0 <= (_lead_c - _other_c) <= 1
+
+    if (_ab_gate_ok
+            and any(e.get("name") == "Bench Press (Top Set)" for e in exercises)
             and not any(_is_chest_press(e) for e in exercises)):
         _press_pool = [n for n in _allowed(CHEST_HYPERTROPHY_PRESS)
                        if n in _EX_BY_NAME and n not in {e.get("name") for e in exercises}]
@@ -1942,7 +2282,49 @@ def _build_session(
             exercises.append(
                 _chest_press_slot(_press_pool[assist_week % len(_press_pool)],
                                   wt, intensity, readiness_z))
+            # Adding a press here can only ever tip Upper A/B further toward
+            # press — re-balance before the reorder, same reasoning as above.
+            exercises = _balance_press_pull(exercises, split, focus_muscle)
             exercises = _alternate_antagonists(exercises, focus_muscle)
+
+    # Upper A/B live-ceiling cap (2026-09-30, 2nd pass; raised for Upper A
+    # 3rd pass, same date): smoke.py's LIVE P1-6 check ceilings every
+    # program_workouts row at 8 exercises (MAX_EXERCISES_PER_SESSION there) —
+    # a separate, harder invariant than this function's own target_exercises
+    # budget. The mandatory bicep/tricep/side-delt isolations "ride on top" of
+    # target_exercises by design (see their comment above), which is exactly
+    # what pushed a default 8-slot Upper A session to 9 countable rows: the
+    # budget alone doesn't see them coming. Nolan's alternation rule allows an
+    # EQUAL press/pull split, not only "extra on lead", so when a
+    # default-or-smaller-budget session lands one over this ceiling with the
+    # allowed +1-on-lead, force an even split instead of the usual 0-1 band —
+    # that's the one exercise this cap needs back.
+    #
+    # Upper A's ceiling is 9, not 8 (Nolan, 2026-09-30): "I do like doing dips
+    # ... maybe just add it on to Upper A" — Weighted Dip is meant to land as a
+    # genuine 9th exercise, on top of the usual 8, not be capped back off by
+    # this same invariant. Upper B's ceiling is unchanged at 8. smoke.py's
+    # MAX_EXERCISES_PER_SESSION carries the matching per-split exception.
+    # "default-or-smaller" is judged against `_pre_dip_target` (the ORIGINAL
+    # 4/6/8/12 budget tier, before this function's own +1 bump for Upper A
+    # above) — otherwise Upper A's bumped target (5/7/9/13) would never read as
+    # "default-or-smaller" and this cap would stop applying to it at all.
+    _UPPER_AB_LIVE_CAP = {"upper_a": 9, "upper_b": 8}
+    if split in _UPPER_AB_LEAD and _pre_dip_target <= 8:
+        _cap = _UPPER_AB_LIVE_CAP[split]
+        _total = sum(1 for e in exercises if not e.get("is_backoff"))
+        if _total > _cap:
+            # Try the normal 0-1 band first — for Upper A, 5 press / 4 pull is
+            # exactly 9 and already satisfies the raised cap without having to
+            # force an even split (which would needlessly cost the dip's own
+            # extra press slot). Only escalate to an exact 0-diff split if that
+            # still isn't enough (e.g. a neutral/core item pushed it further).
+            exercises = _balance_press_pull(exercises, split, focus_muscle, max_diff=1)
+            exercises = _alternate_antagonists(exercises, focus_muscle)
+            _total = sum(1 for e in exercises if not e.get("is_backoff"))
+            if _total > _cap:
+                exercises = _balance_press_pull(exercises, split, focus_muscle, max_diff=0)
+                exercises = _alternate_antagonists(exercises, focus_muscle)
 
     # Enforce the low-volume / high-intensity philosophy as the LAST word: cap
     # accessories at 1-2 sets to failure (RIR 0); strength movements (goal lifts,
@@ -2557,7 +2939,23 @@ class SessionGenerator:
             # here would only ever render the same movement twice or not at all.
             # `is_cal` still stands above, where it governs the interference
             # back-off: calisthenics stay AMPK-prioritised either way.
-            if is_cal and not selection_pinned:
+            #
+            # Upper A/B carve-out (Nolan, 2026-09-30): siphoning a press/pull-
+            # classified calisthenics movement (pull-up, push-up, dip) out of
+            # strength_block would remove it from the very list the strict
+            # press/pull alternation applies to — Nolan's own example of a Upper B
+            # opener was "Weighted Pull-up". _balance_press_pull and
+            # _alternate_antagonists both already counted it as a real unit while
+            # building the session; letting it vanish here would silently re-break
+            # the alternation the two of them just guaranteed, and would also
+            # leave the count imbalanced for anyone reading strength_block alone.
+            # Plank / sit-up / hanging-leg stay routed to calisthenics_block even
+            # on these splits — they're core/neutral, exempt from alternation, so
+            # nothing downstream depends on their position.
+            _upper_ab_alternated = (resolved_split in ("upper_a", "upper_b")
+                                    and any(k in name.lower()
+                                            for k in ("pull-up", "push-up", "dip")))
+            if is_cal and not selection_pinned and not _upper_ab_alternated:
                 key = "pullups" if "pull-up" in name.lower() else ("pushups" if "push-up" in name.lower() else ("situps" if "sit-up" in name.lower() else "other"))
                 if key != "other":
                     rep_val = 10
