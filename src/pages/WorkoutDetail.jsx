@@ -1177,11 +1177,19 @@ export default function WorkoutDetail() {
     if (exerciseLogs.length === 0) return;
     const idx = exerciseLogs.findIndex((ex) => ex.sets?.some((s) => !s.completed));
     setFocusedExerciseIndex(idx === -1 ? 0 : idx);
-    // Only re-derive when the list goes from empty -> non-empty (session
-    // start/resume); focusedExerciseIndex !== null blocks every later run
-    // until something explicitly resets it to null (exercise removal below).
+    // Re-derive whenever the list goes from empty -> non-empty (session
+    // start/resume) OR whenever something explicitly resets focus back to
+    // null (handleRemoveExercise, when the removed exercise was the focused
+    // one). The guard above (focusedExerciseIndex !== null) still blocks
+    // every other render, so this only recomputes on those two transitions,
+    // never on every keystroke/set-toggle (review r4f MAJOR 2: previously
+    // depended only on exerciseLogs.length === 0, so removing one exercise
+    // from a longer list never re-fired this effect and focus silently fell
+    // back to plain index 0 via the effectiveFocusIndex ?? 0 below, instead
+    // of the first-incomplete exercise, permanently breaking auto-advance
+    // until the user tapped a row by hand).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exerciseLogs.length === 0]);
+  }, [exerciseLogs.length === 0, focusedExerciseIndex]);
 
   const effectiveFocusIndex = exerciseLogs.length === 0
     ? -1
