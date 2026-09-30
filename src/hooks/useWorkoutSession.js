@@ -3,7 +3,11 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { setWorkoutActive } from "@/lib/workoutSessionFlag";
 import { saveDraft, clearDraft, preferDraft } from "@/lib/workoutDraft";
-import { autoFinishStaleSession } from "@/lib/autoFinishSession";
+import { autoFinishStaleSession, getSessionStatus } from "@/lib/autoFinishSession";
+import {
+  registerActiveLoggingSession,
+  unregisterActiveLoggingSession,
+} from "@/lib/activeLoggingSessions";
 
 /**
  * Manages a workout_sessions row in Supabase so in-progress workouts
@@ -173,6 +177,7 @@ export function useWorkoutSession() {
     sessionIdRef.current = data.id;
     lastSavedRef.current = { exercises: JSON.stringify(exercises), notes: undefined };
     setWorkoutActive(true);
+    registerActiveLoggingSession(data.id);
     return data;
   };
 
@@ -251,10 +256,19 @@ export function useWorkoutSession() {
     // mirror has no one left to protect.
     clearDraft(id);
     setWorkoutActive(false);
+    unregisterActiveLoggingSession(id);
     const { error } = await supabase
       .from("workout_sessions")
       .update({ status: "completed" })
-      .eq("id", id);
+      // Guarded: if the global sweep already closed this row (auto-finished
+      // it out from under this page, or found it empty and cancelled it)
+      // while the Finish write was in flight, don't stomp that outcome back
+      // to 'completed' with no corresponding log-vs-cancel reconciliation.
+      // The mutation that calls this already checked getSessionStatus before
+      // writing the log, so reaching here with a non-in_progress row is rare
+      // (a second, even later race), but the guard costs nothing.
+      .eq("id", id)
+      .eq("status", "in_progress");
     if (error) console.error("Error completing workout session:", error);
   };
 
@@ -266,7 +280,8 @@ export function useWorkoutSession() {
    * (useGlobalAutoFinish) from double-writing the same session, lives in
    * src/lib/autoFinishSession.js so both callers share one implementation.
    *
-   * Returns true only if the log landed.
+   * Returns 'logged', 'cancelled' (an empty session closed with no log), or
+   * false (nothing changed -- still in_progress).
    */
   const autoFinishSession = async (session, timezone) => autoFinishStaleSession(session, timezone);
 
@@ -282,10 +297,18 @@ export function useWorkoutSession() {
     setSaveFailed(false);
     clearDraft(id);
     setWorkoutActive(false);
+    unregisterActiveLoggingSession(id);
     const { error } = await supabase
       .from("workout_sessions")
       .update({ status: "cancelled" })
-      .eq("id", id);
+      // Guarded: "Start Fresh" on the Resume dialog calls restoreSession then
+      // cancelSession back-to-back on a session id that was only a snapshot
+      // from mount time. If the global sweep auto-finished (or emptied-and-
+      // closed) that exact row in the meantime, this must not flip a
+      // 'completed' row back to 'cancelled' and throw away the log that
+      // already exists for it.
+      .eq("id", id)
+      .eq("status", "in_progress");
     if (error) console.error("Error cancelling workout session:", error);
   };
 
@@ -307,7 +330,21 @@ export function useWorkoutSession() {
       ? { exercises: null, notes: undefined }
       : { exercises: JSON.stringify(exercises), notes: undefined };
     setWorkoutActive(true);
+    registerActiveLoggingSession(sessionId);
   };
+
+  // Belt-and-suspenders unmount cleanup: a crash, a force-navigate away that
+  // skips Finish/Cancel, or a StrictMode dev double-mount's first (fake)
+  // unmount must not leave a session id stuck registered as "actively being
+  // logged" forever -- that would permanently hide it from the global sweep.
+  // register/unregister are idempotent (Set add/delete), so this is safe to
+  // fire alongside the explicit unregisters in completeSession/cancelSession.
+  useEffect(() => {
+    return () => {
+      if (sessionIdRef.current) unregisterActiveLoggingSession(sessionIdRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     sessionIdRef,
@@ -318,6 +355,7 @@ export function useWorkoutSession() {
     autoFinishSession,
     cancelSession,
     restoreSession,
+    getSessionStatus,
     saveFailed,
     retrySave: flushPending,
   };

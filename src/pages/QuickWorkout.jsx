@@ -123,7 +123,7 @@ export default function QuickWorkout() {
   const restTimerRef = useRef(null);
   const restTimerEndRef = useRef(null);
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, saveFailed, retrySave } = useWorkoutSession();
+  const { sessionIdRef, checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, getSessionStatus, saveFailed, retrySave } = useWorkoutSession();
 
   const { profile } = useProfile();
   const toggleLike = useToggleExerciseLike();
@@ -273,11 +273,27 @@ export default function QuickWorkout() {
         // AUTO_FINISH_STALE_MS for why silence and age are separate clocks.
         const silenceMs = sessionSilenceMs(session);
         if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
-          autoFinishSession(session, profile?.timezone).then((saved) => {
+          autoFinishSession(session, profile?.timezone).then((result) => {
             // Only open a new session once the old one is actually closed.
             // Creating it unconditionally would leave two rows in_progress.
-            if (saved) createSession({ exercises: prescribedInitial, startTime });
-            else setResumeSession(session);
+            if (result === "logged" || result === "cancelled") {
+              createSession({ exercises: prescribedInitial, startTime });
+              return;
+            }
+            // result === false: either this write failed, or a concurrent
+            // caller (the global sweep, most likely) already handled this
+            // exact session id and we awaited ITS outcome -- the old
+            // Set-based guard used to hand back a bare `false` here that
+            // couldn't tell those two apart, so a session the sweep had
+            // already closed still showed a stale Resume dialog. Re-read
+            // the row directly before deciding.
+            getSessionStatus(session.id).then((status) => {
+              if (status && status !== "in_progress") {
+                createSession({ exercises: prescribedInitial, startTime });
+              } else {
+                setResumeSession(session);
+              }
+            });
           });
           return;
         }
@@ -365,6 +381,20 @@ export default function QuickWorkout() {
 
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
+      // Re-check the session's live DB status before writing anything. The
+      // global sweep (useGlobalAutoFinish) or a duplicate Finish tap can have
+      // already closed this session out from under this mutation; if so,
+      // creating Workout/WorkoutSchedule/WorkoutLog rows here would double up
+      // the log. Bail before any create runs -- checking after the first
+      // create would already leave an orphan Workout/Schedule row behind.
+      const sid = sessionIdRef.current;
+      if (sid) {
+        const status = await getSessionStatus(sid);
+        if (status && status !== "in_progress") {
+          return { alreadyClosed: true };
+        }
+      }
+
       const today = getTodayString(profile?.timezone);
       const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
 
@@ -396,11 +426,18 @@ export default function QuickWorkout() {
         duration_seconds: durationSeconds,
         notes: sessionNotes.trim() || null,
       });
+
+      return { alreadyClosed: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       completeSession();
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
+      if (result?.alreadyClosed) {
+        toast.info("This workout was already saved.");
+        navigate("/dashboard");
+        return;
+      }
       toast.success("Workout logged successfully!");
       navigate("/dashboard");
     },
@@ -418,8 +455,18 @@ export default function QuickWorkout() {
     },
   });
 
-  const handleResumeSession = () => {
+  const handleResumeSession = async () => {
     if (!resumeSession) return;
+    // The dialog's snapshot can be stale by the time he taps Resume -- the
+    // global sweep runs again on every visibilitychange, so a session that
+    // failed to auto-finish when the dialog first opened can have been
+    // closed successfully since. Re-check rather than trust the snapshot.
+    const status = await getSessionStatus(resumeSession.id);
+    if (status && status !== "in_progress") {
+      setResumeSession(null);
+      createSession({ exercises: [], startTime: Date.now() });
+      return;
+    }
     restoreSession(resumeSession.id, resumeSession.exercises);
     setExercises(resumeSession.exercises || []);
     setStartTime(new Date(resumeSession.start_time).getTime());

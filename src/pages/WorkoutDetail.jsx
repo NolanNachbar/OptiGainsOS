@@ -174,7 +174,7 @@ export default function WorkoutDetail() {
     };
   }, [isLogging]);
 
-  const { checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, saveFailed, retrySave } = useWorkoutSession();
+  const { sessionIdRef, checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, getSessionStatus, saveFailed, retrySave } = useWorkoutSession();
 
   // Detect program source from URL params
   const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -381,11 +381,31 @@ export default function WorkoutDetail() {
       // STALE_SESSION_MS — a session older than a day gets the dialog below,
       // because back-dating a log that far retroactively moves MRV and volume.
       if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
-        autoFinishSession(session, profile?.timezone).then((saved) => {
-          if (saved) invalidateWorkoutLogs(queryClient);
-          // Not saved means the log write failed and the row is still
-          // in_progress on purpose. Ask rather than silently dropping it.
-          else setResumeSession(session);
+        autoFinishSession(session, profile?.timezone).then((result) => {
+          if (result === "logged") {
+            invalidateWorkoutLogs(queryClient);
+            return;
+          }
+          if (result === "cancelled") {
+            // Empty session, closed with no log -- nothing to resume.
+            return;
+          }
+          // result === false: either this call did the work and it failed
+          // (log write or status update), or a concurrent caller (the
+          // global sweep, most likely) already handled this exact session
+          // id and we awaited ITS outcome instead of racing it -- the old
+          // Set-based guard used to hand back a bare `false` here that
+          // could not tell those two apart, so a session the sweep had
+          // already closed still showed a stale Resume dialog. Re-read the
+          // row directly: if it's no longer in_progress, treat it as
+          // already handled.
+          getSessionStatus(session.id).then((status) => {
+            if (status && status !== "in_progress") {
+              invalidateWorkoutLogs(queryClient);
+            } else {
+              setResumeSession(session);
+            }
+          });
         });
         return;
       }
@@ -820,6 +840,21 @@ export default function WorkoutDetail() {
 
   const saveWorkoutLogMutation = useMutation({
     mutationFn: async () => {
+      // Re-check before writing anything. The session could have been
+      // closed out from under this page mid-workout -- most likely the
+      // global sweep auto-finishing it after 3h of silence, or finding it
+      // empty and cancelling it -- and this button doesn't know that until
+      // it asks. Checked first, before any Workout/WorkoutSchedule/WorkoutLog
+      // row is created, so a "closed" verdict here never leaves an orphaned
+      // Workout or WorkoutSchedule row behind with no log to match it.
+      const sid = sessionIdRef.current;
+      if (sid) {
+        const status = await getSessionStatus(sid);
+        if (status && status !== "in_progress") {
+          return { alreadyClosed: true };
+        }
+      }
+
       const today = getTodayString(profile?.timezone);
       const durationSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : null;
 
@@ -906,9 +941,9 @@ export default function WorkoutDetail() {
         notes: combinedNotes || null,
       });
 
-
+      return { alreadyClosed: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       // Close first. In program mode the navigate() below is gated on a second
       // round trip (logProgramWorkout), so between the insert landing and that
       // resolving the screen is unchanged and this dialog is still up with its
@@ -917,6 +952,12 @@ export default function WorkoutDetail() {
       completeSession();
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
+
+      if (result?.alreadyClosed) {
+        toast.info("This workout was already saved.");
+        navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
+        return;
+      }
 
       // If program mode, update progression state and advance enrollment
       if (isProgramSource && enrollment && programWorkoutId) {
@@ -1106,8 +1147,18 @@ export default function WorkoutDetail() {
     });
   };
 
-  const handleResumeSession = () => {
+  const handleResumeSession = async () => {
     if (!resumeSession) return;
+    // The dialog's snapshot can be stale by the time he taps Resume -- the
+    // global sweep runs again on every visibilitychange, so a session that
+    // failed to auto-finish when the dialog first opened can have been
+    // closed successfully since. Re-check rather than trust the snapshot.
+    const status = await getSessionStatus(resumeSession.id);
+    if (status && status !== "in_progress") {
+      setResumeSession(null);
+      invalidateWorkoutLogs(queryClient);
+      return;
+    }
     restoreSession(resumeSession.id, resumeSession.exercises);
     setExerciseLogs(resumeSession.exercises || []);
     setStartTime(new Date(resumeSession.start_time).getTime());

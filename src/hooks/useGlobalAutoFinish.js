@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { autoFinishStaleSession } from "@/lib/autoFinishSession";
+import { isActivelyLoggingSession } from "@/lib/activeLoggingSessions";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 import { AUTO_FINISH_STALE_MS, STALE_SESSION_MS, setWorkoutActive } from "@/lib/workoutSessionFlag";
 import { invalidateWorkoutLogs } from "@/lib/queryKeys";
@@ -25,24 +26,36 @@ import { invalidateWorkoutLogs } from "@/lib/queryKeys";
  * through to the existing Resume?/Start Fresh dialog if he reopens that exact
  * workout.
  *
- * Never sweeps while a logger is mounted and actively open
- * (body[data-logging-active], the same attribute the CSS hide-chrome rule
- * uses) -- a sweep firing mid-set would race that page's own autosave.
+ * Skips only the session id(s) actually registered as open right now
+ * (isActivelyLoggingSession, src/lib/activeLoggingSessions.js) -- not a
+ * whole-sweep bail on "some logger is open somewhere" the way
+ * body[data-logging-active] used to be checked here. He trains twice in a
+ * day often enough that a second, separately-stale session must still get
+ * swept while today's session stays open and untouched; that old check also
+ * only ever got set by WorkoutDetail, so a backgrounded QuickWorkout session
+ * was never skipped at all.
  * autoFinishStaleSession itself holds a module-level in-flight guard, so this
  * and a page-level call for the same session id can never double-write a
  * workout_log even if both fire in the same tick.
+ *
+ * `ready` gates the sweep on the caller's profile query having settled.
+ * Without it, the very first sweep after a cold launch can race the profile
+ * fetch and run with `timezone` undefined, which localDateOf then silently
+ * resolves to the DEVICE's runtime timezone instead of his actual profile
+ * timezone -- risking a workout filed under the wrong calendar day. Passing
+ * `ready: false` while the profile is loading is inert (no queries fire, no
+ * extra re-render loop): the sweep just waits for the next `ready` flip.
  */
-export function useGlobalAutoFinish(timezone) {
+export function useGlobalAutoFinish(timezone, ready = true) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const runningRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !ready) return;
 
     const sweep = async () => {
       if (runningRef.current) return;
-      if (document.body.hasAttribute("data-logging-active")) return;
       runningRef.current = true;
       try {
         // Unscoped by workout on purpose -- he trains twice in a day often
@@ -57,6 +70,7 @@ export function useGlobalAutoFinish(timezone) {
 
         let anyFinished = false;
         for (const session of data) {
+          if (isActivelyLoggingSession(session.id)) continue;
           const ageMs = Date.now() - new Date(session.start_time).getTime();
           const silenceMs = sessionSilenceMs(session);
           // null (updated_at missing) or outside the 3h-24h window: leave it
@@ -64,14 +78,18 @@ export function useGlobalAutoFinish(timezone) {
           if (silenceMs === null) continue;
           if (silenceMs < AUTO_FINISH_STALE_MS || ageMs >= STALE_SESSION_MS) continue;
 
-          const saved = await autoFinishStaleSession(session, timezone);
-          if (saved) {
+          const result = await autoFinishStaleSession(session, timezone);
+          if (result === "logged") {
             anyFinished = true;
             const when = new Date(session.start_time).toLocaleTimeString([], {
               hour: "numeric",
               minute: "2-digit",
             });
             toast.info(`Logged your workout from ${when} — you didn't press Finish`);
+          } else if (result === "cancelled") {
+            // Closed with no log written -- nothing worth a toast, but it
+            // still counts toward releasing the cross-cutting flag below.
+            anyFinished = true;
           }
         }
 
@@ -101,5 +119,5 @@ export function useGlobalAutoFinish(timezone) {
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, timezone]);
+  }, [user?.id, timezone, ready]);
 }
