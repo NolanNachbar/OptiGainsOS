@@ -43,6 +43,145 @@ const groceryStorageKey = (weekStart) => `optigains.grocery.${weekStart}`;
 // isn't limited to these, but a wide-open food picker isn't needed yet.
 const FORCEABLE_FOODS = FOOD_CATALOG.filter((f) => f.creami && f.role === "dairy").map((f) => f.food);
 
+// ── Diet-target slider (Nolan's call, 2026-09-30) ──────────────────────────
+// One horizontal slider replaces the four-way Cut/Maintain/Bulk/Custom picker.
+// Both ends are anchored to what he's actually done or is willing to commit to:
+//  - Peak cut is his real deepest engine-set cut this year, not a formula —
+//    athlete_state shows 1646 kcal on 2026-07-06, 1705 on 2026-06-08, and
+//    1640 on 2026-07-13 (the deepest of the three). That's the permanent
+//    floor: below it the engine's protein/fat floors start fighting the
+//    calorie wall harder than he's ever actually asked them to.
+const PEAK_CUT_KCAL = 1640;
+// He has no bulk history to anchor a "peak bulk" the same way — it's a policy
+// multiplier on maintenance instead, until a real aggressive bulk gives it one.
+const PEAK_BULK_SURPLUS = 0.25;
+const SLIDER_STEP = 50;
+// Standard rounding to the nearest 50 kcal, anchored at zero. Used for every
+// landmark EXCEPT the three protected ones (Peak cut is the fixed constant
+// above; Maintain is the engine's own TDEE, kept exact) — a single anchor
+// point (like "round from 1640") would silently drag Maintain and Peak bulk
+// off their real numbers just to sit on the same 50 kcal grid as Peak cut,
+// which is wrong: 1640 isn't a multiple of 50, so no single uniform grid can
+// hit all three exactly. Each protected landmark is exact; the grid is only
+// for the filler stops between them (see buildStops).
+const round50 = (n) => Math.round(n / SLIDER_STEP) * SLIDER_STEP;
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+
+// Landmarks as a fraction of maintenance (Peak cut is the fixed constant
+// above, not a fraction — his real number doesn't move when maintenance does).
+const LANDMARK_DEFS = [
+  { key: "peak_cut", label: "Peak cut" },
+  { key: "cut", label: "Cut", frac: -0.20 },
+  { key: "mini_cut", label: "Mini cut", frac: -0.10 },
+  { key: "maintain", label: "Maintain", frac: 0 },
+  { key: "lean_bulk", label: "Lean bulk", frac: 0.10 },
+  { key: "bulk", label: "Bulk", frac: 0.175 },
+  { key: "peak_bulk", label: "Peak bulk", frac: PEAK_BULK_SURPLUS },
+];
+// Peak cut / Maintain / Peak bulk are the three anchors the slider's ends and
+// center are built from — they never get dropped for crowding. The rest
+// (Cut/Mini cut/Lean bulk/Bulk) drop out if they'd land within 150 kcal of a
+// neighbour, which happens whenever maintenance sits close to a multiple of
+// one of these fractions.
+const PROTECTED_LANDMARKS = new Set(["peak_cut", "maintain", "peak_bulk"]);
+const MIN_LANDMARK_GAP = 150;
+// Plain 50 kcal filler stops (see buildStops) within this many kcal of a
+// landmark are dropped, so dragging never produces two stops close enough to
+// read as the same number.
+const STOP_MERGE_RADIUS = 25;
+
+function buildLandmarks(maintenance) {
+  // Peak bulk is maintenance x 1.25, but when maintenance is unknown and
+  // falls back to a small current target (a fresh account, or exactly the
+  // test account's fixture, which has no engine history at all) that can sit
+  // AT or BELOW the fixed Peak cut floor — clamp the top to at least one step
+  // above Peak cut so the slider is never a zero- or negative-width range.
+  const sliderTop = Math.max(round50(maintenance * (1 + PEAK_BULK_SURPLUS)), PEAK_CUT_KCAL + SLIDER_STEP);
+  // Same low-maintenance case can push a *fractional* landmark (Cut, sized off
+  // maintenance) below Peak cut, which would break both the "smallest is
+  // always Peak cut" assumption below and true numeric ordering — clamp every
+  // landmark into [Peak cut, sliderTop] before sorting, not after.
+  let kept = LANDMARK_DEFS.map((d) => {
+    const raw = d.key === "peak_cut" ? PEAK_CUT_KCAL : d.key === "maintain" ? maintenance : maintenance * (1 + d.frac);
+    // Maintain is kept exact (the engine's real TDEE, not nudged to a grid);
+    // Peak cut is already exact; everything else rounds to the nearest 50.
+    const exact = d.key === "peak_cut" || d.key === "maintain";
+    const kcal = clamp(exact ? Math.round(raw) : round50(raw), PEAK_CUT_KCAL, sliderTop);
+    return { key: d.key, label: d.label, kcal };
+  });
+  // clamp/round can collapse several landmarks to the same value in that
+  // degenerate case; the LANDMARK_DEFS array is otherwise NOT sorted by kcal
+  // (Cut/Mini cut sit below Maintain, which sits before them in the
+  // definition order), so sort before the neighbour-gap dedupe below runs.
+  kept.sort((a, b) => a.kcal - b.kcal);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 1; i < kept.length; i++) {
+      if (kept[i].kcal - kept[i - 1].kcal < MIN_LANDMARK_GAP) {
+        const prevProtected = PROTECTED_LANDMARKS.has(kept[i - 1].key);
+        const curProtected = PROTECTED_LANDMARKS.has(kept[i].key);
+        const dropIdx = prevProtected && !curProtected ? i : !prevProtected && curProtected ? i - 1 : i;
+        kept.splice(dropIdx, 1);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return kept;
+}
+
+// The slider snaps to this full stop list: every landmark (exact — Peak cut,
+// Maintain and Peak bulk are always reachable on the nose) plus plain 50 kcal
+// steps filling the gaps between them, for the "50 kcal apart" in-between
+// feel the design calls for. A native <input type="range" step="50"> can't
+// do this on its own — its steps are uniform from `min`, which is exactly the
+// bug that used to silently round Peak cut and Maintain onto the wrong grid
+// (1640 isn't a multiple of 50) — so the slider uses step="1" and snaps to
+// the nearest entry here on every change instead.
+function buildStops(landmarks) {
+  const stops = landmarks.map((l) => ({ kcal: l.kcal, label: l.label }));
+  const min = landmarks[0].kcal;
+  const max = landmarks[landmarks.length - 1].kcal;
+  for (let k = Math.ceil(min / SLIDER_STEP) * SLIDER_STEP; k <= max; k += SLIDER_STEP) {
+    if (stops.some((s) => Math.abs(s.kcal - k) < STOP_MERGE_RADIUS)) continue;
+    stops.push({ kcal: k, label: null });
+  }
+  stops.sort((a, b) => a.kcal - b.kcal);
+  return stops;
+}
+
+function nearestStop(value, stops) {
+  return stops.reduce((best, s) => (Math.abs(s.kcal - value) < Math.abs(best.kcal - value) ? s : best), stops[0]).kcal;
+}
+
+// Large-figure label under the kcal readout: the landmark it's sitting on, or
+// the pair it's between.
+function landmarkText(value, landmarks) {
+  const exact = landmarks.find((l) => Math.abs(l.kcal - value) < 1);
+  if (exact) return exact.label;
+  for (let i = 0; i < landmarks.length - 1; i++) {
+    if (value > landmarks[i].kcal && value < landmarks[i + 1].kcal) {
+      return `between ${landmarks[i].label} and ${landmarks[i + 1].label}`;
+    }
+  }
+  return "";
+}
+
+function deltaText(value, maintenance) {
+  if (!maintenance) return "";
+  const delta = Math.round(value - maintenance);
+  // The slider snaps to a 50 kcal grid anchored at PEAK_CUT_KCAL, so the
+  // "Maintain" landmark itself can sit a handful of kcal off the engine's
+  // literal TDEE (e.g. 2,940 vs. 2,960). Treat anything inside half a step
+  // as "at maintenance" rather than surfacing quantization noise like
+  // "Maintain / −20 / day".
+  if (Math.abs(delta) < SLIDER_STEP / 2) return "at maintenance";
+  const pct = Math.round((delta / maintenance) * 100);
+  const sign = delta > 0 ? "+" : "−";
+  return `${sign}${Math.abs(delta)} / day, ${sign}${Math.abs(pct)}%`;
+}
+
 // `bare` drops the card's own glass chrome — used when it renders inside an
 // already-glass container (the Fuel page's week-plan modal).
 export default function WeeklyPlanCard({ bare = false }) {
@@ -123,39 +262,51 @@ export default function WeeklyPlanCard({ bare = false }) {
   };
   const checkedCount = shopping.items.filter((it) => checked[it.food]).length;
 
-  // Manual override (MacroFactor-style "Algorithm" vs "Manual"): he types his
-  // own calorie/protein target for the week, it beats the engine everywhere
-  // (this card, the daily rings) instantly. Backed by the same nutrition_overrides
-  // row the daily ease/push escape valves use — one more `action` value.
+  // Manual override (MacroFactor-style "Algorithm" vs "Manual"): the slider
+  // below picks his own calorie/protein target for the week, it beats the
+  // engine everywhere (this card, the daily rings) instantly. Backed by the
+  // same nutrition_overrides row the daily ease/push escape valves use — one
+  // more `action` value.
   const [showOverride, setShowOverride] = useState(false);
   const [overrideCal, setOverrideCal] = useState("");
   const [overrideProtein, setOverrideProtein] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
+
+  // The engine's real TDEE — the slider's "Maintain" center and the anchor
+  // every other landmark and the delta readout are computed from. Two places
+  // carry it (see compute_athlete_state.py): recommended_intake is the live
+  // phase's number, phase_options.maintenance is the same TDEE run through
+  // the "maintenance" phase explicitly — either works, they agree, but the
+  // explicit one is preferred since it can't be shadowed by a manual override
+  // baked into recommended_intake.
+  const maintenanceRaw = nutrition?.phase_options?.maintenance?.maintenance_kcal
+    ?? nutrition?.recommended_intake?.maintenance_kcal
+    ?? null;
+  const maintenanceKnown = Number.isFinite(maintenanceRaw) && maintenanceRaw > 0;
+  // Guard: no known TDEE yet (before the engine's first run) — anchor the
+  // slider's midpoint on today's actual target instead of guessing one.
+  const maintenance = maintenanceKnown ? maintenanceRaw : (calTarget || 2000);
+  const landmarks = useMemo(() => buildLandmarks(maintenance), [maintenance]);
+  const stops = useMemo(() => buildStops(landmarks), [landmarks]);
+  const sliderMin = landmarks[0].kcal; // always Peak cut, protected
+  const sliderMax = landmarks[landmarks.length - 1].kcal; // always Peak bulk, protected
+  const sliderValue = nearestStop(Number(overrideCal) || maintenance, stops);
+  const sliderPct = (kcal) => ((kcal - sliderMin) / (sliderMax - sliderMin)) * 100;
+  // Cool (cut) → off-white (maintain) → warm (bulk), the existing macro hues
+  // (Ledger's carbs-blue / fat-gold) instead of a new brand color.
+  const trackGradient = "linear-gradient(90deg, rgba(var(--hue-blue-rgb) / 0.55), rgba(var(--color-brand-rgb) / 0.35) 50%, rgba(var(--hue-yellow-rgb) / 0.55))";
+
   const openOverride = () => {
-    setOverrideCal(String(Math.round(calTarget || 0)));
+    setOverrideCal(String(nearestStop(calTarget || maintenance, stops)));
     setOverrideProtein(proteinTarget ? String(Math.round(proteinTarget)) : "");
-    setShowCustom(manualOverride);
     setShowOverride(true);
   };
 
-  // Diet phase picker (Nolan's call, 2026-09-27): Cut / Maintain / Bulk with the
-  // engine's number for each, or Custom (the hand-typed target below). Replaces
-  // the old binary "take the engine's number or type your own".
+  // Diet phase picker (Nolan's call, 2026-09-27, superseded 2026-09-30 by the
+  // slider below): the phase itself is still tracked (diet_phases / the cut's
+  // 4-6 week clock, the cut macro rules) — it's just no longer a picker of its
+  // own, it's derived from where the slider landed.
   const setPhase = useSetDietPhase(today);
-  const phaseOptions = nutrition?.phase_options || {};
   const currentChoice = manualOverride ? "custom" : (dietPhase || (isCut ? "cut" : "maintain"));
-  const PHASE_CHOICES = [
-    { value: "cut", label: "Cut", engineKey: "cut" },
-    { value: "maintain", label: "Maintain", engineKey: "maintenance" },
-    { value: "bulk", label: "Bulk", engineKey: "bulk" },
-  ];
-  const pickPhase = (value, label) => {
-    if (value === currentChoice) { setShowOverride(false); return; }
-    setPhase.mutate(value, {
-      onSuccess: () => { setShowOverride(false); toast.success(`${label} set`); },
-      onError: (e) => toast.error(e.message || "Couldn't change the phase"),
-    });
-  };
   const choiceLabel = { cut: "Cut", maintain: "Maintain", bulk: "Bulk", custom: "Custom" }[currentChoice];
 
   const setOverride = useMutation({
@@ -186,6 +337,24 @@ export default function WeeklyPlanCard({ bare = false }) {
     },
     onError: (e) => toast.error(e.message || "Couldn't save the override"),
   });
+
+  // Save the slider: the phase move (if any) has to land FIRST, since
+  // useSetDietPhase clears any manual override row from today on as part of
+  // switching phases — running it after the override write would silently
+  // erase the number just saved. Below maintenance-100 -> cut, above
+  // maintenance+100 -> bulk, else maintain; skipped entirely if the phase
+  // he's already in already matches (re-picking a phase you're already in
+  // would otherwise reset the cut's 4-6 week clock for nothing).
+  const saveSlider = async () => {
+    const targetPhase = sliderValue < maintenance - 100 ? "cut" : sliderValue > maintenance + 100 ? "bulk" : "maintain";
+    const currentPhase = dietPhase || (isCut ? "cut" : "maintain");
+    try {
+      if (targetPhase !== currentPhase) await setPhase.mutateAsync(targetPhase);
+      await setOverride.mutateAsync({ clear: false });
+    } catch (e) {
+      toast.error(e.message || "Couldn't save the target");
+    }
+  };
 
   // Manual per-day "force this food" override (e.g. force a Creami-sized
   // Cottage Cheese portion) — plan stays cost-driven everywhere else.
@@ -580,83 +749,108 @@ export default function WeeklyPlanCard({ bare = false }) {
         </p>
       </div>
 
-      {/* ── Diet picker: the engine's Cut / Maintain / Bulk numbers, or Custom
-          (a hand-typed target for this week). The day plan above rebuilds
-          around whichever is picked. ── */}
+      {/* ── Diet target slider: one horizontal control from Peak cut to Peak
+          bulk, Maintain in the middle, snapping to named landmarks and
+          stepping 50 kcal between them. Replaces the old four-way Cut /
+          Maintain / Bulk / Custom picker (Nolan's call, 2026-09-30) — the
+          slider always writes a manual override row (same nutrition_overrides
+          path as before), and moves the diet phase to match where it lands.
+          The day plan above rebuilds around wherever it's set. ── */}
       <Dialog open={showOverride} onOpenChange={setShowOverride}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Diet</DialogTitle>
+            <DialogTitle>Diet target</DialogTitle>
           </DialogHeader>
-          <div className="px-5 pb-5 space-y-2">
-            {PHASE_CHOICES.map(({ value, label, engineKey }) => {
-              const opt = phaseOptions[engineKey];
-              const selected = currentChoice === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => pickPhase(value, label)}
-                  disabled={setPhase.isPending}
-                  aria-pressed={selected}
-                  className={`w-full min-h-[52px] rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left disabled:opacity-60 ${selected ? "border-brand/50 bg-brand/[8%]" : "border-charcoal-border glass-interactive"}`}
-                >
-                  <span className="flex items-center gap-2">
-                    {selected ? <Check className="w-4 h-4 text-brand" /> : <span className="w-4" />}
-                    <span className="text-sm font-bold text-ink">{label}</span>
-                  </span>
-                  <span className="text-right">
-                    {opt?.calorie_target ? (
-                      <>
-                        <span className="block font-technical text-gold text-sm">{Math.round(opt.calorie_target).toLocaleString()} kcal</span>
-                        {opt.protein_g ? <span className="block text-[10px] text-ink-muted">{Math.round(opt.protein_g)} g protein</span> : null}
-                      </>
-                    ) : (
-                      <span className="text-[10px] text-ink-muted">after tonight&apos;s engine run</span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setShowCustom((v) => !v)}
-              aria-pressed={currentChoice === "custom"}
-              className={`w-full min-h-[52px] rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left ${currentChoice === "custom" ? "border-brand/50 bg-brand/[8%]" : "border-charcoal-border glass-interactive"}`}
-            >
-              <span className="flex items-center gap-2">
-                {currentChoice === "custom" ? <Check className="w-4 h-4 text-brand" /> : <span className="w-4" />}
-                <span className="text-sm font-bold text-ink">Custom</span>
-              </span>
-              <span className="text-[10px] text-ink-muted">your own numbers, this week</span>
-            </button>
-            {showCustom && (
-              <div className="space-y-3 pt-2">
-                <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Calories / day</span>
-                  <input
-                    type="number" inputMode="numeric" value={overrideCal}
-                    onChange={(e) => setOverrideCal(e.target.value)}
-                    className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-gold"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day (optional)</span>
-                  <input
-                    type="number" inputMode="numeric" value={overrideProtein}
-                    placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
-                    onChange={(e) => setOverrideProtein(e.target.value)}
-                    className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
-                  />
-                </label>
-                <button
-                  onClick={() => setOverride.mutate({ clear: false })}
-                  disabled={setOverride.isPending}
-                  className="cta-action w-full disabled:opacity-60"
-                >
-                  {setOverride.isPending ? "Saving…" : "Set for this week"}
-                </button>
+          <div className="px-5 pb-5 space-y-5">
+            {!maintenanceKnown && (
+              <p className="text-[11px] text-ink-muted">
+                Maintenance estimate pending — using today&apos;s target as the midpoint until the engine has one.
+              </p>
+            )}
+
+            <div className="text-center">
+              <div className="text-3xl font-technical text-gold leading-none [font-variant-numeric:tabular-nums]">
+                {sliderValue.toLocaleString()} <span className="text-base text-ink-muted">kcal</span>
               </div>
+              <div className="text-xs text-ink-secondary mt-1.5">
+                {landmarkText(sliderValue, landmarks)}
+              </div>
+              {maintenanceKnown && (
+                <div className="text-[11px] text-ink-muted mt-0.5 font-technical">
+                  {deltaText(sliderValue, maintenance)}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-1">
+              <div className="relative h-11 flex items-center">
+                <div
+                  className="absolute inset-x-0 h-1.5 rounded-full pointer-events-none"
+                  style={{ background: trackGradient }}
+                />
+                <input
+                  type="range"
+                  className="diet-slider relative w-full"
+                  min={sliderMin}
+                  max={sliderMax}
+                  // step="1" on purpose: the visible stops (landmarks + 50
+                  // kcal fillers, see buildStops) aren't evenly spaced from
+                  // `min`, so a uniform native step can't represent them —
+                  // every change snaps to the nearest one in JS instead.
+                  // Home/End still land exactly on sliderMin/sliderMax
+                  // (Peak cut / Peak bulk) since those ARE the input bounds.
+                  step={1}
+                  value={sliderValue}
+                  onChange={(e) => setOverrideCal(String(nearestStop(Number(e.target.value), stops)))}
+                  aria-label="Daily calorie target"
+                  aria-valuemin={sliderMin}
+                  aria-valuemax={sliderMax}
+                  aria-valuenow={sliderValue}
+                  aria-valuetext={`${sliderValue.toLocaleString()} kcal, ${landmarkText(sliderValue, landmarks)}`}
+                />
+              </div>
+              <div className="relative h-8 mt-0.5">
+                {landmarks.map((l) => (
+                  <div
+                    key={l.key}
+                    className="absolute -translate-x-1/2 text-center w-16"
+                    style={{ left: `${sliderPct(l.kcal)}%` }}
+                  >
+                    <div className="w-px h-1.5 bg-charcoal-border mx-auto" />
+                    <div className="text-[9px] uppercase tracking-wider text-ink-faint font-bold mt-0.5 leading-tight">
+                      {l.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day</span>
+              <input
+                type="number" inputMode="numeric" value={overrideProtein}
+                placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
+                onChange={(e) => setOverrideProtein(e.target.value)}
+                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
+              />
+            </label>
+
+            <button
+              onClick={saveSlider}
+              disabled={setOverride.isPending || setPhase.isPending}
+              className="cta-action w-full disabled:opacity-60"
+            >
+              {setOverride.isPending || setPhase.isPending ? "Saving…" : "Set target"}
+            </button>
+            {manualOverride && (
+              <button
+                type="button"
+                onClick={() => setOverride.mutate({ clear: true })}
+                disabled={setOverride.isPending}
+                className="glass-interactive w-full min-h-[44px] rounded-xl border border-charcoal-border text-xs font-bold text-ink-secondary active:scale-[0.98] disabled:opacity-60"
+              >
+                Back to the engine&apos;s target
+              </button>
             )}
           </div>
         </DialogContent>
