@@ -4,7 +4,7 @@
 // a one-time confirm() before submit when the computed calories exceed
 // ~2500, mirroring the train-logger heavy-weight guard.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, openAddFoodDialog } from './helpers.mjs';
 
 const CASE = 'r1-05';
 const FOOD_NAME = `OVN-${CASE} huge snack`;
@@ -14,7 +14,7 @@ async function cleanup(uid, db) {
 }
 
 async function openManualEntryWithCalories(page, calories) {
-  await page.getByRole('button', { name: 'Add food' }).click();
+  await openAddFoodDialog(page);
   await page.waitForTimeout(300);
   await page.getByRole('button', { name: 'Manual entry' }).click();
   await page.waitForTimeout(200);

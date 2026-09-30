@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
 
@@ -27,8 +27,19 @@ const actions = [
 // `open`/`onClose` from that trigger.
 export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, onStreamNote }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const handleAction = (action) => {
     onClose?.();
+    if (action.label === "Log Food" && location.pathname === "/fuel") {
+      // Fuel.jsx renders FoodTracker directly (see Fuel.jsx) -- if he's
+      // already there, navigating to /food-tracker would unmount Fuel and
+      // remount FoodTracker as its own standalone page instead of just
+      // opening the dialog on what's already on screen. Stay on /fuel and
+      // let FoodTracker's own ?addFood=true effect open the same dialog
+      // in place (r5 review, major: this used to always hard-navigate).
+      navigate("/fuel?addFood=true");
+      return;
+    }
     if (action.path) {
       navigate(action.path);
     } else if (action.action === "weighIn") {

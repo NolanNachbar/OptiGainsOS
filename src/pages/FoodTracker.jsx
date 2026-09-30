@@ -357,9 +357,18 @@ export default function FoodTracker() {
   }
 }, [showAddDialog, showNewMealDialog]);
 
-  // Auto-open add dialog when navigated with ?addFood=true (e.g. from FAB)
+  // Auto-open add dialog when navigated with ?addFood=true (the dock's '+' ->
+  // Log Food, QuickAddMenu.jsx). This path used to only ever fire through a
+  // fresh mount of the standalone /food-tracker route, where selectedDate's
+  // initial useState already computed today fresh -- rollDateForwardRef
+  // never needed calling here. Now that the dock also stays on /fuel (already
+  // mounted, no remount) when Log Food is opened from there, this needs the
+  // same rollDateForward + form reset the sticky-bar/former-FAB onClick did,
+  // or a tab left open across local midnight would open the dialog still
+  // logging to yesterday (r1-01's bug, resurfaced through the new path).
   useEffect(() => {
     if (searchParams.get("addFood") === "true") {
+      resetForm();
       setShowAddDialog(true);
       setSearchParams({}, { replace: true });
     }
@@ -1741,9 +1750,15 @@ const handleSaveMealTemplate = () => {
               </button>
             </>
           )}
-          {/* Coral discipline: the sticky-bar 'Add Food' is desktop-only — on
-              mobile the thumb-zone coral FAB is the SOLE Add-Food affordance, so
-              exactly one coral Add-Food exists per viewport. */}
+          {/* Coral discipline: the sticky-bar 'Add Food' is desktop-only. On
+              mobile it lives behind the dock's raised '+' -> Log Food
+              (QuickAddMenu.jsx), which navigates to
+              /food-tracker?addFood=true and opens this same dialog (see the
+              addFood searchParams effect above) -- this page no longer
+              renders its own FAB. It used to (a bottom-right coral '+'), but
+              the dock's own unconditional '+' made that a second, redundant
+              Add-Food affordance showing on screen at once (r5 review,
+              major). */}
           <Button
             variant="volt"
             size="lg"
@@ -1756,7 +1771,7 @@ const handleSaveMealTemplate = () => {
 
           {/* New Meal is a desktop affordance — on mobile it lives in the More
               sheet (Templates, recipes & ideas) so the sticky bar stays compact
-              and the thumb-zone coral FAB owns the one Add path. */}
+              and the dock's '+' -> Log Food owns the one Add path. */}
           <Button
             variant="dim"
             size="sm"
@@ -1768,23 +1783,6 @@ const handleSaveMealTemplate = () => {
           </Button>
         </div>
       </div>
-
-      {/* Thumb-zone FAB — off-white action 'Add Food' in the lower-right, above
-          the dock. Mobile only; desktop keeps the sticky-bar button. active:scale-95
-          gives a press confirmation (fuel-nutrition-2) on the single easing.
-          bottom: var(--floating-chrome-bottom), not a bare 5rem+safe-area —
-          the shared token's 12px breathing gap keeps this clear of the dock
-          even when the dock's real height drifts a couple px past its nominal
-          80px (SF Pro's line-height vs Manrope's caused exactly that). */}
-      <button
-        type="button"
-        onClick={() => { resetForm(); setShowAddDialog(true); }}
-        aria-label="Add food"
-        className="cta-action lg:hidden fixed right-3 z-30 h-12 w-12 !rounded-full p-0 active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
-        style={{ bottom: 'var(--floating-chrome-bottom)' }}
-      >
-        <Plus className="w-6 h-6" />
-      </button>
 
       {/* Two-column body */}
       <div className="flex items-start">

@@ -5,7 +5,7 @@
 // different from a normal slow save. Fix: while the mutation is paused, the
 // button reads "Offline - saves when you're back online" instead.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, openAddFoodDialog } from './helpers.mjs';
 
 const CASE = 'r1-09';
 const FOOD_NAME = `OVN-${CASE} offline snack`;
@@ -22,7 +22,7 @@ test('offline Add Food shows an honest offline message instead of stuck "Adding.
   try {
     await signIn(page, '/fuel');
 
-    await page.getByRole('button', { name: 'Add food' }).click();
+    await openAddFoodDialog(page);
     await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'Manual entry' }).click();
     await page.waitForTimeout(200);

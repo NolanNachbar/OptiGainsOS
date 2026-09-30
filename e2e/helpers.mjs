@@ -22,3 +22,12 @@ export async function testDb() {
   return db;
 }
 export async function testUserId() { return (await (await testDb()).auth.getUser()).data.user.id; }
+
+// Open the Add Food dialog the way the app now expects on mobile: FoodTracker
+// no longer renders its own bottom-right FAB (r5 review, major -- it doubled
+// up with the dock's raised '+' on /food-tracker). The dock's '+' -> "Log
+// Food" is the one path now, on Fuel or anywhere else.
+export async function openAddFoodDialog(page) {
+  await page.getByTestId('quick-add-button').click();
+  await page.getByRole('menuitem', { name: 'Log Food' }).click();
+}

@@ -4,7 +4,7 @@
 // Recent, taps its "+", and asserts a second row lands with matching macros
 // and the current date/meal_type — then deletes both rows it touched.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, openAddFoodDialog } from './helpers.mjs';
 import { getTodayString } from '../src/utils/dateUtils.js';
 
 const CASE = '3b-relog';
@@ -40,7 +40,7 @@ test('tapping + on a Recent food re-logs it with its last portion', async ({ pag
   try {
     await signIn(page, '/fuel');
 
-    await page.getByRole('button', { name: 'Add food' }).click();
+    await openAddFoodDialog(page);
     await page.waitForTimeout(300);
 
     const relogBtn = page.getByRole('button', { name: `Log ${FOOD_NAME} again with the same portion` });

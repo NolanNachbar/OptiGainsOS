@@ -6,7 +6,7 @@
 // to today (only when the athlete was already viewing today) on
 // visibilitychange/focus/a 60s interval, and also right when Add Food opens.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, openAddFoodDialog } from './helpers.mjs';
 
 const CASE = 'r1-01';
 // Cross *yesterday's real* midnight rather than a future date: faking the
@@ -48,7 +48,7 @@ test('selectedDate rolls forward to today when Add Food opens after crossing loc
     await page.clock.setFixedTime(new Date(`${DAY_D1}T00:10:00-06:00`));
     await page.waitForTimeout(300);
 
-    await page.getByRole('button', { name: 'Add food' }).click();
+    await openAddFoodDialog(page);
     await page.waitForTimeout(400);
 
     const dialogHeader = await page.locator('text=Logging to').innerText();

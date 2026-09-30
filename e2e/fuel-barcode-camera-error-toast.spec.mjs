@@ -7,12 +7,12 @@
 // found" when no lookup ever happened. Fix: only toast when barcode is
 // non-empty.
 import { test, expect } from '@playwright/test';
-import { signIn } from './helpers.mjs';
+import { signIn, openAddFoodDialog } from './helpers.mjs';
 
 test('camera-unavailable "Enter manually" does not show a misleading "Product not found" toast', async ({ page }) => {
   await signIn(page, '/fuel');
 
-  await page.getByRole('button', { name: 'Add food' }).click();
+  await openAddFoodDialog(page);
   await page.waitForTimeout(300);
 
   await page.getByRole('button', { name: 'Scan barcode' }).click();
