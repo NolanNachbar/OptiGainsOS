@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useUserQueries";
+import { useGlobalAutoFinish } from "@/hooks/useGlobalAutoFinish";
 import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Brain, Plus, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import CalculatorsModal from "@/components/CalculatorsModal";
@@ -136,6 +137,10 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useProfile();
+  // App-wide backstop for the 3h auto-finish rule (see useGlobalAutoFinish):
+  // runs on every route Layout wraps, not just the workout page itself, so a
+  // forgotten Finish gets caught whichever page he opens next.
+  useGlobalAutoFinish(profile?.timezone);
   const [showCalculators, setShowCalculators] = useState(false);
   // Bridge for pages whose own FAB is suppressed (e.g. the active workout
   // logger, whose kebab now carries "Calculators" per Phase A) to reach this
