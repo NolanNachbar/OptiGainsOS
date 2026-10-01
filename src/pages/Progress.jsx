@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
+import { useAllBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
 import { BOUNDS as WEIGHT_BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,8 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import WeightProgressChart from "@/components/progress/WeightProgressChart";
-import { Module } from "@/components/ui/system";
+import { Module, SegmentedControl } from "@/components/ui/system";
 import { calculateEWMA } from "@/utils/coachingUtils";
 import {
   TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
@@ -29,14 +28,56 @@ import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
+// The engine's weight_trend_lbs_per_week is always computed in lbs
+// (Today.jsx's same convention) — convert it for a kg profile, never
+// relabel it unconverted.
+const LBS_PER_KG = 0.45359237;
 
-// Ledger-style 30-day weight chart (DESIGN.md Charts): gray raw weigh-in
-// points, a white trend line (EWMA) over them, small tabular axis labels on
-// the right. Same visual convention as the "B" mockup's Today weight module,
-// just a full-width version for the Body detail page.
+const RANGES = [
+  { value: "1W", label: "1W", days: 7 },
+  { value: "1M", label: "1M", days: 30 },
+  { value: "3M", label: "3M", days: 90 },
+  { value: "6M", label: "6M", days: 180 },
+  { value: "1Y", label: "1Y", days: 365 },
+  { value: "All", label: "All", days: null },
+];
+
+// The deltas below the chart are fixed periods (mf-app-screens.md "Weight
+// Changes" card), independent of whichever range the segmented control has
+// selected — same as MacroFactor showing 3-day/7-day deltas regardless of
+// the chart's own window.
+const DELTA_PERIODS = [
+  { label: "1W", days: 7 },
+  { label: "1M", days: 30 },
+  { label: "3M", days: 90 },
+];
+
+// Delta is read from the smoothed TREND, not the raw weigh-ins (task spec):
+// latest trend value minus the trend value at the most recent entry on or
+// before (anchor - days). If no entry reaches back that far, there's no
+// honest delta to show — null, never a value computed from whatever the
+// first in-window point happens to be.
+function trendDelta(trended, days) {
+  if (!trended || trended.length < 2) return null;
+  const last = trended[trended.length - 1];
+  const cutoff = new Date(`${last.recorded_date}T00:00:00`);
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  let candidate = null;
+  for (let i = trended.length - 1; i >= 0; i--) {
+    if (trended[i].recorded_date <= cutoffStr) { candidate = trended[i]; break; }
+  }
+  if (!candidate) return null;
+  return Math.round((last.trendWeight - candidate.trendWeight) * 10) / 10;
+}
+
+// Ledger-style weight chart (DESIGN.md Charts): pale raw weigh-in scatter,
+// a bold trend line (EWMA) over them, small tabular axis labels on the
+// right — same chart language as ExerciseProgressChart (gray history,
+// off-white "now" dot, var(--text-faint) tick tokens).
 function WeightTrendChart({ trended }) {
   if (!trended || trended.length < 2) return null;
-  const W = 396, H = 108, PAD_X = 4, PAD_Y = 12, LABEL_W = 32;
+  const W = 396, H = 140, PAD_X = 4, PAD_Y = 14, LABEL_W = 32;
   const rawVals = trended.map((e) => Number(e.weight));
   const trendVals = trended.map((e) => Number(e.trendWeight));
   const allVals = [...rawVals, ...trendVals];
@@ -45,11 +86,17 @@ function WeightTrendChart({ trended }) {
   const span = max - min || 1;
   const innerH = H - PAD_Y * 2;
   const yFor = (v) => PAD_Y + (1 - (v - min) / span) * innerH;
-  const step = (W - LABEL_W - PAD_X * 2) / (trended.length - 1);
-  const xFor = (i) => PAD_X + i * step;
+  // Positioned by actual elapsed days, not row index, so a gap between
+  // weigh-ins reads as a visual gap instead of being silently compressed
+  // (mf-app-screens.md Body pattern #1; same convention as Today's WeightSpark).
+  const t0 = new Date(`${trended[0].recorded_date}T00:00:00`);
+  const tN = new Date(`${trended[trended.length - 1].recorded_date}T00:00:00`);
+  const totalDays = Math.max(1, Math.round((tN - t0) / 86400000));
+  const dayOf = (e) => Math.round((new Date(`${e.recorded_date}T00:00:00`) - t0) / 86400000);
+  const xFor = (e) => PAD_X + (dayOf(e) / totalDays) * (W - LABEL_W - PAD_X * 2);
 
-  const rawPoints = trended.map((e, i) => ({ x: xFor(i), y: yFor(Number(e.weight)) }));
-  const trendPoints = trended.map((e, i) => ({ x: xFor(i), y: yFor(Number(e.trendWeight)) }));
+  const rawPoints = trended.map((e) => ({ x: xFor(e), y: yFor(Number(e.weight)) }));
+  const trendPoints = trended.map((e) => ({ x: xFor(e), y: yFor(Number(e.trendWeight)) }));
   const path = trendPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
   const last = trendPoints[trendPoints.length - 1];
   const ticks = [max, (max + min) / 2, min];
@@ -67,7 +114,7 @@ function WeightTrendChart({ trended }) {
           </g>
         );
       })}
-      <g fill="var(--text-faint)">
+      <g fill="var(--text-faint)" opacity="0.7">
         {rawPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2" />)}
       </g>
       <path d={path} fill="none" stroke="var(--text-primary)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
@@ -76,97 +123,73 @@ function WeightTrendChart({ trended }) {
   );
 }
 
-// Weight-trend module (Body/Fuel phase-2b, IA.md "Weight trend takes an extra
-// unscored step"): the first thing rendered in Body, above Measurements and
-// Photos — trend value, rate/week, and a 30-day chart, mirroring Today's
-// compact weight-trend module but full width for the detail page it links to.
-function WeightTrendModule() {
-  const { weightEntries } = useBodyWeightEntries();
-  const { profile } = useProfile();
-  const weightUnit = profile?.weight_unit || "lbs";
-
-  // Windowed relative to the most recent weigh-in, not the wall clock: a
-  // lapsed logger (or a demo/test account with older fixture data) should
-  // still see their last 30 days of logged history, not an empty "log a few
-  // more" state just because none of it happens to fall within the last 30
-  // real-world days. Mirrors getLoggedExerciseSummaries' same convention.
-  const allTrended = useMemo(() => calculateEWMA(weightEntries, 0.1), [weightEntries]);
-
-  const weight30d = useMemo(() => {
-    if (allTrended.length === 0) return [];
-    const lastDate = allTrended[allTrended.length - 1].recorded_date;
-    const cutoff = new Date(`${lastDate}T00:00:00`);
-    cutoff.setDate(cutoff.getDate() - 29);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-    return allTrended.filter((e) => e.recorded_date >= cutoffStr);
-  }, [allTrended]);
-
-  const trendStats = useMemo(() => {
-    if (weight30d.length < 2) return { weeklyRate: 0, dataPoints: weight30d.length };
-    const first = weight30d[0];
-    const last = weight30d[weight30d.length - 1];
-    const daySpan = differenceInCalendarDays(parseISO(last.recorded_date), parseISO(first.recorded_date));
-    const weeklyRate = daySpan > 0 ? Math.round(((last.trendWeight - first.trendWeight) / daySpan) * 7 * 10) / 10 : 0;
-    return { weeklyRate, dataPoints: weight30d.length };
-  }, [weight30d]);
-  const latest = weight30d[weight30d.length - 1];
-  const hasRate = trendStats.dataPoints >= 2;
-  // A weigh-in inside the 30-day window can still be a week+ stale — say so
-  // rather than let the trend number read as "today's weight". Same rule as
-  // Today's weight module.
-  const isStale = latest
-    && differenceInCalendarDays(new Date(), parseISO(latest.recorded_date)) > 7;
-
+function DeltaTriples({ trended, weightUnit }) {
   return (
-    <Module label="Weight trend · 30 days" className="mb-2">
-      {weightEntries.length === 0 ? (
-        <p className="text-[12px] text-muted-2 font-semibold">Log a few weigh-ins to see a trend</p>
-      ) : (
-        <>
-          <div className="flex items-baseline gap-1.5">
-            <span className="type-display text-2xl font-semibold tabular-nums">
-              {latest ? fmt(latest.trendWeight, 1) : "—"}
-            </span>
-            <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
-            {hasRate && (
-              <span className="ml-auto font-technical text-[13px] font-semibold text-secondary tabular-nums">
-                {`${trendStats.weeklyRate > 0 ? "+" : ""}${trendStats.weeklyRate} lb/wk`}
+    <div className="flex items-center gap-5 mt-3 flex-wrap">
+      {DELTA_PERIODS.map(({ label, days }) => {
+        const value = trendDelta(trended, days);
+        return (
+          <div key={label} className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-muted-2">{label}</span>
+            {value == null ? (
+              <span className="font-technical text-xs font-bold text-faint tabular-nums">—</span>
+            ) : (
+              <span className="font-technical text-xs font-bold text-ink tabular-nums flex items-center gap-0.5">
+                {value > 0 ? "+" : ""}{value} {weightUnit}
+                {value > 0 ? (
+                  <ArrowUpRight className="w-3 h-3" />
+                ) : value < 0 ? (
+                  <ArrowDownRight className="w-3 h-3" />
+                ) : null}
               </span>
             )}
           </div>
-          {isStale && (
-            <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
-              as of {format(parseISO(latest.recorded_date), "MMM d")}
-            </p>
-          )}
-          {weight30d.length >= 2 ? (
-            <div className="mt-2">
-              <WeightTrendChart trended={weight30d} />
-            </div>
-          ) : (
-            <p className="text-[12px] text-muted-2 font-semibold mt-2">Log a few more weigh-ins to see a 30-day chart</p>
-          )}
-        </>
-      )}
-    </Module>
+        );
+      })}
+    </div>
   );
 }
 
-// ─── Weight Tab ────────────────────────────────────────────────────────────────
-function WeightTab() {
+// ─── Weight module ─────────────────────────────────────────────────────────────
+// The leading surface on Body (mf-app-screens.md "Weight Trend" widget):
+// trend value, a 1W/1M/3M/6M/1Y/All range control over the scatter+trend
+// chart, delta triples below it, then the logger + history. Replaces the old
+// split between a fixed "30 days" summary module above the tabs and a
+// second, separate chart inside a "Weight" tab — one chart, one place.
+function WeightModule() {
   const qc = useQueryClient();
-  const { profile } = useProfile();
-  const { weightEntries } = useBodyWeightEntries();
+  const { profile, isLoading: profileLoading } = useProfile();
+  const { weightEntries, isLoading, error, refetch } = useAllBodyWeightEntries();
   const weightUnit = profile?.weight_unit || "lbs";
+  const [range, setRange] = useState("1M");
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState(getTodayString());
   const [notes, setNotes] = useState("");
+  const [weightError, setWeightError] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const HISTORY_PAGE_SIZE = 7;
   const logWeight = useLogWeight();
 
-  const [weightError, setWeightError] = useState(null);
+  const allTrended = useMemo(() => calculateEWMA(weightEntries, 0.1), [weightEntries]);
+
+  // Windowed relative to the most recent weigh-in, not the wall clock, so a
+  // lapsed logger still sees their actual last N days instead of an empty
+  // "log a few more" state (same anchor the deltas above use).
+  const windowed = useMemo(() => {
+    if (allTrended.length === 0) return [];
+    const rangeDef = RANGES.find((r) => r.value === range);
+    if (!rangeDef?.days) return allTrended;
+    const lastDate = allTrended[allTrended.length - 1].recorded_date;
+    const cutoff = new Date(`${lastDate}T00:00:00`);
+    cutoff.setDate(cutoff.getDate() - (rangeDef.days - 1));
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return allTrended.filter((e) => e.recorded_date >= cutoffStr);
+  }, [allTrended, range]);
+
+  const latest = allTrended[allTrended.length - 1];
+  const isStale = latest
+    && differenceInCalendarDays(new Date(), parseISO(latest.recorded_date)) > 7;
 
   const add = useMutation({
     mutationFn: async () => {
@@ -202,67 +225,107 @@ function WeightTab() {
   });
 
   const sorted = [...weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
+  const reversed = [...sorted].reverse();
+  const visibleHistory = showAllHistory ? reversed : reversed.slice(0, HISTORY_PAGE_SIZE);
+  const remainingHistory = reversed.length - visibleHistory.length;
 
   return (
-    <div className="space-y-6">
-      {/* Trend first: the stats + chart land before the logger so the page
-          leads with insight, not data entry. */}
-      <Card className="glass glass-interactive">
-        <CardContent className="pt-5 pb-5 px-5">
-          <WeightProgressChart data={sorted} weightUnit={weightUnit} className="h-64 md:h-72" />
-        </CardContent>
-      </Card>
-
-      {/* Quick log — collapsed into a disclosure so the trend stays above the
-          fold; expand to record a new entry. */}
-      <details className="glass glass-interactive group/log [&[open]>summary_.log-chevron]:rotate-180">
-        <summary className="flex items-center justify-between cursor-pointer list-none px-5 py-3.5 min-h-[44px]">
-          <span className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-muted-2" />
-            <span className="section-label !text-ink">Log Weight</span>
-          </span>
-          <ChevronDown className="log-chevron w-4 h-4 text-faint transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)]" />
-        </summary>
-        <div className="px-5 pb-5 pt-1">
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full font-technical" />
-              </div>
-              <div>
-                <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
-                <Input type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => { setWeight(e.target.value); setWeightError(null); }} placeholder="0.0" className="h-11 w-full" />
-              </div>
-            </div>
-            {weightError && (
-              <p className="text-xs font-semibold text-bad">{weightError}</p>
-            )}
-            <div>
-              <Label className="text-xs text-ink-muted mb-1.5 block">Notes (optional)</Label>
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Morning, fasted..." className="h-11" />
-            </div>
-            <Button variant="volt" size="lg" className="w-full" disabled={!weight || add.isPending} onClick={() => add.mutate()}>
-              Log
-            </Button>
-          </div>
+    <>
+      <Module>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-[13px] font-semibold text-muted-2">Weight</span>
+          {weightEntries.length >= 2 && (
+            <SegmentedControl options={RANGES} value={range} onChange={setRange} size="sm" />
+          )}
         </div>
-      </details>
 
-      {/* History */}
-      {sorted.length > 0 && (() => {
-        const reversed = [...sorted].reverse();
-        const visible = showAllHistory ? reversed : reversed.slice(0, HISTORY_PAGE_SIZE);
-        const remaining = reversed.length - visible.length;
-        return (
-        <div>
-          <h3 className="section-label mb-3">History</h3>
+        {isLoading || profileLoading ? (
+          <div className="space-y-2 py-1">
+            <Skeleton className="h-7 w-32 rounded" />
+            <Skeleton className="h-[140px] w-full rounded-lg" />
+          </div>
+        ) : error ? (
+          <div className="py-6 text-center">
+            <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load weigh-ins.</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
+          </div>
+        ) : weightEntries.length < 2 ? (
+          <p className="text-[12px] text-muted-2 font-semibold py-1">
+            {weightEntries.length === 0
+              ? "Log a weigh-in to start tracking your trend."
+              : "Log one more weigh-in to see a trend."}
+          </p>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1.5">
+              <span className="type-display text-2xl font-semibold tabular-nums">
+                {fmt(latest.trendWeight, 1)}
+              </span>
+              <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
+            </div>
+            {isStale && (
+              <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
+                as of {format(parseISO(latest.recorded_date), "MMM d")}
+              </p>
+            )}
+            {windowed.length >= 2 ? (
+              <div className="mt-2">
+                <WeightTrendChart trended={windowed} />
+              </div>
+            ) : (
+              <p className="text-[12px] text-muted-2 font-semibold mt-2">Not enough weigh-ins in this range.</p>
+            )}
+            <DeltaTriples trended={allTrended} weightUnit={weightUnit} />
+          </>
+        )}
+
+        {/* Quick log — collapsed into a disclosure so the trend stays above the
+            fold; expand to record a new entry. Defaults open for a brand-new
+            account so the first thing offered is a way to add data, not a
+            buried control. */}
+        <details open={weightEntries.length === 0} className="mt-3 -mx-4 sm:-mx-5 lg:-mx-4 border-t hairline group/log [&[open]>summary_.log-chevron]:rotate-180">
+          <summary className="flex items-center justify-between cursor-pointer list-none px-4 sm:px-5 lg:px-4 py-3 min-h-[44px]">
+            <span className="flex items-center gap-2">
+              <Plus className="w-4 h-4 text-muted-2" />
+              <span className="section-label !text-ink">Log Weight</span>
+            </span>
+            <ChevronDown className="log-chevron w-4 h-4 text-faint transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)]" />
+          </summary>
+          <div className="px-4 sm:px-5 lg:px-4 pb-4 pt-1">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
+                  <Input data-testid="weight-log-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full font-technical" />
+                </div>
+                <div>
+                  <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
+                  <Input data-testid="weight-log-value" type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => { setWeight(e.target.value); setWeightError(null); }} placeholder="0.0" className="h-11 w-full" />
+                </div>
+              </div>
+              {weightError && (
+                <p className="text-xs font-semibold text-bad">{weightError}</p>
+              )}
+              <div>
+                <Label className="text-xs text-ink-muted mb-1.5 block">Notes (optional)</Label>
+                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Morning, fasted..." className="h-11" />
+              </div>
+              <Button variant="volt" size="lg" className="w-full" disabled={!weight || add.isPending} onClick={() => add.mutate()}>
+                Log
+              </Button>
+            </div>
+          </div>
+        </details>
+      </Module>
+
+      {sorted.length > 0 && (
+        <Module label="History">
           <div className="space-y-1.5">
-            {visible.map((entry, i, arr) => {
+            {visibleHistory.map((entry, i, arr) => {
               const prev = arr[i + 1];
               const diff = prev ? (entry.weight - prev.weight) : null;
               return (
-                <div key={entry.id} className="flex items-center gap-4 px-4 py-2.5 glass-inset group">
+                <div key={entry.id} className="flex items-center gap-4 py-2 border-t hairline first:border-t-0 group">
                   <span className="font-technical text-xs font-semibold text-muted-2 w-20 shrink-0">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</span>
                   <span className="font-technical text-sm font-extrabold text-ink">{entry.weight} {weightUnit}</span>
                   {diff !== null && diff !== 0 && (
@@ -286,12 +349,11 @@ function WeightTab() {
               className="w-full mt-2.5 min-h-[44px] cta-ghost"
               onClick={() => setShowAllHistory(v => !v)}
             >
-              {showAllHistory ? "Show less" : `Show more (${remaining})`}
+              {showAllHistory ? "Show less" : `Show more (${remainingHistory})`}
             </Button>
           )}
-        </div>
-        );
-      })()}
+        </Module>
+      )}
 
       <ConfirmDialog
         open={!!confirmId}
@@ -302,7 +364,7 @@ function WeightTab() {
         variant="danger"
         onConfirm={() => { del.mutate(confirmId); setConfirmId(null); }}
       />
-    </div>
+    </>
   );
 }
 
@@ -396,13 +458,14 @@ function MeasurementsTab() {
         <CardContent className="pt-4 pb-5 px-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36 font-technical" />
+            <Input data-testid="measurements-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36 font-technical" />
           </div>
           <div className="grid grid-cols-4 gap-3 mb-3">
-            {MEASUREMENT_FIELDS.map(f => (
+            {MEASUREMENT_FIELDS.map((f, i) => (
               <div key={f.key}>
                 <Label className="text-[10px] text-ink-muted mb-1 block uppercase tracking-wider">{f.label}</Label>
                 <Input
+                  data-testid={i === 0 ? "measurements-chest" : undefined}
                   type="number" inputMode="decimal"
                   step="0.1"
                   value={form[f.key] || ""}
@@ -530,6 +593,8 @@ function PhotosLink() {
 
 function MetabolismTab() {
   const { user } = useAuth();
+  const { profile } = useProfile();
+  const weightUnit = profile?.weight_unit || "lbs";
   const today = getTodayString();
   const { data: state } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
@@ -541,7 +606,13 @@ function MetabolismTab() {
     enabled: !!user,
   });
 
-  const weightTrend = state?.nutrition?.weight_trend_lbs_per_week;
+  // weight_trend_lbs_per_week is always computed in lbs by the engine
+  // (Today.jsx's same convention) — convert the NUMBER for a kg profile,
+  // don't just relabel an unconverted lbs value "lbs/wk".
+  const weightTrendLbs = state?.nutrition?.weight_trend_lbs_per_week;
+  const weightTrend = weightTrendLbs == null ? null
+    : weightUnit === "kg" ? Math.round(weightTrendLbs * LBS_PER_KG * 100) / 100
+    : weightTrendLbs;
 
   return (
     <div className="space-y-6">
@@ -572,7 +643,7 @@ function MetabolismTab() {
             <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" /> Weight Trend
             </p>
-            <p className="font-technical text-lg font-extrabold text-ink">{weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend} lbs/wk` : "—"}</p>
+            <p className="font-technical text-lg font-extrabold text-ink">{weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend} ${weightUnit}/wk` : "—"}</p>
          </Card>
          {(() => {
             // Net energy derived from the measured weight trend rather than a
@@ -610,25 +681,29 @@ function MetabolismTab() {
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 // Rendered embedded inside Fuel → Body & Progress (the standalone /progress route was retired).
+// MacroFactor redesign (LAUNCH_PLAN phase 4): the weight module leads, full
+// width, with its own range control and deltas — it's no longer one of four
+// equal-weight tabs (that duplicated the trend across a "30 days" summary
+// module AND a separate "Weight" tab chart). Metabolism/Measurements/Photos
+// stay tabbed below it; a per-muscle map isn't duplicated here since
+// AthleteState (the Body tab-root) already renders one.
 export default function Progress() {
   return (
-    <>
-      <WeightTrendModule />
-      <Tabs defaultValue="weight">
+    <div className="space-y-2">
+      <WeightModule />
+      <Tabs defaultValue="metabolism">
       {/* Subordinate to the parent Fuel SubTabs: a lighter, contained segmented
           control (glass-inset, no full-width underline strip) so the two nav
           levels read as a clear hierarchy rather than two equal-weight strips. */}
       <TabsList className="mb-3 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
         <TabsTrigger value="metabolism" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
-        <TabsTrigger value="weight" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Weight</TabsTrigger>
         <TabsTrigger value="measurements" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
         <TabsTrigger value="photos" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
       </TabsList>
       <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
-      <TabsContent value="weight"><WeightTab /></TabsContent>
       <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
       <TabsContent value="photos"><PhotosLink /></TabsContent>
       </Tabs>
-    </>
+    </div>
   );
 }

@@ -33,10 +33,12 @@ test('re-saving Measurements for the same date updates the row instead of duplic
     await page.getByRole('button', { name: 'Measurements', exact: true }).click();
     await page.waitForTimeout(300);
 
-    const dateInput = page.locator('input[type="date"]').first();
-    // Chest is the first field in MEASUREMENT_FIELDS; the labels aren't
-    // linked to their inputs (no htmlFor/id), so use field order instead.
-    const chestInput = page.locator('input[type="number"]').first();
+    const dateInput = page.getByTestId('measurements-date');
+    // Chest is the first field in MEASUREMENT_FIELDS; tagged with its own
+    // data-testid so this doesn't collide with WeightModule's own (hidden,
+    // closed-<details>) date/number inputs, which now render earlier in the
+    // DOM on the always-visible Body page.
+    const chestInput = page.getByTestId('measurements-chest');
     const notesInput = page.getByPlaceholder('Notes (optional)');
 
     // First save: chest=100.

@@ -1,9 +1,12 @@
-// Regression for body-r1-02: the Progress > Weight tab's "Log Weight" form had
-// no bounds check, unlike WeighInPrompt's BOUNDS=[50,700] lbs guard on the same
-// write path (useLogWeight). An implausible transposed-digit value (1810 for
-// 181) saved silently with a success toast. Fix: Progress.jsx now validates
-// against the same BOUNDS before writing, and shows an inline error instead of
-// saving.
+// Regression for body-r1-02: the Body page's "Log Weight" form had no bounds
+// check, unlike WeighInPrompt's BOUNDS=[50,700] lbs guard on the same write
+// path (useLogWeight). An implausible transposed-digit value (1810 for 181)
+// saved silently with a success toast. Fix: Progress.jsx now validates against
+// the same BOUNDS before writing, and shows an inline error instead of saving.
+//
+// (MacroFactor-redesign note: the weight module used to live behind its own
+// "Weight" tab; it's now always-visible at the top of the Body page, so this
+// no longer clicks into a tab first — just opens the "Log Weight" disclosure.)
 import { test, expect } from '@playwright/test';
 import { signIn, testDb, testUserId } from './helpers.mjs';
 
@@ -32,13 +35,11 @@ test('Progress Weight tab rejects an out-of-bounds weight instead of saving it s
     await signIn(page, '/fuel?tab=body');
     await page.waitForLoadState('networkidle');
 
-    await page.getByRole('button', { name: 'Weight', exact: true }).click();
-    await page.waitForTimeout(300);
     await page.locator('summary:has-text("Log Weight")').click();
     await page.waitForTimeout(300);
 
-    await page.locator('input[type="date"]').first().fill(DATE);
-    await page.locator('input[type="number"]').first().fill('1810');
+    await page.getByTestId('weight-log-date').fill(DATE);
+    await page.getByTestId('weight-log-value').fill('1810');
     await page.getByPlaceholder('Morning, fasted...').fill(NOTE);
     await page.evaluate(() => document.activeElement?.blur());
     await page.waitForTimeout(200);
@@ -55,7 +56,7 @@ test('Progress Weight tab rejects an out-of-bounds weight instead of saving it s
     await expect(page.locator('body')).toContainText(/expected 50-700|reads as/i);
 
     // A plausible value on the same form still saves normally.
-    await page.locator('input[type="number"]').first().fill('183');
+    await page.getByTestId('weight-log-value').fill('183');
     await page.evaluate(() => document.activeElement?.blur());
     await page.waitForTimeout(200);
     await page.getByRole('button', { name: 'Log', exact: true }).click();

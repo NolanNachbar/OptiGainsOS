@@ -248,7 +248,7 @@ export function useFoodPortions() {
 export function useBodyWeightEntries() {
   const { user } = useAuth();
 
-  const { data: weightEntries = [], isLoading, error } = useQuery({
+  const { data: weightEntries = [], isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.bodyWeightEntries(user?.id),
     queryFn: async () => {
       const since = format(subDays(new Date(), 365), 'yyyy-MM-dd');
@@ -265,7 +265,35 @@ export function useBodyWeightEntries() {
     staleTime: 5 * 60 * 1000,
   });
 
-  return { weightEntries, isLoading, error };
+  return { weightEntries, isLoading, error, refetch };
+}
+
+// Full-history variant for the Body page's weight chart, which needs a real
+// "All" range (and deltas that can reach back past a year) — the 365-day
+// floor on useBodyWeightEntries above is right for every other consumer
+// (Today's 60-day window, FoodTracker's adaptive-TDEE lookback, Profile's
+// "latest weight" read) but would silently clip "All" to 1Y here. Keyed as
+// a suffix of the SAME ['bodyWeightEntries', userId] prefix so a weigh-in
+// write (invalidateBodyWeight, prefix-matched) still invalidates this too.
+export function useAllBodyWeightEntries() {
+  const { user } = useAuth();
+
+  const { data: weightEntries = [], isLoading, error, refetch } = useQuery({
+    queryKey: [...queryKeys.bodyWeightEntries(user?.id), 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('body_weight_entries')
+        .select('*')
+        .eq('created_by', user.id)
+        .order('recorded_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  return { weightEntries, isLoading, error, refetch };
 }
 
 export function useRecoveryMetrics(days = 30) {

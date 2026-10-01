@@ -68,11 +68,13 @@ export default function Fuel() {
             </Dialog>
           </>
         ) : activeTab === "body" ? (
-          <div className="px-4 pt-4 max-w-2xl mx-auto space-y-6 pb-[var(--dock-clearance)]">
-
-            {/* Body & Progress — weight (logger + trend), measurements, photos.
-                Merged in from the retired standalone /progress route. The Progress
-                sub-tab strip is its own label, so no extra section heading here. */}
+          // Body & Progress — weight (logger + trend), measurements, photos.
+          // Merged in from the retired standalone /progress route. No padding
+          // wrapper here (matches the nutrition tab's bare <FoodTracker/>):
+          // Progress.jsx owns its own px-4 sm:px-6 gutter so its Module
+          // cards' bleed negative-margins land flush with the viewport edge
+          // on mobile, the same convention Today.jsx/FoodTracker.jsx use.
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 pb-[var(--dock-clearance)] space-y-2">
             <Progress />
           </div>
         ) : (
