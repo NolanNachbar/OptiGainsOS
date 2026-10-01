@@ -51,7 +51,7 @@ import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
 import SwapFoodDialog from "@/components/nutrition/SwapFoodDialog";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { Module } from "@/components/ui/system";
+import { Module, SegmentedControl } from "@/components/ui/system";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -246,6 +246,19 @@ export default function FoodTracker() {
   const [searchRetry, setSearchRetry] = useState(0);
   const [myFoodsExpanded, setMyFoodsExpanded] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
+  // Consumed/Remaining view for the "Intake vs pace" module — same saved
+  // display preference pattern as Today.jsx's Nutrition module
+  // (mf-app-screens.md "Nutrition & Targets widget": a bar-fill toggle,
+  // never a ring). Kept as its own key since Fuel shows a selectable
+  // historical date, not just today.
+  const [fuelNutritionView, setFuelNutritionView] = useState(() => {
+    try { return localStorage.getItem("fuelNutritionView") === "consumed" ? "consumed" : "remaining"; }
+    catch { return "remaining"; }
+  });
+  const setFuelNutritionViewPersist = (v) => {
+    setFuelNutritionView(v);
+    try { localStorage.setItem("fuelNutritionView", v); } catch { /* private mode / blocked storage */ }
+  };
   const [manualExpanded, setManualExpanded] = useState(false);
   const [showNewRecipe, setShowNewRecipe] = useState(false);
   const [showNewMealDialog, setShowNewMealDialog] = useState(false);
@@ -1797,6 +1810,34 @@ const handleSaveMealTemplate = () => {
               --dock-clearance. */}
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 pb-3.5 space-y-2">
 
+            {/* Recent/go-to foods rail (mf-app-screens.md Fuel pattern #2,
+                "Hourly Go-Tos"): the page's most-recently-eaten foods as a
+                horizontally-scrolling one-tap rail, positioned above the
+                page's search entry point (the header's Search icon) rather
+                than buried inside the Add Food dialog's own Recent list —
+                reuses quickRelogFood exactly, same mutation/toast/invalidate
+                path as the dialog's "+" button. Logs to selectedDate, so it
+                works the same whether viewing today or a past day. */}
+            {recentFoods.length > 0 && (
+              <Module label="Recent">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:-mx-5 sm:px-5">
+                  {recentFoods.map((entry, i) => (
+                    <button
+                      key={`${entry.food_name}-${i}`}
+                      type="button"
+                      onClick={() => quickRelogFood(entry)}
+                      disabled={addFoodMutation.isPending}
+                      aria-label={`Log ${entry.food_name} again`}
+                      className="shrink-0 w-[136px] text-left glass-inset px-3 py-2.5 min-h-[44px] active:scale-[0.98] transition-transform duration-200 [transition-timing-function:var(--ease)] disabled:opacity-50"
+                    >
+                      <div className="text-xs font-semibold text-ink truncate">{entry.food_name}</div>
+                      <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
+                    </button>
+                  ))}
+                </div>
+              </Module>
+            )}
+
             {/* 7-day strip (DESIGN.md/directions "B · Fuel" .wk): a kcal bar per
                 day against a dashed goal tick, today highlighted, tap to select —
                 reuses the same selectedDate state the date-nav pill above drives. */}
@@ -1884,32 +1925,45 @@ const handleSaveMealTemplate = () => {
               const calsGoal = targets.calories;
               const calsRemaining = calsGoal - calsConsumed;
               const macroCols = [
-                { label: 'Kcal', consumed: calsConsumed, goal: calsGoal, hue: null },
-                { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
-                { label: 'Carbs', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
-                { label: 'Fat', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)' },
+                { label: 'Kcal', consumed: calsConsumed, goal: calsGoal, hue: null, unit: '' },
+                { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)', unit: 'g' },
+                { label: 'Carbs', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)', unit: 'g' },
+                { label: 'Fat', consumed: totals.fats, goal: targets.fats, hue: 'var(--hue-yellow)', unit: 'g' },
               ];
               return (
-                <div
-                  className="surface px-4 sm:px-5 py-3 -mx-4 sm:-mx-6 rise-in"
-                  data-tutorial="nutrition-rings"
-                >
+                <Module bleed className="rise-in" data-tutorial="nutrition-rings">
                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="text-[13px] font-semibold text-muted-2 flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold text-muted-2 flex items-center gap-1.5 truncate">
                       Intake vs pace
                       {targets.engineSet && (
-                        <span className="text-[9px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5">
+                        <span className="text-[9px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5 shrink-0">
                           ENGINE-SET
                         </span>
                       )}
                     </span>
-                    <span className="font-technical text-[13px] font-semibold text-ink tabular-nums shrink-0">
-                      {calsGoal > 0
-                        ? (isToday
-                            ? `${Math.abs(Math.round(calsRemaining)).toLocaleString()} kcal ${calsRemaining < 0 ? 'over' : 'left'}`
-                            : `${Math.round(calsConsumed).toLocaleString()} / ${Math.round(calsGoal).toLocaleString()} kcal`)
-                        : '—'}
-                    </span>
+                    {/* Consumed/Remaining toggle (mf-app-screens.md "Nutrition &
+                        Targets widget" — a bar-fill toggle, same pattern as
+                        Today.jsx's Nutrition module). Only meaningful for the
+                        day actually in progress — a past day's log is a fixed
+                        total, so it always just shows consumed/goal. */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isToday && (
+                        <SegmentedControl
+                          options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
+                          value={fuelNutritionView}
+                          onChange={setFuelNutritionViewPersist}
+                          size="sm"
+                          className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
+                        />
+                      )}
+                      <span className="font-technical text-[13px] font-semibold text-ink tabular-nums shrink-0">
+                        {calsGoal > 0
+                          ? (isToday && fuelNutritionView === "remaining"
+                              ? `${Math.abs(Math.round(calsRemaining)).toLocaleString()} kcal ${calsRemaining < 0 ? 'over' : 'left'}`
+                              : `${Math.round(calsConsumed).toLocaleString()} / ${Math.round(calsGoal).toLocaleString()} kcal`)
+                          : '—'}
+                      </span>
+                    </div>
                   </div>
                   {isToday && calsConsumed === 0 && plannedCount > 0 && (
                     <span className="chip-gold mb-2 inline-block">
@@ -1918,7 +1972,18 @@ const handleSaveMealTemplate = () => {
                   )}
                   <div className="grid grid-cols-4 gap-3">
                     {macroCols.map((c) => {
-                      const pct = c.goal > 0 ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
+                      const hasGoal = c.goal != null && c.goal > 0;
+                      const remainingRaw = hasGoal ? Math.round(c.goal - c.consumed) : null;
+                      // "over" reads the ROUNDED delta (see Today.jsx's identical
+                      // comment) so a sub-0.5 overage doesn't render "0g over".
+                      const over = hasGoal && remainingRaw < 0;
+                      const pct = hasGoal ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
+                      const showRemaining = isToday && fuelNutritionView === "remaining";
+                      const caption = !hasGoal
+                        ? "—"
+                        : showRemaining
+                          ? (over ? `${Math.abs(remainingRaw).toLocaleString()}${c.unit} over` : `${remainingRaw.toLocaleString()}${c.unit} left`)
+                          : `${Math.round(c.consumed).toLocaleString()}${c.unit}/${Math.round(c.goal).toLocaleString()}${c.unit}`;
                       return (
                         <div key={c.label} className="min-w-0">
                           <div
@@ -1934,8 +1999,7 @@ const handleSaveMealTemplate = () => {
                             />
                           </div>
                           <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
-                            {Math.round(c.consumed)}
-                            <span className="opacity-60"> / {Math.round(c.goal) || 0}</span>
+                            {caption}
                           </div>
                         </div>
                       );
@@ -1958,7 +2022,7 @@ const handleSaveMealTemplate = () => {
                       ≈ ${totals.cost.toFixed(2)}
                     </div>
                   )}
-                </div>
+                </Module>
               );
             })()}
 
