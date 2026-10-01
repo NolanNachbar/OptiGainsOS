@@ -49,7 +49,12 @@ test('dragging the diet slider to Peak cut and saving writes a 1640 kcal manual 
     // Maintain / Bulk) or "Custom" once a manual override is already set —
     // never a fixed label, so match any of the four.
     const overrideBtn = page.getByRole('button', { name: /^(Cut|Maintain|Bulk|Custom)$/ });
-    await overrideBtn.waitFor({ state: 'visible', timeout: 8000 });
+    // Under full-suite load the first tap can land before the card is
+    // interactive and the panel never opens; re-tap until it does.
+    await expect(async () => {
+      try { await expect(overrideBtn).toBeVisible({ timeout: 4000 }); }
+      catch (e) { await weekPlanBtn.click(); throw e; }
+    }).toPass({ timeout: 25000 });
     await overrideBtn.click();
 
     const slider = page.getByRole('slider', { name: 'Daily calorie target' });
@@ -128,7 +133,12 @@ test('with a real maintenance_kcal, Maintain and Peak bulk land on their exact n
   await weekPlanBtn.click();
 
   const overrideBtn = page.getByRole('button', { name: /^(Cut|Maintain|Bulk|Custom)$/ });
-  await overrideBtn.waitFor({ state: 'visible', timeout: 8000 });
+  // Under full-suite load the first tap can land before the card is
+  // interactive and the panel never opens; re-tap until it does.
+  await expect(async () => {
+    try { await expect(overrideBtn).toBeVisible({ timeout: 4000 }); }
+    catch (e) { await weekPlanBtn.click(); throw e; }
+  }).toPass({ timeout: 25000 });
   await overrideBtn.click();
 
   const slider = page.getByRole('slider', { name: 'Daily calorie target' });
@@ -184,7 +194,12 @@ test('ArrowRight from Peak cut moves exactly one stop', async ({ page }) => {
   await weekPlanBtn.click();
 
   const overrideBtn = page.getByRole('button', { name: /^(Cut|Maintain|Bulk|Custom)$/ });
-  await overrideBtn.waitFor({ state: 'visible', timeout: 8000 });
+  // Under full-suite load the first tap can land before the card is
+  // interactive and the panel never opens; re-tap until it does.
+  await expect(async () => {
+    try { await expect(overrideBtn).toBeVisible({ timeout: 4000 }); }
+    catch (e) { await weekPlanBtn.click(); throw e; }
+  }).toPass({ timeout: 25000 });
   await overrideBtn.click();
 
   const slider = page.getByRole('slider', { name: 'Daily calorie target' });

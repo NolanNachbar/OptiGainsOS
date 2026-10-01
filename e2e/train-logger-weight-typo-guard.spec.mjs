@@ -102,11 +102,14 @@ test.describe('weight typo guard', () => {
 
       await page.getByRole('button', { name: 'Finish', exact: true }).click();
       await page.getByRole('button', { name: 'Log Workout' }).click();
-      await page.waitForTimeout(1200);
-
-      const { data: logs, error } = await db.from('workout_logs').select('*').eq('workout_id', workoutId);
-      expect(error).toBeNull();
-      expect(logs?.length).toBe(1);
+      // Poll rather than sleep: the save can take longer than a fixed wait.
+      let logs = [];
+      await expect.poll(async () => {
+        const { data, error } = await db.from('workout_logs').select('*').eq('workout_id', workoutId);
+        expect(error).toBeNull();
+        logs = data || [];
+        return logs.length;
+      }, { timeout: 10000 }).toBe(1);
       expect(logs[0].exercises[0].sets[0].weight).toBe(1710);
       expect(logs[0].exercises[0].sets[1].weight).toBe(1710);
     } finally {
