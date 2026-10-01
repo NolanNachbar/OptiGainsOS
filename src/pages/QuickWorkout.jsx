@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile, isExerciseLiked, useToggleExerciseLike } from "@/hooks/useUserQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { useWeighInGate } from "@/hooks/useWeighInGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,6 +127,16 @@ export default function QuickWorkout() {
   const { sessionIdRef, checkForActiveSession, createSession, saveProgress, completeSession, autoFinishSession, cancelSession, restoreSession, getSessionStatus, saveFailed, retrySave } = useWorkoutSession();
 
   const { profile, settled: profileSettled } = useProfile();
+  // Weigh-in gate for every path below that starts a brand-new session
+  // (first visit today, a stale session auto-finished then replaced, "Start
+  // Fresh" off the Resume prompt). Skipped when Today's own card already ran
+  // this gate before navigating here (location.state.weighInGated).
+  // Resuming an in-progress session (handleResumeSession's happy path) never
+  // calls guardWeighInStart, so it never prompts.
+  const { guardStart: guardWeighInStart, gateSheet: weighInGateSheet } = useWeighInGate(
+    getTodayString(profile?.timezone),
+    { skip: !!location.state?.weighInGated }
+  );
   const toggleLike = useToggleExerciseLike();
   const weightUnit = profile?.weight_unit || 'lbs';
   const [insightDismissed, setInsightDismissed] = useState(false);
@@ -287,7 +298,7 @@ export default function QuickWorkout() {
             // Only open a new session once the old one is actually closed.
             // Creating it unconditionally would leave two rows in_progress.
             if (result === "logged" || result === "cancelled") {
-              createSession({ exercises: prescribedInitial, startTime });
+              guardWeighInStart(() => createSession({ exercises: prescribedInitial, startTime }));
               return;
             }
             // result === false: either this write failed, or a concurrent
@@ -299,7 +310,7 @@ export default function QuickWorkout() {
             // the row directly before deciding.
             getSessionStatus(session.id).then((status) => {
               if (status && status !== "in_progress") {
-                createSession({ exercises: prescribedInitial, startTime });
+                guardWeighInStart(() => createSession({ exercises: prescribedInitial, startTime }));
               } else {
                 setResumeSession(session);
               }
@@ -320,7 +331,7 @@ export default function QuickWorkout() {
           setResumeSession(session);
         }
       } else {
-        createSession({ exercises: prescribedInitial, startTime });
+        guardWeighInStart(() => createSession({ exercises: prescribedInitial, startTime }));
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -474,7 +485,7 @@ export default function QuickWorkout() {
     const status = await getSessionStatus(resumeSession.id);
     if (status && status !== "in_progress") {
       setResumeSession(null);
-      createSession({ exercises: [], startTime: Date.now() });
+      guardWeighInStart(() => createSession({ exercises: [], startTime: Date.now() }));
       return;
     }
     restoreSession(resumeSession.id, resumeSession.exercises);
@@ -487,7 +498,8 @@ export default function QuickWorkout() {
     restoreSession(resumeSession.id, resumeSession.exercises);
     cancelSession();
     setResumeSession(null);
-    createSession({ exercises: [], startTime: Date.now() });
+    // "Start Fresh" is a brand-new session, not a resume -- gate it too.
+    guardWeighInStart(() => createSession({ exercises: [], startTime: Date.now() }));
   };
 
   // Review r4f BLOCKER: the logic that used to sit inline in the header's
@@ -885,6 +897,8 @@ export default function QuickWorkout() {
           </div>
         )}
       </div>
+
+      {weighInGateSheet}
 
       {/* Resume previous session prompt. onOpenChange is a no-op — dismissing via
           scrim tap must not silently cancel the real in-progress session; only

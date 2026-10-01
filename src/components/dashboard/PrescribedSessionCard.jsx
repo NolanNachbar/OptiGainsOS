@@ -130,17 +130,24 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // already on record.
   const { todayWeight, isLoading: weightLoading, isFetching: weightFetching } = useTodayBodyWeight(today);
   const needsWeight = !weightLoading && !weightFetching && todayWeight?.weight == null;
+  // Every navigation out of this card has already run this gate — stamp the
+  // state so the choke point at the other end (WorkoutDetail's "Start Logging
+  // Workout", QuickWorkout's session creation) doesn't ask again. This holds
+  // whether the gate just fired (weight now on record, or skipped) or never
+  // needed to (weight was already on record): either way there's nothing left
+  // for the other end to usefully ask.
   const beginSession = (to, state) => {
+    const gatedState = { ...(state || {}), weighInGated: true };
     if (!todayCheckin?.energy || needsWeight) {
-      setCheckinGate({ to, state, weighInOnly: !!todayCheckin?.energy && needsWeight });
+      setCheckinGate({ to, state: gatedState, weighInOnly: !!todayCheckin?.energy && needsWeight });
     } else {
-      navigate(to, state ? { state } : undefined);
+      navigate(to, { state: gatedState });
     }
   };
   const continueToSession = () => {
     const gate = checkinGate;
     setCheckinGate(null);
-    if (gate) navigate(gate.to, gate.state ? { state: gate.state } : undefined);
+    if (gate) navigate(gate.to, { state: gate.state });
   };
   // Two different asks, so two different sheets. When the check-in is already
   // done and only the scale is outstanding, the dialog IS the weigh-in: one big
@@ -159,7 +166,11 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         </DialogHeader>
         {weighInOnly ? (
           // Carries its own skip, so the shared one below is suppressed and the
-          // sheet never shows two ways past the same question.
+          // sheet never shows two ways past the same question. (The identical
+          // WeighInPrompt-in-a-Dialog shape is factored out as
+          // WeighInGateDialog for the other start-a-session choke points —
+          // this branch keeps its own DialogHeader because the title here is
+          // shared with the check-in branch below.)
           <WeighInPrompt
             today={today}
             variant="sheet"

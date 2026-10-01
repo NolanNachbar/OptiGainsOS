@@ -3,7 +3,7 @@
 // zero recovery path. Fix: removing a set now shows a toast with an Undo
 // action that reinserts the set at its original position.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 const CASE = 'r1-03';
 const EXERCISE = `OVN-${CASE} Lift`;
@@ -42,6 +42,7 @@ test('deleting a completed set offers an Undo toast that restores it', async ({ 
   }).select().single();
   expect(workout.error).toBeNull();
   const workoutId = workout.data.id;
+  const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
   try {
     await signIn(page, `/workout-detail?id=${workoutId}`);
@@ -98,5 +99,6 @@ test('deleting a completed set offers an Undo toast that restores it', async ({ 
     expect(savedSets[1]).toMatchObject({ set_number: 2, weight: 105, reps: 8, completed: true });
   } finally {
     await cleanup(workoutId);
+    await removeSeededWeighIn();
   }
 });

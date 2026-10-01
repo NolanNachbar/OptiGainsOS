@@ -303,8 +303,11 @@ export default function Today() {
       // movement list rather than a second, independently-selected one. Today and
       // the Train tab then read the same source for "which lifts" (program_workouts);
       // the engine still owns sets/reps/RIR/load on top of it.
+      // name rides along too -- PrescribedSessionCard's no-prescription branch
+      // falls back to "Workout" when it's missing, which is wrong whenever the
+      // day's program workout actually has a title.
       ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId,
-          exercises: entry.exercises || [] }
+          name: entry.title, exercises: entry.exercises || [] }
       : null;
   }, [activeEnrollment, profile?.timezone]);
 

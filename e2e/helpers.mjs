@@ -23,6 +23,27 @@ export async function testDb() {
 }
 export async function testUserId() { return (await (await testDb()).auth.getUser()).data.user.id; }
 
+// Starting a workout now gates on today's weigh-in (useWeighInGate /
+// WeighInGateDialog) wherever a session can begin, including
+// "Start Logging Workout" on /workout-detail. Specs that only care about the
+// logger itself (keypad entry, set deletion, etc.) call this first so that
+// gate never interrupts them -- it seeds a weigh-in for today ONLY if one
+// isn't already there, and returns a cleanup that removes just what it added
+// (an account that already had a real weigh-in for today keeps it).
+export async function ensureTodayWeighIn(db, uid) {
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const { data: existing, error: selectError } = await db.from('body_weight_entries')
+    .select('id').eq('created_by', uid).eq('recorded_date', dateStr).limit(1);
+  if (selectError) throw selectError;
+  if (existing?.length) return async () => {};
+  const { data, error } = await db.from('body_weight_entries')
+    .insert({ created_by: uid, recorded_date: dateStr, weight: 180, notes: 'e2e-seed' })
+    .select().single();
+  if (error) throw error;
+  return async () => { await db.from('body_weight_entries').delete().eq('id', data.id); };
+}
+
 // Open the Add Food dialog the way the app now expects on mobile: FoodTracker
 // no longer renders its own bottom-right FAB (r5 review, major -- it doubled
 // up with the dock's raised '+' on /food-tracker). The dock's '+' -> "Log
