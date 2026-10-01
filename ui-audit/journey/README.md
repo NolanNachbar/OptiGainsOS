@@ -49,6 +49,12 @@ Each one follows his real daily loop across screens and days, not one screen:
   and the row reads "Logged today", Body's history (Fuel → Body, not
   /athlete-state, whose weight trend is server-computed) lists it, all without
   a reload. Verified to fail when `useLogWeight` skips `invalidateBodyWeight`.
+- `journey-program-start-local-date`: browser context in a timezone whose local
+  date differs from the UTC date right now (runtime pick, no clock moves; the
+  test profile's timezone is aligned to it for the run and restored) →
+  Start Program from the real program page → `program_enrollments.started_at`
+  is the local date, and Today shows Day 1. Verified to fail when the enroll
+  default / hook stamp the date with `toISOString()`.
 
 Day boundaries: backdate the rows in the DB (delete + reinsert with the same
 id; the BEFORE UPDATE trigger re-stamps updated_at). Don't move the browser

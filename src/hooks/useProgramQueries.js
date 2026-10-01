@@ -5,6 +5,7 @@ import { queryKeys, invalidatePrograms } from "@/lib/queryKeys";
 import { updateProgressionState } from "@/utils/programProgression";
 import { normalizeCardioSession, getProgramSchedule } from "@/utils/programSchedule";
 import { useProfile } from "@/hooks/useUserQueries";
+import { getTodayString } from "@/utils/dateUtils";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -210,7 +211,7 @@ export function useEnrollInProgram() {
             last_session_date: null,
             sessions_at_current_weight: 0,
             ready_to_progress: false,
-            first_programmed_at: new Date().toISOString().split('T')[0],
+            first_programmed_at: getTodayString(),
           };
         }
       }
@@ -230,7 +231,7 @@ export function useEnrollInProgram() {
         status: 'active',
         current_cycle: 1,
         current_day_index: startDayIndex,
-        started_at: startDate || new Date().toISOString().split('T')[0],
+        started_at: startDate || getTodayString(),
         current_week: 1,
         current_day: startDayIndex,
         completed_workouts: [],

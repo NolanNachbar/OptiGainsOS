@@ -43,6 +43,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getTodayString } from "@/utils/dateUtils";
 
 const GOAL_LABELS = {
   muscle_gain: "Muscle Gain",
@@ -69,7 +70,7 @@ export default function ProgramDetail() {
 
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [startingWeights, setStartingWeights] = useState({});
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(getTodayString());
   const [showWorkoutDetail, setShowWorkoutDetail] = useState(null);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
