@@ -695,7 +695,7 @@ export default function WorkoutDetail() {
                  (found, c) => found || getLastExercisePerformance(allWorkoutLogs, c), null);
 
           const loadStep = weightUnit === 'kg' ? 2.5 : 5;
-          const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [] });
+          const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [], anchor: ex.e1rm_anchor });
           const e1Load = (reps, rir) => loadForTarget(e1, reps, parseRirTarget(rir), loadStep);
           const targetReps = parseRepTarget(ex.rep_target);
           const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
@@ -1130,7 +1130,7 @@ export default function WorkoutDetail() {
       // swapping blanked the weight even when the new movement had past logs.
       const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise.name);
       const seedWeight = loadForTarget(
-          currentE1rm(allWorkoutLogs, newExercise.name, { components: newExercise.components || [] }),
+          currentE1rm(allWorkoutLogs, newExercise.name, { components: newExercise.components || [], anchor: newExercise.e1rm_anchor }),
           newReps, parseRirTarget(newExercise.rir_target ?? newExercise.rir), weightUnit === 'kg' ? 2.5 : 5)
         || (lastPerf?.lastWeight && lastPerf?.lastReps
           ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)

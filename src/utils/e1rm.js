@@ -39,18 +39,25 @@ const bestInLog = (log, names) => {
  * Max set e1RM over the last windowDays; if none, best set of the most recent
  * session that has one (any age). Matches name + components (merged lifts).
  */
-export const currentE1rm = (logs, exerciseName, { components = [], windowDays = 14, now = new Date() } = {}) => {
-  if (!logs?.length) return null;
+export const currentE1rm = (logs, exerciseName, { components = [], windowDays = 14, now = new Date(), anchor = null } = {}) => {
+  // anchor {value, date}: acts like a logged set with e1RM=value on date; logs before date are ignored.
+  const aT = anchor && Number(anchor.value) > 0 ? new Date(anchor.date).getTime() : NaN;
+  const hasAnchor = Number.isFinite(aT);
+  if (!logs?.length && !hasAnchor) return null;
   const names = [exerciseName, ...components].map(norm);
   const cutoff = new Date(now).getTime() - windowDays * 86400000;
   let windowBest = 0;
   let latest = null;
-  for (const log of logs) {
-    const b = bestInLog(log, names);
-    if (!b) continue;
-    const t = new Date(log.log_date).getTime();
+  const consider = (t, b) => {
     if (t >= cutoff) windowBest = Math.max(windowBest, b);
     if (!latest || t > latest.t) latest = { t, b };
+  };
+  if (hasAnchor) consider(aT, Number(anchor.value));
+  for (const log of logs || []) {
+    const t = new Date(log.log_date).getTime();
+    if (hasAnchor && t < aT) continue;
+    const b = bestInLog(log, names);
+    if (b) consider(t, b);
   }
   return windowBest || latest?.b || null;
 };
