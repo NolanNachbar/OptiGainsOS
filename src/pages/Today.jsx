@@ -17,7 +17,7 @@
  */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase, db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,12 +26,17 @@ import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/use
 import { calculateEWMA } from "@/utils/coachingUtils";
 import { useNowDay } from "@/hooks/useNowDay";
 import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
+import { useStaleWorkoutSessions } from "@/hooks/useStaleWorkoutSessions";
+import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
 import { useTodayBodyWeight, useLastBodyWeight, useLogWeight } from "@/hooks/useWeighIn";
 import { BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 import { getTodayProgramWorkout, getProgramSchedule } from "@/utils/programSchedule";
 import { getRecoveryHeatmapData } from "@/utils/muscleVolumeUtils";
 import { getWeekStart } from "@/utils/dateUtils";
@@ -435,6 +440,60 @@ export default function Today() {
   // they must never disagree about where a given session lives.
   const { activeSession, path: activeSessionPath } = useActiveWorkoutSession();
 
+  // Sessions past the 24h auto-finish cutoff — neither the global sweep nor
+  // the page-level mount check will ever touch these (see
+  // useStaleWorkoutSessions for why), so they need an explicit Log/Discard
+  // review surface instead of sitting in_progress forever unseen.
+  const queryClient = useQueryClient();
+  const { data: staleSessions = [] } = useStaleWorkoutSessions();
+  const { autoFinishSession, restoreSession, cancelSession } = useWorkoutSession();
+  const [loggingStaleId, setLoggingStaleId] = useState(null);
+  const [discardTarget, setDiscardTarget] = useState(null); // session pending discard confirmation
+  const [discarding, setDiscarding] = useState(false);
+
+  const invalidateStale = () => {
+    queryClient.invalidateQueries({ queryKey: ["staleWorkoutSessions", user?.id] });
+    queryClient.invalidateQueries({ queryKey: ["activeWorkoutSession"] });
+  };
+
+  const handleLogStale = async (session) => {
+    setLoggingStaleId(session.id);
+    try {
+      // Exactly the auto-finish log path (src/lib/autoFinishSession.js) —
+      // writes the workout_log first, then flips status, same as the
+      // silent 3h sweep does for a fresher session.
+      const result = await autoFinishSession(session, profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+      if (result === "logged") {
+        toast.success(`Logged "${session.name}"`);
+        invalidateWorkoutLogs(queryClient);
+      } else if (result === "cancelled") {
+        toast.info(`"${session.name}" had no sets logged — discarded instead`);
+      } else {
+        toast.error("Couldn't log that session — try again");
+      }
+      invalidateStale();
+    } finally {
+      setLoggingStaleId(null);
+    }
+  };
+
+  const handleConfirmDiscardStale = async () => {
+    if (!discardTarget) return;
+    setDiscarding(true);
+    try {
+      // Exactly the "Start Fresh" cancel path (WorkoutDetail's
+      // handleDismissResume): point the session hook at this row, then
+      // cancel it through the same guarded update.
+      restoreSession(discardTarget.id, discardTarget.exercises);
+      await cancelSession();
+      toast.info(`Discarded "${discardTarget.name}"`);
+      invalidateStale();
+    } finally {
+      setDiscarding(false);
+      setDiscardTarget(null);
+    }
+  };
+
   // ── The single teal-primary selector (dashboard-6) ──────────────────────
   // Teal is THE action color, so the page must show exactly ONE teal primary.
   // Rather than carry parallel coralCta / demoteCta flags that could drift out of
@@ -739,6 +798,64 @@ export default function Today() {
             </>
           )}
         </Module>
+
+        {/* Unfinished-session review — sessions past the 24h auto-finish
+            cutoff (useStaleWorkoutSessions). Never auto-resolved; each row
+            gets an explicit Log (same path as the auto-finish sweep) or
+            Discard (same path as "Start Fresh", confirmed via sheet, never
+            a browser confirm()). Self-hides when the backlog is empty. */}
+        {staleSessions.length > 0 && (
+          <Module label="Unfinished sessions">
+            <div className="flex flex-col gap-2">
+              {staleSessions.map((session) => (
+                <div
+                  key={session.id}
+                  data-testid={`stale-session-${session.id}`}
+                  className="flex items-center justify-between gap-3 py-1"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-ink truncate">{session.name}</div>
+                    <div className="text-[11px] font-semibold text-muted-2 tabular-nums">
+                      Started {format(new Date(session.start_time || session.created_at), "MMM d")}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[44px]"
+                      onClick={() => setDiscardTarget(session)}
+                      disabled={loggingStaleId === session.id}
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      variant="volt"
+                      size="sm"
+                      className="min-h-[44px]"
+                      onClick={() => handleLogStale(session)}
+                      disabled={loggingStaleId === session.id}
+                    >
+                      {loggingStaleId === session.id ? "Logging…" : "Log"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Module>
+        )}
+
+        <ConfirmDialog
+          open={!!discardTarget}
+          onOpenChange={(open) => { if (!open) setDiscardTarget(null); }}
+          title="Discard this session?"
+          description={discardTarget ? `"${discardTarget.name}" will be closed with no workout log written. This can't be undone.` : ""}
+          confirmText="Discard"
+          cancelText="Cancel"
+          variant="danger"
+          loading={discarding}
+          onConfirm={handleConfirmDiscardStale}
+        />
 
         {/* 3 — Weight trend: EWMA trend value + compact 30-day sparkline,
             reusing the same useBodyWeightEntries/calculateEWMA the full
