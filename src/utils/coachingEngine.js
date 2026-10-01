@@ -121,7 +121,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight: roundWeight(currentWeight * 0.9),
         action: 'deload',
-        message: `Your last ${prev.length} ${exerciseName} sessions averaged RIR ${avgRirLast3.toFixed(1)}, you're grinding near failure. Consider dropping to ${roundWeight(currentWeight * 0.9)} to reset and rebuild.`,
+        message: `${exerciseName}: last ${prev.length} sessions averaged RIR ${avgRirLast3.toFixed(1)}. Deload weight: ${roundWeight(currentWeight * 0.9)}.`,
         priority: 3,
       });
       continue;
@@ -137,7 +137,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight,
         action: 'increase',
-        message: `${exerciseName} RIR trend: ${trendStr}. You're earning the weight, attempt ${suggestedWeight} today?`,
+        message: `${exerciseName} RIR trend: ${trendStr}. Next weight: ${suggestedWeight}.`,
         priority: 2,
       });
       continue;
@@ -152,7 +152,7 @@ export function getPreSessionInsight(workoutLogs) {
         currentWeight,
         suggestedWeight,
         action: 'increase',
-        message: `${exerciseName} has felt easy lately (avg RIR ${avgRirLast3.toFixed(1)}). You're leaving gains on the table, try ${suggestedWeight} today.`,
+        message: `${exerciseName}: last 3 sessions averaged RIR ${avgRirLast3.toFixed(1)}. Next weight: ${suggestedWeight}.`,
         priority: 1,
       });
     }
@@ -191,7 +191,7 @@ export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, t
     return {
       type: 'go_heavier',
       suggestedWeight: suggested,
-      message: `RIR ${rir}, you've got more. Next set: ${suggested}?`,
+      message: `RIR ${rir}. Next set: ${suggested}`,
     };
   }
 
@@ -200,16 +200,7 @@ export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, t
     return {
       type: 'note',
       suggestedWeight: null,
-      message: `RIR ${rir} on your final set, add weight next session.`,
-    };
-  }
-
-  // Perfect execution: RIR 1-2 on last set
-  if (isLastSet && rir >= 1 && rir <= 2) {
-    return {
-      type: 'affirm',
-      suggestedWeight: null,
-      message: `RIR ${rir}, perfect execution.`,
+      message: `RIR ${rir} on the final set. Next session: add weight`,
     };
   }
 

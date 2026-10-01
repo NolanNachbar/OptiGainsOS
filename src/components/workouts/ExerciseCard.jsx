@@ -1183,7 +1183,7 @@ export default function ExerciseCard({
                     handleInputFocus(e);
                     if (useKeypad) setActiveField({ setIndex, field: 'rir' });
                   }}
-                  placeholder="—"
+                  placeholder={String(set.rir_target ?? exercise.prescribed?.rir ?? "—")}
                   min="0"
                   max="10"
                   step="0.5"

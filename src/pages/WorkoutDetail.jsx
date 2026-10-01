@@ -713,7 +713,8 @@ export default function WorkoutDetail() {
                   weight: blockWeight,
                   completed: false,
                   rpe: null,
-                  rir: block.rir_target ?? ex.rir_target ?? null,
+                  rir: null, // never prefill the target as a logged value
+                  rir_target: block.rir_target ?? ex.rir_target ?? null,
                   set_type: block.set_type || 'working',
                   set_label: block.label || null,
                 }));
@@ -725,7 +726,8 @@ export default function WorkoutDetail() {
                 weight: targets?.workingWeight || scaledWeight,
                 completed: false,
                 rpe: null,
-                rir: ex.rir_target ?? null,
+                rir: null, // never prefill the target as a logged value
+                rir_target: ex.rir_target ?? null,
                 set_type: 'working',
               }));
 

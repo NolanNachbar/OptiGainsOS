@@ -21,23 +21,21 @@ function deriveSuggestedIncrement(exercise, currentWeight) {
   return Math.max(2.5, roundWeight(raw));
 }
 
-function deriveStallSuggestion(avgRir, rirTarget, sessionsAtWeight) {
-  if (avgRir === null) {
-    return 'Log RIR on your sets to get progression coaching.';
-  }
-  if (avgRir < 2) {
-    if (sessionsAtWeight >= 5) {
-      return `${sessionsAtWeight} sessions grinding near failure (avg RIR ${avgRir.toFixed(1)}). Consider a deload week, then return to 90% of this weight.`;
-    }
-    return `Working close to failure (avg RIR ${avgRir.toFixed(1)}). Focus on completing all reps before adding weight.`;
-  }
-  if (avgRir > rirTarget + 1) {
-    return `Weight feels manageable (avg RIR ${avgRir.toFixed(1)}) but reps aren't there yet. Focus on hitting all target reps.`;
-  }
-  if (sessionsAtWeight >= 5) {
-    return `${sessionsAtWeight} sessions at this weight. Consider a deload week, come back to this weight fresh.`;
-  }
-  return `${sessionsAtWeight} sessions without progress. Check sleep and nutrition are supporting recovery.`;
+// One short factual line, only when the data says so. Callers render nothing for null.
+// Deload is suggested only after 5+ sessions at the same weight.
+function deriveStallSuggestion(sessionsAtWeight, weight, reps) {
+  if (!(sessionsAtWeight >= STALL_THRESHOLD)) return null;
+  if (sessionsAtWeight >= 5) return `Stalled ${sessionsAtWeight} sessions \u2014 deload suggested`;
+  if (weight && reps) return `${sessionsAtWeight} sessions at ${weight} \u00d7 ${reps}`;
+  if (weight) return `${sessionsAtWeight} sessions at ${weight}`;
+  return null;
+}
+
+// RIR for a logged set, or null when unknown. Legacy rows stored `rpe` (RIR = 10 - rpe).
+function setRir(s) {
+  if (s.rir != null && s.rir !== '') return Number(s.rir);
+  if (s.rpe != null && s.rpe !== '') return 10 - Number(s.rpe);
+  return null;
 }
 
 // Returns the Monday date string for a given date string (ISO week start).
@@ -100,37 +98,26 @@ export function evaluateSetPerformance(exercise, setData, workingWeight, totalSe
   const rir = setData.rir ?? setData.rpe;
   if (rir == null || !setData.set_type) return null;
 
-  const { set_type, set_number } = setData;
-  const dbEntry = lookupExercise(exercise.name);
-  const isCompound = dbEntry?.type === 'Compound';
-  const isFinalSet = totalSets != null && set_number >= totalSets;
+  const { set_type } = setData;
 
   if (set_type === 'daily_min') {
     if (rir >= 3) {
       return {
         type: 'success',
-        message: `Weight moved well. Working weight: ${workingWeight}. Feel free to go heavier.`,
+        message: `RIR ${rir} on the daily min. Working weight: ${workingWeight}.`,
       };
     } else if (rir >= 2) {
       return {
         type: 'info',
-        message: `Solid. Proceed to working sets at ${workingWeight}.`,
+        message: `RIR ${rir} on the daily min. Working sets at ${workingWeight}.`,
       };
     } else {
       const reducedWeight = roundWeight(workingWeight * 0.92);
       return {
         type: 'warning',
-        message: `Tough day. Consider reducing to ${reducedWeight} or doing back-off sets.`,
+        message: `RIR ${rir} on the daily min. Back-off weight: ${reducedWeight}.`,
       };
     }
-  }
-
-  // Taking the last set to failure is a deliberate training strategy — only warn on non-final sets.
-  if (set_type === 'working' && rir === 0 && isCompound && !isFinalSet) {
-    return {
-      type: 'warning',
-      message: 'Training to failure on compounds increases recovery time. Consider stopping 1-2 reps short.',
-    };
   }
 
   return null;
@@ -173,11 +160,11 @@ export function updateProgressionState(currentState, exercise, completedSets) {
   // Calculate average RIR excluding the last set — users may intentionally
   // take the final set to failure, which shouldn't penalize progression.
   // Reads `rir` field; falls back to `rpe` for backwards compatibility with old logged sets.
-  const setsWithRir = workingSets.filter((s) => (s.rir ?? s.rpe) != null);
+  const setsWithRir = workingSets.filter((s) => Number.isFinite(setRir(s)));
   const nonFinalSetsWithRir = setsWithRir.length > 1 ? setsWithRir.slice(0, -1) : setsWithRir;
   const avgRir =
     nonFinalSetsWithRir.length > 0
-      ? nonFinalSetsWithRir.reduce((sum, s) => sum + (s.rir ?? s.rpe), 0) / nonFinalSetsWithRir.length
+      ? nonFinalSetsWithRir.reduce((sum, s) => sum + setRir(s), 0) / nonFinalSetsWithRir.length
       : null;
 
   const maxWorkingWeight = Math.max(...workingSets.map((s) => s.weight));
@@ -196,7 +183,11 @@ export function updateProgressionState(currentState, exercise, completedSets) {
 
   const stalled = !readyToProgress && sessionsAtWeight >= STALL_THRESHOLD;
   const stallSuggestion = stalled
-    ? deriveStallSuggestion(avgRir, rir_target, sessionsAtWeight)
+    ? deriveStallSuggestion(
+        sessionsAtWeight,
+        maxWorkingWeight,
+        workingSets.find((s) => s.weight === maxWorkingWeight)?.reps
+      )
     : null;
 
   state[name] = {

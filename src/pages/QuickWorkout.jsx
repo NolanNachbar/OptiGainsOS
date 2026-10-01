@@ -71,7 +71,7 @@ export default function QuickWorkout() {
         set_number: s + 1,
         reps: repsNum(ex.reps),
         weight: ex.targetWeight || 0,
-        rir: ex.rir ?? null,
+        rir: null, // prescribed RIR lives in `prescribed`; never prefill it as logged
         completed: false,
       })),
     }));
