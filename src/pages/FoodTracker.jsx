@@ -570,7 +570,7 @@ export default function FoodTracker() {
     enabled: !!user,
   });
 
-  const { allFoodEntries } = useAllFoodEntries();
+  const { allFoodEntries, isLoading: allEntriesLoading } = useAllFoodEntries();
   const tdee = profile ? getBestTDEE(profile, latestWeight, weightEntries, allFoodEntries) : {};
 
   const calorieTrend = useMemo(() => {
@@ -1818,6 +1818,10 @@ const handleSaveMealTemplate = () => {
                 reuses quickRelogFood exactly, same mutation/toast/invalidate
                 path as the dialog's "+" button. Logs to selectedDate, so it
                 works the same whether viewing today or a past day. */}
+            {/* While the 90-day history loads, hold the Recent card's height (~122px)
+                so it popping in doesn't shove the log and the Templates button down
+                mid-tap. */}
+            {allEntriesLoading && <div className="min-h-[122px]" aria-hidden="true" />}
             {recentFoods.length > 0 && (
               <Module label="Recent">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:-mx-5 sm:px-5">
@@ -2185,7 +2189,10 @@ const handleSaveMealTemplate = () => {
               /* Loading skeletons: bars use the system `bg-track` material with
                  the tokened `.pulse-loop` shimmer (single easing, --loop-dur
                  cadence), a restrained, hue-free placeholder breathe. */
-              <div className="surface px-4 sm:px-5 py-2 -mx-4 sm:-mx-6 space-y-4">
+              /* min-h matches the loaded empty-day log (~415px) so the swap to
+                 real rows doesn't shove everything below (incl. the Templates
+                 button) down ~95px mid-tap, which made a tap land on empty space. */
+              <div className="surface px-4 sm:px-5 py-2 -mx-4 sm:-mx-6 space-y-4 min-h-[415px]">
                 {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((label) => (
                   <div key={label} className="pulse-loop space-y-2 py-1">
                     <div className="flex items-center gap-2.5">
