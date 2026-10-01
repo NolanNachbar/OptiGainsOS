@@ -4,7 +4,7 @@
 // marking a set complete with weight > 2x the exercise's last weight prompts
 // an inline confirm before it's accepted.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 const CASE = 'r1-01';
 const EXERCISE = `OVN-${CASE} Lift`;
@@ -56,6 +56,7 @@ test.describe('weight typo guard', () => {
     expect(workout.error).toBeNull();
     const workoutId = workout.data.id;
     const priorLogId = priorLog.data.id;
+    const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
     try {
       await signIn(page, `/workout-detail?id=${workoutId}`);
@@ -114,6 +115,7 @@ test.describe('weight typo guard', () => {
       expect(logs[0].exercises[0].sets[1].weight).toBe(1710);
     } finally {
       await cleanup(workoutId, priorLogId);
+      await removeSeededWeighIn();
     }
   });
 
@@ -127,6 +129,7 @@ test.describe('weight typo guard', () => {
     }).select().single();
     expect(workout.error).toBeNull();
     const workoutId = workout.data.id;
+    const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
     try {
       await signIn(page, `/workout-detail?id=${workoutId}`);
@@ -137,6 +140,7 @@ test.describe('weight typo guard', () => {
       await expect(weightField).toHaveValue('2000');
     } finally {
       await cleanup(workoutId);
+      await removeSeededWeighIn();
     }
   });
 });

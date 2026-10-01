@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, Fragment } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
@@ -34,6 +34,7 @@ import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } 
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { useWeighInGate } from "@/hooks/useWeighInGate";
 import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
@@ -134,6 +135,7 @@ const formatTimeAgo = (startTimeStr) => {
 
 export default function WorkoutDetail() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [rawWorkout, setWorkout] = useState(null);
@@ -184,6 +186,17 @@ export default function WorkoutDetail() {
 
   // Fetch user profile to get weight unit preference
   const { profile, settled: profileSettled } = useProfile();
+
+  // Weigh-in gate for the "Start Logging Workout" choke point below. Skipped
+  // when Today's own card already ran this gate before navigating here
+  // (location.state.weighInGated) -- otherwise every day a program workout or
+  // library workout is started from here (Train tab, program detail, a
+  // workout's own detail page) rather than Today's session card, he is never
+  // asked and the weight trend loses the day.
+  const { guardStart: guardWeighInStart, gateSheet: weighInGateSheet } = useWeighInGate(
+    getTodayString(profile?.timezone),
+    { skip: !!location.state?.weighInGated }
+  );
 
   // Equipment substitution. rawWorkout is what's stored; `workout` is what he can
   // actually run where he is today. A library workout never passes through the
@@ -1147,17 +1160,28 @@ export default function WorkoutDetail() {
   };
 
   const handleStartLogging = () => {
-    setIsLogging(true);
-    if (isTutorialDemo) { return; }
-    const workoutId = isProgramSource ? null : urlParams.get('id');
-    const now = Date.now();
-    setStartTime(now);
-    createSession({
-      workoutId,
-      programWorkoutId: isProgramSource ? programWorkoutId : null,
-      enrollmentId: isProgramSource ? enrollmentId : null,
-      exercises: [],
-      startTime: now,
+    if (isTutorialDemo) {
+      setIsLogging(true);
+      return;
+    }
+    // Gate before anything flips to the logging view: a workout started from
+    // here (Train tab, program detail, a workout's own detail page) never
+    // ran Today's card gate, so this is the choke point that asks for today's
+    // weigh-in no matter how the session got started. Deferred until the
+    // gate resolves (weight on record, logged, or skipped) rather than racing
+    // it behind setIsLogging(true).
+    guardWeighInStart(() => {
+      setIsLogging(true);
+      const workoutId = isProgramSource ? null : urlParams.get('id');
+      const now = Date.now();
+      setStartTime(now);
+      createSession({
+        workoutId,
+        programWorkoutId: isProgramSource ? programWorkoutId : null,
+        enrollmentId: isProgramSource ? enrollmentId : null,
+        exercises: [],
+        startTime: now,
+      });
     });
   };
 
@@ -1950,6 +1974,7 @@ export default function WorkoutDetail() {
           an accidental tap outside the dialog silently discarded the workout) —
           onOpenChange is a no-op here; only the explicit "Start Fresh" button may
           cancel it. */}
+      {weighInGateSheet}
       <Dialog open={!!resumeSession} onOpenChange={() => {}}>
         <DialogContent className="max-w-sm" hideClose>
           <DialogHeader>

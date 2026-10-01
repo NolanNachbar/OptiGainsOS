@@ -11,7 +11,7 @@
 // remaining time only ever decreases across an RIR correction on a
 // completed set, never jumps back up toward the full duration.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 test.use({ viewport: { width: 428, height: 926 }, hasTouch: true, isMobile: true });
 
@@ -45,6 +45,7 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
   }).select().single();
   expect(workout.error).toBeNull();
   const workoutId = workout.data.id;
+  const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
   try {
     await signIn(page, `/workout-detail?id=${workoutId}`);
@@ -93,5 +94,6 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     expect(after).toBeLessThan(before);
   } finally {
     await cleanup(workoutId);
+    await removeSeededWeighIn();
   }
 });

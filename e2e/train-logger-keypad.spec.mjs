@@ -11,7 +11,7 @@
 // already proves click()+type() still works; this covers the other input
 // API a test could reasonably use.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 test.use({ viewport: { width: 428, height: 926 }, hasTouch: true, isMobile: true });
 
@@ -48,6 +48,7 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
   }).select().single();
   expect(workout.error).toBeNull();
   const workoutId = workout.data.id;
+  const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
   try {
     await signIn(page, `/workout-detail?id=${workoutId}`);
@@ -119,5 +120,6 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
     expect(logs[0].exercises[0].sets[1].weight).toBe(135);
   } finally {
     await cleanup(workoutId);
+    await removeSeededWeighIn();
   }
 });
