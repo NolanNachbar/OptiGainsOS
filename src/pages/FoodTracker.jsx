@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed, Star, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Bookmark, Calculator, Save, Camera, AlertTriangle, Upload, HelpCircle, ArrowUpRight, Sparkles, Flame, ArrowLeftRight } from "lucide-react";
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays, parseISO, isValid } from "date-fns";
+import { getTodayString, nowInTz } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -201,20 +202,20 @@ export default function FoodTracker() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [selectedDate, setSelectedDate] = useState(getTodayString());
   // If the tab is left open (or an iOS home-screen app backgrounded) across
   // local midnight, selectedDate never re-derives on its own and new entries
   // silently save under yesterday's date with no on-screen indication. Only
   // roll forward when the athlete was viewing today — a deliberately chosen
   // past day is left alone.
-  const wasOnTodayRef = useRef(selectedDate === format(new Date(), "yyyy-MM-dd"));
+  const wasOnTodayRef = useRef(selectedDate === getTodayString());
   useEffect(() => {
-    wasOnTodayRef.current = selectedDate === format(new Date(), "yyyy-MM-dd");
+    wasOnTodayRef.current = selectedDate === getTodayString();
   }, [selectedDate]);
   const editingEntryRef = useRef(null);
   const rollDateForwardRef = useRef(() => {});
   rollDateForwardRef.current = () => {
-    const nowToday = format(new Date(), "yyyy-MM-dd");
+    const nowToday = getTodayString();
     // Never move the day out from under an open edit: updateFoodMutation
     // saves with date: selectedDate, so a roll mid-edit would move the entry.
     if (editingEntryRef.current) return;
@@ -319,7 +320,7 @@ export default function FoodTracker() {
   const [portionsExpanded, setPortionsExpanded] = useState(false);
   // Copy a previous day's log forward.
   const [showCopyDayDialog, setShowCopyDayDialog] = useState(false);
-  const [copyFromDate, setCopyFromDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd"));
+  const [copyFromDate, setCopyFromDate] = useState(format(subDays(nowInTz(), 1), "yyyy-MM-dd"));
   const [copySelection, setCopySelection] = useState({});
   // Descriptive intake stats window, in days.
   const [statsWindow, setStatsWindow] = useState(7);
@@ -488,6 +489,9 @@ export default function FoodTracker() {
   }, [newFood.serving_amount, newFood.serving_unit, baseMacros, baseUnit, foodServingSizeGrams, activePortions]);
 
   const { profile } = useProfile();
+  // The profile (and its timezone) can land after first render, or be synced to
+  // the device zone on app open; re-derive "today" if we were on it.
+  useEffect(() => { rollDateForwardRef.current(); }, [profile?.timezone]);
   const { weightEntries } = useBodyWeightEntries();
   const { activePhase, phaseHistory } = useDietPhase();
   // The day's targets — engine recovery-gated when available, else profile
@@ -1320,7 +1324,7 @@ const handleSaveMealTemplate = () => {
       fats_grams: entry.fats_grams || 0,
       fiber_grams: entry.fiber_grams ?? null,
     });
-    setSelectedDate(entry.date || format(new Date(), "yyyy-MM-dd"));
+    setSelectedDate(entry.date || getTodayString());
     setEditingEntry(entry);
     setShowAddDialog(true);
   };
@@ -1686,7 +1690,7 @@ const handleSaveMealTemplate = () => {
   // 'Today' is a jump-back action, not a status label — only surface it when
   // the user has scrubbed off the current day, so the word is unambiguously
   // tappable and never redundant with a date pill that already reads today.
-  const isViewingToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
+  const isViewingToday = selectedDate === getTodayString();
 
 
   return (
@@ -1727,7 +1731,7 @@ const handleSaveMealTemplate = () => {
           </button>
           {!isViewingToday && (
             <button
-              onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
+              onClick={() => setSelectedDate(getTodayString())}
               className="text-xs font-bold tracking-wide text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               Today
@@ -1848,7 +1852,7 @@ const handleSaveMealTemplate = () => {
             <div className="grid grid-cols-7 gap-1.5">
               {calorieTrend.map((day) => {
                 const isSelected = day.date === selectedDate;
-                const isTodayCol = day.date === format(new Date(), 'yyyy-MM-dd');
+                const isTodayCol = day.date === getTodayString();
                 // One shared scale across all 7 days (goal × ~1.2 headroom, or the
                 // tallest day if someone blew way past goal) so an over-target day
                 // visibly crosses its own dashed tick instead of clipping flat, and
@@ -1924,7 +1928,7 @@ const handleSaveMealTemplate = () => {
                 not a real intraday timeline, so a "now" line would plot
                 partly-invented times — skipped rather than faked. */}
             {(() => {
-              const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
+              const isToday = selectedDate === getTodayString();
               const calsConsumed = totals.calories;
               const calsGoal = targets.calories;
               const calsRemaining = calsGoal - calsConsumed;
@@ -3937,7 +3941,7 @@ const handleSaveMealTemplate = () => {
               id="copy-from"
               type="date"
               value={copyFromDate}
-              max={format(new Date(), "yyyy-MM-dd")}
+              max={getTodayString()}
               onChange={(e) => { setCopyFromDate(e.target.value); setCopySelection({}); }}
               className="mt-1"
             />

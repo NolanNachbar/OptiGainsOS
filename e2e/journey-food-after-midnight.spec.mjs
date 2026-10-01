@@ -50,9 +50,19 @@ test('food logged when local date != UTC date lands on the local day, on Today a
   const db = await testDb();
   const uid = await testUserId();
   await cleanup(db, uid);
+  // The test account's profile tz (America/Denver) deliberately differs from the
+  // browser zone: the app must sync it to the device on open. Restored in finally.
+  const { data: prof } = await db.from('user_profiles').select('timezone').eq('created_by', uid).maybeSingle();
+  const origTz = prof?.timezone ?? null;
 
   try {
     await signIn(page, '/today');
+    await expect.poll(async () => {
+      const { data } = await db.from('user_profiles').select('timezone').eq('created_by', uid).maybeSingle();
+      return data?.timezone;
+    }, { timeout: 10000, message: 'app open should sync profile tz to the device zone' }).toBe(TZ);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(500);
     const before = await consumedKcal(page);
     expect(before, 'Today shows a Consumed/goal Kcal caption').not.toBeNull();
@@ -98,5 +108,6 @@ test('food logged when local date != UTC date lands on the local day, on Today a
     expect(await consumedKcal(page)).toBe(before + KCAL);
   } finally {
     await cleanup(db, uid);
+    if (prof) await db.from('user_profiles').update({ timezone: origTz }).eq('created_by', uid);
   }
 });

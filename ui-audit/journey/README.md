@@ -41,7 +41,8 @@ Each one follows his real daily loop across screens and days, not one screen:
 - `journey-food-after-midnight`: browser context in a timezone whose local date
   differs from the UTC date right now (picked at runtime; no clock moves) → log
   a food through the Fuel UI → row's `date` is the local date, Fuel's current day
-  lists it, Today's Kcal consumed rises by the same amount. Verified to fail
+  lists it, Today's Kcal consumed rises by the same amount; profile tz (Denver) is
+  synced to the device zone on open and restored. Verified to fail
   when FoodTracker derives its day from `toISOString()`.
 - `journey-weighin-updates-body`: Today → Body (primes its cache) → back →
   weigh in from Today's weight row → `body_weight_entries` row (local today,
@@ -51,7 +52,7 @@ Each one follows his real daily loop across screens and days, not one screen:
   a reload. Verified to fail when `useLogWeight` skips `invalidateBodyWeight`.
 - `journey-program-start-local-date`: browser context in a timezone whose local
   date differs from the UTC date right now (runtime pick, no clock moves; the
-  test profile's timezone is aligned to it for the run and restored) →
+  app syncs the test profile's timezone to the device zone, restored after) →
   Start Program from the real program page → `program_enrollments.started_at`
   is the local date, and Today shows Day 1. Verified to fail when the enroll
   default / hook stamp the date with `toISOString()`.

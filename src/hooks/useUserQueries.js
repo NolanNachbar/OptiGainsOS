@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { queryKeys } from "@/lib/queryKeys";
+import { queryKeys, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays } from "date-fns";
-import { getTodayString } from "@/utils/dateUtils";
+import { getTodayString, setUserTimezone } from "@/utils/dateUtils";
 
 // One shared empty array, so "no rows" keeps a stable identity across renders
 // and doesn't retrigger every memo downstream of it.
@@ -31,7 +31,31 @@ export function useProfile() {
   // resolved for this user should gate on `settled`, not `!isLoading`.
   const settled = !!user && (isFetched || status === "error");
 
+  // Register the profile timezone for the date helpers (see dateUtils). Done
+  // in render, not an effect, so children rendered from this same pass already
+  // derive "today" in the right zone. Idempotent.
+  setUserTimezone(profile?.timezone);
+
   return { profile, isLoading, isFetched, status, settled, error };
+}
+
+// Keep user_profiles.timezone in step with the device on app open: if the
+// device zone differs from the stored one (travel, new phone), write it once so
+// reads and writes keep agreeing on "today". Tried once per mount per zone, so a
+// failed write can't loop. Only touches the signed-in user's own profile row.
+export function useSyncProfileTimezone() {
+  const { profile, settled } = useProfile();
+  const queryClient = useQueryClient();
+  const triedRef = useRef(null);
+  useEffect(() => {
+    if (!settled || !profile?.id) return;
+    const device = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!device || profile.timezone === device || triedRef.current === device) return;
+    triedRef.current = device;
+    db.entities.UserProfile.update(profile.id, { timezone: device })
+      .then(() => invalidateProfile(queryClient))
+      .catch(() => {});
+  }, [settled, profile?.id, profile?.timezone, queryClient]);
 }
 
 // Is this exercise "liked" (in exercise_preferences.preferred)? Case-insensitive.

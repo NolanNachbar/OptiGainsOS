@@ -70,7 +70,10 @@ export default function ProgramDetail() {
 
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [startingWeights, setStartingWeights] = useState({});
-  const [startDate, setStartDate] = useState(getTodayString());
+  // null until the user picks one, so the default tracks the profile timezone
+  // even if the profile loads after this page mounts.
+  const [pickedStartDate, setStartDate] = useState(null);
+  const startDate = pickedStartDate ?? getTodayString();
   const [showWorkoutDetail, setShowWorkoutDetail] = useState(null);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

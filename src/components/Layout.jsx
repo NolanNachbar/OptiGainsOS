@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, useSyncProfileTimezone } from "@/hooks/useUserQueries";
 import { useGlobalAutoFinish } from "@/hooks/useGlobalAutoFinish";
 import { Activity, Dumbbell, BarChart3, UtensilsCrossed, HeartPulse, Brain, Plus, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
+import { nowInTz } from "@/utils/dateUtils";
 import CalculatorsModal from "@/components/CalculatorsModal";
 import WeighInModal from "@/components/WeighInModal";
 import QuickAddMenu from "@/components/ui/QuickAddMenu";
@@ -149,6 +150,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, settled: profileSettled } = useProfile();
+  useSyncProfileTimezone();
   // App-wide backstop for the 3h auto-finish rule (see useGlobalAutoFinish):
   // runs on every route Layout wraps, not just the workout page itself, so a
   // forgotten Finish gets caught whichever page he opens next. `ready` holds
@@ -306,7 +308,7 @@ export default function Layout({ children, currentPageName }) {
   };
   const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
     ? pageSubtitle[currentPageName]
-    : format(new Date(), "EEEE, MMMM d");
+    : format(nowInTz(), "EEEE, MMMM d");
 
   const isTabRoot = TAB_ROOT_PAGES.has(currentPageName);
   const isDrillDown = DRILL_DOWN_PAGES.has(currentPageName);
@@ -426,7 +428,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="mt-auto px-2.5">
             <div className="flex items-center justify-between px-0.5">
               <span className="font-technical text-[10.5px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
-                {format(new Date(), "EEE MMM d")}
+                {format(nowInTz(), "EEE MMM d")}
               </span>
               <div className="flex items-center gap-2">
                 {/* Desktop quick-add trigger — the sidebar's equivalent of the

@@ -50,12 +50,10 @@ test('starting a program when local date != UTC date stamps the local date and T
   const { data: otherActive } = await db.from('program_enrollments').select('id').eq('created_by', uid).eq('status', 'active');
   if (otherActive?.length) await db.from('program_enrollments').update({ status: 'paused' }).in('id', otherActive.map((e) => e.id));
 
-  // Today resolves "today" in the PROFILE timezone (test account: America/Denver,
-  // which only straddles UTC for part of the day). Align it with the browser
-  // zone for the run so the two agree, and restore it in finally.
+  // The app syncs user_profiles.timezone to the device zone on open, so the
+  // run changes the test account's profile tz to TZ; restore it in finally.
   const { data: prof } = await db.from('user_profiles').select('timezone').eq('created_by', uid).maybeSingle();
   const origTz = prof?.timezone ?? null;
-  if (prof) await db.from('user_profiles').update({ timezone: TZ }).eq('created_by', uid);
 
   try {
     const { data: program, error: pErr } = await db.from('programs').insert({
