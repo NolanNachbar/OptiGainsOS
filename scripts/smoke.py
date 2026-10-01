@@ -354,7 +354,9 @@ check("auto-finish fires before a session can reach the Start Fresh dialog",
 # flips status. The removed 8h version flipped status alone, which is why three
 # August sessions hold sets no learner can see. Guard the ordering in source.
 _hook_src = (SRC / "hooks/useWorkoutSession.js").read_text()
-_af_body = _hook_src.split("const autoFinishSession")[-1].split("const cancelSession")[0]
+# The implementation moved to src/lib/autoFinishSession.js (shared by the hook
+# and the app-wide sweep); the hook only delegates now.
+_af_body = (SRC / "lib/autoFinishSession.js").read_text().split("export async function autoFinishStaleSession")[-1].split("export async function getSessionStatus")[0]
 _hook_sp = _hook_src.split("const saveProgress")[-1].split("const completeSession")[0]
 check("saveProgress skips no-op writes so a restore cannot reset the silence clock",
       "lastSavedRef" in _hook_sp and "return;" in _hook_sp,

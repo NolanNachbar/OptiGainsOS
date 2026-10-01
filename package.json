@@ -17,7 +17,8 @@
     "mobile:sync": "npm run build && npx cap sync",
     "mobile:android": "npx cap open android",
     "mobile:ios": "npx cap open ios",
-    "test:e2e": "playwright test -c e2e/playwright.config.mjs"
+    "test:e2e": "playwright test -c e2e/playwright.config.mjs",
+    "gate": "bash scripts/gate.sh"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
