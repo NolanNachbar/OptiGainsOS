@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { autoFinishStaleSession } from "@/lib/autoFinishSession";
 import { isActivelyLoggingSession } from "@/lib/activeLoggingSessions";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
-import { AUTO_FINISH_STALE_MS, STALE_SESSION_MS, setWorkoutActive } from "@/lib/workoutSessionFlag";
+import { AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS, setWorkoutActive } from "@/lib/workoutSessionFlag";
 import { invalidateWorkoutLogs } from "@/lib/queryKeys";
 
 /**
@@ -20,11 +20,12 @@ import { invalidateWorkoutLogs } from "@/lib/queryKeys";
  * whenever the tab regains visibility, so the gap closes no matter which page
  * he opens next.
  *
- * Sessions older than 24h (STALE_SESSION_MS) are deliberately left alone here,
- * same as the page-level check: auto-logging them would back-date a workout_log
- * far enough to retroactively rewrite MRV/volume history. They still fall
- * through to the existing Resume?/Start Fresh dialog if he reopens that exact
- * workout.
+ * Up to AUTO_FINISH_MAX_AGE_MS (48h), not 24h (Nolan, 2026-09-30): a session
+ * he started yesterday and never finished is logged on the next open, filed
+ * under its start date and timestamped 3h after its last change. A >24h session left
+ * for a manual Log/Discard meant he went to Train instead of Today's Start and
+ * skipped the weigh-in, and the stale session pinned the engine on yesterday's
+ * day.
  *
  * Skips only the session id(s) actually registered as open right now
  * (isActivelyLoggingSession, src/lib/activeLoggingSessions.js) -- not a
@@ -73,10 +74,10 @@ export function useGlobalAutoFinish(timezone, ready = true) {
           if (isActivelyLoggingSession(session.id)) continue;
           const ageMs = Date.now() - new Date(session.start_time).getTime();
           const silenceMs = sessionSilenceMs(session);
-          // null (updated_at missing) or outside the 3h-24h window: leave it
-          // exactly as the page-level check would.
+          // null (updated_at missing), quiet for under 3h, or older than 48h:
+          // leave it exactly as the page-level check would.
           if (silenceMs === null) continue;
-          if (silenceMs < AUTO_FINISH_STALE_MS || ageMs >= STALE_SESSION_MS) continue;
+          if (silenceMs < AUTO_FINISH_STALE_MS || ageMs >= AUTO_FINISH_MAX_AGE_MS) continue;
 
           const result = await autoFinishStaleSession(session, timezone);
           if (result === "logged") {

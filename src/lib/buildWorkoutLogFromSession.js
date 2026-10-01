@@ -1,4 +1,5 @@
 import { localDateOf } from "@/utils/dateUtils";
+import { AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
 
 /**
  * The workout_logs payload for a session the athlete never finished by hand.
@@ -13,6 +14,8 @@ import { localDateOf } from "@/utils/dateUtils";
  *                     Tuesday workout is filed under Tuesday
  *   duration_seconds  start -> last set logged, not start -> now, which would
  *                     bill every idle hour since as training time
+ *   created_at        last change + AUTO_FINISH_STALE_MS (the moment the
+ *                     session went stale), capped at now
  *
  * program_id is absent from workout_sessions, so it stays null unless a caller
  * resolves it from the enrollment. That is the same null the 98 existing rows
@@ -45,6 +48,11 @@ export function buildWorkoutLogFromSession(session, timezone) {
     exercises,
     duration_seconds: durationSeconds,
     notes: session.notes || null,
+    ...(lastTouched && {
+      created_at: new Date(
+        Math.min(Date.now(), new Date(lastTouched).getTime() + AUTO_FINISH_STALE_MS)
+      ).toISOString(),
+    }),
   };
 }
 

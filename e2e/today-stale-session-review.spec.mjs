@@ -1,8 +1,7 @@
-// Part A: sessions past the 24h auto-finish cutoff (STALE_SESSION_MS,
+// Part A: sessions past the 48h auto-finish cutoff (AUTO_FINISH_MAX_AGE_MS,
 // src/lib/workoutSessionFlag.js) are DELIBERATELY never touched by
-// useGlobalAutoFinish or the page-level mount check -- auto-logging one that
-// old would back-date a workout_log far enough to retroactively rewrite
-// MRV/volume history. Without this review row such a session sits
+// useGlobalAutoFinish or the page-level mount check, so they aren't
+// back-filled into history unreviewed. Without this review row such a session sits
 // in_progress forever with no UI ever mentioning it (it's also too old for
 // useActiveWorkoutSession's 12h banner). This proves the Today-page review
 // surface (useStaleWorkoutSessions) lists it and that both actions work:
@@ -45,7 +44,7 @@ async function cleanup(uid) {
   await db.from('workouts').delete().eq('created_by', uid).in('title', [LOG_WORKOUT_TITLE, DISCARD_WORKOUT_TITLE]);
 }
 
-test('unfinished-session review: a 30h-old session lists on Today and Log/Discard both resolve it', async ({ page }) => {
+test('unfinished-session review: a 60h-old session lists on Today and Log/Discard both resolve it', async ({ page }) => {
   const uid = await testUserId();
   const db = await testDb();
   await cleanup(uid);
@@ -68,7 +67,7 @@ test('unfinished-session review: a 30h-old session lists on Today and Log/Discar
     expect(discardWorkout.error).toBeNull();
     discardWorkoutId = discardWorkout.data.id;
 
-    // Both sessions: started 30h ago -- past STALE_SESSION_MS (24h), so
+    // Both sessions: started 60h ago -- past AUTO_FINISH_MAX_AGE_MS (48h), so
     // neither auto-finish sweep nor the page mount check will ever touch
     // them. The "log" one carries a completed set (sessionHasLoggedSets ->
     // true, so Log should write a workout_log); the "discard" one has none
@@ -78,8 +77,8 @@ test('unfinished-session review: a 30h-old session lists on Today and Log/Discar
       workout_id: logWorkoutId,
       program_workout_id: null,
       status: 'in_progress',
-      start_time: isoHoursAgo(30),
-      updated_at: isoHoursAgo(29),
+      start_time: isoHoursAgo(60),
+      updated_at: isoHoursAgo(59),
       exercises: [{ name: LOG_EXERCISE, sets: [{ weight: 100, reps: 5, completed: true }] }],
     }).select().single();
     expect(logSession.error).toBeNull();
@@ -90,8 +89,8 @@ test('unfinished-session review: a 30h-old session lists on Today and Log/Discar
       workout_id: discardWorkoutId,
       program_workout_id: null,
       status: 'in_progress',
-      start_time: isoHoursAgo(30),
-      updated_at: isoHoursAgo(29),
+      start_time: isoHoursAgo(60),
+      updated_at: isoHoursAgo(59),
       exercises: [{ name: DISCARD_EXERCISE, sets: [{ weight: 100, reps: 5, completed: false }] }],
     }).select().single();
     expect(discardSession.error).toBeNull();

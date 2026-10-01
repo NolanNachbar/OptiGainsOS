@@ -34,7 +34,7 @@ import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } 
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
+import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
 const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
@@ -391,10 +391,9 @@ export default function WorkoutDetail() {
 
       // Went quiet for hours but is still today's: he finished lifting and
       // never pressed Finish. Write the log, close the row, and fall through
-      // to a fresh workout. Age is deliberately still bounded by
-      // STALE_SESSION_MS — a session older than a day gets the dialog below,
-      // because back-dating a log that far retroactively moves MRV and volume.
-      if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
+      // to a fresh workout. Up to AUTO_FINISH_MAX_AGE_MS (48h), so
+      // yesterday's forgotten session is logged too, under its start date.
+      if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < AUTO_FINISH_MAX_AGE_MS) {
         autoFinishSession(session, timezone).then((result) => {
           if (result === "logged") {
             invalidateWorkoutLogs(queryClient);

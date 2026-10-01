@@ -26,7 +26,7 @@ import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
 import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
-import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
+import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
 const formatTimeAgo = (startTimeStr) => {
@@ -282,7 +282,7 @@ export default function QuickWorkout() {
         // pressing Finish. Save it properly, then start clean. See
         // AUTO_FINISH_STALE_MS for why silence and age are separate clocks.
         const silenceMs = sessionSilenceMs(session);
-        if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < STALE_SESSION_MS) {
+        if (silenceMs !== null && silenceMs >= AUTO_FINISH_STALE_MS && ageMs < AUTO_FINISH_MAX_AGE_MS) {
           autoFinishSession(session, timezone).then((result) => {
             // Only open a new session once the old one is actually closed.
             // Creating it unconditionally would leave two rows in_progress.

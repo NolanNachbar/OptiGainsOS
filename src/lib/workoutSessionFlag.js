@@ -39,11 +39,20 @@ export const STALE_SESSION_MS = 24 * 60 * 60 * 1000;
  *   AUTO_FINISH_STALE_MS (3h, silence) < ACTIVE_SESSION_MAX_AGE_MS (12h, age)
  *                                      < STALE_SESSION_MS (24h, age)
  * Two different clocks. Auto-finish asks "still lifting?", the other two ask
- * "is this still today's workout?". A session past 24h old is never
- * auto-finished — back-dating a log that far retroactively rewrites MRV and
- * volume history, so those still go to the Resume?/Start Fresh dialog.
+ * "is this still today's workout?". Yesterday's forgotten session is still
+ * auto-logged (Nolan, 2026-09-30), under its start date and timestamped 3h
+ * after its last change, up to AUTO_FINISH_MAX_AGE_MS.
  */
 export const AUTO_FINISH_STALE_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Oldest session (by start_time) the auto-finish will log on its own. 48h
+ * covers "started it yesterday, forgot Finish". Older in_progress rows date
+ * from before the auto-finish existed and some hold sets ticked seconds after
+ * start, so they go to Today's Unfinished sessions card for a manual
+ * Log/Discard instead of being back-filled into history.
+ */
+export const AUTO_FINISH_MAX_AGE_MS = 48 * 60 * 60 * 1000;
 
 const KEY = "optigains-workout-active";
 const EVENT = "optigains-workout-flag-changed";

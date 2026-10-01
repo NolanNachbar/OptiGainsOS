@@ -2,21 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { isActivelyLoggingSession } from "@/lib/activeLoggingSessions";
-import { STALE_SESSION_MS } from "@/lib/workoutSessionFlag";
+import { AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
 
 /**
- * In-progress sessions past STALE_SESSION_MS (24h) — the one bucket neither
- * auto-finish sweep (useGlobalAutoFinish) nor the page-level mount check
- * (WorkoutDetail/QuickWorkout) ever closes on its own: both deliberately stop
- * auto-acting once a session is 24h+ old, because auto-logging one that stale
- * would back-date a workout_log far enough to retroactively rewrite MRV/volume
- * history (see src/lib/workoutSessionFlag.js). The only existing recovery path
- * is the Resume?/Start Fresh dialog, and that only fires if he happens to
- * reopen that exact workout again — so a session started on an abandoned
- * workout can sit `in_progress` forever with no UI ever mentioning it.
- *
- * This hook surfaces that backlog for the Today-page review row so it can be
- * resolved explicitly (Log or Discard) instead of silently persisting.
+ * In-progress sessions past AUTO_FINISH_MAX_AGE_MS (48h), the one bucket
+ * neither auto-finish sweep (useGlobalAutoFinish) nor the page-level mount
+ * check (WorkoutDetail/QuickWorkout) closes on its own. Anything younger and
+ * quiet for 3h is logged automatically. Older rows predate the auto-finish
+ * and some hold doubtful sets, so they are resolved here by hand (Log or
+ * Discard) instead of being back-filled into history, or sitting
+ * `in_progress` forever with no UI mentioning them.
  */
 export function useStaleWorkoutSessions() {
   const { user } = useAuth();
@@ -35,7 +30,7 @@ export function useStaleWorkoutSessions() {
         if (isActivelyLoggingSession(session.id)) return false;
         const started = session.start_time || session.created_at;
         const ageMs = started ? Date.now() - new Date(started).getTime() : 0;
-        return ageMs >= STALE_SESSION_MS;
+        return ageMs >= AUTO_FINISH_MAX_AGE_MS;
       });
       if (!stale.length) return [];
 
