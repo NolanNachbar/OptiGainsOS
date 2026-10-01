@@ -1956,13 +1956,6 @@ const handleSaveMealTemplate = () => {
                           className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
                         />
                       )}
-                      <span className="font-technical text-[13px] font-semibold text-ink tabular-nums shrink-0">
-                        {calsGoal > 0
-                          ? (isToday && fuelNutritionView === "remaining"
-                              ? `${Math.abs(Math.round(calsRemaining)).toLocaleString()} kcal ${calsRemaining < 0 ? 'over' : 'left'}`
-                              : `${Math.round(calsConsumed).toLocaleString()} / ${Math.round(calsGoal).toLocaleString()} kcal`)
-                          : '—'}
-                      </span>
                     </div>
                   </div>
                   {isToday && calsConsumed === 0 && plannedCount > 0 && (

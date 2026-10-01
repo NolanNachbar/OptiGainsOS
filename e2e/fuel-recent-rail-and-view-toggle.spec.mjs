@@ -78,7 +78,7 @@ test('Fuel: the Recent rail re-logs with one tap, and Consumed/Remaining toggles
     await expect(kcalCaption).toBeVisible({ timeout: 10000 });
 
     await page.getByRole('button', { name: 'Consumed' }).click();
-    const consumedHeader = page.locator('[data-tutorial="nutrition-rings"]').getByText(/^\d[\d,]* \/ \d[\d,]* kcal$/);
+    const consumedHeader = page.locator('[data-tutorial="nutrition-rings"]').getByText(/^\d[\d,]*g?\/\d[\d,]*g?$/).first();
     await expect(consumedHeader).toBeVisible({ timeout: 5000 });
     await expect(page.locator('[data-tutorial="nutrition-rings"]').getByText(/left|over/)).toHaveCount(0);
 
