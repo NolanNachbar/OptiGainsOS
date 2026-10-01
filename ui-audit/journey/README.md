@@ -32,6 +32,12 @@ Each one follows his real daily loop across screens and days, not one screen:
   the app → logged under yesterday at last change + 3h, no banner, no review
   card → start the next workout from Train → weigh-in prompt. Verified to fail
   on the pre-fix 24h-cap sweep.
+- `journey-finish-next-split-day`: seeded 3-day program, Today → Start (program
+  card) → check-in sheet weigh-in → log a set → Finish → enrollment records
+  cycle 1 / day 1, Today reads "Logged today" → next day (enrollment start, log
+  and weigh-in moved back one day) → Today shows day 2, not day 1, and Start
+  opens day 2's program logger. The app advances by schedule date, not by
+  completion. Verified to fail when Today's lookup is pinned to day 1.
 
 Day boundaries: backdate the rows in the DB (delete + reinsert with the same
 id; the BEFORE UPDATE trigger re-stamps updated_at). Don't move the browser
@@ -39,8 +45,6 @@ clock: Supabase auth then refresh-loops into a 429.
 
 ## Journeys still to cover
 
-- Today → Start (program workout) → weigh-in → log → Finish → tomorrow's
-  Today shows the next day in the split, not the same one.
 - Food logged after local midnight lands on the new day on Today and Fuel.
 - Weigh-in from Today updates the Body trend and the Today weight module.
 - Two sessions in one day (twice-a-day prescription): both logged, neither
