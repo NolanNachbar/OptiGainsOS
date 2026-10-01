@@ -30,6 +30,7 @@ import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
@@ -116,6 +117,12 @@ const parseRepTarget = (repTarget) => {
 const parseRirFromNotes = (notes) => {
   const m = String(notes || '').match(/RIR\s*(\d+)/i);
   return m ? parseInt(m[1], 10) : 0;
+};
+
+const parseRirTarget = (v) => {
+  if (v == null || v === '') return null;
+  const n = parseInt(String(v), 10);
+  return Number.isFinite(n) ? n : null;
 };
 
 // "Back Squat (Top Set)" / "Back Squat (Back-off)" → "back squat"
@@ -687,6 +694,9 @@ export default function WorkoutDetail() {
             || (ex.components || []).reduce(
                  (found, c) => found || getLastExercisePerformance(allWorkoutLogs, c), null);
 
+          const loadStep = weightUnit === 'kg' ? 2.5 : 5;
+          const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [] });
+          const e1Load = (reps, rir) => loadForTarget(e1, reps, parseRirTarget(rir), loadStep);
           const targetReps = parseRepTarget(ex.rep_target);
           const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
             ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
@@ -705,6 +715,7 @@ export default function WorkoutDetail() {
                   || engineBlocksByLabel.get(block.set_type);
                 const blockWeight = engineBlock?.load_lbs
                   || block.load_lbs
+                  || e1Load(blockReps, block.rir_target ?? ex.rir_target)
                   || (lastPerf?.lastWeight && lastPerf?.lastReps
                       ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, blockReps)
                       : targets?.workingWeight || scaledWeight);
@@ -723,7 +734,7 @@ export default function WorkoutDetail() {
             : Array.from({ length: numSets }, (_, setIndex) => ({
                 set_number: setIndex + 1,
                 reps: targetReps,
-                weight: targets?.workingWeight || scaledWeight,
+                weight: e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
                 completed: false,
                 rpe: null,
                 rir: null, // never prefill the target as a logged value
@@ -749,9 +760,12 @@ export default function WorkoutDetail() {
         const suggestions = workout.exercises?.map((exercise) => {
           const lastPerf = getLastExercisePerformance(allWorkoutLogs, exercise.name);
           const targetReps = parseRepTarget(exercise.reps);
-          const weight = lastPerf?.lastWeight && lastPerf?.lastReps
-            ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
-            : lastPerf?.lastWeight || 0;
+          const weight = loadForTarget(
+              currentE1rm(allWorkoutLogs, exercise.name),
+              targetReps, parseRirFromNotes(exercise.notes) || null, weightUnit === 'kg' ? 2.5 : 5)
+            || (lastPerf?.lastWeight && lastPerf?.lastReps
+              ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
+              : lastPerf?.lastWeight || 0);
           return { exercise, targetReps, weight };
         }) || [];
 
@@ -1115,9 +1129,12 @@ export default function WorkoutDetail() {
       // rep target), mirroring the initial-load seeding. Was hardcoded to 0, so
       // swapping blanked the weight even when the new movement had past logs.
       const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise.name);
-      const seedWeight = lastPerf?.lastWeight && lastPerf?.lastReps
-        ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
-        : lastPerf?.lastWeight || 0;
+      const seedWeight = loadForTarget(
+          currentE1rm(allWorkoutLogs, newExercise.name, { components: newExercise.components || [] }),
+          newReps, parseRirTarget(newExercise.rir_target ?? newExercise.rir), weightUnit === 'kg' ? 2.5 : 5)
+        || (lastPerf?.lastWeight && lastPerf?.lastReps
+          ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
+          : lastPerf?.lastWeight || 0);
 
       // Carry forward already-completed sets exactly as logged so a mid-exercise
       // swap never discards finished work; only the remaining (uncompleted) sets
