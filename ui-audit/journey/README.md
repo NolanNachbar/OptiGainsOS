@@ -38,6 +38,17 @@ Each one follows his real daily loop across screens and days, not one screen:
   and weigh-in moved back one day) → Today shows day 2, not day 1, and Start
   opens day 2's program logger. The app advances by schedule date, not by
   completion. Verified to fail when Today's lookup is pinned to day 1.
+- `journey-food-after-midnight`: browser context in a timezone whose local date
+  differs from the UTC date right now (picked at runtime; no clock moves) → log
+  a food through the Fuel UI → row's `date` is the local date, Fuel's current day
+  lists it, Today's Kcal consumed rises by the same amount. Verified to fail
+  when FoodTracker derives its day from `toISOString()`.
+- `journey-weighin-updates-body`: Today → Body (primes its cache) → back →
+  weigh in from Today's weight row → `body_weight_entries` row (local today,
+  typed value) and profile `current_weight` follow, Today's trend number moves
+  and the row reads "Logged today", Body's history (Fuel → Body, not
+  /athlete-state, whose weight trend is server-computed) lists it, all without
+  a reload. Verified to fail when `useLogWeight` skips `invalidateBodyWeight`.
 
 Day boundaries: backdate the rows in the DB (delete + reinsert with the same
 id; the BEFORE UPDATE trigger re-stamps updated_at). Don't move the browser
@@ -45,8 +56,6 @@ clock: Supabase auth then refresh-loops into a 429.
 
 ## Journeys still to cover
 
-- Food logged after local midnight lands on the new day on Today and Fuel.
-- Weigh-in from Today updates the Body trend and the Today weight module.
 - Two sessions in one day (twice-a-day prescription): both logged, neither
   swallowed by the duplicate guard.
 - Offline set logging → reconnect → nothing lost.
