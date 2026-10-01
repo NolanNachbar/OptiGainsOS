@@ -25,11 +25,10 @@ import { getTodayString } from "@/utils/dateUtils";
  * pending start is stashed and an effect below fires it (or opens the sheet)
  * the moment the query settles.
  *
- * guardStart never re-fires: once a start has been dispatched (immediately
- * or via the sheet) it is the only one this hook instance will ever issue —
- * callers that call it more than once (QuickWorkout's session-recovery
- * effect branches) are deciding between mutually exclusive paths, not asking
- * to start twice.
+ * One pending start at a time: a second call while the sheet is open (or the
+ * query is loading) is dropped. Once the gate has been answered, by a weight
+ * on record, a logged weight, or Skip, later starts on the same page (Cancel,
+ * then Start again) go straight through without asking again.
  */
 export function useWeighInGate(today, { skip = false } = {}) {
   const dateStr = today || getTodayString();
@@ -38,19 +37,19 @@ export function useWeighInGate(today, { skip = false } = {}) {
   const needsWeight = !skip && settled && todayWeight?.weight == null;
 
   const pendingRef = useRef(null);
-  const firedRef = useRef(false);
+  const answeredRef = useRef(false);
   const [waiting, setWaiting] = useState(false);
 
   const fire = (fn) => {
-    firedRef.current = true;
+    answeredRef.current = true;
     pendingRef.current = null;
     setWaiting(false);
     fn();
   };
 
   const guardStart = (startFn) => {
-    if (firedRef.current) return;
-    if (skip || (settled && !needsWeight)) {
+    if (pendingRef.current) return;
+    if (skip || answeredRef.current || (settled && !needsWeight)) {
       fire(startFn);
       return;
     }
@@ -63,7 +62,7 @@ export function useWeighInGate(today, { skip = false } = {}) {
   // Resolve a stashed start the moment the query settles — covers the case
   // where guardStart was called before isLoading/isFetching had flipped.
   useEffect(() => {
-    if (firedRef.current || !pendingRef.current || !settled) return;
+    if (!pendingRef.current || !settled) return;
     if (needsWeight) {
       setWaiting(true);
     } else {
