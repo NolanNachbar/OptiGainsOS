@@ -9,7 +9,7 @@
 // one-line status update already covered structurally; this test must not
 // destroy the test account's session data).
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 const CASE = 'qwcancel-1';
 const EXERCISE = `OVN-${CASE} Lift`;
@@ -41,6 +41,7 @@ test('Cancel workout is reachable from QuickWorkout mid-session and shows a conf
   // one behind that silently intercepts this run's first interactions
   // behind an un-dismissable "Resume Workout?" scrim.
   await cleanup(uid);
+  const removeSeededWeighIn = await ensureTodayWeighIn(await testDb(), uid);
 
   try {
     await signIn(page, '/quick-workout');
@@ -100,6 +101,7 @@ test('Cancel workout is reachable from QuickWorkout mid-session and shows a conf
     // Still mid-session, nothing was discarded by the dismissed dialog.
     await expect(page.getByText(EXERCISE)).toBeVisible();
   } finally {
+    await removeSeededWeighIn();
     await cleanup(uid);
   }
 });

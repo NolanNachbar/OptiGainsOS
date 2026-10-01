@@ -11,7 +11,7 @@ export function useTodayBodyWeight(date) {
   const { user } = useAuth();
   const dateStr = date || getTodayString();
 
-  const { data: todayWeight = null, isLoading, isFetching } = useQuery({
+  const { data: todayWeight = null, isLoading, isFetching, isPending } = useQuery({
     queryKey: ["bodyWeightEntries", "today", user?.id, dateStr],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,7 +31,9 @@ export function useTodayBodyWeight(date) {
   // stale cache still reports isLoading false while holding the old value. The
   // pre-session gate needs "we don't know yet" to be distinguishable from
   // "no weigh-in today", or it would re-ask on a day already logged.
-  return { todayWeight, isLoading, isFetching };
+  // isPending covers the disabled state (no user yet), where isLoading and
+  // isFetching are both false but nothing has been read.
+  return { todayWeight, isLoading, isFetching, isPending };
 }
 
 // The most recent weigh-in strictly BEFORE `date`, and how long ago it was.

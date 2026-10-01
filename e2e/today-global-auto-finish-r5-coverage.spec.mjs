@@ -11,7 +11,7 @@
 //       sweep) racing the same stale session id produce exactly one
 //       workout_log, not two.
 import { test, expect } from '@playwright/test';
-import { signIn, testDb, testUserId } from './helpers.mjs';
+import { signIn, testDb, testUserId, ensureTodayWeighIn } from './helpers.mjs';
 
 function isoHoursAgo(hours) {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
@@ -59,6 +59,7 @@ test.describe('r5 e2e coverage gaps', () => {
     const db = await testDb();
     await cleanupAnyQuickSession(uid, db);
     await cleanupMarkers(uid, db, [A_MARKER, B_MARKER]);
+    const removeSeededWeighIn = await ensureTodayWeighIn(db, uid);
 
     try {
       // Mount /quick-workout with nothing in-progress -- its own mount effect
@@ -151,6 +152,7 @@ test.describe('r5 e2e coverage gaps', () => {
       expect(new Date(aAfter.updated_at).getTime()).toBe(new Date(aUpdatedAt).getTime());
       expect((bLogs || []).filter((l) => hasMarkerExercise(l, A_MARKER)).length).toBe(0);
     } finally {
+      await removeSeededWeighIn();
       await cleanupMarkers(uid, db, [A_MARKER, B_MARKER]);
       await cleanupAnyQuickSession(uid, db);
     }

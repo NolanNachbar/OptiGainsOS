@@ -32,12 +32,18 @@ import { getTodayString } from "@/utils/dateUtils";
  */
 export function useWeighInGate(today, { skip = false } = {}) {
   const dateStr = today || getTodayString();
-  const { todayWeight, isLoading, isFetching } = useTodayBodyWeight(dateStr);
-  const settled = !isLoading && !isFetching;
+  const { todayWeight, isLoading, isFetching, isPending } = useTodayBodyWeight(dateStr);
+  const settled = !isPending && !isLoading && !isFetching;
   const needsWeight = !skip && settled && todayWeight?.weight == null;
 
   const pendingRef = useRef(null);
   const answeredRef = useRef(false);
+  // Latest values, not this render's: callers (QuickWorkout) call guardStart
+  // from an async .then(), holding a closure from a render where the query
+  // hadn't settled. If it settled since, the effect below has already run
+  // with nothing pending and would never fire again, stranding the start.
+  const latestRef = useRef({ settled, needsWeight });
+  latestRef.current = { settled, needsWeight };
   const [waiting, setWaiting] = useState(false);
 
   const fire = (fn) => {
@@ -49,14 +55,15 @@ export function useWeighInGate(today, { skip = false } = {}) {
 
   const guardStart = (startFn) => {
     if (pendingRef.current) return;
-    if (skip || answeredRef.current || (settled && !needsWeight)) {
+    const now = latestRef.current;
+    if (skip || answeredRef.current || (now.settled && !now.needsWeight)) {
       fire(startFn);
       return;
     }
     // Not settled yet, or settled and needsWeight: stash it. The effect below
-    // resolves it once the query settles (immediately, if it already has).
+    // resolves it once the query settles.
     pendingRef.current = startFn;
-    if (settled && needsWeight) setWaiting(true);
+    if (now.settled && now.needsWeight) setWaiting(true);
   };
 
   // Resolve a stashed start the moment the query settles — covers the case
