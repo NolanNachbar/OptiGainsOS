@@ -85,13 +85,15 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
 
     // The correction committed...
     await expect(page.getByLabel(/Set 1 reps in reserve/).first()).toHaveValue('4');
-    // ...but did NOT re-run completion: the rest timer kept counting down
+    // ...but did NOT re-run completion: the rest timer keeps counting down
     // from where it already was, instead of jumping back up toward the full
-    // 90s duration (the MAJOR 1 bug this test guards against).
-    await page.waitForTimeout(800);
-    const after = parseRemaining(await restLabel.getAttribute('aria-label'));
-    expect(after).not.toBeNull();
-    expect(after).toBeLessThan(before);
+    // 90s duration (the MAJOR 1 bug this test guards against). The label only
+    // re-renders on a 500ms tick and is ceil'd to whole seconds, so a fixed
+    // sleep can read the same second as `before`; poll for the real signal
+    // instead -- a timer that is genuinely running drops below `before`, a
+    // restarted one sits near 90 and never does.
+    const remaining = async () => parseRemaining(await restLabel.getAttribute('aria-label'));
+    await expect.poll(remaining, { timeout: 5000 }).toBeLessThan(before);
   } finally {
     await cleanup(workoutId);
     await removeSeededWeighIn();
