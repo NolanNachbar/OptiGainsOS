@@ -27,6 +27,14 @@ async function cleanup(workoutId) {
   await db.from('workouts').delete().eq('id', workoutId);
 }
 
+// A run killed mid-test never reaches its finally, leaving an in_progress
+// session that makes Today show "Workout in progress" and breaks every later
+// Today-based spec. Sweep any such leftovers by title before seeding.
+async function sweepLeftovers(db, uid) {
+  const { data: old } = await db.from('workouts').select('id').eq('created_by', uid).eq('title', `OVN-${CASE} Test Workout`);
+  for (const w of old || []) await cleanup(w.id);
+}
+
 // "1:29" -> 89
 function parseRemaining(label) {
   const m = label.match(/Rest, (\d+):(\d{2}) remaining/);
@@ -37,6 +45,7 @@ function parseRemaining(label) {
 test('reopening RIR on an already-completed set via the keypad does not restart the rest timer', async ({ page }) => {
   const db = await testDb();
   const uid = await testUserId();
+  await sweepLeftovers(db, uid);
 
   const workout = await db.from('workouts').insert({
     created_by: uid,

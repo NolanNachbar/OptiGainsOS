@@ -69,6 +69,12 @@ test('starting a program when local date != UTC date stamps the local date and T
 
     // ── Enroll through the real UI, accepting the default start date ──
     await signIn(page, `/program/${program.id}`);
+    // The profile tz (Denver) differs from the browser zone: wait for the
+    // app's on-open sync to land so the default start date reads the device day.
+    await expect.poll(async () => {
+      const { data } = await db.from('user_profiles').select('timezone').eq('created_by', uid).maybeSingle();
+      return data?.timezone;
+    }, { timeout: 10000, message: 'app open should sync profile tz to the device zone' }).toBe(TZ);
     await page.getByRole('button', { name: 'Start Program', exact: true }).first().click();
     // The enroll sheet is not exposed as role=dialog; key off its date input.
     await expect(page.locator('input[type="date"]')).toHaveValue(localToday);
