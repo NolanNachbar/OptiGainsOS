@@ -239,15 +239,26 @@ export function useEnrollInProgram() {
 
       // Re-use the existing row if the user previously cancelled (unique constraint on user+program)
       const existing = await db.entities.ProgramEnrollment.filter({ created_by: user.id, program_id: programId });
-      if (existing.length > 0) {
-        return db.entities.ProgramEnrollment.update(existing[0].id, enrollmentData);
-      }
+      const enrolled = existing.length > 0
+        ? await db.entities.ProgramEnrollment.update(existing[0].id, enrollmentData)
+        : await db.entities.ProgramEnrollment.create({
+            created_by: user.id,
+            program_id: programId,
+            ...enrollmentData,
+          });
 
-      return db.entities.ProgramEnrollment.create({
-        created_by: user.id,
-        program_id: programId,
-        ...enrollmentData,
-      });
+      // Starting a program supersedes whatever he was running: pause every
+      // other active enrollment (the same 'paused' state ProgramDetail's Pause
+      // uses, so the old program can be resumed). Done AFTER the new row lands
+      // so a failed enroll never leaves him with no active program.
+      const stillActive = await db.entities.ProgramEnrollment.filter({ created_by: user.id, status: 'active' });
+      await Promise.all(
+        stillActive
+          .filter((e) => e.id !== enrolled.id)
+          .map((e) => db.entities.ProgramEnrollment.update(e.id, { status: 'paused' }))
+      );
+
+      return enrolled;
     },
     onSuccess: () => {
       invalidatePrograms(queryClient);
@@ -255,126 +266,143 @@ export function useEnrollInProgram() {
   });
 }
 
+/**
+ * Credit a finished program-day workout to its enrollment: progression state,
+ * completed_workouts, and day/cycle advancement. The single implementation
+ * behind both the Finish button (useLogProgramWorkout) and the stale-session
+ * auto-finisher (src/lib/autoFinishSession.js), so the two can never drift.
+ * Pure data: callers own query invalidation.
+ */
+export async function creditProgramWorkout({ enrollmentId, programWorkoutId, exerciseLogs, enrollment, workoutCycle, timezone }) {
+  let newState = { ...enrollment.progression_state };
+
+  const programWorkout = await db.entities.ProgramWorkout.get(programWorkoutId);
+  // Fetch all workouts up front: used both to derive the calendar cycle (so
+  // the completion key matches getProgramSchedule even when workoutCycle was
+  // not passed, e.g. from the Today route) and for v2 advancement below.
+  const allProgramWorkouts = await db.entities.ProgramWorkout.filter({ program_id: enrollment.program_id });
+
+  // Derive cycle/day the same way the schedule does, so the completion key
+  // lines up with what getProgramSchedule compares against (off-calendar
+  // users otherwise key completions to the wrong cycle and "today" never
+  // shows as done).
+  const scheduleEntry = getProgramSchedule(enrollment, allProgramWorkouts, timezone)
+    .find((e) => e.programWorkoutId === programWorkoutId && e.isCurrent);
+  const actualCycle = scheduleEntry?.cycle || workoutCycle || enrollment.current_cycle || 1;
+  const actualDayIndex = scheduleEntry?.dayIndex || programWorkout.day_index;
+
+  // Idempotency guard: if this exact program day is already marked complete,
+  // do not append a duplicate completion or advance the enrollment again.
+  // Stops a double-tap / lost-response retry from silently skipping a day.
+  const alreadyLogged = (enrollment.completed_workouts || []).some(
+    (cw) => cw && cw.program_workout_id === programWorkoutId
+      && cw.cycle === actualCycle && cw.day_index === actualDayIndex
+  );
+  if (alreadyLogged) {
+    return {
+      status: enrollment.status,
+      current_week: enrollment.current_cycle || enrollment.current_week,
+      current_day: enrollment.current_day_index || enrollment.current_day,
+    };
+  }
+
+  for (const log of exerciseLogs) {
+    const exerciseConfig = (programWorkout.exercises || []).find(
+      (e) => e.name === log.name
+    );
+    if (exerciseConfig) {
+      newState = updateProgressionState(newState, exerciseConfig, log.sets || []);
+    }
+  }
+
+  // Store completion with the ACTUAL cycle and day_index from the calendar schedule
+  const completedWorkouts = [
+    ...(enrollment.completed_workouts || []),
+    {
+      program_workout_id: programWorkoutId,
+      cycle: actualCycle,
+      day_index: actualDayIndex,
+      completed_at: new Date().toISOString(),
+    },
+  ];
+
+  const program = await db.entities.Program.get(enrollment.program_id);
+  const isV2 = program.schema_version === 2;
+
+  let updateFields;
+
+  if (isV2) {
+    // v2: Simplified progression - just advance to next workout in sequence
+    // No calendar-based skipping - user completes workouts in order
+    const sortedWorkouts = [...allProgramWorkouts].sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
+
+    // Advance to next workout
+    let new_day_index = actualDayIndex + 1;
+    let new_cycle = actualCycle;
+    let status = 'active';
+
+    // If we've completed all workouts in this cycle, move to next cycle
+    if (new_day_index > sortedWorkouts.length) {
+      new_day_index = 1;
+      new_cycle += 1;
+    }
+
+    // Check if program is complete
+    if (new_cycle > (program.num_cycles || 1)) {
+      new_cycle = program.num_cycles || 1;
+      new_day_index = sortedWorkouts.length;
+      status = 'completed';
+    }
+
+    updateFields = {
+      completed_workouts: completedWorkouts,
+      progression_state: newState,
+      current_day_index: new_day_index,
+      current_cycle: new_cycle,
+      // Keep v1 fields in sync
+      current_day: new_day_index,
+      current_week: new_cycle,
+      status,
+      updated_at: new Date().toISOString(),
+    };
+  } else {
+    // v1: week/day advancement
+    let { current_day, current_week } = enrollment;
+    current_day += 1;
+
+    if (current_day > program.days_per_week) {
+      current_day = 1;
+      current_week += 1;
+    }
+
+    const status = current_week > program.duration_weeks ? 'completed' : 'active';
+
+    updateFields = {
+      completed_workouts: completedWorkouts,
+      progression_state: newState,
+      current_day,
+      current_week,
+      status,
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  await db.entities.ProgramEnrollment.update(enrollmentId, updateFields);
+
+  return {
+    status: updateFields.status,
+    current_week: updateFields.current_week || updateFields.current_cycle,
+    current_day: updateFields.current_day || updateFields.current_day_index,
+  };
+}
+
 export function useLogProgramWorkout() {
   const queryClient = useQueryClient();
   const { profile } = useProfile();
 
   return useMutation({
-    mutationFn: async ({ enrollmentId, programWorkoutId, exerciseLogs, enrollment, workoutCycle }) => {
-      let newState = { ...enrollment.progression_state };
-
-      const programWorkout = await db.entities.ProgramWorkout.get(programWorkoutId);
-      // Fetch all workouts up front: used both to derive the calendar cycle (so
-      // the completion key matches getProgramSchedule even when workoutCycle was
-      // not passed, e.g. from the Today route) and for v2 advancement below.
-      const allProgramWorkouts = await db.entities.ProgramWorkout.filter({ program_id: enrollment.program_id });
-
-      // Derive cycle/day the same way the schedule does, so the completion key
-      // lines up with what getProgramSchedule compares against (off-calendar
-      // users otherwise key completions to the wrong cycle and "today" never
-      // shows as done).
-      const scheduleEntry = getProgramSchedule(enrollment, allProgramWorkouts, profile?.timezone)
-        .find((e) => e.programWorkoutId === programWorkoutId && e.isCurrent);
-      const actualCycle = scheduleEntry?.cycle || workoutCycle || enrollment.current_cycle || 1;
-      const actualDayIndex = scheduleEntry?.dayIndex || programWorkout.day_index;
-
-      // Idempotency guard: if this exact program day is already marked complete,
-      // do not append a duplicate completion or advance the enrollment again.
-      // Stops a double-tap / lost-response retry from silently skipping a day.
-      const alreadyLogged = (enrollment.completed_workouts || []).some(
-        (cw) => cw && cw.program_workout_id === programWorkoutId
-          && cw.cycle === actualCycle && cw.day_index === actualDayIndex
-      );
-      if (alreadyLogged) {
-        return {
-          status: enrollment.status,
-          current_week: enrollment.current_cycle || enrollment.current_week,
-          current_day: enrollment.current_day_index || enrollment.current_day,
-        };
-      }
-
-      for (const log of exerciseLogs) {
-        const exerciseConfig = (programWorkout.exercises || []).find(
-          (e) => e.name === log.name
-        );
-        if (exerciseConfig) {
-          newState = updateProgressionState(newState, exerciseConfig, log.sets || []);
-        }
-      }
-
-      // Store completion with the ACTUAL cycle and day_index from the calendar schedule
-      const completedWorkouts = [
-        ...(enrollment.completed_workouts || []),
-        {
-          program_workout_id: programWorkoutId,
-          cycle: actualCycle,
-          day_index: actualDayIndex,
-          completed_at: new Date().toISOString(),
-        },
-      ];
-
-      const program = await db.entities.Program.get(enrollment.program_id);
-      const isV2 = program.schema_version === 2;
-
-      let updateFields;
-
-      if (isV2) {
-        // v2: Simplified progression - just advance to next workout in sequence
-        // No calendar-based skipping - user completes workouts in order
-        const sortedWorkouts = [...allProgramWorkouts].sort((a, b) => (a.day_index || 0) - (b.day_index || 0));
-
-        // Advance to next workout
-        let new_day_index = actualDayIndex + 1;
-        let new_cycle = actualCycle;
-        let status = 'active';
-
-        // If we've completed all workouts in this cycle, move to next cycle
-        if (new_day_index > sortedWorkouts.length) {
-          new_day_index = 1;
-          new_cycle += 1;
-        }
-
-        // Check if program is complete
-        if (new_cycle > (program.num_cycles || 1)) {
-          new_cycle = program.num_cycles || 1;
-          new_day_index = sortedWorkouts.length;
-          status = 'completed';
-        }
-
-        updateFields = {
-          completed_workouts: completedWorkouts,
-          progression_state: newState,
-          current_day_index: new_day_index,
-          current_cycle: new_cycle,
-          // Keep v1 fields in sync
-          current_day: new_day_index,
-          current_week: new_cycle,
-          status,
-          updated_at: new Date().toISOString(),
-        };
-      } else {
-        // v1: week/day advancement
-        let { current_day, current_week } = enrollment;
-        current_day += 1;
-
-        if (current_day > program.days_per_week) {
-          current_day = 1;
-          current_week += 1;
-        }
-
-        const status = current_week > program.duration_weeks ? 'completed' : 'active';
-
-        updateFields = {
-          completed_workouts: completedWorkouts,
-          progression_state: newState,
-          current_day,
-          current_week,
-          status,
-          updated_at: new Date().toISOString(),
-        };
-      }
-
-      await db.entities.ProgramEnrollment.update(enrollmentId, updateFields);
+    mutationFn: async (args) => {
+      const result = await creditProgramWorkout({ ...args, timezone: profile?.timezone });
 
       // Immediately invalidate all relevant queries to ensure UI updates
       await Promise.all([
@@ -384,11 +412,7 @@ export function useLogProgramWorkout() {
         queryClient.invalidateQueries({ queryKey: ['schedule'] }),
       ]);
 
-      return {
-        status: updateFields.status,
-        current_week: updateFields.current_week || updateFields.current_cycle,
-        current_day: updateFields.current_day || updateFields.current_day_index,
-      };
+      return result;
     },
     onSuccess: () => {
       invalidatePrograms(queryClient);

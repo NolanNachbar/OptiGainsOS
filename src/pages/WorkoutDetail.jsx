@@ -7,6 +7,7 @@ import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNote
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
+import { resolveProgramLibraryWorkoutId } from "@/lib/resolveProgramLibraryWorkoutId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -905,29 +906,10 @@ export default function WorkoutDetail() {
       let realWorkoutId = workout.id;
 
       if (workout._isProgramWorkout) {
-        // Prefer source_workout_id (set when a library workout was dragged into the program)
-        if (programWorkout?.source_workout_id) {
-          realWorkoutId = programWorkout.source_workout_id;
-        } else {
-          // Search for existing workout by title match (reuse across cycles)
-          const allUserWorkouts = await db.entities.Workout.filter({ created_by: user.id });
-          const existingWorkout = allUserWorkouts.find(w => w.title === workout.title);
-
-          if (existingWorkout) {
-            realWorkoutId = existingWorkout.id;
-          } else {
-            // Create a new workout only if no match exists
-            const created = await db.entities.Workout.create({
-              title: workout.title,
-              description: workout.description || '',
-              focus: workout.focus || 'strength',
-              duration_minutes: workout.duration_minutes || 45,
-              exercises: workout.exercises || [],
-              created_by: user.id,
-            });
-            realWorkoutId = created.id;
-          }
-        }
+        realWorkoutId = await resolveProgramLibraryWorkoutId(
+          { ...workout, source_workout_id: programWorkout?.source_workout_id },
+          user.id
+        );
       }
 
       // Check for existing schedule entry for today

@@ -56,6 +56,14 @@ Each one follows his real daily loop across screens and days, not one screen:
   Start Program from the real program page → `program_enrollments.started_at`
   is the local date, and Today shows Day 1. Verified to fail when the enroll
   default / hook stamp the date with `toISOString()`.
+- `journey-enroll-supersedes-active`: enroll in program A then B through the
+  real program page → A is `paused`, B the only `active`, Today shows B's Day 1;
+  and with two actives seeded, Today picks the most recently started. Verified
+  to fail when `useEnrollInProgram` leaves the old enrollment active.
+- `journey-autofinish-credits-program`: a program-day session seeded past the
+  3h silence rule → the global sweep logs it with `program_id` / `enrollment_id`
+  / `workout_id` and the enrollment records cycle 1 / day 1 and advances to day
+  2, same as Finish. Verified to fail when auto-finish skips program crediting.
 
 Day boundaries: backdate the rows in the DB (delete + reinsert with the same
 id; the BEFORE UPDATE trigger re-stamps updated_at). Don't move the browser

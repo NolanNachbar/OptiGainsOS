@@ -288,7 +288,12 @@ export default function Today() {
   // progression instead of being logged as an ad-hoc quick workout.
   const { enrollments, isLoading: enrollmentsLoading, isError: enrollmentsError } = useEnrollments();
   const activeEnrollment = useMemo(
-    () => enrollments.find((e) => e.status === "active") || null,
+    // Deterministic if two are ever active: the most recently started wins.
+    () => [...enrollments]
+      .filter((e) => e.status === "active")
+      .sort((a, b) =>
+        String(b.started_at || "").localeCompare(String(a.started_at || ""))
+        || String(b.created_at || "").localeCompare(String(a.created_at || "")))[0] || null,
     [enrollments]
   );
   const todayProgramWorkout = useMemo(() => {

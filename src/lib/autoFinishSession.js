@@ -1,4 +1,6 @@
 import { db, supabase } from "@/api/supabaseClient";
+import { creditProgramWorkout } from "@/hooks/useProgramQueries";
+import { resolveProgramLibraryWorkoutId } from "@/lib/resolveProgramLibraryWorkoutId";
 import { clearDraft, preferDraft } from "@/lib/workoutDraft";
 import {
   buildWorkoutLogFromSession,
@@ -68,6 +70,27 @@ export async function autoFinishStaleSession(session, timezone) {
 
     const payload = buildWorkoutLogFromSession(merged, timezone);
 
+    // A program-day session links to its enrollment and program_workout, the
+    // same linkage the Finish button writes (program_id, library workout_id).
+    let programCtx = null;
+    if (session.program_workout_id && session.enrollment_id) {
+      try {
+        const [enrollment, programWorkout] = await Promise.all([
+          db.entities.ProgramEnrollment.get(session.enrollment_id),
+          db.entities.ProgramWorkout.get(session.program_workout_id),
+        ]);
+        if (enrollment && programWorkout) {
+          payload.program_id = enrollment.program_id;
+          payload.enrollment_id = enrollment.id;
+          payload.workout_id = await resolveProgramLibraryWorkoutId(programWorkout, session.created_by);
+          programCtx = { enrollment, programWorkout };
+        }
+      } catch (error) {
+        console.error("Auto-finish aborted, could not resolve the program day:", error);
+        return false;
+      }
+    }
+
     try {
       const sameDay = await db.entities.WorkoutLog.filter({
         created_by: payload.created_by,
@@ -78,6 +101,27 @@ export async function autoFinishStaleSession(session, timezone) {
     } catch (error) {
       console.error("Auto-finish aborted, workout_log write failed:", error);
       return false;
+    }
+
+    // Credit the program exactly like Finish (same function). Log first,
+    // credit second, status last: a failure here leaves the session
+    // in_progress, and the retry is safe (the log is deduped by content, and
+    // creditProgramWorkout ignores a day already marked complete).
+    if (programCtx) {
+      try {
+        // Re-read: the enrollment may have advanced since the first read.
+        const enrollment = await db.entities.ProgramEnrollment.get(session.enrollment_id);
+        await creditProgramWorkout({
+          enrollmentId: enrollment.id,
+          programWorkoutId: programCtx.programWorkout.id,
+          exerciseLogs: payload.exercises,
+          enrollment,
+          timezone,
+        });
+      } catch (error) {
+        console.error("Auto-finish wrote the log but could not credit the program:", error);
+        return false;
+      }
     }
 
     const { error } = await supabase

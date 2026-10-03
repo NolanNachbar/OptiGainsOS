@@ -17,9 +17,9 @@ import { AUTO_FINISH_STALE_MS } from "@/lib/workoutSessionFlag";
  *   created_at        last change + AUTO_FINISH_STALE_MS (the moment the
  *                     session went stale), capped at now
  *
- * program_id is absent from workout_sessions, so it stays null unless a caller
- * resolves it from the enrollment. That is the same null the 98 existing rows
- * carry; auto-finish does not make the linkage gap worse, and does not fix it.
+ * program_id is absent from workout_sessions, so it stays null here;
+ * autoFinishStaleSession fills program_id / workout_id from the enrollment for
+ * program-day sessions.
  */
 export function buildWorkoutLogFromSession(session, timezone) {
   if (!session) return null;
