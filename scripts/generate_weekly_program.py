@@ -38,6 +38,7 @@ except ImportError:
     pass
 
 import numpy as np
+from engine.program_guard      import program_is_engine_owned, NO_ENGINE_TAG
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
 from engine.session_generator  import (generate as gen_session, get_split, build_title,
@@ -813,7 +814,8 @@ def main():
 
     # ── Enrollment ────────────────────────────────────────────────────────────
     enrollments = sb_get("program_enrollments", {
-        "select": "*", "status": "eq.active", "limit": "1",
+        "select": "*", "status": "eq.active",
+        "order": "started_at.desc.nullslast", "limit": "1",
         "created_by": f"eq.{USER_ID}",
     })
     if not enrollments:
@@ -848,6 +850,14 @@ def main():
 
     enrollment   = enrollments[0]
     program_id   = enrollment["program_id"]
+    # Programs tagged "no-engine" are hand-authored: every program_workouts /
+    # program_workouts_pending write below (and the library write-through derived
+    # from the engine's days) is skipped. State, learners and the prescription
+    # still run normally.
+    engine_owns_program = program_is_engine_owned(sb_get, program_id)
+    if not engine_owns_program:
+        print(f"  Program {program_id} is tagged '{NO_ENGINE_TAG}': engine will NOT "
+              f"write program_workouts / program_workouts_pending for it.")
     current_week = int(enrollment.get("current_week") or 1)
     cycle_length = int(enrollment.get("days_per_week") or 7)
 
@@ -1623,7 +1633,7 @@ def main():
             title, pw_row["focus"], exercises, cardio,
             description=f"Engine-generated {split} session, auto-saved from the weekly program.",
         )
-        if ok and lib_payload:
+        if ok and lib_payload and engine_owns_program:
             _key = title.strip().lower()
             _existing = library_ids.get(_key)
             if _existing:
@@ -1655,7 +1665,10 @@ def main():
     # on Today and Schedule after auto-apply had already made the week live, and
     # approving re-upserted every day, trained ones included. Clear any row a
     # previous run left so nothing reads a stale staged week.
-    sb_delete("program_workouts_pending", {"program_id": f"eq.{program_id}"})
+    if engine_owns_program:
+        sb_delete("program_workouts_pending", {"program_id": f"eq.{program_id}"})
+    else:
+        print(f"  SKIP program_workouts_pending delete ({NO_ENGINE_TAG} program)")
 
     # Carry-forward: program_workouts is what mpc_prescriber.py and
     # compute_athlete_state.py read for TODAY, keyed by scheduled_date. A date
@@ -1704,7 +1717,10 @@ def main():
 
     applied, carried, skipped = 0, 0, 0
     _fresh_by_date = {r["scheduled_date"]: r for r in pending_rows}
-    for sim_day in days_to_generate:
+    if not engine_owns_program:
+        print(f"  SKIP auto-apply + carry-forward ({NO_ENGINE_TAG} program): "
+              f"0 program_workouts written")
+    for sim_day in (days_to_generate if engine_owns_program else []):
         iso = sim_day.isoformat()
         if iso in _touched:
             skipped += 1

@@ -47,6 +47,7 @@ try:
 except ImportError:
     pass
 
+from engine.program_guard import program_is_engine_owned, NO_ENGINE_TAG
 import numpy as np
 from engine.banister_kalman    import BanisterKalman
 from engine.guardrail          import SystemGuardrail
@@ -738,7 +739,7 @@ def main():
     # to classify the split independently, from different log views, and could fight).
     from engine.session_generator import split_from_title
     _today_plan = sb_get("program_workouts", {
-        "select": "cardio_sessions,title,exercises", "created_by": f"eq.{USER_ID}",
+        "select": "program_id,cardio_sessions,title,exercises", "created_by": f"eq.{USER_ID}",
         "scheduled_date": f"eq.{TODAY}", "limit": "1"})
     _today_run_slot = None
     _today_split = None
@@ -891,9 +892,14 @@ def main():
             # second enrollment also has a row for TODAY, and a date-only filter
             # would rewrite that one too.
             _pw_filt = {"scheduled_date": f"eq.{TODAY}"}
-            if _today_plan[0].get("program_id"):
-                _pw_filt["program_id"] = f"eq.{_today_plan[0]['program_id']}"
-            if sb_patch("program_workouts", _pw_filt,
+            _pw_pid = _today_plan[0].get("program_id")
+            if _pw_pid:
+                _pw_filt["program_id"] = f"eq.{_pw_pid}"
+            # Programs tagged "no-engine" are hand-authored: never rewrite their days.
+            if not program_is_engine_owned(sb_get, _pw_pid):
+                print(f"   SKIP program_workouts re-plan write: program {_pw_pid} "
+                      f"is tagged '{NO_ENGINE_TAG}'")
+            elif sb_patch("program_workouts", _pw_filt,
                         {"title": _new_title, "exercises": _pw_ex}):
                 print(f"   Re-planned today's program row → '{_new_title}' "
                       f"({len(_pw_ex)} exercises)")
