@@ -347,8 +347,22 @@ export default function ExerciseCard({
     }
   }, [showCues, exercise.name]);
 
-  // Handle set completed
+  // Top sets must carry an RIR: e1RM treats a blank RIR as 0, so an un-RIR'd
+  // top single reads as a max effort and stalls load progression. The target
+  // is never pre-filled, so completing a blank top set routes to the RIR
+  // input instead. RIR 0 is a real value (null-check, not truthiness).
+  const [rirRequiredIndex, setRirRequiredIndex] = useState(null);
   const handleSetCompleted = (setIndex, completed) => {
+    const target = exercise.sets[setIndex];
+    if (
+      completed && showRIR && target?.set_type === 'top_set'
+      && target.rir == null && target.rpe == null
+    ) {
+      setRirRequiredIndex(setIndex);
+      if (useKeypad) setActiveField({ setIndex, field: 'rir' });
+      else rirInputRefs.current[setIndex]?.focus();
+      return;
+    }
     // Sweaty-thumb guard (r1-01): a fat-fingered extra digit (1710 for 171)
     // sails past any per-field max and becomes the e1RM/PR/progression
     // baseline the moment the set is marked complete. Catch it here, once,
@@ -424,6 +438,7 @@ export default function ExerciseCard({
   };
 
   const handleRirChange = (setIndex, rir) => {
+    if (rir != null) setRirRequiredIndex((cur) => (cur === setIndex ? null : cur));
     onUpdateSet(exerciseIndex, setIndex, 'rir', rir);
 
     const set = exercise.sets[setIndex];
@@ -1220,6 +1235,12 @@ export default function ExerciseCard({
               </button>
             </div>
 
+            {rirRequiredIndex === setIndex && !set.completed && set.rir == null && (
+              <div role="alert" className="pb-1.5 pl-0.5 text-[11px] font-semibold text-warn">
+                RIR required on top sets
+              </div>
+            )}
+
             {/* Tag capture. failure_reason (miss): WHY it fell short — technical reasons
                 route to programming, "out of gas" eases the cut. sticking_point (made,
                 RIR ≤ 1): WHERE it stalled, programming only, never the cut signal. */}
@@ -1458,6 +1479,7 @@ export default function ExerciseCard({
         weightUnit={weightUnit}
         isHold={isHold}
         showRIR={showRIR}
+        rirRequired={rirRequiredIndex === activeField.setIndex}
         lastPerformance={lastPerformance}
         commitWeight={commitWeight}
         commitReps={commitReps}
@@ -1505,7 +1527,7 @@ function rirPillTint(val, active) {
 // exact same commitWeight/commitReps/commitRir functions a hardware
 // keyboard's onChange would call.
 function KeypadSheet({
-  activeField, exercise, weightUnit, isHold, showRIR, lastPerformance,
+  activeField, exercise, weightUnit, isHold, showRIR, rirRequired, lastPerformance,
   commitWeight, commitReps, commitRir, onClose, onDone, focusField,
   scrollActiveIntoView,
 }) {
@@ -1635,7 +1657,7 @@ function KeypadSheet({
   const label =
     field === "weight" ? `Set ${set?.set_number ?? ""} · Weight`
     : field === "reps" ? `Set ${set?.set_number ?? ""} · ${isHold ? "Sec" : "Reps"}`
-    : `Set ${set?.set_number ?? ""} · RIR`;
+    : `Set ${set?.set_number ?? ""} · RIR${rirRequired ? " · required on top sets" : ""}`;
 
   const prevText =
     field === "weight" && lastPerformance?.lastWeight

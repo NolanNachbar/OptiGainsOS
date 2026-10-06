@@ -1348,8 +1348,22 @@ export default function WorkoutDetail() {
     })));
   };
 
+  // Completed top sets with no RIR (e.g. checked off via "Complete All" or
+  // logged before this rule). Flagged once on Finish, never a hard block, so
+  // older data can't trap a workout.
+  const topSetsMissingRir = () => exerciseLogs.flatMap(ex => (ex.sets || [])
+    .filter(s => s.completed && s.set_type === 'top_set' && s.rir == null && s.rpe == null)
+    .map(s => `${ex.name} set ${s.set_number}`));
+  const rirFlaggedRef = useRef(false);
+
   const handleSaveWorkoutLog = () => {
     if (isTutorialDemo) { navigate('/dashboard'); return; }
+    const missingRir = profile?.show_rir ?? true ? topSetsMissingRir() : [];
+    if (missingRir.length && !rirFlaggedRef.current) {
+      rirFlaggedRef.current = true;
+      toast.warning(`Top set missing RIR: ${missingRir.join(', ')}. Add it, or tap Finish again to save as-is.`, { duration: 6000 });
+      return;
+    }
     if (hasIncompleteSets()) {
       setShowIncompletePrompt(true);
       return;
