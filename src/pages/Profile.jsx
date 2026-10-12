@@ -17,7 +17,7 @@ import { getBestTDEE, calculateMacroSplit } from "@/utils/coachingUtils";
 import { MacroGoalsEditor } from "@/components/nutrition/MacroGoalsEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator } from "lucide-react";
+import { Save, Trash2, AlertTriangle, Flame, User, LogOut, HelpCircle, Bell, Database, ChevronRight, ChevronLeft, Calculator, Dumbbell } from "lucide-react";
 import { ProfileStatsCard } from "@/components/ui/system";
 import { deriveInitials } from "@/lib/initials";
 import DataExport from "@/components/DataExport";
@@ -56,6 +56,16 @@ function formatVol(n) {
   if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
   if (v >= 1000) return `${Math.round(v / 1000)}k`;
   return `${v}`;
+}
+
+// goal_priorities default when the profile has none yet -- same values
+// scripts/engine/allocator.default_goal_priorities() falls back to, so a
+// freshly-loaded slider set starts exactly where the engine already is.
+function defaultGoalPriorities(trainingPhase) {
+  if ((trainingPhase || "").toLowerCase() === "buds_prep") {
+    return { strength: 35, hypertrophy: 25, pst: 40 };
+  }
+  return { hypertrophy: 40, strength: 30, pst: 30 };
 }
 
 // Coerce the dirty-comparison-relevant numeric fields so string/number drift never reads as dirty.
@@ -145,6 +155,10 @@ export default function Profile({ hideHeader }) {
     checkin_day: 0,
     display_name: '',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // Relative sliders (not required to sum to 100 -- normalized on save).
+    // iosaud-02: the engine has read goal_priorities for a while
+    // (allocator.default_goal_priorities), there was just never a UI writer.
+    goal_priorities: defaultGoalPriorities(),
   });
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
@@ -181,6 +195,16 @@ export default function Profile({ hideHeader }) {
       checkin_day:  p.checkin_day  ?? 0,
       display_name: p.display_name || '',
       timezone:     p.timezone     || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      // Stored as 0-1 floats (allocator.goal_priorities); sliders show 0-100 for
+      // a nicer drag range. Falls back to the engine's own default so a user who's
+      // never touched this sees sliders that match what's already driving their plan.
+      goal_priorities: p.goal_priorities
+        ? {
+            strength:    Math.round((p.goal_priorities.strength ?? 0.3) * 100),
+            hypertrophy: Math.round((p.goal_priorities.hypertrophy ?? 0.4) * 100),
+            pst:         Math.round((p.goal_priorities.pst ?? 0.3) * 100),
+          }
+        : defaultGoalPriorities(p.training_phase),
     };
     setFormData(initial);
     savedFormDataRef.current = structuredClone(normalizeFormData(initial));
@@ -228,7 +252,7 @@ export default function Profile({ hideHeader }) {
   // `!onMobileHub` guard keeps the coral bar off a fresh hub load even before
   // the dirty baseline settles.
   const editableSectionOpen =
-    !onMobileHub && ((resolvedSection === 'identity' || resolvedSection === 'body') || hideHeader);
+    !onMobileHub && ((resolvedSection === 'identity' || resolvedSection === 'body' || resolvedSection === 'training') || hideHeader);
   // Render only after the dirty baseline has been synced (baselineSyncedRef is
   // gated inside `isDirty`, which returns false until then) AND a real field
   // change has flipped isDirty — never on the initial settle.
@@ -295,6 +319,20 @@ export default function Profile({ hideHeader }) {
     if (cleaned.activity_level === '') delete cleaned.activity_level;
     if (cleaned.current_weight === '') delete cleaned.current_weight;
 
+    // Normalize the 0-100 sliders to the 0-1 weights allocator.goal_weights
+    // expects, summing to 1.0 regardless of what the raw slider values add up
+    // to (the defaults already sum to 100, but a user dragging just one
+    // slider shouldn't have to rebalance the other two by hand).
+    const gp = cleaned.goal_priorities || {};
+    const gpSum = (gp.strength || 0) + (gp.hypertrophy || 0) + (gp.pst || 0);
+    cleaned.goal_priorities = gpSum > 0
+      ? {
+          strength:    Math.round((gp.strength    / gpSum) * 1000) / 1000,
+          hypertrophy: Math.round((gp.hypertrophy  / gpSum) * 1000) / 1000,
+          pst:         Math.round((gp.pst          / gpSum) * 1000) / 1000,
+        }
+      : defaultGoalPriorities();
+
     doSubmit(cleaned);
   };
 
@@ -311,6 +349,7 @@ export default function Profile({ hideHeader }) {
   const NAV = [
     { id: 'identity', label: 'Identity',        icon: User },
     { id: 'body',     label: 'Body & Nutrition', icon: Flame },
+    { id: 'training', label: 'Training Focus',  icon: Dumbbell },
     { id: 'settings', label: 'Settings',         icon: Database },
   ];
 
@@ -478,6 +517,7 @@ export default function Profile({ hideHeader }) {
                 <p className="text-[13px] text-ink-muted mt-0.5">
                   {resolvedSection === 'identity' ? 'Your account details' :
                   resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
+                  resolvedSection === 'training' ? 'What the adaptive engine optimizes for' :
                                                     'Notifications, integrations, and account actions'}
                 </p>
               </div>
@@ -819,6 +859,64 @@ export default function Profile({ hideHeader }) {
                 </CardContent>
               </Card>
           </div>{/* end body section */}
+
+          {/* ── TRAINING FOCUS SECTION ──
+              iosaud-02: the engine has read goal_priorities for a while
+              (allocator.default_goal_priorities / goal_weights) to split the
+              weekly set budget across strength / hypertrophy / pst; there was
+              no UI anywhere that wrote to it, so the split could never
+              actually be changed. These three sliders are that write path. */}
+          <div className={sectionClass('training')}>
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <SectionHeader icon={Dumbbell} title="Training Focus" />
+                  <p className="text-sm text-ink-muted mb-4">
+                    Relative weight only — these don't need to add to 100. Raise one
+                    to pull more of your weekly sets toward it; the plan updates on
+                    your next generated week.
+                  </p>
+                  <div className="space-y-5">
+                    {[
+                      { key: 'strength',    label: 'Strength',   hint: 'Bench / squat / deadlift numbers' },
+                      { key: 'hypertrophy', label: 'Hypertrophy', hint: 'Size — accessory volume' },
+                      { key: 'pst',         label: 'PST / Conditioning', hint: 'Push-ups, sit-ups, pull-ups, running' },
+                    ].map(({ key, label, hint }) => (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1">
+                          <Label>{label}</Label>
+                          <span className="text-sm font-semibold text-ink tabular-nums">
+                            {formData.goal_priorities?.[key] ?? 0}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={formData.goal_priorities?.[key] ?? 0}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            goal_priorities: { ...formData.goal_priorities, [key]: parseInt(e.target.value) || 0 },
+                          })}
+                          className="w-full accent-brand"
+                          aria-label={`${label} priority`}
+                        />
+                        <p className="text-xs text-ink-muted mt-1">{hint}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, goal_priorities: defaultGoalPriorities(profile?.training_phase) })}
+                    >
+                      Reset to default
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+          </div>{/* end training section */}
 
           {/* Spacer for the sticky save bar — reserves the bar's body (~64px)
               PLUS its bottom offset from the same --floating-chrome-bottom token
