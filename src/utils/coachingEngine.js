@@ -114,16 +114,28 @@ export function getPreSessionInsight(workoutLogs) {
       ? key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       : key;
 
-    // Already near failure consistently — potential deload
+    // Already near failure consistently — potential deload, but ONLY if
+    // performance is actually declining. RIR 0 alone is not a stall signal:
+    // accessories are deliberately trained to failure by design
+    // (Science-Unified.md:122, athlete_profile.ACCESSORY_RIR_TARGET=0), so a
+    // RIR-0 average on accessory work is the expected, successful case, not
+    // a warning. Mirror strength_progression.py's own rule for the
+    // competition lifts: only flag a deload when the e1RM trend itself is
+    // dropping, not merely when the lifter is pushing to failure as intended.
     if (avgRirLast3 < 1 && prev.length >= 3) {
-      candidates.push({
-        exerciseName,
-        currentWeight,
-        suggestedWeight: roundWeight(currentWeight * 0.9),
-        action: 'deload',
-        message: `${exerciseName}: last ${prev.length} sessions averaged RIR ${avgRirLast3.toFixed(1)}. Deload weight: ${roundWeight(currentWeight * 0.9)}.`,
-        priority: 3,
-      });
+      const e1rmStart = prev[0].e1rm;
+      const e1rmEnd = prev[prev.length - 1].e1rm;
+      const e1rmDeclining = e1rmStart > 0 && (e1rmEnd - e1rmStart) / e1rmStart < -0.03;
+      if (e1rmDeclining) {
+        candidates.push({
+          exerciseName,
+          currentWeight,
+          suggestedWeight: roundWeight(currentWeight * 0.9),
+          action: 'deload',
+          message: `${exerciseName}: RIR ${avgRirLast3.toFixed(1)} and e1RM trending down over ${prev.length} sessions. Deload weight: ${roundWeight(currentWeight * 0.9)}.`,
+          priority: 3,
+        });
+      }
       continue;
     }
 
