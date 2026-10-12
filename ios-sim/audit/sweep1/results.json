@@ -1,0 +1,28 @@
+[
+  {
+    "i": 0,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 1,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 2,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 3,
+    "kind": "dump",
+    "ok": true
+  },
+  {
+    "i": 4,
+    "kind": "login",
+    "ok": false,
+    "error": "native element not found: Email"
+  }
+]

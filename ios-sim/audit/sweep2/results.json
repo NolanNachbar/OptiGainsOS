@@ -1,0 +1,198 @@
+[
+  {
+    "i": 0,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 1,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 2,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 3,
+    "kind": "dump",
+    "ok": true
+  },
+  {
+    "i": 4,
+    "kind": "login",
+    "ok": false,
+    "error": "native element not found: Email"
+  },
+  {
+    "i": 5,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 6,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 7,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 8,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 9,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 10,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 11,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 12,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 13,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 14,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 15,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 16,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 17,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 18,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 19,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 20,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 21,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 22,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 23,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 24,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 25,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 26,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 27,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 28,
+    "kind": "dump",
+    "ok": true
+  },
+  {
+    "i": 29,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 30,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 31,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 32,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 33,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 34,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 35,
+    "kind": "dump",
+    "ok": true
+  },
+  {
+    "i": 36,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 37,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 38,
+    "kind": "shot",
+    "ok": true
+  }
+]

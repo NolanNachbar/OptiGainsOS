@@ -1,0 +1,27 @@
+[
+  {
+    "idea": "A training-focus picker in Profile (preset or 3-slider: Powerlifting / Bodybuilding / Conditioning) that writes training_phase and/or goal_priorities directly.",
+    "moment": "Tried to find any way to tell the engine 'shift toward hypertrophy now' and found none anywhere in the app.",
+    "howOften": "Likely every phase change, i.e. every few months, but currently impossible at any frequency."
+  },
+  {
+    "idea": "Keep the set-entry confirm button in the same screen position (right column) for RIR as for weight/reps, instead of moving to a full-width bottom button.",
+    "moment": "Advancing from the reps keypad to the RIR pill screen mid-flow.",
+    "howOften": "Every logged set with RIR shown, i.e. most sets on most sessions."
+  },
+  {
+    "idea": "Let a logged set be edited for a few seconds after a RIR-pill tap commits it, instead of instant-commit-and-close.",
+    "moment": "Realized a mis-tapped RIR pill (adjacent pill, sweaty/shaky post-set) has no visible undo path from the sheet itself.",
+    "howOften": "Rare per session, but costly when it happens given the already-confirmed 'no undo on set delete' finding from the prior overnight run."
+  },
+  {
+    "idea": "Surface the paused/resumable second program (e.g. 'Strength + BUD/S Conditioning') with a clearer signal of what happens to the currently active program if you hit Resume on it.",
+    "moment": "Opened a paused program's detail page and found a full 'Resume' CTA sitting right next to an unrelated active program, with no visible explanation of what resuming does to the other one.",
+    "howOften": "Whenever more than one program exists, which this account already has."
+  },
+  {
+    "idea": "A lightweight way to compute (or fake, for test purposes) athlete_state for a non-primary account, so future audits/clones aren't permanently stuck on 'No analysis yet' for the State/Insights tabs.",
+    "moment": "Every athlete_state-dependent screen on the fresh clone read empty, even with 129 real cloned workouts underneath it.",
+    "howOften": "Every future audit pass that wants to visually verify anything downstream of the daily engine run."
+  }
+]

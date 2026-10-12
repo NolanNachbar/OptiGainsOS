@@ -1,0 +1,8 @@
+[
+  { "goto": "/quick-workout" },
+  { "wait": 2500 },
+  { "tapText": "Bench Press" },
+  { "wait": 1500 },
+  { "shot": "exercise-added" },
+  { "dump": "exercise-added" }
+]
