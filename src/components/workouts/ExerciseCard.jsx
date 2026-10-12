@@ -1647,11 +1647,15 @@ function KeypadSheet({
   };
 
   const pickRir = (val) => {
-    commitRir(setIndex, String(val));
-    // RIR is always the last field in fieldOrder when it's shown, so
-    // tapping a pill both sets the value and finishes the set.
-    onClose();
-    onDone(setIndex);
+    // Mirrors pressDigit: fills the buffer/commits the value, same as typing
+    // a digit for weight/reps. It does NOT close the sheet or finish the set
+    // on its own anymore -- that was the inconsistency (a pill tap used to
+    // commit-and-finish in one tap, unlike weight/reps needing an explicit
+    // Next/Done). Finishing now always goes through the same Done button.
+    const str = String(val);
+    setBuffer(str);
+    setFresh(false);
+    commitRir(setIndex, str);
   };
 
   const label =
@@ -1666,7 +1670,10 @@ function KeypadSheet({
       ? `Prev ${lastPerformance.lastReps}`
       : null;
 
-  const currentRir = set?.rir != null ? set.rir : (set?.rpe != null ? 10 - set.rpe : null);
+  // Driven off the same `buffer` the header number shows (not `set.rir` directly), so a
+  // pill tap highlights immediately like a typed digit does, without waiting on the
+  // commit round-trip through the parent's state.
+  const currentRir = buffer !== "" ? Number(buffer) : null;
 
   const key = "min-h-[52px] rounded-xl bg-[var(--key-surface)] text-[var(--key-text)] text-xl font-bold flex items-center justify-center active:bg-[var(--key-surface-active)] touch-manipulation select-none";
   const stop = (e) => e.preventDefault();
@@ -1698,8 +1705,13 @@ function KeypadSheet({
       </div>
 
       {field === "rir" ? (
-        <div className="px-4 pb-4 space-y-1.5">
-          <div className="flex gap-1.5">
+        // Same outer grid-cols-4 shape as weight/reps below: a col-span-3 input
+        // area on the left, a col-span-1 confirm button on the right, in the
+        // SAME position every field uses. A pill tap now only fills the buffer
+        // (like a digit) -- it no longer commits-and-finishes the set by
+        // itself, so the confirm step is consistent across all three fields.
+        <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
+          <div className="col-span-3 flex gap-1.5">
             {[0, 1, 2, 3, 4, 5, 6].map((v) => (
               <button
                 key={v}
@@ -1713,18 +1725,19 @@ function KeypadSheet({
               </button>
             ))}
           </div>
-          {/* A pill tap both sets RIR and finishes the set (it's always the
-              last field), but the set can also be finished without picking
-              one -- RIR is optional data, not a gate on completion. */}
-          <button
-            type="button"
-            onPointerDown={stop}
-            onClick={goNext}
-            aria-label="Done, mark set complete"
-            className="w-full min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
-          >
-            Done ✓
-          </button>
+          <div className="col-span-1 flex flex-col gap-1.5">
+            {/* RIR is optional data, not a gate on completion -- Done still
+                works with no pill picked. */}
+            <button
+              type="button"
+              onPointerDown={stop}
+              onClick={goNext}
+              aria-label="Done, mark set complete"
+              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+            >
+              Done ✓
+            </button>
+          </div>
         </div>
       ) : (
         <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
