@@ -1,0 +1,6 @@
+[
+  { "goto": "/" },
+  { "wait": 4000 },
+  { "shot": "landing" },
+  { "dump": "landing" }
+]

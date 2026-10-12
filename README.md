@@ -21,20 +21,22 @@ debugging detour. Every table is scoped by a `created_by` UUID.
 |---|---|---|
 | `nvtnachbar@gmail.com` | `169d2f0b-cf5a-44fb-8551-845004725a26` | **The real athlete.** All live data. |
 | `athlete@local.test` | `5ec4eebf-ae62-4f3f-9c1d-f44f92716bc8` | Test fixture. Local dev only. |
+| `optigains-sim-test@example.invalid` | see `auth.users` | **Hosted test clone** for `ios-sim`. Login: password `OptiGainsSimTest_2026!`. Created/refreshed by `ios-sim/clone-test-user.mjs`, which clones the real athlete's rows under this id. Profile is overwritten to `display_name: "TEST ACCOUNT (ios-sim clone)"` so it's never mistaken for real data in the UI. |
 
 The engine (`scripts/*.py`, via the `USER_ID` GitHub secret) and the Garmin edge
 functions (via the `USER_ID` Supabase secret) both read and write **only** the
 real athlete's UUID. The test account holds a frozen snapshot from late June 2026
 and nothing writes to it any more.
 
-The trap: `athlete@local.test` holds its own byte-identical copies of the real
-account's rows — `garmin_activities` with the same Garmin `activity_id`s, and 56
-`workout_logs` rows on 56 dates that all also exist on the real account. Query
-either table without a `created_by` filter and every one of those looks like a
-duplicated workout. None of them are. The engine filters by `created_by` and
-never sees them, RLS keeps them out of the browser, and there are zero true
-duplicates within the real account (one double-submit on 2026-06-22 aside).
-Always filter by `created_by` before concluding the data is corrupt.
+The trap: `athlete@local.test` **and** `optigains-sim-test@example.invalid` both
+hold byte-identical copies of the real account's rows — `garmin_activities` with
+the same Garmin `activity_id`s, and `workout_logs` rows on dates that also exist
+on the real account. Query any of these tables without a `created_by` filter and
+every one of those looks like a duplicated workout. None of them are. The engine
+filters by `created_by` and never sees them, RLS keeps them out of the browser,
+and there are zero true duplicates within the real account (one double-submit on
+2026-06-22 aside). Always filter by `created_by` before concluding the data is
+corrupt.
 
 This keeps getting re-discovered. Details and the other closed findings are in
 `KNOWN_NON_ISSUES.md`.
