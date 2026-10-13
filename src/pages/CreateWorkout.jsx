@@ -461,18 +461,18 @@ export default function CreateWorkout() {
               last card's inputs can never scroll clear of the pinned bar, so
               they sit clipped behind it at the fold. The bar's full painted
               height is pt-3 (12px) + the 44px button + its bottom padding
-              (--dock-total-height + 16px + safe-area), so the spacer must
+              (16px + safe-area; the dock is hidden on this route), so the spacer must
               reserve that exact footprint, not a guessed ~64px, or the last
               inputs stay clipped. At lg the bar is static and needs no spacer. */}
           <div
             aria-hidden
-            className="lg:hidden h-[calc(12px+44px+var(--dock-total-height)+16px+env(safe-area-inset-bottom))]"
+            className="lg:hidden h-[calc(12px+44px+16px+env(safe-area-inset-bottom))]"
           />
 
           {/* Action row. This form runs ~1168px (well past one phone viewport),
               so on mobile the coral Save must not live only at the bottom of the
-              scroll: below lg the row is `sticky bottom-0`, pinned just above the
-              dock (--dock-clearance) with a safe-area inset, so it stays in the
+              scroll: below lg the row is `sticky bottom-0`, pinned to the
+              bottom edge (dock hidden on this route) with a safe-area inset, so it stays in the
               thumb zone while the user scrolls the long form. A glass-sheet lid +
               hairline top edge separates it from the content scrolling beneath.
               At lg it returns to static flow (no dock, plenty of width), sitting
@@ -480,7 +480,7 @@ export default function CreateWorkout() {
               sticky bar bleed to the page gutters on mobile while the lg:static
               state resets them. */}
           <div
-            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(var(--dock-total-height)+16px+env(safe-area-inset-bottom))] pt-3
+            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3
                        lg:static lg:z-auto lg:mx-0 lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:[backdrop-filter:none]"
           >
             <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
