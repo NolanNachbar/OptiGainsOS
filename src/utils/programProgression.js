@@ -247,30 +247,6 @@ export function projectProgression(exercise, totalWeeks, startingWeight) {
 }
 
 /**
- * Transfer progression state when an exercise is replaced mid-program.
- * Carries the working weight over for reference but resets session count
- * since the new exercise needs independent calibration.
- */
-export function transferProgressionState(currentState, oldExerciseName, newExerciseName) {
-  const old = currentState[oldExerciseName];
-  if (!old) return currentState;
-
-  const state = { ...currentState };
-  state[newExerciseName] = {
-    working_weight: old.working_weight,
-    last_session_date: old.last_session_date,
-    sessions_at_current_weight: 0,
-    ready_to_progress: false,
-    stalled: false,
-    stall_suggestion: null,
-    first_programmed_at: format(new Date(), 'yyyy-MM-dd'),
-    _transferred_from: oldExerciseName,
-  };
-  delete state[oldExerciseName];
-  return state;
-}
-
-/**
  * Returns true if more than half the program exercises are stalled.
  * Used to surface an advisory coaching tip — nothing is forced.
  */

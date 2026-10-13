@@ -20,7 +20,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
-import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
+import { calculateDailyTargets } from "@/utils/programProgression";
 import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getWorkoutBodyData } from "@/utils/muscleVolumeUtils";
@@ -1143,20 +1143,10 @@ export default function WorkoutDetail() {
       };
     }));
 
-    // In program mode, transfer progression state so the replacement exercise
-    // inherits the previous working weight as a starting reference.
-    if (isProgramSource && enrollment) {
-      const updatedState = transferProgressionState(
-        enrollment.progression_state || {},
-        oldName,
-        newExercise.name
-      );
-      db.entities.ProgramEnrollment.update(enrollment.id, {
-        progression_state: updatedState,
-      }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['enrollment', enrollmentId] });
-      });
-    }
+    // The swap is session-only and the replacement is seeded from its own
+    // history above. Progression state is deliberately NOT touched: moving it
+    // would delete the original's working weight for next week and hand the
+    // replacement a load from a different movement.
   };
 
   const handleStartLogging = () => {
