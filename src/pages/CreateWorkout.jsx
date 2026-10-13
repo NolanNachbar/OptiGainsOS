@@ -215,8 +215,24 @@ export default function CreateWorkout() {
 
   const overrideProgramWorkout = useOverrideProgramWorkout();
 
+  // Inline validation errors (one message per field). noValidate on the form
+  // replaces Safari's one-bubble-at-a-time "Fill out this field" with these.
+  const [errors, setErrors] = useState({});
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nextErrors = {};
+    if (!workout.title?.trim()) nextErrors.title = "Give the workout a title.";
+    if (!workout.duration_minutes) nextErrors.duration = "Enter a duration of at least 1 minute.";
+    const unnamed = isCardio ? -1 : (workout.exercises || []).findIndex((ex) => !(ex.name || "").trim());
+    if (!workout.exercises?.length) nextErrors.exercises = "Add at least one exercise.";
+    else if (unnamed !== -1) nextErrors.exercises = `Exercise ${unnamed + 1} needs a name.`;
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      const target = nextErrors.title ? "title" : nextErrors.duration ? "duration" : null;
+      if (target) document.getElementById(target)?.focus();
+      return;
+    }
     try {
       const workoutData = {
         title: workout.title,
@@ -279,7 +295,7 @@ export default function CreateWorkout() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <Card className="mb-4 md:mb-6">
             <CardHeader><CardTitle>Workout Details</CardTitle></CardHeader>
             <CardContent className="space-y-3 sm:space-y-4">
@@ -293,11 +309,13 @@ export default function CreateWorkout() {
                 <Input
                   id="title"
                   value={workout.title}
-                  onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
+                  onChange={(e) => { setWorkout({ ...workout, title: e.target.value }); if (errors.title) setErrors({ ...errors, title: undefined }); }}
                   placeholder="e.g., Upper Body Strength"
                   required
+                  aria-invalid={!!errors.title}
                   className="mt-1 h-auto py-2.5 text-[20px] font-extrabold tracking-[-0.02em]"
                 />
+                {errors.title && <p role="alert" className="mt-1 text-xs font-semibold text-bad">{errors.title}</p>}
               </div>
 
               {showDescription ? (
@@ -380,9 +398,11 @@ export default function CreateWorkout() {
                       onChange={(e) => setWorkout({ ...workout, duration_minutes: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1) })}
                       onBlur={(e) => { if (e.target.value === '') setWorkout({ ...workout, duration_minutes: 1 }); }}
                       required
+                      aria-invalid={!!errors.duration}
                       min="1"
                       className="mt-1"
                     />
+                    {errors.duration && <p role="alert" className="mt-1 text-xs font-semibold text-bad">{errors.duration}</p>}
                   </div>
                 </div>
               </div>
@@ -455,6 +475,10 @@ export default function CreateWorkout() {
               )}
             </CardContent>
           </Card>
+
+          {errors.exercises && (
+            <p role="alert" className="mb-3 text-sm font-semibold text-bad">{errors.exercises}</p>
+          )}
 
           {/* Mobile spacer: the action row below is `sticky bottom-0` and pins
               its glass lid over whatever scrolls beneath it. Without this, the
