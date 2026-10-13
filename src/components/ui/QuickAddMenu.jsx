@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain } from "lucide-react";
+import { X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain, BarChart3 } from "lucide-react";
 
 const EASE = [0.2, 0.7, 0.3, 1];
 
@@ -16,6 +16,7 @@ const actions = [
   { label: "Create Workout", icon: PenLine, path: "/create-workout", tier: "demoted" },
   { label: "Calculators", icon: Calculator, action: "calculators", tier: "demoted" },
   { label: "Stream Note", icon: Brain, action: "streamNote", tier: "demoted" },
+  { label: "Analyze", icon: BarChart3, path: "/insights", tier: "demoted" },
 ];
 
 // QuickAddMenu — the tiered quick-add menu (mobile bottom sheet / desktop
