@@ -1153,7 +1153,7 @@ const handleSaveMealTemplate = () => {
 
   const addFoodMutation = useMutation({
     mutationFn: async (data) => {
-      await db.entities.FoodEntry.create({
+      return await db.entities.FoodEntry.create({
         food_name: data.food_name,
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
@@ -1172,7 +1172,7 @@ const handleSaveMealTemplate = () => {
         eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
       });
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (created, variables) => {
       invalidateFood(queryClient);
       // A quick re-log never opened/populated the Add Food form, so there's
       // nothing to close or reset for it — closing here would dismiss the
@@ -1180,8 +1180,23 @@ const handleSaveMealTemplate = () => {
       if (!variables?.__quickRelog) {
         setShowAddDialog(false);
         resetForm();
+        toast.success("Food logged successfully!");
+        return;
       }
-      toast.success("Food logged successfully!");
+      // One tap logs instantly, so a mis-tap needs a one-tap way back.
+      toast.success(`Logged ${variables.food_name}`, {
+        closeButton: false,
+        action: created?.id
+          ? {
+              label: "Undo",
+              onClick: () => {
+                db.entities.FoodEntry.delete(created.id)
+                  .then(() => invalidateFood(queryClient))
+                  .catch(() => toast.error("Couldn't undo. Delete the entry from the list."));
+              },
+            }
+          : undefined,
+      });
     },
     onError: () => {
       toast.error("Failed to log food");
@@ -1192,8 +1207,17 @@ const handleSaveMealTemplate = () => {
   // logged straight to the current meal/date — no dialog detour through
   // selectRecentFood's form-population dance (that path is for editing the
   // portion before logging; this path is for repeating it verbatim).
+  const lastQuickRelogRef = useRef({ key: null, at: 0 });
   const quickRelogFood = (entry) => {
     if (addFoodMutation.isPending) return; // guard a double-tap duplicate
+    // The write finishes in well under a second, so isPending alone does not
+    // stop a rapid second/third tap on the same chip (three taps logged three
+    // entries). Ignore a repeat of the same entry within 1.5s; a deliberate
+    // second serving is still one more tap after that.
+    const key = entry.id || entry.food_name;
+    const now = Date.now();
+    if (lastQuickRelogRef.current.key === key && now - lastQuickRelogRef.current.at < 1500) return;
+    lastQuickRelogRef.current = { key, at: now };
     const servingStr = String(entry.serving_size || "");
     const parts = servingStr.split(' ');
     const originalAmount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
@@ -1201,7 +1225,9 @@ const handleSaveMealTemplate = () => {
     addFoodMutation.mutate({
       __quickRelog: true,
       food_name: entry.food_name,
-      meal_type: entry.meal_type,
+      // The meal for NOW, not the old entry's meal: a chicken breast eaten
+      // at lunch yesterday logged at 8:46 PM must land in dinner.
+      meal_type: getDefaultMealType(),
       serving_amount: originalAmount,
       serving_unit: originalUnit,
       serving_grams: entry.serving_grams ?? null,
@@ -2616,6 +2642,7 @@ const handleSaveMealTemplate = () => {
                   </button>
                 )}
                 <div>
+                  {!editingEntry && (<>
                   <Label htmlFor="search">Search USDA Database</Label>
                   <div className="flex gap-2 mt-1">
                     <div className="relative flex-1">
@@ -2645,6 +2672,7 @@ const handleSaveMealTemplate = () => {
                       <span className="text-xs font-medium">Scan</span>
                     </Button>
                   </div>
+                  </>)}
 
                       {/* Search results: My Foods → Generic → Branded */}
                       {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
@@ -2850,6 +2878,8 @@ const handleSaveMealTemplate = () => {
                       </div>
                     )}
 
+                    {!editingEntry && (
+                    <>
                     {/* AI estimate — describe a food when exact macros aren't in the DB */}
                     <div className="border-t border-charcoal-border pt-4">
                       <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
@@ -2883,6 +2913,8 @@ const handleSaveMealTemplate = () => {
                         <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
                       )}
                     </div>
+                    </>
+                    )}
 
                     {/* add-food-dialog-5: the AI-estimate section above already
                         opens this "alternatives to search" zone with a single
@@ -2890,6 +2922,7 @@ const handleSaveMealTemplate = () => {
                         drops its own top border so the two don't stack into a
                         double divider, spacing alone (pt-1) separates them. */}
                     <div className="pt-1">
+                      {!editingEntry && (
                       <button
                         type="button"
                         onClick={() => setManualExpanded(v => !v)}
@@ -2899,8 +2932,9 @@ const handleSaveMealTemplate = () => {
                         <span className="section-label">Manual entry</span>
                         {manualExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
                       </button>
+                      )}
 
-                      {manualExpanded && (
+                      {(manualExpanded || editingEntry) && (
                       <div className="space-y-4 pt-1">
                         <div>
                           <Label htmlFor="food_name">Food Name *</Label>
