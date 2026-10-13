@@ -985,6 +985,7 @@ export default function QuickWorkout() {
               Not yet
             </Button>
             <Button
+              variant="volt"
               className="flex-1"
               onClick={() => { setShowAllDonePrompt(false); handleSave(); }}
             >
