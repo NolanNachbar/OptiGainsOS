@@ -422,13 +422,29 @@ export function useLogProgramWorkout() {
 
 export function useUpdateEnrollmentStatus() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: ({ id, status }) =>
-      db.entities.ProgramEnrollment.update(id, {
+    mutationFn: async ({ id, status }) => {
+      const updated = await db.entities.ProgramEnrollment.update(id, {
         status,
         updated_at: new Date().toISOString(),
-      }),
+      });
+      // Resuming a program supersedes whatever is running, same as enrolling:
+      // pause every other active enrollment so exactly one program drives
+      // Today and Schedule. Done AFTER the resume lands so a failure never
+      // leaves no active program.
+      let pausedIds = [];
+      if (status === 'active' && user) {
+        const others = (await db.entities.ProgramEnrollment.filter({ created_by: user.id, status: 'active' }))
+          .filter((e) => e.id !== id);
+        await Promise.all(
+          others.map((e) => db.entities.ProgramEnrollment.update(e.id, { status: 'paused', updated_at: new Date().toISOString() }))
+        );
+        pausedIds = others.map((e) => e.program_id);
+      }
+      return { updated, pausedIds };
+    },
     onSuccess: () => {
       invalidatePrograms(queryClient);
     },

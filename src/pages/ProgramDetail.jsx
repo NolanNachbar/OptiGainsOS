@@ -196,7 +196,14 @@ export default function ProgramDetail() {
   const handleResume = () => {
     statusMutation.mutate(
       { id: enrollment.id, status: "active" },
-      { onSuccess: () => toast.success("Program resumed") }
+      {
+        onSuccess: ({ pausedIds }) =>
+          toast.success(
+            pausedIds?.length
+              ? "Program resumed. Your other active program was paused."
+              : "Program resumed"
+          ),
+      }
     );
   };
 
