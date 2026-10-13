@@ -1711,17 +1711,19 @@ function KeypadSheet({
         // (like a digit) -- it no longer commits-and-finishes the set by
         // itself, so the confirm step is consistent across all three fields.
         <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
+          {/* Six pills (0-5+), not seven: RIR 5+ earns zero stimulus credit in
+              the engine, so 6+ was a redundant value. Six fit at >=44pt wide. */}
           <div className="col-span-3 flex gap-1.5">
-            {[0, 1, 2, 3, 4, 5, 6].map((v) => (
+            {[0, 1, 2, 3, 4, 5].map((v) => (
               <button
                 key={v}
                 type="button"
                 onPointerDown={stop}
                 onClick={() => pickRir(v)}
-                aria-label={`RIR ${v === 6 ? "6+" : v}`}
-                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, currentRir === v)}`}
+                aria-label={`RIR ${v === 5 ? "5+" : v}`}
+                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v)}`}
               >
-                {v === 6 ? "6+" : v}
+                {v === 5 ? "5+" : v}
               </button>
             ))}
           </div>
