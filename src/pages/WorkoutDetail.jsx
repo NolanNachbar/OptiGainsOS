@@ -983,6 +983,19 @@ export default function WorkoutDetail() {
         return;
       }
 
+      // Recap of what was just logged (sets, volume, PRs). allWorkoutLogs is
+      // this render's snapshot, i.e. everything BEFORE this session.
+      const sm = summarizeSession(exerciseLogs, allWorkoutLogs);
+      const recapOptions = {
+        description: [
+          `${sm.sets} set${sm.sets === 1 ? "" : "s"}`,
+          `${sm.volume.toLocaleString()} ${weightUnit} volume`,
+          ...sm.prs.slice(0, 3).map((p) => `${p.exercise} ${p.weight} x ${p.reps}`),
+        ].join(" · "),
+        duration: 9000,
+      };
+      const prTitle = sm.prs.length ? ` ${sm.prs.length === 1 ? "New PR!" : `${sm.prs.length} new PRs!`}` : "";
+
       // If program mode, update progression state and advance enrollment
       if (isProgramSource && enrollment && programWorkoutId) {
         // Calculate which cycle this workout belongs to from today's schedule.
@@ -1012,7 +1025,7 @@ export default function WorkoutDetail() {
               if (result.status === 'completed') {
                 toast.success("Program completed! Congratulations!", { duration: 5000 });
               } else {
-                toast.success("Workout logged! Progression updated.");
+                toast.success(`Workout logged.${prTitle}`, recapOptions);
               }
               navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
@@ -1023,7 +1036,7 @@ export default function WorkoutDetail() {
           }
         );
       } else {
-        toast.success("Workout logged successfully!");
+        toast.success(`Workout logged.${prTitle}`, recapOptions);
         navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
       }
     },
