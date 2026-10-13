@@ -109,7 +109,11 @@ export default function ExerciseCard({
   // left the input behind the keyboard). Fallback timeout covers desktop / an
   // already-open keyboard where no resize fires.
   const handleInputFocus = (e) => {
-    e.target.select();
+    // With the custom keypad the field is never edited through the DOM
+    // selection: KeypadSheet owns a `fresh` buffer whose first key replaces the
+    // value. Selecting here only painted iOS text-selection handles over the
+    // number, so select only on the native-keyboard path.
+    if (!useKeypad) e.target.select();
     // Review r4f minor: when the custom keypad sheet is active, its own
     // effect calls scrollActiveIntoView() via requestAnimationFrame once the
     // sheet's real height is published, and that already owns positioning
@@ -795,9 +799,16 @@ export default function ExerciseCard({
                   Replace exercise
                 </button>
                 )}
-                {/* "Add notes" removed from here — the toolbar row above the
-                    exercise name already has its own Add-notes button, so
-                    this kebab entry was a duplicate (coordinator, r4f). */}
+                <button
+                  onClick={() => {
+                    setEditingNotes(true);
+                    setOpenMenu(false);
+                  }}
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Add notes
+                </button>
                 <button
                   onClick={() => {
                     setShowCues(true);
@@ -877,38 +888,11 @@ export default function ExerciseCard({
             cell. Volume/Best set stay in the vitals grid below exactly as
             before — they only exist once there's logged data, unlike Target
             which is static program info available from the first render. */}
-        <div className="flex items-center justify-between gap-2 mt-1 -ml-2">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowCues(true)}
-              aria-label="Exercise history and info"
-              className="relative h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-            >
-              <HelpCircle className="w-[18px] h-[18px]" />
-              {hasPendingNotes && (
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
-              )}
-            </button>
-            {onReplaceExercise && (
-              <button
-                type="button"
-                onClick={() => setShowReplaceDialog(true)}
-                aria-label="Swap exercise"
-                className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-              >
-                <RefreshCw className="w-[18px] h-[18px]" />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setEditingNotes(true)}
-              aria-label="Add notes"
-              className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-            >
-              <FileText className="w-[18px] h-[18px]" />
-            </button>
-          </div>
+        {/* The history/swap/notes icon row is gone: all three live in the kebab
+            ("Notes & cues", "Replace exercise", "Add notes"), so a free-mode
+            card no longer spends a 44px row on four unlabeled controls. */}
+        {vitals?.target && (
+        <div className="flex items-center gap-2 mt-1">
           {vitals?.target && (
             <div className="font-technical text-[13px] tabular-nums truncate pr-1">
               <span className="text-ink-muted">Target </span>
@@ -922,6 +906,7 @@ export default function ExerciseCard({
             </div>
           )}
         </div>
+        )}
       </CardHeader>
       <CardContent className="pt-0">
         {/* Advisory nudge, between-set coaching chip, and shot-list note all moved

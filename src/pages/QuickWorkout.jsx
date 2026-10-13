@@ -567,6 +567,8 @@ export default function QuickWorkout() {
           else navigate("/dashboard");
         }}
         onFinish={handleSave}
+        onRenameTitle={() => setEditingTitle(true)}
+        hideLayoutHeader
         isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
         weightUnit={weightUnit}
         saveFailed={saveFailed}
@@ -586,7 +588,7 @@ export default function QuickWorkout() {
       />
 
       <div
-        className={`max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6 ${
+        className={`max-w-5xl mx-auto p-4 md:p-6 pt-[calc(var(--logging-top-clearance,96px)+12px)] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6 ${
           // Empty canvas: make the body a viewport-tall flex column so the
           // add-exercise form can be pushed into the lower (thumb) third with
           // no dead void between the hero and the form. lg keeps the normal
@@ -683,21 +685,9 @@ export default function QuickWorkout() {
               </p>
             )}
           </div>
-        ) : !resumeSession ? (
-          // Default-titled session: the chrome already prints "Quick Workout" +
-          // today's date, so DON'T reprint the title here. Show only a quiet
-          // "Rename session" affordance. Gated on !resumeSession so this row
-          // doesn't bleed through the Resume scrim before the user decides.
-          <button
-            type="button"
-            aria-label="Rename session"
-            onClick={() => setEditingTitle(true)}
-            className="mb-3 lg:hidden flex items-center gap-1.5 min-h-[44px] -my-2 text-sm font-semibold text-ink-muted hover:text-ink touch-manipulation"
-          >
-            <Pencil className="w-4 h-4 shrink-0" />
-            Rename session
-          </button>
         ) : null}
+        {/* Default-titled sessions rename from the logging bar's title line
+            (WorkoutLoggingHeader onRenameTitle); no standalone row here. */}
 
         {isRunCardio && <VdotZonesCard className="mb-6" />}
 
