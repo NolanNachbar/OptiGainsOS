@@ -251,7 +251,11 @@ export default function ProgramDetail() {
 
   // Progress calculations
   const completedCount = enrollment?.completed_workouts?.length || 0;
-  const totalWorkouts = cycleLength * numCycles;
+  // Rest days are cycle slots but not workouts; counting them made the
+  // denominator (e.g. "10/91 workouts") larger than anything completable.
+  const trainingDaysPerCycle =
+    workouts.filter((w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0).length || cycleLength;
+  const totalWorkouts = trainingDaysPerCycle * numCycles;
   const progressPercent =
     totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
 
@@ -386,7 +390,7 @@ export default function ProgramDetail() {
                   )}
                   <div className="flex items-center gap-1">
                     <Dumbbell className="w-4 h-4 text-ink-muted" />
-                    {workouts.filter((w) => w.exercises?.length > 0).length} training days
+                    {trainingDaysPerCycle} training day{trainingDaysPerCycle !== 1 ? "s" : ""} per cycle
                   </div>
                 </div>
 
@@ -519,6 +523,21 @@ export default function ProgramDetail() {
                           </Button>
                         )}
                       </div>
+                    )}
+                    {showManageActions && (
+                      <p className="text-[11px] leading-relaxed text-ink-muted px-1">
+                        {(isEnrolled || enrollment?.status === "paused") && (
+                          <>
+                            <span className="font-semibold text-ink-secondary">Pause</span> keeps your progress and frees the schedule.{" "}
+                            <span className="font-semibold text-ink-secondary">Cancel</span> ends your enrollment and clears its progress.{" "}
+                          </>
+                        )}
+                        {isOwner && (
+                          <>
+                            <span className="font-semibold text-ink-secondary">Delete</span> removes the program itself.
+                          </>
+                        )}
+                      </p>
                     )}
                   </div>
                 )}

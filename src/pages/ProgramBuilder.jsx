@@ -851,7 +851,7 @@ function StepDetails({ program, setProgram, tagInput, setTagInput }) {
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="hero-metric text-4xl text-ink">{program.cycle_length * program.num_cycles}</span>
-              <span className="section-label">total training days</span>
+              <span className="section-label">total days</span>
             </div>
             <p className="text-sm text-ink-secondary mt-0.5">
               {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""}
