@@ -412,6 +412,18 @@ export default function Today() {
     return days.size;
   }, [recentLogs, weeklyTarget, activeEnrollment, weekStartStr, today]);
 
+  // A strength session logged today that is NOT tied to the active program
+  // (a Quick Workout). It rightly doesn't advance the program ring (see the
+  // comment above), but the session card says "Logged today", so the ring
+  // needs a one-line reason or the two read as contradicting each other.
+  const adHocLoggedToday = useMemo(
+    () => !!activeEnrollment && recentLogs.some(
+      (l) => l.log_date === today && Array.isArray(l.exercises) && l.exercises.length > 0
+        && l.enrollment_id !== activeEnrollment.id
+    ),
+    [recentLogs, activeEnrollment, today]
+  );
+
   // Loading/error: never show a confident "0/N" while recentLogs or
   // enrollments are still resolving, or after either failed to load — hide
   // the rings module entirely in those cases instead (see render below).
@@ -928,6 +940,11 @@ export default function Today() {
                 size={44}
               />
             </div>
+            {adHocLoggedToday && (
+              <p className="text-[11px] font-semibold text-muted-2 pt-1">
+                Today's quick workout isn't part of the program week.
+              </p>
+            )}
           </Module>
         )}
 
