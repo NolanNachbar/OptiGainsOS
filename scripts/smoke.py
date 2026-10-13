@@ -371,6 +371,25 @@ check("auto-finish writes the workout_log before flipping status",
       and _af_body.index("WorkoutLog.create") < _af_body.index('status: "completed"'),
       "autoFinishSession must create the log first, or it silently destroys sets")
 
+# Science-Unified.md: "No scheduled deloads" and bar load is never cut off a
+# performance/readiness signal -- the engine trims VOLUME. The athlete may
+# schedule a deload by hand; nothing the app computes may suggest one. Guard the
+# three user-facing surfaces that used to ("deload suggested", the coach's
+# "Deload weight" load cut, the "Deload due" chip).
+_pp_src = (SRC / "utils/programProgression.js").read_text()
+_ce_src = (SRC / "utils/coachingEngine.js").read_text()
+_as_src = (SRC / "pages/AthleteState.jsx").read_text()
+_strip_comments = lambda t: re.sub(r"//[^\n]*|/\*.*?\*/", "", t, flags=re.S)
+check("stall note never suggests a deload",
+      not re.search(r"deload", _strip_comments(_pp_src), re.I),
+      "programProgression must stay factual; deloads are the athlete's manual choice")
+check("coach never emits a deload action or cuts bar load on a declining trend",
+      "action: 'deload'" not in _ce_src and "currentWeight * 0.9" not in _ce_src,
+      "declining e1RM is an informational hold, not a load cut (spec: volume is what gets trimmed)")
+check("no automatic 'Deload due' chip",
+      "Deload due" not in _as_src,
+      "the engine does not schedule or suggest deloads")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # LIVE TIER

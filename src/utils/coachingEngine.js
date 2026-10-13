@@ -89,7 +89,7 @@ function buildExerciseHistory(workoutLogs) {
  * Phase 2: Find the single most actionable pre-session insight.
  * Returns null if nothing meaningful to say.
  *
- * { exerciseName, message, suggestedWeight, currentWeight, action: 'increase'|'hold'|'deload' }
+ * { exerciseName, message, suggestedWeight, currentWeight, action: 'increase'|'hold', trend?: 'down' }
  */
 export function getPreSessionInsight(workoutLogs) {
   const history = buildExerciseHistory(workoutLogs);
@@ -127,12 +127,17 @@ export function getPreSessionInsight(workoutLogs) {
       const e1rmEnd = prev[prev.length - 1].e1rm;
       const e1rmDeclining = e1rmStart > 0 && (e1rmEnd - e1rmStart) / e1rmStart < -0.03;
       if (e1rmDeclining) {
+        // Informational only: no bar-load cut and no deload. The spec never cuts
+        // load off a performance/readiness signal (Science-Unified.md, "Load vs
+        // volume downregulation"); volume is what the engine trims. The athlete
+        // can schedule a deload manually if they choose.
         candidates.push({
           exerciseName,
           currentWeight,
-          suggestedWeight: roundWeight(currentWeight * 0.9),
-          action: 'deload',
-          message: `${exerciseName}: RIR ${avgRirLast3.toFixed(1)} and e1RM trending down over ${prev.length} sessions. Deload weight: ${roundWeight(currentWeight * 0.9)}.`,
+          suggestedWeight: null,
+          action: 'hold',
+          trend: 'down',
+          message: `${exerciseName}: RIR ${avgRirLast3.toFixed(1)} and e1RM trending down over ${prev.length} sessions. Staying at ${currentWeight} lbs.`,
           priority: 3,
         });
       }

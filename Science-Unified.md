@@ -78,6 +78,9 @@ Substantive changes applied in this unified doc:
   "program peaks years in advance" / taper language are removed. Downregulation is
   reactive, multi-signal, multi-day, and expressed as volume. Exactly one rare
   slow-tissue backstop remains for genuine non-functional overreaching.
+  **The engine and the coach never schedule, prescribe, or suggest a deload.** The
+  athlete may still schedule one manually (e.g. a deload week in the program builder);
+  that is the athlete's choice, not an engine output, and the UI must not nudge toward it.
 
 Conflicts between the two originals, resolved (per the correction-spec table):
 
@@ -89,6 +92,16 @@ Conflicts between the two originals, resolved (per the correction-spec table):
 | Learning tool | Kalman + KL phases | Gaussian Process | Gaussian Process |
 | State estimation | 4-state EKF | 3-state DEKF | DEKF (dual filter, learnable params) |
 | Deload trigger | Hazard >= 0.8 | Mahalanobis > 2.5 | Both reactive priors; converted to volume downregulation |
+
+**Documented exception to "frequency is derived": mandatory arm/delt isolations.**
+Per-muscle frequency is a derived output for 13 of the 16 tracked muscles. Three are
+the intentional exception: `side_delts`, `triceps`, `biceps` each get one isolation
+set in every session (`athlete_profile.MANDATORY_ISOLATION_MUSCLES`), on top of the
+exercise-count target and independent of the computed weekly volume target. This is
+a deliberate, ongoing self-experiment (daily shoulders and arms at low per-session
+dose), not an engine-derived result. It is a coaching prior (`[COACH]`), owned by the
+athlete, and can be switched off by emptying that tuple. If the experiment ends, the
+three muscles revert to the derived-frequency path like the other 13.
 
 ---
 

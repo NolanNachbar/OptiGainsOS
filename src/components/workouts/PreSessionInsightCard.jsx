@@ -23,11 +23,12 @@ export default function PreSessionInsightCard({ insight, onAccept, onDismiss }) 
     onAccept?.(insight);
   };
 
-  const Icon = insight.action === 'deload' ? TrendingDown : TrendingUp;
+  const isDown = insight.trend === 'down';
+  const Icon = isDown ? TrendingDown : TrendingUp;
   // Coach is the engine's voice, not a CTA — its mark/label carry the teal
   // coach hue (matching the Engine Prescription chip in QuickWorkout), never
-  // coral. The deload trend keeps the warn hue (a real physiological signal).
-  const iconColor = insight.action === 'deload' ? 'text-warn' : 'text-teal';
+  // coral. A downward trend keeps the warn hue (a real performance signal).
+  const iconColor = isDown ? 'text-warn' : 'text-teal';
 
   return (
     <Card className="mb-4 p-4">

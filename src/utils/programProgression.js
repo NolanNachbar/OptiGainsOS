@@ -22,10 +22,11 @@ function deriveSuggestedIncrement(exercise, currentWeight) {
 }
 
 // One short factual line, only when the data says so. Callers render nothing for null.
-// Deload is suggested only after 5+ sessions at the same weight.
+// Never suggests a deload: the engine has none by design (Science-Unified.md, "No
+// scheduled deloads"); the athlete may schedule one manually if they want.
 function deriveStallSuggestion(sessionsAtWeight, weight, reps) {
   if (!(sessionsAtWeight >= STALL_THRESHOLD)) return null;
-  if (sessionsAtWeight >= 5) return `Stalled ${sessionsAtWeight} sessions \u2014 deload suggested`;
+  if (sessionsAtWeight >= 5) return `Stalled ${sessionsAtWeight} sessions at ${weight}${reps ? ` \u00d7 ${reps}` : ''}`;
   if (weight && reps) return `${sessionsAtWeight} sessions at ${weight} \u00d7 ${reps}`;
   if (weight) return `${sessionsAtWeight} sessions at ${weight}`;
   return null;
