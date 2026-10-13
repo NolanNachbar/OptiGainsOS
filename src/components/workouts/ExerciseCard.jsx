@@ -968,53 +968,6 @@ export default function ExerciseCard({
           </div>
         )}
 
-        {/* Per-exercise vitals (DESIGN.md dB .vit4): Volume vs last / Best
-            set. Only rendered cells with real data; the row itself is
-            skipped entirely when there's nothing to show. Target used to
-            live here as a third stacked cell ("TARGET" over "1 × 10") —
-            moved up onto the icon-toolbar row above (coordinator, r4f:
-            Nolan dislikes vertical stacking, and Target is static program
-            info that's available before there's any set data, unlike these
-            two, which appear only once the athlete has actually logged
-            something). vitals.target itself is unchanged (still computed
-            above) — only where it renders moved. */}
-        {(vitals?.volume || vitals?.best) && (
-          <div
-            className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mb-3 font-technical"
-            style={{ gridTemplateColumns: `repeat(${[vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
-          >
-            {vitals.volume && (
-              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
-                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
-                </div>
-                <div className="text-[11px] mt-0.5">
-                  {vitals.volume.deltaPct != null ? (
-                    <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
-                      {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
-                    </span>
-                  ) : (
-                    <span className="text-ink-muted">–</span>
-                  )}
-                  <span className="text-ink-muted"> vs last</span>
-                </div>
-              </div>
-            )}
-            {vitals.best && (
-              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
-                  {vitals.best.weight}×{vitals.best.reps}
-                </div>
-                {vitals.best.e1rm != null && (
-                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Column header */}
         <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
           <span className="pl-0.5">Set</span>
@@ -1279,6 +1232,56 @@ export default function ExerciseCard({
           <Plus className="w-4 h-4 mr-1" />
           Add Set
         </Button>
+
+        {/* Volume / Best set sit BELOW the set table now. They only exist once a
+            set is logged, so rendering them above the table made the first tick
+            shove the row being edited down by ~150px mid-set. */}
+        {/* Per-exercise vitals (DESIGN.md dB .vit4): Volume vs last / Best
+            set. Only rendered cells with real data; the row itself is
+            skipped entirely when there's nothing to show. Target used to
+            live here as a third stacked cell ("TARGET" over "1 × 10") —
+            moved up onto the icon-toolbar row above (coordinator, r4f:
+            Nolan dislikes vertical stacking, and Target is static program
+            info that's available before there's any set data, unlike these
+            two, which appear only once the athlete has actually logged
+            something). vitals.target itself is unchanged (still computed
+            above) — only where it renders moved. */}
+        {(vitals?.volume || vitals?.best) && (
+          <div
+            className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mt-3 font-technical"
+            style={{ gridTemplateColumns: `repeat(${[vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
+          >
+            {vitals.volume && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+                </div>
+                <div className="text-[11px] mt-0.5">
+                  {vitals.volume.deltaPct != null ? (
+                    <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
+                      {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
+                    </span>
+                  ) : (
+                    <span className="text-ink-muted">–</span>
+                  )}
+                  <span className="text-ink-muted"> vs last</span>
+                </div>
+              </div>
+            )}
+            {vitals.best && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.best.weight}×{vitals.best.reps}
+                </div>
+                {vitals.best.e1rm != null && (
+                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Advisory nudge, between-set coaching chip, and the shot-list note
             do NOT render inline here any more (Phase A: "none of them sit in

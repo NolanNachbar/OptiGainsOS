@@ -156,7 +156,9 @@ export function useWorkoutExercises(initialExercises = []) {
   // defaultWeight: callers already pass the athlete's last-performance /
   // insight weight; the parameter was silently dropped here, seeding every
   // first set at 0 lb.
-  const addExercise = useCallback((exerciseName, defaultWeight = 0) => {
+  // defaultReps seeds the first set the same way defaultWeight does (last
+  // session's reps), so a repeat lift is one tick instead of clear-the-0-then-type.
+  const addExercise = useCallback((exerciseName, defaultWeight = 0, defaultReps = 0) => {
     if (!exerciseName?.trim()) {
       toast.error("Please enter an exercise name");
       return false;
@@ -167,7 +169,7 @@ export function useWorkoutExercises(initialExercises = []) {
       exercise_index: exercises.length,
       sets: [{
         set_number: 1,
-        reps: 0,
+        reps: Number(defaultReps) > 0 ? Number(defaultReps) : 0,
         weight: Number(defaultWeight) || 0,
         completed: false,
       }],

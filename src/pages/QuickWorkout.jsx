@@ -255,12 +255,13 @@ export default function QuickWorkout() {
     moveExercise(Number(active.id), Number(over.id));
   };
 
-  // Wrapper for addExercise that autofills weight from last performance or insight suggestion
+  // Wrapper for addExercise that autofills weight (last performance or insight
+  // suggestion) and reps (last performance)
   const addExercise = (exerciseName) => {
     const suggestion = insightSuggestions[exerciseName.toLowerCase()];
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, exerciseName);
     const defaultWeight = suggestion || lastPerf?.lastWeight || 0;
-    return addExerciseRaw(exerciseName, defaultWeight);
+    return addExerciseRaw(exerciseName, defaultWeight, lastPerf?.lastReps || 0);
   };
 
   // Same autofill on swap: seed the replacement's load from its own history so a
