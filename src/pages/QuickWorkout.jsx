@@ -796,7 +796,8 @@ export default function QuickWorkout() {
             already prescribed loads, to avoid two coaches contradicting. Once
             exercises exist it's the full insight card with its accept/dismiss
             actions. */}
-        {!prescribed && preSessionInsight && (
+        {!prescribed && preSessionInsight &&
+          exercises.some((ex) => (ex.name || "").toLowerCase().trim() === preSessionInsight.exerciseName.toLowerCase().trim()) && (
           <PreSessionInsightCard
             insight={preSessionInsight}
             onAccept={handleInsightAccept}
