@@ -30,7 +30,7 @@ import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { getLastExercisePerformance, getExerciseE1rmHistory, summarizeSession } from "@/utils/exerciseStats";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
