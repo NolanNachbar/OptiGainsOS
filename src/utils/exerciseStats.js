@@ -120,6 +120,32 @@ export const detectPRs = (log, allPreviousLogs) => {
 };
 
 /**
+ * One-glance recap of a just-finished session: completed sets, volume, and
+ * weight PRs against everything logged before it. A first-ever lift is not a
+ * PR (nothing to beat). Only sets not explicitly marked incomplete count.
+ * @param {Array} exercises - Session exercises with sets
+ * @param {Array} previousLogs - Workout logs from before this session
+ * @returns {{ sets: number, volume: number, prs: Array<{exercise, weight, reps}> }}
+ */
+export const summarizeSession = (exercises, previousLogs) => {
+  let sets = 0;
+  let volume = 0;
+  const prs = [];
+  (exercises || []).forEach((ex) => {
+    const done = (ex.sets || []).filter((s) => s.completed !== false && (Number(s.reps) || 0) > 0);
+    if (done.length === 0) return;
+    sets += done.length;
+    volume += done.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0);
+    const top = done.reduce((best, s) => ((Number(s.weight) || 0) > (Number(best.weight) || 0) ? s : best), done[0]);
+    const prior = getExercisePR(previousLogs, ex.name);
+    if (prior.weight > 0 && (Number(top.weight) || 0) > prior.weight) {
+      prs.push({ exercise: ex.name, weight: Number(top.weight), reps: Number(top.reps) || 0 });
+    }
+  });
+  return { sets, volume: Math.round(volume), prs };
+};
+
+/**
  * Get exercise history with max weight, volume, and avg reps per session
  * @param {Array} logs - Array of workout logs
  * @param {string} exerciseName - Name of the exercise

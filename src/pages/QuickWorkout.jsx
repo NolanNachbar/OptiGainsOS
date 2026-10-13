@@ -23,7 +23,7 @@ import ExerciseCard from "@/components/workouts/ExerciseCard";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
-import { getLastExercisePerformance } from "@/utils/exerciseStats";
+import { getLastExercisePerformance, summarizeSession } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
 import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
@@ -448,7 +448,10 @@ export default function QuickWorkout() {
         notes: sessionNotes.trim() || null,
       });
 
-      return { alreadyClosed: false };
+      return {
+        alreadyClosed: false,
+        summary: { ...summarizeSession(exercises, allWorkoutLogs), minutes: Math.max(1, Math.round(durationSeconds / 60)) },
+      };
     },
     onSuccess: (result) => {
       completeSession();
@@ -459,7 +462,21 @@ export default function QuickWorkout() {
         navigate("/dashboard");
         return;
       }
-      toast.success("Workout logged successfully!");
+      const sm = result?.summary;
+      toast.success(
+        sm?.prs?.length ? `Workout logged. ${sm.prs.length === 1 ? "New PR!" : `${sm.prs.length} new PRs!`}` : "Workout logged",
+        {
+          description: sm
+            ? [
+                `${sm.sets} set${sm.sets === 1 ? "" : "s"}`,
+                `${sm.volume.toLocaleString()} ${weightUnit} volume`,
+                `${sm.minutes} min`,
+                ...sm.prs.slice(0, 3).map((p) => `${p.exercise} ${p.weight} x ${p.reps}`),
+              ].join(" · ")
+            : undefined,
+          duration: 9000,
+        }
+      );
       navigate("/dashboard");
     },
     onError: (error) => {
