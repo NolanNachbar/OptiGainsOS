@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -372,6 +373,15 @@ export default function ExerciseCard({
     // baseline the moment the set is marked complete. Catch it here, once,
     // right before it's treated as real data — not in onChange, so typing
     // isn't interrupted mid-entry. Tunable UI threshold, not engine semantics.
+    if (completed && !isHold) {
+      // A set with no reps is not a performed set: it would log 0 volume and
+      // still fire stall/progression logic. Make the missing number explicit.
+      const reps = Number(exercise.sets[setIndex]?.reps);
+      if (!Number.isFinite(reps) || reps <= 0) {
+        toast.error("Enter reps before completing the set", { id: "reps-required" });
+        return;
+      }
+    }
     if (completed) {
       const weight = exercise.sets[setIndex]?.weight;
       const lastWeight = lastPerformance?.lastWeight;
@@ -487,7 +497,10 @@ export default function ExerciseCard({
   // fires the program-mode nudge / Phase-3 coaching chip side effects).
   const commitWeight = (setIndex, raw) => {
     let next = raw === "" || raw == null ? null : parseFloat(raw);
-    if (Number.isFinite(next) && next > 2000) next = 2000;
+    if (Number.isFinite(next) && next > 2000) {
+      next = 2000;
+      toast.info(`Weight capped at 2000 ${weightUnit}`, { id: "weight-cap" });
+    }
     onUpdateSet(exerciseIndex, setIndex, 'weight', Number.isFinite(next) ? next : null);
   };
 
@@ -862,10 +875,10 @@ export default function ExerciseCard({
                       onRequestCancelWorkout();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2 border-t border-charcoal-border mt-1 pt-3"
                   >
                     <X className="w-4 h-4" />
-                    Cancel workout
+                    Cancel entire workout
                   </button>
                 )}
               </div>,
