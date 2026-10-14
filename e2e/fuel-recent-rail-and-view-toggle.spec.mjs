@@ -53,7 +53,7 @@ test('Fuel: the Recent rail re-logs with one tap, and Consumed/Remaining toggles
     await railChip.scrollIntoViewIfNeeded();
     await railChip.click();
 
-    await expect(page.getByText('Food logged successfully!')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Food logged.')).toBeVisible({ timeout: 5000 });
 
     await expect.poll(async () => {
       const { data } = await db.from('food_entries').select('id')
