@@ -1,22 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
-import { db, supabase } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
+import { toCsv, buildLiftingCsvRows, fetchAllPages } from "@/utils/workoutCsv";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 function downloadCSV(filename, rows) {
-  const csv = rows
-    .map((r) =>
-      r.map((cell) => {
-        const s = String(cell ?? "");
-        return s.includes(",") || s.includes('"') || s.includes("\n")
-          ? `"${s.replace(/"/g, '""')}"`
-          : s;
-      }).join(",")
-    )
-    .join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -29,22 +20,18 @@ const EXPORTS = [
   {
     id: "lifting",
     label: "Lifting Log",
-    description: "All workout logs with sets, reps, weight, and RIR",
+    description: "Every set: date, workout, exercise, set #, weight, reps, RIR/RPE, set type, completed, notes",
     fn: async (user) => {
+      // Paged past the 1000-row API cap, ordered by a unique tiebreaker, and
+      // scoped to the signed-in user.
       const [workoutLogs, workouts] = await Promise.all([
-        db.entities.WorkoutLog.filter({ created_by: user.id }),
-        db.entities.Workout.filter({ created_by: user.id }),
+        fetchAllPages(() => supabase.from("workout_logs").select("*").eq("created_by", user.id)
+          .order("log_date", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true })),
+        fetchAllPages(() => supabase.from("workouts").select("id,title").eq("created_by", user.id)
+          .order("id", { ascending: true })),
       ]);
       const nameMap = Object.fromEntries(workouts.map((w) => [w.id, w.title]));
-      const rows = [["date", "workout", "exercise", "set", "weight", "reps", "rir", "completed"]];
-      for (const log of [...workoutLogs].sort((a, b) => new Date(a.log_date) - new Date(b.log_date))) {
-        for (const ex of log.exercises || []) {
-          for (const s of ex.sets || []) {
-            rows.push([log.log_date, nameMap[log.workout_id] || "Quick Workout", ex.name, s.set_number, s.weight, s.reps, (s.rir ?? s.rpe) ?? "", s.completed ? "yes" : "no"]);
-          }
-        }
-      }
-      downloadCSV("lifting_log.csv", rows);
+      downloadCSV("lifting_log.csv", buildLiftingCsvRows(workoutLogs, nameMap));
     },
   },
   {
@@ -153,7 +140,9 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
       try {
         await exp.fn(user, { weightEntries, foodEntries });
         count++;
-      } catch {}
+      } catch (err) {
+        console.error(err);
+      }
     }
     toast.success(`${count} files downloaded`);
     setLoading(null);
