@@ -2,7 +2,7 @@ export default function Logo({ className = "w-16 h-16", ...props }) {
   return (
     <img
       src={`${import.meta.env.BASE_URL}optigains-logo.svg`}
-      className={className}
+      className={`brand-mark ${className}`}
       alt="OptiGains"
       {...props}
     />

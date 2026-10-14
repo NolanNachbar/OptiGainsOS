@@ -7,6 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { buildFoodExportRows, fetchAllPages, toCsv } from "@/utils/foodLog";
 
+// Export All fetches every dataset first and only then downloads the files,
+// one at a time with a pause: iOS Safari aborts an in-flight fetch ("Load
+// failed") when a download fires right before it.
+let sink = null;
+function emitCSV(filename, rows) {
+  if (sink) sink.push([filename, rows]);
+  else downloadCSV(filename, rows);
+}
+
 function downloadCSV(filename, rows) {
   const blob = new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -32,7 +41,7 @@ const EXPORTS = [
           .order("id", { ascending: true })),
       ]);
       const nameMap = Object.fromEntries(workouts.map((w) => [w.id, w.title]));
-      downloadCSV("lifting_log.csv", buildLiftingCsvRows(workoutLogs, nameMap));
+      emitCSV("lifting_log.csv", buildLiftingCsvRows(workoutLogs, nameMap));
     },
   },
   {
@@ -49,7 +58,7 @@ const EXPORTS = [
       );
       const { data: customFoods } = await supabase.from("custom_foods").select("*").eq("created_by", user.id);
       const rows = buildFoodExportRows(entries, customFoods || []);
-      downloadCSV("food_log.csv", rows);
+      emitCSV("food_log.csv", rows);
     },
   },
   {
@@ -61,7 +70,7 @@ const EXPORTS = [
       [...weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date)).forEach((e) => {
         rows.push([e.recorded_date, e.weight, e.notes || ""]);
       });
-      downloadCSV("body_weight.csv", rows);
+      emitCSV("body_weight.csv", rows);
     },
   },
   {
@@ -72,7 +81,7 @@ const EXPORTS = [
       const { data } = await supabase.from("recovery_metrics").select("*").eq("created_by", user.id).order("date");
       const rows = [["date", "source", "hrv", "sleep_min", "sleep_score", "body_battery", "resting_hr", "steps", "training_load_acute", "training_load_chronic"]];
       (data || []).forEach((r) => rows.push([r.date, r.source, r.hrv ?? "", r.sleep_duration_min ?? "", r.sleep_score ?? "", r.body_battery ?? "", r.resting_hr ?? "", r.steps ?? "", r.training_load_acute ?? "", r.training_load_chronic ?? ""]));
-      downloadCSV("recovery_metrics.csv", rows);
+      emitCSV("recovery_metrics.csv", rows);
     },
   },
   {
@@ -83,7 +92,7 @@ const EXPORTS = [
       const { data } = await supabase.from("supplement_logs").select("*").eq("created_by", user.id).order("taken_at");
       const rows = [["taken_at", "supplement", "dose", "unit", "notes"]];
       (data || []).forEach((r) => rows.push([r.taken_at, r.supplement_name, r.dose ?? "", r.unit ?? "", r.notes ?? ""]));
-      downloadCSV("supplement_log.csv", rows);
+      emitCSV("supplement_log.csv", rows);
     },
   },
   {
@@ -94,7 +103,7 @@ const EXPORTS = [
       const { data } = await supabase.from("reading_log").select("*").eq("created_by", user.id).order("created_at");
       const rows = [["title", "author", "category", "status", "rating", "started_at", "finished_at", "notes"]];
       (data || []).forEach((r) => rows.push([r.title, r.author ?? "", r.category ?? "", r.status, r.rating ?? "", r.started_at ?? "", r.finished_at ?? "", r.notes ?? ""]));
-      downloadCSV("reading_log.csv", rows);
+      emitCSV("reading_log.csv", rows);
     },
   },
   {
@@ -105,7 +114,7 @@ const EXPORTS = [
       const { data } = await supabase.from("job_applications").select("*").eq("created_by", user.id).order("date_applied");
       const rows = [["company", "role", "date_applied", "status", "notes", "next_action", "next_action_date"]];
       (data || []).forEach((r) => rows.push([r.company, r.role, r.date_applied ?? "", r.status, r.notes ?? "", r.next_action ?? "", r.next_action_date ?? ""]));
-      downloadCSV("job_applications.csv", rows);
+      emitCSV("job_applications.csv", rows);
     },
   },
   {
@@ -116,7 +125,7 @@ const EXPORTS = [
       const { data } = await supabase.from("measurements").select("*").eq("created_by", user.id).order("date");
       const rows = [["date", "chest_cm", "waist_cm", "hips_cm", "left_arm_cm", "right_arm_cm", "left_quad_cm", "right_quad_cm", "neck_cm", "notes"]];
       (data || []).forEach((r) => rows.push([r.date, r.chest_cm ?? "", r.waist_cm ?? "", r.hips_cm ?? "", r.left_arm_cm ?? "", r.right_arm_cm ?? "", r.left_quad_cm ?? "", r.right_quad_cm ?? "", r.neck_cm ?? "", r.notes ?? ""]));
-      downloadCSV("measurements.csv", rows);
+      emitCSV("measurements.csv", rows);
     },
   },
 ];
@@ -142,17 +151,25 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
   const runAll = async () => {
     setLoading("all");
     let count = 0;
-    for (const exp of EXPORTS) {
-      try {
-        await exp.fn(user, { weightEntries, foodEntries });
-        count++;
-      } catch (err) {
-        console.error(err);
-        toast.error(`${exp.label} export failed`);
+    sink = [];
+    try {
+      for (const exp of EXPORTS) {
+        try {
+          await exp.fn(user, { weightEntries, foodEntries });
+          count++;
+        } catch (err) {
+          console.error(err);
+          toast.error(`${exp.label} export failed`);
+        }
       }
-      // iOS Safari can abort the next in-flight fetch ("Load failed") when a
-      // download fires right before it; give each download a beat to settle.
-      await new Promise((r) => setTimeout(r, 500));
+      const files = sink;
+      sink = null;
+      for (const [filename, rows] of files) {
+        downloadCSV(filename, rows);
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    } finally {
+      sink = null;
     }
     toast.success(`${count} of ${EXPORTS.length} files downloaded`);
     setLoading(null);
