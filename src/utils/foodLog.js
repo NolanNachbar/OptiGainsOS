@@ -30,3 +30,54 @@ export function createTapGuard(windowMs = 800, now = () => Date.now()) {
     },
   };
 }
+
+// ── My Foods saves ─────────────────────────────────────────────────────────
+
+// Where a saved food's numbers came from. 'ai_estimate' and 'label_scan' are
+// estimates and get a quiet badge; the rest are plain.
+export const FOOD_SOURCE_LABELS = {
+  ai_estimate: "AI estimate",
+  label_scan: "Label scan",
+};
+
+const sameName = (a, b) =>
+  String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+
+const r1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
+
+const macrosDiffer = (a, b) =>
+  r1(a.calories) !== r1(b.calories) ||
+  r1(a.protein_grams) !== r1(b.protein_grams) ||
+  r1(a.carbs_grams) !== r1(b.carbs_grams) ||
+  r1(a.fats_grams) !== r1(b.fats_grams);
+
+/**
+ * Decide what an implicit "save this food to My Foods" should do.
+ *
+ *  - no same-name food            -> create
+ *  - same name, form is editing
+ *    that very saved food and its
+ *    macros were changed          -> update (an explicit edit)
+ *  - same name otherwise          -> keep (never overwrite silently)
+ *
+ * Without the "keep" branch, logging a USDA "Egg" or an AI estimate called
+ * "Chicken breast" replaced the macros of whatever was already saved under
+ * that name.
+ */
+export function planCustomFoodSave(existing, food, { activeFoodId = null } = {}) {
+  const match = (existing || []).find((f) => sameName(f.food_name, food.food_name));
+  if (!match) return { action: "create" };
+  if (activeFoodId && match.id === activeFoodId && macrosDiffer(match, food)) {
+    return { action: "update", id: match.id, match };
+  }
+  return { action: "keep", id: match.id, match };
+}
+
+/** True when a Supabase/PostgREST error is about the named column not existing. */
+export function isMissingColumnError(err, column) {
+  const msg = String(err?.message || "");
+  return (
+    msg.includes(column) &&
+    (err?.code === "PGRST204" || err?.code === "42703" || /column/i.test(msg))
+  );
+}

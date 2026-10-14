@@ -35,7 +35,7 @@ import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays, parseISO, isValid } from "date-fns";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
-import { createTapGuard } from "@/utils/foodLog";
+import { createTapGuard, planCustomFoodSave, isMissingColumnError, FOOD_SOURCE_LABELS } from "@/utils/foodLog";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -337,6 +337,9 @@ export default function FoodTracker() {
   const [estimateInput, setEstimateInput] = useState("");
   const [isEstimating, setIsEstimating] = useState(false);
   const [isEstimatedFood, setIsEstimatedFood] = useState(false);
+  // Where the form's food came from, for the custom_foods.source tag:
+  // 'ai_estimate' | 'label_scan' | 'usda' | 'barcode' | 'manual' | null.
+  const [foodSource, setFoodSource] = useState(null);
   // Quick-meal estimator (estimate-meal edge fn): a free-text or photo meal ->
   // a list of items the athlete confirms, then batch-logs. For travel/restaurants
   // where weighing each item isn't possible.
@@ -653,16 +656,31 @@ export default function FoodTracker() {
   });
 
   // Save custom food mutation (fire-and-forget)
+  // A same-name food is never silently overwritten: see planCustomFoodSave.
+  // `source` needs the custom_foods.source column; until that migration is
+  // applied the write retries without it so logging never breaks on it.
+  const sourceColumnMissingRef = useRef(false);
   const saveCustomFoodMutation = useMutation({
-    mutationFn: async (food) => {
+    mutationFn: async ({ food, activeFoodId: editingFoodId = null }) => {
       const existing = await db.entities.CustomFood.filter({ created_by: user.id });
-      const match = existing.find(
-        (f) => f.food_name.toLowerCase() === food.food_name.toLowerCase()
-      );
-      if (match) {
-        return db.entities.CustomFood.update(match.id, food);
+      const plan = planCustomFoodSave(existing, food, { activeFoodId: editingFoodId });
+      // Nothing written, so nothing for onSuccess to hang portions off.
+      if (plan.action === "keep") return null;
+      // Changing a saved food's numbers by hand makes it a manual food.
+      const row = plan.action === "update" ? { ...food, source: "manual" } : food;
+      const write = (payload) =>
+        plan.action === "update"
+          ? db.entities.CustomFood.update(plan.id, payload)
+          : db.entities.CustomFood.create({ ...payload, created_by: user.id });
+      const { source, ...withoutSource } = row;
+      if (sourceColumnMissingRef.current || !source) return write(withoutSource);
+      try {
+        return await write(row);
+      } catch (err) {
+        if (!isMissingColumnError(err, "source")) throw err;
+        sourceColumnMissingRef.current = true;
+        return write(withoutSource);
       }
-      return db.entities.CustomFood.create({ ...food, created_by: user.id });
     },
     onSuccess: (saved) => {
       invalidateCustomFoods(queryClient);
@@ -701,6 +719,9 @@ export default function FoodTracker() {
       serving_size: baseQuantityForUnit(unit),
       serving_unit: unit,
       serving_grams: foodServingSizeGrams ?? null,
+      // Null (unknown) is dropped before the write, so a form that never learned
+      // its origin doesn't stamp a source it can't back up.
+      source: foodSource,
       calories: Math.round(baseMacros.calories * scale),
       protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
@@ -769,22 +790,30 @@ export default function FoodTracker() {
           return;
         }
         let imported = 0;
+        let skipped = 0;
         for (const line of lines.slice(1)) {
           const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
           const food_name = cols[nameIdx];
           if (!food_name) continue;
-          await saveCustomFoodMutation.mutateAsync({
-            food_name,
-            calories: parseFloat(cols[calIdx]) || 0,
-            protein_grams: protIdx >= 0 ? parseFloat(cols[protIdx]) || 0 : 0,
-            carbs_grams: carbIdx >= 0 ? parseFloat(cols[carbIdx]) || 0 : 0,
-            fats_grams: fatIdx >= 0 ? parseFloat(cols[fatIdx]) || 0 : 0,
-            serving_size: 1,
-            serving_unit: unitIdx >= 0 ? cols[unitIdx] || "serving" : "serving",
+          const saved = await saveCustomFoodMutation.mutateAsync({
+            food: {
+              food_name,
+              calories: parseFloat(cols[calIdx]) || 0,
+              protein_grams: protIdx >= 0 ? parseFloat(cols[protIdx]) || 0 : 0,
+              carbs_grams: carbIdx >= 0 ? parseFloat(cols[carbIdx]) || 0 : 0,
+              fats_grams: fatIdx >= 0 ? parseFloat(cols[fatIdx]) || 0 : 0,
+              serving_size: 1,
+              serving_unit: unitIdx >= 0 ? cols[unitIdx] || "serving" : "serving",
+              source: "manual",
+            },
           });
-          imported++;
+          // null = a same-name food already exists and was left untouched.
+          if (saved) imported++; else skipped++;
         }
-        toast.success(`${imported} food${imported !== 1 ? "s" : ""} imported to My Foods.`);
+        toast.success(
+          `${imported} food${imported !== 1 ? "s" : ""} imported to My Foods.` +
+          (skipped ? ` ${skipped} already existed and were left as they are.` : "")
+        );
       } catch {
         toast.error("Could not read CSV file.");
       }
@@ -836,6 +865,7 @@ export default function FoodTracker() {
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
+    setFoodSource(savedMatch?.source || "manual");
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
@@ -879,6 +909,8 @@ export default function FoodTracker() {
     setIsUsdaFood(false);
     setServingHint(null);
     setBaseMacros(baseMacroValues);
+    // Saved foods carry their tag; synthetic ones (estimates) pass it in.
+    setFoodSource(food.source || "manual");
     // Synthetic foods (AI estimates, label scans) have no row yet — no id, and
     // no portions until the athlete saves them to My Foods.
     setActiveFoodId(food.id || null);
@@ -926,6 +958,7 @@ export default function FoodTracker() {
         serving_size: 1,
         serving_unit: "serving",
         serving_grams: hasGrams ? estGrams : null,
+        source: "ai_estimate",
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -1062,6 +1095,7 @@ export default function FoodTracker() {
         serving_size: 1,
         serving_unit: "serving",
         serving_grams: Number.isFinite(labelGrams) && labelGrams > 0 ? labelGrams : null,
+        source: "label_scan",
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -1103,7 +1137,7 @@ export default function FoodTracker() {
   };
 
   if (newFood.food_name && baseMacros.calories > 0) {
-    saveCustomFoodMutation.mutate(buildCustomFoodPayload());
+    saveCustomFoodMutation.mutate({ food: buildCustomFoodPayload(), activeFoodId });
   }
 
   setMealItems((prev) => [...prev, item]);
@@ -1336,6 +1370,7 @@ const handleSaveMealTemplate = () => {
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
+    setFoodSource(savedMatch?.source || "manual");
     // Recover grams-per-unit from the total weight the entry recorded, so editing
     // a logged serving still shows what it weighs.
     setFoodServingSizeGrams(
@@ -1495,10 +1530,12 @@ const handleSaveMealTemplate = () => {
     setGenericResults([]); setBrandedResults([]);
     setEditingEntry(null);
     setIsEstimatedFood(false);
+    setFoodSource(null);
   };
 
   const selectFood = (food) => {
     setIsEstimatedFood(false);
+    setFoodSource(food.dataType === "Barcode" ? "barcode" : "usda");
     // baseMacros always stored per 100g (USDA/barcode nutrient basis)
     const baseMacroValues = {
       calories: Math.round(food.calories),
@@ -2696,7 +2733,7 @@ const handleSaveMealTemplate = () => {
                               {matchingCustomFoods.map((food) => (
                                 <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                   <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                    <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                    <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                     <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                   </button>
                                   <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -2869,7 +2906,7 @@ const handleSaveMealTemplate = () => {
                                 {sortedCustomFoods.map((food) => (
                                   <div key={food.id} className="flex items-center hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                     <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                      <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                      <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                       <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                     </button>
                                     <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -3320,7 +3357,7 @@ const handleSaveMealTemplate = () => {
                     addFoodMutation.mutate(newFood);
                     // Save manually-entered foods to custom_foods (fire-and-forget, per-serving values)
                     if (newFood.food_name && baseMacros.calories > 0) {
-                      saveCustomFoodMutation.mutate(buildCustomFoodPayload());
+                      saveCustomFoodMutation.mutate({ food: buildCustomFoodPayload(), activeFoodId });
                     }
                   }}
                   // Block a blank/zero amount: it would log a real entry with 0
@@ -3698,7 +3735,7 @@ const handleSaveMealTemplate = () => {
                   {matchingCustomFoods.map((food) => (
                     <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                       <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                        <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                        <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                         <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                       </button>
                       <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
