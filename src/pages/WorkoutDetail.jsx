@@ -28,6 +28,7 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import { SegmentedControl } from "@/components/ui/system";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
+import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
@@ -2066,6 +2067,7 @@ export default function WorkoutDetail() {
             <DialogTitle>Finish Workout</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
             <div className="space-y-2">
               <label className="section-label">Workout Notes</label>
               <Textarea

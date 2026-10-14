@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
+import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
@@ -993,6 +994,7 @@ export default function QuickWorkout() {
           <DialogDescription>
             That was the last set. Finish and save this session, or keep going if you want to add more.
           </DialogDescription>
+          <FinishSummary exercises={exercises} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
               Not yet
