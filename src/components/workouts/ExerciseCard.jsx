@@ -32,6 +32,7 @@ export default function ExerciseCard({
   onUpdateName,
   originalExercise = null,
   lastPerformance = null,
+  loadWhy = null,
   programExercise = null, // exercise config from program_workouts
   progressionTargets = null, // from calculateDailyTargets
   onNudge = null, // callback when a nudge is generated
@@ -354,6 +355,7 @@ export default function ExerciseCard({
   const [rirRequiredIndex, setRirRequiredIndex] = useState(null);
   // Which row's set-type menu (working / warm-up / drop / failure) is open.
   const [markMenuIndex, setMarkMenuIndex] = useState(null);
+  const [whyOpen, setWhyOpen] = useState(false);
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
     if (
@@ -963,6 +965,26 @@ export default function ExerciseCard({
                 )}
               </svg>
             </div>
+          </div>
+        )}
+
+        {/* Why this weight: only lines the engine wrote for this lift (load,
+            % of e1RM, reps @ RIR, its own notes). Absent data renders nothing. */}
+        {Array.isArray(loadWhy) && loadWhy.length > 0 && (
+          <div className="pb-1.5">
+            <button
+              type="button"
+              aria-expanded={whyOpen}
+              onClick={() => setWhyOpen((v) => !v)}
+              className="text-[11px] font-semibold text-ink-faint underline-offset-2 hover:underline min-h-[28px] touch-manipulation"
+            >
+              {whyOpen ? 'Hide why this weight' : 'Why this weight'}
+            </button>
+            {whyOpen && (
+              <ul className="mt-1 space-y-0.5 text-[11px] text-ink-muted font-technical">
+                {loadWhy.map((line, i) => <li key={i}>{line}</li>)}
+              </ul>
+            )}
           </div>
         )}
 

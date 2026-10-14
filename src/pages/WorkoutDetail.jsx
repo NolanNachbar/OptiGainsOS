@@ -32,6 +32,7 @@ import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
 import { isWarmupSet } from "@/utils/setTypes";
+import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
@@ -1760,6 +1761,7 @@ export default function WorkoutDetail() {
                           onUpdateName={updateExerciseName}
                           originalExercise={originalEx}
                           lastPerformance={lastPerformance}
+                          loadWhy={isProgramSource ? buildLoadWhy(engineByName.get(exerciseLog.name), exerciseLog.sets, weightUnit) : null}
                           programExercise={programEx}
                           progressionTargets={targets}
                           onReplaceExercise={handleReplaceExercise}
