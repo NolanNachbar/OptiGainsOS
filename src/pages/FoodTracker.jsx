@@ -1555,7 +1555,10 @@ const handleSaveMealTemplate = () => {
     setPortionsDirty(false);
     setNewFood({
       ...newFood,
-      food_name: food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+      // Only normalize ALL-CAPS names (USDA branded); "Bananas, raw" stays as written.
+      food_name: food.description === food.description.toUpperCase()
+        ? food.description.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+        : food.description,
       serving_unit: unit,
       serving_amount: amount,
       calories: Math.round(baseMacroValues.calories * initialScale),
