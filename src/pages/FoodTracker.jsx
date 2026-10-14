@@ -340,6 +340,9 @@ export default function FoodTracker() {
   // Where the form's food came from, for the custom_foods.source tag:
   // 'ai_estimate' | 'label_scan' | 'usda' | 'barcode' | 'manual' | null.
   const [foodSource, setFoodSource] = useState(null);
+  // What the estimator said about its own answer: { kind, confidence, detail }.
+  // Shown quietly on the form; null for anything that isn't a fresh estimate.
+  const [estimateMeta, setEstimateMeta] = useState(null);
   // Quick-meal estimator (estimate-meal edge fn): a free-text or photo meal ->
   // a list of items the athlete confirms, then batch-logs. For travel/restaurants
   // where weighing each item isn't possible.
@@ -866,6 +869,7 @@ export default function FoodTracker() {
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
     setFoodSource(savedMatch?.source || "manual");
+    setEstimateMeta(null);
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
@@ -911,6 +915,7 @@ export default function FoodTracker() {
     setBaseMacros(baseMacroValues);
     // Saved foods carry their tag; synthetic ones (estimates) pass it in.
     setFoodSource(food.source || "manual");
+    setEstimateMeta(null);
     // Synthetic foods (AI estimates, label scans) have no row yet — no id, and
     // no portions until the athlete saves them to My Foods.
     setActiveFoodId(food.id || null);
@@ -967,6 +972,7 @@ export default function FoodTracker() {
       });
       setServingHint(est.serving_description ? `Estimated for ${est.serving_description}` : null);
       setIsEstimatedFood(true);
+      setEstimateMeta({ kind: "AI estimate", confidence: est.confidence, detail: est.assumptions || null });
       setManualExpanded(true);
       setEstimateInput("");
       toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
@@ -1104,6 +1110,7 @@ export default function FoodTracker() {
       });
       setServingHint(est.serving_description ? `Label: ${est.serving_description}` : null);
       setIsEstimatedFood(true);
+      setEstimateMeta({ kind: "Label read", confidence: est.confidence, detail: est.note || null });
       setManualExpanded(true);
       setShowLabelCapture(false);
       resetLabelCapture();
@@ -1371,6 +1378,7 @@ const handleSaveMealTemplate = () => {
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
     setFoodSource(savedMatch?.source || "manual");
+    setEstimateMeta(null);
     // Recover grams-per-unit from the total weight the entry recorded, so editing
     // a logged serving still shows what it weighs.
     setFoodServingSizeGrams(
@@ -1531,10 +1539,12 @@ const handleSaveMealTemplate = () => {
     setEditingEntry(null);
     setIsEstimatedFood(false);
     setFoodSource(null);
+    setEstimateMeta(null);
   };
 
   const selectFood = (food) => {
     setIsEstimatedFood(false);
+    setEstimateMeta(null);
     setFoodSource(food.dataType === "Barcode" ? "barcode" : "usda");
     // baseMacros always stored per 100g (USDA/barcode nutrient basis)
     const baseMacroValues = {
@@ -3052,6 +3062,17 @@ const handleSaveMealTemplate = () => {
                             )}
                           </div>
                         </div>
+
+                        {/* The estimator's own read on its answer: how sure it was
+                            and what it assumed. Kept quiet — the macros above are
+                            still the thing to check. */}
+                        {estimateMeta && (
+                          <p className="text-[11px] text-ink-muted -mt-2">
+                            <span className="font-semibold">{estimateMeta.kind}</span>
+                            {estimateMeta.confidence && ` · ${estimateMeta.confidence} confidence`}
+                            {estimateMeta.detail && ` · ${estimateMeta.detail}`}
+                          </p>
+                        )}
 
                         {/* The weight of one serving. This is the number that was
                             missing: without it a homemade food's "serving" is a
