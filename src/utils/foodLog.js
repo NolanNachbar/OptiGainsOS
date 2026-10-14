@@ -124,12 +124,12 @@ export function parseTemplateServing(item) {
 export const FOOD_EXPORT_HEADER = [
   "date", "meal", "eaten_at", "logged_at", "food_name",
   "serving_qty", "serving_unit", "serving_grams",
-  "calories", "protein_g", "carbs_g", "fats_g", "fiber_g", "source",
+  "calories", "protein_g", "carbs_g", "fats_g", "fiber_g", "food_source_current",
 ];
 
 /**
  * CSV rows for the full food export. Planned (not-yet-eaten) rows are left out.
- * `source` is the origin tag of the My Foods item with the same name, blank when
+ * `food_source_current` is the CURRENT origin tag of the My Foods item with the same name, blank when
  * the entry has no saved food or the food predates the tag; food_entries itself
  * carries no source column.
  */
