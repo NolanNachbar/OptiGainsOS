@@ -12,7 +12,7 @@ import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
-import { estimateOneRepMax, isE1rmEligibleSet } from "@/utils/exerciseStats";
+import { estimateOneRepMax, isE1rmEligibleSet, previousSetForRow } from "@/utils/exerciseStats";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -992,6 +992,9 @@ export default function ExerciseCard({
         {/* Set rows */}
         {exercise.sets.map((set, setIndex) => {
           const isActive = !set.completed && setIndex === activeSetIndex;
+          // This row's own previous-session set (same position; falls back to
+          // the last one). Display + tap-to-copy only; saved data is untouched.
+          const prevSet = previousSetForRow(lastPerformance?.sets, exercise.sets, setIndex);
           // Compare against what was PRESCRIBED for this set (working/daily-min
           // weight × the exercise's rep target), not a heavier all-time best — so
           // programmed-lighter sets that hit their target aren't flagged as misses.
@@ -1038,18 +1041,16 @@ export default function ExerciseCard({
               </span>
               <button
                 type="button"
-                disabled={!lastPerformance?.lastWeight}
+                disabled={!prevSet}
                 onClick={() => {
-                  // Tap "last time" to copy it into this set (Hevy-style prefill).
-                  onUpdateSet(exerciseIndex, setIndex, 'weight', lastPerformance.lastWeight);
-                  onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
+                  // Tap the previous set to copy it into this row (Hevy-style prefill).
+                  onUpdateSet(exerciseIndex, setIndex, 'weight', prevSet.weight);
+                  onUpdateSet(exerciseIndex, setIndex, 'reps', prevSet.reps);
                 }}
-                aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
+                aria-label={prevSet ? `Previous set ${prevSet.weight} by ${prevSet.reps}, tap to use` : 'No previous set'}
                 className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] -my-3.5 inline-flex items-center"
               >
-                {lastPerformance?.lastWeight
-                  ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
-                  : '—'}
+                {prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}
               </button>
               <div className="relative min-w-0">
                 <input

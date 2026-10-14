@@ -439,7 +439,6 @@ export const getLastExercisePerformance = (logs, exerciseName) => {
     if (exercise && exercise.sets && exercise.sets.length > 0) {
       // Get all weights and reps from the sets
       const weights = exercise.sets.map(s => s.weight || 0);
-      const reps = exercise.sets.map(s => s.reps || 0);
 
       // Find the max weight used
       const lastWeight = Math.max(...weights);
@@ -452,11 +451,42 @@ export const getLastExercisePerformance = (logs, exerciseName) => {
         lastDate: log.log_date,
         sets: exercise.sets.map(s => ({
           weight: s.weight || 0,
-          reps: s.reps || 0
+          reps: s.reps || 0,
+          set_type: s.set_type || 'working',
         }))
       };
     }
   }
 
   return null;
+};
+
+/**
+ * The previous-session set a logger row should show as its "prev" reference.
+ *
+ * Matches by position, not by heaviest: row N shows last time's Nth set. When
+ * last time had fewer sets, it falls back to the last available one. Warm-up
+ * rows are matched against last time's warm-ups and every other row against
+ * last time's non-warm-ups, so a warm-up never shifts the working-set
+ * alignment. Zeroed leftovers (a set that was never filled in) are skipped.
+ * Display-only: nothing here changes what gets saved.
+ *
+ * @param {Array} lastSets - lastPerformance.sets
+ * @param {Array} currentSets - the sets currently on the card
+ * @param {number} index - row index in currentSets
+ * @returns {{weight:number, reps:number}|null}
+ */
+export const previousSetForRow = (lastSets, currentSets, index) => {
+  if (!Array.isArray(lastSets) || lastSets.length === 0) return null;
+  const isWarm = (s) => /warm/i.test(s?.set_type || '');
+  const real = (s) => Number(s?.reps) > 0 || Number(s?.weight) > 0;
+  const group = isWarm(currentSets?.[index]);
+  const pool = lastSets.filter((s) => real(s) && isWarm(s) === group);
+  if (pool.length === 0) return null;
+  let ordinal = 0;
+  for (let i = 0; i < index; i++) {
+    if (isWarm(currentSets[i]) === group) ordinal++;
+  }
+  const pick = pool[Math.min(ordinal, pool.length - 1)];
+  return { weight: Number(pick.weight) || 0, reps: Number(pick.reps) || 0 };
 };
