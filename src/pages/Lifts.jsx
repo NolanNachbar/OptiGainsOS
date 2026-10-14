@@ -7,7 +7,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Module } from "@/components/ui/system";
 import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
-import { getLoggedExerciseSummaries } from "@/utils/exerciseStats";
+import { getLoggedExerciseSummaries, getRepPRTable } from "@/utils/exerciseStats";
 import { format, parseISO } from "date-fns";
 import { ChevronDown } from "lucide-react";
 
@@ -30,6 +30,13 @@ export default function Lifts() {
   });
 
   const summaries = useMemo(() => getLoggedExerciseSummaries(workoutLogs), [workoutLogs]);
+
+  // Per-rep-count records for the open row only (computed on expand, not for
+  // every lift in the list).
+  const prTable = useMemo(
+    () => (expanded ? getRepPRTable(workoutLogs, expanded) : []),
+    [workoutLogs, expanded]
+  );
 
   if (!user || isLoading) {
     return <LoadingScreen />;
@@ -121,6 +128,33 @@ export default function Lifts() {
                           ? `best set logged is ${s.bodyweightReps} reps.`
                           : "no completed sets logged yet."}
                       </p>
+                    )}
+                    {prTable.length > 0 && (
+                      <div className="px-1 pt-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-2 mb-1">
+                          Records by reps
+                        </p>
+                        <table className="w-full text-[11px] font-technical tabular-nums">
+                          <thead>
+                            <tr className="text-muted-2 text-left">
+                              <th className="font-semibold py-0.5">Reps</th>
+                              <th className="font-semibold py-0.5">Best ({weightUnit})</th>
+                              <th className="font-semibold py-0.5 text-right">Set on</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {prTable.map((p) => (
+                              <tr key={p.reps} className="border-t hairline text-ink">
+                                <td className="py-1">{p.reps}</td>
+                                <td className="py-1 font-bold">{p.weight}</td>
+                                <td className="py-1 text-right text-muted-2">
+                                  {p.date ? format(parseISO(p.date), "MMM d, yyyy") : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 )}
