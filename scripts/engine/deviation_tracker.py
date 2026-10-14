@@ -21,7 +21,7 @@ Output:
 """
 from __future__ import annotations
 
-from engine.log_ingest import canon, canon_tokens
+from engine.log_ingest import canon, canon_tokens, work_sets
 from engine.muscle_map import get_muscles
 
 
@@ -50,7 +50,8 @@ def _logged_names(log: dict) -> dict:
         name = canon(ex.get("name") or "")
         if not name:
             continue
-        sets = [s for s in (ex.get("sets") or [])
+        # Warm-ups are not work: they do not satisfy a prescribed set.
+        sets = [s for s in work_sets(ex.get("sets"))
                 if s.get("completed") is not False and (s.get("weight") or s.get("reps"))]
         out[name] = out.get(name, 0) + (len(sets) or 0)
     return out

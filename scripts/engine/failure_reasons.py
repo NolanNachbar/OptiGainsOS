@@ -29,6 +29,8 @@ tags and free-text notes flow through one path.
 """
 from __future__ import annotations
 
+from engine.log_ingest import is_warmup_set
+
 # Canonical reason value (stored on the set as `failure_reason`) → metadata.
 #   technical: excluded from the nutrition strength signal (skill/leverage, not fuel)
 #   region:    per-lift sticking-point region in the engine vocab (None = no target)
@@ -126,6 +128,10 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
         for ex in (log.get("exercises") or []):
             lift = infer_lift(ex.get("name"))
             for s in (ex.get("sets") or []):
+                # A warm-up or drop set is lighter than the work by design,
+                # never a miss (mirrors src/config/failureReasons.js isMissedSet).
+                if is_warmup_set(s) or s.get("set_type") == "drop":
+                    continue
                 reason = s.get("failure_reason")
                 if reason and reason in FAILURE_REASONS:
                     if reason == SYSTEMIC:

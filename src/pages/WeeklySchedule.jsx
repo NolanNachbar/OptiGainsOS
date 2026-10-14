@@ -12,6 +12,7 @@ import { useProfile } from "@/hooks/useUserQueries";
 import { getProgramSchedule } from "@/utils/programSchedule";
 import WeekTemplateSwap from "@/components/program/WeekTemplateSwap";
 import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
+import { workSets } from "@/utils/setTypes";
 
 const RUN_NAMES = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
 const isRun = (ex) => RUN_NAMES.some(k => ex.name?.toLowerCase().includes(k));
@@ -96,7 +97,7 @@ function formatSetRep(count, repToken) {
 
 // Logged session: derive the rep token from completed sets, never zero-reps.
 function formatSets(exercise) {
-  const sets = (exercise.sets || []).filter(s => s.completed !== false);
+  const sets = workSets(exercise.sets).filter(s => s.completed !== false);
   if (!sets.length) return "";
   const w = sets[0]?.weight;
   const r = sets[0]?.reps;

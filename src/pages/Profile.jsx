@@ -24,6 +24,7 @@ import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { workSets } from "@/utils/setTypes";
 
 function SectionHeader({ icon: Icon, title }) {
   return (
@@ -113,7 +114,7 @@ export default function Profile({ hideHeader }) {
       let totalVolumeLbs = 0;
       for (const log of data) {
         for (const ex of (log.exercises || [])) {
-          for (const set of (ex.sets || [])) {
+          for (const set of workSets(ex.sets)) {
             totalVolumeLbs += (Number(set.weight) || 0) * (Number(set.reps) || 0);
           }
         }

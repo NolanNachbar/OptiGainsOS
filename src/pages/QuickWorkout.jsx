@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
+import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
@@ -364,6 +365,18 @@ export default function QuickWorkout() {
       setRestTimer(remaining);
       if (remaining <= 0) {
         restTimerEndRef.current = null;
+        // End-of-rest cue (Quick Workout never had one; programmed workouts
+        // schedule a service-worker alarm instead). Visual toast first, then a
+        // best-effort vibration where the platform exposes it. No sound. This
+        // touches nothing about session state or the workout-active flag.
+        // Unverified on iOS: Safari/iOS PWAs do not implement
+        // navigator.vibrate, so on iPhone this is a silent no-op by design.
+        toast("Rest over — next set", { duration: 4000 });
+        try {
+          if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+            navigator.vibrate([200, 100, 200]);
+          }
+        } catch { /* best-effort cue */ }
         // Rest is over — flash 0:00 for a beat, then clear the chip so the
         // bottom bar collapses back to its single elapsed-clock row instead of
         // stranding a dead 0:00 countdown. setRestTimer(null) is what tears the
@@ -981,6 +994,7 @@ export default function QuickWorkout() {
           <DialogDescription>
             That was the last set. Finish and save this session, or keep going if you want to add more.
           </DialogDescription>
+          <FinishSummary exercises={exercises} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
           <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
               Not yet

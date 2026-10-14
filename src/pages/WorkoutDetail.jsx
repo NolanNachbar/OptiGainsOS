@@ -28,9 +28,12 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import { SegmentedControl } from "@/components/ui/system";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
+import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { isWarmupSet, baseType } from "@/utils/setTypes";
+import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
@@ -1069,6 +1072,8 @@ export default function WorkoutDetail() {
       const top = prev[exIdx];
       if (!top || !/\(top set\)/i.test(top.name)) return prev;
       const set = top.sets?.[setIdx];
+      // A warm-up is not the top set; never derive back-off loads from it.
+      if (isWarmupSet(set)) return prev;
       const weight = Number(set?.weight);
       const reps = Number(set?.reps);
       if (!weight || !reps) return prev;
@@ -1375,7 +1380,7 @@ export default function WorkoutDetail() {
   // logged before this rule). Flagged once on Finish, never a hard block, so
   // older data can't trap a workout.
   const topSetsMissingRir = () => exerciseLogs.flatMap(ex => (ex.sets || [])
-    .filter(s => s.completed && s.set_type === 'top_set' && s.rir == null && s.rpe == null)
+    .filter(s => s.completed && baseType(s) === 'top_set' && s.rir == null && s.rpe == null)
     .map(s => `${ex.name} set ${s.set_number}`));
   const rirFlaggedRef = useRef(false);
 
@@ -1780,6 +1785,7 @@ export default function WorkoutDetail() {
                           onUpdateName={updateExerciseName}
                           originalExercise={originalEx}
                           lastPerformance={lastPerformance}
+                          loadWhy={isProgramSource ? buildLoadWhy(engineByName.get(exerciseLog.name), exerciseLog.sets, weightUnit) : null}
                           programExercise={programEx}
                           progressionTargets={targets}
                           onReplaceExercise={handleReplaceExercise}
@@ -2109,6 +2115,7 @@ export default function WorkoutDetail() {
             <DialogTitle>Finish Workout</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
             <div className="space-y-2">
               <label className="section-label">Workout Notes</label>
               <Textarea

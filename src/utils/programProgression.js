@@ -1,3 +1,4 @@
+import { baseType } from '@/utils/setTypes';
 import { lookupExercise } from '@/ml/exerciseDB';
 import { format, parseISO, startOfWeek } from 'date-fns';
 
@@ -94,7 +95,7 @@ export function calculateDailyTargets(exercise, progressionState = {}) {
  * @param {number} [totalSets] - Total number of sets for this exercise (used to detect final set)
  * @returns {{ type: 'success'|'warning'|'info', message: string }|null}
  */
-export function evaluateSetPerformance(exercise, setData, workingWeight, totalSets) {
+export function evaluateSetPerformance(exercise, setData, workingWeight) {
   // Support both `rir` (new) and `rpe` (legacy field name) for backwards compatibility
   const rir = setData.rir ?? setData.rpe;
   if (rir == null || !setData.set_type) return null;
@@ -135,10 +136,16 @@ export function evaluateSetPerformance(exercise, setData, workingWeight, totalSe
  */
 export function updateProgressionState(currentState, exercise, completedSets) {
   const state = { ...currentState };
-  const { name, rir_target = 2, rep_target, progression = {} } = exercise;
+  const { name, rir_target = 2, rep_target } = exercise;
 
   const workingSets = completedSets.filter(
-    (s) => s.set_type === 'working' || s.set_type === 'daily_max'
+    // Eligibility follows the set's structural (base) type, so a top_set /
+    // backoff / daily_min marked "failure" does not newly feed progression,
+    // and a warm-up or drop mark removes a working set from it. Unmarked
+    // sets behave exactly as before.
+    (s) => (s.set_type === 'warmup' || s.set_type === 'drop')
+      ? false
+      : (baseType(s) === 'working' || baseType(s) === 'daily_max')
   );
 
   if (workingSets.length === 0) return state;

@@ -1,4 +1,5 @@
 import { format, subDays, parseISO, differenceInDays } from "date-fns";
+import { workSets } from "./setTypes";
 
 // ─── hrTSS for Garmin cardio sessions ───────────────────────────────────────
 // Uses TRIMP-based heart rate training stress score.
@@ -30,7 +31,7 @@ export function calculateLiftingTSS(workoutLog) {
 
   // Collect RIR values from completed sets; fall back to legacy `rpe` field for old logs
   const rirValues = (workoutLog.exercises || [])
-    .flatMap((ex) => ex.sets || [])
+    .flatMap((ex) => workSets(ex.sets))
     .filter((s) => s.completed && (s.rir ?? s.rpe) != null)
     .map((s) => Number(s.rir ?? s.rpe));
 

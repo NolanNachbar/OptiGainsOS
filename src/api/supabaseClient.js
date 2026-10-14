@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { workSets } from "@/utils/setTypes";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -93,7 +94,7 @@ class DatabaseAdapter {
       for (const ex of log.exercises) {
         if (!ex.name || ex.name.toLowerCase() !== exerciseLower) continue;
         if (!Array.isArray(ex.sets)) continue;
-        for (const set of ex.sets) {
+        for (const set of workSets(ex.sets)) {
           const w = Number(set.weight) || 0;
           const r = Number(set.reps) || 0;
           if (w <= 0 || r <= 0) continue;

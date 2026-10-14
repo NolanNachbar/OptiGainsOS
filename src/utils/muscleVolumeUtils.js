@@ -1,4 +1,5 @@
 import { EXERCISE_DB } from "@/ml/exerciseDB";
+import { workSets } from "./setTypes";
 
 // Maps our EXERCISE_DB muscle names → react-body-highlighter muscle keys
 const MUSCLE_NAME_MAP = {
@@ -122,7 +123,7 @@ export function getRecoveryHeatmapData(workoutLogs = []) {
       const dbEntry = findExercise(ex.name || ex.exercise_name);
       if (!dbEntry) continue;
 
-      const setCount = ex.sets?.length || 1;
+      const setCount = workSets(ex.sets).length || 1;
       const primary = toLibMuscles(dbEntry.primaryMuscle);
       const secondary = toLibMuscles(dbEntry.secondaryMuscle);
 
@@ -163,7 +164,7 @@ export function getWeeklyBodyData(workoutLogs = []) {
       const dbEntry = findExercise(ex.name || ex.exercise_name);
       if (!dbEntry) continue;
 
-      const setCount = ex.sets?.length || 1;
+      const setCount = workSets(ex.sets).length || 1;
       const primary = toLibMuscles(dbEntry.primaryMuscle);
       const secondary = toLibMuscles(dbEntry.secondaryMuscle);
 
