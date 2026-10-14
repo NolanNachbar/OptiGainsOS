@@ -108,7 +108,7 @@ test.describe('desktop inputs', () => {
 test.describe('keypad', () => {
   test.use({ viewport: { width: 428, height: 926 }, hasTouch: true, isMobile: true });
 
-  test('Done on a blank top-set RIR reopens the RIR keypad; a pill completes it', async ({ page }) => {
+  test('Done on a blank top-set RIR reopens the RIR keypad; a pill then Done completes it', async ({ page }) => {
     const db = await testDb();
     const uid = await testUserId();
     const removeWeighIn = await ensureTodayWeighIn(db, uid);
@@ -127,6 +127,7 @@ test.describe('keypad', () => {
       await expect(page.getByRole('checkbox', { name: 'Mark set 1 complete' })).toHaveAttribute('aria-checked', 'false');
 
       await sheet.getByRole('button', { name: 'RIR 0' }).click();
+      await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
       await expect(sheet).not.toBeVisible();
       await expect(page.getByLabel('Set 1 reps in reserve')).toHaveValue('0');
       await expect(page.getByRole('checkbox', { name: 'Mark set 1 incomplete' })).toBeVisible();
