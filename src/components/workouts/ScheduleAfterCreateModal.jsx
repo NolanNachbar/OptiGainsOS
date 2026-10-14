@@ -76,12 +76,12 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
       invalidateWorkouts(queryClient);
       invalidatePrograms(queryClient);
       const numCycles = program.num_cycles || program.duration_weeks || 4;
-      toast.success(`Program enrolled! ${numCycles} cycles scheduled starting ${format(parseISO(startDate), "MMM d")}`);
+      toast.success(`Program enrolled. ${numCycles} cycles scheduled starting ${format(parseISO(startDate), "MMM d")}`);
       onClose();
       navigate(`/program/${program.id}`);
     } catch (err) {
       console.error("Schedule error:", err);
-      toast.error("Failed to schedule program");
+      toast.error("Program not scheduled. Check your connection and try again.");
     } finally {
       setIsScheduling(false);
     }
@@ -101,7 +101,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
           <p className="text-sm text-ink-muted">
-            <strong>{program?.title || program?.name}</strong> was created successfully! Want to schedule it on your calendar now?
+            <strong>{program?.title || program?.name}</strong> is saved. Schedule it on your calendar now?
           </p>
 
           <div>

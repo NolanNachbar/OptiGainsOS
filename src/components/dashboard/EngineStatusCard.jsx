@@ -45,7 +45,7 @@ export default function EngineStatusCard({ today }) {
             if (!ago) return null;
             return (
               <span className={`ml-auto font-technical text-[10px] font-bold uppercase tracking-wider ${ago.stale ? "text-warn/80" : "text-faint"}`}>
-                {ago.stale ? "⚠ " : ""}Computed {ago.label}
+                {ago.stale ? "Stale: " : ""}Computed {ago.label}
               </span>
             );
           })()}

@@ -67,7 +67,7 @@ export default function MealTemplates({ compact = false }) {
       invalidateMealTemplates(queryClient);
       toast.success("Template deleted");
     },
-    onError: () => toast.error("Failed to delete template"),
+    onError: () => toast.error("Template not deleted. Check your connection and try again."),
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -80,11 +80,11 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: ({ id, ...data }) => db.entities.MealTemplate.update(id, data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template updated.");
+      toast.success("Template updated");
       setShowEditDialog(false);
       setEditingTemplate(null);
     },
-    onError: () => toast.error("Failed to update template"),
+    onError: () => toast.error("Template not updated. Check your connection and try again."),
   });
 
   const handleDelete = (template) => {
@@ -131,7 +131,7 @@ export default function MealTemplates({ compact = false }) {
         <div className="text-center py-6 text-ink-muted text-sm">
           <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>No templates yet.</p>
-          <p className="text-xs mt-1">Save a meal from the daily log to get started.</p>
+          <p className="text-xs mt-1">Meals you save from the daily log appear here.</p>
         </div>
       ) : compact ? (
         <div className="space-y-2">
@@ -371,10 +371,10 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success(`Template "${template.name}" applied.`);
+      toast.success(`Template "${template.name}" applied`);
       onOpenChange(false);
     },
-    onError: () => toast.error("Failed to apply template"),
+    onError: () => toast.error("Template not applied. Check your connection and try again."),
   });
 
   const totals = getTemplateTotals(template.items || []);
@@ -808,16 +808,16 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
     mutationFn: (data) => db.entities.MealTemplate.create(data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template saved.");
+      toast.success("Template saved");
       onOpenChange(false);
       setName("");
     },
-    onError: () => toast.error("Failed to save template"),
+    onError: () => toast.error("Template not saved. Check your connection and try again."),
   });
 
   const handleSave = () => {
     if (!name.trim()) {
-      toast.error("Please enter a template name");
+      toast.error("Enter a template name.");
       return;
     }
     if (selectedEntries.length === 0) {

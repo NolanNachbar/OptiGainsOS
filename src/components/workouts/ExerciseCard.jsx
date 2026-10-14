@@ -533,7 +533,7 @@ export default function ExerciseCard({
   const repsInputRefs = useRef({});
   const rirInputRefs = useRef({});
 
-  // Phase B: completing a set from the keypad (RIR-pill tap, or "Done ✓")
+  // Phase B: completing a set from the keypad (RIR-pill tap, or "Done")
   // must NOT call handleSetCompleted in the same synchronous handler that
   // just committed the RIR/weight/reps value -- handleSetCompleted closes
   // over the CURRENT-render's `exercise` prop, which is still the
@@ -1778,7 +1778,7 @@ function KeypadSheet({
               aria-label="Done, mark set complete"
               className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
-              Done ✓
+              Done
             </button>
           </div>
         </div>
@@ -1817,7 +1817,7 @@ function KeypadSheet({
               aria-label={isLastField ? "Done, mark set complete" : "Next field"}
               className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
-              {isLastField ? "Done ✓" : "Next"}
+              {isLastField ? "Done" : "Next"}
             </button>
           </div>
         </div>

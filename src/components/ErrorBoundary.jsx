@@ -27,10 +27,10 @@ export default class ErrorBoundary extends Component {
           <div className="text-center max-w-md">
             <AlertTriangle className="w-12 h-12 text-warn mx-auto mb-4" />
             <h2 className="text-xl font-bold text-ink mb-2">
-              Something went wrong
+              This page hit an error
             </h2>
             <p className="text-ink-muted  text-sm mb-6">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || 'Unexpected error. Try again, or return to the dashboard.'}
             </p>
             <div className="flex gap-3 justify-center">
               <Button variant="outline" onClick={this.handleReset}>

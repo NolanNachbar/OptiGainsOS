@@ -24,7 +24,7 @@ export default function WeighInModal({ open, onOpenChange }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!weight || parseFloat(weight) <= 0) {
-      toast.error("Please enter a valid weight");
+      toast.error("Enter a weight above 0.");
       return;
     }
     weighInMutation.mutate(
@@ -35,7 +35,7 @@ export default function WeighInModal({ open, onOpenChange }) {
           onOpenChange(false);
           setWeight("");
         },
-        onError: () => toast.error("Failed to log weight"),
+        onError: () => toast.error("Weight not saved. Check your connection and try again."),
       }
     );
   };

@@ -136,7 +136,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
               </div>
             ) : (
               <div className="text-center py-6 text-ink-muted">
-                Bar weight is equal to or greater than target. No plates needed!
+                Bar weight is equal to or greater than target. No plates needed.
               </div>
             )}
           </CardContent>

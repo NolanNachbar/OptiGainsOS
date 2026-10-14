@@ -94,7 +94,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] }),
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Action not updated. Check your connection and try again."),
   });
 
   const deleteMutation = useMutation({
@@ -129,7 +129,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         },
       });
     },
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Action not deleted. Check your connection and try again."),
   });
 
   const addMutation = useMutation({
@@ -149,7 +149,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
       setAdding(false);
       queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
     },
-    onError: () => toast.error("Failed to add task"),
+    onError: () => toast.error("Task not added. Check your connection and try again."),
   });
 
   const completed = todos.filter(t => t.completed).length;
@@ -175,7 +175,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         </Button>
       </div>
       {total === 0 && !adding && (
-        <p className="text-xs text-faint py-2">No actions yet, tap + to add one</p>
+        <p className="text-xs text-faint py-2">No actions yet. Tap + to add one.</p>
       )}
       {total > 0 && (
         <div className="h-1 bg-track rounded-full mt-2.5">
