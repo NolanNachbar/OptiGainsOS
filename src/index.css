@@ -88,7 +88,7 @@
   --brand-tint:      var(--text-primary);   /* active nav ink — no accent pill */
 
   /* ── Hue-coded data (each datum owns one — never decoration) ────────── */
-  --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity (biometric, unrelated to the old brand teal) */
+  --hue-teal:   #5EDCD2;  --hue-teal-rgb: 94 220 210;   /* readiness · positive · intensity (biometric datum; there is no brand hue) */
   --hue-teal-2: #4ECDC4;                                 /* HRV */
   --hue-coral:  #EE7B61;  --hue-coral-rgb: 238 123 97;   /* RHR · protein (Ledger protein hue) */
   --hue-violet: #9B8CFF;  --hue-violet-rgb: 155 140 255; /* sleep · fatigue (ATL) */
@@ -232,7 +232,7 @@
   /* Full floated footprint of the global FAB (FloatingActionButton): its fixed
      bottom offset (5rem + safe-area) + 48px body + a breathing band above it.
      Single-sources the clearance content must reserve so the last in-flow card
-     ends above the FAB instead of under its teal '+' — Layout's <main> padding
+     ends above the FAB instead of under its '+' — Layout's <main> padding
      references this rather than recomputing the offset + body by hand.
      The breathing band is 64px (NOT 24px/48px): the budget must clear the FAB
      body with real daylight, not graze it. At 24px the last card's bottom-right
@@ -278,6 +278,21 @@
 
   /* ── Type ───────────────────────────────────────────────────────────── */
   --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  /* Seven-step scale (brand guide). Mirrors fontSize in tailwind.config.js:
+     use `text-micro|caption|body|emph|title|display|hero` in JSX. Nothing
+     below 11px. Each step pairs size / line-height. */
+  --t-micro:   11px;  --t-micro-lh:   14px;  /* caps labels, 600, 0.08em */
+  --t-caption: 12px;  --t-caption-lh: 16px;
+  --t-body:    14px;  --t-body-lh:    20px;
+  --t-emph:    15px;  --t-emph-lh:    20px;  /* 600 */
+  --t-title:   17px;  --t-title-lh:   22px;  /* 600 */
+  --t-display: 28px;  --t-display-lh: 32px;  /* 700, tabular */
+  --t-hero:    44px;  --t-hero-lh:    44px;  /* 700, tabular */
+
+  /* Radius: three tokens only (mirrors borderRadius in tailwind.config.js). */
+  --r-module:  0;
+  --r-control: 10px;
+  --r-pill:    9999px;
 }
 
 /* Bottom clearance for Layout's main content column. The active value (dock-
@@ -304,9 +319,13 @@ html.light {
   --color-track:       rgba(18, 24, 34, 0.08);
 
   --text-primary:   #171B22;
-  --text-secondary: rgba(23, 27, 34, 0.74);
-  --text-muted:     rgba(23, 27, 34, 0.55);
-  --text-faint:     rgba(23, 27, 34, 0.40);
+  /* Alphas raised so every text tier clears WCAG AA 4.5:1 on the three light
+     surfaces (#FFFFFF / #EEF0F3 / #F4F5F8). Worst case is --color-bg:
+     secondary .80 = 7.6:1, muted .70 = 5.98:1 (was .55 = 3.73),
+     faint .62 = 4.62:1 (was .40 = 2.45). */
+  --text-secondary: rgba(23, 27, 34, 0.80);
+  --text-muted:     rgba(23, 27, 34, 0.70);
+  --text-faint:     rgba(23, 27, 34, 0.62);
 
   /* Keypad key surface (light mode) — a raised neutral key face distinct
      from --color-surface-2, dark ink label. See :root above for where
@@ -326,30 +345,33 @@ html.light {
   --color-action-dark: #FFFFFF;
   --brand-tint:      var(--text-primary);
 
-  --hue-teal:   #14A89D;  --hue-teal-rgb: 20 168 157;
-  --hue-teal-2: #109488;
-  --hue-coral:  #D9654E;  --hue-coral-rgb: 217 101 78;   /* protein */
-  --hue-violet: #6F5BE6;  --hue-violet-rgb: 111 91 230;
-  --hue-green:  #4F9A5C;  --hue-green-rgb: 79 154 92;    /* gain */
-  --hue-blue:   #3C7FB0;  --hue-blue-rgb: 60 127 176;    /* carbs */
+  /* Light-theme hues are tuned DARK enough to be read as text (>= 4.5:1 on
+     #EEF0F3), because `text-teal`/`text-coral`/... share these vars with the
+     fills. Fills on paper stay legible (>= 4.5:1 is also >= 3:1 non-text). */
+  --hue-teal:   #0B7A71;  --hue-teal-rgb: 11 122 113;    /* readiness */
+  --hue-teal-2: #0B7A71;
+  --hue-coral:  #B8452F;  --hue-coral-rgb: 184 69 47;    /* protein */
+  --hue-violet: #5A46CC;  --hue-violet-rgb: 90 70 204;
+  --hue-green:  #3A7A47;  --hue-green-rgb: 58 122 71;    /* gain */
+  --hue-blue:   #2F6A98;  --hue-blue-rgb: 47 106 152;    /* carbs */
   /* No dedicated kcal hue in Ledger — neutral ink, matching :root. */
   --hue-gold:   var(--text-secondary);  --hue-gold-rgb: 23 27 34;
-  --hue-yellow: #A9821F;  --hue-yellow-rgb: 169 130 31;  /* fat */
+  --hue-yellow: #7F5F12;  --hue-yellow-rgb: 127 95 18;  /* fat */
 
-  --ok:   #4F9A5C;  --ok-rgb:   79 154 92;
-  --warn: #C07F2A;  --warn-rgb: 192 127 42;
+  --ok:   #3A7A47;  --ok-rgb:   58 122 71;
+  --warn: #8F5E14;  --warn-rgb: 143 94 20;
   /* Destructive red — deeper, cooler true-red distinct from the off-white/ink
      action color in the light theme. See :root for rationale. */
   --bad:  #CE2C31;  --bad-rgb:  206 44 49;
-  --info: #3C7FB0;  --info-rgb: 60 127 176;
-  --color-positive: #4F9A5C;
+  --info: #2F6A98;  --info-rgb: 47 106 152;
+  --color-positive: #3A7A47;
   --color-danger:   #CE2C31;
-  --color-cardio:   #3C7FB0;
+  --color-cardio:   #2F6A98;
 
   --viz-1: #171B22;
-  --viz-2: #3C7FB0;
-  --viz-3: #4F9A5C;
-  --viz-4: #6F5BE6;
+  --viz-2: #2F6A98;
+  --viz-3: #3A7A47;
+  --viz-4: #5A46CC;
   --viz-5: #A6ACB6;
 
   --glass-bg:          rgba(255, 255, 255, 0.72);
@@ -411,7 +433,7 @@ input:-webkit-autofill:focus {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: var(--r-pill); }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.20); }
 html.light ::-webkit-scrollbar-thumb { background: rgba(18, 24, 34, 0.18); }
 
@@ -453,7 +475,8 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
 /* ══ Typography voices ═══════════════════════════════════════════════════ */
 
-/* Display — SF Pro semibold, tight. The product's headline voice. Weight
+/* Display — SF Pro bold (700 = the numeral/display weight; everything else
+   emphasised is 600, see fontWeight in tailwind.config.js), tight. The product's headline voice. Weight
    dropped 800->700 vs the old Manrope voice: SF Pro's 800 optical weight
    reads noticeably heavier/blockier than Manrope's at the same numeric
    weight, so straight reuse of the old weight looked off-face. */
@@ -468,9 +491,9 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 /* Micro section label — the og-cap. */
 .section-label {
   font-family: var(--font-ui);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -495,15 +518,14 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   letter-spacing: -0.01em;
 }
 
-/* The one big number that matters on a screen. Ledger's hero figures are 34
-   semibold at ~-2.5% tracking (specs.md); weight dropped 800->600 for the
-   same SF Pro optical-weight reason as .type-display above. */
+/* The one big number that matters on a screen. Hero figures are bold (700, the
+   numeral weight per the brand guide) at ~-2.5% tracking; tabular always. */
 .hero-metric {
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.025em;
   line-height: 1;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .text-secondary { color: var(--text-secondary); }
@@ -538,7 +560,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   /* Inset tile — the og-inset. Small metric cells inside a glass card. */
   .glass-inset {
     background: var(--glass-inset-bg);
-    border-radius: 13px;
+    border-radius: var(--r-control);
   }
 
   /* Row-stripe — the og-row-stripe. A faint inset FILL for a row inside a
@@ -578,7 +600,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
     box-shadow: var(--shadow-2);
   }
   /* Brand-tinted surface — the one moment a card carries the action color.
-     Flat teal wash, no blur. */
+     Flat off-white wash, no blur. */
   .glass-brand {
     background: rgba(var(--color-brand-rgb) / 0.13);
     border: 1px solid rgba(var(--color-brand-rgb) / 0.30);
@@ -599,7 +621,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
      un-swept callers keep working. Weight dropped 800->600 for SF Pro. */
   .cta-action, .cta-coral {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 48px; border-radius: 14px; white-space: nowrap;
+    height: 48px; border-radius: var(--r-control); white-space: nowrap;
     font-size: 15px; font-weight: 600; color: var(--color-action-dark);
     background: var(--color-brand);
     box-shadow: none;
@@ -611,8 +633,8 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   /* Ghost action — og-cta-ghost. */
   .cta-ghost {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 44px; border-radius: 14px; white-space: nowrap;
-    font-size: 13.5px; font-weight: 700; color: var(--text-primary);
+    height: 44px; border-radius: var(--r-control); white-space: nowrap;
+    font-size: 14px; font-weight: 600; color: var(--text-primary);
     background: rgba(255, 255, 255, 0.06);
     border: 0.5px solid var(--glass-edge);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
@@ -624,10 +646,10 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
   /* Value pill — og-pillv (prescribed loads, key row values). */
   .pill-value {
-    font-size: 13px; font-weight: 800; white-space: nowrap;
+    font-size: 14px; font-weight: 600; white-space: nowrap;
     font-variant-numeric: tabular-nums;
     background: rgba(255, 255, 255, 0.06);
-    border-radius: 10px; padding: 5px 9px;
+    border-radius: var(--r-control); padding: 5px 9px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
   }
   html.light .pill-value { background: rgba(18, 24, 34, 0.05); }
@@ -637,10 +659,10 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 
   /* Deadline chip — og-chip (gold). */
   .chip-gold {
-    font-size: 12px; font-weight: 700; color: var(--hue-gold);
+    font-size: 12px; font-weight: 600; color: var(--hue-gold);
     background: rgba(var(--hue-gold-rgb) / 0.13);
     border: 0.5px solid rgba(var(--hue-gold-rgb) / 0.20);
-    border-radius: 999px; padding: 6px 12px; white-space: nowrap;
+    border-radius: var(--r-pill); padding: 6px 12px; white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
 
@@ -712,7 +734,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 /* The scan line travels the scan window (height = --scan-reticle-h). Sweeping
    it from the top edge to the bottom edge — half the window height in each
    direction — communicates "scanning" via motion rather than borrowing the
-   teal action hue. Derived from the reticle token so the sweep tracks the
+   the action colour. Derived from the reticle token so the sweep tracks the
    window size automatically. */
 @keyframes scanSweep {
   from { transform: translateY(calc(var(--scan-reticle-h) / -2)); }
@@ -742,11 +764,11 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 }
 
 /* Sonner toasts — og-toast. Themed to neutral glass surfaces so they obey the
-   Vapor × Macro system: Manrope + tabular numerals, 0.5px hairline edges, one
+   Ledger system: SF Pro + tabular numerals, 0.5px hairline edges, one
    easing, 8px rise entrance. richColors is OFF — Sonner's saturated success
    green / info blue / warning yellow would poach the biometric-only spectrum,
    so success/info read as restrained neutral glass and only error/destructive
-   borrows teal (--color-brand #19C8A6), the single action color. Tokens are theme-
+   borrows the off-white action colour (--color-brand). Tokens are theme-
    aware (re-tune on html.light) so one rule covers both themes. */
 [data-sonner-toaster],
 [data-sonner-toast] {
@@ -757,7 +779,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   background: var(--color-elevated);
   border: 0.5px solid var(--color-border);
   color: var(--text-primary);
-  border-radius: 12px;
+  border-radius: var(--r-control);
   box-shadow: var(--shadow-1);
   /* Re-time Sonner's own enter/exit slide to the single system easing within
      the 180–320ms band. Sonner v2 drives the actual mount translate via its
@@ -777,13 +799,13 @@ svg.rbh path:hover, svg.rbh polygon:hover,
    colored. Tinted to SECONDARY so the COPY leads: at primary the neutral check
    out-shouted the message it was decorating (a checkmark is confirmation, not
    the payload). Secondary keeps it a legible-but-quiet supporting glyph and lets
-   the text carry the toast. Only the error state below swaps in the teal action
+   the text carry the toast. Only the error state below swaps in the action
    tint, where the icon SHOULD draw the eye. */
 [data-sonner-toast].og-toast [data-icon] {
   color: var(--text-secondary);
 }
-/* Error / destructive keeps the NEUTRAL hairline edge — teal on the border read
-   as decoration (a second action accent competing with coral), so the error
+/* Error / destructive keeps the NEUTRAL hairline edge — an accent on the border read
+   as decoration (a second action accent competing with the data hues), so the error
    state borrows the action tint only on its ICON, where the accent is earned and
    draws the eye. The surface stays the same neutral glass as a passive toast. */
 [data-sonner-toast].og-toast.og-toast--error {
@@ -823,7 +845,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   place-items: center;
   background: transparent;
   border: 0;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   /* Resting contrast is --text-secondary: the always-visible X is a convenience
      on a read-and-forget pill, not the point of it, so it stays quiet relative
      to the copy while still clearing the legibility floor (>=4.5:1 on the
@@ -847,7 +869,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   position: absolute;
   width: 28px;
   height: 28px;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   background: var(--color-surface-2);
   border: 0.5px solid var(--color-border);
   z-index: -1;
@@ -900,7 +922,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 .diet-slider:focus-visible {
   outline: 2px solid rgba(var(--color-brand-rgb) / 0.55);
   outline-offset: 2px;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
 }
 .diet-slider::-webkit-slider-runnable-track {
   height: 6px;
@@ -911,7 +933,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   width: 44px;
   height: 44px;
   margin-top: -19px; /* centers the 44px thumb on the 6px track */
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   background: var(--color-brand);
   border: 3px solid var(--color-action-dark);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
@@ -925,7 +947,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 .diet-slider::-moz-range-thumb {
   width: 44px;
   height: 44px;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   background: var(--color-brand);
   border: 3px solid var(--color-action-dark);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
