@@ -72,7 +72,7 @@ export function analyzeWeightTrend(weightEntries, days = 7) {
 
 export function analyzeLoggingConsistency(foodEntries, profile, days = 7) {
   const cutoff = subDays(new Date(), days);
-  const recent = foodEntries.filter((e) => parseISO(e.date) >= cutoff);
+  const recent = foodEntries.filter((e) => e.planned !== true && parseISO(e.date) >= cutoff);
 
   const byDate = {};
   recent.forEach((entry) => {

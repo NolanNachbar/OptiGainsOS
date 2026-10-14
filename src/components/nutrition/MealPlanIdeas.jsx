@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, UtensilsCrossed, X, Plus, Search, Bookmark } from "lucide-react";
 import { SaveAsTemplateDialog } from "@/components/nutrition/MealTemplates";
+import { eatenOnly } from "@/utils/nutritionUtils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const MEAL_ALLOC  = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
@@ -176,7 +177,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
   const fat  = fatsGoal     || 0;
 
   const pool = useMemo(
-    () => buildMealPool(allFoodEntries, excluded, additions),
+    () => buildMealPool(eatenOnly(allFoodEntries), excluded, additions),
     [allFoodEntries, excluded, additions]
   );
 
@@ -203,7 +204,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
 
   const excludeMeal = useCallback((key) => setExcluded((prev) => new Set([...prev, key])), []);
 
-  const searchIndex   = useMemo(() => buildSearchIndex(allFoodEntries), [allFoodEntries]);
+  const searchIndex   = useMemo(() => buildSearchIndex(eatenOnly(allFoodEntries)), [allFoodEntries]);
   const searchResults = useMemo(() => {
     if (!addSearch.trim()) return [];
     const q = addSearch.toLowerCase();

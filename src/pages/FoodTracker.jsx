@@ -2174,7 +2174,7 @@ const handleSaveMealTemplate = () => {
                 onClick={() => {
                   // Default to the most recent logged day before this one, so
                   // the dialog opens on something rather than an empty date.
-                  const prior = allFoodEntries
+                  const prior = eatenOnly(allFoodEntries)
                     .map((e) => e.date)
                     .filter((d) => d < selectedDate)
                     .sort()
@@ -2312,16 +2312,20 @@ const handleSaveMealTemplate = () => {
                 { mealType: 'snack',     label: 'Snack' },
               ].map(({ mealType, label }, i) => {
                 const entries = mealGroups[mealType];
-                const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
-                const mealP = entries.reduce((sum, e) => sum + (e.protein_grams || 0), 0);
-                const mealC = entries.reduce((sum, e) => sum + (e.carbs_grams || 0), 0);
-                const mealF = entries.reduce((sum, e) => sum + (e.fats_grams || 0), 0);
-                const mealCost = entries.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
+                // Header totals are what was eaten, matching the ring; planned
+                // rows still list below (striped) and are counted separately.
+                const eatenInMeal = eatenOnly(entries);
+                const plannedInMeal = entries.length - eatenInMeal.length;
+                const mealCals = eatenInMeal.reduce((sum, e) => sum + (e.calories || 0), 0);
+                const mealP = eatenInMeal.reduce((sum, e) => sum + (e.protein_grams || 0), 0);
+                const mealC = eatenInMeal.reduce((sum, e) => sum + (e.carbs_grams || 0), 0);
+                const mealF = eatenInMeal.reduce((sum, e) => sum + (e.fats_grams || 0), 0);
+                const mealCost = eatenInMeal.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
                 const hasEntries = entries.length > 0;
                 // Earliest VALID eaten_at across the meal's entries, for the
                 // header time badge — date-fns `format` throws on an invalid
                 // Date, so a bad/missing timestamp is skipped, not fatal.
-                const mealTime = entries.reduce((earliest, e) => {
+                const mealTime = eatenInMeal.reduce((earliest, e) => {
                   if (!e.eaten_at) return earliest;
                   const d = new Date(e.eaten_at);
                   if (!isValid(d)) return earliest;
@@ -2334,6 +2338,11 @@ const handleSaveMealTemplate = () => {
                       <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-ink-secondary' : 'bg-track'}`} />
                         <span className="text-[14.5px] font-bold text-ink truncate">{label}</span>
+                        {plannedInMeal > 0 && (
+                          <span className="font-technical text-[10px] font-semibold text-ink-muted shrink-0">
+                            +{plannedInMeal} planned
+                          </span>
+                        )}
                         {mealTime && (
                           <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
                             {format(mealTime, 'h:mm a')}
