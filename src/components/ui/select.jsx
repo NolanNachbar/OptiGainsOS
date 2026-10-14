@@ -125,7 +125,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
         onValueChange(value);
         setOpen(false);
       }}
-      className={`relative flex min-h-[44px] cursor-pointer select-none items-center rounded-md px-2 py-2.5 text-[13px] outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-[var(--glass-edge)] text-ink' : ''} ${className}`}
+      className={`relative flex min-h-[44px] cursor-pointer select-none items-center rounded-md px-2 py-2.5 text-[14px] outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-[var(--glass-edge)] text-ink' : ''} ${className}`}
       {...props}
     >
       {children}

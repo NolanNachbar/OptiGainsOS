@@ -55,7 +55,7 @@ const navigationItems = [
       { label: "Hydration", url: "/fuel?tab=hydration",
         active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
-  { title: "Body", url: "/athlete-state", icon: HeartPulse,
+  { title: "State", url: "/athlete-state", icon: HeartPulse,
     matches: ["/athlete-state", "/recovery", "/physique", "/coach", "/lifts"],
     mobileStrip: true,
     children: [
@@ -286,7 +286,7 @@ export default function Layout({ children, currentPageName }) {
     CreateWorkout: "Create Workout",
     ProgramDetail: "Program",
     ProgramBuilder: "Program Builder",
-    AthleteState: "Body",
+    AthleteState: "State",
     Recovery: "Recovery",
     BriefHistory: "Brief History",
   }[currentPageName] || currentPageName || "Home";
@@ -366,7 +366,7 @@ export default function Layout({ children, currentPageName }) {
         }`}
       >
         <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
-        <span className="text-[9.5px] font-bold">{item.title}</span>
+        <span className="text-[11px] font-semibold leading-[14px] tracking-normal truncate max-w-full">{item.title}</span>
       </Link>
     );
   };
@@ -391,7 +391,7 @@ export default function Layout({ children, currentPageName }) {
                 <div key={item.title}>
                   <Link
                     to={item.url}
-                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[13.5px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                       isActive
                         ? "text-[var(--brand-tint)] bg-brand/[0.16]"
                         : "text-ink-faint hover:text-ink"
@@ -409,7 +409,7 @@ export default function Layout({ children, currentPageName }) {
                           <Link
                             key={c.label}
                             to={c.url}
-                            className={`px-2 py-[5px] rounded-md text-[12px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                            className={`px-2 py-[5px] rounded-md text-[12px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                               on
                                 ? "text-ink bg-white/[0.05]"
                                 : "text-ink-faint hover:text-ink-muted"
@@ -428,7 +428,7 @@ export default function Layout({ children, currentPageName }) {
 
           <div className="mt-auto px-2.5">
             <div className="flex items-center justify-between px-0.5">
-              <span className="font-technical text-[10.5px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
+              <span className="font-technical text-[11px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
                 {format(nowInTz(), "EEE MMM d")}
               </span>
               <div className="flex items-center gap-2">
