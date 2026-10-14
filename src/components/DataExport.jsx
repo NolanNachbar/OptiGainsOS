@@ -150,8 +150,11 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
         console.error(err);
         toast.error(`${exp.label} export failed`);
       }
+      // iOS Safari can abort the next in-flight fetch ("Load failed") when a
+      // download fires right before it; give each download a beat to settle.
+      await new Promise((r) => setTimeout(r, 500));
     }
-    toast.success(`${count} files downloaded`);
+    toast.success(`${count} of ${EXPORTS.length} files downloaded`);
     setLoading(null);
   };
 
