@@ -2697,6 +2697,7 @@ const handleSaveMealTemplate = () => {
                     <Camera className="w-4 h-4 text-ink-muted shrink-0" />
                   </button>
                 )}
+                {!editingEntry && (
                 <div>
                   <Label htmlFor="search">Search USDA Database</Label>
                   <div className="flex gap-2 mt-1">
@@ -2840,6 +2841,7 @@ const handleSaveMealTemplate = () => {
                         )
                       )}
                     </div>
+                    )}
 
                     {/* When not searching and no food selected: show Recent Foods + My Foods */}
                     {searchQuery.length < 2 && !newFood.food_name && (
@@ -2933,6 +2935,7 @@ const handleSaveMealTemplate = () => {
                     )}
 
                     {/* AI estimate — describe a food when exact macros aren't in the DB */}
+                    {!editingEntry && (
                     <div className="border-t border-charcoal-border pt-4">
                       <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-brand" /> Can't find it? Describe it
@@ -2965,6 +2968,7 @@ const handleSaveMealTemplate = () => {
                         <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
                       )}
                     </div>
+                    )}
 
                     {/* add-food-dialog-5: the AI-estimate section above already
                         opens this "alternatives to search" zone with a single
@@ -2972,6 +2976,9 @@ const handleSaveMealTemplate = () => {
                         drops its own top border so the two don't stack into a
                         double divider, spacing alone (pt-1) separates them. */}
                     <div className="pt-1">
+                      {/* An edit leads with amount + meal; the disclosure (and the
+                          search/estimate paths above) only belong to adding. */}
+                      {!editingEntry && (
                       <button
                         type="button"
                         onClick={() => setManualExpanded(v => !v)}
@@ -2981,9 +2988,10 @@ const handleSaveMealTemplate = () => {
                         <span className="section-label">Manual entry</span>
                         {manualExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
                       </button>
+                      )}
 
                       {manualExpanded && (
-                      <div className="space-y-4 pt-1">
+                      <div className={editingEntry ? "flex flex-col gap-4 pt-1" : "space-y-4 pt-1"}>
                         <div>
                           <Label htmlFor="food_name">Food Name *</Label>
                           <Input
@@ -2995,11 +3003,15 @@ const handleSaveMealTemplate = () => {
                           />
                         </div>
 
+                        {/* Editing doesn't restamp eaten_at, so the toggle would be
+                            a control that does nothing. */}
+                        {!editingEntry && (
                         <div>
                           <LoggingModeToggle value={loggingMode} onChange={setLoggingMode} />
                         </div>
+                        )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className={`grid grid-cols-2 gap-4 ${editingEntry ? "order-first" : ""}`}>
                           <div>
                             <Label htmlFor="meal_type">Meal Type</Label>
                             <Select
